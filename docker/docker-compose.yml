@@ -1,0 +1,108 @@
+# ==================================
+# eLISAschool - Docker Compose
+# ==================================
+# Commandes: docker-compose up -d | docker-compose down
+
+version: '3.9'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: elisaschool_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-elisaschool}
+      POSTGRES_USER: ${DB_USER:-elisaschool_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - elisaschool_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis pour files d'attente et synchronisation
+  redis:
+    image: redis:7-alpine
+    container_name: elisaschool_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - elisaschool_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API Express
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: elisaschool_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-elisaschool}
+      DB_USER: ${DB_USER:-elisaschool_user}
+      DB_PASSWORD: ${DB_PASSWORD:-dev_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev_encryption_key_32chars}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+      - ../shared:/shared
+    networks:
+      - elisaschool_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run dev
+
+  # Frontend React/Vite
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: elisaschool_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:${APP_PORT:-3000}/api
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - ../shared:/shared
+    networks:
+      - elisaschool_network
+    depends_on:
+      - backend
+    command: npm run dev -- --host
+
+networks:
+  elisaschool_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

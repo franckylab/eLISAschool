@@ -1,0 +1,196 @@
+/**
+ * ==================================
+ * eLISAschool - Service Notifications
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: xAI Éducation
+ */
+
+import { Repository, FindOptionsWhere } from 'typeorm';
+import { AppDataSource } from '@database/data-source';
+import { Notification, TypeNotification, StatutNotification } from '../entities';
+import { CreateNotificationDto, CreateBulkNotificationDto, QueryNotificationsDto } from '../dto';
+import { AppError } from '@common/filters/error.filter';
+import { logger } from '@common/utils/logger.util';
+
+/**
+ * Service de gestion des notifications
+ */
+export class NotificationsService {
+    private notificationRepository: Repository<Notification>;
+
+    constructor() {
+        this.notificationRepository = AppDataSource.getRepository(Notification);
+    }
+
+    /**
+     * Créer une notification
+     */
+    async create(createDto: CreateNotificationDto, expediteurId?: string): Promise<Notification> {
+        const notification = this.notificationRepository.create({
+            ...createDto,
+            expediteurId,
+            statut: StatutNotification.EN_ATTENTE,
+        });
+
+        await this.notificationRepository.save(notification);
+
+        // TODO: Envoyer la notification selon le type (push, email, etc.)
+        if (!createDto.programmeePour) {
+            await this.envoyerNotification(notification);
+        }
+
+        logger.info(`Notification créée pour ${createDto.destinataireId}`);
+
+        return notification;
+    }
+
+    /**
+     * Créer des notifications en masse
+     */
+    async createBulk(createDto: CreateBulkNotificationDto, expediteurId?: string): Promise<number> {
+        const notifications = createDto.destinatairesIds.map((destinataireId) =>
+            this.notificationRepository.create({
+                destinataireId,
+                titre: createDto.titre,
+                contenu: createDto.contenu,
+                type: createDto.type as TypeNotification,
+                priorite: createDto.priorite as any,
+                categorie: createDto.categorie,
+                expediteurId,
+                statut: StatutNotification.EN_ATTENTE,
+            })
+        );
+
+        await this.notificationRepository.save(notifications);
+
+        // Envoyer toutes les notifications
+        for (const notification of notifications) {
+            await this.envoyerNotification(notification);
+        }
+
+        logger.info(`${notifications.length} notifications créées en masse`);
+
+        return notifications.length;
+    }
+
+    /**
+     * Récupérer les notifications d'un utilisateur
+     */
+    async findByUser(
+        utilisateurId: string,
+        query: QueryNotificationsDto
+    ): Promise<{ items: Notification[]; total: number }> {
+        const { page, limit, statut, type, categorie, nonLues } = query;
+
+        const where: FindOptionsWhere<Notification> = { destinataireId: utilisateurId };
+
+        if (statut) where.statut = statut as StatutNotification;
+        if (type) where.type = type as TypeNotification;
+        if (categorie) where.categorie = categorie;
+        if (nonLues) where.statut = StatutNotification.ENVOYEE; // Non lues = envoyées mais pas lues
+
+        const [items, total] = await this.notificationRepository.findAndCount({
+            where,
+            order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+
+        return { items, total };
+    }
+
+    /**
+     * Marquer une notification comme lue
+     */
+    async markAsRead(id: string, utilisateurId: string): Promise<Notification> {
+        const notification = await this.notificationRepository.findOne({
+            where: { id, destinataireId: utilisateurId },
+        });
+
+        if (!notification) {
+            throw new AppError('Notification non trouvée', 404, 'NOTIFICATION_NOT_FOUND');
+        }
+
+        notification.statut = StatutNotification.LUE;
+        notification.lueAt = new Date();
+
+        await this.notificationRepository.save(notification);
+
+        return notification;
+    }
+
+    /**
+     * Marquer toutes les notifications comme lues
+     */
+    async markAllAsRead(utilisateurId: string): Promise<number> {
+        const result = await this.notificationRepository.update(
+            { destinataireId: utilisateurId, statut: StatutNotification.ENVOYEE },
+            { statut: StatutNotification.LUE, lueAt: new Date() }
+        );
+
+        logger.info(`${result.affected} notifications marquées comme lues pour ${utilisateurId}`);
+
+        return result.affected || 0;
+    }
+
+    /**
+     * Supprimer une notification
+     */
+    async remove(id: string, utilisateurId: string): Promise<void> {
+        const notification = await this.notificationRepository.findOne({
+            where: { id, destinataireId: utilisateurId },
+        });
+
+        if (!notification) {
+            throw new AppError('Notification non trouvée', 404, 'NOTIFICATION_NOT_FOUND');
+        }
+
+        await this.notificationRepository.remove(notification);
+    }
+
+    /**
+     * Compter les notifications non lues
+     */
+    async countUnread(utilisateurId: string): Promise<number> {
+        return this.notificationRepository.count({
+            where: { destinataireId: utilisateurId, statut: StatutNotification.ENVOYEE },
+        });
+    }
+
+    /**
+     * Envoyer une notification
+     * TODO: Implémenter l'envoi réel selon le type
+     */
+    private async envoyerNotification(notification: Notification): Promise<void> {
+        try {
+            switch (notification.type) {
+                case TypeNotification.EMAIL:
+                    // TODO: Envoyer email
+                    break;
+                case TypeNotification.PUSH:
+                    // TODO: Envoyer push notification
+                    break;
+                case TypeNotification.SMS:
+                    // TODO: Envoyer SMS
+                    break;
+                case TypeNotification.IN_APP:
+                default:
+                    // In-app: juste mettre à jour le statut
+                    break;
+            }
+
+            notification.statut = StatutNotification.ENVOYEE;
+            notification.envoyeeAt = new Date();
+            await this.notificationRepository.save(notification);
+        } catch (error) {
+            notification.statut = StatutNotification.ECHEC;
+            await this.notificationRepository.save(notification);
+            logger.error(`Échec envoi notification ${notification.id}`, error);
+        }
+    }
+}
+
+export const notificationsService = new NotificationsService();
+
+export default NotificationsService;
