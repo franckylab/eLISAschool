@@ -1,15 +1,19 @@
 /**
  * ==================================
- * eLISAschool - Service d'authentification
+ * eLISAschool - Service d'authentification v2.0
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * Utilise le système de configuration centralisé
  */
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '../entities';
 import { TokenService } from './token.service';
+import { AuditService, auditService } from './audit.service';
+import { AuditAction } from '../entities/audit-log.entity';
 import {
     LoginDto,
     RegisterDto,
@@ -22,10 +26,10 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { generateSecureToken } from '@common/utils/crypto.util';
+import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 
 /**
- * Service d'authentification
- * Gère toutes les opérations liées à l'authentification des utilisateurs
+ * Service d'authentification avec configuration centralisée
  */
 export class AuthService {
     private utilisateurRepository: Repository<Utilisateur>;
@@ -39,39 +43,53 @@ export class AuthService {
     }
 
     /**
+     * Récupère les paramètres de sécurité depuis la configuration
+     */
+    private async getSecurityParams() {
+        return {
+            maxLoginAttempts: await getParamNumber('auth.max_login_attempts', 5),
+            lockoutDuration: await getParamNumber('auth.lockout_duration', 15),
+            sessionDuration: await getParamNumber('auth.session_duration', 1440),
+            passwordMinLength: await getParamNumber('auth.password_min_length', 8),
+            require2FA: await getParamBoolean('auth.require_2fa', false),
+        };
+    }
+
+    /**
      * Connexion d'un utilisateur
-     * @param loginDto - Données de connexion
-     * @param adresseIp - Adresse IP du client
-     * @param userAgent - User-Agent du client
      */
     async login(
         loginDto: LoginDto,
         adresseIp?: string,
-        userAgent?: string
+        userAgent?: string,
+        req?: any
     ): Promise<LoginResponseDto> {
-        // Recherche de l'utilisateur par email
+        const securityParams = await this.getSecurityParams();
+
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { email: loginDto.email.toLowerCase() },
             select: ['id', 'email', 'matricule', 'motDePasse', 'role', 'statut', 'tentativesConnexion', 'bloqueJusqua', 'etablissementId'],
         });
 
         if (!utilisateur) {
-            logger.warn(`Tentative de connexion échouée: email non trouvé - ${loginDto.email}`);
+            await auditService.logLogin('unknown', false, req, 'Email non trouvé');
             throw new AppError('Email ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
         }
 
         // Vérification du blocage
         if (utilisateur.estBloque()) {
-            logger.warn(`Compte bloqué: ${utilisateur.email}`);
+            await auditService.logLogin(utilisateur.id, false, req, 'Compte bloqué');
             throw new AppError('Compte temporairement bloqué. Veuillez réessayer plus tard.', 403, 'ACCOUNT_LOCKED');
         }
 
         // Vérification du statut
         if (utilisateur.statut === StatutUtilisateur.SUSPENDU) {
+            await auditService.logLogin(utilisateur.id, false, req, 'Compte suspendu');
             throw new AppError('Compte suspendu. Contactez l\'administrateur.', 403, 'ACCOUNT_SUSPENDED');
         }
 
         if (utilisateur.statut === StatutUtilisateur.INACTIF) {
+            await auditService.logLogin(utilisateur.id, false, req, 'Compte inactif');
             throw new AppError('Compte inactif.', 403, 'ACCOUNT_INACTIVE');
         }
 
@@ -79,19 +97,18 @@ export class AuthService {
         const motDePasseValide = await utilisateur.verifierMotDePasse(loginDto.motDePasse);
 
         if (!motDePasseValide) {
-            // Incrémente le compteur de tentatives
             utilisateur.tentativesConnexion += 1;
 
-            // Blocage après 5 tentatives
-            if (utilisateur.tentativesConnexion >= 5) {
+            // Blocage selon configuration
+            if (utilisateur.tentativesConnexion >= securityParams.maxLoginAttempts) {
                 const bloqueJusqua = new Date();
-                bloqueJusqua.setMinutes(bloqueJusqua.getMinutes() + 15);
+                bloqueJusqua.setMinutes(bloqueJusqua.getMinutes() + securityParams.lockoutDuration);
                 utilisateur.bloqueJusqua = bloqueJusqua;
-                logger.warn(`Compte bloqué après tentatives multiples: ${utilisateur.email}`);
+                logger.warn(`Compte bloqué après ${securityParams.maxLoginAttempts} tentatives: ${utilisateur.email}`);
             }
 
             await this.utilisateurRepository.save(utilisateur);
-
+            await auditService.logLogin(utilisateur.id, false, req, 'Mot de passe incorrect');
             throw new AppError('Email ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
         }
 
@@ -120,12 +137,18 @@ export class AuthService {
             userAgent
         );
 
+        // Audit connexion réussie
+        await auditService.logLogin(utilisateur.id, true, req);
+
         logger.info(`Connexion réussie: ${utilisateur.email}`);
+
+        // Durée de session en secondes depuis config
+        const expiresIn = securityParams.sessionDuration * 60;
 
         return {
             accessToken,
             refreshToken,
-            expiresIn: 7 * 24 * 60 * 60, // 7 jours en secondes
+            expiresIn,
             utilisateur: {
                 id: utilisateur.id,
                 email: utilisateur.email,
@@ -139,10 +162,19 @@ export class AuthService {
 
     /**
      * Inscription d'un nouvel utilisateur
-     * @param registerDto - Données d'inscription
      */
     async register(registerDto: RegisterDto): Promise<{ message: string; utilisateurId: string }> {
-        // Vérification de l'unicité de l'email
+        const securityParams = await this.getSecurityParams();
+
+        // Validation longueur mot de passe
+        if (registerDto.motDePasse.length < securityParams.passwordMinLength) {
+            throw new AppError(
+                `Le mot de passe doit contenir au moins ${securityParams.passwordMinLength} caractères`,
+                400,
+                'PASSWORD_TOO_SHORT'
+            );
+        }
+
         const emailExiste = await this.utilisateurRepository.findOne({
             where: { email: registerDto.email.toLowerCase() },
         });
@@ -161,12 +193,14 @@ export class AuthService {
             matriculeExiste = !!existant;
         }
 
-        // Création de l'utilisateur
+        // Rôle par défaut depuis config
+        const defaultRole = await getParam<string>('utilisateurs.default_role', Role.ELEVE);
+
         const utilisateur = this.utilisateurRepository.create({
             email: registerDto.email.toLowerCase(),
             matricule: matricule!,
             motDePasse: registerDto.motDePasse,
-            role: Role.ELEVE, // Rôle par défaut
+            role: defaultRole as Role,
             statut: StatutUtilisateur.EN_ATTENTE_VALIDATION,
             langue: registerDto.langue || 'fr',
             tokenVerificationEmail: generateSecureToken(),
@@ -174,7 +208,6 @@ export class AuthService {
 
         await this.utilisateurRepository.save(utilisateur);
 
-        // Création du profil
         const profil = this.profilRepository.create({
             utilisateurId: utilisateur.id,
             nom: registerDto.nom,
@@ -184,9 +217,15 @@ export class AuthService {
 
         await this.profilRepository.save(profil);
 
-        logger.info(`Nouvel utilisateur inscrit: ${utilisateur.email}`);
+        // Audit inscription
+        await auditService.log({
+            utilisateurId: utilisateur.id,
+            action: AuditAction.USER_CREATE,
+            description: `Inscription: ${utilisateur.email}`,
+            module: 'auth',
+        });
 
-        // TODO: Envoyer email de vérification
+        logger.info(`Nouvel utilisateur inscrit: ${utilisateur.email}`);
 
         return {
             message: 'Inscription réussie. Veuillez vérifier votre email.',
@@ -196,23 +235,18 @@ export class AuthService {
 
     /**
      * Rafraîchit les tokens avec un refresh token valide
-     * @param refreshToken - Token de rafraîchissement
-     * @param adresseIp - Adresse IP du client
-     * @param userAgent - User-Agent du client
      */
     async refreshTokens(
         refreshToken: string,
         adresseIp?: string,
         userAgent?: string
     ): Promise<{ accessToken: string; refreshToken: string }> {
-        // Validation du refresh token
         const tokenEntity = await this.tokenService.validateRefreshToken(refreshToken);
 
         if (!tokenEntity) {
             throw new AppError('Token de rafraîchissement invalide ou expiré', 401, 'INVALID_REFRESH_TOKEN');
         }
 
-        // Récupération de l'utilisateur
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id: tokenEntity.utilisateurId },
         });
@@ -222,10 +256,8 @@ export class AuthService {
             throw new AppError('Utilisateur non autorisé', 401, 'USER_NOT_AUTHORIZED');
         }
 
-        // Révocation de l'ancien token
         await this.tokenService.revokeRefreshToken(refreshToken);
 
-        // Génération des nouveaux tokens
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
@@ -248,16 +280,24 @@ export class AuthService {
 
     /**
      * Déconnexion - Révoque le refresh token
-     * @param refreshToken - Token à révoquer
      */
-    async logout(refreshToken: string): Promise<void> {
+    async logout(refreshToken: string, utilisateurId?: string, req?: any): Promise<void> {
         await this.tokenService.revokeRefreshToken(refreshToken);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.LOGOUT,
+                description: 'Déconnexion',
+                module: 'auth',
+            }, req);
+        }
+
         logger.info('Déconnexion réussie');
     }
 
     /**
      * Déconnexion de toutes les sessions d'un utilisateur
-     * @param utilisateurId - ID de l'utilisateur
      */
     async logoutAll(utilisateurId: string): Promise<void> {
         await this.tokenService.revokeAllUserTokens(utilisateurId);
@@ -266,29 +306,31 @@ export class AuthService {
 
     /**
      * Demande de réinitialisation de mot de passe
-     * @param forgotPasswordDto - Email de l'utilisateur
      */
     async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { email: forgotPasswordDto.email.toLowerCase() },
         });
 
-        // On ne révèle pas si l'email existe ou non
         if (!utilisateur) {
             return { message: 'Si cet email existe, vous recevrez un lien de réinitialisation.' };
         }
 
-        // Génération du token de réinitialisation
         const token = generateSecureToken();
         const expiration = new Date();
-        expiration.setHours(expiration.getHours() + 1); // Expire dans 1 heure
+        expiration.setHours(expiration.getHours() + 1);
 
         utilisateur.tokenReinitialisationMdp = token;
         utilisateur.expirationTokenMdp = expiration;
 
         await this.utilisateurRepository.save(utilisateur);
 
-        // TODO: Envoyer email avec le lien de réinitialisation
+        await auditService.log({
+            utilisateurId: utilisateur.id,
+            action: AuditAction.PASSWORD_RESET,
+            description: 'Demande de réinitialisation de mot de passe',
+            module: 'auth',
+        });
 
         logger.info(`Demande de réinitialisation de mot de passe: ${utilisateur.email}`);
 
@@ -297,9 +339,18 @@ export class AuthService {
 
     /**
      * Réinitialisation du mot de passe
-     * @param resetPasswordDto - Token et nouveau mot de passe
      */
-    async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    async resetPassword(resetPasswordDto: ResetPasswordDto, req?: any): Promise<{ message: string }> {
+        const securityParams = await this.getSecurityParams();
+
+        if (resetPasswordDto.nouveauMotDePasse.length < securityParams.passwordMinLength) {
+            throw new AppError(
+                `Le mot de passe doit contenir au moins ${securityParams.passwordMinLength} caractères`,
+                400,
+                'PASSWORD_TOO_SHORT'
+            );
+        }
+
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { tokenReinitialisationMdp: resetPasswordDto.token },
         });
@@ -312,15 +363,14 @@ export class AuthService {
             throw new AppError('Token expiré', 400, 'TOKEN_EXPIRED');
         }
 
-        // Mise à jour du mot de passe
         utilisateur.motDePasse = resetPasswordDto.nouveauMotDePasse;
         utilisateur.tokenReinitialisationMdp = undefined;
         utilisateur.expirationTokenMdp = undefined;
 
         await this.utilisateurRepository.save(utilisateur);
-
-        // Révocation de tous les tokens existants
         await this.tokenService.revokeAllUserTokens(utilisateur.id);
+
+        await auditService.logPasswordChange(utilisateur.id, req);
 
         logger.info(`Mot de passe réinitialisé: ${utilisateur.email}`);
 
@@ -329,13 +379,22 @@ export class AuthService {
 
     /**
      * Changement de mot de passe (utilisateur connecté)
-     * @param utilisateurId - ID de l'utilisateur
-     * @param changePasswordDto - Ancien et nouveau mot de passe
      */
     async changePassword(
         utilisateurId: string,
-        changePasswordDto: ChangePasswordDto
+        changePasswordDto: ChangePasswordDto,
+        req?: any
     ): Promise<{ message: string }> {
+        const securityParams = await this.getSecurityParams();
+
+        if (changePasswordDto.nouveauMotDePasse.length < securityParams.passwordMinLength) {
+            throw new AppError(
+                `Le mot de passe doit contenir au moins ${securityParams.passwordMinLength} caractères`,
+                400,
+                'PASSWORD_TOO_SHORT'
+            );
+        }
+
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id: utilisateurId },
             select: ['id', 'email', 'motDePasse'],
@@ -345,16 +404,16 @@ export class AuthService {
             throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
         }
 
-        // Vérification de l'ancien mot de passe
         const motDePasseValide = await utilisateur.verifierMotDePasse(changePasswordDto.motDePasseActuel);
 
         if (!motDePasseValide) {
             throw new AppError('Mot de passe actuel incorrect', 400, 'INVALID_CURRENT_PASSWORD');
         }
 
-        // Mise à jour du mot de passe
         utilisateur.motDePasse = changePasswordDto.nouveauMotDePasse;
         await this.utilisateurRepository.save(utilisateur);
+
+        await auditService.logPasswordChange(utilisateurId, req);
 
         logger.info(`Mot de passe changé: ${utilisateur.email}`);
 
@@ -363,7 +422,6 @@ export class AuthService {
 
     /**
      * Vérification de l'email
-     * @param token - Token de vérification
      */
     async verifyEmail(token: string): Promise<{ message: string }> {
         const utilisateur = await this.utilisateurRepository.findOne({
@@ -389,8 +447,7 @@ export class AuthService {
     }
 
     /**
-     * Récupère l'utilisateur courant à partir de l'ID
-     * @param utilisateurId - ID de l'utilisateur
+     * Récupère l'utilisateur courant
      */
     async getCurrentUser(utilisateurId: string): Promise<any> {
         const utilisateur = await this.utilisateurRepository.findOne({
@@ -423,7 +480,5 @@ export class AuthService {
     }
 }
 
-// Instance singleton
 export const authService = new AuthService();
-
 export default AuthService;

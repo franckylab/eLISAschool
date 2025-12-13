@@ -2,6 +2,8 @@
  * ==================================
  * eLISAschool - Export de tous les modules
  * ==================================
+ * Version: 2.0.0
+ * Auteur: xAI Éducation
  */
 
 // Modules critiques
@@ -24,3 +26,9 @@ export * from './materiel';
 export * from './clubs';
 export * from './gamification';
 export * from './cartes';
+
+// Nouveaux modules
+export * from './orientation';
+export * from './impressions';
+export * from './scoring';
+export * from './monitoring';

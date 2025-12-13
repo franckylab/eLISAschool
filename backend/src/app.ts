@@ -32,6 +32,25 @@ import { requetesController } from '@modules/requetes';
 import { clubsController } from '@modules/clubs';
 import { materielController } from '@modules/materiel';
 import { cartesController } from '@modules/cartes';
+import { orientationController } from '@modules/orientation';
+import { impressionsController } from '@modules/impressions';
+import { scoringService } from '@modules/scoring';
+import { etablissementController } from '@modules/etablissement';
+import { cyclesController } from '@modules/cycles';
+import { niveauxController } from '@modules/niveaux';
+import { anneesScolairesController } from '@modules/annees-scolaires';
+import { personnelController } from '@modules/personnel';
+import { classesController } from '@modules/classes';
+import { matieresController } from '@modules/matieres';
+import { periodesController } from '@modules/periodes';
+import { elevesController } from '@modules/eleves';
+import { bulletinsController } from '@modules/bulletins';
+
+
+
+
+
+import { monitoringController } from '@modules/monitoring';
 
 /**
  * Crée et configure l'application Express
@@ -147,6 +166,29 @@ export function createApp(): Application {
     app.use('/api/clubs', clubsController);
     app.use('/api/gamification', gamificationController);
     app.use('/api/cartes', cartesController);
+
+    // Nouveaux modules
+    app.use('/api/orientation', orientationController);
+    app.use('/api/impressions', impressionsController);
+    app.use('/api/monitoring', monitoringController);
+
+    // Modules académiques
+    app.use('/api/etablissement', etablissementController);
+    app.use('/api/cycles', cyclesController);
+    app.use('/api/niveaux', niveauxController);
+    app.use('/api/annees-scolaires', anneesScolairesController);
+    app.use('/api/personnel', personnelController);
+    app.use('/api/classes', classesController);
+    app.use('/api/matieres', matieresController);
+    app.use('/api/periodes', periodesController);
+    app.use('/api/eleves', elevesController);
+    app.use('/api/bulletins', bulletinsController);
+
+
+
+
+
+
 
     // ==================================
     // Gestion des erreurs

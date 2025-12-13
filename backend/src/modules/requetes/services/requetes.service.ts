@@ -1,10 +1,25 @@
+/**
+ * ==================================
+ * eLISAschool - Service Requêtes v2.0
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: xAI Éducation
+ * 
+ * Utilise le système de configuration centralisée
+ */
+
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Requete, TypeRequete, StatutRequete } from '../entities';
-import { CreateRequeteDto, TraiterRequeteDto, QueryRequetesDto } from '../dto';
+import { Requete, TypeRequete } from '../entities';
+import { CreateRequeteDto, UpdateRequeteDto, TraiterRequeteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { StatutRequete } from '@shared/enums/statuts.enum';
 
+/**
+ * Service Requêtes avec configuration centralisée
+ */
 export class RequetesService {
     private requeteRepo: Repository<Requete>;
 
@@ -12,70 +27,174 @@ export class RequetesService {
         this.requeteRepo = AppDataSource.getRepository(Requete);
     }
 
+    /**
+     * Récupère les paramètres requêtes depuis la configuration
+     */
+    private async getRequetesParams() {
+        return {
+            approvalLevels: await getParamNumber('requetes.approval_levels', 1),
+            autoNotify: await getParamBoolean('requetes.auto_notify', true),
+        };
+    }
+
+    /**
+     * Crée une nouvelle requête
+     */
     async create(dto: CreateRequeteDto, demandeurId: string): Promise<Requete> {
-        const requete = this.requeteRepo.create({ ...dto, demandeurId });
+        const params = await this.getRequetesParams();
+
+        // Générer un numéro de requête
+        const numero = await this.generateNumero(dto.type);
+
+        const requete = this.requeteRepo.create({
+            ...dto,
+            numero,
+            demandeurId,
+            statut: StatutRequete.EN_ATTENTE,
+            niveauxApprobation: params.approvalLevels,
+            niveauActuel: 0,
+        });
+
         await this.requeteRepo.save(requete);
-        logger.info(`Requête créée: ${dto.sujet} par ${demandeurId}`);
+
+        // Notification automatique si activé
+        if (params.autoNotify) {
+            // TODO: Envoyer notification
+            logger.info(`Notification auto pour requête ${numero}`);
+        }
+
+        logger.info(`Requête créée: ${numero}`);
         return requete;
     }
 
-    async findAll(query: QueryRequetesDto) {
-        const { page, limit, type, statut } = query;
-        const where: any = {};
-        if (type) where.type = type;
-        if (statut) where.statut = statut;
+    async findAll(options: {
+        demandeurId?: string;
+        type?: TypeRequete;
+        statut?: StatutRequete;
+        page?: number;
+        limit?: number;
+    }): Promise<{ items: Requete[]; total: number }> {
+        const { demandeurId, type, statut, page = 1, limit = 20 } = options;
 
-        const [items, total] = await this.requeteRepo.findAndCount({
-            where,
-            relations: ['demandeur', 'approbateur'],
-            order: { createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
-        return { items, total };
-    }
+        const qb = this.requeteRepo.createQueryBuilder('r')
+            .leftJoinAndSelect('r.demandeur', 'd')
+            .orderBy('r.createdAt', 'DESC');
 
-    async findByUser(demandeurId: string, query: QueryRequetesDto) {
-        const { page, limit, statut } = query;
-        const where: any = { demandeurId };
-        if (statut) where.statut = statut;
+        if (demandeurId) qb.andWhere('r.demandeurId = :demandeurId', { demandeurId });
+        if (type) qb.andWhere('r.type = :type', { type });
+        if (statut) qb.andWhere('r.statut = :statut', { statut });
 
-        const [items, total] = await this.requeteRepo.findAndCount({
-            where,
-            order: { createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
-        });
+        const [items, total] = await qb
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+
         return { items, total };
     }
 
     async findOne(id: string): Promise<Requete> {
-        const requete = await this.requeteRepo.findOne({ where: { id }, relations: ['demandeur', 'approbateur'] });
+        const requete = await this.requeteRepo.findOne({
+            where: { id },
+            relations: ['demandeur'],
+        });
         if (!requete) throw new AppError('Requête non trouvée', 404, 'NOT_FOUND');
         return requete;
     }
 
+    /**
+     * Traite une requête (approbation/rejet avec niveaux)
+     */
     async traiter(id: string, dto: TraiterRequeteDto, approbateurId: string): Promise<Requete> {
+        const params = await this.getRequetesParams();
         const requete = await this.findOne(id);
+
         if (requete.statut !== StatutRequete.EN_ATTENTE && requete.statut !== StatutRequete.EN_COURS) {
-            throw new AppError('Requête déjà traitée', 400, 'ALREADY_PROCESSED');
+            throw new AppError('Cette requête ne peut plus être traitée', 400, 'INVALID_STATUS');
         }
-        requete.statut = dto.statut as StatutRequete;
+
+        if (dto.decision === 'APPROUVE') {
+            requete.niveauActuel = (requete.niveauActuel || 0) + 1;
+
+            // Vérifier si tous les niveaux sont validés
+            if (requete.niveauActuel >= params.approvalLevels) {
+                requete.statut = StatutRequete.APPROUVEE;
+                requete.dateTraitement = new Date();
+            } else {
+                requete.statut = StatutRequete.EN_COURS;
+            }
+        } else {
+            requete.statut = StatutRequete.REJETEE;
+            requete.dateTraitement = new Date();
+        }
+
         requete.approbateurId = approbateurId;
-        requete.commentaireApprobation = dto.commentaire;
-        requete.dateApprobation = new Date();
+        requete.commentaireTraitement = dto.commentaire;
+
+        // Historique d'approbation
+        const historique = requete.historiqueApprobation || [];
+        historique.push({
+            niveau: requete.niveauActuel,
+            approbateurId,
+            decision: dto.decision,
+            commentaire: dto.commentaire,
+            date: new Date().toISOString(),
+        });
+        requete.historiqueApprobation = historique;
+
         await this.requeteRepo.save(requete);
-        logger.info(`Requête ${id} ${dto.statut} par ${approbateurId}`);
+
+        // Notification automatique
+        if (params.autoNotify) {
+            logger.info(`Notification traitement requête ${requete.numero}`);
+        }
+
+        logger.info(`Requête ${requete.numero} traitée: ${dto.decision}`);
         return requete;
     }
 
-    async annuler(id: string, utilisateurId: string): Promise<Requete> {
+    /**
+     * Annule une requête
+     */
+    async annuler(id: string, demandeurId: string): Promise<Requete> {
         const requete = await this.findOne(id);
-        if (requete.demandeurId !== utilisateurId) throw new AppError('Non autorisé', 403, 'FORBIDDEN');
-        if (requete.statut !== StatutRequete.EN_ATTENTE) throw new AppError('Impossible d\'annuler', 400, 'CANNOT_CANCEL');
+
+        if (requete.demandeurId !== demandeurId) {
+            throw new AppError('Vous ne pouvez annuler que vos propres requêtes', 403, 'FORBIDDEN');
+        }
+
+        if (requete.statut !== StatutRequete.EN_ATTENTE) {
+            throw new AppError('Seules les requêtes en attente peuvent être annulées', 400, 'INVALID_STATUS');
+        }
+
         requete.statut = StatutRequete.ANNULEE;
         await this.requeteRepo.save(requete);
+
+        logger.info(`Requête ${requete.numero} annulée`);
         return requete;
+    }
+
+    /**
+     * Génère un numéro de requête unique
+     */
+    private async generateNumero(type: TypeRequete): Promise<string> {
+        const prefix = type.substring(0, 3).toUpperCase();
+        const year = new Date().getFullYear();
+        const count = await this.requeteRepo.count({
+            where: { type },
+        });
+        return `${prefix}-${year}-${String(count + 1).padStart(5, '0')}`;
+    }
+
+    /**
+     * Statistiques des requêtes
+     */
+    async getStatistiques(): Promise<any> {
+        const total = await this.requeteRepo.count();
+        const enAttente = await this.requeteRepo.count({ where: { statut: StatutRequete.EN_ATTENTE } });
+        const approuvees = await this.requeteRepo.count({ where: { statut: StatutRequete.APPROUVEE } });
+        const rejetees = await this.requeteRepo.count({ where: { statut: StatutRequete.REJETEE } });
+
+        return { total, enAttente, approuvees, rejetees };
     }
 }
 

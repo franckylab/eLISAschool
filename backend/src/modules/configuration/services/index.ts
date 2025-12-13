@@ -1,7 +1,10 @@
 /**
  * ==================================
- * eLISAschool - Export des services Configuration
+ * eLISAschool - Export Services Configuration
  * ==================================
  */
 
-export { ConfigurationService, configurationService } from './configuration.service';
+export * from './configuration.service';
+export * from './configuration-seed.service';
+export * from './configuration-history.service';
+export * from './configuration-listener';

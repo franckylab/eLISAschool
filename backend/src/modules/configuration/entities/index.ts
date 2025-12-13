@@ -6,3 +6,5 @@
 
 export { ConfigurationApp } from './configuration-app.entity';
 export { ConfigurationModule, ChampPersonnalise, WidgetConfig } from './configuration-module.entity';
+export { ParametreSysteme, CategorieParametre, TypeValeurParametre } from './parametre-systeme.entity';
+export { HistoriqueConfiguration, ActionConfiguration, CibleConfiguration } from './historique-configuration.entity';

@@ -1,74 +1,193 @@
+/**
+ * ==================================
+ * eLISAschool - Service Cartes v2.0
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: xAI Éducation
+ * 
+ * Utilise le système de configuration centralisée
+ */
+
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Carte, TypeCarte, StatutCarte } from '../entities';
+import { CarteScolaire, StatutCarte, TypeCarte } from '../entities';
 import { CreateCarteDto, UpdateCarteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
-import { generateQRCodeDataURL as generateQRCode } from '@common/utils/qr.util';
+import { logger } from '@common/utils/logger.util';
+import { getParamBoolean, getParamNumber, getParam, getAppConfig } from '@modules/configuration/utils/config.helper';
 
+/**
+ * Service Cartes avec configuration centralisée
+ */
 export class CartesService {
-    private carteRepo: Repository<Carte>;
+    private carteRepo: Repository<CarteScolaire>;
 
     constructor() {
-        this.carteRepo = AppDataSource.getRepository(Carte);
+        this.carteRepo = AppDataSource.getRepository(CarteScolaire);
     }
 
-    async create(dto: CreateCarteDto): Promise<Carte> {
-        const numeroCarte = this.genererNumeroCarte(dto.type);
-        const qrCode = await generateQRCode(JSON.stringify({ id: numeroCarte, type: dto.type }));
+    /**
+     * Récupère les paramètres cartes depuis la configuration
+     */
+    private async getCartesParams() {
+        return {
+            enableQRCode: await getParamBoolean('cartes.enable_qrcode', true),
+            validityMonths: await getParamNumber('cartes.validity_months', 12),
+            includePhoto: await getParamBoolean('cartes.include_photo', true),
+        };
+    }
+
+    /**
+     * Crée une nouvelle carte avec paramètres de configuration
+     */
+    async create(dto: CreateCarteDto): Promise<CarteScolaire> {
+        const params = await this.getCartesParams();
+        const appConfig = await getAppConfig();
+
+        // Calculer la date d'expiration
+        const dateExpiration = new Date();
+        dateExpiration.setMonth(dateExpiration.getMonth() + params.validityMonths);
+
+        // Générer le numéro de carte
+        const numeroCarte = this.generateNumeroCarte(dto.type);
 
         const carte = this.carteRepo.create({
             ...dto,
             numeroCarte,
-            qrCode,
-            dateExpiration: dto.dateExpiration ? new Date(dto.dateExpiration) : undefined,
+            dateExpiration,
+            statut: StatutCarte.ACTIVE,
+            qrCode: params.enableQRCode ? this.generateQRCode(numeroCarte) : undefined,
+            etablissementNom: appConfig.nomEtablissement,
         });
+
         await this.carteRepo.save(carte);
+        logger.info(`Carte créée: ${numeroCarte} pour ${dto.utilisateurId}`);
         return carte;
     }
 
-    async findByUser(utilisateurId: string): Promise<Carte[]> {
-        return this.carteRepo.find({ where: { utilisateurId } });
+    async findAll(type?: TypeCarte, statut?: StatutCarte): Promise<CarteScolaire[]> {
+        const where: any = {};
+        if (type) where.type = type;
+        if (statut) where.statut = statut;
+        return this.carteRepo.find({ where, relations: ['utilisateur'], order: { createdAt: 'DESC' } });
     }
 
-    async findOne(id: string): Promise<Carte> {
+    async findOne(id: string): Promise<CarteScolaire> {
         const carte = await this.carteRepo.findOne({ where: { id }, relations: ['utilisateur'] });
         if (!carte) throw new AppError('Carte non trouvée', 404, 'NOT_FOUND');
         return carte;
     }
 
-    async findByNumero(numeroCarte: string): Promise<Carte> {
-        const carte = await this.carteRepo.findOne({ where: { numeroCarte }, relations: ['utilisateur'] });
-        if (!carte) throw new AppError('Carte non trouvée', 404, 'NOT_FOUND');
-        return carte;
+    async findByUtilisateur(utilisateurId: string): Promise<CarteScolaire[]> {
+        return this.carteRepo.find({ where: { utilisateurId }, order: { createdAt: 'DESC' } });
     }
 
-    async update(id: string, dto: UpdateCarteDto): Promise<Carte> {
+    async update(id: string, dto: UpdateCarteDto): Promise<CarteScolaire> {
         const carte = await this.findOne(id);
-        if (dto.statut) carte.statut = dto.statut as StatutCarte;
-        if (dto.dateExpiration) carte.dateExpiration = new Date(dto.dateExpiration);
+        Object.assign(carte, dto);
         await this.carteRepo.save(carte);
         return carte;
     }
 
-    async desactiver(id: string): Promise<Carte> {
+    /**
+     * Désactive une carte
+     */
+    async desactiver(id: string, raison?: string): Promise<CarteScolaire> {
         const carte = await this.findOne(id);
-        carte.statut = StatutCarte.INACTIVE;
+        carte.statut = StatutCarte.DESACTIVEE;
+        carte.raisonDesactivation = raison;
         await this.carteRepo.save(carte);
+        logger.info(`Carte désactivée: ${carte.numeroCarte}`);
         return carte;
     }
 
-    async signalerPerte(id: string): Promise<Carte> {
-        const carte = await this.findOne(id);
-        carte.statut = StatutCarte.PERDUE;
-        await this.carteRepo.save(carte);
-        return carte;
+    /**
+     * Renouvelle une carte avec les paramètres configurés
+     */
+    async renouveler(id: string): Promise<CarteScolaire> {
+        const params = await this.getCartesParams();
+        const oldCarte = await this.findOne(id);
+
+        // Désactiver l'ancienne
+        oldCarte.statut = StatutCarte.EXPIREE;
+        await this.carteRepo.save(oldCarte);
+
+        // Créer la nouvelle
+        const dateExpiration = new Date();
+        dateExpiration.setMonth(dateExpiration.getMonth() + params.validityMonths);
+
+        const numeroCarte = this.generateNumeroCarte(oldCarte.type);
+
+        const nouvelleCarte = this.carteRepo.create({
+            utilisateurId: oldCarte.utilisateurId,
+            type: oldCarte.type,
+            numeroCarte,
+            dateExpiration,
+            statut: StatutCarte.ACTIVE,
+            qrCode: params.enableQRCode ? this.generateQRCode(numeroCarte) : undefined,
+            etablissementNom: oldCarte.etablissementNom,
+        });
+
+        await this.carteRepo.save(nouvelleCarte);
+        logger.info(`Carte renouvelée: ${oldCarte.numeroCarte} -> ${numeroCarte}`);
+        return nouvelleCarte;
     }
 
-    private genererNumeroCarte(type: string): string {
+    /**
+     * Vérifie si une carte est valide (scanning)
+     */
+    async verifier(numeroCarte: string): Promise<{ valide: boolean; carte?: CarteScolaire; raison?: string }> {
+        const carte = await this.carteRepo.findOne({
+            where: { numeroCarte },
+            relations: ['utilisateur'],
+        });
+
+        if (!carte) {
+            return { valide: false, raison: 'Carte inconnue' };
+        }
+
+        if (carte.statut !== StatutCarte.ACTIVE) {
+            return { valide: false, carte, raison: `Carte ${carte.statut.toLowerCase()}` };
+        }
+
+        if (carte.dateExpiration && new Date() > carte.dateExpiration) {
+            return { valide: false, carte, raison: 'Carte expirée' };
+        }
+
+        return { valide: true, carte };
+    }
+
+    /**
+     * Génère un numéro de carte unique
+     */
+    private generateNumeroCarte(type: TypeCarte): string {
         const prefix = type.substring(0, 3).toUpperCase();
-        const annee = new Date().getFullYear().toString().slice(-2);
+        const year = new Date().getFullYear().toString().substring(2);
         const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-        return `${prefix}${annee}${random}`;
+        return `${prefix}${year}${random}`;
+    }
+
+    /**
+     * Génère un QR code (placeholder - en production utiliser qrcode library)
+     */
+    private generateQRCode(numeroCarte: string): string {
+        // En production, générer un vrai QR code avec la librairie qrcode
+        return `QR:${numeroCarte}`;
+    }
+
+    /**
+     * Cartes expirant bientôt (dans X jours)
+     */
+    async getCartesExpirantBientot(jours: number = 30): Promise<CarteScolaire[]> {
+        const dateLimite = new Date();
+        dateLimite.setDate(dateLimite.getDate() + jours);
+
+        return this.carteRepo.createQueryBuilder('c')
+            .where('c.statut = :statut', { statut: StatutCarte.ACTIVE })
+            .andWhere('c.dateExpiration <= :dateLimite', { dateLimite })
+            .andWhere('c.dateExpiration > :now', { now: new Date() })
+            .leftJoinAndSelect('c.utilisateur', 'u')
+            .getMany();
     }
 }
 

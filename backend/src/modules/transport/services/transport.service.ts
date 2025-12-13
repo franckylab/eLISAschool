@@ -1,10 +1,24 @@
+/**
+ * ==================================
+ * eLISAschool - Service Transport v2.0
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: xAI Éducation
+ * 
+ * Utilise le système de configuration centralisé
+ */
+
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { LigneTransport, InscriptionTransport, PresenceTransport } from '../entities';
 import { CreateLigneDto, CreateInscriptionTransportDto, EnregistrerPresenceDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
+/**
+ * Service Transport avec configuration centralisée
+ */
 export class TransportService {
     private ligneRepo: Repository<LigneTransport>;
     private inscriptionRepo: Repository<InscriptionTransport>;
@@ -14,6 +28,16 @@ export class TransportService {
         this.ligneRepo = AppDataSource.getRepository(LigneTransport);
         this.inscriptionRepo = AppDataSource.getRepository(InscriptionTransport);
         this.presenceRepo = AppDataSource.getRepository(PresenceTransport);
+    }
+
+    /**
+     * Récupère les paramètres transport depuis la configuration
+     */
+    private async getTransportParams() {
+        return {
+            enableGPS: await getParamBoolean('transport.enable_gps', false),
+            enableQRCheckin: await getParamBoolean('transport.enable_qr_checkin', true),
+        };
     }
 
     async createLigne(dto: CreateLigneDto): Promise<LigneTransport> {
@@ -45,7 +69,16 @@ export class TransportService {
         return this.inscriptionRepo.find({ where: { ligneId, actif: true }, relations: ['eleve'] });
     }
 
+    /**
+     * Enregistrer une présence (vérifie si QR checkin est activé)
+     */
     async enregistrerPresence(dto: EnregistrerPresenceDto): Promise<PresenceTransport> {
+        const params = await this.getTransportParams();
+
+        if (!params.enableQRCheckin) {
+            throw new AppError('Le pointage QR n\'est pas activé', 400, 'QR_CHECKIN_DISABLED');
+        }
+
         const presence = this.presenceRepo.create({ ...dto, date: new Date(dto.date) });
         await this.presenceRepo.save(presence);
         return presence;
@@ -58,6 +91,14 @@ export class TransportService {
             .where('i.ligneId = :ligneId', { ligneId })
             .andWhere('p.date = :today', { today })
             .getMany();
+    }
+
+    /**
+     * Vérifie si le GPS est activé (pour l'interface)
+     */
+    async isGPSEnabled(): Promise<boolean> {
+        const params = await this.getTransportParams();
+        return params.enableGPS;
     }
 }
 

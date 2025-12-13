@@ -1,16 +1,20 @@
 /**
  * ==================================
- * eLISAschool - DTOs Configuration
+ * eLISAschool - DTOs Configuration v2.0
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * DTOs étendus pour la configuration app, modules et paramètres système
  */
 
 import { z } from 'zod';
+import { CategorieParametre, TypeValeurParametre } from '../entities/parametre-systeme.entity';
 
-/**
- * Schéma de mise à jour de la configuration app
- */
+// ============================================
+// CONFIGURATION APPLICATION
+// ============================================
+
 export const updateConfigAppSchema = z.object({
     nomEtablissement: z.string().max(255).optional(),
     typeEtablissement: z.enum(['MATERNELLE', 'PRIMAIRE', 'COLLEGE', 'LYCEE', 'MIXTE']).optional(),
@@ -33,16 +37,14 @@ export const updateConfigAppSchema = z.object({
     theme: z.enum(['default', 'dark', 'cameroon']).optional(),
 });
 
-/**
- * Schéma d'activation de licence
- */
 export const activerLicenceSchema = z.object({
     licenceKey: z.string().min(10, 'Clé de licence invalide'),
 });
 
-/**
- * Schéma de champ personnalisé
- */
+// ============================================
+// CONFIGURATION MODULES
+// ============================================
+
 export const champPersonnaliseSchema = z.object({
     nom: z.string().min(1).max(100),
     label: z.string().min(1).max(255),
@@ -59,34 +61,99 @@ export const champPersonnaliseSchema = z.object({
     }).optional(),
 });
 
-/**
- * Schéma de widget
- */
 export const widgetConfigSchema = z.object({
     id: z.string(),
     nom: z.string().min(1).max(100),
     type: z.string().min(1).max(50),
     visible: z.boolean().default(true),
     ordre: z.number().int().min(0),
-    position: z.object({
-        x: z.number(),
-        y: z.number(),
-    }),
-    taille: z.object({
-        width: z.number().min(1),
-        height: z.number().min(1),
-    }),
+    position: z.object({ x: z.number(), y: z.number() }),
+    taille: z.object({ width: z.number().min(1), height: z.number().min(1) }),
     config: z.record(z.any()).optional(),
 });
 
-/**
- * Schéma de mise à jour de configuration module
- */
 export const updateConfigModuleSchema = z.object({
     champsPersonnalises: z.array(champPersonnaliseSchema).optional(),
     widgets: z.array(widgetConfigSchema).optional(),
     parametres: z.record(z.any()).optional(),
     actif: z.boolean().optional(),
+});
+
+// ============================================
+// PARAMÈTRES SYSTÈME
+// ============================================
+
+/**
+ * Création d'un nouveau paramètre
+ */
+export const createParametreSchema = z.object({
+    cle: z.string().min(3).max(255).regex(/^[a-z0-9_.]+$/, 'Format: module.nom_parametre'),
+    valeur: z.any(),
+    typeValeur: z.nativeEnum(TypeValeurParametre).optional(),
+    categorie: z.nativeEnum(CategorieParametre).default(CategorieParametre.CUSTOM),
+    module: z.string().max(100).optional(),
+    description: z.string().max(500).optional(),
+    modifiableRuntime: z.boolean().default(true),
+    visible: z.boolean().default(true),
+    ordre: z.number().int().min(0).default(0),
+    validation: z.string().max(500).optional(),
+    options: z.array(z.object({
+        value: z.string(),
+        label: z.string(),
+    })).optional(),
+});
+
+/**
+ * Mise à jour d'un paramètre existant
+ */
+export const updateParametreSchema = z.object({
+    valeur: z.any().optional(),
+    description: z.string().max(500).optional(),
+    visible: z.boolean().optional(),
+    ordre: z.number().int().min(0).optional(),
+    options: z.array(z.object({
+        value: z.string(),
+        label: z.string(),
+    })).optional(),
+});
+
+/**
+ * Mise à jour en masse de paramètres
+ */
+export const updateParametresBulkSchema = z.object({
+    parametres: z.array(z.object({
+        cle: z.string(),
+        valeur: z.any(),
+    })),
+});
+
+/**
+ * Requête de liste des paramètres
+ */
+export const queryParametresSchema = z.object({
+    categorie: z.nativeEnum(CategorieParametre).optional(),
+    module: z.string().optional(),
+    modifiableRuntime: z.boolean().optional(),
+    visible: z.boolean().optional(),
+    search: z.string().optional(),
+});
+
+/**
+ * Export/Import de configuration
+ */
+export const exportConfigSchema = z.object({
+    includeApp: z.boolean().default(true),
+    includeModules: z.boolean().default(true),
+    includeParametres: z.boolean().default(true),
+});
+
+export const importConfigSchema = z.object({
+    config: z.object({
+        app: z.any().optional(),
+        modules: z.array(z.any()).optional(),
+        parametres: z.array(z.any()).optional(),
+    }),
+    overwrite: z.boolean().default(false),
 });
 
 // Types inférés
@@ -95,9 +162,21 @@ export type ActiverLicenceDto = z.infer<typeof activerLicenceSchema>;
 export type ChampPersonnaliseDto = z.infer<typeof champPersonnaliseSchema>;
 export type WidgetConfigDto = z.infer<typeof widgetConfigSchema>;
 export type UpdateConfigModuleDto = z.infer<typeof updateConfigModuleSchema>;
+export type CreateParametreDto = z.infer<typeof createParametreSchema>;
+export type UpdateParametreDto = z.infer<typeof updateParametreSchema>;
+export type UpdateParametresBulkDto = z.infer<typeof updateParametresBulkSchema>;
+export type QueryParametresDto = z.infer<typeof queryParametresSchema>;
+export type ExportConfigDto = z.infer<typeof exportConfigSchema>;
+export type ImportConfigDto = z.infer<typeof importConfigSchema>;
 
 export default {
     updateConfigAppSchema,
     activerLicenceSchema,
     updateConfigModuleSchema,
+    createParametreSchema,
+    updateParametreSchema,
+    updateParametresBulkSchema,
+    queryParametresSchema,
+    exportConfigSchema,
+    importConfigSchema,
 };

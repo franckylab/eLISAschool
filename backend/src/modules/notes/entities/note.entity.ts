@@ -1,9 +1,7 @@
 /**
  * ==================================
- * eLISAschool - Entité Note
+ * eLISAschool - Entité Note (Refactorisée)
  * ==================================
- * Version: 1.0.0
- * Auteur: xAI Éducation
  */
 
 import {
@@ -14,8 +12,14 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
+    Index,
 } from 'typeorm';
-import { Utilisateur } from '@modules/auth/entities';
+import { Utilisateur } from '@modules/utilisateurs/entities';
+import { Eleve } from '@modules/eleves/entities';
+import { Matiere } from '@modules/matieres/entities';
+import { Classe } from '@modules/classes/entities';
+import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Periode } from '@modules/periodes/entities';
 
 /**
  * Type d'évaluation
@@ -38,10 +42,12 @@ export enum StatutNote {
     PUBLIEE = 'PUBLIEE',
 }
 
-/**
- * Entité Note
- */
 @Entity('notes')
+@Index(['eleveId'])
+@Index(['matiereId'])
+@Index(['classeId'])
+@Index(['periodeId'])
+@Index(['enseignantId'])
 export class Note {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -49,46 +55,63 @@ export class Note {
     @Column({ type: 'uuid' })
     eleveId!: string;
 
-    @ManyToOne(() => Utilisateur)
+    @ManyToOne(() => Eleve)
     @JoinColumn({ name: 'eleveId' })
-    eleve!: Utilisateur;
+    eleve!: Eleve;
 
     @Column({ type: 'uuid' })
     enseignantId!: string;
 
+    // On garde le lien vers l'utilisateur pour l'audit et la simplicité (l'identité numérique)
     @ManyToOne(() => Utilisateur)
     @JoinColumn({ name: 'enseignantId' })
     enseignant!: Utilisateur;
 
-    @Column({ type: 'varchar', length: 100 })
-    matiere!: string;
+    @Column({ type: 'uuid' })
+    matiereId!: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    classe?: string;
+    @ManyToOne(() => Matiere)
+    @JoinColumn({ name: 'matiereId' })
+    matiere!: Matiere;
+
+    @Column({ type: 'uuid' })
+    classeId!: string;
+
+    @ManyToOne(() => Classe)
+    @JoinColumn({ name: 'classeId' })
+    classe?: Classe;
+
+    @Column({ type: 'uuid' })
+    periodeId!: string;
+
+    @ManyToOne(() => Periode)
+    @JoinColumn({ name: 'periodeId' })
+    periode!: Periode;
+
+    @Column({ type: 'uuid' })
+    anneeScolaireId!: string;
+
+    @ManyToOne(() => AnneeScolaire)
+    @JoinColumn({ name: 'anneeScolaireId' })
+    anneeScolaire!: AnneeScolaire;
 
     @Column({ type: 'enum', enum: TypeEvaluation, default: TypeEvaluation.DEVOIR })
     typeEvaluation!: TypeEvaluation;
 
     @Column({ type: 'varchar', length: 255, nullable: true })
-    description?: string;
+    description?: string; // Titre du devoir (ex: "Interro #1")
 
-    @Column({ type: 'decimal', precision: 5, scale: 2 })
+    @Column({ type: 'float' })
     valeur!: number;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2, default: 20 })
-    bareme!: number;
+    @Column({ type: 'float', default: 20 })
+    bareme!: number; // ex: 20, 100, 10
 
-    @Column({ type: 'decimal', precision: 3, scale: 2, default: 1 })
-    coefficient!: number;
+    @Column({ type: 'float', default: 1 })
+    coefficient!: number; // Poids dans la moyenne
 
     @Column({ type: 'text', nullable: true })
     commentaire?: string;
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    trimestre?: string; // T1, T2, T3
-
-    @Column({ type: 'varchar', length: 20, nullable: true })
-    anneeScolaire?: string; // 2024-2025
 
     @Column({ type: 'date', nullable: true })
     dateEvaluation?: Date;
@@ -102,18 +125,17 @@ export class Note {
     @Column({ type: 'timestamp', nullable: true })
     valideeAt?: Date;
 
-    @CreateDateColumn({ type: 'timestamp' })
+    @CreateDateColumn()
     createdAt!: Date;
 
-    @UpdateDateColumn({ type: 'timestamp' })
+    @UpdateDateColumn()
     updatedAt!: Date;
 
     /**
-     * Calcule la note sur 20
+     * Calcule la note sur 20 (Standardisation)
      */
     get noteSur20(): number {
+        if (this.bareme === 0) return 0;
         return (this.valeur / this.bareme) * 20;
     }
 }
-
-export default Note;

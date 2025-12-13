@@ -1,67 +1,41 @@
 /**
  * ==================================
- * eLISAschool - Seed des rôles initiaux
+ * eLISAschool - Seed des données initiales
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * Inclut: Configuration app, Paramètres système, Super admin
  */
 
 import { AppDataSource } from '../data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '@modules/auth/entities';
-import { ConfigurationApp } from '@modules/configuration/entities';
+import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { logger } from '@common/utils/logger.util';
 
 /**
- * Exécute les seeds de données initiales
+ * Exécute tous les seeds de données initiales
  */
 export async function runSeeds(): Promise<void> {
     logger.info('🌱 Exécution des seeds...');
 
-    await seedConfigurationApp();
+    // 1. Configuration (app, modules, paramètres)
+    await seedConfiguration();
+
+    // 2. Super admin
     await seedSuperAdmin();
 
     logger.info('✅ Seeds exécutés avec succès');
 }
 
 /**
- * Seed de la configuration initiale
+ * Seed de la configuration via le service dédié
  */
-async function seedConfigurationApp(): Promise<void> {
-    const configRepo = AppDataSource.getRepository(ConfigurationApp);
+async function seedConfiguration(): Promise<void> {
+    const seedService = new ConfigurationSeedService();
+    const result = await seedService.runAllSeeds();
 
-    const existant = await configRepo.findOne({ where: {} });
-    if (existant) {
-        logger.info('Configuration app déjà existante, skip...');
-        return;
-    }
-
-    const config = configRepo.create({
-        nomEtablissement: 'eLISAschool Demo',
-        typeEtablissement: 'MIXTE',
-        langueDefaut: 'fr',
-        devise: 'XOF',
-        fuseauHoraire: 'Africa/Douala',
-        couleurPrimaire: '#28a745',
-        couleurSecondaire: '#ffc107',
-        couleurAccent: '#007bff',
-        theme: 'default',
-        messageAccueil: 'Bienvenue sur eLISAschool - Votre solution de gestion scolaire',
-        modulesActifs: {
-            auth: true,
-            utilisateurs: true,
-            configuration: true,
-            notifications: true,
-            messagerie: true,
-            cantine: true,
-            transport: true,
-            notes: true,
-            clubs: true,
-        },
-        version: '1.0.0',
-    });
-
-    await configRepo.save(config);
-    logger.info('Configuration app créée');
+    logger.info(`Configuration seeds: App=${result.app}, Modules=${result.modules}, Params=${result.parametres}`);
 }
 
 /**
@@ -71,7 +45,6 @@ async function seedSuperAdmin(): Promise<void> {
     const userRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
 
-    // Vérifier si un super admin existe déjà
     const existant = await userRepo.findOne({
         where: { role: Role.SUPER_ADMIN },
     });
@@ -81,11 +54,10 @@ async function seedSuperAdmin(): Promise<void> {
         return;
     }
 
-    // Créer le super admin
     const superAdmin = userRepo.create({
         email: 'admin@elisaschool.cm',
         matricule: 'ADMIN001',
-        motDePasse: 'AdminSecret123!', // À changer en production !
+        motDePasse: 'AdminSecret123!',
         role: Role.SUPER_ADMIN,
         statut: StatutUtilisateur.ACTIF,
         emailVerifie: true,
@@ -94,7 +66,6 @@ async function seedSuperAdmin(): Promise<void> {
 
     await userRepo.save(superAdmin);
 
-    // Créer le profil associé
     const profil = profilRepo.create({
         utilisateurId: superAdmin.id,
         nom: 'ADMINISTRATEUR',
@@ -104,7 +75,7 @@ async function seedSuperAdmin(): Promise<void> {
 
     await profilRepo.save(profil);
 
-    logger.info('Super admin créé: admin@elisaschool.cm');
+    logger.info('✅ Super admin créé: admin@elisaschool.cm');
     logger.warn('⚠️  ATTENTION: Changez le mot de passe par défaut en production !');
 }
 
