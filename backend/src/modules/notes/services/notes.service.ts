@@ -13,6 +13,7 @@ import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
+import { AffectationEleve } from '@modules/classes/entities';
 
 export class NotesService {
     private noteRepository: Repository<Note>;
@@ -36,6 +37,26 @@ export class NotesService {
         if (!anneeId) {
             const periode = await periodesService.findOne(createDto.periodeId);
             anneeId = periode.anneeScolaireId;
+        }
+
+        // Validation : vérifier que l'élève est bien dans la classe
+        if (createDto.eleveId && createDto.classeId && anneeId) {
+            const affectationRepo = AppDataSource.getRepository(AffectationEleve);
+            const affectation = await affectationRepo.findOne({
+                where: {
+                    eleveId: createDto.eleveId,
+                    classeId: createDto.classeId,
+                    anneeScolaireId: anneeId,
+                    actif: true
+                }
+            });
+            if (!affectation) {
+                throw new AppError(
+                    `L'élève ${createDto.eleveId} n'est pas affecté à la classe ${createDto.classeId} pour cette année`,
+                    400,
+                    'ELEVE_NOT_IN_CLASS'
+                );
+            }
         }
 
         const note = this.noteRepository.create({
@@ -164,9 +185,10 @@ export class NotesService {
     }
 
     // Calcul de moyenne refactorisé
-    async calculerMoyenne(eleveId: string, matiereId: string, periodeId?: string): Promise<number> {
+    async calculerMoyenne(eleveId: string, matiereId: string, periodeId?: string, etablissementId?: string): Promise<number> {
         const where: FindOptionsWhere<Note> = { eleveId, matiereId, statut: StatutNote.PUBLIEE };
         if (periodeId) where.periodeId = periodeId;
+        if (etablissementId) where.etablissementId = etablissementId;
 
         const notes = await this.noteRepository.find({ where });
         if (notes.length === 0) return 0;

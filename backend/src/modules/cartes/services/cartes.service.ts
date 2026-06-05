@@ -14,7 +14,7 @@ import { CarteScolaire, StatutCarte, TypeCarte } from '../entities';
 import { CreateCarteDto, UpdateCarteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { getParamBoolean, getParamNumber, getParam, getAppConfig } from '@modules/configuration/utils/config.helper';
+import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 
 /**
  * Service Cartes avec configuration centralisée
@@ -40,9 +40,16 @@ export class CartesService {
     /**
      * Crée une nouvelle carte avec paramètres de configuration
      */
-    async create(dto: CreateCarteDto): Promise<CarteScolaire> {
+    async create(dto: CreateCarteDto, etablissementId?: string): Promise<CarteScolaire> {
         const params = await this.getCartesParams();
-        const appConfig = await getAppConfig();
+        
+        // Récupérer le nom de l'établissement
+        let etablissementNom = '';
+        if (etablissementId) {
+            const { Etablissement } = await import('@modules/etablissement/entities');
+            const etab = await AppDataSource.getRepository(Etablissement).findOne({ where: { id: etablissementId } });
+            if (etab) etablissementNom = etab.nom;
+        }
 
         // Calculer la date d'expiration
         const dateExpiration = new Date();
@@ -53,28 +60,33 @@ export class CartesService {
 
         const carte: CarteScolaire = this.carteRepo.create({
             ...dto,
+            etablissementId,
             type: dto.type as TypeCarte,
             numeroCarte,
             dateExpiration,
             statut: StatutCarte.ACTIVE,
             qrCode: params.enableQRCode ? this.generateQRCode(numeroCarte) : undefined,
-            etablissementNom: appConfig.nomEtablissement,
+            etablissementNom,
         });
 
         await this.carteRepo.save(carte);
-        logger.info(`Carte créée: ${numeroCarte} pour ${dto.utilisateurId}`);
+        logger.info(`[${etablissementId}] Carte créée: ${numeroCarte} pour ${dto.utilisateurId}`);
         return carte;
     }
 
-    async findAll(type?: TypeCarte, statut?: StatutCarte): Promise<CarteScolaire[]> {
+    async findAll(type?: TypeCarte, statut?: StatutCarte, etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: CarteScolaire[]; total: number; page: number; limit: number }> {
         const where: any = {};
         if (type) where.type = type;
         if (statut) where.statut = statut;
-        return this.carteRepo.find({ where, relations: ['utilisateur'], order: { createdAt: 'DESC' } });
+        if (etablissementId) where.etablissementId = etablissementId;
+        const [data, total] = await this.carteRepo.findAndCount({ where, relations: ['utilisateur'], order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+        return { data, total, page, limit };
     }
 
-    async findOne(id: string): Promise<CarteScolaire> {
-        const carte = await this.carteRepo.findOne({ where: { id }, relations: ['utilisateur'] });
+    async findOne(id: string, etablissementId?: string): Promise<CarteScolaire> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const carte = await this.carteRepo.findOne({ where, relations: ['utilisateur'] });
         if (!carte) throw new AppError('Carte non trouvée', 404, 'NOT_FOUND');
         return carte;
     }

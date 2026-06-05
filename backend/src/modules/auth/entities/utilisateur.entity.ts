@@ -22,21 +22,13 @@ import {
 } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { Etablissement } from '@modules/etablissement/entities';
+import UtilisateurRole from './utilisateur-role.entity';
+import UtilisateurPermission from './utilisateur-permission.entity';
+import UtilisateurEtablissement from './utilisateur-etablissement.entity';
+import { Role } from '@shared/enums/roles.enum';
 
-/**
- * Rôles utilisateur - importés depuis shared
- */
-export enum Role {
-    SUPER_ADMIN = 'SUPER_ADMIN',
-    ADMIN = 'ADMIN',
-    CHEF_ETABLISSEMENT = 'CHEF_ETABLISSEMENT',
-    ENSEIGNANT = 'ENSEIGNANT',
-    PERSONNEL = 'PERSONNEL',
-    RESPONSABLE_CANTINE = 'RESPONSABLE_CANTINE',
-    RESPONSABLE_TRANSPORT = 'RESPONSABLE_TRANSPORT',
-    PARENT = 'PARENT',
-    ELEVE = 'ELEVE',
-}
+// Ré-exporter l'enum Role pour compatibilité
+export { Role };
 
 /**
  * Statut utilisateur
@@ -106,6 +98,22 @@ export class Utilisateur {
     @ManyToOne(() => Etablissement, { nullable: true })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    /**
+     * Relations RBAC (multi-rôles et permissions personnalisées)
+     */
+    @OneToMany(() => UtilisateurRole, ur => ur.utilisateur)
+    utilisateurRoles!: UtilisateurRole[];
+
+    @OneToMany(() => UtilisateurPermission, up => up.utilisateur)
+    utilisateurPermissions!: UtilisateurPermission[];
+
+    /**
+     * Relation multi-établissements (v2.0)
+     * Un utilisateur peut être associé à plusieurs établissements
+     */
+    @OneToMany(() => UtilisateurEtablissement, ue => ue.utilisateur)
+    utilisateurEtablissements!: UtilisateurEtablissement[];
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

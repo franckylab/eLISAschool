@@ -1,0 +1,5 @@
+- Adopts a standard layered architecture within the module: Controllers (Express Routers) handle HTTP requests, Services contain business logic, Entities define TypeORM data models, and DTOs provide Zod-based validation schemas.
+- Security is enforced via Express middlewares (`authMiddleware`) for JWT verification and Guards (`permission.guard`) for granular Role-Based Access Control (RBAC).
+- Session management relies on short-lived JWT Access Tokens and long-lived, database-persisted Refresh Tokens (`RefreshToken` entity) to support secure rotation and revocation.
+- Integrates with a centralized configuration module (`configuration/utils/config.helper`) to dynamically fetch security parameters like lockout duration and password policies.
+- Includes an `AuditService` that logs critical security events such as logins, password changes, and access denials.

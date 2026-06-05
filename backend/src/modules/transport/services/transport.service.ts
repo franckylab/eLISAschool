@@ -40,33 +40,42 @@ export class TransportService {
         };
     }
 
-    async createLigne(dto: CreateLigneDto): Promise<LigneTransport> {
-        const ligne = this.ligneRepo.create(dto);
+    async createLigne(dto: CreateLigneDto, etablissementId?: string): Promise<LigneTransport> {
+        const ligne = this.ligneRepo.create({ ...dto, etablissementId });
         await this.ligneRepo.save(ligne);
-        logger.info(`Ligne de transport créée: ${dto.nom}`);
+        logger.info(`[${etablissementId}] Ligne de transport créée: ${dto.nom}`);
         return ligne;
     }
 
-    async getLignes(): Promise<LigneTransport[]> {
-        return this.ligneRepo.find({ where: { actif: true }, relations: ['chauffeur'] });
+    async getLignes(etablissementId?: string): Promise<LigneTransport[]> {
+        const where: any = { actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.ligneRepo.find({ where, relations: ['chauffeur'] });
     }
 
-    async getLigne(id: string): Promise<LigneTransport> {
-        const ligne = await this.ligneRepo.findOne({ where: { id }, relations: ['chauffeur'] });
+    async getLigne(id: string, etablissementId?: string): Promise<LigneTransport> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const ligne = await this.ligneRepo.findOne({ where, relations: ['chauffeur'] });
         if (!ligne) throw new AppError('Ligne non trouvée', 404, 'NOT_FOUND');
         return ligne;
     }
 
-    async createInscription(dto: CreateInscriptionTransportDto): Promise<InscriptionTransport> {
-        const existant = await this.inscriptionRepo.findOne({ where: { eleveId: dto.eleveId, actif: true } });
+    async createInscription(dto: CreateInscriptionTransportDto, etablissementId?: string): Promise<InscriptionTransport> {
+        const where: any = { eleveId: dto.eleveId, actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const existant = await this.inscriptionRepo.findOne({ where });
         if (existant) throw new AppError('Élève déjà inscrit au transport', 409, 'ALREADY_ENROLLED');
-        const inscription = this.inscriptionRepo.create(dto);
+        const inscription = this.inscriptionRepo.create({ ...dto, etablissementId });
         await this.inscriptionRepo.save(inscription);
+        logger.info(`[${etablissementId}] Inscription transport créée pour élève ${dto.eleveId}`);
         return inscription;
     }
 
-    async getInscriptionsByLigne(ligneId: string): Promise<InscriptionTransport[]> {
-        return this.inscriptionRepo.find({ where: { ligneId, actif: true }, relations: ['eleve'] });
+    async getInscriptionsByLigne(ligneId: string, etablissementId?: string): Promise<InscriptionTransport[]> {
+        const where: any = { ligneId, actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.inscriptionRepo.find({ where, relations: ['eleve'] });
     }
 
     /**
@@ -84,13 +93,14 @@ export class TransportService {
         return presence;
     }
 
-    async getPresencesDuJour(ligneId: string): Promise<PresenceTransport[]> {
+    async getPresencesDuJour(ligneId: string, etablissementId?: string): Promise<PresenceTransport[]> {
         const today = new Date().toISOString().split('T')[0];
-        return this.presenceRepo.createQueryBuilder('p')
+        const qb = this.presenceRepo.createQueryBuilder('p')
             .innerJoin('p.inscription', 'i')
             .where('i.ligneId = :ligneId', { ligneId })
-            .andWhere('p.date = :today', { today })
-            .getMany();
+            .andWhere('p.date = :today', { today });
+        if (etablissementId) qb.andWhere('p.etablissementId = :etablissementId', { etablissementId });
+        return qb.getMany();
     }
 
     /**

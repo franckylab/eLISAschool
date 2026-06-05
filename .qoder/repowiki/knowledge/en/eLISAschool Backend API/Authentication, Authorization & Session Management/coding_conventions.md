@@ -1,0 +1,4 @@
+- Controllers delegate all business logic to service classes and use a shared `validateBody` helper to enforce Zod schema validation before processing requests.
+- Services retrieve security-related configuration values (e.g., max login attempts, session duration) asynchronously via helper functions from the configuration module rather than using hardcoded constants.
+- Entities use TypeORM lifecycle decorators (`@BeforeInsert`, `@BeforeUpdate`) to automatically handle sensitive data transformations, such as password hashing, before persistence.
+- Authorization guards check for a `SUPER_ADMIN` role to bypass specific permission checks, ensuring administrative override capabilities across protected routes.

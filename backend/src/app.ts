@@ -25,6 +25,7 @@ import { swaggerSpec } from '@config/swagger.config';
 
 // Import des routes des modules
 import { authController } from '@modules/auth';
+import utilisateurEtablissementController from '@modules/auth/controllers/utilisateur-etablissement.controller';
 import { utilisateursController } from '@modules/utilisateurs';
 import { configurationController } from '@modules/configuration';
 import { notificationsController } from '@modules/notifications';
@@ -51,6 +52,7 @@ import { periodesController } from '@modules/periodes';
 import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
 import { monitoringController } from '@modules/monitoring';
+import rbacController from '@modules/rbac';
 
 /**
  * Crée et configure l'application Express
@@ -117,15 +119,7 @@ export function createApp(): Application {
     app.use(requestLogger);
 
     // ==================================
-    // Middleware Multi-Tenancy
-    // ==================================
-
-    // Attache automatiquement l'etablissementId depuis le JWT
-    // Les SUPER_ADMIN peuvent accéder à tous les établissements
-    app.use('/api/', tenantMiddleware);
-
-    // ==================================
-    // Routes de base
+    // Routes publiques (SANS middleware tenant)
     // ==================================
 
     // Route de santé (health check)
@@ -162,15 +156,25 @@ export function createApp(): Application {
     });
 
     // ==================================
+    // Middleware Multi-Tenancy (APRÈS les routes publiques)
+    // ==================================
+
+    // Attache automatiquement l'etablissementId depuis le JWT
+    // Les SUPER_ADMIN peuvent accéder à tous les établissements
+    app.use('/api/', tenantMiddleware);
+
+    // ==================================
     // Montage des routes des modules
     // ==================================
 
     // Modules critiques
     app.use('/api/auth', authController);
+    app.use('/api/utilisateurs', utilisateurEtablissementController); // Multi-établissements (v2.0)
     app.use('/api/utilisateurs', utilisateursController);
     app.use('/api/configuration', configurationController);
     app.use('/api/notifications', notificationsController);
     app.use('/api/notes', notesController);
+    app.use('/api/rbac', rbacController);
 
     // Modules communication
     app.use('/api/messagerie', messagerieController);

@@ -1,1 +1,0 @@
-Zod for request validation schemas (e.g., `updateEtablissementSchema`, `createPersonnelSchema`); TypeORM with UUID primary keys and enum columns for persistence; Express Router with custom `authMiddleware` and `requireRoles` for authorization.

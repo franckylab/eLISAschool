@@ -1,1 +1,1 @@
-Unifies backend, frontend, and shared domain modules into a cohesive school management PWA through npm workspaces and Docker Compose orchestration.
+Unifies backend, frontend, and shared domain contracts into a cohesive school management platform through npm workspaces and Docker Compose service orchestration.

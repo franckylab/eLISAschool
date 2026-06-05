@@ -39,7 +39,7 @@ export class RequetesService {
     /**
      * Crée une nouvelle requête
      */
-    async create(dto: CreateRequeteDto, demandeurId: string): Promise<Requete> {
+    async create(dto: CreateRequeteDto, demandeurId: string, etablissementId?: string): Promise<Requete> {
         const params = await this.getRequetesParams();
 
         // Générer un numéro de requête
@@ -47,6 +47,7 @@ export class RequetesService {
 
         const requete: Requete = this.requeteRepo.create({
             ...dto,
+            etablissementId,
             type: dto.type as TypeRequete,
             numero,
             demandeurId,
@@ -60,10 +61,10 @@ export class RequetesService {
         // Notification automatique si activé
         if (params.autoNotify) {
             // TODO: Envoyer notification
-            logger.info(`Notification auto pour requête ${numero}`);
+            logger.info(`[${etablissementId}] Notification auto pour requête ${numero}`);
         }
 
-        logger.info(`Requête créée: ${numero}`);
+        logger.info(`[${etablissementId}] Requête créée: ${numero}`);
         return requete;
     }
 
@@ -71,10 +72,11 @@ export class RequetesService {
         demandeurId?: string;
         type?: TypeRequete;
         statut?: StatutRequete;
+        etablissementId?: string;
         page?: number;
         limit?: number;
     }): Promise<{ items: Requete[]; total: number }> {
-        const { demandeurId, type, statut, page = 1, limit = 20 } = options;
+        const { demandeurId, type, statut, etablissementId, page = 1, limit = 20 } = options;
 
         const qb = this.requeteRepo.createQueryBuilder('r')
             .leftJoinAndSelect('r.demandeur', 'd')
@@ -83,6 +85,7 @@ export class RequetesService {
         if (demandeurId) qb.andWhere('r.demandeurId = :demandeurId', { demandeurId });
         if (type) qb.andWhere('r.type = :type', { type });
         if (statut) qb.andWhere('r.statut = :statut', { statut });
+        if (etablissementId) qb.andWhere('r.etablissementId = :etablissementId', { etablissementId });
 
         const [items, total] = await qb
             .skip((page - 1) * limit)

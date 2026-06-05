@@ -1,1 +1,0 @@
-Manages school year lifecycle, academic cycles, grade levels, evaluation periods, subjects, student enrollment, grades, report cards, and career orientation within an educational institution.

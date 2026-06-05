@@ -64,10 +64,10 @@ export class Materiel {
     /**
      * Établissement du matériel (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
@@ -114,6 +114,16 @@ export class PretMateriel {
 
     @Column({ type: 'boolean', default: false })
     retourne!: boolean;
+
+    /**
+     * Établissement du prêt (multi-tenancy)
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

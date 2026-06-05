@@ -1,1 +1,0 @@
-Provides centralized configuration management, database connectivity, error handling, request logging, and shared cryptographic utilities for the backend application.

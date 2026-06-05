@@ -2,38 +2,49 @@
  * ==================================
  * eLISAschool - Guard de Permissions
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
  * 
  * Vérification des permissions granulaires (RBAC)
+ * Supporte le nouveau système dynamique avec fallback vers l'ancien système
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
-import { Role, Permission, DEFAULT_ROLE_PERMISSIONS } from '@shared/enums/roles.enum';
+import { Role as RoleEnum, Permission, DEFAULT_ROLE_PERMISSIONS } from '@shared/enums/roles.enum';
 import { auditService } from '../services/audit.service';
 import { AuditAction } from '../entities/audit-log.entity';
 
 /**
  * Vérifie si un utilisateur a une permission donnée
+ * Utilise les permissions du JWT (nouveau système) avec fallback vers l'ancien système
  */
-export function hasPermission(role: Role, permission: Permission): boolean {
-    const rolePermissions = DEFAULT_ROLE_PERMISSIONS[role];
+export function hasPermission(req: Request, permission: Permission): boolean {
+    const utilisateur = req.utilisateur;
+    if (!utilisateur) return false;
+
+    // Mode 1 : Nouveau système - permissions dans le JWT
+    if (utilisateur.permissions && Array.isArray(utilisateur.permissions)) {
+        return utilisateur.permissions.includes(permission);
+    }
+
+    // Mode 2 : Fallback - Ancien système statique
+    const rolePermissions = DEFAULT_ROLE_PERMISSIONS[utilisateur.role as RoleEnum];
     return rolePermissions?.includes(permission) || false;
 }
 
 /**
  * Vérifie si un utilisateur a au moins une des permissions requises
  */
-export function hasAnyPermission(role: Role, permissions: Permission[]): boolean {
-    return permissions.some(p => hasPermission(role, p));
+export function hasAnyPermission(req: Request, permissions: Permission[]): boolean {
+    return permissions.some(p => hasPermission(req, p));
 }
 
 /**
  * Vérifie si un utilisateur a toutes les permissions requises
  */
-export function hasAllPermissions(role: Role, permissions: Permission[]): boolean {
-    return permissions.every(p => hasPermission(role, p));
+export function hasAllPermissions(req: Request, permissions: Permission[]): boolean {
+    return permissions.every(p => hasPermission(req, p));
 }
 
 /**
@@ -52,18 +63,18 @@ export function requirePermissions(
                 throw new AppError('Non authentifié', 401, 'UNAUTHENTICATED');
             }
 
-            const userRole = req.utilisateur.role as Role;
-
-            // Super admin bypass
-            if (userRole === Role.SUPER_ADMIN) {
+            // Super admin bypass (vérifie le rôle dans le JWT)
+            const userRole = req.utilisateur.role;
+            const userRoles = req.utilisateur.roles || [userRole];
+            if (userRoles.includes('SUPER_ADMIN')) {
                 next();
                 return;
             }
 
-            // Vérification des permissions
+            // Vérification des permissions (utilise le nouveau système avec fallback)
             const hasAccess = requireAll
-                ? hasAllPermissions(userRole, permissions)
-                : hasAnyPermission(userRole, permissions);
+                ? hasAllPermissions(req, permissions)
+                : hasAnyPermission(req, permissions);
 
             if (!hasAccess) {
                 // Log l'accès refusé

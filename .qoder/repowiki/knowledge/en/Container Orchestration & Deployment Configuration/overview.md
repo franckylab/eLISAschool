@@ -1,1 +1,1 @@
-Defines multi-service Docker Compose orchestration and production-ready container builds for the eLISAschool application stack.
+Defines multi-service Docker infrastructure for the eLISAschool application, orchestrating PostgreSQL, Redis, Node.js backend, and React frontend with development and production build pipelines.

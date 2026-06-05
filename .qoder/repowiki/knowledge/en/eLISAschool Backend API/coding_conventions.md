@@ -1,3 +1,2 @@
-- All feature modules follow a standard directory structure with dedicated `controllers/`, `services/`, `entities/`, and `dto/` subdirectories.
-- Each module exposes its public API via an `index.ts` barrel export, which is consumed by the main application orchestrator.
-- Global error handling and 404 responses are managed by centralized filters in `src/common/filters/` rather than within individual modules.
+- Every feature module follows a strict directory structure with separate `controllers`, `services`, `entities`, and `dto` folders.
+- All modules export their public API via a barrel `index.ts` file, enabling clean imports in the main application composer.

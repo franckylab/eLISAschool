@@ -16,6 +16,8 @@ description: >
 - Ajouter une **entité** ou une **relation** entre entités
 - Effectuer toute modification structurelle sur l'API
 
+> **Note** : Pour comprendre les règles métier, les flux de données et les calculs, utiliser le skill `/elisaschool-business-logic`.
+
 ## Prérequis
 
 - Node.js >= 20.0.0, npm >= 10.0.0
@@ -529,7 +531,7 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 
 ## Maintenance et évolution
 
-Ce skill et la règle associée (`elisaschool-conventions`) sont des documents **vivants** qui évoluent avec le projet.
+Ce skill, la règle associée (`elisaschool-conventions`) et le skill métier (`elisaschool-business-logic`) sont des documents **vivants** qui évoluent avec le projet.
 
 ### Quand mettre à jour automatiquement
 
@@ -550,7 +552,7 @@ L'utilisateur peut demander une mise à jour à tout moment avec des instruction
 ### Processus de mise à jour
 
 1. Identifier le changement à documenter
-2. Lire les fichiers `.qoder/rules/elisaschool-conventions.md` et/ou `.qoder/skills/elisaschool-dev/SKILL.md`
+2. Lire les fichiers `.qoder/rules/elisaschool-conventions.md`, `.qoder/skills/elisaschool-dev/SKILL.md` et/ou `.qoder/skills/elisaschool-business-logic/SKILL.md`
 3. Ajouter/modifier les sections concernées en respectant le style existant
 4. Vérifier la cohérence avec le code réel du codebase
 5. Informer l'utilisateur des modifications apportées

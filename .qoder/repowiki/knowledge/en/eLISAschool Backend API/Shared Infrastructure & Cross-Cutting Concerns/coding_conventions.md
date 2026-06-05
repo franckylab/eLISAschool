@@ -1,4 +1,0 @@
-- Every sub-package exposes its public API through an `index.ts` barrel export file, using either `export * from` or named `export { } from` statements.
-- All utility and filter/interceptor modules follow a dual-export pattern: named exports for individual functions/classes plus a default export bundling all members into a single object.
-- Environment-dependent behavior is gated on `envConfig.app.isDevelopment` / `envConfig.app.isProduction` flags rather than raw `process.env.NODE_ENV` checks in business logic.
-- Structured JSON responses for errors include `success: false`, an `error` object with `code` and `message`, a `timestamp`, and the request `path`.

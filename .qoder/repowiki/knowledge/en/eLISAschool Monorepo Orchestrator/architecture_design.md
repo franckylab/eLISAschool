@@ -1,4 +1,4 @@
-- Uses npm workspaces to manage dependency sharing and build coordination across `backend`, `frontend`, and `shared` modules.
-- Defines unified development and production workflows via root-level scripts in `package.json` (e.g., `npm run dev`, `npm run docker:up`).
-- Centralizes environment configuration in `.env.example` for cross-service consistency (DB, JWT, Redis).
-- Delegates service orchestration and containerization to the `docker` module via `docker-compose.yml`.
+- Uses npm workspaces to link `backend`, `frontend`, and `shared` modules, enabling local dependency resolution and unified build/test scripts.
+- Leverages `docker-compose.yml` to wire infrastructure services (PostgreSQL, Redis) with application services, enforcing startup order via health checks.
+- Centralizes environment configuration through `.env` files, injecting shared secrets and service endpoints into both Docker containers and local development processes.
+- Provides unified CLI entry points in the root `package.json` for concurrent development (`npm run dev`) and containerized deployment (`npm run docker:prod`).

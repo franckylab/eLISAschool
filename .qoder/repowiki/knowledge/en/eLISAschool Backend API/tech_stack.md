@@ -1,1 +1,1 @@
-Express.js (HTTP server), TypeORM (shared database connection), PostgreSQL (unified data store)
+All modules share a unified PostgreSQL database via a single TypeORM DataSource and rely on a common Express.js middleware pipeline for security (Helmet, CORS) and rate limiting.

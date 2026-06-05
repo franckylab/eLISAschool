@@ -100,17 +100,33 @@ router.patch(
 );
 
 /**
- * DELETE /api/etablissements/:id
- * Supprime un établissement (SUPER_ADMIN uniquement)
+ * PATCH /api/etablissements/:id/desactiver
+ * Désactive un établissement (SUPER_ADMIN uniquement)
  */
-router.delete(
-    '/:id',
+router.patch(
+    '/:id/desactiver',
     authMiddleware,
     requireRoles(Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            await etablissementService.delete(req.params.id);
-            res.json({ success: true, message: 'Établissement supprimé' });
+            const etablissement = await etablissementService.desactiver(req.params.id);
+            res.json({ success: true, data: etablissement, message: 'Établissement désactivé' });
+        } catch (error) { next(error); }
+    }
+);
+
+/**
+ * PATCH /api/etablissements/:id/activer
+ * Réactive un établissement (SUPER_ADMIN uniquement)
+ */
+router.patch(
+    '/:id/activer',
+    authMiddleware,
+    requireRoles(Role.SUPER_ADMIN),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const etablissement = await etablissementService.activer(req.params.id);
+            res.json({ success: true, data: etablissement, message: 'Établissement réactivé' });
         } catch (error) { next(error); }
     }
 );

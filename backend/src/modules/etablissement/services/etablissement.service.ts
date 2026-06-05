@@ -29,18 +29,32 @@ export class EtablissementService {
      * Crée un nouvel établissement avec sa configuration par défaut
      */
     async create(dto: CreateEtablissementDto): Promise<Etablissement> {
-        const etablissement = this.etablissementRepo.create(dto);
-        await this.etablissementRepo.save(etablissement);
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // Création automatique de la configuration par défaut
-        const config = this.configRepo.create({
-            etablissementId: etablissement.id,
-            cyclesActifs: [],
-        });
-        await this.configRepo.save(config);
+        try {
+            const etablissement = this.etablissementRepo.create(dto);
+            await queryRunner.manager.save(etablissement);
 
-        logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
-        return etablissement;
+            // Création automatique de la configuration par défaut
+            const config = this.configRepo.create({
+                etablissementId: etablissement.id,
+                cyclesActifs: dto.cyclesActifs || [],
+                configurationBulletin: dto.configurationBulletin,
+            });
+            await queryRunner.manager.save(config);
+
+            await queryRunner.commitTransaction();
+            logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
+            return etablissement;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`Erreur création établissement: ${error.message}`);
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -83,17 +97,31 @@ export class EtablissementService {
     }
 
     /**
-     * Supprime un établissement (désactivation logique recommandée)
+     * Désactive un établissement (suppression logique)
+     * Empêche la suppression physique pour préserver l'intégrité des données
      */
-    async delete(id: string): Promise<void> {
+    async desactiver(id: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
 
-        // Vérifier s'il y a des données liées avant suppression
-        // En production, préférer la désactivation (actif = false)
-        await this.configRepo.delete({ etablissementId: id });
-        await this.etablissementRepo.remove(etablissement);
+        // Désactivation logique au lieu de suppression physique
+        etablissement.actif = false;
+        await this.etablissementRepo.save(etablissement);
 
-        logger.info(`Établissement supprimé: ${id}`);
+        logger.info(`Établissement désactivé: ${etablissement.nom} (${id})`);
+        return etablissement;
+    }
+
+    /**
+     * Réactive un établissement
+     */
+    async activer(id: string): Promise<Etablissement> {
+        const etablissement = await this.findOne(id);
+
+        etablissement.actif = true;
+        await this.etablissementRepo.save(etablissement);
+
+        logger.info(`Établissement réactivé: ${etablissement.nom} (${id})`);
+        return etablissement;
     }
 
     // ==================================

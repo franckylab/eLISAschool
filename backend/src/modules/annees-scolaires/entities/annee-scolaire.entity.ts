@@ -18,11 +18,12 @@ import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('annees_scolaires')
 @Index(['etablissementId'])
+@Index(['libelle', 'etablissementId'], { unique: true })
 export class AnneeScolaire {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 50, unique: true })
+    @Column({ type: 'varchar', length: 50 })
     libelle!: string; // ex: 2024-2025
 
     @Column({ type: 'date' })
@@ -40,10 +41,10 @@ export class AnneeScolaire {
     /**
      * Établissement de l'année scolaire (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 

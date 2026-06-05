@@ -1,4 +1,4 @@
-- **Centralized Orchestration**: The `src/app.ts` file acts as the composition root, importing controllers from all feature modules (auth, academic, student life, etc.) and mounting them on specific `/api/*` routes.
-- **Shared Infrastructure Injection**: All modules rely on a common `src/common/` layer for cross-cutting concerns, including global error handling (`error.filter.ts`), request logging interceptors, and cryptographic utilities.
-- **Unified Data Access**: A single TypeORM `AppDataSource` defined in `src/database/` is initialized at startup in `src/index.ts` and shared across all feature modules for entity management.
-- **Global Security & Configuration**: Security middleware (Helmet, CORS, Rate Limiting) and environment configuration (`envConfig`) are applied globally at the application level, enforcing consistent policies across all mounted routes.
+- Centralized orchestration in `src/app.ts` mounts all feature module controllers under the `/api/` prefix, enforcing a uniform REST interface.
+- Cross-cutting concerns are applied globally: `tenantMiddleware` isolates data per establishment after public routes, while `errorHandler` and `requestLogger` ensure consistent response formatting and observability.
+- Shared infrastructure is bootstrapped in `src/index.ts`, which initializes the single TypeORM `AppDataSource` for all modules before starting the HTTP server.
+- Feature modules remain isolated by depending only on common utilities (`@common/*`) and configuration (`@config/*`), avoiding direct inter-module coupling.

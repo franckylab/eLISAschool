@@ -89,12 +89,14 @@ export class Bulletin {
     /**
      * Établissement du bulletin (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    @Index(['etablissementId', 'eleveId', 'periodeId'], { unique: true })
 
     @CreateDateColumn()
     createdAt!: Date;

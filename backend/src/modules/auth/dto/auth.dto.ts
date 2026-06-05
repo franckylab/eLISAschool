@@ -145,8 +145,16 @@ export interface LoginResponseDto {
 export interface JwtPayload {
     sub: string; // utilisateurId
     email: string;
-    role: string;
-    etablissementId?: string;
+    role: string; // Rôle principal (backward compat)
+    roles?: string[]; // NOUVEAU : tous les codes de rôles
+    permissions?: string[]; // NOUVEAU : permissions résolues au login
+    etablissementId?: string; // Legacy (single-établissement)
+    etablissements?: Array<{ // NOUVEAU : multi-établissements (v2.0)
+        etablissementId: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        actif: boolean;
+    }>;
     iat?: number;
     exp?: number;
 }
@@ -157,8 +165,16 @@ export interface JwtPayload {
 export interface UtilisateurAuth {
     id: string;
     email: string;
-    role: string;
-    etablissementId?: string;
+    role: string; // Rôle principal (backward compat)
+    roles?: string[]; // NOUVEAU : tous les rôles
+    permissions?: string[]; // NOUVEAU : permissions résolues
+    etablissementId?: string; // Legacy (single-établissement)
+    etablissements?: Array<{ // NOUVEAU : multi-établissements (v2.0)
+        etablissementId: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        actif: boolean;
+    }>;
 }
 
 export default {

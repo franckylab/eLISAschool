@@ -53,10 +53,10 @@ export class MenuCantine {
     /**
      * Établissement du menu (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
@@ -107,10 +107,10 @@ export class InscriptionCantine {
     /**
      * Établissement de l'inscription cantine (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
@@ -151,6 +151,16 @@ export class ConsommationCantine {
 
     @Column({ type: 'boolean', default: false })
     paye!: boolean;
+
+    /**
+     * Établissement de la consommation (multi-tenancy)
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

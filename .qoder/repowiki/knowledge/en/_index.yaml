@@ -2,17 +2,21 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-05T15:17:08Z"
+exported_at: "2026-06-05T18:07:41Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
         title: eLISAschool Monorepo Orchestrator
         scope:
-            - README.md
-            - .gitignore
-            - package.json
-            - package-lock.json
+            - .dockerignore
+            - .env
             - .env.example
+            - .gitignore
+            - README.md
+            - docker-compose.dev.yml
+            - docker-compose.yml
+            - package-lock.json
+            - package.json
         source_files: []
         children: []
         depends_on: []
@@ -24,135 +28,35 @@ modules:
             - backend/
         source_files: []
         children:
-            - backend/backend_communications
-            - backend/backend_student_life
-            - backend/backend_auth_core
-            - backend/backend_infrastructure
-            - backend/backend_administration
-            - backend/backend_academic
+            - backend/feature_modules
+            - backend/core_framework
         depends_on: []
         related_to:
             - path: shared
-            - path: docker
-    backend/backend_academic:
-        dir_name: Academic Management & Student Records
-        title: Academic Management & Student Records
-        scope:
-            - backend/src/modules/annees-scolaires/
-            - backend/src/modules/cycles/
-            - backend/src/modules/niveaux/
-            - backend/src/modules/periodes/
-            - backend/src/modules/matieres/
-            - backend/src/modules/eleves/
-            - backend/src/modules/notes/
-            - backend/src/modules/bulletins/
-            - backend/src/modules/orientation/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_student_life
-            - path: backend/backend_administration
-            - path: backend/backend_auth_core
-            - path: backend/backend_infrastructure
-            - path: shared
-            - path: docker
-            - path: backend/backend_communications
-    backend/backend_administration:
-        dir_name: Backend Administration & Monitoring
-        title: Backend Administration & Monitoring
-        scope:
-            - backend/src/modules/etablissement/
-            - backend/src/modules/personnel/
-            - backend/src/modules/monitoring/
-            - backend/src/modules/scoring/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_academic
-            - path: backend/backend_auth_core
-            - path: backend/backend_communications
-            - path: backend/backend_infrastructure
-            - path: shared
-            - path: docker
-            - path: backend/backend_student_life
-    backend/backend_auth_core:
-        dir_name: Authentication, User Management & System Configuration
-        title: Authentication, User Management & System Configuration
-        scope:
-            - backend/src/modules/auth/
-            - backend/src/modules/utilisateurs/
-            - backend/src/modules/configuration/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_administration
-            - path: backend/backend_communications
-            - path: backend/backend_academic
-            - path: backend/backend_student_life
-            - path: shared
-            - path: docker
-            - path: backend/backend_infrastructure
-    backend/backend_communications:
-        dir_name: Backend Communications & Document Management
-        title: Backend Communications & Document Management
-        scope:
-            - backend/src/modules/messagerie/
-            - backend/src/modules/notifications/
-            - backend/src/modules/impressions/
-            - backend/src/modules/requetes/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_student_life
-            - path: backend/backend_administration
-            - path: backend/backend_auth_core
-            - path: backend/backend_infrastructure
-            - path: docker
-            - path: shared
-            - path: backend/backend_academic
-    backend/backend_infrastructure:
-        dir_name: Shared Infrastructure & Cross-Cutting Concerns
-        title: Shared Infrastructure & Cross-Cutting Concerns
+    backend/core_framework:
+        dir_name: Core Framework & Application Infrastructure
+        title: Core Framework & Application Infrastructure
         scope:
             - backend/src/common/
             - backend/src/config/
             - backend/src/database/
+            - backend/src/app.ts
+            - backend/src/index.ts
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: shared
-            - path: backend/backend_academic
-            - path: backend/backend_administration
-            - path: backend/backend_communications
-            - path: backend/backend_student_life
-            - path: docker
-            - path: backend/backend_auth_core
-    backend/backend_student_life:
-        dir_name: Student Life Services
-        title: Student Life Services
+            - path: backend/feature_modules
+    backend/feature_modules:
+        dir_name: Authentication, Authorization & Session Management
+        title: Authentication, Authorization & Session Management
         scope:
-            - backend/src/modules/cantine/
-            - backend/src/modules/transport/
-            - backend/src/modules/cartes/
-            - backend/src/modules/clubs/
-            - backend/src/modules/gamification/
-            - backend/src/modules/materiel/
+            - backend/src/modules/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_academic
-            - path: backend/backend_communications
-            - path: backend/backend_auth_core
-            - path: shared
-            - path: backend/backend_infrastructure
-            - path: docker
-            - path: backend/backend_administration
+            - path: backend/core_framework
     docker:
         dir_name: Container Orchestration & Deployment Configuration
         title: Container Orchestration & Deployment Configuration
@@ -161,15 +65,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend/backend_academic
-            - path: backend/backend_infrastructure
-            - path: backend/backend_student_life
-            - path: backend/backend_communications
-            - path: backend/backend_administration
-            - path: shared
-            - path: backend/backend_auth_core
-            - path: backend
+        related_to: []
     shared:
         dir_name: Shared Domain Contracts & Validation
         title: Shared Domain Contracts & Validation
@@ -179,11 +75,4 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_infrastructure
-            - path: backend/backend_auth_core
-            - path: backend/backend_student_life
-            - path: backend/backend_administration
-            - path: backend/backend_academic
-            - path: backend/backend_communications
-            - path: docker
             - path: backend

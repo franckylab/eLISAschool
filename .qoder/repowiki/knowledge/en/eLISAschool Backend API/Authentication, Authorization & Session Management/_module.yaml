@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/feature_modules
+title: Authentication, Authorization & Session Management
+scope:
+    - backend/src/modules/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/core_framework

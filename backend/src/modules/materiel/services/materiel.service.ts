@@ -35,35 +35,40 @@ export class MaterielService {
         };
     }
 
-    async create(dto: CreateMaterielDto): Promise<Materiel> {
+    async create(dto: CreateMaterielDto, etablissementId?: string): Promise<Materiel> {
         const params = await this.getMaterielParams();
 
         const materiel: Materiel = this.materielRepo.create({
             ...dto,
+            etablissementId,
             categorie: dto.categorie as CategorieMateriel,
             etat: dto.etat as EtatMateriel,
             dateAcquisition: dto.dateAcquisition ? new Date(dto.dateAcquisition) : undefined,
         });
         await this.materielRepo.save(materiel);
-        logger.info(`Matériel créé: ${dto.nom}`);
+        logger.info(`[${etablissementId}] Matériel créé: ${dto.nom}`);
         return materiel;
     }
 
-    async findAll(categorie?: string): Promise<Materiel[]> {
+    async findAll(categorie?: string, etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: Materiel[]; total: number; page: number; limit: number }> {
         const where: any = {};
         if (categorie) where.categorie = categorie;
-        return this.materielRepo.find({ where, order: { nom: 'ASC' } });
+        if (etablissementId) where.etablissementId = etablissementId;
+        const [data, total] = await this.materielRepo.findAndCount({ where, order: { nom: 'ASC' }, skip: (page - 1) * limit, take: limit });
+        return { data, total, page, limit };
     }
 
-    async findOne(id: string): Promise<Materiel> {
-        const materiel = await this.materielRepo.findOne({ where: { id } });
+    async findOne(id: string, etablissementId?: string): Promise<Materiel> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const materiel = await this.materielRepo.findOne({ where });
         if (!materiel) throw new AppError('Matériel non trouvé', 404, 'NOT_FOUND');
         return materiel;
     }
 
-    async preter(dto: PretMaterielDto): Promise<PretMateriel> {
+    async preter(dto: PretMaterielDto, etablissementId?: string): Promise<PretMateriel> {
         const params = await this.getMaterielParams();
-        const materiel = await this.findOne(dto.materielId);
+        const materiel = await this.findOne(dto.materielId, etablissementId);
 
         if (!materiel.disponible || materiel.quantite < dto.quantite) {
             throw new AppError('Matériel non disponible', 400, 'NOT_AVAILABLE');
@@ -91,17 +96,20 @@ export class MaterielService {
 
         const pret: PretMateriel = this.pretRepo.create({
             ...dto,
+            etablissementId,
             datePret: new Date(),
             dateRetourPrevue,
         });
         await this.pretRepo.save(pret);
 
-        logger.info(`Prêt matériel: ${materiel.nom} à ${dto.emprunteurId}`);
+        logger.info(`[${etablissementId}] Prêt matériel: ${materiel.nom} à ${dto.emprunteurId}`);
         return pret;
     }
 
-    async retourner(pretId: string, dto: RetourMaterielDto): Promise<PretMateriel> {
-        const pret = await this.pretRepo.findOne({ where: { id: pretId }, relations: ['materiel'] });
+    async retourner(pretId: string, dto: RetourMaterielDto, etablissementId?: string): Promise<PretMateriel> {
+        const where: any = { id: pretId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const pret = await this.pretRepo.findOne({ where, relations: ['materiel'] });
         if (!pret) throw new AppError('Prêt non trouvé', 404, 'NOT_FOUND');
         if (pret.retourne) throw new AppError('Déjà retourné', 400, 'ALREADY_RETURNED');
 
@@ -110,25 +118,26 @@ export class MaterielService {
         if (dto.notes) pret.notes = (pret.notes || '') + '\n' + dto.notes;
         await this.pretRepo.save(pret);
 
-        const materiel = await this.findOne(pret.materielId);
+        const materiel = await this.findOne(pret.materielId, etablissementId);
         materiel.quantite += pret.quantite;
         materiel.disponible = true;
         await this.materielRepo.save(materiel);
 
-        logger.info(`Retour matériel: ${materiel.nom}`);
+        logger.info(`[${etablissementId}] Retour matériel: ${materiel.nom}`);
         return pret;
     }
 
-    async getPretsEnCours(): Promise<PretMateriel[]> {
-        return this.pretRepo.find({ where: { retourne: false }, relations: ['materiel', 'emprunteur'] });
+    async getPretsEnCours(etablissementId?: string): Promise<PretMateriel[]> {
+        const where: any = { retourne: false };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.pretRepo.find({ where, relations: ['materiel', 'emprunteur'] });
     }
 
-    async getPretsEnRetard(): Promise<PretMateriel[]> {
+    async getPretsEnRetard(etablissementId?: string): Promise<PretMateriel[]> {
+        const where: any = { retourne: false, dateRetourPrevue: LessThan(new Date()) };
+        if (etablissementId) where.etablissementId = etablissementId;
         return this.pretRepo.find({
-            where: {
-                retourne: false,
-                dateRetourPrevue: LessThan(new Date()),
-            },
+            where,
             relations: ['materiel', 'emprunteur'],
         });
     }

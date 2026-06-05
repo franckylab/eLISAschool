@@ -10,7 +10,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '../entities';
+import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur, UtilisateurEtablissement } from '../entities';
 import { TokenService } from './token.service';
 import { AuditService, auditService } from './audit.service';
 import { AuditAction } from '../entities/audit-log.entity';
@@ -27,6 +27,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { generateSecureToken } from '@common/utils/crypto.util';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
+import { permissionResolverService } from './permission-resolver.service';
 
 /**
  * Service d'authentification avec configuration centralisée
@@ -34,11 +35,13 @@ import { getParamNumber, getParamBoolean, getParam } from '@modules/configuratio
 export class AuthService {
     private utilisateurRepository: Repository<Utilisateur>;
     private profilRepository: Repository<ProfilUtilisateur>;
+    private utilisateurEtablissementRepo: Repository<UtilisateurEtablissement>;
     private tokenService: TokenService;
 
     constructor() {
         this.utilisateurRepository = AppDataSource.getRepository(Utilisateur);
         this.profilRepository = AppDataSource.getRepository(ProfilUtilisateur);
+        this.utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
         this.tokenService = new TokenService();
     }
 
@@ -122,12 +125,32 @@ export class AuthService {
             where: { utilisateurId: utilisateur.id },
         });
 
+        // Résolution des permissions (nouveau système RBAC)
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id);
+
+        // Chargement des établissements de l'utilisateur (multi-tenancy v2.0)
+        const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
+            where: { utilisateurId: utilisateur.id, actif: true },
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+        });
+
+        const etablissementsPayload = utilisateurEtablissements.map(ue => ({
+            etablissementId: ue.etablissementId,
+            role: ue.role,
+            etablissementPrincipal: ue.etablissementPrincipal,
+            actif: ue.actif
+        }));
+
         // Génération des tokens
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
-            role: utilisateur.role,
-            etablissementId: utilisateur.etablissementId,
+            role: utilisateur.role, // backward compat
+            roles: userRoles.map(r => r.code), // NOUVEAU : tous les rôles
+            permissions: Array.from(resolvedPermissions), // NOUVEAU : permissions résolues
+            etablissementId: utilisateur.etablissementId, // Legacy (single-établissement)
+            etablissements: etablissementsPayload.length > 0 ? etablissementsPayload : undefined, // Multi-établissements
         };
 
         const accessToken = this.tokenService.generateAccessToken(payload);
@@ -258,10 +281,16 @@ export class AuthService {
 
         await this.tokenService.revokeRefreshToken(refreshToken);
 
+        // Re-résolution des permissions (pour prendre en compte les changements)
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id);
+
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
             role: utilisateur.role,
+            roles: userRoles.map(r => r.code),
+            permissions: Array.from(resolvedPermissions),
             etablissementId: utilisateur.etablissementId,
         };
 

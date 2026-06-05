@@ -1,8 +1,9 @@
 /**
  * eLISAschool - Entités Requêtes
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 export enum TypeRequete {
     CONGE = 'CONGE',
@@ -21,6 +22,7 @@ export enum StatutRequete {
 }
 
 @Entity('requetes')
+@Index(['etablissementId'])
 export class Requete {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -71,6 +73,16 @@ export class Requete {
 
     @Column({ type: 'timestamp', nullable: true })
     dateTraitement?: Date;
+
+    /**
+     * Établissement de la requête (multi-tenancy)
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

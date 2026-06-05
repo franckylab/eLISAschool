@@ -1,5 +1,5 @@
-- Central docker-compose.yml orchestrates four services: PostgreSQL 16, Redis 7, Node.js backend (Express), and React/Vite frontend served via Nginx.
-- Multi-stage Dockerfiles (Dockerfile.backend, Dockerfile.frontend) separate dependency installation, build, and runtime stages to minimize image size and enforce non-root execution (expressjs user).
-- Frontend production image uses nginx:alpine with a custom nginx.conf that handles SPA routing fallback, static asset caching, gzip compression, and reverse-proxying /api requests to the backend service.
-- Services communicate over a dedicated bridge network (elisaschool_network); backend depends on healthy postgres and redis instances before starting.
-- Volume mounts in development mode enable hot-reloading by binding local backend/frontend/shared directories into containers.
+- Multi-stage Dockerfiles separate dependency installation, TypeScript compilation, and runtime execution for both backend (Node.js/Express) and frontend (React/Vite) services.
+- docker-compose.yml defines four interconnected services (postgres, redis, backend, frontend) on a shared bridge network with health checks ensuring dependency ordering.
+- Backend uses npm workspaces monorepo structure, building shared libraries before the main application; frontend serves static assets through Nginx with SPA routing support.
+- Development mode mounts source volumes with hot-reload via nodemon, while production builds compile TypeScript to optimized JavaScript bundles.
+- Nginx configuration provides reverse proxy to backend API, static asset caching, gzip compression, and security headers for the frontend service.

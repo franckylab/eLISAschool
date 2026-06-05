@@ -75,10 +75,10 @@ export class MembrePersonnel {
     /**
      * Établissement du membre du personnel (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 

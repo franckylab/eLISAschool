@@ -1,0 +1,1 @@
+TypeORM with PostgreSQL via a single `DataSource`; Zod for runtime environment schema validation; Express with Helmet, CORS, and rate-limiting security middleware.

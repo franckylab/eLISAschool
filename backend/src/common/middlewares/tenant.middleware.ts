@@ -1,14 +1,17 @@
 /**
  * ==================================
- * eLISAschool - Middleware Multi-Tenancy
+ * eLISAschool - Middleware Multi-Tenancy v2.0
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * 
  * Filtre automatiquement les requêtes par établissement.
- * Lit l'etablissementId depuis le JWT (req.utilisateur) et
- * l'attache à la requête pour que les services puissent l'utiliser.
+ * Supporte désormais les utilisateurs multi-établissements.
  * 
- * Les SUPER_ADMIN peuvent accéder à tous les établissements.
+ * Comportement :
+ * - SUPER_ADMIN : accès à tous les établissements (etablissementId optionnel dans le query)
+ * - Utilisateurs multi-établissements : utilise le query param ou l'établissement principal
+ * - Utilisateurs single-établissement (legacy) : utilise l'etablissementId du JWT
+ * - Autres rôles : utilise l'etablissementId du JWT (obligatoire)
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -17,12 +20,23 @@ import { logger } from '@common/utils/logger.util';
 import { Role } from '@modules/auth/entities';
 
 /**
+ * Interface pour les établissements dans le JWT
+ */
+interface JwtEtablissement {
+    etablissementId: string;
+    role: string;
+    etablissementPrincipal: boolean;
+    actif: boolean;
+}
+
+/**
  * Middleware multi-tenancy : attache l'etablissementId à la requête
  * 
- * Comportement :
- * - SUPER_ADMIN : accès à tous les établissements (etablissementId optionnel dans le query)
- * - ADMIN/CHEF_ETABLISSEMENT : utilise l'etablissementId du JWT
- * - Autres rôles : utilise l'etablissementId du JWT (obligatoire)
+ * Algorithme de sélection :
+ * 1. SUPER_ADMIN → query param ou undefined
+ * 2. Multi-établissements → query param (si autorisé) OU établissement principal
+ * 3. Single-établissement (legacy) → etablissementId du JWT
+ * 4. Erreur si aucun établissement trouvé
  */
 export function tenantMiddleware(req: Request, _res: Response, next: NextFunction): void {
     try {
@@ -33,18 +47,62 @@ export function tenantMiddleware(req: Request, _res: Response, next: NextFunctio
         }
 
         const userRole = req.utilisateur.role as Role;
-        const userEtablissementId = req.utilisateur.etablissementId;
 
-        // SUPER_ADMIN peut accéder à tous les établissements
+        // 1. SUPER_ADMIN peut accéder à tous les établissements
         if (userRole === Role.SUPER_ADMIN) {
-            // L'admin peut spécifier un établissement via query param
             const queryEtablissementId = req.query.etablissementId as string | undefined;
             req.etablissementId = queryEtablissementId || undefined;
             next();
             return;
         }
 
-        // Pour les autres rôles, l'etablissementId du JWT est obligatoire
+        // 2. Support multi-établissements (v2.0)
+        const etablissements: JwtEtablissement[] = req.utilisateur.etablissements || [];
+        
+        if (etablissements.length > 0) {
+            const requestedId = req.query.etablissementId as string | undefined;
+            
+            if (requestedId) {
+                // L'utilisateur demande un établissement spécifique
+                const hasAccess = etablissements.some(
+                    e => e.etablissementId === requestedId && e.actif
+                );
+                
+                if (!hasAccess) {
+                    throw new AppError(
+                        'Accès non autorisé à cet établissement',
+                        403,
+                        'ACCESS_DENIED'
+                    );
+                }
+                
+                req.etablissementId = requestedId;
+                logger.info(`[Multi-tenancy] Utilisateur ${req.utilisateur.id} switch vers ${requestedId}`);
+            } else {
+                // Utiliser l'établissement principal
+                const principal = etablissements.find(e => e.etablissementPrincipal);
+                
+                if (principal) {
+                    req.etablissementId = principal.etablissementId;
+                } else if (etablissements.length > 0 && etablissements[0].actif) {
+                    // Fallback : premier établissement actif
+                    req.etablissementId = etablissements[0].etablissementId;
+                } else {
+                    throw new AppError(
+                        'Aucun établissement actif associé à votre compte',
+                        403,
+                        'NO_ACTIVE_ETABLISSEMENT'
+                    );
+                }
+            }
+            
+            next();
+            return;
+        }
+
+        // 3. Legacy : single-établissement (compatibilité ascendante)
+        const userEtablissementId = req.utilisateur.etablissementId;
+        
         if (!userEtablissementId) {
             throw new AppError(
                 'Aucun établissement associé à votre compte',

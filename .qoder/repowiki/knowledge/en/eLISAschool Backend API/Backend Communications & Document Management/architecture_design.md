@@ -1,5 +1,0 @@
-- Four independent sub-modules (messagerie, notifications, impressions, requetes) each following a strict Controller-Service-Entity-DTO layered architecture with barrel exports via index.ts.
-- Controllers define Express routers with route-level auth middleware (`authMiddleware`, `adminOnly`, `managerOnly`) and delegate business logic to singleton service instances.
-- Services use TypeORM repositories obtained from a shared `AppDataSource` and integrate with centralized configuration via `@modules/configuration/utils/config.helper` for runtime parameter retrieval.
-- DTOs are defined as Zod schemas with inferred TypeScript types; controllers use a local `validate<T>` helper that calls `schema.safeParse()` and throws `AppError` on failure.
-- Entities are TypeORM-decorated classes referencing `Utilisateur` from the auth module; all modules share consistent response envelopes `{ success: true, data: ..., timestamp: ... }`.

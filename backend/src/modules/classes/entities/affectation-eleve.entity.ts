@@ -53,12 +53,14 @@ export class AffectationEleve {
     /**
      * Établissement de l'affectation (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    @Index(['eleveId', 'anneeScolaireId'], { unique: true })
 
     @CreateDateColumn()
     createdAt!: Date;

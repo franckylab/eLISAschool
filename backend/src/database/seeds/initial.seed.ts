@@ -11,6 +11,7 @@
 import { AppDataSource } from '../data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '@modules/auth/entities';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
+import { RBACSeedService } from './rbac.seed';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -22,7 +23,10 @@ export async function runSeeds(): Promise<void> {
     // 1. Configuration (app, modules, paramètres)
     await seedConfiguration();
 
-    // 2. Super admin
+    // 2. RBAC (rôles, permissions, mappings)
+    await seedRBAC();
+
+    // 3. Super admin
     await seedSuperAdmin();
 
     logger.info('✅ Seeds exécutés avec succès');
@@ -36,6 +40,16 @@ async function seedConfiguration(): Promise<void> {
     const result = await seedService.runAllSeeds();
 
     logger.info(`Configuration seeds: App=${result.app}, Modules=${result.modules}, Params=${result.parametres}`);
+}
+
+/**
+ * Seed du système RBAC (rôles, permissions, mappings)
+ */
+async function seedRBAC(): Promise<void> {
+    const rbacSeedService = new RBACSeedService();
+    const result = await rbacSeedService.runAllSeeds();
+
+    logger.info(`RBAC seeds: ${result.roles} rôles, ${result.permissions} permissions, ${result.mappings} mappings, ${result.userRoles} user-roles`);
 }
 
 /**

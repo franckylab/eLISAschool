@@ -1,6 +1,0 @@
-- Six independent feature modules (cantine, transport, cartes, clubs, gamification, materiel) each following a strict four-layer structure: controllers/ (Express Router), services/ (business logic with TypeORM repositories), entities/ (TypeORM entity definitions), dto/ (Zod validation schemas).
-- Each module exports via index.ts using barrel re-exports (`export * from './entities'`, etc.), enabling clean imports from sibling packages.
-- Controllers instantiate service classes directly (e.g., `new CantineService()`) rather than relying on dependency injection containers; routes are defined inline with async handlers wrapped in try/catch forwarding to Express error middleware.
-- All entities reference `@modules/auth/entities` Utilisateur for foreign-key relationships, establishing auth as a cross-cutting dependency.
-- Services use a centralized configuration helper (`@modules/configuration/utils/config.helper`) to read feature flags and numeric thresholds at runtime, avoiding hardcoded constants.
-- Module entry points (index.ts) re-export all layers but do not define a unified router — controller routers are exported as named constants (e.g., `cantineController`) for upstream composition.

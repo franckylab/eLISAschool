@@ -24,81 +24,137 @@ export class BulletinsService {
     }
 
     async generate(dto: GenerateBulletinDto, etablissementId?: string): Promise<Bulletin[]> {
-        const classe = await classesService.findOne(dto.classeId);
-        const periode = await periodesService.findOne(dto.periodeId);
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // Récupérer les élèves (tous ou un seul)
-        const eleveRepo = AppDataSource.getRepository(Eleve);
-        let eleves: Eleve[] = [];
-        if (dto.eleveId) {
-            const eleve = await eleveRepo.findOne({ where: { id: dto.eleveId } });
-            if (eleve) eleves.push(eleve);
-        } else {
-            // Find eleves in class via affectations
-            // Note: ElevesService findAll doesn't filter by class directly, we need to query affectations
-            // Shortcut: We'll assume we can query via AffectationEleve or just use a custom query.
-            // For now, let's use a query on AffectationEleve in Classes module
-            // But ClassesService doesn't expose "getEleves".
-            // Let's modify ClassesService or just query here for simplicity/MVP.
-            const affectationRepo = AppDataSource.getRepository('AffectationEleve');
-            const affectations = await affectationRepo.find({
-                where: { classeId: dto.classeId, actif: true },
-                relations: ['eleve'] // Wait, relation eleve in AffectationEleve? I commented it out in initial implementation!
-                // CHECK: modules/classes/entities/affectation-eleve.entity.ts
-            }) as any[]; // Cast to avoid TS error if relation missing in type def
+        try {
+            const classe = await classesService.findOne(dto.classeId, etablissementId);
+            const periode = await periodesService.findOne(dto.periodeId);
 
-            // If relation missing, we need to fetch eleves manually.
-            // Let's assume relation exists or we fetch by IDs.
-            const eleveIds = affectations.map((a: any) => a.eleveId);
-            if (eleveIds.length > 0) {
-                eleves = await eleveRepo.findByIds(eleveIds);
-            }
-        }
-
-        const bulletins: Bulletin[] = [];
-
-        for (const eleve of eleves) {
-            // Calculer Moyenne Générale
-            // 1. Récupérer programme (matieres)
-            const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
-
-            let totalPoints = 0;
-            let totalCoeffs = 0;
-
-            for (const matiereNiveau of programme) {
-                const moyenneMatiere = await notesService.calculerMoyenne(eleve.id, matiereNiveau.matiereId, periode.id);
-                totalPoints += moyenneMatiere * matiereNiveau.coefficient;
-                totalCoeffs += matiereNiveau.coefficient;
+            // Vérifier que la période appartient à la même année scolaire que la classe
+            if (periode.anneeScolaireId !== classe.anneeScolaireId) {
+                throw new AppError('La période ne correspond pas à l\'année scolaire de la classe', 400, 'PERIODE_MISMATCH');
             }
 
-            const moyenneGenerale = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
+            // Récupérer les élèves (tous ou un seul)
+            const eleveRepo = AppDataSource.getRepository(Eleve);
+            let eleves: Eleve[] = [];
+            if (dto.eleveId) {
+                const eleve = await eleveRepo.findOne({ where: { id: dto.eleveId } });
+                if (eleve) eleves.push(eleve);
+            } else {
+                // Find eleves in class via affectations
+                const affectationRepo = AppDataSource.getRepository('AffectationEleve');
+                const affectations = await affectationRepo.find({
+                    where: { classeId: dto.classeId, actif: true },
+                }) as any[];
 
-            // Créer ou MAJ Bulletin
-            let bulletin = await this.repo.findOne({
-                where: { eleveId: eleve.id, classeId: classe.id, periodeId: periode.id }
-            });
+                const eleveIds = affectations.map((a: any) => a.eleveId);
+                if (eleveIds.length > 0) {
+                    eleves = await eleveRepo.findByIds(eleveIds);
+                }
+            }
 
-            if (!bulletin) {
-                bulletin = this.repo.create({
-                    eleveId: eleve.id,
-                    classeId: classe.id,
-                    periodeId: periode.id,
-                    anneeScolaireId: classe.anneeScolaireId,
-                    etablissementId,
+            if (eleves.length === 0) {
+                throw new AppError('Aucun élève trouvé dans cette classe', 404, 'NO_ELEVES');
+            }
+
+            const bulletins: Bulletin[] = [];
+
+            for (const eleve of eleves) {
+                // Vérifier que l'élève appartient au même établissement
+                if (etablissementId && eleve.etablissementId !== etablissementId) {
+                    throw new AppError(`L'élève ${eleve.id} n'appartient pas à cet établissement`, 403, 'WRONG_ETABLISSEMENT');
+                }
+
+                // Calculer Moyenne Générale
+                const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
+
+                let totalPoints = 0;
+                let totalCoeffs = 0;
+
+                for (const matiereNiveau of programme) {
+                    const moyenneMatiere = await notesService.calculerMoyenne(
+                        eleve.id,
+                        matiereNiveau.matiereId,
+                        periode.id,
+                        etablissementId
+                    );
+                    totalPoints += moyenneMatiere * matiereNiveau.coefficient;
+                    totalCoeffs += matiereNiveau.coefficient;
+                }
+
+                const moyenneGenerale = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
+
+                // Créer ou MAJ Bulletin
+                let bulletin = await this.repo.findOne({
+                    where: { eleveId: eleve.id, classeId: classe.id, periodeId: periode.id }
                 });
+
+                if (!bulletin) {
+                    bulletin = this.repo.create({
+                        eleveId: eleve.id,
+                        classeId: classe.id,
+                        periodeId: periode.id,
+                        anneeScolaireId: classe.anneeScolaireId,
+                        etablissementId,
+                    });
+                }
+
+                bulletin.moyenneGenerale = parseFloat(moyenneGenerale.toFixed(2));
+
+                await queryRunner.manager.save(bulletin);
+                bulletins.push(bulletin);
             }
 
-            bulletin.moyenneGenerale = parseFloat(moyenneGenerale.toFixed(2));
+            // Calcul des rangs pour tous les bulletins de la classe/période
+            await this.calculerRangs(classe.id, periode.id, etablissementId, queryRunner);
 
-            await this.repo.save(bulletin);
-            bulletins.push(bulletin);
+            await queryRunner.commitTransaction();
+            logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classe.nom}`);
+            return bulletins;
+        } catch (error: any) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`[${etablissementId}] Erreur génération bulletins: ${error.message}`);
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Calcule les rangs de tous les élèves d'une classe pour une période donnée
+     */
+    private async calculerRangs(classeId: string, periodeId: string, etablissementId?: string, queryRunner?: any): Promise<void> {
+        // Récupérer tous les bulletins de la classe pour cette période
+        const where: any = { classeId, periodeId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        
+        const bulletins = await (queryRunner?.manager || this.repo).find(Bulletin, {
+            where,
+            order: { moyenneGenerale: 'DESC' }
+        });
+
+        if (bulletins.length === 0) return;
+
+        // Trier par moyenne décroissante et assigner les rangs
+        bulletins.sort((a: Bulletin, b: Bulletin) => (b.moyenneGenerale || 0) - (a.moyenneGenerale || 0));
+
+        let rang = 1;
+        for (let i = 0; i < bulletins.length; i++) {
+            // Si même moyenne que le précédent, même rang
+            if (i > 0 && bulletins[i].moyenneGenerale === bulletins[i - 1].moyenneGenerale) {
+                bulletins[i].rang = bulletins[i - 1].rang;
+            } else {
+                bulletins[i].rang = rang;
+            }
+            rang++;
+            
+            await (queryRunner?.manager || this.repo).save(bulletins[i]);
         }
 
-        // Calcul Rangs (si classe entière) - Simplification: Recalculer rangs pour tous les bulletins de la classe/période
-        // TODO: Separate ranking logic
-
-        logger.info(`${bulletins.length} bulletins générés pour la classe ${classe.nom}`);
-        return bulletins;
+        logger.info(`[${etablissementId}] Rangs calculés pour ${bulletins.length} bulletins`);
     }
 
     async findByEleve(eleveId: string): Promise<Bulletin[]> {

@@ -321,13 +321,31 @@ Les entités sont **auto-découvertes** par TypeORM via le glob pattern `modules
 
 ---
 
-## 15. Maintenance de cette règle
+## 15. Cohérence de la logique métier
 
-Cette règle et le skill associé (`elisaschool-dev`) sont conçus pour **évoluer avec le projet** :
+Avant toute modification impactant la logique métier, **toujours** consulter le skill `elisaschool-business-logic` pour comprendre :
 
-- **Mise à jour automatique** : Lorsque l'IA détecte un nouveau pattern récurrent dans le codebase (ex: un nouveau type de middleware, un pattern de pagination, une convention de test), elle peut **proposer** d'ajouter ou modifier une section de cette règle.
-- **Mise à jour à la demande** : L'utilisateur peut demander explicitement de mettre à jour la règle ou le skill à tout moment (ex: *« mets à jour la règle pour inclure les conventions de tests »*, *« ajoute le pattern WebSocket dans le skill »*).
-- **Mise à jour contextuelle** : Après un changement architectural significatif (ajout de Redis en cluster, migration vers un nouveau framework de test, etc.), l'IA doit **proactivement** suggérer une mise à jour des fichiers `.qoder/rules/` et `.qoder/skills/`.
-- **Revue périodique** : Il est recommandé de relire cette règle tous les 10-15 modules ajoutés pour vérifier sa cohérence avec l'état réel du code.
+- Les **règles métier** existantes (unicité, protection suppression, workflows)
+- Les **dépendances entre modules** (cascade notes → bulletins, config → tous)
+- Les **paramètres de configuration** qui pilotent le comportement
+- Le **multi-tenancy** (etablissementId) et son impact sur les requêtes
+- Le **cache** (TTL, invalidation) et les événements (EventEmitter)
 
-> **Pour demander une mise à jour**, il suffit de dire : *« mets à jour la règle »* ou *« actualise le skill »* en précisant le changement souhaité.
+**Règle d'or** : Ne jamais modifier un service sans avoir lu le service en entier et tracé ses imports croisés.
+
+---
+
+## 16. Maintenance et skills disponibles
+
+Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
+
+- **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité)
+- **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config)
+
+**Modes de mise à jour** :
+- **Automatique** : Lorsque l'IA détecte un nouveau pattern récurrent, elle propose d'ajouter/modifier une section
+- **À la demande** : *« mets à jour la règle »*, *« actualise le skill business logic »*
+- **Contextuelle** : Après un changement architectural significatif, mise à jour proactive
+- **Revue périodique** : Tous les 10-15 modules ajoutés
+
+> **Pour demander une mise à jour** : *« mets à jour la règle »* ou *« actualise le skill »* en précisant le changement.

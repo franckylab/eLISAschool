@@ -1,5 +1,0 @@
-- Every controller defines a local `validate<T>(schema, data)` function that calls `schema.safeParse(data)` and throws `AppError('Erreur de validation', 400, 'VALIDATION_ERROR')` on failure, used consistently before passing DTOs to services.
-- All route handlers follow the pattern `async (req, res, next) => { try { ... } catch (error) { next(error); } }`, delegating error handling to Express middleware rather than returning errors inline.
-- Services expose singleton instances via `export const <name>Service = new <NameService>()` at the bottom of the service file, enabling direct import without dependency injection containers.
-- DTO pairs follow a create/update convention where the update schema is derived via `createSchema.partial().extend({ additionalField: z.type().optional() })`, keeping update contracts as strict supersets of create contracts.
-- Entity timestamp columns uniformly use `@CreateDateColumn()` named `createdAt` and `@UpdateDateColumn()` named `updatedAt`, applied across all entities without exception.

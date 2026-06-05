@@ -40,19 +40,23 @@ export class ClubsService {
         };
     }
 
-    async createClub(dto: CreateClubDto): Promise<Club> {
-        const club = this.clubRepo.create(dto);
+    async createClub(dto: CreateClubDto, etablissementId?: string): Promise<Club> {
+        const club = this.clubRepo.create({ ...dto, etablissementId });
         await this.clubRepo.save(club);
-        logger.info(`Club créé: ${dto.nom}`);
+        logger.info(`[${etablissementId}] Club créé: ${dto.nom}`);
         return club;
     }
 
-    async getClubs(): Promise<Club[]> {
-        return this.clubRepo.find({ where: { actif: true }, relations: ['responsable'] });
+    async getClubs(etablissementId?: string): Promise<Club[]> {
+        const where: any = { actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.clubRepo.find({ where, relations: ['responsable'] });
     }
 
-    async getClub(id: string): Promise<Club> {
-        const club = await this.clubRepo.findOne({ where: { id }, relations: ['responsable'] });
+    async getClub(id: string, etablissementId?: string): Promise<Club> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const club = await this.clubRepo.findOne({ where, relations: ['responsable'] });
         if (!club) throw new AppError('Club non trouvé', 404, 'NOT_FOUND');
         return club;
     }
@@ -60,12 +64,14 @@ export class ClubsService {
     /**
      * Inscription à un club (vérifie la limite configurable)
      */
-    async inscrire(dto: InscrireClubDto): Promise<InscriptionClub> {
+    async inscrire(dto: InscrireClubDto, etablissementId?: string): Promise<InscriptionClub> {
         const params = await this.getClubsParams();
 
         // Vérifier le nombre d'inscriptions de l'élève
+        const whereCount: any = { eleveId: dto.eleveId, actif: true };
+        if (etablissementId) whereCount.etablissementId = etablissementId;
         const inscriptionsActuelles = await this.inscriptionRepo.count({
-            where: { eleveId: dto.eleveId, actif: true },
+            where: whereCount,
         });
 
         if (inscriptionsActuelles >= params.maxPerStudent) {
@@ -77,28 +83,35 @@ export class ClubsService {
         }
 
         // Vérifier si déjà inscrit
+        const whereExisting: any = { clubId: dto.clubId, eleveId: dto.eleveId, actif: true };
+        if (etablissementId) whereExisting.etablissementId = etablissementId;
         const existing = await this.inscriptionRepo.findOne({
-            where: { clubId: dto.clubId, eleveId: dto.eleveId, actif: true },
+            where: whereExisting,
         });
         if (existing) throw new AppError('Déjà inscrit', 409, 'ALREADY_ENROLLED');
 
         // Créer l'inscription avec approbation si requise
         const inscription = this.inscriptionRepo.create({
             ...dto,
+            etablissementId,
             actif: !params.requireApproval,
         });
         await this.inscriptionRepo.save(inscription);
 
-        logger.info(`Inscription club: élève ${dto.eleveId} -> club ${dto.clubId}`);
+        logger.info(`[${etablissementId}] Inscription club: élève ${dto.eleveId} -> club ${dto.clubId}`);
         return inscription;
     }
 
-    async getInscrits(clubId: string): Promise<InscriptionClub[]> {
-        return this.inscriptionRepo.find({ where: { clubId, actif: true }, relations: ['eleve'] });
+    async getInscrits(clubId: string, etablissementId?: string): Promise<InscriptionClub[]> {
+        const where: any = { clubId, actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.inscriptionRepo.find({ where, relations: ['eleve'] });
     }
 
-    async approuverInscription(inscriptionId: string): Promise<InscriptionClub> {
-        const inscription = await this.inscriptionRepo.findOne({ where: { id: inscriptionId } });
+    async approuverInscription(inscriptionId: string, etablissementId?: string): Promise<InscriptionClub> {
+        const where: any = { id: inscriptionId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const inscription = await this.inscriptionRepo.findOne({ where });
         if (!inscription) throw new AppError('Inscription non trouvée', 404, 'NOT_FOUND');
 
         inscription.actif = true;
@@ -106,29 +119,34 @@ export class ClubsService {
         return inscription;
     }
 
-    async createEvenement(clubId: string, dto: CreateEvenementDto): Promise<EvenementClub> {
+    async createEvenement(clubId: string, dto: CreateEvenementDto, etablissementId?: string): Promise<EvenementClub> {
         const evenement = this.evenementRepo.create({
             ...dto,
+            etablissementId,
             clubId,
             dateDebut: new Date(dto.dateDebut),
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
         });
         await this.evenementRepo.save(evenement);
-        logger.info(`Événement club créé: ${dto.titre}`);
+        logger.info(`[${etablissementId}] Événement club créé: ${dto.titre}`);
         return evenement;
     }
 
-    async getEvenements(clubId: string): Promise<EvenementClub[]> {
-        return this.evenementRepo.find({ where: { clubId }, order: { dateDebut: 'DESC' } });
+    async getEvenements(clubId: string, etablissementId?: string): Promise<EvenementClub[]> {
+        const where: any = { clubId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.evenementRepo.find({ where, order: { dateDebut: 'DESC' } });
     }
 
     /**
      * Compte d'inscriptions par élève
      */
-    async getInscriptionsEleve(eleveId: string): Promise<{ clubs: InscriptionClub[]; limite: number }> {
+    async getInscriptionsEleve(eleveId: string, etablissementId?: string): Promise<{ clubs: InscriptionClub[]; limite: number }> {
         const params = await this.getClubsParams();
+        const where: any = { eleveId, actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
         const clubs = await this.inscriptionRepo.find({
-            where: { eleveId, actif: true },
+            where,
             relations: ['club'],
         });
         return { clubs, limite: params.maxPerStudent };

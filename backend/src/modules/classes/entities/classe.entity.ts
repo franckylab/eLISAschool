@@ -72,12 +72,15 @@ export class Classe {
     /**
      * Établissement auquel la classe appartient (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    @Index(['etablissementId', 'anneeScolaireId'])
+    @Index(['etablissementId', 'niveauId'])
 
     @CreateDateColumn()
     createdAt!: Date;

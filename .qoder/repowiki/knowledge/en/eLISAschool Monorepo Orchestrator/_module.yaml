@@ -2,11 +2,15 @@ schema_version: 1
 module_path: ""
 title: eLISAschool Monorepo Orchestrator
 scope:
-    - README.md
-    - .gitignore
-    - package.json
-    - package-lock.json
+    - .dockerignore
+    - .env
     - .env.example
+    - .gitignore
+    - README.md
+    - docker-compose.dev.yml
+    - docker-compose.yml
+    - package-lock.json
+    - package.json
 source_files: []
 depends_on: []
 related_to: []

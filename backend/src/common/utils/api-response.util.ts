@@ -78,6 +78,17 @@ export function sendCreated<T>(res: Response, data: T, message?: string): void {
 }
 
 /**
+ * Envoie une réponse de succès standardisée (alias pour sendSuccess avec message)
+ */
+export function successResponse<T>(res: Response, data: T, message?: string, statusCode: number = 200): void {
+    res.status(statusCode).json({
+        success: true,
+        data,
+        ...(message && { message }),
+    });
+}
+
+/**
  * Envoie une réponse paginée standardisée
  */
 export function sendPaginated<T>(

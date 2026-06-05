@@ -1,0 +1,5 @@
+- Entry points: `index.ts` bootstraps the server, initializes the TypeORM `AppDataSource`, and handles graceful shutdown; `app.ts` configures the Express pipeline.
+- Configuration layer: `config/` uses Zod (`env.config.ts`) for strict environment variable validation and provides TypeORM options (`database.config.ts`) with environment-aware entity paths.
+- Shared infrastructure: `common/` houses global error filters (`error.filter.ts`), request logging interceptors, and a `tenant.middleware.ts` that enforces multi-tenancy by attaching `etablissementId` from JWTs to the Express Request object.
+- Database layer: `database/` manages the single `DataSource` instance and seed execution.
+- Dependency direction: Core modules depend on `config` for settings and `common` for cross-cutting concerns, while feature modules mount their routers into the central Express app defined in `app.ts`.

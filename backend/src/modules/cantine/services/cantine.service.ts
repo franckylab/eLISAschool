@@ -43,100 +43,108 @@ export class CantineService {
 
     // ============ MENUS ============
 
-    async createMenu(dto: CreateMenuDto): Promise<MenuCantine> {
+    async createMenu(dto: CreateMenuDto, etablissementId?: string): Promise<MenuCantine> {
         const menu = this.menuRepo.create({
             ...dto,
+            etablissementId,
             date: dto.date ? new Date(dto.date) : new Date(),
         });
         await this.menuRepo.save(menu);
-        logger.info(`Menu créé pour le ${dto.date}`);
+        logger.info(`[${etablissementId}] Menu créé pour le ${dto.date}`);
         return menu;
     }
 
-    async getMenus(dateDebut?: string, dateFin?: string): Promise<MenuCantine[]> {
+    async getMenus(dateDebut?: string, dateFin?: string, etablissementId?: string): Promise<MenuCantine[]> {
         const qb = this.menuRepo.createQueryBuilder('m').where('m.actif = true');
-
+        if (etablissementId) qb.andWhere('m.etablissementId = :etablissementId', { etablissementId });
         if (dateDebut) qb.andWhere('m.date >= :dateDebut', { dateDebut });
         if (dateFin) qb.andWhere('m.date <= :dateFin', { dateFin });
-
         return qb.orderBy('m.date', 'ASC').getMany();
     }
 
     /**
      * Récupère les menus de la semaine (selon config)
      */
-    async getMenusSemaine(): Promise<MenuCantine[]> {
+    async getMenusSemaine(etablissementId?: string): Promise<MenuCantine[]> {
         const params = await this.getCantineParams();
         const today = new Date();
         const endDate = new Date(today);
         endDate.setDate(endDate.getDate() + params.menuPlanningDays);
 
-        return this.menuRepo.createQueryBuilder('m')
-            .where('m.actif = true')
+        const qb = this.menuRepo.createQueryBuilder('m')
+            .where('m.actif = true');
+        if (etablissementId) qb.andWhere('m.etablissementId = :etablissementId', { etablissementId });
+        return qb
             .andWhere('m.date >= :today', { today: today.toISOString().split('T')[0] })
             .andWhere('m.date <= :endDate', { endDate: endDate.toISOString().split('T')[0] })
             .orderBy('m.date', 'ASC')
             .getMany();
     }
 
-    async getMenuDuJour(): Promise<MenuCantine | null> {
+    async getMenuDuJour(etablissementId?: string): Promise<MenuCantine | null> {
         const today = new Date().toISOString().split('T')[0];
-        return this.menuRepo.findOne({ where: { date: new Date(today), actif: true } });
+        const where: any = { date: new Date(today), actif: true };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.menuRepo.findOne({ where });
     }
 
     // ============ INSCRIPTIONS ============
 
-    async createInscription(dto: CreateInscriptionDto): Promise<InscriptionCantine> {
-        const existant = await this.inscriptionRepo.findOne({
-            where: { eleveId: dto.eleveId, statut: StatutInscriptionCantine.ACTIVE },
-        });
+    async createInscription(dto: CreateInscriptionDto, etablissementId?: string): Promise<InscriptionCantine> {
+        const where: any = { eleveId: dto.eleveId, statut: StatutInscriptionCantine.ACTIVE };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const existant = await this.inscriptionRepo.findOne({ where });
         if (existant) {
             throw new AppError('Élève déjà inscrit à la cantine', 409, 'ALREADY_ENROLLED');
         }
 
         const inscription: InscriptionCantine = this.inscriptionRepo.create({
             ...dto,
+            etablissementId,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : new Date(),
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             solde: 0,
         });
         await this.inscriptionRepo.save(inscription);
+        logger.info(`[${etablissementId}] Inscription cantine créée pour élève ${dto.eleveId}`);
         return inscription;
     }
 
-    async getInscription(id: string): Promise<InscriptionCantine> {
+    async getInscription(id: string, etablissementId?: string): Promise<InscriptionCantine> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
         const inscription = await this.inscriptionRepo.findOne({
-            where: { id },
+            where,
             relations: ['eleve'],
         });
         if (!inscription) throw new AppError('Inscription non trouvée', 404, 'NOT_FOUND');
         return inscription;
     }
 
-    async getInscriptionByEleve(eleveId: string): Promise<InscriptionCantine | null> {
-        return this.inscriptionRepo.findOne({
-            where: { eleveId, statut: StatutInscriptionCantine.ACTIVE },
-        });
+    async getInscriptionByEleve(eleveId: string, etablissementId?: string): Promise<InscriptionCantine | null> {
+        const where: any = { eleveId, statut: StatutInscriptionCantine.ACTIVE };
+        if (etablissementId) where.etablissementId = etablissementId;
+        return this.inscriptionRepo.findOne({ where });
     }
 
     /**
      * Recharger le solde (avec devise depuis config)
      */
-    async rechargerSolde(inscriptionId: string, dto: RechargerSoldeDto): Promise<InscriptionCantine> {
+    async rechargerSolde(inscriptionId: string, dto: RechargerSoldeDto, etablissementId?: string): Promise<InscriptionCantine> {
         const params = await this.getCantineParams();
-        const inscription = await this.getInscription(inscriptionId);
+        const inscription = await this.getInscription(inscriptionId, etablissementId);
 
         inscription.solde += dto.montant;
         await this.inscriptionRepo.save(inscription);
 
-        logger.info(`Solde rechargé: +${dto.montant} ${params.currency} pour inscription ${inscriptionId}`);
+        logger.info(`[${etablissementId}] Solde rechargé: +${dto.montant} ${params.currency} pour inscription ${inscriptionId}`);
         return inscription;
     }
 
     // ============ CONSOMMATIONS ============
 
-    async enregistrerConsommation(dto: EnregistrerConsommationDto): Promise<ConsommationCantine> {
-        const inscription = await this.getInscriptionByEleve(dto.eleveId || dto.inscriptionId);
+    async enregistrerConsommation(dto: EnregistrerConsommationDto, etablissementId?: string): Promise<ConsommationCantine> {
+        const inscription = await this.getInscriptionByEleve(dto.eleveId || dto.inscriptionId, etablissementId);
         if (!inscription) {
             throw new AppError('Élève non inscrit à la cantine', 400, 'NOT_ENROLLED');
         }
@@ -152,24 +160,25 @@ export class CantineService {
 
         const consommation: ConsommationCantine = this.consommationRepo.create({
             ...dto,
+            etablissementId,
             inscriptionId: inscription.id,
             date: dto.date ? new Date(dto.date) : new Date(),
             statut: StatutRepas.CONSOMME,
         });
         await this.consommationRepo.save(consommation);
 
+        logger.info(`[${etablissementId}] Consommation enregistrée pour élève ${dto.eleveId}`);
         return consommation;
     }
 
-    async getConsommationsEleve(eleveId: string, mois?: string): Promise<ConsommationCantine[]> {
+    async getConsommationsEleve(eleveId: string, etablissementId?: string, mois?: string): Promise<ConsommationCantine[]> {
         const qb = this.consommationRepo.createQueryBuilder('c')
             .innerJoin('c.inscription', 'i')
             .where('i.eleveId = :eleveId', { eleveId });
-
+        if (etablissementId) qb.andWhere('c.etablissementId = :etablissementId', { etablissementId });
         if (mois) {
             qb.andWhere('TO_CHAR(c.date, \'YYYY-MM\') = :mois', { mois });
         }
-
         return qb.orderBy('c.date', 'DESC').getMany();
     }
 }

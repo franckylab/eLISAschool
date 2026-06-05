@@ -43,10 +43,10 @@ export class Club {
     /**
      * Établissement du club (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
@@ -83,10 +83,10 @@ export class InscriptionClub {
     /**
      * Établissement de l'inscription au club (multi-tenancy)
      */
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
-    @ManyToOne(() => Etablissement, { nullable: true })
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
@@ -95,6 +95,7 @@ export class InscriptionClub {
 }
 
 @Entity('evenements_clubs')
+@Index(['etablissementId'])
 export class EvenementClub {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -120,6 +121,16 @@ export class EvenementClub {
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     lieu?: string;
+
+    /**
+     * Établissement de l'événement (multi-tenancy)
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;
