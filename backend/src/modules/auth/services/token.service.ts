@@ -31,7 +31,7 @@ export class TokenService {
      */
     generateAccessToken(payload: JwtPayload): string {
         return jwt.sign(payload, envConfig.jwt.secret, {
-            expiresIn: envConfig.jwt.expiresIn,
+            expiresIn: envConfig.jwt.expiresIn as any,
             issuer: 'eLISAschool',
             audience: 'elisaschool-api',
         });

@@ -15,7 +15,7 @@ import { AppError } from '@common/filters/error.filter';
 const router = Router();
 const impressionsService = new ImpressionsService();
 
-function validate<T>(schema: any, data: unknown): T {
+function validate(schema: any, data: unknown): any {
     const result = schema.safeParse(data);
     if (!result.success) {
         throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');

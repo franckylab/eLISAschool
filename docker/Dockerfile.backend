@@ -1,38 +1,87 @@
 # ==================================
 # eLISAschool Backend - Dockerfile
 # ==================================
-# Build: docker build -f docker/Dockerfile.backend -t elisaschool-backend .
+# Utilisé pour la production ET le développement
+# En dev: docker-compose.dev.yml override la commande et monte les volumes
+# En prod: build multi-stage, exécution du JS compilé
 
-# Étape de base
+# ==================================
+# Étape 1: Base commune
+# ==================================
 FROM node:20-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
-# Étape de dépendances
+# ==================================
+# Étape 2: Installation des dépendances (monorepo workspaces)
+# ==================================
 FROM base AS deps
-COPY backend/package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Étape de build
-FROM base AS builder
-COPY backend/package*.json ./
+# Copie des fichiers de dépendances (monorepo workspaces)
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY shared/package.json ./shared/
+# Création des répertoires workspace pour npm
+RUN mkdir -p backend shared
+# Installation de toutes les dépendances (dev + prod)
 RUN npm ci
-COPY backend/ .
-COPY shared/ /shared
-RUN npm run build
 
-# Étape de production
-FROM base AS runner
-ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 expressjs
-
+# ==================================
+# Étape 3: Build TypeScript (production uniquement)
+# ==================================
+FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
+COPY package.json package-lock.json ./
+COPY backend/ ./backend/
+COPY shared/ ./shared/
+# Build du shared puis du backend
+RUN npm run build --workspace=shared && npm run build --workspace=backend
 
+# ==================================
+# Étape 4: Image de production (finale)
+# ==================================
+FROM node:20-alpine AS production
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 expressjs
+
+# Copie des dépendances de production uniquement
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY shared/package.json ./shared/
+RUN mkdir -p backend shared && npm ci --omit=dev && npm cache clean --force
+
+# Copie des builds compilés
+COPY --from=builder /app/shared/dist ./shared/dist
+COPY --from=builder /app/backend/dist ./backend/dist
+
+# Configuration
+ENV NODE_ENV=production
+ENV PORT=3000
 USER expressjs
 EXPOSE 3000
-ENV PORT 3000
 
-CMD ["node", "dist/index.js"]
+# Commande par défaut (production)
+CMD ["node", "backend/dist/index.js"]
+
+# ==================================
+# Étape 5: Image de développement
+# ==================================
+FROM base AS development
+WORKDIR /app
+
+# Copie de TOUT node_modules depuis deps (npm workspaces hoist tout à la racine)
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copie du code source (sera remplacé par le volume monté en dev)
+COPY package.json package-lock.json ./
+COPY backend/ ./backend/
+COPY shared/ ./shared/
+
+# Nodemon est installé via les devDependencies
+ENV NODE_ENV=development
+ENV PORT=3000
+EXPOSE 3000
+
+# Commande par défaut (développement avec hot-reload)
+CMD ["npx", "nodemon", "--config", "backend/nodemon.json"]

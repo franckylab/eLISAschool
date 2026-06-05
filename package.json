@@ -1,8 +1,8 @@
 {
   "name": "elisaschool",
   "version": "1.0.0",
-  "description": "PWA de gestion avancée d'établissements scolaires - eLISAschool",
-  "author": "xAI Éducation",
+  "description": "PWA de gestion avanc\u00e9e d'\u00e9tablissements scolaires - eLISAschool",
+  "author": "xAI \u00c9ducation",
   "license": "UNLICENSED",
   "private": true,
   "workspaces": [
@@ -21,12 +21,25 @@
     "lint": "npm run lint --workspaces",
     "db:migrate": "npm run migration:run --workspace=backend",
     "db:seed": "npm run seed --workspace=backend",
-    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
-    "docker:down": "docker-compose -f docker/docker-compose.yml down",
-    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f"
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:dev:build": "docker compose -f docker-compose.dev.yml up -d --build",
+    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:dev:restart": "docker compose -f docker-compose.dev.yml restart backend",
+    "docker:prod": "docker compose up -d",
+    "docker:prod:build": "docker compose up -d --build",
+    "docker:prod:logs": "docker compose logs -f",
+    "docker:prod:down": "docker compose down",
+    "docker:down": "docker compose -f docker-compose.dev.yml down && docker compose down",
+    "docker:clean": "docker compose -f docker-compose.dev.yml down -v && docker compose down -v",
+    "postinstall": "rm -rf node_modules/@types/express/node_modules/@types/express-serve-static-core"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "overrides": {
+    "@types/express": "4.17.21",
+    "@types/express-serve-static-core": "4.17.31"
   }
 }

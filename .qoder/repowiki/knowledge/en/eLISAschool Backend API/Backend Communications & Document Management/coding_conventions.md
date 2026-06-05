@@ -1,0 +1,5 @@
+- Every controller defines a local generic `validate<T>(schema, data)` function that wraps Zod's `safeParse` and throws `AppError('Erreur de validation', 400, 'VALIDATION_ERROR')` on failure.
+- All services instantiate TypeORM repositories in the constructor using `AppDataSource.getRepository(EntityClass)` rather than injecting repositories.
+- DTO files export both Zod schema constants (e.g., `createConversationSchema`) and corresponding TypeScript types inferred via `z.infer<typeof schemaName>`.
+- Each sub-module uses a barrel `index.ts` at its root that re-exports entities, dto, services, and controllers via `export * from './...'` statements.
+- Services retrieve runtime configuration parameters through helper functions from `@modules/configuration/utils/config.helper` (e.g., `getParamNumber`, `getParamBoolean`, `getAppConfig`) instead of hard-coding limits or feature flags.

@@ -1,0 +1,3 @@
+- `npm install`: Installs dependencies for all workspaces.
+- `npm run dev`: Concurrently starts backend and frontend development servers.
+- `npm run docker:up`: Boots the entire application stack (DB, Redis, Backend, Frontend) via Docker Compose.

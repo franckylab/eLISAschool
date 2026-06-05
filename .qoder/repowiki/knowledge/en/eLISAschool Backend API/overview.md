@@ -1,0 +1,1 @@
+Orchestrates a modular Express application for school management, wiring domain-specific feature modules to shared infrastructure, authentication, and database services.

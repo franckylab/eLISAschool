@@ -10,7 +10,7 @@
 
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Notification, TypeNotification, StatutNotification } from '../entities';
+import { Notification, TypeNotification, StatutNotification, PrioriteNotification } from '../entities';
 import { CreateNotificationDto, CreateBulkNotificationDto, QueryNotificationsDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -45,7 +45,7 @@ export class NotificationsService {
         const params = await this.getNotificationsParams();
 
         // Si type non spécifié, utiliser le canal par défaut configuré
-        const type = createDto.type || params.defaultChannel as TypeNotification;
+        const type: TypeNotification = (createDto.type || params.defaultChannel) as TypeNotification;
 
         // Vérifier si le canal est activé
         if (type === TypeNotification.PUSH && !params.enablePush) {
@@ -58,11 +58,12 @@ export class NotificationsService {
             throw new AppError('Les notifications SMS sont désactivées', 400, 'SMS_DISABLED');
         }
 
-        const notification = this.notificationRepository.create({
+        const notification: Notification = this.notificationRepository.create({
             ...createDto,
             type,
             expediteurId,
             statut: StatutNotification.EN_ATTENTE,
+            priorite: (createDto.priorite as PrioriteNotification) || PrioriteNotification.NORMALE,
         });
 
         await this.notificationRepository.save(notification);

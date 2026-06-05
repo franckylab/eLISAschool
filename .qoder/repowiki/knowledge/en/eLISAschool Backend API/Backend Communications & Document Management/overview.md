@@ -1,0 +1,1 @@
+Provides messaging, notifications, document printing, and request management capabilities for the eLISAschool platform.

@@ -1,0 +1,6 @@
+- Each sub-module exports its public API through a barrel `index.ts` file that re-exports from `controllers`, `services`, `dto`, `entities`, `middlewares`, `guards`, and `utils` sub-directories.
+- Request body validation uses Zod schemas defined in module-specific `dto/*.ts` files, with a shared `validateBody` or `validate` helper that throws an `AppError('VALIDATION_ERROR', 400)` on failure.
+- Service classes are instantiated as singletons at module level (e.g. `export const authService = new AuthService()`) and controllers import these singleton instances rather than creating new service objects per request.
+- Password fields are automatically hashed using bcrypt before insert/update via TypeORM `@BeforeInsert()` and `@BeforeUpdate()` lifecycle hooks on the `Utilisateur` entity.
+- Route handlers wrap async logic in try/catch blocks and delegate errors to Express's error-handling middleware via `next(error)`, returning standardized JSON responses with `success`, `data`, `message`, and `timestamp` fields.
+- Authorization is enforced through composable Express middlewares: `authMiddleware` for authentication, `requireRoles(...roles)` for role checks, and `requirePermissions([...permissions])` for granular permission checks, with SUPER_ADMIN bypass built into permission guards.

@@ -1,0 +1,1 @@
+Defines multi-service Docker Compose orchestration and production-ready container builds for the eLISAschool application stack.

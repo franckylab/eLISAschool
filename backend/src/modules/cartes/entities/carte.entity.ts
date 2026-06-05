@@ -17,6 +17,7 @@ export enum StatutCarte {
     INACTIVE = 'INACTIVE',
     PERDUE = 'PERDUE',
     EXPIREE = 'EXPIREE',
+    DESACTIVEE = 'DESACTIVEE',
 }
 
 @Entity('cartes')
@@ -48,6 +49,12 @@ export class Carte {
 
     @Column({ type: 'varchar', length: 500, nullable: true })
     photoUrl?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    etablissementNom?: string;
+
+    @Column({ type: 'text', nullable: true })
+    raisonDesactivation?: string;
 
     @Column({ type: 'simple-json', nullable: true })
     metadata?: Record<string, any>;

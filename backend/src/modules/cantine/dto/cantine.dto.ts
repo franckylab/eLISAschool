@@ -13,6 +13,8 @@ export const createMenuSchema = z.object({
 
 export const createInscriptionSchema = z.object({
     eleveId: z.string().uuid(),
+    dateDebut: z.string().optional(),
+    dateFin: z.string().optional(),
     allergies: z.array(z.string()).optional(),
     regimeAlimentaire: z.string().optional(),
 });
@@ -22,8 +24,11 @@ export const rechargerSoldeSchema = z.object({
 });
 
 export const enregistrerConsommationSchema = z.object({
+    eleveId: z.string().uuid().optional(),
     inscriptionId: z.string().uuid(),
     menuId: z.string().uuid(),
+    montant: z.number().min(0).optional(),
+    date: z.string().optional(),
 });
 
 export const queryMenusSchema = z.object({

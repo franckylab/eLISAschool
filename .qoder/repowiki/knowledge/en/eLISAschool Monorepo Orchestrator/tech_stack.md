@@ -1,0 +1,1 @@
+Node.js >=20, npm >=10, Docker Compose

@@ -24,7 +24,7 @@ const utilisateursService = new UtilisateursService();
 /**
  * Helper de validation Zod
  */
-function validate<T>(schema: any, data: unknown): T {
+function validate(schema: any, data: unknown): any {
     const result = schema.safeParse(data);
     if (!result.success) {
         const errors = result.error.errors.map((e: any) => ({

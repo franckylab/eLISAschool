@@ -1,0 +1,4 @@
+- Organized into five logical sub-packages: `enums` (roles/permissions), `types` (API contracts/user models), `constants` (app limits/config), `validators` (Zod schemas), and `config` (registry).
+- Uses a barrel export pattern via `src/index.ts` to expose all domain contracts through a single entry point (`@elisaschool/shared`).
+- Validators depend on constants for constraint values (e.g., password length), establishing an internal dependency direction from `validators` to `constants`.
+- Compiled as a CommonJS module with declaration maps enabled for seamless integration in both Node.js backend and browser-based frontend environments.

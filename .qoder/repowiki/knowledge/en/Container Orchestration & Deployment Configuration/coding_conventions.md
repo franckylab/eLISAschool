@@ -1,0 +1,4 @@
+- Multi-stage Docker builds use consistent stage names (base, deps, builder, runner) across both backend and frontend Dockerfiles.
+- All services declare healthcheck configurations with 10s interval, 5s timeout, and 5 retries for postgres and redis.
+- Environment variables use default fallback syntax (${VAR:-default}) throughout docker-compose.yml for portable configuration.
+- Non-root user execution is enforced in production backend images via dedicated system user (expressjs, uid 1001).

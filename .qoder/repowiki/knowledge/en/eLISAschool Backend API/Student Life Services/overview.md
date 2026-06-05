@@ -1,0 +1,1 @@
+Provides cafeteria, transport, ID cards, clubs, gamification, and equipment lending management for students.

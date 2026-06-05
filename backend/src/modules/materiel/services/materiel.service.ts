@@ -5,12 +5,12 @@
  * Version: 2.0.0
  * Auteur: xAI Éducation
  * 
- * Utilise le système de configuration centralisé
+ * Utilise le système de configuration centralisée
  */
 
 import { Repository, LessThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Materiel, PretMateriel, CategorieMateriel } from '../entities';
+import { Materiel, PretMateriel, CategorieMateriel, EtatMateriel } from '../entities';
 import { CreateMaterielDto, PretMaterielDto, RetourMaterielDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -28,9 +28,6 @@ export class MaterielService {
         this.pretRepo = AppDataSource.getRepository(PretMateriel);
     }
 
-    /**
-     * Récupère les paramètres matériel depuis la configuration
-     */
     private async getMaterielParams() {
         return {
             maxLoanDays: await getParamNumber('materiel.max_loan_days', 30),
@@ -41,11 +38,11 @@ export class MaterielService {
     async create(dto: CreateMaterielDto): Promise<Materiel> {
         const params = await this.getMaterielParams();
 
-        const materiel = this.materielRepo.create({
+        const materiel: Materiel = this.materielRepo.create({
             ...dto,
+            categorie: dto.categorie as CategorieMateriel,
+            etat: dto.etat as EtatMateriel,
             dateAcquisition: dto.dateAcquisition ? new Date(dto.dateAcquisition) : undefined,
-            // Génère un code-barres si activé
-            codeBarre: params.enableBarcode ? this.generateBarcode() : undefined,
         });
         await this.materielRepo.save(materiel);
         logger.info(`Matériel créé: ${dto.nom}`);
@@ -64,9 +61,6 @@ export class MaterielService {
         return materiel;
     }
 
-    /**
-     * Prêt de matériel avec durée max configurable
-     */
     async preter(dto: PretMaterielDto): Promise<PretMateriel> {
         const params = await this.getMaterielParams();
         const materiel = await this.findOne(dto.materielId);
@@ -75,14 +69,12 @@ export class MaterielService {
             throw new AppError('Matériel non disponible', 400, 'NOT_AVAILABLE');
         }
 
-        // Calculer la date de retour si non fournie
         let dateRetourPrevue = dto.dateRetourPrevue ? new Date(dto.dateRetourPrevue) : null;
         if (!dateRetourPrevue) {
             dateRetourPrevue = new Date();
             dateRetourPrevue.setDate(dateRetourPrevue.getDate() + params.maxLoanDays);
         }
 
-        // Vérifier que la durée ne dépasse pas le max
         const aujourdhui = new Date();
         const diffDays = Math.ceil((dateRetourPrevue.getTime() - aujourdhui.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays > params.maxLoanDays) {
@@ -97,7 +89,7 @@ export class MaterielService {
         if (materiel.quantite === 0) materiel.disponible = false;
         await this.materielRepo.save(materiel);
 
-        const pret = this.pretRepo.create({
+        const pret: PretMateriel = this.pretRepo.create({
             ...dto,
             datePret: new Date(),
             dateRetourPrevue,
@@ -131,9 +123,6 @@ export class MaterielService {
         return this.pretRepo.find({ where: { retourne: false }, relations: ['materiel', 'emprunteur'] });
     }
 
-    /**
-     * Prêts en retard
-     */
     async getPretsEnRetard(): Promise<PretMateriel[]> {
         return this.pretRepo.find({
             where: {
@@ -144,9 +133,6 @@ export class MaterielService {
         });
     }
 
-    /**
-     * Génère un code-barres unique
-     */
     private generateBarcode(): string {
         return `MAT${Date.now()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     }

@@ -10,12 +10,11 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Requete, TypeRequete } from '../entities';
-import { CreateRequeteDto, UpdateRequeteDto, TraiterRequeteDto } from '../dto';
+import { Requete, TypeRequete, StatutRequete } from '../entities';
+import { CreateRequeteDto, TraiterRequeteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
-import { StatutRequete } from '@shared/enums/statuts.enum';
 
 /**
  * Service Requêtes avec configuration centralisée
@@ -44,10 +43,11 @@ export class RequetesService {
         const params = await this.getRequetesParams();
 
         // Générer un numéro de requête
-        const numero = await this.generateNumero(dto.type);
+        const numero = await this.generateNumero(dto.type as TypeRequete);
 
-        const requete = this.requeteRepo.create({
+        const requete: Requete = this.requeteRepo.create({
             ...dto,
+            type: dto.type as TypeRequete,
             numero,
             demandeurId,
             statut: StatutRequete.EN_ATTENTE,
@@ -90,6 +90,15 @@ export class RequetesService {
             .getManyAndCount();
 
         return { items, total };
+    }
+
+    /**
+     * Trouve les requêtes d'un utilisateur
+     */
+    async findByUser(demandeurId: string, query?: any): Promise<{ items: Requete[]; total: number }> {
+        const page = query?.page || 1;
+        const limit = query?.limit || 20;
+        return this.findAll({ demandeurId, page, limit, statut: query?.statut as StatutRequete, type: query?.type as TypeRequete });
     }
 
     async findOne(id: string): Promise<Requete> {

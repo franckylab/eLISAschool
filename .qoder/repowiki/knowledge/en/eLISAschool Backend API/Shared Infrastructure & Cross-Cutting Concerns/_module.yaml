@@ -1,0 +1,17 @@
+schema_version: 1
+module_path: backend/backend_infrastructure
+title: Shared Infrastructure & Cross-Cutting Concerns
+scope:
+    - backend/src/common/
+    - backend/src/config/
+    - backend/src/database/
+source_files: []
+depends_on: []
+related_to:
+    - path: shared
+    - path: backend/backend_academic
+    - path: backend/backend_administration
+    - path: backend/backend_communications
+    - path: backend/backend_student_life
+    - path: docker
+    - path: backend/backend_auth_core

@@ -1,0 +1,1 @@
+Express.js (HTTP server), TypeORM (shared database connection), PostgreSQL (unified data store)

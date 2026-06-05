@@ -1,0 +1,15 @@
+{
+    "watch": [
+        "src",
+        "../shared/src"
+    ],
+    "ext": "ts,json",
+    "ignore": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+    ],
+    "exec": "TS_NODE_TRANSPILE_ONLY=true npx ts-node -r tsconfig-paths/register src/index.ts",
+    "delay": 1000
+}

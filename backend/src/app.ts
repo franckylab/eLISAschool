@@ -17,6 +17,8 @@ import { logger } from '@common/utils/logger.util';
 import { errorHandler } from '@common/filters/error.filter';
 import { notFoundHandler } from '@common/filters/not-found.filter';
 import { requestLogger } from '@common/interceptors/request-logger.interceptor';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from '@config/swagger.config';
 
 // Import des routes des modules
 import { authController } from '@modules/auth';
@@ -94,14 +96,14 @@ export function createApp(): Application {
         standardHeaders: true,
         legacyHeaders: false,
     });
-    app.use('/api/', limiter);
+    app.use('/api/', limiter as any);
 
     // ==================================
     // Middlewares de parsing
     // ==================================
 
     // Compression gzip des réponses
-    app.use(compression());
+    app.use(compression() as any);
 
     // Parsing JSON avec limite de taille
     app.use(express.json({ limit: '10mb' }));
@@ -140,6 +142,17 @@ export function createApp(): Application {
             author: 'xAI Éducation',
             documentation: '/api/docs',
         });
+    });
+
+    // Documentation API interactive (Swagger UI)
+    app.use('/api/docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: 'eLISAschool API Docs',
+    }) as any);
+
+    // Route JSON de la spécification OpenAPI
+    app.get('/api/docs.json', (_req: Request, res: Response) => {
+        res.json(swaggerSpec);
     });
 
     // ==================================

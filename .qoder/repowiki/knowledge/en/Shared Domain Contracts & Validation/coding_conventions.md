@@ -1,0 +1,4 @@
+- Each sub-package uses an `index.ts` barrel file to re-export all members via `export *`, ensuring a flat public API surface.
+- Validation schemas are defined using Zod's `z.object` and paired with inferred TypeScript types via `z.infer` for end-to-end type safety.
+- Constants are defined as `const` objects with `as const` assertions to enforce immutability and literal type inference.
+- Enums and complex constant mappings (like role permissions) include comprehensive JSDoc comments describing their purpose and usage context.

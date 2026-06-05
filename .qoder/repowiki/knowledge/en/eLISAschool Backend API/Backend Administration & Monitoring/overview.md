@@ -1,0 +1,1 @@
+Manages school establishment configuration, personnel records, system monitoring, and student scoring with role-based access control.

@@ -25,6 +25,9 @@ export class Requete {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
+    @Column({ type: 'varchar', length: 50, unique: true })
+    numero!: string;
+
     @Column({ type: 'uuid' })
     demandeurId!: string;
 
@@ -47,6 +50,12 @@ export class Requete {
     @Column({ type: 'simple-json', nullable: true })
     piecesJointes?: { nom: string; url: string }[];
 
+    @Column({ type: 'int', default: 1 })
+    niveauxApprobation!: number;
+
+    @Column({ type: 'int', default: 0 })
+    niveauActuel!: number;
+
     @Column({ type: 'uuid', nullable: true })
     approbateurId?: string;
 
@@ -55,10 +64,13 @@ export class Requete {
     approbateur?: Utilisateur;
 
     @Column({ type: 'text', nullable: true })
-    commentaireApprobation?: string;
+    commentaireTraitement?: string;
+
+    @Column({ type: 'simple-json', nullable: true })
+    historiqueApprobation?: any[];
 
     @Column({ type: 'timestamp', nullable: true })
-    dateApprobation?: Date;
+    dateTraitement?: Date;
 
     @CreateDateColumn()
     createdAt!: Date;

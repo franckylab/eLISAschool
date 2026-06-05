@@ -1,0 +1,1 @@
+Provides JWT-based authentication with refresh tokens, RBAC authorization, user lifecycle management, and a centralized configuration system with caching, history tracking, and module toggling.

@@ -10,5 +10,6 @@ export * from './entities';
 export * from './dto';
 export * from './services';
 export * from './controllers';
-export * from './middlewares';
+// Export explicite des middlewares pour éviter le conflit avec UtilisateurAuth du dto
+export { authMiddleware, optionalAuthMiddleware } from './middlewares';
 export * from './guards';

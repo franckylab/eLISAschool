@@ -49,10 +49,11 @@ export class CartesService {
         dateExpiration.setMonth(dateExpiration.getMonth() + params.validityMonths);
 
         // Générer le numéro de carte
-        const numeroCarte = this.generateNumeroCarte(dto.type);
+        const numeroCarte = this.generateNumeroCarte(dto.type as TypeCarte);
 
-        const carte = this.carteRepo.create({
+        const carte: CarteScolaire = this.carteRepo.create({
             ...dto,
+            type: dto.type as TypeCarte,
             numeroCarte,
             dateExpiration,
             statut: StatutCarte.ACTIVE,
@@ -188,6 +189,34 @@ export class CartesService {
             .andWhere('c.dateExpiration > :now', { now: new Date() })
             .leftJoinAndSelect('c.utilisateur', 'u')
             .getMany();
+    }
+
+    /**
+     * Signale la perte d'une carte
+     */
+    async signalerPerte(id: string): Promise<CarteScolaire> {
+        const carte = await this.findOne(id);
+        carte.statut = StatutCarte.PERDUE;
+        carte.raisonDesactivation = 'Perte signalée';
+        await this.carteRepo.save(carte);
+        logger.info(`Perte signalée: ${carte.numeroCarte}`);
+        return carte;
+    }
+
+    /**
+     * Recherche par numéro de carte
+     */
+    async findByNumero(numeroCarte: string): Promise<CarteScolaire> {
+        const carte = await this.carteRepo.findOne({ where: { numeroCarte }, relations: ['utilisateur'] });
+        if (!carte) throw new AppError('Carte non trouvée', 404, 'NOT_FOUND');
+        return carte;
+    }
+
+    /**
+     * Alias pour findByUtilisateur
+     */
+    async findByUser(utilisateurId: string): Promise<CarteScolaire[]> {
+        return this.findByUtilisateur(utilisateurId);
     }
 }
 

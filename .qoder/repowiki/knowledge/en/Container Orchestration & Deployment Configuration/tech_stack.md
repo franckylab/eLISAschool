@@ -1,0 +1,1 @@
+Node.js 20-alpine base images; PostgreSQL 16-alpine; Redis 7-alpine; nginx:alpine for frontend serving; Docker Compose v3.9.

@@ -50,7 +50,7 @@ export async function getParamNumber(cle: string, defaultValue: number = 0): Pro
 export async function getParamBoolean(cle: string, defaultValue: boolean = false): Promise<boolean> {
     const value = await getParam<boolean | string>(cle, defaultValue);
     if (typeof value === 'boolean') return value;
-    return value === true || value === 'true' || value === '1';
+    return value === 'true' || value === '1';
 }
 
 /**

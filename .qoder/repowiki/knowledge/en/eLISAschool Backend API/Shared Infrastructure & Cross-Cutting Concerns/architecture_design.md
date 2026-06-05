@@ -1,0 +1,5 @@
+- Three sub-packages: `config` (environment validation via Zod schema in `env.config.ts` and TypeORM options in `database.config.ts`), `database` (TypeORM DataSource lifecycle in `data-source.ts` with seed runner in `seeds/run-seeds.ts`), and `common` (Express middleware layer with `error.filter.ts`, `not-found.filter.ts`, `request-logger.interceptor.ts`, plus utility modules for crypto, QR codes, and Winston-based logging).
+- Barrel exports via `index.ts` files at each sub-package root (`common/index.ts`, `config/index.ts`, `database/index.ts`) provide a single import surface for consumers.
+- Configuration flows top-down: `env.config.ts` validates and structures env vars → `database.config.ts` consumes `envConfig` → `data-source.ts` instantiates the TypeORM DataSource using that config.
+- Error handling uses a custom `AppError` class with standardized HTTP status codes and error codes, consumed by the global `errorHandler` Express middleware; all non-operational errors default to 500.
+- Logging is centralized through a Winston logger (`logger.util.ts`) configured with console + file transports, used uniformly by filters, interceptors, and seed scripts.

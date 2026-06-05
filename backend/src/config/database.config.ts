@@ -8,6 +8,15 @@
 
 import { DataSourceOptions } from 'typeorm';
 import { envConfig } from './env.config';
+import path from 'path';
+
+/**
+ * Détermine les chemins des entités et migrations selon l'environnement
+ * En développement: chemins vers les fichiers .ts (src/)
+ * En production: chemins vers les fichiers .js compilés (dist/)
+ */
+const isProduction = envConfig.app.isProduction;
+const basePath = isProduction ? path.join(__dirname, '..', '..') : path.join(__dirname, '..');
 
 /**
  * Options de configuration TypeORM
@@ -26,14 +35,20 @@ export const databaseConfig: DataSourceOptions = {
     // Journalisation des requêtes SQL
     logging: envConfig.app.isDevelopment ? ['query', 'error', 'warn'] : ['error'],
 
-    // Entités (ajoutées dynamiquement lors de l'import des modules)
-    entities: ['src/modules/**/entities/*.entity.{ts,js}'],
+    // Entités (chemins adaptés selon dev/prod)
+    entities: isProduction
+        ? [path.join(basePath, 'modules', '**', 'entities', '*.entity.js')]
+        : [path.join(basePath, 'modules', '**', 'entities', '*.entity.ts')],
 
     // Migrations
-    migrations: ['src/database/migrations/*.{ts,js}'],
+    migrations: isProduction
+        ? [path.join(basePath, 'database', 'migrations', '*.js')]
+        : [path.join(basePath, 'database', 'migrations', '*.ts')],
 
     // Subscribers
-    subscribers: ['src/database/subscribers/*.{ts,js}'],
+    subscribers: isProduction
+        ? [path.join(basePath, 'database', 'subscribers', '*.js')]
+        : [path.join(basePath, 'database', 'subscribers', '*.ts')],
 
     // Pool de connexions
     poolSize: envConfig.app.isProduction ? 20 : 5,

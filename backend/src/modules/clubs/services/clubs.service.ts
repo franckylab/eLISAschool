@@ -85,7 +85,7 @@ export class ClubsService {
         // Créer l'inscription avec approbation si requise
         const inscription = this.inscriptionRepo.create({
             ...dto,
-            statut: params.requireApproval ? 'EN_ATTENTE' : 'APPROUVE',
+            actif: !params.requireApproval,
         });
         await this.inscriptionRepo.save(inscription);
 
@@ -101,7 +101,7 @@ export class ClubsService {
         const inscription = await this.inscriptionRepo.findOne({ where: { id: inscriptionId } });
         if (!inscription) throw new AppError('Inscription non trouvée', 404, 'NOT_FOUND');
 
-        inscription.statut = 'APPROUVE';
+        inscription.actif = true;
         await this.inscriptionRepo.save(inscription);
         return inscription;
     }

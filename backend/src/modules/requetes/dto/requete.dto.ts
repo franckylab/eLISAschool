@@ -8,7 +8,7 @@ export const createRequeteSchema = z.object({
 });
 
 export const traiterRequeteSchema = z.object({
-    statut: z.enum(['APPROUVEE', 'REJETEE']),
+    decision: z.enum(['APPROUVE', 'REJETE']),
     commentaire: z.string().optional(),
 });
 

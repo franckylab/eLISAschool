@@ -1,7 +1,5 @@
 /**
- * ==================================
  * eLISAschool - Entités Cantine
- * ==================================
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
@@ -11,6 +9,7 @@ export enum StatutRepas {
     DISPONIBLE = 'DISPONIBLE',
     EPUISE = 'EPUISE',
     ANNULE = 'ANNULE',
+    CONSOMME = 'CONSOMME',
 }
 
 @Entity('menus_cantine')
@@ -22,7 +21,7 @@ export class MenuCantine {
     date!: Date;
 
     @Column({ type: 'varchar', length: 20, default: 'dejeuner' })
-    typeRepas!: string; // petit-dejeuner, dejeuner, gouter
+    typeRepas!: string;
 
     @Column({ type: 'varchar', length: 255 })
     platPrincipal!: string;
@@ -38,6 +37,9 @@ export class MenuCantine {
 
     @Column({ type: 'enum', enum: StatutRepas, default: StatutRepas.DISPONIBLE })
     statut!: StatutRepas;
+
+    @Column({ type: 'boolean', default: true })
+    actif!: boolean;
 
     @Column({ type: 'simple-array', nullable: true })
     allergenes?: string[];
@@ -72,6 +74,12 @@ export class InscriptionCantine {
 
     @Column({ type: 'enum', enum: StatutInscriptionCantine, default: StatutInscriptionCantine.ACTIVE })
     statut!: StatutInscriptionCantine;
+
+    @Column({ type: 'date', nullable: true })
+    dateDebut?: Date;
+
+    @Column({ type: 'date', nullable: true })
+    dateFin?: Date;
 
     @Column({ type: 'simple-array', nullable: true })
     allergies?: string[];
@@ -108,8 +116,14 @@ export class ConsommationCantine {
     @JoinColumn({ name: 'menuId' })
     menu!: MenuCantine;
 
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    montant!: number;
+
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    dateConsommation!: Date;
+    date!: Date;
+
+    @Column({ type: 'enum', enum: StatutRepas, default: StatutRepas.CONSOMME })
+    statut!: StatutRepas;
 
     @Column({ type: 'boolean', default: false })
     paye!: boolean;

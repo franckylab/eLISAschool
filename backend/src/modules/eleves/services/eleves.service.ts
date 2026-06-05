@@ -43,7 +43,7 @@ export class ElevesService {
         return this.repo.find({
             where,
             relations: ['utilisateur'],
-            order: { nomTuteur: 'ASC', utilisateur: { nom: 'ASC' } }
+            order: { nomTuteur: 'ASC' }
         });
     }
 

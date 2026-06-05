@@ -1,0 +1,5 @@
+- Every controller defines a local `validate<T>` function that calls `schema.safeParse(data)` and throws an `AppError('Erreur de validation', 400, 'VALIDATION_ERROR')` on failure, ensuring consistent Zod-based input validation across all endpoints.
+- All successful HTTP responses follow the envelope pattern `{ success: true, data: <payload>, timestamp: new Date().toISOString() }`, with optional `message` fields for mutation endpoints.
+- Each service class declares repository properties in the constructor via `AppDataSource.getRepository(EntityClass)` and never injects repositories through constructor parameters.
+- DTO files export both Zod schemas (e.g., `createMenuSchema`) and inferred TypeScript types (e.g., `CreateMenuDto = z.infer<typeof createMenuSchema>`), keeping validation rules and type definitions co-located.
+- Entity files define TypeScript enums at module scope before the `@Entity` class declarations, and reference these enums in `@Column({ type: 'enum', enum: ... })` decorators for status and category fields.

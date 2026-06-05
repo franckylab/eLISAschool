@@ -1,0 +1,7 @@
+- Four independent sub-modules (etablissement, personnel, monitoring, scoring) following a consistent layered architecture: controllers → services → entities/DTOs.
+- Controllers use Express Router instances exported as named constants (e.g., `etablissementController`) and default exports for mounting.
+- Services are stateless classes instantiated once at module load time and exported as singleton instances (e.g., `export const etablissementService = new EtablissementService()`).
+- Each sub-module has an `index.ts` barrel export that re-exports all layers (`entities`, `dto`, `services`, `controllers`) via `export *` statements.
+- Dependency direction flows inward: controllers depend on services, services depend on TypeORM repositories and shared utilities (`@common/utils/logger.util`, `@database/data-source`).
+- The monitoring module lacks DTOs and entities, operating purely as a service layer that reads OS metrics and application state.
+- The scoring module lacks a controller, exposing only entity definitions and business logic through its service.

@@ -46,7 +46,7 @@ export class CantineService {
     async createMenu(dto: CreateMenuDto): Promise<MenuCantine> {
         const menu = this.menuRepo.create({
             ...dto,
-            date: new Date(dto.date),
+            date: dto.date ? new Date(dto.date) : new Date(),
         });
         await this.menuRepo.save(menu);
         logger.info(`Menu créé pour le ${dto.date}`);
@@ -94,9 +94,9 @@ export class CantineService {
             throw new AppError('Élève déjà inscrit à la cantine', 409, 'ALREADY_ENROLLED');
         }
 
-        const inscription = this.inscriptionRepo.create({
+        const inscription: InscriptionCantine = this.inscriptionRepo.create({
             ...dto,
-            dateDebut: new Date(dto.dateDebut),
+            dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : new Date(),
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             solde: 0,
         });
@@ -136,24 +136,24 @@ export class CantineService {
     // ============ CONSOMMATIONS ============
 
     async enregistrerConsommation(dto: EnregistrerConsommationDto): Promise<ConsommationCantine> {
-        const inscription = await this.getInscriptionByEleve(dto.eleveId);
+        const inscription = await this.getInscriptionByEleve(dto.eleveId || dto.inscriptionId);
         if (!inscription) {
             throw new AppError('Élève non inscrit à la cantine', 400, 'NOT_ENROLLED');
         }
 
         // Vérifier le solde
-        if (inscription.solde < dto.montant) {
+        if (inscription.solde < (dto.montant || 0)) {
             throw new AppError('Solde insuffisant', 400, 'INSUFFICIENT_BALANCE');
         }
 
         // Débiter le solde
-        inscription.solde -= dto.montant;
+        inscription.solde -= (dto.montant || 0);
         await this.inscriptionRepo.save(inscription);
 
-        const consommation = this.consommationRepo.create({
+        const consommation: ConsommationCantine = this.consommationRepo.create({
             ...dto,
             inscriptionId: inscription.id,
-            date: new Date(dto.date),
+            date: dto.date ? new Date(dto.date) : new Date(),
             statut: StatutRepas.CONSOMME,
         });
         await this.consommationRepo.save(consommation);

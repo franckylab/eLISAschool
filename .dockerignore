@@ -1,0 +1,62 @@
+# ==================================
+# eLISAschool - Docker Ignore
+# ==================================
+
+# Dépendances
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+shared/node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Environnement
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Documentation
+docs/
+*.md
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Tests
+coverage/
+.nyc_output/
+**/*.test.ts
+**/*.spec.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/data/
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Temporaires
+tmp/
+temp/
+*.tmp
+
+# Backups
+backups/

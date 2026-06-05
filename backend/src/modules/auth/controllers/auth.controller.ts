@@ -36,7 +36,7 @@ const authService = new AuthService();
 /**
  * Helper pour valider les données avec Zod
  */
-function validateBody<T>(schema: any, body: unknown): T {
+function validateBody(schema: any, body: unknown): any {
     const result = schema.safeParse(body);
     if (!result.success) {
         const errors = result.error.errors.map((e: any) => ({

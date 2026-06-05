@@ -1,0 +1,1 @@
+Zod for runtime environment validation (`env.config.ts`), TypeORM with PostgreSQL (`database.config.ts`, `data-source.ts`), Winston for structured logging (`logger.util.ts`), Node.js crypto module for AES-256-GCM encryption (`crypto.util.ts`), qrcode library for QR code generation (`qr.util.ts`).

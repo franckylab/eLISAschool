@@ -1,0 +1,1 @@
+Express.js with TypeScript; TypeORM ORM with PostgreSQL (pg driver); JWT via jsonwebtoken; password hashing via bcryptjs; Zod for schema validation; Winston for logging; in-memory Map-based caching with TTL eviction.

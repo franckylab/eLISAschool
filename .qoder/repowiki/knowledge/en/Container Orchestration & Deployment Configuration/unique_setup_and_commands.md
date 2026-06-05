@@ -1,0 +1,4 @@
+- Start stack: `docker-compose up -d` from the docker/ directory.
+- Stop stack: `docker-compose down`.
+- Backend dev mode runs `npm run dev` with volume-mounted source; frontend dev mode runs `npm run dev -- --host`.
+- Environment variables are injected via .env file (DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, ENCRYPTION_KEY, APP_PORT, FRONTEND_PORT, REDIS_PORT, DB_PORT).

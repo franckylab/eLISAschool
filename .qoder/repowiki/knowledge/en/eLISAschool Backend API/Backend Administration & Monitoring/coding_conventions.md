@@ -1,0 +1,5 @@
+- Controllers define a local `validate<T>(schema, data)` helper that calls `schema.safeParse(data)` and throws `AppError('Erreur de validation', 400, 'VALIDATION_ERROR')` on failure.
+- Every route handler wraps async logic in try/catch blocks that delegate errors to Express via `next(error)`.
+- Services obtain TypeORM repositories in their constructor via `AppDataSource.getRepository(EntityClass)` and store them as private instance fields.
+- All route handlers return a uniform JSON envelope `{ success: true, data: ... }` (or `{ success: true, message: ... }` for mutations without a payload).
+- Module index files use barrel exports (`export * from './entities'`, etc.) to provide a single import entry point for each sub-module.

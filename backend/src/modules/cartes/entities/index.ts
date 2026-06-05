@@ -1,1 +1,1 @@
-export { Carte, TypeCarte, StatutCarte } from './carte.entity';
+export { Carte, Carte as CarteScolaire, TypeCarte, StatutCarte } from './carte.entity';

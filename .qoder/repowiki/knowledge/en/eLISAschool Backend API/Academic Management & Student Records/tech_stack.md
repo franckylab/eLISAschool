@@ -1,0 +1,1 @@
+Zod for runtime request/response validation with schema inference; TypeORM with PostgreSQL for ORM and persistence; Express Router for HTTP routing without NestJS or other meta-framework abstraction.

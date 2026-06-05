@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: shared
+title: Shared Domain Contracts & Validation
+scope:
+    - shared/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_infrastructure
+    - path: backend/backend_auth_core
+    - path: backend/backend_student_life
+    - path: backend/backend_administration
+    - path: backend/backend_academic
+    - path: backend/backend_communications
+    - path: docker
+    - path: backend
