@@ -1,1 +1,0 @@
-Provides the foundational application setup, including Express configuration, database connectivity, environment validation, and shared middleware for multi-tenancy and error handling.

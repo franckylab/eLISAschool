@@ -14,11 +14,22 @@ import { logger } from '@common/utils/logger.util';
 /**
  * Interface utilisateur authentifié
  */
+/**
+ * Utilisateur authentifié (attaché à la requête)
+ */
 export interface UtilisateurAuth {
     id: string;
     email: string;
-    role: string;
+    role: string; // Rôle principal (backward compat)
+    roles?: string[]; // NOUVEAU : tous les rôles
+    permissions?: string[]; // NOUVEAU : permissions résolues
     etablissementId?: string;
+    etablissements?: Array<{
+        etablissementId: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        actif: boolean;
+    }>;
 }
 
 const tokenService = new TokenService();

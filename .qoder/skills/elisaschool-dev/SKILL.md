@@ -494,7 +494,8 @@ Puis mettre à jour le DTO si la FK est requise en entrée, et ajouter la relati
 | `impressions` | `/api/impressions` | Documents | Impression de documents |
 | `scoring` | `/api/scoring` | Système | Calcul de scores et moyennes |
 | `monitoring` | `/api/monitoring` | Système | Monitoring et logs système |
-| `etablissement` | `/api/etablissement` | Académiques | Informations établissement |
+| `audit` | `/api/audit` | Système | **Audit trail complet** (logs, export, archivage) |
+| `etablissement` | `/api/etablissements` | Académiques | Informations établissement |
 | `cycles` | `/api/cycles` | Académiques | Cycles d'enseignement |
 | `niveaux` | `/api/niveaux` | Académiques | Niveaux scolaires |
 | `annees-scolaires` | `/api/annees-scolaires` | Académiques | Années scolaires |
@@ -524,8 +525,433 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 | Erreurs globales | `backend/src/common/filters/error.filter.ts` |
 | Auth middleware | `backend/src/modules/auth/middlewares/auth.middleware.ts` |
 | Rôles et permissions | `shared/src/enums/roles.enum.ts` |
+| **Permission middleware** | `backend/src/modules/auth/middlewares/permission.middleware.ts` |
+| **Permission resolver** | `backend/src/modules/auth/services/permission-resolver.service.ts` |
+| **RBAC module** | `backend/src/modules/rbac/` |
+| **RBAC seed** | `backend/src/database/seeds/rbac.seed.ts` |
 | Types API partagés | `shared/src/types/api.types.ts` |
 | DataSource TypeORM | `backend/src/database/data-source.ts` |
+| **Audit trail (entité)** | `backend/src/modules/auth/entities/audit-log.entity.ts` |
+| **Audit trail (service)** | `backend/src/modules/auth/services/audit.service.ts` |
+| **Audit trail (controller)** | `backend/src/modules/audit/controllers/audit.controller.ts` |
+| **Audit interceptor** | `backend/src/common/interceptors/audit.interceptor.ts` |
+
+---
+
+## Workflow : Instrumenter un module avec l'Audit Trail
+
+### Étape 1 : Ajouter les imports
+
+**Fichier :** `services/<module>.service.ts`
+
+```typescript
+import { Request } from 'express';
+import { auditService, AuditAction } from '@modules/auth';
+```
+
+### Étape 2 : Instrumenter la méthode CREATE
+
+```typescript
+async create(dto: CreateDto, req?: Request): Promise<Entity> {
+    // ... logique métier existante ...
+    const entity = this.repo.create(dto);
+    await this.repo.save(entity);
+    
+    // AUDIT
+    if (req?.utilisateur?.id) {
+        await auditService.log({
+            utilisateurId: req.utilisateur.id,
+            action: AuditAction.ENTITY_CREATE, // Adapter: ELEVE_CREATE, USER_CREATE, etc.
+            cible: 'NomEntité',
+            cibleId: entity.id,
+            description: `Création entité: ${entity.identifiant}`,
+            nouvellesValeurs: dto,
+            module: 'nom-module',
+        }, req);
+    }
+    
+    return entity;
+}
+```
+
+### Étape 3 : Instrumenter la méthode UPDATE
+
+```typescript
+async update(id: string, dto: UpdateDto, req?: Request): Promise<Entity> {
+    const entity = await this.findOne(id);
+    
+    // Capturer les anciennes valeurs
+    const anciennesValeurs = {
+        champ1: entity.champ1,
+        champ2: entity.champ2,
+    };
+    
+    // ... logique de mise à jour ...
+    Object.assign(entity, dto);
+    await this.repo.save(entity);
+    
+    // AUDIT
+    if (req?.utilisateur?.id) {
+        await auditService.log({
+            utilisateurId: req.utilisateur.id,
+            action: AuditAction.ENTITY_UPDATE,
+            cible: 'NomEntité',
+            cibleId: entity.id,
+            description: `Modification entité: ${entity.identifiant}`,
+            anciennesValeurs,
+            nouvellesValeurs: dto,
+            module: 'nom-module',
+        }, req);
+    }
+    
+    return entity;
+}
+```
+
+### Étape 4 : Instrumenter la méthode DELETE
+
+```typescript
+async delete(id: string, req?: Request): Promise<void> {
+    const entity = await this.findOne(id);
+    
+    await this.repo.remove(entity);
+    
+    // AUDIT
+    if (req?.utilisateur?.id) {
+        await auditService.log({
+            utilisateurId: req.utilisateur.id,
+            action: AuditAction.ENTITY_DELETE,
+            cible: 'NomEntité',
+            cibleId: id,
+            description: `Suppression entité: ${entity.identifiant}`,
+            anciennesValeurs: { identifiant: entity.identifiant },
+            module: 'nom-module',
+            severity: 'WARNING' as any,
+        }, req);
+    }
+}
+```
+
+### Étape 5 : Mettre à jour le controller
+
+```typescript
+// AVANT
+router.post('/', authMiddleware, async (req, res, next) => {
+    const entity = await service.create(req.body);
+    res.json({ success: true, data: entity });
+});
+
+// APRÈS (passer req au service)
+router.post('/', authMiddleware, async (req, res, next) => {
+    const entity = await service.create(req.body, req); // ← Ajouter req
+    res.json({ success: true, data: entity });
+});
+```
+
+### Étape alternative : Utiliser l'interceptor automatique
+
+```typescript
+import { createAuditInterceptor } from '@common/interceptors/audit.interceptor';
+
+const auditInterceptor = createAuditInterceptor({
+    module: 'eleves',
+    entityType: 'Eleve',
+});
+
+// Monter l'interceptor avant les routes
+router.post('/', authMiddleware, auditInterceptor, async (req, res, next) => {
+    const entity = await service.create(req.body);
+    res.json({ success: true, data: entity });
+});
+```
+
+### Bonnes pratiques d'audit
+
+1. **Toujours vérifier** `req?.utilisateur?.id` avant de logger
+2. **Passer l'objet `req`** à `auditService.log()` pour capturer IP et User-Agent
+3. **Sanitiser** les données sensibles (automatique pour passwords, tokens)
+4. **Utiliser la bonne sévérité** :
+   - `INFO` : opérations normales (CREATE, UPDATE)
+   - `WARNING` : suppressions, changements sensibles
+   - `CRITICAL` : erreurs de sécurité
+5. **Définir le `module`** correspondant au module métier
+6. **Capturer anciennes ET nouvelles valeurs** pour les UPDATE
+
+### Tester l'audit
+
+```bash
+# Consulter les logs (ADMIN requis)
+curl -H "Authorization: Bearer <token>" http://localhost:3000/api/audit/logs
+
+# Export CSV
+curl -H "Authorization: Bearer <token>" "http://localhost:3000/api/audit/logs/export?format=csv"
+
+# Statistiques
+curl -H "Authorization: Bearer <token>" http://localhost:3000/api/audit/logs/statistics
+```
+
+**Documentation complète** : `backend/docs/audit-trail.md`  
+**Guide d'instrumentation** : `backend/AUDIT-INSTRUMENTATION-GUIDE.md`
+
+---
+
+## Workflow : Utiliser le Système RBAC v2.0
+
+### Présentation du système RBAC
+
+eLISAschool dispose d'un **système RBAC avancé (v2.0)** avec :
+- **~230 permissions** granulaires (format `module:action`)
+- **9 rôles système** configurés
+- **Multi-rôles** par utilisateur (illimité)
+- **Permissions personnalisées** GRANTED/DENIED au niveau utilisateur
+- **Cache intelligent** TTL 5 minutes
+- **API REST complète** (20 endpoints pour gestion RBAC)
+- **Backward compatibility** avec l'ancien système (enum Role)
+
+### Étape 1 : Protéger un endpoint avec requirePermission
+
+**Fichier :** `controllers/<module>.controller.ts`
+
+```typescript
+import { Router, Request, Response, NextFunction } from 'express';
+import { 
+    authMiddleware,
+    requirePermission,           // NOUVEAU : guard par permission
+    requireAnyPermission,        // NOUVEAU : OU logique
+    requireAllPermissions        // NOUVEAU : ET logique
+} from '@modules/auth/middlewares';
+
+const router = Router();
+
+// Toutes les routes nécessitent d'être authentifié
+router.use(authMiddleware);
+
+// ANCIENNE MÉTHODE (toujours valide)
+router.get('/', requireRoles(Role.ADMIN), async (req, res) => {
+    // Accès réservé au rôle ADMIN
+});
+
+// NOUVELLE MÉTHODE (recommandée)
+router.post('/menus', 
+    requirePermission('cantine:menus:create'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const menu = await cantineService.createMenu(req.body);
+            res.status(201).json({ success: true, data: menu });
+        } catch (error) { next(error); }
+    }
+);
+
+// OU logique (au moins UNE permission)
+router.get('/bulletins',
+    requireAnyPermission(['bulletins:view', 'bulletins:edit']),
+    async (req, res) => {
+        // Accès si bulletins:view OU bulletins:edit
+    }
+);
+
+// ET logique (TOUTES les permissions requises)
+router.post('/notes/bulk',
+    requireAllPermissions(['notes:create', 'notes:bulk:create']),
+    async (req, res) => {
+        // Accès si notes:create ET notes:bulk:create
+    }
+);
+```
+
+### Étape 2 : Vérifier une permission dans un service
+
+**Fichier :** `services/<module>.service.ts`
+
+```typescript
+import { checkPermission } from '@modules/auth/middlewares';
+import { AppError } from '@common/filters/error.filter';
+
+export class CantineService {
+    async createMenu(dto: any, utilisateurId: string) {
+        // Vérifier la permission
+        const hasPermission = await checkPermission(
+            utilisateurId,
+            'cantine:menus:create'
+        );
+
+        if (!hasPermission) {
+            throw new AppError('Permission insuffisante', 403, 'INSUFFICIENT_PERMISSIONS');
+        }
+
+        // Créer le menu
+        return this.menuRepo.save(dto);
+    }
+}
+```
+
+### Étape 3 : Créer un rôle personnalisé via API
+
+```bash
+POST /api/rbac/roles
+Authorization: Bearer {token_admin}
+Content-Type: application/json
+
+{
+  "code": "SUPERVISEUR",
+  "libelle": "Superviseur Pédagogique",
+  "description": "Responsable du suivi pédagogique",
+  "permissionIds": ["uuid1", "uuid2", "uuid3"],
+  "etablissementId": "uuid-etablissement"
+}
+```
+
+### Étape 4 : Assigner un rôle à un utilisateur
+
+```bash
+POST /api/rbac/users/{userId}/roles
+Authorization: Bearer {token_admin}
+Content-Type: application/json
+
+{
+  "roleId": "uuid-du-role",
+  "estPrincipal": true,
+  "motif": "Promotion"
+}
+```
+
+### Étape 5 : Ajouter une permission personnalisée (override)
+
+```bash
+POST /api/rbac/users/{userId}/permissions
+Authorization: Bearer {token_admin}
+Content-Type: application/json
+
+{
+  "permissionId": "uuid-permission",
+  "type": "GRANTED",  // ou "DENIED" pour refuser explicitement
+  "motif": "Accès temporaire pour projet spécial"
+}
+```
+
+### Étape 6 : Voir les permissions effectives d'un utilisateur
+
+```bash
+GET /api/rbac/users/{userId}/permissions
+Authorization: Bearer {token_admin}
+
+# Retourne TOUTES les permissions résolues (rôles + customs)
+```
+
+### API RBAC complète (20 endpoints)
+
+#### Rôles (8 endpoints)
+```
+POST   /api/rbac/roles                      # Créer rôle
+GET    /api/rbac/roles                      # Lister rôles
+GET    /api/rbac/roles/stats                # Statistiques
+GET    /api/rbac/roles/:id                  # Détail rôle
+PATCH  /api/rbac/roles/:id                  # Modifier rôle
+DELETE /api/rbac/roles/:id                  # Supprimer rôle
+GET    /api/rbac/roles/systeme              # Rôles système
+PATCH  /api/rbac/roles/:id/permissions      # Assigner permissions
+```
+
+#### Permissions (6 endpoints)
+```
+POST   /api/rbac/permissions                # Créer permission
+GET    /api/rbac/permissions                # Lister permissions
+GET    /api/rbac/permissions/by-module      # Par module
+GET    /api/rbac/permissions/:id            # Détail
+PATCH  /api/rbac/permissions/:id            # Modifier
+DELETE /api/rbac/permissions/:id            # Supprimer
+```
+
+#### User Roles (6 endpoints)
+```
+GET    /api/rbac/users/:userId/roles              # Rôles utilisateur
+POST   /api/rbac/users/:userId/roles              # Assigner rôle
+PATCH  /api/rbac/users/:userId/roles/:roleId      # Modifier rôle
+DELETE /api/rbac/users/:userId/roles/:roleId      # Retirer rôle
+GET    /api/rbac/users/:userId/permissions        # Permissions effectives
+POST   /api/rbac/users/:userId/permissions        # Permission custom
+```
+
+### Permissions par module (exemples)
+
+| Module | Permissions | Exemple |
+|--------|-------------|----------|
+| **Cantine** | `cantine:menus:create`, `cantine:menus:edit`, `cantine:menus:delete`, `cantine:inscriptions:create`, `cantine:solde:recharger`, `cantine:consommations:enregistrer` | 9 permissions |
+| **Transport** | `transport:lignes:create`, `transport:lignes:edit`, `transport:inscriptions:create`, `transport:presences:enregistrer` | 8 permissions |
+| **Élèves** | `eleves:view`, `eleves:create`, `eleves:edit`, `eleves:radiation`, `eleves:reinscription`, `eleves:documents:generate` | 6 permissions |
+| **Notes** | `notes:view`, `notes:create`, `notes:edit`, `notes:bulk:create`, `notes:import`, `notes:export` | 10 permissions |
+| **Bulletins** | `bulletins:view`, `bulletins:generate`, `bulletins:edit`, `bulletins:publier`, `bulletins:export` | 5 permissions |
+| **Utilisateurs** | `utilisateurs:manage`, `utilisateurs:import`, `utilisateurs:export`, `utilisateurs:reset-password`, `utilisateurs:statut:change` | 7 permissions |
+
+### Rôles système et leurs permissions
+
+| Rôle | Code | Permissions | Description |
+|------|------|-------------|-------------|
+| **Super Admin** | `SUPER_ADMIN` | **TOUTES (~230)** | Accès total |
+| **Admin** | `ADMIN` | **~180** | Gestion complète établissement |
+| **Chef Établissement** | `CHEF_ETABLISSEMENT` | **~150** | Direction, validation, rapports |
+| **Enseignant** | `ENSEIGNANT` | **~60** | Notes, bulletins, messagerie |
+| **Parent** | `PARENT` | **~20** | Consultation enfant |
+| **Élève** | `ELEVE` | **~15** | Consultation personnelle |
+| **Personnel Admin** | `PERSONNEL_ADMINISTRATIF` | **~100** | Administratif, inscriptions |
+| **Resp. Cantine** | `RESPONSABLE_CANTINE` | **~30** | Cantine uniquement |
+| **Resp. Transport** | `RESPONSABLE_TRANSPORT` | **~25** | Transport uniquement |
+
+### Migration des utilisateurs existants
+
+```bash
+# Simuler la migration (dry-run)
+DRY_RUN=true npm run migrate:rbac
+
+# Exécuter la migration réelle
+npm run migrate:rbac
+```
+
+Le script va :
+1. ✅ Vérifier l'état actuel de la base
+2. ✅ Migrer les utilisateurs vers le multi-rôles
+3. ✅ Vérifier la cohérence des données
+4. ✅ Générer un rapport détaillé
+
+### Tester le système RBAC
+
+```bash
+# Exécuter les tests
+TEST_USER_ID=uuid-utilisateur npm run test:rbac
+```
+
+Les tests vérifient :
+- ✅ Résolution des permissions
+- ✅ Performance du cache
+- ✅ Permissions spécifiques
+- ✅ Fallback vers ancien système
+- ✅ Multi-rôles
+- ✅ Simulation des guards
+
+### Bonnes pratiques RBAC
+
+1. **Privilégier `requirePermission`** plutôt que `requireRoles` pour plus de granularité
+2. **Utiliser `requireAnyPermission`** pour les lectures (view OU edit)
+3. **Utiliser `requireAllPermissions`** pour les opérations sensibles (create + bulk)
+4. **Invalider le cache** après modification des permissions : `permissionResolverService.invalidateUserCache(userId)`
+5. **Logger les audits** pour traçabilité des changements de permissions
+6. **Tester avec différents rôles** avant déploiement
+7. **Ne pas bypasser** les guards de permission
+8. **Ne pas modifier** les rôles système directement en DB
+
+### Fichiers de référence RBAC
+
+| Fichier | Description |
+|---------|-------------|
+| `docs/rbac-system.md` | Documentation complète (436 lignes) |
+| `docs/permissions-manquantes.md` | Analyse des 145 permissions ajoutées (422 lignes) |
+| `docs/guards-exemples-implémentation.ts` | 10 exemples complets d'implémentation (554 lignes) |
+| `docs/RBAC_COMPLETION.md` | Synthèse du système (416 lignes) |
+| `docs/RBAC_FINAL_SESSION.md` | Résumé de la session (473 lignes) |
+| `backend/src/database/migrations/migrate-rbac.ts` | Script de migration (295 lignes) |
+| `backend/src/database/migrations/test-rbac.ts` | Script de test (400 lignes) |
+| `backend/src/modules/rbac/` | Module RBAC complet |
+| `backend/src/modules/auth/middlewares/permission.middleware.ts` | Middleware unifié (200 lignes) |
 
 ---
 

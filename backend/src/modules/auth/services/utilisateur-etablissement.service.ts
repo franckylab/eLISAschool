@@ -10,7 +10,7 @@
 
 import { Repository, DataSource } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { UtilisateurEtablissement } from '../entities';
+import { UtilisateurEtablissement, RoleLimitationEtablissement } from '../entities';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -27,9 +27,43 @@ export interface AffecterUtilisateurDto {
 
 export class UtilisateurEtablissementService {
     private repo: Repository<UtilisateurEtablissement>;
+    private limitationRepo: Repository<RoleLimitationEtablissement>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(UtilisateurEtablissement);
+        this.limitationRepo = AppDataSource.getRepository(RoleLimitationEtablissement);
+    }
+
+    /**
+     * Récupère la limitation pour un rôle donné
+     * Utilise les valeurs par défaut si non configuré en base
+     */
+    private async getLimitation(role: Role): Promise<RoleLimitationEtablissement> {
+        const limitation = await this.limitationRepo.findOne({ where: { role } });
+        
+        if (limitation) {
+            return limitation;
+        }
+
+        // Valeurs par défaut selon le rôle
+        const defaults: Record<Role, Partial<RoleLimitationEtablissement>> = {
+            [Role.SUPER_ADMIN]: { maxEtablissements: 999, peutChanger: true, necessiteValidation: false },
+            [Role.ADMIN]: { maxEtablissements: 10, peutChanger: true, necessiteValidation: false },
+            [Role.CHEF_ETABLISSEMENT]: { maxEtablissements: 5, peutChanger: true, necessiteValidation: false },
+            [Role.ENSEIGNANT]: { maxEtablissements: 5, peutChanger: true, necessiteValidation: false },
+            [Role.PERSONNEL]: { maxEtablissements: 3, peutChanger: true, necessiteValidation: false },
+            [Role.RESPONSABLE_CANTINE]: { maxEtablissements: 2, peutChanger: true, necessiteValidation: true },
+            [Role.RESPONSABLE_TRANSPORT]: { maxEtablissements: 2, peutChanger: true, necessiteValidation: true },
+            [Role.PARENT]: { maxEtablissements: 10, peutChanger: true, necessiteValidation: false },
+            [Role.ELEVE]: { maxEtablissements: 1, peutChanger: false, necessiteValidation: false },
+        };
+
+        return {
+            role,
+            maxEtablissements: defaults[role].maxEtablissements || 1,
+            peutChanger: defaults[role].peutChanger || false,
+            necessiteValidation: defaults[role].necessiteValidation || false,
+        } as RoleLimitationEtablissement;
     }
 
     /**
@@ -59,6 +93,42 @@ export class UtilisateurEtablissementService {
             existing.dateFin = dto.dateFin ? new Date(dto.dateFin) : undefined;
             existing.motif = dto.motif || existing.motif;
             return await this.repo.save(existing);
+        }
+
+        // VALIDATION MÉTIER : Vérifier les limitations par rôle
+        const limitation = await this.getLimitation(dto.role);
+
+        // Élève : interdiction stricte multi-établissements
+        if (dto.role === Role.ELEVE) {
+            const count = await this.repo.count({
+                where: { utilisateurId: dto.utilisateurId, actif: true }
+            });
+            if (count > 0) {
+                throw new AppError(
+                    'Un élève ne peut être affecté qu\'à un seul établissement',
+                    400,
+                    'ELEVE_MULTI_ETABLISSEMENT_NOT_ALLOWED'
+                );
+            }
+        }
+
+        // Vérifier le nombre maximum d'établissements
+        const currentCount = await this.repo.count({
+            where: { utilisateurId: dto.utilisateurId, actif: true }
+        });
+
+        if (currentCount >= limitation.maxEtablissements) {
+            throw new AppError(
+                `Ce rôle est limité à ${limitation.maxEtablissements} établissement(s) maximum`,
+                400,
+                'MAX_ETABLISSEMENTS_REACHED'
+            );
+        }
+
+        // Vérifier si validation requise
+        if (limitation.necessiteValidation) {
+            logger.warn(`[VALIDATION_REQUISE] Affectation de ${dto.utilisateurId} à ${dto.etablissementId} nécessite validation SUPER_ADMIN`);
+            // TODO: Implémenter workflow de validation (notification SUPER_ADMIN)
         }
 
         // Si c'est l'établissement principal, désactiver les autres

@@ -101,96 +101,201 @@ export class RBACSeedService {
 
         // Nouvelles permissions pour couvrir tous les modules
         const newPermissions = [
-            // Élèves
-            { code: 'eleves:view', libelle: 'Voir les élèves', module: 'eleves', action: 'view' },
-            { code: 'eleves:create', libelle: 'Créer un élève', module: 'eleves', action: 'create' },
-            { code: 'eleves:edit', libelle: 'Modifier un élève', module: 'eleves', action: 'edit' },
-            { code: 'eleves:delete', libelle: 'Supprimer un élève', module: 'eleves', action: 'delete' },
-            { code: 'eleves:import', libelle: 'Importer des élèves', module: 'eleves', action: 'import' },
-            { code: 'eleves:export', libelle: 'Exporter des élèves', module: 'eleves', action: 'export' },
+            // ==================================
+            // PERMISSIONS CRITIQUES (Sécurité & Admin)
+            // ==================================
+            
+            // Établissements
+            { code: 'etablissements:list', libelle: 'Lister tous les établissements', module: 'etablissements', action: 'list' },
+            { code: 'etablissements:create', libelle: 'Créer un établissement', module: 'etablissements', action: 'create' },
+            { code: 'etablissements:desactiver', libelle: 'Désactiver un établissement', module: 'etablissements', action: 'desactiver' },
+            { code: 'etablissements:activer', libelle: 'Activer un établissement', module: 'etablissements', action: 'activer' },
+            { code: 'etablissements:config:view', libelle: 'Voir la configuration', module: 'etablissements', action: 'config:view' },
+            { code: 'etablissements:config:edit', libelle: 'Modifier la configuration', module: 'etablissements', action: 'config:edit' },
 
-            // Enseignants / Personnel
-            { code: 'enseignants:view', libelle: 'Voir les enseignants', module: 'enseignants', action: 'view' },
-            { code: 'enseignants:create', libelle: 'Créer un enseignant', module: 'enseignants', action: 'create' },
-            { code: 'enseignants:edit', libelle: 'Modifier un enseignant', module: 'enseignants', action: 'edit' },
-            { code: 'enseignants:delete', libelle: 'Supprimer un enseignant', module: 'enseignants', action: 'delete' },
-            { code: 'enseignants:assign', libelle: 'Assigner un enseignant', module: 'enseignants', action: 'assign' },
+            // Permissions RBAC
+            { code: 'permissions:view', libelle: 'Voir les permissions', module: 'permissions', action: 'view' },
+            { code: 'permissions:create', libelle: 'Créer une permission', module: 'permissions', action: 'create' },
+            { code: 'permissions:edit', libelle: 'Modifier une permission', module: 'permissions', action: 'edit' },
+            { code: 'permissions:delete', libelle: 'Supprimer une permission', module: 'permissions', action: 'delete' },
 
-            // Classes
-            { code: 'classes:view', libelle: 'Voir les classes', module: 'classes', action: 'view' },
-            { code: 'classes:create', libelle: 'Créer une classe', module: 'classes', action: 'create' },
-            { code: 'classes:edit', libelle: 'Modifier une classe', module: 'classes', action: 'edit' },
-            { code: 'classes:delete', libelle: 'Supprimer une classe', module: 'classes', action: 'delete' },
-
-            // Matières
-            { code: 'matieres:view', libelle: 'Voir les matières', module: 'matieres', action: 'view' },
-            { code: 'matieres:create', libelle: 'Créer une matière', module: 'matieres', action: 'create' },
-            { code: 'matieres:edit', libelle: 'Modifier une matière', module: 'matieres', action: 'edit' },
-            { code: 'matieres:delete', libelle: 'Supprimer une matière', module: 'matieres', action: 'delete' },
-            { code: 'matieres:assign', libelle: 'Assigner une matière', module: 'matieres', action: 'assign' },
-
-            // Années scolaires
-            { code: 'annees:view', libelle: 'Voir les années scolaires', module: 'annees', action: 'view' },
-            { code: 'annees:create', libelle: 'Créer une année scolaire', module: 'annees', action: 'create' },
-            { code: 'annees:edit', libelle: 'Modifier une année scolaire', module: 'annees', action: 'edit' },
-            { code: 'annees:delete', libelle: 'Supprimer une année scolaire', module: 'annees', action: 'delete' },
-            { code: 'annees:activer', libelle: 'Activer une année scolaire', module: 'annees', action: 'activer' },
-
-            // Périodes
-            { code: 'periodes:view', libelle: 'Voir les périodes', module: 'periodes', action: 'view' },
-            { code: 'periodes:create', libelle: 'Créer une période', module: 'periodes', action: 'create' },
-            { code: 'periodes:edit', libelle: 'Modifier une période', module: 'periodes', action: 'edit' },
-            { code: 'periodes:delete', libelle: 'Supprimer une période', module: 'periodes', action: 'delete' },
-            { code: 'periodes:cloturer', libelle: 'Clôturer une période', module: 'periodes', action: 'cloturer' },
-
-            // Cycles
-            { code: 'cycles:view', libelle: 'Voir les cycles', module: 'cycles', action: 'view' },
-            { code: 'cycles:create', libelle: 'Créer un cycle', module: 'cycles', action: 'create' },
-            { code: 'cycles:edit', libelle: 'Modifier un cycle', module: 'cycles', action: 'edit' },
-            { code: 'cycles:delete', libelle: 'Supprimer un cycle', module: 'cycles', action: 'delete' },
-
-            // Niveaux
-            { code: 'niveaux:view', libelle: 'Voir les niveaux', module: 'niveaux', action: 'view' },
-            { code: 'niveaux:create', libelle: 'Créer un niveau', module: 'niveaux', action: 'create' },
-            { code: 'niveaux:edit', libelle: 'Modifier un niveau', module: 'niveaux', action: 'edit' },
-            { code: 'niveaux:delete', libelle: 'Supprimer un niveau', module: 'niveaux', action: 'delete' },
-
-            // Orientation
-            { code: 'orientation:view', libelle: 'Voir l\'orientation', module: 'orientation', action: 'view' },
-            { code: 'orientation:create', libelle: 'Créer un profil d\'orientation', module: 'orientation', action: 'create' },
-            { code: 'orientation:edit', libelle: 'Modifier l\'orientation', module: 'orientation', action: 'edit' },
-            { code: 'orientation:valider', libelle: 'Valider l\'orientation', module: 'orientation', action: 'valider' },
-
-            // Scoring
-            { code: 'scoring:view', libelle: 'Voir le scoring', module: 'scoring', action: 'view' },
-            { code: 'scoring:configurer', libelle: 'Configurer le scoring', module: 'scoring', action: 'configurer' },
-            { code: 'scoring:generer', libelle: 'Générer le scoring', module: 'scoring', action: 'generer' },
+            // Configuration avancée
+            { code: 'configuration:seed', libelle: 'Exécuter les seeds', module: 'configuration', action: 'seed' },
+            { code: 'configuration:licence:activer', libelle: 'Activer une licence', module: 'configuration', action: 'licence:activer' },
 
             // Monitoring
-            { code: 'monitoring:view', libelle: 'Voir le monitoring', module: 'monitoring', action: 'view' },
-            { code: 'monitoring:logs', libelle: 'Voir les logs', module: 'monitoring', action: 'logs' },
-            { code: 'monitoring:export', libelle: 'Exporter les données de monitoring', module: 'monitoring', action: 'export' },
+            { code: 'monitoring:maintenance:toggle', libelle: 'Activer/désactiver maintenance', module: 'monitoring', action: 'maintenance:toggle' },
+            { code: 'monitoring:metrics:view', libelle: 'Voir les métriques', module: 'monitoring', action: 'metrics:view' },
+            { code: 'monitoring:stats:view', libelle: 'Voir les statistiques', module: 'monitoring', action: 'stats:view' },
+            { code: 'monitoring:health:view', libelle: 'Voir l\'état de santé', module: 'monitoring', action: 'health:view' },
 
-            // Établissement
-            { code: 'etablissement:view', libelle: 'Voir l\'établissement', module: 'etablissement', action: 'view' },
-            { code: 'etablissement:edit', libelle: 'Modifier l\'établissement', module: 'etablissement', action: 'edit' },
+            // Utilisateurs avancé
+            { code: 'utilisateurs:manage', libelle: 'Gestion avancée des utilisateurs', module: 'utilisateurs', action: 'manage' },
+            { code: 'utilisateurs:import', libelle: 'Importer des utilisateurs', module: 'utilisateurs', action: 'import' },
+            { code: 'utilisateurs:export', libelle: 'Exporter les utilisateurs', module: 'utilisateurs', action: 'export' },
+            { code: 'utilisateurs:reset-password', libelle: 'Réinitialiser mot de passe', module: 'utilisateurs', action: 'reset-password' },
+            { code: 'utilisateurs:profil:update', libelle: 'Mettre à jour le profil', module: 'utilisateurs', action: 'profil:update' },
+            { code: 'utilisateurs:statut:change', libelle: 'Changer le statut', module: 'utilisateurs', action: 'statut:change' },
+            { code: 'utilisateurs:etablissements:manage', libelle: 'Gérer les établissements', module: 'utilisateurs', action: 'etablissements:manage' },
+
+            // Auth
+            { code: 'auth:sessions:manage', libelle: 'Gérer les sessions', module: 'auth', action: 'sessions:manage' },
+
+            // Années scolaires
+            { code: 'annees:cloturer', libelle: 'Clôturer une année', module: 'annees', action: 'cloturer' },
+            { code: 'annees:dupliquer', libelle: 'Dupliquer une année', module: 'annees', action: 'dupliquer' },
+
+            // ==================================
+            // MODULES MÉTIER PRIORITAIRES
+            // ==================================
+
+            // Élèves
+            { code: 'eleves:radiation', libelle: 'Radier un élève', module: 'eleves', action: 'radiation' },
+            { code: 'eleves:reinscription', libelle: 'Réinscrire un élève', module: 'eleves', action: 'reinscription' },
+            { code: 'eleves:documents:generate', libelle: 'Générer des documents', module: 'eleves', action: 'documents:generate' },
+            { code: 'eleves:historique:view', libelle: 'Voir l\'historique', module: 'eleves', action: 'historique:view' },
+
+            // Bulletins
+            { code: 'bulletins:edit', libelle: 'Modifier un bulletin', module: 'bulletins', action: 'edit' },
+            { code: 'bulletins:publier', libelle: 'Publier un bulletin', module: 'bulletins', action: 'publier' },
+            { code: 'bulletins:export', libelle: 'Exporter les bulletins', module: 'bulletins', action: 'export' },
+
+            // Cantine (granulaire)
+            { code: 'cantine:menus:create', libelle: 'Créer un menu', module: 'cantine', action: 'menus:create' },
+            { code: 'cantine:menus:edit', libelle: 'Modifier un menu', module: 'cantine', action: 'menus:edit' },
+            { code: 'cantine:menus:delete', libelle: 'Supprimer un menu', module: 'cantine', action: 'menus:delete' },
+            { code: 'cantine:inscriptions:create', libelle: 'Inscrire à la cantine', module: 'cantine', action: 'inscriptions:create' },
+            { code: 'cantine:inscriptions:view', libelle: 'Voir les inscriptions', module: 'cantine', action: 'inscriptions:view' },
+            { code: 'cantine:solde:recharger', libelle: 'Recharger le solde', module: 'cantine', action: 'solde:recharger' },
+            { code: 'cantine:consommations:enregistrer', libelle: 'Enregistrer une consommation', module: 'cantine', action: 'consommations:enregistrer' },
+            { code: 'cantine:consommations:view', libelle: 'Voir les consommations', module: 'cantine', action: 'consommations:view' },
+            { code: 'cantine:statistiques:view', libelle: 'Voir les statistiques cantine', module: 'cantine', action: 'statistiques:view' },
+
+            // Cartes
+            { code: 'cartes:create', libelle: 'Créer une carte', module: 'cartes', action: 'create' },
+            { code: 'cartes:edit', libelle: 'Modifier une carte', module: 'cartes', action: 'edit' },
+            { code: 'cartes:desactiver', libelle: 'Désactiver une carte', module: 'cartes', action: 'desactiver' },
+            { code: 'cartes:perte:signaler', libelle: 'Signaler une perte', module: 'cartes', action: 'perte:signaler' },
+            { code: 'cartes:import', libelle: 'Importer des cartes', module: 'cartes', action: 'import' },
+
+            // Classes
+            { code: 'classes:affecter', libelle: 'Affecter un élève', module: 'classes', action: 'affecter' },
+            { code: 'classes:desaffecter', libelle: 'Désaffecter un élève', module: 'classes', action: 'desaffecter' },
+            { code: 'classes:effectifs:view', libelle: 'Voir les effectifs', module: 'classes', action: 'effectifs:view' },
+            { code: 'classes:export', libelle: 'Exporter les classes', module: 'classes', action: 'export' },
+
+            // Clubs
+            { code: 'clubs:create', libelle: 'Créer un club', module: 'clubs', action: 'create' },
+            { code: 'clubs:edit', libelle: 'Modifier un club', module: 'clubs', action: 'edit' },
+            { code: 'clubs:delete', libelle: 'Supprimer un club', module: 'clubs', action: 'delete' },
+            { code: 'clubs:inscriptions:manage', libelle: 'Gérer les inscriptions', module: 'clubs', action: 'inscriptions:manage' },
+            { code: 'clubs:evenements:create', libelle: 'Créer un événement', module: 'clubs', action: 'evenements:create' },
+            { code: 'clubs:evenements:edit', libelle: 'Modifier un événement', module: 'clubs', action: 'evenements:edit' },
+            { code: 'clubs:evenements:delete', libelle: 'Supprimer un événement', module: 'clubs', action: 'evenements:delete' },
+            { code: 'clubs:evenements:view', libelle: 'Voir les événements', module: 'clubs', action: 'evenements:view' },
+
+            // Gamification
+            { code: 'gamification:badges:create', libelle: 'Créer un badge', module: 'gamification', action: 'badges:create' },
+            { code: 'gamification:badges:edit', libelle: 'Modifier un badge', module: 'gamification', action: 'badges:edit' },
+            { code: 'gamification:badges:delete', libelle: 'Supprimer un badge', module: 'gamification', action: 'badges:delete' },
+            { code: 'gamification:points:attribuer', libelle: 'Attribuer des points', module: 'gamification', action: 'points:attribuer' },
+            { code: 'gamification:badges:attribuer', libelle: 'Attribuer un badge', module: 'gamification', action: 'badges:attribuer' },
+            { code: 'gamification:classement:view', libelle: 'Voir le classement', module: 'gamification', action: 'classement:view' },
+            { code: 'gamification:historique:view', libelle: 'Voir l\'historique', module: 'gamification', action: 'historique:view' },
 
             // Impressions
-            { code: 'impressions:view', libelle: 'Voir les impressions', module: 'impressions', action: 'view' },
-            { code: 'impressions:gerer', libelle: 'Gérer les impressions', module: 'impressions', action: 'gerer' },
+            { code: 'impressions:modeles:view', libelle: 'Voir les modèles', module: 'impressions', action: 'modeles:view' },
+            { code: 'impressions:modeles:create', libelle: 'Créer un modèle', module: 'impressions', action: 'modeles:create' },
+            { code: 'impressions:modeles:edit', libelle: 'Modifier un modèle', module: 'impressions', action: 'modeles:edit' },
+            { code: 'impressions:modeles:delete', libelle: 'Supprimer un modèle', module: 'impressions', action: 'modeles:delete' },
+            { code: 'impressions:file:view', libelle: 'Voir les fichiers', module: 'impressions', action: 'file:view' },
+            { code: 'impressions:file:create', libelle: 'Créer un fichier', module: 'impressions', action: 'file:create' },
+            { code: 'impressions:file:generer', libelle: 'Générer un fichier', module: 'impressions', action: 'file:generer' },
+            { code: 'impressions:file:annuler', libelle: 'Annuler une impression', module: 'impressions', action: 'file:annuler' },
+            { code: 'impressions:traiter', libelle: 'Traiter en batch', module: 'impressions', action: 'traiter' },
 
-            // Notifications
-            { code: 'notifications:view', libelle: 'Voir les notifications', module: 'notifications', action: 'view' },
-            { code: 'notifications:envoyer', libelle: 'Envoyer des notifications', module: 'notifications', action: 'envoyer' },
-            { code: 'notifications:configurer', libelle: 'Configurer les notifications', module: 'notifications', action: 'configurer' },
+            // Matériel
+            { code: 'materiel:create', libelle: 'Créer un matériel', module: 'materiel', action: 'create' },
+            { code: 'materiel:edit', libelle: 'Modifier un matériel', module: 'materiel', action: 'edit' },
+            { code: 'materiel:delete', libelle: 'Supprimer un matériel', module: 'materiel', action: 'delete' },
+            { code: 'materiel:prets:view', libelle: 'Voir les prêts', module: 'materiel', action: 'prets:view' },
+            { code: 'materiel:prets:create', libelle: 'Créer un prêt', module: 'materiel', action: 'prets:create' },
+            { code: 'materiel:prets:retour', libelle: 'Enregistrer un retour', module: 'materiel', action: 'prets:retour' },
+            { code: 'materiel:inventaire:manage', libelle: 'Gérer l\'inventaire', module: 'materiel', action: 'inventaire:manage' },
+
+            // Matières
+            { code: 'matieres:groupes:view', libelle: 'Voir les groupes', module: 'matieres', action: 'groupes:view' },
+            { code: 'matieres:groupes:create', libelle: 'Créer un groupe', module: 'matieres', action: 'groupes:create' },
+            { code: 'matieres:programme:view', libelle: 'Voir le programme', module: 'matieres', action: 'programme:view' },
+            { code: 'matieres:programme:create', libelle: 'Créer un programme', module: 'matieres', action: 'programme:create' },
+            { code: 'matieres:programme:edit', libelle: 'Modifier un programme', module: 'matieres', action: 'programme:edit' },
+            { code: 'matieres:affectations:create', libelle: 'Créer une affectation', module: 'matieres', action: 'affectations:create' },
 
             // Messagerie
-            { code: 'messagerie:view', libelle: 'Voir la messagerie', module: 'messagerie', action: 'view' },
-            { code: 'messagerie:envoyer', libelle: 'Envoyer des messages', module: 'messagerie', action: 'envoyer' },
-            { code: 'messagerie:supprimer', libelle: 'Supprimer des messages', module: 'messagerie', action: 'supprimer' },
+            { code: 'messagerie:conversations:create', libelle: 'Créer une conversation', module: 'messagerie', action: 'conversations:create' },
+            { code: 'messagerie:broadcast', libelle: 'Envoyer un broadcast', module: 'messagerie', action: 'broadcast' },
+            { code: 'messagerie:messages:read', libelle: 'Marquer comme lu', module: 'messagerie', action: 'messages:read' },
 
-            // Requêtes (complément)
-            { code: 'requetes:refuser', libelle: 'Refuser une requête', module: 'requetes', action: 'refuser' },
+            // Notes
+            { code: 'notes:bulk:create', libelle: 'Créer des notes en masse', module: 'notes', action: 'bulk:create' },
+            { code: 'notes:import', libelle: 'Importer des notes', module: 'notes', action: 'import' },
+            { code: 'notes:export', libelle: 'Exporter les notes', module: 'notes', action: 'export' },
+            { code: 'notes:statistiques:view', libelle: 'Voir les statistiques', module: 'notes', action: 'statistiques:view' },
+
+            // Notifications
+            { code: 'notifications:create', libelle: 'Créer une notification', module: 'notifications', action: 'create' },
+            { code: 'notifications:bulk:create', libelle: 'Créer en masse', module: 'notifications', action: 'bulk:create' },
+            { code: 'notifications:read', libelle: 'Marquer comme lue', module: 'notifications', action: 'read' },
+            { code: 'notifications:read-all', libelle: 'Marquer tout comme lu', module: 'notifications', action: 'read-all' },
+            { code: 'notifications:delete', libelle: 'Supprimer une notification', module: 'notifications', action: 'delete' },
+            { code: 'notifications:count', libelle: 'Voir le compteur', module: 'notifications', action: 'count' },
+
+            // Orientation
+            { code: 'orientation:profils:view', libelle: 'Voir les profils', module: 'orientation', action: 'profils:view' },
+            { code: 'orientation:profils:create', libelle: 'Créer un profil', module: 'orientation', action: 'profils:create' },
+            { code: 'orientation:profils:edit', libelle: 'Modifier un profil', module: 'orientation', action: 'profils:edit' },
+            { code: 'orientation:suggestions:view', libelle: 'Voir les suggestions', module: 'orientation', action: 'suggestions:view' },
+            { code: 'orientation:fiches:view', libelle: 'Voir les fiches', module: 'orientation', action: 'fiches:view' },
+            { code: 'orientation:fiches:create', libelle: 'Créer une fiche', module: 'orientation', action: 'fiches:create' },
+            { code: 'orientation:rdv:view', libelle: 'Voir les rendez-vous', module: 'orientation', action: 'rdv:view' },
+            { code: 'orientation:rdv:create', libelle: 'Créer un rendez-vous', module: 'orientation', action: 'rdv:create' },
+            { code: 'orientation:rdv:edit', libelle: 'Modifier un rendez-vous', module: 'orientation', action: 'rdv:edit' },
+            { code: 'orientation:rdv:annuler', libelle: 'Annuler un rendez-vous', module: 'orientation', action: 'rdv:annuler' },
+
+            // Périodes
+            { code: 'periodes:types:view', libelle: 'Voir les types', module: 'periodes', action: 'types:view' },
+            { code: 'periodes:types:create', libelle: 'Créer un type', module: 'periodes', action: 'types:create' },
+
+            // Personnel
+            { code: 'personnel:view', libelle: 'Voir le personnel', module: 'personnel', action: 'view' },
+            { code: 'personnel:create', libelle: 'Créer un membre', module: 'personnel', action: 'create' },
+            { code: 'personnel:edit', libelle: 'Modifier un membre', module: 'personnel', action: 'edit' },
+            { code: 'personnel:delete', libelle: 'Supprimer un membre', module: 'personnel', action: 'delete' },
+            { code: 'personnel:types:view', libelle: 'Voir les types', module: 'personnel', action: 'types:view' },
+            { code: 'personnel:types:create', libelle: 'Créer un type', module: 'personnel', action: 'types:create' },
+
+            // Requêtes
+            { code: 'requetes:traiter', libelle: 'Traiter une requête', module: 'requetes', action: 'traiter' },
+            { code: 'requetes:annuler', libelle: 'Annuler une requête', module: 'requetes', action: 'annuler' },
+
+            // Scoring
+            { code: 'scoring:points:attribuer', libelle: 'Attribuer des points', module: 'scoring', action: 'points:attribuer' },
+            { code: 'scoring:rangs:calculer', libelle: 'Calculer les rangs', module: 'scoring', action: 'rangs:calculer' },
+            { code: 'scoring:classement:view', libelle: 'Voir le classement', module: 'scoring', action: 'classement:view' },
+            { code: 'scoring:regles:view', libelle: 'Voir les règles', module: 'scoring', action: 'regles:view' },
+            { code: 'scoring:regles:create', libelle: 'Créer une règle', module: 'scoring', action: 'regles:create' },
+            { code: 'scoring:historique:view', libelle: 'Voir l\'historique', module: 'scoring', action: 'historique:view' },
+            { code: 'scoring:recalculer', libelle: 'Recalculer les scores', module: 'scoring', action: 'recalculer' },
+
+            // Transport
+            { code: 'transport:lignes:view', libelle: 'Voir les lignes', module: 'transport', action: 'lignes:view' },
+            { code: 'transport:lignes:create', libelle: 'Créer une ligne', module: 'transport', action: 'lignes:create' },
+            { code: 'transport:lignes:edit', libelle: 'Modifier une ligne', module: 'transport', action: 'lignes:edit' },
+            { code: 'transport:lignes:delete', libelle: 'Supprimer une ligne', module: 'transport', action: 'lignes:delete' },
+            { code: 'transport:inscriptions:create', libelle: 'Inscrire au transport', module: 'transport', action: 'inscriptions:create' },
+            { code: 'transport:inscriptions:view', libelle: 'Voir les inscriptions', module: 'transport', action: 'inscriptions:view' },
+            { code: 'transport:presences:enregistrer', libelle: 'Enregistrer une présence', module: 'transport', action: 'presences:enregistrer' },
+            { code: 'transport:presences:view', libelle: 'Voir les présences', module: 'transport', action: 'presences:view' },
         ];
 
         // Fusionner avec les permissions existantes (parser les codes)

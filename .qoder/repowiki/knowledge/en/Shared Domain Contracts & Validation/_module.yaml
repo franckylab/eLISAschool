@@ -6,4 +6,6 @@ scope:
 source_files: []
 depends_on: []
 related_to:
-    - path: backend
+    - path: docker
+    - path: backend/core_framework
+    - path: backend/feature_modules

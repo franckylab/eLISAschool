@@ -6,6 +6,7 @@ scope:
     - .env
     - .env.example
     - .gitignore
+    - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
     - README.md
     - docker-compose.dev.yml
     - docker-compose.yml

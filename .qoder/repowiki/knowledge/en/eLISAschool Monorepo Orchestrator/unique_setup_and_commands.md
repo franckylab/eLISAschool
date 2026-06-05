@@ -1,3 +1,3 @@
 - `npm run dev`: Concurrently starts backend and frontend development servers.
-- `npm run docker:dev`: Boots the full stack (DB, Redis, Backend) in development mode using `docker-compose.dev.yml`.
-- `npm run db:migrate` / `npm run db:seed`: Unified database maintenance commands targeting the backend workspace.
+- `npm run docker:dev`: Boots the entire stack (DB, Redis, Backend) in detached mode using the development compose file.
+- `npm run db:migrate` / `npm run db:seed`: Unified entry points for database schema management executed within the backend workspace context.

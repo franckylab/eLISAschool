@@ -137,6 +137,39 @@ export class AuditService {
     }
 
     /**
+     * Méthode générique pour les opérations CRUD
+     * Simplifie l'instrumentation des services
+     */
+    async logCRUD(
+        operation: 'CREATE' | 'UPDATE' | 'DELETE',
+        entityType: string,
+        utilisateurId: string,
+        entityId: string,
+        anciennesValeurs?: Record<string, any>,
+        nouvellesValeurs?: Record<string, any>,
+        req?: Request
+    ): Promise<void> {
+        const actionMap: Record<string, AuditAction> = {
+            'CREATE': AuditAction[`${entityType.toUpperCase()}_CREATE` as keyof typeof AuditAction],
+            'UPDATE': AuditAction[`${entityType.toUpperCase()}_UPDATE` as keyof typeof AuditAction],
+            'DELETE': AuditAction[`${entityType.toUpperCase()}_DELETE` as keyof typeof AuditAction],
+        };
+
+        const action = actionMap[operation] || AuditAction.USER_UPDATE; // Fallback
+        const severity = operation === 'DELETE' ? AuditSeverity.WARNING : AuditSeverity.INFO;
+
+        await this.logEntityChange(
+            action,
+            utilisateurId,
+            entityType,
+            entityId,
+            anciennesValeurs,
+            nouvellesValeurs,
+            req
+        );
+    }
+
+    /**
      * Récupère les logs d'audit avec filtres
      */
     async getLogs(options: {

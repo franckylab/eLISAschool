@@ -53,6 +53,7 @@ import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
 import { monitoringController } from '@modules/monitoring';
 import rbacController from '@modules/rbac';
+import { auditController } from '@modules/audit';
 
 /**
  * Crée et configure l'application Express
@@ -206,6 +207,9 @@ export function createApp(): Application {
     app.use('/api/periodes', periodesController);
     app.use('/api/eleves', elevesController);
     app.use('/api/bulletins', bulletinsController);
+
+    // Module audit (doit être après tenantMiddleware)
+    app.use('/api/audit', auditController);
 
     // ==================================
     // Gestion des erreurs

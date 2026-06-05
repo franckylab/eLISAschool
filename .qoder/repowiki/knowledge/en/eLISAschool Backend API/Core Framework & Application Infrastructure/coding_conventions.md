@@ -1,3 +1,0 @@
-- Global error handling uses a custom `AppError` class with standardized status codes and operational flags, processed by a central `errorHandler` middleware.
-- API responses follow a consistent JSON structure with a `success` boolean, optional `data` payload, and standardized pagination metadata via `api-response.util.ts`.
-- Multi-tenancy is enforced via a dedicated `tenantMiddleware` that extracts the establishment ID from the authenticated user's JWT and attaches it to the request context.

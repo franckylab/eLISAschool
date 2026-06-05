@@ -2,7 +2,7 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-05T18:07:41Z"
+exported_at: "2026-06-05T21:06:41Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -12,6 +12,7 @@ modules:
             - .env
             - .env.example
             - .gitignore
+            - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
             - README.md
             - docker-compose.dev.yml
             - docker-compose.yml
@@ -22,8 +23,8 @@ modules:
         depends_on: []
         related_to: []
     backend:
-        dir_name: eLISAschool Backend API
-        title: eLISAschool Backend API
+        dir_name: eLISAschool Backend Platform
+        title: eLISAschool Backend Platform
         scope:
             - backend/
         source_files: []
@@ -32,7 +33,7 @@ modules:
             - backend/core_framework
         depends_on: []
         related_to:
-            - path: shared
+            - path: docker
     backend/core_framework:
         dir_name: Core Framework & Application Infrastructure
         title: Core Framework & Application Infrastructure
@@ -47,9 +48,10 @@ modules:
         depends_on: []
         related_to:
             - path: backend/feature_modules
+            - path: shared
     backend/feature_modules:
-        dir_name: Authentication, Authorization & Session Management
-        title: Authentication, Authorization & Session Management
+        dir_name: Authentication, Authorization & Feature Modules
+        title: Authentication, Authorization & Feature Modules
         scope:
             - backend/src/modules/
         source_files: []
@@ -57,6 +59,7 @@ modules:
         depends_on: []
         related_to:
             - path: backend/core_framework
+            - path: shared
     docker:
         dir_name: Container Orchestration & Deployment Configuration
         title: Container Orchestration & Deployment Configuration
@@ -65,7 +68,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: shared
     shared:
         dir_name: Shared Domain Contracts & Validation
         title: Shared Domain Contracts & Validation
@@ -75,4 +80,6 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: backend
+            - path: docker
+            - path: backend/core_framework
+            - path: backend/feature_modules

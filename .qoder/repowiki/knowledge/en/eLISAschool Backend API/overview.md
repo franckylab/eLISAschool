@@ -1,1 +1,0 @@
-Orchestrates a multi-tenant school management system by wiring domain-specific feature modules through a shared Express infrastructure with centralized security and data access.

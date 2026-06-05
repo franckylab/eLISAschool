@@ -1,1 +1,0 @@
-All modules share a unified PostgreSQL database via a single TypeORM DataSource and rely on a common Express.js middleware pipeline for security (Helmet, CORS) and rate limiting.

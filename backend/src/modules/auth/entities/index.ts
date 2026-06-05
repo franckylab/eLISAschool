@@ -15,3 +15,4 @@ export { default as Permission } from './permission.entity';
 export { default as UtilisateurRole } from './utilisateur-role.entity';
 export { default as UtilisateurPermission, TypePermission } from './utilisateur-permission.entity';
 export { default as UtilisateurEtablissement } from './utilisateur-etablissement.entity';
+export { default as RoleLimitationEtablissement } from './role-limitation-etablissement.entity';

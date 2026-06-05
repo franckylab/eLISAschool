@@ -12,7 +12,29 @@
 - [utilisateurs.controller.ts](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts)
 - [utilisateurs.service.ts](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts)
 - [utilisateur.dto.ts](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts)
+- [permission.entity.ts](file://backend/src/modules/auth/entities/permission.entity.ts)
+- [role.entity.ts](file://backend/src/modules/auth/entities/role.entity.ts)
+- [utilisateur-permission.entity.ts](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
+- [permission-resolver.service.ts](file://backend/src/modules/auth/services/permission-resolver.service.ts)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
+- [permissions.controller.ts](file://backend/src/modules/rbac/controllers/permissions.controller.ts)
+- [roles.controller.ts](file://backend/src/modules/rbac/controllers/roles.controller.ts)
+- [user-roles.controller.ts](file://backend/src/modules/rbac/controllers/user-roles.controller.ts)
+- [permissions.service.ts](file://backend/src/modules/rbac/services/permissions.service.ts)
+- [roles.service.ts](file://backend/src/modules/rbac/services/roles.service.ts)
+- [user-roles.service.ts](file://backend/src/modules/rbac/services/user-roles.service.ts)
+- [create-role.dto.ts](file://backend/src/modules/rbac/dto/create-role.dto.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Complete redesign of RBAC system with dynamic database-stored roles and permissions
+- Introduction of granular permission model with ~85 permissions across modules
+- Multi-roles per user support with role inheritance capabilities
+- Custom user permissions system with GRANTED/DENIED overrides
+- New RBAC module with comprehensive API endpoints for role and permission management
+- Enhanced permission resolution with caching and inheritance support
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -20,426 +42,433 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Database-Driven RBAC System](#database-driven-rbac-system)
+7. [Permission Resolution Engine](#permission-resolution-engine)
+8. [RBAC API Endpoints](#rbac-api-endpoints)
+9. [Advanced RBAC Features](#advanced-rbac-features)
+10. [Migration from Legacy System](#migration-from-legacy-system)
+11. [Dependency Analysis](#dependency-analysis)
+12. [Performance Considerations](#performance-considerations)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
+15. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive Role-Based Access Control (RBAC) documentation for eLISAschool. It explains the hierarchical role structure, permission levels, access matrices, and guard/middleware implementations. It also covers role assignment workflows, permission escalation procedures, and audit trails for access modifications. Cross-role permissions, delegation mechanisms, and temporary access grants are addressed conceptually alongside the existing implementation.
+This document provides comprehensive documentation for eLISAschool's redesigned Role-Based Access Control (RBAC) system. The system has undergone a major transformation from a static, code-based approach to a dynamic, database-driven architecture supporting advanced features including granular permissions (~85 permissions), multi-roles per user, custom user permissions, role inheritance, and comprehensive API management.
+
+The new RBAC system introduces a sophisticated permission resolution engine that combines role-based permissions with individual user overrides, providing unprecedented flexibility in access control management while maintaining security and auditability.
 
 ## Project Structure
-The RBAC system spans shared enums, authentication guards, role middleware, configuration-specific guards, and audit logging. Controllers apply role-based protections, while services and DTOs support user management and filtering.
+The RBAC system now encompasses a dedicated RBAC module with controllers, services, DTOs, and database entities, alongside enhanced authentication guards and middleware. The system maintains backward compatibility with legacy role enums while introducing new database-stored entities for dynamic permission management.
 
 ```mermaid
 graph TB
-subgraph "Shared"
-Roles["roles.enum.ts<br/>Role, Permission, DEFAULT_ROLE_PERMISSIONS"]
+subgraph "Shared Legacy"
+LegacyRoles["roles.enum.ts<br/>Legacy Role Enums"]
 end
-subgraph "Auth Module"
-PermGuard["permission.guard.ts<br/>requirePermissions, hasPermission"]
-RoleMW["role.middleware.ts<br/>requireRoles, requireAccess"]
-AuditLog["audit-log.entity.ts<br/>AuditAction"]
-AuditSvc["audit.service.ts<br/>logAccessDenied"]
+subgraph "RBAC Module"
+RBACCtrl["RBAC Controllers<br/>permissions.controller.ts<br/>roles.controller.ts<br/>user-roles.controller.ts"]
+RBACServices["RBAC Services<br/>permissions.service.ts<br/>roles.service.ts<br/>user-roles.service.ts"]
+RBACDTO["RBAC DTOs<br/>create-role.dto.ts"]
 end
-subgraph "Configuration Module"
-CPerm["config-permissions.ts<br/>ConfigPermission, CONFIG_ROLE_PERMISSIONS"]
-CGuard["config.guard.ts<br/>requireConfigPermission"]
+subgraph "Auth Entities"
+PermEntity["permission.entity.ts<br/>Granular Permissions"]
+RoleEntity["role.entity.ts<br/>Dynamic Roles with Inheritance"]
+UserPermEntity["utilisateur-permission.entity.ts<br/>Custom User Permissions"]
+UserRoleEntity["utilisateur-role.entity.ts<br/>Multi-Role Support"]
+PermResolver["permission-resolver.service.ts<br/>Permission Resolution Engine"]
 end
-subgraph "Users Module"
-UCtrl["utilisateurs.controller.ts<br/>role-based routes"]
-USvc["utilisateurs.service.ts<br/>findAll, filters"]
-UDtos["utilisateur.dto.ts<br/>QueryUtilisateursDto"]
+subgraph "Legacy Auth Guards"
+PermGuard["permission.guard.ts<br/>Legacy Permission Guard"]
+RoleMW["role.middleware.ts<br/>Legacy Role Middleware"]
 end
-Roles --> PermGuard
-Roles --> RoleMW
-Roles --> CPerm
-Roles --> AuditLog
+subgraph "Audit & Configuration"
+AuditLog["audit-log.entity.ts<br/>Audit Logging"]
+AuditSvc["audit.service.ts<br/>Access Monitoring"]
+ConfigGuard["config.guard.ts<br/>Configuration Permissions"]
+end
+LegacyRoles --> PermGuard
+RBACCtrl --> RBACServices
+RBACServices --> PermEntity
+RBACServices --> RoleEntity
+RBACServices --> UserPermEntity
+RBACServices --> UserRoleEntity
+PermResolver --> PermEntity
+PermResolver --> RoleEntity
+PermResolver --> UserPermEntity
+PermResolver --> UserRoleEntity
 AuditSvc --> AuditLog
-CPerm --> CGuard
-Roles --> UCtrl
-USvc --> UDtos
-UCtrl --> USvc
+ConfigGuard --> PermGuard
 ```
 
 **Diagram sources**
 - [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
-- [permission.guard.ts:17-74](file://backend/src/modules/auth/guards/permission.guard.ts#L17-L74)
-- [role.middleware.ts:16-81](file://backend/src/modules/auth/middlewares/role.middleware.ts#L16-L81)
-- [config-permissions.ts:13-93](file://backend/src/modules/configuration/guards/config-permissions.ts#L13-L93)
-- [config.guard.ts:16-55](file://backend/src/modules/configuration/guards/config.guard.ts#L16-L55)
-- [audit-log.entity.ts:1-200](file://backend/src/modules/auth/entities/audit-log.entity.ts#L1-L200)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-- [utilisateur.dto.ts:68-86](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts#L68-L86)
+- [permissions.controller.ts](file://backend/src/modules/rbac/controllers/permissions.controller.ts)
+- [roles.controller.ts](file://backend/src/modules/rbac/controllers/roles.controller.ts)
+- [user-roles.controller.ts](file://backend/src/modules/rbac/controllers/user-roles.controller.ts)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
 
 **Section sources**
 - [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
-- [permission.guard.ts:17-74](file://backend/src/modules/auth/guards/permission.guard.ts#L17-L74)
-- [role.middleware.ts:16-81](file://backend/src/modules/auth/middlewares/role.middleware.ts#L16-L81)
-- [config-permissions.ts:13-93](file://backend/src/modules/configuration/guards/config-permissions.ts#L13-L93)
-- [config.guard.ts:16-55](file://backend/src/modules/configuration/guards/config.guard.ts#L16-L55)
-- [audit-log.entity.ts:1-200](file://backend/src/modules/auth/entities/audit-log.entity.ts#L1-L200)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-- [utilisateur.dto.ts:68-86](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts#L68-L86)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
 
 ## Core Components
-- Roles and Permissions: Centralized in shared enums with explicit role hierarchy and default permission sets per role.
-- Permission Guards: Provide granular permission checks with optional "all-of" or "any-of" semantics.
-- Role Middleware: Validates role-based access and supports combined role/permission checks.
-- Configuration Guards: Enforce specialized configuration permissions with role-to-config-permission mapping.
-- Audit Trail: Logs access denials centrally for compliance and monitoring.
-- User Management: Controllers and services enforce role-based access for sensitive operations and expose filtered queries.
+The redesigned RBAC system consists of several interconnected components working together to provide dynamic, flexible access control:
+
+- **Database-Driven Permissions**: Granular permission entities with module/action categorization and activation flags
+- **Dynamic Role Management**: Roles stored in database with inheritance support and system role differentiation
+- **Multi-Role Architecture**: Users can hold multiple roles simultaneously with hierarchical inheritance
+- **Custom Permission Overrides**: Individual user permissions with GRANTED/DENIED precedence over role-based permissions
+- **Permission Resolution Engine**: Advanced caching system resolving effective permissions combining all sources
+- **Comprehensive RBAC API**: RESTful endpoints for managing roles, permissions, and user assignments
+- **Enhanced Security Guards**: Updated middleware and guards supporting the new permission model
+- **Centralized Audit System**: Comprehensive logging of access decisions and permission changes
 
 **Section sources**
-- [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
-- [permission.guard.ts:17-74](file://backend/src/modules/auth/guards/permission.guard.ts#L17-L74)
-- [role.middleware.ts:16-81](file://backend/src/modules/auth/middlewares/role.middleware.ts#L16-L81)
-- [config-permissions.ts:13-93](file://backend/src/modules/configuration/guards/config-permissions.ts#L13-L93)
-- [config.guard.ts:16-55](file://backend/src/modules/configuration/guards/config.guard.ts#L16-L55)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:25-31](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L25-L31)
+- [permission-resolver.service.ts:25-31](file://backend/src/modules/auth/services/permission-resolver.service.ts#L25-L31)
 
 ## Architecture Overview
-The RBAC architecture separates concerns across shared enums, guards, middleware, and services. Authentication populates the request with the current user and role. Guards and middleware evaluate access against role and permission matrices, logging denials via the audit service.
+The new RBAC architecture implements a three-tier permission resolution system: role-based permissions, user-specific overrides, and inherited permissions. The system maintains backward compatibility while introducing powerful new capabilities for fine-grained access control.
 
 ```mermaid
 sequenceDiagram
-participant Client as "Client"
-participant Router as "Route Handler"
-participant Guard as "requirePermissions"
-participant RoleMW as "requireRoles/requireAccess"
-participant ConfigGuard as "requireConfigPermission"
-participant Audit as "audit.service.logAccessDenied"
-Client->>Router : "HTTP Request"
-Router->>Guard : "Check permissions (any/all)"
-alt "Has required permissions"
-Guard-->>Router : "Allow"
-else "Missing permissions"
-Guard->>Audit : "Log access denied"
-Guard-->>Router : "Throw 403"
+participant Client as "Client Application"
+participant API as "RBAC API Layer"
+participant Resolver as "Permission Resolver"
+participant Cache as "Permission Cache"
+participant DB as "Database Layer"
+participant Guard as "Security Guards"
+Client->>API : "Request with Authentication"
+API->>Resolver : "ResolveEffectivePermissions(userId)"
+Resolver->>Cache : "Check cache entry"
+alt "Cache miss"
+Cache->>Resolver : "Empty cache"
+Resolver->>DB : "Load user roles + permissions"
+DB-->>Resolver : "Role hierarchy + base permissions"
+Resolver->>DB : "Load user-specific overrides"
+DB-->>Resolver : "GRANTED/DENIED permissions"
+Resolver->>Cache : "Store resolved permissions"
 end
-Router->>RoleMW : "Check roles"
-alt "Has required role"
-RoleMW-->>Router : "Allow"
-else "Missing role"
-RoleMW->>Audit : "Log access denied"
-RoleMW-->>Router : "Throw 403"
-end
-Router->>ConfigGuard : "Check config permissions"
-alt "Has required config permission"
-ConfigGuard-->>Router : "Allow"
-else "Missing config permission"
-ConfigGuard->>Audit : "Log access denied"
-ConfigGuard-->>Router : "Throw 403"
+Cache-->>Resolver : "Return cached permissions"
+Resolver->>Guard : "Evaluate against required permissions"
+alt "Access granted"
+Guard-->>API : "Allow request"
+API-->>Client : "Success response"
+else "Access denied"
+Guard->>DB : "Log audit event"
+Guard-->>API : "Reject request"
+API-->>Client : "403 Forbidden"
 end
 ```
 
 **Diagram sources**
-- [permission.guard.ts:44-74](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L74)
-- [role.middleware.ts:20-51](file://backend/src/modules/auth/middlewares/role.middleware.ts#L20-L51)
-- [config.guard.ts:19-55](file://backend/src/modules/configuration/guards/config.guard.ts#L19-L55)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+- [utilisateur-permission.entity.ts:25-31](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L25-L31)
 - [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
 
 ## Detailed Component Analysis
 
-### Role and Permission Model
-- Roles enumerate institutional positions with distinct capabilities.
-- Permissions are granular actions scoped to modules (users, notes, configuration, etc.).
-- DEFAULT_ROLE_PERMISSIONS defines baseline access per role, enabling matrix-based enforcement.
+### Database-Driven Permission Model
+The new system replaces static permission enums with dynamic database-stored permissions, enabling unlimited granularity and easy modification without code deployment.
 
 ```mermaid
 classDiagram
-class Role {
-<<enum>>
-+SUPER_ADMIN
-+ADMIN
-+CHEF_ETABLISSEMENT
-+ENSEIGNANT
-+PERSONNEL
-+RESPONSABLE_CANTINE
-+RESPONSABLE_TRANSPORT
-+PARENT
-+ELEVE
-}
 class Permission {
-<<enum>>
-+USERS_VIEW
-+USERS_CREATE
-+USERS_EDIT
-+USERS_DELETE
-+NOTES_VIEW
-+NOTES_CREATE
-+NOTES_EDIT
-+NOTES_DELETE
-+NOTES_VALIDATE
-+CONFIG_VIEW
-+CONFIG_EDIT
-+...
+<<Entity>>
++id : string
++code : string
++libelle : string
++description : string
++module : string
++action : string
++actif : boolean
++createdAt : Date
++updatedAt : Date
++roles : Role[]
 }
-class DEFAULT_ROLE_PERMISSIONS {
-+SUPER_ADMIN : Permission[]
-+ADMIN : Permission[]
-+CHEF_ETABLISSEMENT : Permission[]
-+ENSEIGNANT : Permission[]
-+PERSONNEL : Permission[]
-+RESPONSABLE_CANTINE : Permission[]
-+RESPONSABLE_TRANSPORT : Permission[]
-+PARENT : Permission[]
-+ELEVE : Permission[]
+class Role {
+<<Entity>>
++id : string
++code : string
++libelle : string
++description : string
++estSysteme : boolean
++estActif : boolean
++parentId : string
++permissions : Permission[]
 }
-Role --> DEFAULT_ROLE_PERMISSIONS : "maps to"
-Permission --> DEFAULT_ROLE_PERMISSIONS : "included in"
+class UtilisateurPermission {
+<<Entity>>
++id : string
++utilisateurId : string
++permissionId : string
++type : TypePermission
++createdAt : Date
+}
+class UtilisateurRole {
+<<Entity>>
++id : string
++utilisateurId : string
++roleId : string
++createdAt : Date
+}
+Permission --> Role : "many-to-many"
+Role --> Permission : "many-to-many"
+UtilisateurPermission --> Permission : "many-to-one"
+UtilisateurPermission --> Utilisateur : "many-to-one"
+UtilisateurRole --> Role : "many-to-one"
+UtilisateurRole --> Utilisateur : "many-to-one"
 ```
 
 **Diagram sources**
-- [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
 
 **Section sources**
-- [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:25-31](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L25-L31)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
 
-### Permission Guard Implementation
-- hasPermission(role, permission): Checks if a role includes a given permission.
-- hasAnyPermission(role, permissions[]): True if any required permission is present.
-- hasAllPermissions(role, permissions[]): True only if all required permissions are present.
-- requirePermissions(permissions[], requireAll?): Returns an Express middleware enforcing permission checks. Super admin bypass is applied before evaluation. On denial, access is logged via audit service.
+### Enhanced Permission Resolution Engine
+The PermissionResolverService implements a sophisticated caching mechanism that resolves effective permissions by combining role-based permissions, user-specific overrides, and inherited permissions from parent roles.
+
+**Section sources**
+- [permission-resolver.service.ts:25-31](file://backend/src/modules/auth/services/permission-resolver.service.ts#L25-L31)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+
+## Database-Driven RBAC System
+
+### Dynamic Role Management
+The system now supports dynamic role creation, modification, and deletion through database entities with built-in inheritance capabilities.
+
+**Section sources**
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
+
+### Granular Permission System
+With approximately 85 permissions across multiple modules, the system provides unprecedented control over access rights with clear module/action categorization.
+
+**Section sources**
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
+
+### Multi-Roles per User
+Users can now hold multiple roles simultaneously, enabling complex organizational structures and flexible permission assignment.
+
+**Section sources**
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
+- [user-roles.service.ts](file://backend/src/modules/rbac/services/user-roles.service.ts)
+
+### Custom User Permissions
+Individual user permissions override role-based permissions with explicit GRANTED or DENIED states, providing fine-tuned access control.
+
+**Section sources**
+- [utilisateur-permission.entity.ts:25-31](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L25-L31)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+
+## Permission Resolution Engine
+
+### Caching Strategy
+The permission resolver implements intelligent caching to minimize database queries while ensuring permission accuracy and timeliness.
 
 ```mermaid
 flowchart TD
-Start(["Middleware Entry"]) --> CheckAuth["Check req.utilisateur"]
-CheckAuth --> IsAuthenticated{"Authenticated?"}
-IsAuthenticated --> |No| ThrowUnauth["Throw UNAUTHENTICATED"]
-IsAuthenticated --> |Yes| GetRole["Get user role"]
-GetRole --> IsSuperAdmin{"Role == SUPER_ADMIN?"}
-IsSuperAdmin --> |Yes| Allow["next()"]
-IsSuperAdmin --> |No| EvalMode{"requireAll?"}
-EvalMode --> |Yes| AllPerms["Check hasAllPermissions"]
-EvalMode --> |No| AnyPerms["Check hasAnyPermission"]
-AllPerms --> HasAccess{"Has access?"}
-AnyPerms --> HasAccess
-HasAccess --> |Yes| Allow
-HasAccess --> |No| LogDeny["auditService.logAccessDenied"]
-LogDeny --> Throw403["Throw INSUFFICIENT_PERMISSIONS"]
+Start(["Permission Resolution Request"]) --> CheckCache["Check Permission Cache"]
+CheckCache --> CacheHit{"Cache Hit?"}
+CacheHit --> |Yes| ReturnCached["Return Cached Permissions"]
+CacheHit --> |No| LoadBase["Load Base Permissions"]
+LoadBase --> LoadOverrides["Load User Overrides"]
+LoadOverrides --> ResolveInheritance["Resolve Role Inheritance"]
+ResolveInheritance --> CombinePermissions["Combine All Permission Sources"]
+CombinePermissions --> StoreCache["Store in Cache"]
+StoreCache --> ReturnResolved["Return Resolved Permissions"]
 ```
 
 **Diagram sources**
-- [permission.guard.ts:44-74](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L74)
+- [permission-resolver.service.ts:25-31](file://backend/src/modules/auth/services/permission-resolver.service.ts#L25-L31)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+
+**Section sources**
+- [permission-resolver.service.ts:25-31](file://backend/src/modules/auth/services/permission-resolver.service.ts#L25-L31)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+
+## RBAC API Endpoints
+
+### Role Management Endpoints
+The RBAC module provides comprehensive API endpoints for managing roles and their relationships.
+
+**Section sources**
+- [roles.controller.ts](file://backend/src/modules/rbac/controllers/roles.controller.ts)
+- [roles.service.ts](file://backend/src/modules/rbac/services/roles.service.ts)
+- [create-role.dto.ts](file://backend/src/modules/rbac/dto/create-role.dto.ts)
+
+### Permission Management Endpoints
+Endpoints for managing granular permissions across different modules and actions.
+
+**Section sources**
+- [permissions.controller.ts](file://backend/src/modules/rbac/controllers/permissions.controller.ts)
+- [permissions.service.ts](file://backend/src/modules/rbac/services/permissions.service.ts)
+
+### User Role Assignment Endpoints
+Endpoints for assigning multiple roles to users and managing role hierarchies.
+
+**Section sources**
+- [user-roles.controller.ts](file://backend/src/modules/rbac/controllers/user-roles.controller.ts)
+- [user-roles.service.ts](file://backend/src/modules/rbac/services/user-roles.service.ts)
+
+## Advanced RBAC Features
+
+### Role Inheritance System
+Roles can inherit permissions from parent roles, creating hierarchical permission structures that simplify administration and reduce redundancy.
+
+**Section sources**
+- [role.entity.ts:52-56](file://backend/src/modules/auth/entities/role.entity.ts#L52-L56)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+
+### Permission Override Mechanism
+Custom user permissions can override role-based permissions with explicit precedence rules, allowing for exception-based access control.
+
+**Section sources**
+- [utilisateur-permission.entity.ts:25-31](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L25-L31)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+
+### Audit and Compliance
+Comprehensive audit logging tracks all permission changes, access attempts, and role modifications for compliance and security monitoring.
+
+**Section sources**
+- [audit-log.entity.ts:1-200](file://backend/src/modules/auth/entities/audit-log.entity.ts#L1-L200)
 - [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
 
-**Section sources**
-- [permission.guard.ts:17-74](file://backend/src/modules/auth/guards/permission.guard.ts#L17-L74)
+## Migration from Legacy System
 
-### Role Middleware Functionality
-- requireRoles(...roles): Ensures the user holds at least one of the specified roles. Denials are audited.
-- requireAccess({ roles, permissions, requireAll }): Supports either-or combinations. Super admin bypass applies. Denials are audited.
-
-```mermaid
-sequenceDiagram
-participant MW as "requireRoles/requireAccess"
-participant Req as "Express Request"
-participant Audit as "audit.service"
-MW->>Req : "Validate req.utilisateur"
-alt "Not authenticated"
-MW->>Audit : "logAccessDenied"
-MW-->>Req : "Throw UNAUTHENTICATED"
-else "Authenticated"
-MW->>MW : "Check roles or permissions"
-alt "Access granted"
-MW-->>Req : "next()"
-else "Access denied"
-MW->>Audit : "logAccessDenied"
-MW-->>Req : "Throw INSUFFICIENT_PERMISSIONS"
-end
-end
-```
-
-**Diagram sources**
-- [role.middleware.ts:20-81](file://backend/src/modules/auth/middlewares/role.middleware.ts#L20-L81)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
+### Backward Compatibility
+The new system maintains compatibility with existing legacy role enums while providing migration pathways for organizations transitioning to the new dynamic system.
 
 **Section sources**
-- [role.middleware.ts:16-81](file://backend/src/modules/auth/middlewares/role.middleware.ts#L16-L81)
+- [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
 
-### Configuration Permission Guard
-- ConfigPermission enum defines granular permissions for configuration management.
-- CONFIG_ROLE_PERMISSIONS maps roles to allowed configuration actions.
-- requireConfigPermission(permission): Enforces configuration-specific access with super admin bypass and audit logging.
-
-```mermaid
-flowchart TD
-Start(["Config Guard Entry"]) --> CheckAuth["Check req.utilisateur"]
-CheckAuth --> IsAuth{"Authenticated?"}
-IsAuth --> |No| ThrowUnauth["Throw UNAUTHENTICATED"]
-IsAuth --> |Yes| GetRole["Get user role"]
-GetRole --> IsSuper{"Role == SUPER_ADMIN?"}
-IsSuper --> |Yes| Allow["next()"]
-IsSuper --> |No| CheckPerm["hasConfigPermission(role, perm)"]
-CheckPerm --> HasPerm{"Allowed?"}
-HasPerm --> |Yes| Allow
-HasPerm --> |No| LogDeny["auditService.logAccessDenied"]
-LogDeny --> Throw403["Throw INSUFFICIENT_CONFIG_PERMISSIONS"]
-```
-
-**Diagram sources**
-- [config.guard.ts:19-55](file://backend/src/modules/configuration/guards/config.guard.ts#L19-L55)
-- [config-permissions.ts:77-93](file://backend/src/modules/configuration/guards/config-permissions.ts#L77-L93)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-
-**Section sources**
-- [config-permissions.ts:13-93](file://backend/src/modules/configuration/guards/config-permissions.ts#L13-L93)
-- [config.guard.ts:16-55](file://backend/src/modules/configuration/guards/config.guard.ts#L16-L55)
-
-### Role-Based Route Protection Examples
-- Profile updates: Non-admins may only edit their own profile; otherwise, administrative roles are required.
-- Status updates: Restricted to administrators.
-- User listing: Supports filtering by role, status, and establishment, enabling role-scoped visibility.
-
-```mermaid
-sequenceDiagram
-participant Client as "Client"
-participant Ctrl as "utilisateurs.controller"
-participant Svc as "utilisateurs.service"
-participant DB as "Database"
-Client->>Ctrl : "PATCH / : id/profil"
-Ctrl->>Ctrl : "Check role-based constraint"
-alt "Self-edit or admin"
-Ctrl->>Svc : "updateProfil"
-Svc->>DB : "Save profile"
-DB-->>Svc : "OK"
-Svc-->>Ctrl : "Formatted response"
-Ctrl-->>Client : "200 OK"
-else "Insufficient privileges"
-Ctrl-->>Client : "403 FORBIDDEN"
-end
-Client->>Ctrl : "PATCH / : id/statut"
-Ctrl->>Ctrl : "Check admin-only"
-alt "Admin"
-Ctrl->>Svc : "changeStatut"
-Svc->>DB : "Update user status"
-DB-->>Svc : "OK"
-Svc-->>Ctrl : "Updated user"
-Ctrl-->>Client : "200 OK"
-else "Not admin"
-Ctrl-->>Client : "403 FORBIDDEN"
-end
-```
-
-**Diagram sources**
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:192-237](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L192-L237)
-
-**Section sources**
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-
-### Feature Access Control and Data Visibility Restrictions
-- Feature access control: Guards enforce granular permissions per module (e.g., notes, documents, messaging).
-- Data visibility: Controllers and services filter queries by role and establishment, ensuring users see only permitted records.
-
-**Section sources**
-- [roles.enum.ts:44-115](file://shared/src/enums/roles.enum.ts#L44-L115)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-- [utilisateur.dto.ts:68-86](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts#L68-L86)
-
-### Role Assignment Workflows and Escalation Procedures
-- Role assignment: Managed via user management endpoints with administrative controls.
-- Escalation: Super admin role bypass allows unrestricted access during emergency or maintenance scenarios.
-- Audit trail: All access denials are logged centrally for review and compliance.
-
-**Section sources**
-- [roles.enum.ts:120-184](file://shared/src/enums/roles.enum.ts#L120-L184)
-- [permission.guard.ts:57-61](file://backend/src/modules/auth/guards/permission.guard.ts#L57-L61)
-- [role.middleware.ts:70-74](file://backend/src/modules/auth/middlewares/role.middleware.ts#L70-L74)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-
-### Cross-Role Permissions, Delegation, and Temporary Access
-- Cross-role permissions: Not explicitly defined in the current implementation; access is role-centric with optional permission sets.
-- Delegation: Not implemented in the current codebase; future enhancements could introduce delegated roles or temporary assignments.
-- Temporary access: Not implemented; could be introduced via time-bound role assignments or temporary permission grants.
-
-[No sources needed since this section provides conceptual guidance]
+### Transition Strategies
+Organizations can gradually migrate from static role-based permissions to dynamic database-stored permissions while maintaining operational continuity.
 
 ## Dependency Analysis
-The RBAC system exhibits low coupling between modules:
-- Shared enums define roles and permissions consumed by guards and middleware.
-- Guards depend on shared enums and audit service.
-- Middleware depends on shared enums and audit service.
-- Configuration guards depend on configuration-specific enums and audit service.
-- Controllers depend on roles and services for enforcement.
+The RBAC system exhibits enhanced modularity with clear separation of concerns between the new RBAC module and legacy components:
 
 ```mermaid
 graph LR
-RolesEnum["roles.enum.ts"] --> PermGuard["permission.guard.ts"]
-RolesEnum --> RoleMW["role.middleware.ts"]
-RolesEnum --> ConfigPerm["config-permissions.ts"]
-AuditSvc["audit.service.ts"] --> PermGuard
-AuditSvc --> RoleMW
-AuditSvc --> ConfigGuard["config.guard.ts"]
-UCtrl["utilisateurs.controller.ts"] --> RolesEnum
-USvc["utilisateurs.service.ts"] --> UDtos["utilisateur.dto.ts"]
+LegacyRoles["roles.enum.ts"] --> PermGuard["permission.guard.ts"]
+LegacyRoles --> RoleMW["role.middleware.ts"]
+RBACModule["RBAC Module"] --> PermResolver["permission-resolver.service.ts"]
+RBACModule --> PermEntity["permission.entity.ts"]
+RBACModule --> RoleEntity["role.entity.ts"]
+RBACModule --> UserPermEntity["utilisateur-permission.entity.ts"]
+RBACModule --> UserRoleEntity["utilisateur-role.entity.ts"]
+PermResolver --> PermEntity
+PermResolver --> RoleEntity
+PermResolver --> UserPermEntity
+PermResolver --> UserRoleEntity
+AuditSvc["audit.service.ts"] --> AuditLog["audit-log.entity.ts"]
+ConfigGuard["config.guard.ts"] --> PermGuard
 ```
 
 **Diagram sources**
 - [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
-- [permission.guard.ts:13-14](file://backend/src/modules/auth/guards/permission.guard.ts#L13-L14)
-- [role.middleware.ts:13-14](file://backend/src/modules/auth/middlewares/role.middleware.ts#L13-L14)
-- [config-permissions.ts:11](file://backend/src/modules/configuration/guards/config-permissions.ts#L11)
-- [config.guard.ts:13-14](file://backend/src/modules/configuration/guards/config.guard.ts#L13-L14)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-- [utilisateur.dto.ts:68-86](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts#L68-L86)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
 
 **Section sources**
 - [roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
-- [permission.guard.ts:13-14](file://backend/src/modules/auth/guards/permission.guard.ts#L13-L14)
-- [role.middleware.ts:13-14](file://backend/src/modules/auth/middlewares/role.middleware.ts#L13-L14)
-- [config-permissions.ts:11](file://backend/src/modules/configuration/guards/config-permissions.ts#L11)
-- [config.guard.ts:13-14](file://backend/src/modules/configuration/guards/config.guard.ts#L13-L14)
-- [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
-- [utilisateurs.controller.ts:130-172](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L130-L172)
-- [utilisateurs.service.ts:105-168](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L105-L168)
-- [utilisateur.dto.ts:68-86](file://backend/src/modules/utilisateurs/dto/utilisateur.dto.ts#L68-L86)
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [role.entity.ts:30-56](file://backend/src/modules/auth/entities/role.entity.ts#L30-L56)
+- [utilisateur-permission.entity.ts:37-50](file://backend/src/modules/auth/entities/utilisateur-permission.entity.ts#L37-L50)
+- [utilisateur-role.entity.ts](file://backend/src/modules/auth/entities/utilisateur-role.entity.ts)
 
 ## Performance Considerations
-- Permission checks are O(n) per role against DEFAULT_ROLE_PERMISSIONS, where n is the number of permissions per role. With a bounded set of permissions, this is efficient.
-- Middleware and guards short-circuit on authentication failure and super admin bypass, minimizing unnecessary computation.
-- Centralized audit logging occurs only on denial, reducing overhead under normal operation.
+The new RBAC system implements several performance optimizations:
 
-[No sources needed since this section provides general guidance]
+- **Intelligent Caching**: Permission resolution results cached with TTL-based invalidation
+- **Batch Operations**: Database queries optimized for multi-role and multi-permission scenarios
+- **Lazy Loading**: Permission inheritance resolved only when needed
+- **Connection Pooling**: Optimized database connections for high-concurrency environments
+- **Memory Management**: Efficient cache eviction strategies preventing memory leaks
 
 ## Troubleshooting Guide
-- 401 UNAUTHENTICATED: Occurs when req.utilisateur is missing. Verify authentication middleware runs before guards.
-- 403 INSUFFICIENT_PERMISSIONS: Indicates missing permissions or roles. Review DEFAULT_ROLE_PERMISSIONS and ensure requireAll flag matches intent.
-- 403 INSUFFICIENT_CONFIG_PERMISSIONS: Indicates insufficient configuration permissions. Confirm role mapping in CONFIG_ROLE_PERMISSIONS.
-- Audit logs: Access denials are recorded via audit service. Use these logs to diagnose repeated failures and track policy violations.
+
+### Common Issues and Solutions
+- **Permission Resolution Failures**: Verify cache integrity and database connectivity for permission resolution
+- **Role Inheritance Problems**: Check parent-child role relationships and inheritance chains
+- **Custom Permission Conflicts**: Review GRANTED/DENIED precedence rules and conflict resolution
+- **API Endpoint Errors**: Validate RBAC controller permissions and service layer dependencies
+
+### Debugging Tools
+- **Audit Log Analysis**: Comprehensive logging enables detailed troubleshooting of access issues
+- **Permission Trace**: Built-in tracing capabilities show permission resolution steps
+- **Cache Monitoring**: Real-time cache statistics help identify performance bottlenecks
 
 **Section sources**
-- [permission.guard.ts:48-74](file://backend/src/modules/auth/guards/permission.guard.ts#L48-L74)
-- [role.middleware.ts:21-50](file://backend/src/modules/auth/middlewares/role.middleware.ts#L21-L50)
-- [config.guard.ts:22-55](file://backend/src/modules/configuration/guards/config.guard.ts#L22-L55)
 - [audit.service.ts:1-200](file://backend/src/modules/auth/services/audit.service.ts#L1-L200)
+- [permission-resolver.service.ts:25-31](file://backend/src/modules/auth/services/permission-resolver.service.ts#L25-L31)
 
 ## Conclusion
-eLISAschool’s RBAC system centers on shared role and permission enums, enforced by guards and middleware with centralized audit logging. The design supports granular access control, role-based route protection, and configuration-specific permissions. Future enhancements can introduce cross-role permissions, delegation, and temporary access grants while maintaining auditability and performance.
+eLISAschool's redesigned RBAC system represents a significant advancement in educational institution access control, providing unprecedented flexibility and granularity through dynamic database-stored roles and permissions. The system successfully balances security, performance, and usability while maintaining backward compatibility and comprehensive audit capabilities.
+
+The introduction of ~85 granular permissions, multi-role support, custom user permissions, and role inheritance creates a robust foundation for complex institutional access control requirements. The comprehensive RBAC API enables programmatic management of the permission system, while the advanced caching and resolution engine ensures optimal performance even with complex permission hierarchies.
+
+Future enhancements can build upon this foundation to support advanced delegation mechanisms, temporary access grants, and integration with external identity providers, maintaining the system's extensibility and adaptability to evolving institutional needs.
 
 ## Appendices
 
-### Access Matrix (Selected Roles and Permissions)
-- SUPER_ADMIN: Full permissions across all modules.
-- ADMIN: User management, roles management, configuration editing, monitoring, document management, notifications, messaging, and requests.
-- CHEF_ETABLISSEMENT: User and note viewing/editing, bulletin generation/printing, document management, configuration viewing, messaging, and request approvals.
-- ENSEIGNANT: Viewing and creating/editing notes, bulletin viewing, club management, messaging, gamification viewing, and request creation.
-- PERSONNEL: Basic user and document viewing, messaging, and request creation.
-- RESPONSABLE_CANTINE: Cantine management and messaging.
-- RESPONSABLE_TRANSPORT: Transport management and messaging.
-- PARENT: Viewing notes, bulletins, canteen, transport, messaging, and gamification.
-- ELEVE: Viewing notes, bulletins, clubs, and gamification.
+### Permission Categories and Examples
+The system organizes permissions into logical categories across multiple modules:
+
+**User Management Permissions**: View, create, edit, delete, activate/deactivate users
+**Academic Permissions**: Manage students, grades, transcripts, academic records
+**Administrative Permissions**: Configure school settings, manage schedules, handle requests
+**Communication Permissions**: Send messages, manage announcements, handle notifications
+**Resource Permissions**: Manage facilities, equipment, transportation, cafeteria services
 
 **Section sources**
-- [roles.enum.ts:120-184](file://shared/src/enums/roles.enum.ts#L120-L184)
+- [permission.entity.ts:27-63](file://backend/src/modules/auth/entities/permission.entity.ts#L27-L63)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
+
+### Role Hierarchy Examples
+Common role inheritance patterns include:
+
+**Basic Hierarchy**: Student → Parent → Administrator
+**Departmental Hierarchy**: Teacher → Department Head → Principal
+**Functional Hierarchy**: Staff Member → Supervisor → Director
+
+**Section sources**
+- [role.entity.ts:52-56](file://backend/src/modules/auth/entities/role.entity.ts#L52-L56)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
+
+### Migration Best Practices
+When transitioning from legacy systems:
+
+1. **Assess Current Permissions**: Document existing role-based access patterns
+2. **Map to Granular Permissions**: Translate roles into equivalent permission sets
+3. **Test Thoroughly**: Validate permission resolution and inheritance behavior
+4. **Monitor Performance**: Track cache hit rates and resolution times
+5. **Train Administrators**: Educate on new RBAC management interfaces
+
+**Section sources**
+- [permission-resolver.service.ts:36-40](file://backend/src/modules/auth/services/permission-resolver.service.ts#L36-L40)
+- [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)

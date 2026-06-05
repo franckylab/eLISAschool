@@ -1,0 +1,8 @@
+- Entry Point: `backend/src/index.ts` bootstraps the application by initializing the TypeORM `AppDataSource` and starting the Express server created by `createApp()` in `backend/src/app.ts`.
+- Application Layer: `app.ts` configures security (Helmet, CORS, Rate Limiting), parsing, and mounts module-specific routes. It enforces a global `tenantMiddleware` for multi-tenancy after public routes.
+- Common Utilities: The `common/` directory exports shared infrastructure components:
+  - `filters/`: Global error handling (`error.filter.ts`) and 404 handling.
+  - `middlewares/`: `tenant.middleware.ts` injects `etablissementId` into requests based on JWT claims and user roles.
+  - `utils/`: Standardized API response builders (`api-response.util.ts`), logging, and validation helpers.
+- Configuration: `config/` uses Zod (`env.config.ts`) for strict environment variable validation and provides TypeORM connection settings (`database.config.ts`).
+- Database: `database/` manages the TypeORM `DataSource` instance, migrations, and seeding scripts.

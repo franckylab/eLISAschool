@@ -1,1 +1,0 @@
-Handles user authentication, JWT-based session management, role-based access control, and security auditing for the eLISAschool platform.

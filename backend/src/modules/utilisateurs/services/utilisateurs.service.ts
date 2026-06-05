@@ -7,6 +7,7 @@
  */
 
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
+import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '@modules/auth/entities';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
  * Interface de résultat paginé
@@ -48,7 +50,7 @@ export class UtilisateursService {
     /**
      * Créer un nouvel utilisateur
      */
-    async create(createDto: CreateUtilisateurDto): Promise<UtilisateurResponseDto> {
+    async create(createDto: CreateUtilisateurDto, req?: Request): Promise<UtilisateurResponseDto> {
         // Vérifier l'unicité de l'email
         const existant = await this.utilisateurRepository.findOne({
             where: { email: createDto.email.toLowerCase() },
@@ -93,6 +95,19 @@ export class UtilisateursService {
         });
 
         await this.profilRepository.save(profil);
+
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.USER_CREATE,
+                cible: 'Utilisateur',
+                cibleId: utilisateur.id,
+                description: `Création utilisateur: ${utilisateur.email} (${utilisateur.matricule})`,
+                nouvellesValeurs: { email: utilisateur.email, role: utilisateur.role, matricule: utilisateur.matricule },
+                module: 'utilisateurs',
+            }, req);
+        }
 
         logger.info(`Utilisateur créé: ${utilisateur.email} (${utilisateur.matricule})`);
 
@@ -189,7 +204,7 @@ export class UtilisateursService {
     /**
      * Mettre à jour un utilisateur
      */
-    async update(id: string, updateDto: UpdateUtilisateurDto): Promise<UtilisateurResponseDto> {
+    async update(id: string, updateDto: UpdateUtilisateurDto, req?: Request): Promise<UtilisateurResponseDto> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id },
         });
@@ -197,6 +212,12 @@ export class UtilisateursService {
         if (!utilisateur) {
             throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
         }
+
+        const anciennesValeurs = {
+            email: utilisateur.email,
+            role: utilisateur.role,
+            statut: utilisateur.statut,
+        };
 
         // Vérifier l'unicité de l'email si modifié
         if (updateDto.email && updateDto.email !== utilisateur.email) {
@@ -226,6 +247,20 @@ export class UtilisateursService {
         }
 
         await this.utilisateurRepository.save(utilisateur);
+
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.USER_UPDATE,
+                cible: 'Utilisateur',
+                cibleId: utilisateur.id,
+                description: `Modification utilisateur: ${utilisateur.email}`,
+                anciennesValeurs,
+                nouvellesValeurs: updateDto,
+                module: 'utilisateurs',
+            }, req);
+        }
 
         const profil = await this.profilRepository.findOne({
             where: { utilisateurId: id },

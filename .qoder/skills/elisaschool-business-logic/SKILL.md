@@ -29,7 +29,13 @@ ETABLISSEMENT (racine — enums partagés : SousSysteme, TypeEtablissement, Cycl
 │   ├── Utilisateur (identité numérique)
 │   ├── ProfilUtilisateur
 │   ├── RefreshToken
-│   └── AuditLog
+│   └── AuditLog (système d'audit trail complet)
+│
+├── AUDIT (consultation & gestion) ─── API REST + archivage + statistiques
+│   ├── AuditController (/api/audit/*)
+│   ├── AuditArchivageService (archivage 30/365 jours)
+│   ├── AuditInterceptor (capture automatique CRUD)
+│   └── Migration 003 (audit_logs_archive)
 │
 ├── CONFIGURATION (hub central) ──── 46+ paramètres, cache TTL 5min, EventEmitter
 │   ├── ConfigurationApp (singleton — nom, logo, thème, licence)
@@ -174,6 +180,116 @@ login(email, password)
 - `requireAccess(permission)` : vérification rôle OU permission + bypass SUPER_ADMIN
 - Presets middleware : `adminOnly`, `managerOnly`, `staffOnly`, `teacherOnly`
 - Permissions config : 18 permissions granulaires pour le module Configuration
+
+### Audit Trail (Système de traçabilité complet)
+
+**Architecture** :
+```
+AuditLog (entité dans auth)
+├── 80+ actions définies dans AuditAction enum
+├── 3 niveaux de sévérité : INFO, WARNING, CRITICAL
+├── Capture : utilisateur, action, cible, IP, user agent, valeurs avant/après
+└── Double journalisation : DB + Winston logs
+
+AuditService (méthodes)
+├── log() — Méthode générique
+├── logLogin() — Connexions réussies/échouées
+├── logPasswordChange() — Changements mot de passe
+├── logEntityChange() — Modifications entités (avec sanitization)
+├── logAccessDenied() — Accès refusés
+├── logCRUD() — Helper générique pour CREATE/UPDATE/DELETE
+└── getLogs() — Récupération avec filtres
+
+AuditController (API REST /api/audit/*)
+├── GET /logs — Liste paginée avec filtres (ADMIN)
+├── GET /logs/:id — Détail d'un log (ADMIN)
+├── GET /logs/me — Mes logs personnels (tous utilisateurs)
+├── GET /logs/export — Export CSV/JSON (ADMIN)
+└── GET /logs/statistics — Statistiques complètes (ADMIN)
+
+AuditArchivageService
+├── archiveOldLogs(30 jours) — Archive les anciens logs
+├── purgeArchivedLogs(365 jours) — Purge les archives
+└── getStatistics() — Statistiques agrégées
+
+AuditInterceptor (automatique)
+├── createAuditInterceptor() — Configuration flexible
+├── genericAuditMiddleware() — Usage simple
+└── Capture automatique POST/PUT/PATCH/DELETE
+```
+
+**Actions d'audit disponibles** (80+) :
+
+- **Auth** : LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, PASSWORD_RESET
+- **Utilisateurs** : USER_CREATE/UPDATE/DELETE, SUSPEND, ACTIVATE, ROLE_CHANGE
+- **Élèves** : ELEVE_CREATE/UPDATE/DELETE, INSCRIPTION
+- **Académique** : CYCLE, NIVEAU, CLASSE, MATIERE, PERIODE, ANNEE_SCOLAIRE (CRUD + ACTIVATE)
+- **Bulletins** : BULLETIN_GENERATE, BULLETIN_UPDATE
+- **Cantine** : MENU_CREATE/UPDATE/DELETE, INSCRIPTION_CANTINE, SOLDE_RECHARGE, CONSOMMATION
+- **Transport** : LIGNE_CREATE/UPDATE/DELETE, INSCRIPTION_TRANSPORT, PRESENCE
+- **Cartes** : CARTE_CREATE/UPDATE, DESACTIVER, RENOUVELER, PERTE
+- **Matériel** : MATERIEL_CREATE/UPDATE/DELETE, ASSIGN, RETURN
+- **Messages** : MESSAGE_SEND, DELETE, MARK_READ
+- **Clubs** : CLUB_CREATE/UPDATE/DELETE, JOIN, LEAVE
+- **Gamification** : BADGE_AWARD, SCORE_UPDATE
+- **Orientation** : ORIENTATION_CREATE/UPDATE/VALIDATE
+- **Requêtes** : REQUETE_CREATE/EXECUTE/DELETE
+- **RBAC** : ROLE_CREATE/UPDATE/DELETE/ASSIGN/REVOKE, PERMISSION_CREATE/UPDATE/DELETE
+- **Config** : CONFIG_UPDATE, MODULE_ACTIVATE/DEACTIVATE
+- **Sécurité** : ACCESS_DENIED, PERMISSION_CHANGE, DATA_EXPORT/IMPORT/DELETE_BULK
+- **Documents** : DOCUMENT_CREATE/DELETE/PRINT/GENERATE
+- **Notes** : NOTE_CREATE/UPDATE/DELETE/VALIDATE
+
+**Modules instrumentés** (exemples) :
+- ✅ Auth (login, password, access denied)
+- ✅ Élèves (create, update, delete)
+- ✅ Utilisateurs (create, update, delete, suspend/activate)
+- ✅ Notes (create, update)
+- ✅ Configuration (via historique dédié)
+
+**Comment instrumenter un module** :
+```typescript
+// 1. Imports
+import { Request } from 'express';
+import { auditService, AuditAction } from '@modules/auth';
+
+// 2. Dans la méthode CREATE
+async create(dto: CreateDto, req?: Request): Promise<Entity> {
+    const entity = await this.repo.save(dto);
+    
+    if (req?.utilisateur?.id) {
+        await auditService.log({
+            utilisateurId: req.utilisateur.id,
+            action: AuditAction.ELEVE_CREATE,
+            cible: 'Eleve',
+            cibleId: entity.id,
+            description: `Création élève: ${entity.matricule}`,
+            nouvellesValeurs: dto,
+            module: 'eleves',
+        }, req);
+    }
+    
+    return entity;
+}
+
+// 3. Dans le controller, passer req
+router.post('/', authMiddleware, async (req, res) => {
+    const entity = await service.create(req.body, req); // ← Ajouter req
+    res.json({ success: true, data: entity });
+});
+```
+
+**Archivage automatique** :
+- Logs < 30 jours : table `audit_logs` (accès rapide)
+- Logs 30-365 jours : table `audit_logs_archive` (accès modéré)
+- Logs > 365 jours : export + suppression (configurable)
+- Migration SQL : `003-audit-logs-archive.sql`
+- Fonctions PostgreSQL : `archive_old_audit_logs()`, `purge_old_audit_archives()`
+
+**Documentation** :
+- Guide complet : `backend/docs/audit-trail.md`
+- Guide d'instrumentation : `backend/AUDIT-INSTRUMENTATION-GUIDE.md`
+- Récapitulatif : `IMPLEMENTATION-AUDIT-TRAIL.md`
 
 ---
 
@@ -541,6 +657,12 @@ async maNouvelleOperation(id: string, dto: MonDto): Promise<Entity> {
 | Scoring pondéré | `backend/src/modules/scoring/services/scoring.service.ts` | — |
 | Gamification | `backend/src/modules/gamification/services/gamification.service.ts` | — |
 | Orientation (suggestions) | `backend/src/modules/orientation/services/orientation.service.ts` | 171 |
+| **Audit trail (entité)** | `backend/src/modules/auth/entities/audit-log.entity.ts` | 139 |
+| **Audit trail (service)** | `backend/src/modules/auth/services/audit.service.ts` | 230 |
+| **Audit trail (controller)** | `backend/src/modules/audit/controllers/audit.controller.ts` | 300 |
+| **Audit archivage** | `backend/src/modules/audit/services/archivage.service.ts` | 149 |
+| **Audit interceptor** | `backend/src/common/interceptors/audit.interceptor.ts` | 175 |
+| **Migration archivage** | `backend/src/database/migrations/003-audit-logs-archive.sql` | 129 |
 | Enums partagés | `shared/src/enums/roles.enum.ts`, `statuts.enum.ts`, `modules.enum.ts` | — |
 | Types API | `shared/src/types/api.types.ts` | — |
 | Registre modules | `shared/src/config/config.registry.ts` | — |

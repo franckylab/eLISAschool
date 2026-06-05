@@ -8,21 +8,27 @@
 
 /**
  * Rôles disponibles dans l'application
+ * Version 2.0 - Système éducatif camerounais et sous-régional
+ * Total : 67 rôles
  */
 export enum Role {
+    // ==================================
+    // RÔLES EXISTANTS (conservés)
+    // ==================================
+    
     /** Super administrateur - accès total */
     SUPER_ADMIN = 'SUPER_ADMIN',
 
     /** Administrateur de l'établissement */
     ADMIN = 'ADMIN',
 
-    /** Chef d'établissement */
+    /** Chef d'établissement (générique) */
     CHEF_ETABLISSEMENT = 'CHEF_ETABLISSEMENT',
 
-    /** Enseignant */
+    /** Enseignant (générique) */
     ENSEIGNANT = 'ENSEIGNANT',
 
-    /** Personnel non-enseignant (secrétaire, etc.) */
+    /** Personnel non-enseignant (générique) */
     PERSONNEL = 'PERSONNEL',
 
     /** Responsable cantine */
@@ -36,88 +42,542 @@ export enum Role {
 
     /** Élève */
     ELEVE = 'ELEVE',
+
+    // ==================================
+    // ADMINISTRATION NATIONALE/RÉGIONALE (7 rôles)
+    // ==================================
+    
+    /** Ministre de l'Éducation / Responsable politique */
+    MINISTRE = 'MINISTRE',
+    
+    /** Secrétaire Général du Ministère */
+    SECRETAIRE_GENERAL = 'SECRETAIRE_GENERAL',
+    
+    /** Inspecteur Général de l'Éducation */
+    INSPECTEUR_GENERAL = 'INSPECTEUR_GENERAL',
+    
+    /** Délégué/Directeur Régional de l'Éducation */
+    DIRECTEUR_REGIONAL = 'DIRECTEUR_REGIONAL',
+    
+    /** Délégué Départemental / Inspecteur départemental */
+    DELEGUE_DEPARTEMENTAL = 'DELEGUE_DEPARTEMENTAL',
+    
+    /** Inspecteur Pédagogique / IA-IPR */
+    INSPECTEUR_PEDAGOGIQUE = 'INSPECTEUR_PEDAGOGIQUE',
+    
+    /** Inspecteur National (spécifique pays) */
+    INSPECTEUR_NATIONAL = 'INSPECTEUR_NATIONAL',
+
+    // ==================================
+    // DIRECTION D'ÉTABLISSEMENT (6 rôles)
+    // ==================================
+    
+    /** Chef d'établissement secondaire (lycée) */
+    PROVISEUR = 'PROVISEUR',
+    
+    /** Chef d'établissement collège */
+    PRINCIPAL = 'PRINCIPAL',
+    
+    /** Chef d'école primaire */
+    DIRECTEUR = 'DIRECTEUR',
+    
+    /** Responsable discipline & organisation (lycée) */
+    CENSEUR = 'CENSEUR',
+    
+    /** Chef d'établissement adjoint */
+    DIRECTEUR_ADJOINT = 'DIRECTEUR_ADJOINT',
+    
+    /** Conseiller pédagogique interne */
+    RESPONSABLE_PEDAGOGIQUE = 'RESPONSABLE_PEDAGOGIQUE',
+
+    // ==================================
+    // ENSEIGNANTS (10 rôles)
+    // ==================================
+    
+    /** Enseignant secondaire certifié */
+    PROFESSEUR_CERTIFIE = 'PROFESSEUR_CERTIFIE',
+    
+    /** Enseignant lycée (agrégé) */
+    PROFESSEUR_AGREGE = 'PROFESSEUR_AGREGE',
+    
+    /** Enseignant primaire */
+    INSTITUTEUR = 'INSTITUTEUR',
+    
+    /** Enseignant contractuel / vacataire */
+    MAITRE_AUXILIAIRE = 'MAITRE_AUXILIAIRE',
+    
+    /** Enseignant enseignement technique/professionnel */
+    PROFESSEUR_TECHNIQUE = 'PROFESSEUR_TECHNIQUE',
+    
+    /** Enseignant maternelle */
+    EDUCATEUR_MATERNELLE = 'EDUCATEUR_MATERNELLE',
+    
+    /** Professeur principal (responsable classe) */
+    PROFESSEUR_PRINCIPAL = 'PROFESSEUR_PRINCIPAL',
+    
+    /** Coordinateur matière/département */
+    COORDINATEUR_DISCIPLINE = 'COORDINATEUR_DISCIPLINE',
+    
+    /** Enseignant éducation spécialisée (handicap) */
+    PROFESSEUR_SPECIAL = 'PROFESSEUR_SPECIAL',
+    
+    /** Professeur langues étrangères */
+    PROFESSEUR_LANGUES = 'PROFESSEUR_LANGUES',
+
+    // ==================================
+    // ORIENTATION & CONSEIL (4 rôles)
+    // ==================================
+    
+    /** Conseiller orientation scolaire */
+    CONSEILLER_ORIENTEUR = 'CONSEILLER_ORIENTEUR',
+    
+    /** Psychologue de l'éducation */
+    PSYCHOLOGUE_SCOLAIRE = 'PSYCHOLOGUE_SCOLAIRE',
+    
+    /** Assistant social scolaire */
+    ASSISTANT_SOCIAL = 'ASSISTANT_SOCIAL',
+    
+    /** Médecin de l'Éducation nationale */
+    MEDECIN_SCOLAIRE = 'MEDECIN_SCOLAIRE',
+
+    // ==================================
+    // PERSONNEL ADMINISTRATIF (7 rôles)
+    // ==================================
+    
+    /** Secrétaire de direction */
+    SECRETAIRE_DIRECTION = 'SECRETAIRE_DIRECTION',
+    
+    /** Agent comptable de l'établissement */
+    COMPTABLE = 'COMPTABLE',
+    
+    /** Gestionnaire matériel/logistique */
+    GESTIONNAIRE = 'GESTIONNAIRE',
+    
+    /** Responsable bibliothèque */
+    BIBLIOTHECAIRE = 'BIBLIOTHECAIRE',
+    
+    /** Responsable documentation */
+    DOCUMENTALISTE = 'DOCUMENTALISTE',
+    
+    /** Responsable archives */
+    ARCHIVISTE = 'ARCHIVISTE',
+    
+    /** Agent d'accueil */
+    ACCUEIL_STANDARD = 'ACCUEIL_STANDARD',
+
+    // ==================================
+    // PERSONNEL TECHNIQUE (5 rôles)
+    // ==================================
+    
+    /** Technicien laboratoire (sciences) */
+    TECHNICIEN_LABO = 'TECHNICIEN_LABO',
+    
+    /** Technicien informatique */
+    TECHNICIEN_INFO = 'TECHNICIEN_INFO',
+    
+    /** Conseiller TIC pédagogique */
+    CONSEILLER_TIC = 'CONSEILLER_TIC',
+    
+    /** Assistant pédagogique */
+    AIDE_EDUCATEUR = 'AIDE_EDUCATEUR',
+    
+    /** Animateur TICE */
+    ANIMATEUR_TICE = 'ANIMATEUR_TICE',
+
+    // ==================================
+    // SURVEILLANCE & INTERNAT (4 rôles)
+    // ==================================
+    
+    /** Responsable surveillance */
+    SURVEILLANT_GENERAL = 'SURVEILLANT_GENERAL',
+    
+    /** Maître d'internat / surveillant */
+    SURVEILLANT = 'SURVEILLANT',
+    
+    /** Responsable internat */
+    MAITRE_INTERNAT = 'MAITRE_INTERNAT',
+    
+    /** Conseiller Principal d'Éducation (CPE) */
+    CONSEILLER_VIE_SCOLAIRE = 'CONSEILLER_VIE_SCOLAIRE',
+
+    // ==================================
+    // SANTÉ & BIEN-ÊTRE (3 rôles)
+    // ==================================
+    
+    /** Infirmier de l'établissement */
+    INFIRMIER_SCOLAIRE = 'INFIRMIER_SCOLAIRE',
+    
+    /** Nutritionniste (cantine) */
+    NUTRITIONNISTE = 'NUTRITIONNISTE',
+    
+    /** Kinésithérapeute scolaire */
+    KINESITHERAPEUTE = 'KINESITHERAPEUTE',
+
+    // ==================================
+    // CANTINE & LOGISTIQUE (2 rôles supplémentaires)
+    // ==================================
+    
+    /** Personnel cuisine */
+    CUISINIER = 'CUISINIER',
+    
+    /** Chauffeur bus scolaire */
+    CHAUFFEUR = 'CHAUFFEUR',
+    
+    /** Personnel de maintenance */
+    AGENT_ENTRETIEN = 'AGENT_ENTRETIEN',
+
+    // ==================================
+    // CLUBS & ACTIVITÉS (3 rôles)
+    // ==================================
+    
+    /** Coordinateur activités parascolaires */
+    COORDINATEUR_CLUBS = 'COORDINATEUR_CLUBS',
+    
+    /** Coach sport */
+    ENTRAINEUR_SPORTIF = 'ENTRAINEUR_SPORTIF',
+    
+    /** Animateur culturel */
+    ANIMATEUR_CULTUREL = 'ANIMATEUR_CULTUREL',
+
+    // ==================================
+    // SPÉCIALISÉ (5 rôles)
+    // ==================================
+    
+    /** Responsable examens nationaux */
+    COORDINATEUR_EXAMEN = 'COORDINATEUR_EXAMEN',
+    
+    /** Gestionnaire bourses */
+    RESPONSABLE_BOURSES = 'RESPONSABLE_BOURSES',
+    
+    /** Audit interne (MINEDUC) */
+    AUDITEUR_INTERNE = 'AUDITEUR_INTERNE',
+    
+    /** Statisticien éducation */
+    STATISTICIEN = 'STATISTICIEN',
+    
+    /** Communication institutionnelle */
+    CHARGE_COMMUNICATION = 'CHARGE_COMMUNICATION',
 }
 
 /**
- * Permissions granulaires
+ * Permissions granulaires - Version 2.0
+ * ~230 permissions au total
  */
 export enum Permission {
-    // Utilisateurs
+    // ==================================
+    // UTILISATEURS & AUTH
+    // ==================================
     USERS_VIEW = 'users:view',
     USERS_CREATE = 'users:create',
     USERS_EDIT = 'users:edit',
     USERS_DELETE = 'users:delete',
+    UTILISATEURS_MANAGE = 'utilisateurs:manage',
+    UTILISATEURS_IMPORT = 'utilisateurs:import',
+    UTILISATEURS_EXPORT = 'utilisateurs:export',
+    UTILISATEURS_RESET_PASSWORD = 'utilisateurs:reset-password',
+    UTILISATEURS_PROFIL_UPDATE = 'utilisateurs:profil:update',
+    UTILISATEURS_STATUT_CHANGE = 'utilisateurs:statut:change',
+    UTILISATEURS_ETABLISSEMENTS_MANAGE = 'utilisateurs:etablissements:manage',
 
-    // Rôles
+    // Rôles & Permissions
     ROLES_VIEW = 'roles:view',
     ROLES_MANAGE = 'roles:manage',
+    PERMISSIONS_VIEW = 'permissions:view',
+    PERMISSIONS_CREATE = 'permissions:create',
+    PERMISSIONS_EDIT = 'permissions:edit',
+    PERMISSIONS_DELETE = 'permissions:delete',
 
-    // Notes
+    // Auth
+    AUTH_SESSIONS_MANAGE = 'auth:sessions:manage',
+
+    // ==================================
+    // NOTES & BULLETINS
+    // ==================================
     NOTES_VIEW = 'notes:view',
     NOTES_CREATE = 'notes:create',
     NOTES_EDIT = 'notes:edit',
     NOTES_DELETE = 'notes:delete',
     NOTES_VALIDATE = 'notes:validate',
+    NOTES_BULK_CREATE = 'notes:bulk:create',
+    NOTES_IMPORT = 'notes:import',
+    NOTES_EXPORT = 'notes:export',
+    NOTES_STATISTIQUES_VIEW = 'notes:statistiques:view',
 
-    // Bulletins
     BULLETINS_VIEW = 'bulletins:view',
     BULLETINS_GENERATE = 'bulletins:generate',
     BULLETINS_PRINT = 'bulletins:print',
+    BULLETINS_EDIT = 'bulletins:edit',
+    BULLETINS_PUBLIER = 'bulletins:publier',
+    BULLETINS_EXPORT = 'bulletins:export',
 
-    // Cantine
+    // ==================================
+    // ÉLÈVES & PERSONNEL
+    // ==================================
+    ELEVES_VIEW = 'eleves:view',
+    ELEVES_CREATE = 'eleves:create',
+    ELEVES_EDIT = 'eleves:edit',
+    ELEVES_DELETE = 'eleves:delete',
+    ELEVES_IMPORT = 'eleves:import',
+    ELEVES_EXPORT = 'eleves:export',
+    ELEVES_RADIATION = 'eleves:radiation',
+    ELEVES_REINSCRIPTION = 'eleves:reinscription',
+    ELEVES_DOCUMENTS_GENERATE = 'eleves:documents:generate',
+    ELEVES_HISTORIQUE_VIEW = 'eleves:historique:view',
+
+    ENSEIGNANTS_VIEW = 'enseignants:view',
+    ENSEIGNANTS_CREATE = 'enseignants:create',
+    ENSEIGNANTS_EDIT = 'enseignants:edit',
+    ENSEIGNANTS_DELETE = 'enseignants:delete',
+    ENSEIGNANTS_ASSIGN = 'enseignants:assign',
+
+    PERSONNEL_VIEW = 'personnel:view',
+    PERSONNEL_CREATE = 'personnel:create',
+    PERSONNEL_EDIT = 'personnel:edit',
+    PERSONNEL_DELETE = 'personnel:delete',
+    PERSONNEL_TYPES_VIEW = 'personnel:types:view',
+    PERSONNEL_TYPES_CREATE = 'personnel:types:create',
+
+    // ==================================
+    // CLASSES & MATIÈRES
+    // ==================================
+    CLASSES_VIEW = 'classes:view',
+    CLASSES_CREATE = 'classes:create',
+    CLASSES_EDIT = 'classes:edit',
+    CLASSES_DELETE = 'classes:delete',
+    CLASSES_AFFECTER = 'classes:affecter',
+    CLASSES_DESAFFECTER = 'classes:desaffecter',
+    CLASSES_EFFECTIFS_VIEW = 'classes:effectifs:view',
+    CLASSES_EXPORT = 'classes:export',
+
+    MATIERES_VIEW = 'matieres:view',
+    MATIERES_CREATE = 'matieres:create',
+    MATIERES_EDIT = 'matieres:edit',
+    MATIERES_DELETE = 'matieres:delete',
+    MATIERES_ASSIGN = 'matieres:assign',
+    MATIERES_GROUPES_VIEW = 'matieres:groupes:view',
+    MATIERES_GROUPES_CREATE = 'matieres:groupes:create',
+    MATIERES_PROGRAMME_VIEW = 'matieres:programme:view',
+    MATIERES_PROGRAMME_CREATE = 'matieres:programme:create',
+    MATIERES_PROGRAMME_EDIT = 'matieres:programme:edit',
+    MATIERES_AFFECTATIONS_CREATE = 'matieres:affectations:create',
+
+    // ==================================
+    // STRUCTURE ACADÉMIQUE
+    // ==================================
+    ANNEES_VIEW = 'annees:view',
+    ANNEES_CREATE = 'annees:create',
+    ANNEES_EDIT = 'annees:edit',
+    ANNEES_DELETE = 'annees:delete',
+    ANNEES_ACTIVER = 'annees:activer',
+    ANNEES_CLOTURER = 'annees:cloturer',
+    ANNEES_DUPLIQUER = 'annees:dupliquer',
+
+    PERIODES_VIEW = 'periodes:view',
+    PERIODES_CREATE = 'periodes:create',
+    PERIODES_EDIT = 'periodes:edit',
+    PERIODES_DELETE = 'periodes:delete',
+    PERIODES_CLOTURER = 'periodes:cloturer',
+    PERIODES_TYPES_VIEW = 'periodes:types:view',
+    PERIODES_TYPES_CREATE = 'periodes:types:create',
+
+    CYCLES_VIEW = 'cycles:view',
+    CYCLES_CREATE = 'cycles:create',
+    CYCLES_EDIT = 'cycles:edit',
+    CYCLES_DELETE = 'cycles:delete',
+
+    NIVEAUX_VIEW = 'niveaux:view',
+    NIVEAUX_CREATE = 'niveaux:create',
+    NIVEAUX_EDIT = 'niveaux:edit',
+    NIVEAUX_DELETE = 'niveaux:delete',
+
+    // ==================================
+    // CANTINE & TRANSPORT
+    // ==================================
     CANTINE_VIEW = 'cantine:view',
     CANTINE_MANAGE = 'cantine:manage',
+    CANTINE_MENUS_CREATE = 'cantine:menus:create',
+    CANTINE_MENUS_EDIT = 'cantine:menus:edit',
+    CANTINE_MENUS_DELETE = 'cantine:menus:delete',
+    CANTINE_INSCRIPTIONS_CREATE = 'cantine:inscriptions:create',
+    CANTINE_INSCRIPTIONS_VIEW = 'cantine:inscriptions:view',
+    CANTINE_SOLDE_RECHARGER = 'cantine:solde:recharger',
+    CANTINE_CONSOMMATIONS_ENREGISTRER = 'cantine:consommations:enregistrer',
+    CANTINE_CONSOMMATIONS_VIEW = 'cantine:consommations:view',
+    CANTINE_STATISTIQUES_VIEW = 'cantine:statistiques:view',
 
-    // Transport
     TRANSPORT_VIEW = 'transport:view',
     TRANSPORT_MANAGE = 'transport:manage',
+    TRANSPORT_LIGNES_VIEW = 'transport:lignes:view',
+    TRANSPORT_LIGNES_CREATE = 'transport:lignes:create',
+    TRANSPORT_LIGNES_EDIT = 'transport:lignes:edit',
+    TRANSPORT_LIGNES_DELETE = 'transport:lignes:delete',
+    TRANSPORT_INSCRIPTIONS_CREATE = 'transport:inscriptions:create',
+    TRANSPORT_INSCRIPTIONS_VIEW = 'transport:inscriptions:view',
+    TRANSPORT_PRESENCES_ENREGISTRER = 'transport:presences:enregistrer',
+    TRANSPORT_PRESENCES_VIEW = 'transport:presences:view',
 
-    // Matériel
+    // ==================================
+    // MATÉRIEL & CARTES
+    // ==================================
     MATERIEL_VIEW = 'materiel:view',
     MATERIEL_MANAGE = 'materiel:manage',
+    MATERIEL_CREATE = 'materiel:create',
+    MATERIEL_EDIT = 'materiel:edit',
+    MATERIEL_DELETE = 'materiel:delete',
+    MATERIEL_PRETS_VIEW = 'materiel:prets:view',
+    MATERIEL_PRETS_CREATE = 'materiel:prets:create',
+    MATERIEL_PRETS_RETOUR = 'materiel:prets:retour',
+    MATERIEL_INVENTAIRE_MANAGE = 'materiel:inventaire:manage',
 
-    // Clubs
+    CARTES_VIEW = 'cartes:view',
+    CARTES_GENERATE = 'cartes:generate',
+    CARTES_PRINT = 'cartes:print',
+    CARTES_CREATE = 'cartes:create',
+    CARTES_EDIT = 'cartes:edit',
+    CARTES_DESACTIVER = 'cartes:desactiver',
+    CARTES_PERTE_SIGNALER = 'cartes:perte:signaler',
+    CARTES_IMPORT = 'cartes:import',
+
+    // ==================================
+    // CLUBS & GAMIFICATION
+    // ==================================
     CLUBS_VIEW = 'clubs:view',
     CLUBS_MANAGE = 'clubs:manage',
+    CLUBS_CREATE = 'clubs:create',
+    CLUBS_EDIT = 'clubs:edit',
+    CLUBS_DELETE = 'clubs:delete',
+    CLUBS_INSCRIPTIONS_MANAGE = 'clubs:inscriptions:manage',
+    CLUBS_EVENEMENTS_CREATE = 'clubs:evenements:create',
+    CLUBS_EVENEMENTS_EDIT = 'clubs:evenements:edit',
+    CLUBS_EVENEMENTS_DELETE = 'clubs:evenements:delete',
+    CLUBS_EVENEMENTS_VIEW = 'clubs:evenements:view',
 
-    // Documents
+    GAMIFICATION_VIEW = 'gamification:view',
+    GAMIFICATION_MANAGE = 'gamification:manage',
+    GAMIFICATION_BADGES_CREATE = 'gamification:badges:create',
+    GAMIFICATION_BADGES_EDIT = 'gamification:badges:edit',
+    GAMIFICATION_BADGES_DELETE = 'gamification:badges:delete',
+    GAMIFICATION_POINTS_ATTRIBUER = 'gamification:points:attribuer',
+    GAMIFICATION_BADGES_ATTRIBUER = 'gamification:badges:attribuer',
+    GAMIFICATION_CLASSEMENT_VIEW = 'gamification:classement:view',
+    GAMIFICATION_HISTORIQUE_VIEW = 'gamification:historique:view',
+
+    // ==================================
+    // ORIENTATION & SCORING
+    // ==================================
+    ORIENTATION_VIEW = 'orientation:view',
+    ORIENTATION_CREATE = 'orientation:create',
+    ORIENTATION_EDIT = 'orientation:edit',
+    ORIENTATION_VALIDER = 'orientation:valider',
+    ORIENTATION_PROFILS_VIEW = 'orientation:profils:view',
+    ORIENTATION_PROFILS_CREATE = 'orientation:profils:create',
+    ORIENTATION_PROFILS_EDIT = 'orientation:profils:edit',
+    ORIENTATION_SUGGESTIONS_VIEW = 'orientation:suggestions:view',
+    ORIENTATION_FICHES_VIEW = 'orientation:fiches:view',
+    ORIENTATION_FICHES_CREATE = 'orientation:fiches:create',
+    ORIENTATION_RDV_VIEW = 'orientation:rdv:view',
+    ORIENTATION_RDV_CREATE = 'orientation:rdv:create',
+    ORIENTATION_RDV_EDIT = 'orientation:rdv:edit',
+    ORIENTATION_RDV_ANNULER = 'orientation:rdv:annuler',
+
+    SCORING_VIEW = 'scoring:view',
+    SCORING_CONFIGURER = 'scoring:configurer',
+    SCORING_GENERER = 'scoring:generer',
+    SCORING_POINTS_ATTRIBUER = 'scoring:points:attribuer',
+    SCORING_RANGS_CALCULER = 'scoring:rangs:calculer',
+    SCORING_CLASSEMENT_VIEW = 'scoring:classement:view',
+    SCORING_REGLES_VIEW = 'scoring:regles:view',
+    SCORING_REGLES_CREATE = 'scoring:regles:create',
+    SCORING_HISTORIQUE_VIEW = 'scoring:historique:view',
+    SCORING_RECALCULER = 'scoring:recalculer',
+
+    // ==================================
+    // IMPRESSIONS & DOCUMENTS
+    // ==================================
+    IMPRESSIONS_VIEW = 'impressions:view',
+    IMPRESSIONS_GERER = 'impressions:gerer',
+    IMPRESSIONS_MODELES_VIEW = 'impressions:modeles:view',
+    IMPRESSIONS_MODELES_CREATE = 'impressions:modeles:create',
+    IMPRESSIONS_MODELES_EDIT = 'impressions:modeles:edit',
+    IMPRESSIONS_MODELES_DELETE = 'impressions:modeles:delete',
+    IMPRESSIONS_FILE_VIEW = 'impressions:file:view',
+    IMPRESSIONS_FILE_CREATE = 'impressions:file:create',
+    IMPRESSIONS_FILE_GENERER = 'impressions:file:generer',
+    IMPRESSIONS_FILE_ANNULER = 'impressions:file:annuler',
+    IMPRESSIONS_TRAITER = 'impressions:traiter',
+
     DOCUMENTS_VIEW = 'documents:view',
     DOCUMENTS_CREATE = 'documents:create',
     DOCUMENTS_PRINT = 'documents:print',
 
-    // Cartes
-    CARTES_VIEW = 'cartes:view',
-    CARTES_GENERATE = 'cartes:generate',
-    CARTES_PRINT = 'cartes:print',
-
-    // Configuration
-    CONFIG_VIEW = 'config:view',
-    CONFIG_EDIT = 'config:edit',
-
-    // Monitoring
-    MONITORING_VIEW = 'monitoring:view',
-
-    // Messagerie
+    // ==================================
+    // MESSAGERIE & NOTIFICATIONS
+    // ==================================
     MESSAGES_SEND = 'messages:send',
     MESSAGES_BROADCAST = 'messages:broadcast',
+    MESSAGERIE_VIEW = 'messagerie:view',
+    MESSAGERIE_ENVOYER = 'messagerie:envoyer',
+    MESSAGERIE_SUPPRIMER = 'messagerie:supprimer',
+    MESSAGERIE_CONVERSATIONS_CREATE = 'messagerie:conversations:create',
+    MESSAGERIE_BROADCAST = 'messagerie:broadcast',
+    MESSAGERIE_MESSAGES_READ = 'messagerie:messages:read',
 
-    // Notifications
     NOTIFICATIONS_MANAGE = 'notifications:manage',
+    NOTIFICATIONS_VIEW = 'notifications:view',
+    NOTIFICATIONS_ENVOYER = 'notifications:envoyer',
+    NOTIFICATIONS_CONFIGURER = 'notifications:configurer',
+    NOTIFICATIONS_CREATE = 'notifications:create',
+    NOTIFICATIONS_BULK_CREATE = 'notifications:bulk:create',
+    NOTIFICATIONS_READ = 'notifications:read',
+    NOTIFICATIONS_READ_ALL = 'notifications:read-all',
+    NOTIFICATIONS_DELETE = 'notifications:delete',
+    NOTIFICATIONS_COUNT = 'notifications:count',
 
-    // Requêtes
+    // ==================================
+    // REQUÊTES
+    // ==================================
     REQUETES_VIEW = 'requetes:view',
     REQUETES_CREATE = 'requetes:create',
     REQUETES_APPROVE = 'requetes:approve',
+    REQUETES_REFUSER = 'requetes:refuser',
+    REQUETES_TRAITER = 'requetes:traiter',
+    REQUETES_ANNULER = 'requetes:annuler',
 
-    // Gamification
-    GAMIFICATION_VIEW = 'gamification:view',
-    GAMIFICATION_MANAGE = 'gamification:manage',
+    // ==================================
+    // ÉTABLISSEMENTS & CONFIGURATION
+    // ==================================
+    ETABLISSEMENT_VIEW = 'etablissement:view',
+    ETABLISSEMENT_EDIT = 'etablissement:edit',
+    ETABLISSEMENTS_LIST = 'etablissements:list',
+    ETABLISSEMENTS_CREATE = 'etablissements:create',
+    ETABLISSEMENTS_DESACTIVER = 'etablissements:desactiver',
+    ETABLISSEMENTS_ACTIVER = 'etablissements:activer',
+    ETABLISSEMENTS_CONFIG_VIEW = 'etablissements:config:view',
+    ETABLISSEMENTS_CONFIG_EDIT = 'etablissements:config:edit',
+
+    CONFIG_VIEW = 'config:view',
+    CONFIG_EDIT = 'config:edit',
+    CONFIGURATION_SEED = 'configuration:seed',
+    CONFIGURATION_LICENCE_ACTIVER = 'configuration:licence:activer',
+
+    // ==================================
+    // MONITORING
+    // ==================================
+    MONITORING_VIEW = 'monitoring:view',
+    MONITORING_LOGS = 'monitoring:logs',
+    MONITORING_EXPORT = 'monitoring:export',
+    MONITORING_METRICS_VIEW = 'monitoring:metrics:view',
+    MONITORING_STATS_VIEW = 'monitoring:stats:view',
+    MONITORING_HEALTH_VIEW = 'monitoring:health:view',
+    MONITORING_MAINTENANCE_TOGGLE = 'monitoring:maintenance:toggle',
 }
 
 /**
  * Mapping des permissions par défaut pour chaque rôle
+ * Version 2.0 - Seulement les rôles principaux sont définis ici
+ * Les rôles spécifiques héritent des permissions du rôle générique
  */
-export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     [Role.SUPER_ADMIN]: Object.values(Permission), // Toutes les permissions
 
     [Role.ADMIN]: [

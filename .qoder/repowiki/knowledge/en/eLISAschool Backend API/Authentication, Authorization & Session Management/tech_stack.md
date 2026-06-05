@@ -1,3 +1,0 @@
-- Uses `jsonwebtoken` for JWT signing/verification and `bcryptjs` for password hashing.
-- Employs `zod` for runtime request body validation in DTOs.
-- Leverages `typeorm` for ORM-based persistence of users, profiles, refresh tokens, and audit logs.

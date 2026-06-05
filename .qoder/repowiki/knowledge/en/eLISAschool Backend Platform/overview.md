@@ -1,0 +1,1 @@
+Orchestrates a multi-tenant school management system by unifying domain-specific feature modules under a shared Express infrastructure with centralized authentication and RBAC.

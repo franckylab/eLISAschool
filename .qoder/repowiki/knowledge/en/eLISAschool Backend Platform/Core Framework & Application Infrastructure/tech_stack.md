@@ -1,0 +1,3 @@
+- Environment Validation: Uses `zod` for schema-based environment variable validation in `env.config.ts`.
+- ORM: TypeORM with PostgreSQL driver, configured via `DataSourceOptions` in `database.config.ts`.
+- Security: `helmet` for HTTP headers, `express-rate-limit` for DDoS protection, and `cors` for cross-origin resource sharing.

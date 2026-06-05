@@ -1,2 +1,0 @@
-- Every feature module follows a strict directory structure with separate `controllers`, `services`, `entities`, and `dto` folders.
-- All modules export their public API via a barrel `index.ts` file, enabling clean imports in the main application composer.

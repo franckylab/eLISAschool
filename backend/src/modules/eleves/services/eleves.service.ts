@@ -5,11 +5,13 @@
  */
 
 import { Repository } from 'typeorm';
+import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { Eleve } from '../entities';
 import { CreateEleveDto, UpdateEleveDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -18,7 +20,7 @@ export class ElevesService {
         this.repo = AppDataSource.getRepository(Eleve);
     }
 
-    async create(dto: CreateEleveDto, etablissementId?: string): Promise<Eleve> {
+    async create(dto: CreateEleveDto, etablissementId?: string, req?: Request): Promise<Eleve> {
         const existing = await this.repo.findOne({ where: { matricule: dto.matricule } });
         if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
 
@@ -33,6 +35,20 @@ export class ElevesService {
         });
 
         await this.repo.save(eleve);
+        
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_CREATE,
+                cible: 'Eleve',
+                cibleId: eleve.id,
+                description: `Création dossier élève: ${dto.matricule}`,
+                nouvellesValeurs: dto,
+                module: 'eleves',
+            }, req);
+        }
+        
         logger.info(`Dossier élève créé: ${dto.matricule}`);
         return eleve;
     }
@@ -59,20 +75,55 @@ export class ElevesService {
         return this.repo.findOne({ where: { utilisateurId: userId } });
     }
 
-    async update(id: string, dto: UpdateEleveDto): Promise<Eleve> {
+    async update(id: string, dto: UpdateEleveDto, req?: Request): Promise<Eleve> {
         const eleve = await this.findOne(id);
+        const anciennesValeurs = {
+            matricule: eleve.matricule,
+            nomTuteur: eleve.nomTuteur,
+            telephoneTuteur: eleve.telephoneTuteur,
+        };
 
         if (dto.dateNaissance) dto.dateNaissance = new Date(dto.dateNaissance) as any;
         if (dto.dateInscription) dto.dateInscription = new Date(dto.dateInscription) as any;
 
         Object.assign(eleve, dto);
         await this.repo.save(eleve);
+        
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_UPDATE,
+                cible: 'Eleve',
+                cibleId: eleve.id,
+                description: `Modification dossier élève: ${eleve.matricule}`,
+                anciennesValeurs,
+                nouvellesValeurs: dto,
+                module: 'eleves',
+            }, req);
+        }
+        
         return eleve;
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: string, req?: Request): Promise<void> {
         const eleve = await this.findOne(id);
         await this.repo.remove(eleve);
+        
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_DELETE,
+                cible: 'Eleve',
+                cibleId: id,
+                description: `Suppression dossier élève: ${eleve.matricule}`,
+                anciennesValeurs: { matricule: eleve.matricule },
+                module: 'eleves',
+                severity: 'WARNING' as any,
+            }, req);
+        }
+        
         logger.info(`Dossier élève supprimé: ${id}`);
     }
 }

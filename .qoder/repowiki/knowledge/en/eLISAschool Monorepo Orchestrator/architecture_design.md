@@ -1,4 +1,4 @@
-- Uses npm workspaces to link `backend`, `frontend`, and `shared` modules, enabling local dependency resolution and unified build/test scripts.
-- Leverages `docker-compose.yml` to wire infrastructure services (PostgreSQL, Redis) with application services, enforcing startup order via health checks.
-- Centralizes environment configuration through `.env` files, injecting shared secrets and service endpoints into both Docker containers and local development processes.
-- Provides unified CLI entry points in the root `package.json` for concurrent development (`npm run dev`) and containerized deployment (`npm run docker:prod`).
+- Uses npm workspaces to link `backend`, `frontend`, and `shared` modules, enabling local dependency resolution and unified script execution.
+- Relies on the `shared` module as a central contract layer for TypeScript types and Zod schemas, ensuring type safety across the API and UI boundaries.
+- Leverages Docker Compose to orchestrate service dependencies, enforcing startup order via health checks for PostgreSQL and Redis before the backend initializes.
+- Implements a root-level `.env` strategy to inject consistent configuration (DB credentials, JWT secrets) into both local development scripts and containerized environments.
