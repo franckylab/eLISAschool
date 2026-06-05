@@ -18,7 +18,7 @@ export class ElevesService {
         this.repo = AppDataSource.getRepository(Eleve);
     }
 
-    async create(dto: CreateEleveDto): Promise<Eleve> {
+    async create(dto: CreateEleveDto, etablissementId?: string): Promise<Eleve> {
         const existing = await this.repo.findOne({ where: { matricule: dto.matricule } });
         if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
 
@@ -29,6 +29,7 @@ export class ElevesService {
             ...dto,
             dateNaissance: new Date(dto.dateNaissance),
             dateInscription: dto.dateInscription ? new Date(dto.dateInscription) : new Date(),
+            etablissementId,
         });
 
         await this.repo.save(eleve);
@@ -36,9 +37,10 @@ export class ElevesService {
         return eleve;
     }
 
-    async findAll(sousSysteme?: string): Promise<Eleve[]> {
+    async findAll(sousSysteme?: string, etablissementId?: string): Promise<Eleve[]> {
         const where: any = {};
         if (sousSysteme) where.sousSysteme = sousSysteme;
+        if (etablissementId) where.etablissementId = etablissementId;
 
         return this.repo.find({
             where,

@@ -1,10 +1,13 @@
 /**
  * eLISAschool - Entités Clubs
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Eleve } from '@modules/eleves/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('clubs')
+@Index(['etablissementId'])
 export class Club {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -37,6 +40,16 @@ export class Club {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
+    /**
+     * Établissement du club (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
+
     @CreateDateColumn()
     createdAt!: Date;
 
@@ -45,6 +58,7 @@ export class Club {
 }
 
 @Entity('inscriptions_clubs')
+@Index(['etablissementId'])
 export class InscriptionClub {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -59,12 +73,22 @@ export class InscriptionClub {
     @Column({ type: 'uuid' })
     eleveId!: string;
 
-    @ManyToOne(() => Utilisateur)
+    @ManyToOne(() => Eleve)
     @JoinColumn({ name: 'eleveId' })
-    eleve!: Utilisateur;
+    eleve!: Eleve;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    /**
+     * Établissement de l'inscription au club (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     inscritAt!: Date;

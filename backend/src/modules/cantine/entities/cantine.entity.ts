@@ -2,8 +2,10 @@
  * eLISAschool - Entités Cantine
  */
 
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Eleve } from '@modules/eleves/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 export enum StatutRepas {
     DISPONIBLE = 'DISPONIBLE',
@@ -13,6 +15,7 @@ export enum StatutRepas {
 }
 
 @Entity('menus_cantine')
+@Index(['etablissementId'])
 export class MenuCantine {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -47,6 +50,16 @@ export class MenuCantine {
     @Column({ type: 'text', nullable: true })
     description?: string;
 
+    /**
+     * Établissement du menu (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
+
     @CreateDateColumn()
     createdAt!: Date;
 
@@ -61,6 +74,7 @@ export enum StatutInscriptionCantine {
 }
 
 @Entity('inscriptions_cantine')
+@Index(['etablissementId'])
 export class InscriptionCantine {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -68,9 +82,9 @@ export class InscriptionCantine {
     @Column({ type: 'uuid' })
     eleveId!: string;
 
-    @ManyToOne(() => Utilisateur)
+    @ManyToOne(() => Eleve)
     @JoinColumn({ name: 'eleveId' })
-    eleve!: Utilisateur;
+    eleve!: Eleve;
 
     @Column({ type: 'enum', enum: StatutInscriptionCantine, default: StatutInscriptionCantine.ACTIVE })
     statut!: StatutInscriptionCantine;
@@ -89,6 +103,16 @@ export class InscriptionCantine {
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     solde!: number;
+
+    /**
+     * Établissement de l'inscription cantine (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

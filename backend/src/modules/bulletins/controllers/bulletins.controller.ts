@@ -25,7 +25,7 @@ function validate(schema: any, data: unknown): any {
 router.post('/generate', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(generateBulletinSchema, req.body);
-        const bulletins = await service.generate(dto);
+        const bulletins = await service.generate(dto, req.etablissementId);
         res.json({ success: true, count: bulletins.length, data: bulletins });
     } catch (error) { next(error); }
 });

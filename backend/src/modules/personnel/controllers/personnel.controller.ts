@@ -42,7 +42,7 @@ router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const typeId = req.query.typeId as string;
-        const membres = await service.findAll(typeId);
+        const membres = await service.findAll(typeId, req.etablissementId);
         res.json({ success: true, data: membres });
     } catch (error) { next(error); }
 });
@@ -50,7 +50,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createPersonnelSchema, req.body);
-        const membre = await service.createMembre(dto);
+        const membre = await service.createMembre(dto, req.etablissementId);
         res.status(201).json({ success: true, data: membre });
     } catch (error) { next(error); }
 });

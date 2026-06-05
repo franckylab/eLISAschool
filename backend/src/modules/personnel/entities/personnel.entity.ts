@@ -16,6 +16,7 @@ import {
     Index
 } from 'typeorm';
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('types_personnel')
 export class TypePersonnel {
@@ -37,6 +38,7 @@ export class TypePersonnel {
 
 @Entity('membres_personnel')
 @Index(['utilisateurId'])
+@Index(['etablissementId'])
 export class MembrePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -69,6 +71,16 @@ export class MembrePersonnel {
 
     @Column({ type: 'text', nullable: true })
     diplomes?: string;
+
+    /**
+     * Établissement du membre du personnel (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

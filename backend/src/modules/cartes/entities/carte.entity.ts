@@ -1,8 +1,9 @@
 /**
  * eLISAschool - Entités Cartes
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 export enum TypeCarte {
     SCOLAIRE = 'SCOLAIRE',
@@ -21,6 +22,7 @@ export enum StatutCarte {
 }
 
 @Entity('cartes')
+@Index(['etablissementId'])
 export class Carte {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -58,6 +60,16 @@ export class Carte {
 
     @Column({ type: 'simple-json', nullable: true })
     metadata?: Record<string, any>;
+
+    /**
+     * Établissement de la carte (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

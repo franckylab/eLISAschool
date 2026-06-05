@@ -17,10 +17,12 @@ import {
 import { Niveau } from '@modules/niveaux/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('classes')
 @Index(['niveauId'])
 @Index(['anneeScolaireId'])
+@Index(['etablissementId'])
 export class Classe {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -66,6 +68,16 @@ export class Classe {
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    /**
+     * Établissement auquel la classe appartient (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

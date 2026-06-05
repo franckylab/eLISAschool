@@ -2,8 +2,11 @@
  * ==================================
  * eLISAschool - Export de tous les modules
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: xAI Éducation
+ * 
+ * Tous les modules sont exportés pour permettre une utilisation
+ * cohérente dans l'application.
  */
 
 // Modules critiques
@@ -32,3 +35,15 @@ export * from './orientation';
 export * from './impressions';
 export * from './scoring';
 export * from './monitoring';
+
+// Modules académiques (multi-établissements)
+export * from './etablissement';
+export * from './cycles';
+export * from './niveaux';
+export * from './annees-scolaires';
+export * from './personnel';
+export * from './classes';
+export * from './matieres';
+export * from './periodes';
+export * from './eleves';
+export * from './bulletins';

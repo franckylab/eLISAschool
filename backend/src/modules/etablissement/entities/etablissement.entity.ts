@@ -2,8 +2,11 @@
  * ==================================
  * eLISAschool - Entités Etablissement
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * Support multi-établissements : chaque établissement est une entité
+ * distincte avec sa propre configuration (relation 1:1).
  */
 
 import {
@@ -12,7 +15,15 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToOne,
+    ManyToOne,
+    JoinColumn,
+    Index,
 } from 'typeorm';
+
+// ==================================
+// Enums partagés (utilisés par d'autres modules)
+// ==================================
 
 export enum SousSysteme {
     FRANCOPHONE = 'FRANCOPHONE',
@@ -35,11 +46,17 @@ export enum CycleScolaire {
     LYCEE = 'LYCEE',
 }
 
+// ==================================
+// Entité Etablissement (multi-établissements)
+// ==================================
+
 /**
- * Configuration globale de l'établissement
+ * Entité principale représentant un établissement scolaire.
+ * Le système supporte plusieurs établissements, chacun ayant
+ * sa propre configuration, ses classes, élèves, personnel, etc.
  */
-@Entity('etablissement_config')
-export class EtablissementConfig {
+@Entity('etablissements')
+export class Etablissement {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -58,9 +75,6 @@ export class EtablissementConfig {
     @Column({ type: 'enum', enum: TypeEtablissement, default: TypeEtablissement.LAIC })
     type!: TypeEtablissement;
 
-    @Column({ type: 'simple-json', default: [CycleScolaire.COLLEGE, CycleScolaire.LYCEE] })
-    cyclesActifs!: CycleScolaire[];
-
     @Column({ type: 'varchar', length: 255, nullable: true })
     numeroArrete?: string;
 
@@ -72,6 +86,49 @@ export class EtablissementConfig {
 
     @Column({ type: 'text', nullable: true })
     adresse?: string;
+
+    @Column({ type: 'boolean', default: true })
+    actif!: boolean;
+
+    /**
+     * Relation 1:1 vers la configuration de l'établissement.
+     * Chargée à la demande pour éviter les requêtes inutiles.
+     */
+    @OneToOne(() => EtablissementConfig, (config) => config.etablissement)
+    configuration?: EtablissementConfig;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}
+
+// ==================================
+// Entité EtablissementConfig (configuration par établissement)
+// ==================================
+
+/**
+ * Configuration spécifique à un établissement (cycles actifs, bulletin, etc.).
+ * Relation 1:1 avec Etablissement — un établissement a une seule config.
+ */
+@Entity('etablissement_config')
+export class EtablissementConfig {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    /**
+     * Relation 1:1 vers l'établissement parent
+     */
+    @OneToOne(() => Etablissement, (etablissement) => etablissement.configuration)
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
+
+    @Column({ type: 'simple-json', default: [CycleScolaire.COLLEGE, CycleScolaire.LYCEE] })
+    cyclesActifs!: CycleScolaire[];
 
     @Column({ type: 'simple-json', nullable: true })
     configurationBulletin?: {

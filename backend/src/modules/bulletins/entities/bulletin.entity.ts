@@ -19,11 +19,13 @@ import { Eleve } from '@modules/eleves/entities';
 import { Classe } from '@modules/classes/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Periode } from '@modules/periodes/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('bulletins')
 @Index(['eleveId'])
 @Index(['classeId'])
 @Index(['periodeId'])
+@Index(['etablissementId'])
 export class Bulletin {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -83,6 +85,16 @@ export class Bulletin {
 
     @Column({ type: 'boolean', default: false })
     publie!: boolean;
+
+    /**
+     * Établissement du bulletin (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

@@ -27,7 +27,7 @@ router.use(authMiddleware);
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validate(queryNotesSchema, req.query);
-        const result = await notesService.findAll(query);
+        const result = await notesService.findAll(query, req.etablissementId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });
@@ -42,7 +42,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createNoteSchema, req.body);
-        const note = await notesService.create(dto, req.utilisateur!.id);
+        const note = await notesService.create(dto, req.utilisateur!.id, req.etablissementId);
         res.status(201).json({ success: true, data: note });
     } catch (error) { next(error); }
 });
@@ -50,7 +50,7 @@ router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEME
 router.post('/bulk', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createBulkNotesSchema, req.body);
-        const count = await notesService.createBulk(dto, req.utilisateur!.id);
+        const count = await notesService.createBulk(dto, req.utilisateur!.id, req.etablissementId);
         res.status(201).json({ success: true, count, message: `${count} notes créées` });
     } catch (error) { next(error); }
 });

@@ -14,10 +14,14 @@ import {
     UpdateDateColumn,
     OneToOne,
     OneToMany,
+    ManyToOne,
+    JoinColumn,
+    Index,
     BeforeInsert,
     BeforeUpdate,
 } from 'typeorm';
 import bcrypt from 'bcryptjs';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Rôles utilisateur - importés depuis shared
@@ -94,6 +98,14 @@ export class Utilisateur {
 
     @Column({ type: 'uuid', nullable: true })
     etablissementId?: string;
+
+    /**
+     * Relation vers l'établissement de l'utilisateur.
+     * Nullable car le SUPER_ADMIN peut ne pas être rattaché à un établissement.
+     */
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

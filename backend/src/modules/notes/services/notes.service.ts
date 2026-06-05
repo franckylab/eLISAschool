@@ -29,7 +29,7 @@ export class NotesService {
         };
     }
 
-    async create(createDto: CreateNoteDto, enseignantId: string): Promise<Note> {
+    async create(createDto: CreateNoteDto, enseignantId: string, etablissementId?: string): Promise<Note> {
         const params = await this.getNotesParams();
 
         let anneeId = createDto.anneeScolaireId;
@@ -44,6 +44,7 @@ export class NotesService {
             enseignantId,
             dateEvaluation: createDto.dateEvaluation ? new Date(createDto.dateEvaluation) : undefined,
             statut: params.requireValidation ? StatutNote.BROUILLON : StatutNote.VALIDEE,
+            etablissementId,
         });
 
         await this.noteRepository.save(note);
@@ -60,7 +61,7 @@ export class NotesService {
         return note;
     }
 
-    async createBulk(createDto: CreateBulkNotesDto, enseignantId: string): Promise<number> {
+    async createBulk(createDto: CreateBulkNotesDto, enseignantId: string, etablissementId?: string): Promise<number> {
         const params = await this.getNotesParams();
 
         let anneeId = createDto.anneeScolaireId;
@@ -85,6 +86,7 @@ export class NotesService {
                 dateEvaluation: createDto.dateEvaluation ? new Date(createDto.dateEvaluation) : undefined,
                 enseignantId,
                 statut: params.requireValidation ? StatutNote.BROUILLON : StatutNote.VALIDEE,
+                etablissementId,
             })
         );
 
@@ -100,7 +102,7 @@ export class NotesService {
         return notes.length;
     }
 
-    async findAll(query: QueryNotesDto): Promise<{ items: Note[]; total: number }> {
+    async findAll(query: QueryNotesDto, etablissementId?: string): Promise<{ items: Note[]; total: number }> {
         const { page, limit, eleveId, matiereId, classeId, periodeId, anneeScolaireId, typeEvaluation, statut } = query;
 
         const where: FindOptionsWhere<Note> = {};
@@ -111,6 +113,7 @@ export class NotesService {
         if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
         if (typeEvaluation) where.typeEvaluation = typeEvaluation;
         if (statut) where.statut = statut;
+        if (etablissementId) where.etablissementId = etablissementId;
 
         const [items, total] = await this.noteRepository.findAndCount({
             where,

@@ -37,7 +37,7 @@ export class PersonnelService {
 
     // ==== MEMBRES PERSONNEL ====
 
-    async createMembre(dto: CreatePersonnelDto): Promise<MembrePersonnel> {
+    async createMembre(dto: CreatePersonnelDto, etablissementId?: string): Promise<MembrePersonnel> {
         const existing = await this.personnelRepo.findOne({ where: { matricule: dto.matricule } });
         if (existing) throw new AppError('Matricule déjà utilisé', 409, 'MATRICULE_EXISTS');
 
@@ -48,15 +48,17 @@ export class PersonnelService {
         const membre = this.personnelRepo.create({
             ...dto,
             dateEmbauche: new Date(dto.dateEmbauche),
+            etablissementId,
         });
         await this.personnelRepo.save(membre);
         logger.info(`Nouveau membre personnel: ${dto.matricule}`);
         return membre;
     }
 
-    async findAll(typeId?: string): Promise<MembrePersonnel[]> {
+    async findAll(typeId?: string, etablissementId?: string): Promise<MembrePersonnel[]> {
         const where: any = {};
         if (typeId) where.typePersonnelId = typeId;
+        if (etablissementId) where.etablissementId = etablissementId;
         return this.personnelRepo.find({
             where,
             relations: ['utilisateur', 'typePersonnel'],

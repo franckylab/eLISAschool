@@ -23,7 +23,7 @@ export class BulletinsService {
         this.repo = AppDataSource.getRepository(Bulletin);
     }
 
-    async generate(dto: GenerateBulletinDto): Promise<Bulletin[]> {
+    async generate(dto: GenerateBulletinDto, etablissementId?: string): Promise<Bulletin[]> {
         const classe = await classesService.findOne(dto.classeId);
         const periode = await periodesService.findOne(dto.periodeId);
 
@@ -84,6 +84,7 @@ export class BulletinsService {
                     classeId: classe.id,
                     periodeId: periode.id,
                     anneeScolaireId: classe.anneeScolaireId,
+                    etablissementId,
                 });
             }
 

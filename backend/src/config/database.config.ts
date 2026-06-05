@@ -53,8 +53,8 @@ export const databaseConfig: DataSourceOptions = {
     // Pool de connexions
     poolSize: envConfig.app.isProduction ? 20 : 5,
 
-    // SSL en production
-    ssl: envConfig.app.isProduction ? { rejectUnauthorized: false } : false,
+    // SSL en production (certificats valides requis)
+    ssl: envConfig.app.isProduction ? { rejectUnauthorized: true } : false,
 
     // Options supplémentaires PostgreSQL
     extra: {

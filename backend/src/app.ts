@@ -2,8 +2,10 @@
  * ==================================
  * eLISAschool Backend - Configuration Express
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * Support multi-établissements + réponses API standardisées
  */
 
 import express, { Application, Request, Response, NextFunction } from 'express';
@@ -17,6 +19,7 @@ import { logger } from '@common/utils/logger.util';
 import { errorHandler } from '@common/filters/error.filter';
 import { notFoundHandler } from '@common/filters/not-found.filter';
 import { requestLogger } from '@common/interceptors/request-logger.interceptor';
+import { tenantMiddleware } from '@common/middlewares/tenant.middleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@config/swagger.config';
 
@@ -47,11 +50,6 @@ import { matieresController } from '@modules/matieres';
 import { periodesController } from '@modules/periodes';
 import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
-
-
-
-
-
 import { monitoringController } from '@modules/monitoring';
 
 /**
@@ -119,6 +117,14 @@ export function createApp(): Application {
     app.use(requestLogger);
 
     // ==================================
+    // Middleware Multi-Tenancy
+    // ==================================
+
+    // Attache automatiquement l'etablissementId depuis le JWT
+    // Les SUPER_ADMIN peuvent accéder à tous les établissements
+    app.use('/api/', tenantMiddleware);
+
+    // ==================================
     // Routes de base
     // ==================================
 
@@ -137,7 +143,7 @@ export function createApp(): Application {
         res.status(200).json({
             success: true,
             name: 'eLISAschool API',
-            description: 'API de gestion scolaire avancée',
+            description: 'API de gestion scolaire avancée — Multi-établissements',
             version: envConfig.app.version,
             author: 'xAI Éducation',
             documentation: '/api/docs',
@@ -185,8 +191,8 @@ export function createApp(): Application {
     app.use('/api/impressions', impressionsController);
     app.use('/api/monitoring', monitoringController);
 
-    // Modules académiques
-    app.use('/api/etablissement', etablissementController);
+    // Modules académiques (multi-établissements)
+    app.use('/api/etablissements', etablissementController);
     app.use('/api/cycles', cyclesController);
     app.use('/api/niveaux', niveauxController);
     app.use('/api/annees-scolaires', anneesScolairesController);
@@ -196,12 +202,6 @@ export function createApp(): Application {
     app.use('/api/periodes', periodesController);
     app.use('/api/eleves', elevesController);
     app.use('/api/bulletins', bulletinsController);
-
-
-
-
-
-
 
     // ==================================
     // Gestion des erreurs

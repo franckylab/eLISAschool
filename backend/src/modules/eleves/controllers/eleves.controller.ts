@@ -25,7 +25,7 @@ function validate(schema: any, data: unknown): any {
 router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const sousSysteme = req.query.sousSysteme as string;
-        const eleves = await service.findAll(sousSysteme);
+        const eleves = await service.findAll(sousSysteme, req.etablissementId);
         res.json({ success: true, data: eleves });
     } catch (error) { next(error); }
 });
@@ -33,7 +33,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createEleveSchema, req.body);
-        const eleve = await service.create(dto);
+        const eleve = await service.create(dto, req.etablissementId);
         res.status(201).json({ success: true, data: eleve });
     } catch (error) { next(error); }
 });

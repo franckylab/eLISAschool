@@ -10,9 +10,14 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    ManyToOne,
+    JoinColumn,
+    Index,
 } from 'typeorm';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('annees_scolaires')
+@Index(['etablissementId'])
 export class AnneeScolaire {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -31,6 +36,16 @@ export class AnneeScolaire {
 
     @Column({ type: 'boolean', default: false })
     cloturee!: boolean;
+
+    /**
+     * Établissement de l'année scolaire (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

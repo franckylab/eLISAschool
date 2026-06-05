@@ -1,10 +1,13 @@
 /**
  * eLISAschool - Entités Transport
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Eleve } from '@modules/eleves/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('lignes_transport')
+@Index(['etablissementId'])
 export class LigneTransport {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -37,6 +40,16 @@ export class LigneTransport {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
+    /**
+     * Établissement de la ligne de transport (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
+
     @CreateDateColumn()
     createdAt!: Date;
 
@@ -45,6 +58,7 @@ export class LigneTransport {
 }
 
 @Entity('inscriptions_transport')
+@Index(['etablissementId'])
 export class InscriptionTransport {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -52,9 +66,9 @@ export class InscriptionTransport {
     @Column({ type: 'uuid' })
     eleveId!: string;
 
-    @ManyToOne(() => Utilisateur)
+    @ManyToOne(() => Eleve)
     @JoinColumn({ name: 'eleveId' })
-    eleve!: Utilisateur;
+    eleve!: Eleve;
 
     @Column({ type: 'uuid' })
     ligneId!: string;
@@ -74,6 +88,16 @@ export class InscriptionTransport {
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     soldePaye!: number;
+
+    /**
+     * Établissement de l'inscription transport (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

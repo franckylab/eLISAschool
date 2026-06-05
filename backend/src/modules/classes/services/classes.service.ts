@@ -21,23 +21,25 @@ export class ClassesService {
         this.affectationRepo = AppDataSource.getRepository(AffectationEleve);
     }
 
-    async create(dto: CreateClasseDto): Promise<Classe> {
+    async create(dto: CreateClasseDto, etablissementId?: string): Promise<Classe> {
         const anneeId = dto.anneeScolaireId || (await anneesScolairesService.findActive())?.id;
         if (!anneeId) throw new AppError('Aucune année scolaire active', 400, 'NO_ACTIVE_YEAR');
 
         const classe = this.classeRepo.create({
             ...dto,
             anneeScolaireId: anneeId,
+            etablissementId,
         });
         await this.classeRepo.save(classe);
         logger.info(`Classe créée: ${dto.nom}`);
         return classe;
     }
 
-    async findAll(niveauId?: string, anneeId?: string): Promise<Classe[]> {
+    async findAll(niveauId?: string, anneeId?: string, etablissementId?: string): Promise<Classe[]> {
         const where: any = {};
         if (niveauId) where.niveauId = niveauId;
         if (anneeId) where.anneeScolaireId = anneeId;
+        if (etablissementId) where.etablissementId = etablissementId;
 
         // Si anneeId non fourni mais filtre par niveau, on essaie de filtrer par année active par défaut ?
         // Non, si pas de filtre, on retourne tout ou on laisse le controller décider.
@@ -77,7 +79,7 @@ export class ClassesService {
 
     // ==== AFFECTATIONS ====
 
-    async affecterEleve(dto: AffecterEleveDto): Promise<AffectationEleve> {
+    async affecterEleve(dto: AffecterEleveDto, etablissementId?: string): Promise<AffectationEleve> {
         const classe = await this.findOne(dto.classeId);
 
         // Vérifier si déjà affecté cette année
@@ -102,6 +104,7 @@ export class ClassesService {
             classeId: dto.classeId,
             anneeScolaireId: classe.anneeScolaireId,
             dateAffectation: dto.dateAffectation ? new Date(dto.dateAffectation) : new Date(),
+            etablissementId,
         });
 
         await this.affectationRepo.save(affectation);

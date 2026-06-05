@@ -1,8 +1,9 @@
 /**
  * eLISAschool - Entités Matériel
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 export enum CategorieMateriel {
     LIVRE = 'LIVRE',
@@ -22,6 +23,7 @@ export enum EtatMateriel {
 }
 
 @Entity('materiels')
+@Index(['etablissementId'])
 export class Materiel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -58,6 +60,16 @@ export class Materiel {
 
     @Column({ type: 'boolean', default: true })
     disponible!: boolean;
+
+    /**
+     * Établissement du matériel (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

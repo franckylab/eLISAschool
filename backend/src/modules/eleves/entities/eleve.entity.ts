@@ -16,11 +16,12 @@ import {
     Index
 } from 'typeorm';
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
-import { SousSysteme } from '@modules/etablissement/entities';
+import { SousSysteme, Etablissement } from '@modules/etablissement/entities';
 
 @Entity('eleves')
 @Index(['utilisateurId'])
 @Index(['matricule'])
+@Index(['etablissementId'])
 export class Eleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -71,6 +72,16 @@ export class Eleve {
 
     @Column({ type: 'enum', enum: ['COMPLET', 'INCOMPLET'], default: 'INCOMPLET' })
     etatDossier!: 'COMPLET' | 'INCOMPLET';
+
+    /**
+     * Établissement de l'élève (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

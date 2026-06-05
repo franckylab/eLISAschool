@@ -26,7 +26,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     try {
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
-        const classes = await service.findAll(niveauId, anneeId);
+        const classes = await service.findAll(niveauId, anneeId, req.etablissementId);
         res.json({ success: true, data: classes });
     } catch (error) { next(error); }
 });
@@ -34,7 +34,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createClasseSchema, req.body);
-        const classe = await service.create(dto);
+        const classe = await service.create(dto, req.etablissementId);
         res.status(201).json({ success: true, data: classe });
     } catch (error) { next(error); }
 });
@@ -57,7 +57,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(affecterEleveSchema, req.body);
-        const affectation = await service.affecterEleve(dto);
+        const affectation = await service.affecterEleve(dto, req.etablissementId);
         res.status(201).json({ success: true, data: affectation });
     } catch (error) { next(error); }
 });

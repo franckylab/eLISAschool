@@ -20,6 +20,7 @@ import { Matiere } from '@modules/matieres/entities';
 import { Classe } from '@modules/classes/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Periode } from '@modules/periodes/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Type d'évaluation
@@ -48,6 +49,7 @@ export enum StatutNote {
 @Index(['classeId'])
 @Index(['periodeId'])
 @Index(['enseignantId'])
+@Index(['etablissementId'])
 export class Note {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -124,6 +126,16 @@ export class Note {
 
     @Column({ type: 'timestamp', nullable: true })
     valideeAt?: Date;
+
+    /**
+     * Établissement de la note (multi-tenancy)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;
