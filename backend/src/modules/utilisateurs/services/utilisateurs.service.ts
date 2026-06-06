@@ -120,8 +120,6 @@ export class UtilisateursService {
     async findAll(query: QueryUtilisateursDto): Promise<PaginatedResult<UtilisateurResponseDto>> {
         const { page, limit, search, role, statut, etablissementId, sortBy, sortOrder } = query;
 
-        const skip = (page - 1) * limit;
-
         // Construction des conditions WHERE
         const where: FindOptionsWhere<Utilisateur> = {};
 
@@ -137,7 +135,7 @@ export class UtilisateursService {
             where.etablissementId = etablissementId;
         }
 
-        // Requête avec relations
+        // Requête avec relations et pagination optimisée
         const queryBuilder = this.utilisateurRepository
             .createQueryBuilder('u')
             .leftJoinAndSelect('profil', 'p', 'p.utilisateurId = u.id')
@@ -151,18 +149,24 @@ export class UtilisateursService {
             );
         }
 
-        // Tri
-        const orderField = ['createdAt', 'email', 'matricule', 'role'].includes(sortBy) ? sortBy : 'createdAt';
+        // Tri - validation du champ de tri
+        const allowedSortFields = ['createdAt', 'updatedAt', 'email', 'matricule', 'role', 'statut'];
+        const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
         queryBuilder.orderBy(`u.${orderField}`, sortOrder);
 
-        // Pagination
-        queryBuilder.skip(skip).take(limit);
+        // Utiliser le système de pagination optimisé
+        const { createPaginatedResult, paginateWithQueryBuilder } = await import('@common/utils/pagination.util');
+        
+        const result = await paginateWithQueryBuilder(
+            queryBuilder,
+            page,
+            limit,
+            true // COUNT optimisé pour les requêtes avec JOINs
+        );
 
-        const [utilisateurs, total] = await queryBuilder.getManyAndCount();
-
-        // Récupérer les profils
+        // Récupérer les profils et formater la réponse
         const items = await Promise.all(
-            utilisateurs.map(async (u) => {
+            result.items.map(async (u) => {
                 const profil = await this.profilRepository.findOne({
                     where: { utilisateurId: u.id },
                 });
@@ -170,16 +174,7 @@ export class UtilisateursService {
             })
         );
 
-        return {
-            items,
-            meta: {
-                totalItems: total,
-                itemCount: items.length,
-                itemsPerPage: limit,
-                totalPages: Math.ceil(total / limit),
-                currentPage: page,
-            },
-        };
+        return createPaginatedResult(items, result.meta.totalItems, page, limit);
     }
 
     /**

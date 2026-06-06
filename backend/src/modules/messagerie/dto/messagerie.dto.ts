@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { paginationSchema } from '@common/dto/pagination.dto';
 
 export const createConversationSchema = z.object({
     titre: z.string().max(255).optional(),
@@ -23,15 +24,11 @@ export const sendMessageSchema = z.object({
     })).optional(),
 });
 
-export const queryConversationsSchema = z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('20'),
+export const queryConversationsSchema = paginationSchema.extend({
     type: z.enum(['INDIVIDUELLE', 'GROUPE', 'ANNONCE']).optional(),
 });
 
-export const queryMessagesSchema = z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('50'),
+export const queryMessagesSchema = paginationSchema.extend({
     avant: z.string().datetime().optional(),
 });
 

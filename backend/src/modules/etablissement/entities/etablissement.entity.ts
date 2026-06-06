@@ -20,6 +20,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import { EtablissementConfig } from './etablissement-config.entity';
 
 // ==================================
 // Enums partagés (utilisés par d'autres modules)
@@ -94,52 +95,8 @@ export class Etablissement {
      * Relation 1:1 vers la configuration de l'établissement.
      * Chargée à la demande pour éviter les requêtes inutiles.
      */
-    @OneToOne(() => EtablissementConfig, (config) => config.etablissement)
+    @OneToOne('EtablissementConfig', 'etablissement')
     configuration?: EtablissementConfig;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
-}
-
-// ==================================
-// Entité EtablissementConfig (configuration par établissement)
-// ==================================
-
-/**
- * Configuration spécifique à un établissement (cycles actifs, bulletin, etc.).
- * Relation 1:1 avec Etablissement — un établissement a une seule config.
- */
-@Entity('etablissement_config')
-export class EtablissementConfig {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
-
-    @Column({ type: 'uuid' })
-    etablissementId!: string;
-
-    /**
-     * Relation 1:1 vers l'établissement parent
-     */
-    @OneToOne(() => Etablissement, (etablissement) => etablissement.configuration)
-    @JoinColumn({ name: 'etablissementId' })
-    etablissement?: Etablissement;
-
-    @Column({ type: 'simple-json', default: [CycleScolaire.COLLEGE, CycleScolaire.LYCEE] })
-    cyclesActifs!: CycleScolaire[];
-
-    @Column({ type: 'simple-json', nullable: true })
-    configurationBulletin?: {
-        style?: string; // 'moderne', 'classique'
-        couleurPrimaire?: string;
-        afficherRang?: boolean;
-        afficherMoyenneGenerale?: boolean;
-        afficherAppreciation?: boolean;
-        afficherPhoto?: boolean;
-        afficherCourbeProgression?: boolean;
-    };
 
     @CreateDateColumn()
     createdAt!: Date;

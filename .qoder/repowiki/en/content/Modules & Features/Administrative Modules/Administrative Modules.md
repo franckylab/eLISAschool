@@ -14,7 +14,17 @@
 - [configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [configuration-app.entity.ts](file://backend/src/modules/configuration/entities/configuration-app.entity.ts)
 - [roles.enum.ts](file://shared/src/enums/roles.enum.ts)
+- [cantine.service.ts](file://backend/src/modules/cantine/services/cantine.service.ts)
+- [transport.service.ts](file://backend/src/modules/transport/services/transport.service.ts)
+- [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new cantine debt limit validation feature with configuration parameter `cantine.max_debt`
+- Enhanced transport module with real-time tracking capabilities using `transport.alert_delay_minutes`
+- Updated configuration system documentation to include new parameter categories
+- Expanded institutional management coverage to include operational module configurations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -30,12 +40,15 @@
 ## Introduction
 This document describes the administrative modules that govern institutional management, human resources, user administration, and system monitoring. It explains the centralized configuration system, staff management, user account administration, authentication and authorization mechanisms, and system monitoring capabilities. It also documents the administrative hierarchy, permission systems, audit trails, and institutional settings management, and details the integration between administrative functions and operational modules to ensure governance and compliance.
 
+**Updated** Enhanced with new configuration-driven features including cantine debt limit validation and transport real-time tracking capabilities.
+
 ## Project Structure
 The administrative domain spans several modules:
 - Authentication and Authorization: Controllers, services, guards, and middleware for secure access and permission enforcement.
 - Institutional Management: Controllers and entities for managing institution-wide settings and configuration.
 - Human Resources: Controllers for managing staff types and members.
 - User Administration: Controllers for managing users and profiles.
+- Operational Modules: Enhanced with configuration-driven features for cantine management and transport tracking.
 - Monitoring: Controllers and services for system monitoring.
 
 ```mermaid
@@ -59,15 +72,26 @@ end
 subgraph "User Administration"
 UC["utilisateurs.controller.ts"]
 end
+subgraph "Operational Modules"
+CS["cantine.service.ts"]
+TS["transport.service.ts"]
+CH["config.helper.ts"]
+end
+subgraph "Monitoring"
+MS["monitoring.service.ts"]
+end
 AC --> AS
 AS --> UE
 AS --> PE
 AC --> PG
 AC --> RM
 CC --> CA
+CC --> CH
 EC --> CC
 PC --> CC
 UC --> AS
+CS --> CH
+TS --> CH
 ```
 
 **Diagram sources**
@@ -82,6 +106,9 @@ UC --> AS
 - [configuration-app.entity.ts:1-112](file://backend/src/modules/configuration/entities/configuration-app.entity.ts#L1-L112)
 - [personnel.controller.ts:1-75](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L75)
 - [utilisateurs.controller.ts:1-207](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L1-L207)
+- [cantine.service.ts:1-200](file://backend/src/modules/cantine/services/cantine.service.ts#L1-L200)
+- [transport.service.ts:1-200](file://backend/src/modules/transport/services/transport.service.ts#L1-L200)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
 
 **Section sources**
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
@@ -95,6 +122,9 @@ UC --> AS
 - [configuration-app.entity.ts:1-112](file://backend/src/modules/configuration/entities/configuration-app.entity.ts#L1-L112)
 - [personnel.controller.ts:1-75](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L75)
 - [utilisateurs.controller.ts:1-207](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L1-L207)
+- [cantine.service.ts:1-200](file://backend/src/modules/cantine/services/cantine.service.ts#L1-L200)
+- [transport.service.ts:1-200](file://backend/src/modules/transport/services/transport.service.ts#L1-L200)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
 
 ## Core Components
 - Authentication and Authorization
@@ -105,12 +135,17 @@ UC --> AS
 - Institutional Management
   - Controllers manage application configuration, module activation, parameter management, history, backups, cache invalidation, and exports.
   - Entities define application-wide settings including institution info, locale, theme, license, and active modules.
+  - **Updated** Enhanced with operational module configuration support including cantine and transport parameters.
 
 - Human Resources
   - Controllers manage staff types and members with role-restricted endpoints.
 
 - User Administration
   - Controllers manage users and profiles with fine-grained access controls and status updates.
+
+- Operational Modules
+  - **New** Cantine module with debt limit validation using configurable `cantine.max_debt` parameter.
+  - **New** Transport module with real-time tracking capabilities using configurable `transport.alert_delay_minutes` parameter.
 
 - Monitoring
   - Controllers and services provide monitoring endpoints for system health and metrics.
@@ -124,6 +159,8 @@ UC --> AS
 - [configuration-app.entity.ts:21-108](file://backend/src/modules/configuration/entities/configuration-app.entity.ts#L21-L108)
 - [personnel.controller.ts:25-71](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L25-L71)
 - [utilisateurs.controller.ts:47-203](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L47-L203)
+- [cantine.service.ts:33-43](file://backend/src/modules/cantine/services/cantine.service.ts#L33-L43)
+- [transport.service.ts:123-137](file://backend/src/modules/transport/services/transport.service.ts#L123-L137)
 
 ## Architecture Overview
 The administrative architecture follows layered modules with explicit separation of concerns:
@@ -132,6 +169,7 @@ The administrative architecture follows layered modules with explicit separation
 - Guards and middlewares enforce authorization policies.
 - Entities model data and relationships.
 - Shared enums define roles and permissions consistently across modules.
+- **Updated** Configuration helper provides centralized parameter management for all modules.
 
 ```mermaid
 graph TB
@@ -141,11 +179,14 @@ ConfigCtrl["Configuration Controller"]
 UsersCtrl["Users Controller"]
 StaffCtrl["Personnel Controller"]
 InstCtrl["Institution Controller"]
+OperCtrl["Operational Controllers"]
 AuthSvc["Auth Service"]
 ConfigSvc["Configuration Service"]
 UsersSvc["Users Service"]
 StaffSvc["Personnel Service"]
 InstSvc["Institution Service"]
+OperSvc["Operational Services"]
+ConfigHelper["Config Helper"]
 RolesEnum["Roles Enum"]
 PermGuard["Permission Guard"]
 RoleMW["Role Middleware"]
@@ -155,11 +196,13 @@ Client --> ConfigCtrl
 Client --> UsersCtrl
 Client --> StaffCtrl
 Client --> InstCtrl
+Client --> OperCtrl
 AuthCtrl --> AuthSvc
 ConfigCtrl --> ConfigSvc
 UsersCtrl --> UsersSvc
 StaffCtrl --> StaffSvc
 InstCtrl --> InstSvc
+OperCtrl --> OperSvc
 AuthCtrl --> PermGuard
 AuthCtrl --> RoleMW
 ConfigCtrl --> PermGuard
@@ -170,11 +213,16 @@ StaffCtrl --> PermGuard
 StaffCtrl --> RoleMW
 InstCtrl --> PermGuard
 InstCtrl --> RoleMW
+OperCtrl --> PermGuard
+OperCtrl --> RoleMW
 AuthSvc --> DB
 ConfigSvc --> DB
 UsersSvc --> DB
 StaffSvc --> DB
 InstSvc --> DB
+OperSvc --> DB
+ConfigSvc --> ConfigHelper
+OperSvc --> ConfigHelper
 RoleMW --> RolesEnum
 PermGuard --> RolesEnum
 ```
@@ -187,6 +235,7 @@ PermGuard --> RolesEnum
 - [etablissement.controller.ts:1-44](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts#L1-L44)
 - [auth.service.ts:1-485](file://backend/src/modules/auth/services/auth.service.ts#L1-L485)
 - [roles.enum.ts](file://shared/src/enums/roles.enum.ts)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
 
 ## Detailed Component Analysis
 
@@ -234,6 +283,7 @@ AC-->>C : "200 OK with tokens"
   - List, retrieve, update, and toggle modules per institution.
 - Parameter management
   - CRUD operations on system parameters with categorization and bulk updates.
+- **Updated** Operational module parameters including cantine and transport configurations.
 - History and backups
   - Audit logs, restore from history, create and restore backups, invalidate caches, and export configuration.
 - Listener integration
@@ -323,6 +373,61 @@ UC-->>C : "200 OK"
 **Section sources**
 - [utilisateurs.controller.ts:47-203](file://backend/src/modules/utilisateurs/controllers/utilisateurs.controller.ts#L47-L203)
 
+### Operational Modules Enhancement
+
+#### Cantine Debt Limit Validation
+- **New Feature** Configurable debt limit enforcement for student meal accounts.
+- Parameter: `cantine.max_debt` with default value of 10,000 currency units.
+- Validation Logic: Prevents students from exceeding configured maximum debt when making meal purchases.
+- Currency Support: Automatically uses regional currency configuration.
+
+```mermaid
+flowchart TD
+Start(["Meal Purchase Request"]) --> GetParams["Get cantine.max_debt from config"]
+GetParams --> CheckEnrollment["Verify Student Enrollment"]
+CheckEnrollment --> CalcBalance["Calculate New Balance"]
+CalcBalance --> CheckDebt{"New Balance < 0?"}
+CheckDebt --> |No| Approve["Approve Purchase"]
+CheckDebt --> |Yes| CheckLimit{"Exceeds Max Debt?"}
+CheckLimit --> |Yes| Reject["Reject Purchase"]
+CheckLimit --> |No| Approve
+Approve --> Update["Update Student Account"]
+Reject --> LogError["Log Debt Exceeded Error"]
+Update --> End(["Transaction Complete"])
+LogError --> End
+```
+
+**Diagram sources**
+- [cantine.service.ts:148-160](file://backend/src/modules/cantine/services/cantine.service.ts#L148-L160)
+
+#### Transport Real-Time Tracking
+- **New Feature** Real-time bus delay detection and alert system.
+- Parameter: `transport.alert_delay_minutes` with configurable threshold for delay alerts.
+- Delay Calculation: Compares current time with scheduled departure time to determine delays.
+- Alert Generation: Automatically flags buses running behind schedule for operational monitoring.
+
+```mermaid
+sequenceDiagram
+participant O as "Operations"
+participant TS as "Transport Service"
+participant CFG as "Config Helper"
+O->>TS : "Check Bus Schedule"
+TS->>CFG : "Get transport.alert_delay_minutes"
+CFG-->>TS : "Delay Threshold"
+TS->>TS : "Calculate Time Difference"
+TS->>TS : "Compare with Threshold"
+TS-->>O : "Delay Status + Minutes"
+```
+
+**Diagram sources**
+- [transport.service.ts:123-137](file://backend/src/modules/transport/services/transport.service.ts#L123-L137)
+
+**Section sources**
+- [cantine.service.ts:33-43](file://backend/src/modules/cantine/services/cantine.service.ts#L33-L43)
+- [cantine.service.ts:148-160](file://backend/src/modules/cantine/services/cantine.service.ts#L148-L160)
+- [transport.service.ts:123-137](file://backend/src/modules/transport/services/transport.service.ts#L123-L137)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
+
 ### Authorization and Permissions
 - Role middleware
   - Enforces role-based access with a bypass for super administrators and logs denied access.
@@ -359,6 +464,7 @@ Deny --> Audit["Log Access Denied"]
   - Personal details linked to user via foreign key.
 - Configuration app entity
   - Institution metadata, locale, theme, license, active modules, and versioning.
+- **Updated** Operational configuration parameters integrated into centralized configuration system.
 
 ```mermaid
 erDiagram
@@ -430,7 +536,16 @@ varchar version
 timestamp createdAt
 timestamp updatedAt
 }
-UTILISATEUR ||--o{ PROFIL_UTILISATEUR : "has profile"
+PARAMETRE_SYSTEME {
+uuid id PK
+varchar cle UK
+json valeur
+varchar description
+varchar categorie
+timestamp createdAt
+timestamp updatedAt
+}
+CONFIGURATION_APP ||--o{ PROFIL_UTILISATEUR : "has profile"
 ```
 
 **Diagram sources**
@@ -448,6 +563,7 @@ UTILISATEUR ||--o{ PROFIL_UTILISATEUR : "has profile"
 - Services depend on repositories and shared configuration helpers.
 - Entities define relationships and constraints enforced by the ORM.
 - Guards and middlewares rely on shared role and permission definitions.
+- **Updated** Operational services depend on centralized configuration helper for parameter management.
 
 ```mermaid
 graph LR
@@ -456,9 +572,12 @@ CC["Configuration Controller"] --> CS["Configuration Service"]
 UC["Users Controller"] --> US["Users Service"]
 PC["Personnel Controller"] --> PS["Personnel Service"]
 EC["Etablissement Controller"] --> ES["Etablissement Service"]
+OperCtrl["Operational Controllers"] --> OS["Operational Services"]
 AS --> UE["User Entity"]
 AS --> PE["Profile Entity"]
 CS --> CA["Configuration App Entity"]
+CS --> CH["Config Helper"]
+OS --> CH
 AC --> RM["Role Middleware"]
 AC --> PG["Permission Guard"]
 CC --> RM
@@ -469,6 +588,8 @@ PC --> RM
 PC --> PG
 EC --> RM
 EC --> PG
+OperCtrl --> RM
+OperCtrl --> PG
 RM --> RE["Roles Enum"]
 PG --> RE
 ```
@@ -486,6 +607,7 @@ PG --> RE
 - [role.middleware.ts:1-152](file://backend/src/modules/auth/middlewares/role.middleware.ts#L1-L152)
 - [permission.guard.ts:1-118](file://backend/src/modules/auth/guards/permission.guard.ts#L1-L118)
 - [roles.enum.ts](file://shared/src/enums/roles.enum.ts)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
 
 **Section sources**
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
@@ -500,12 +622,15 @@ PG --> RE
 - [role.middleware.ts:1-152](file://backend/src/modules/auth/middlewares/role.middleware.ts#L1-L152)
 - [permission.guard.ts:1-118](file://backend/src/modules/auth/guards/permission.guard.ts#L1-L118)
 - [roles.enum.ts](file://shared/src/enums/roles.enum.ts)
+- [config.helper.ts:1-200](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L200)
 
 ## Performance Considerations
 - Centralized configuration parameters reduce repeated reads and enable dynamic tuning of security and behavior without redeployment.
+- **Updated** Configuration helper caches frequently accessed parameters to minimize database queries.
 - Token generation and refresh leverage IP/User-Agent binding to minimize replay risks and optimize session lifecycle.
 - Bulk parameter updates reduce round-trips for administrative tasks.
 - Audit logging is asynchronous and scoped to critical events to minimize overhead.
+- **New** Operational module parameters are cached locally within service instances for optimal performance.
 
 ## Troubleshooting Guide
 - Authentication failures
@@ -516,12 +641,22 @@ PG --> RE
 - Configuration operations
   - Validation errors surface structured field-level messages; ensure DTOs conform to schemas.
   - History and backup operations require appropriate permissions; confirm audit trail entries.
+- **New** Cantine debt limit issues
+  - Students unable to purchase meals may exceed configured `cantine.max_debt` limit; adjust parameter value as needed.
+  - Verify currency configuration matches regional settings.
+- **New** Transport delay detection problems
+  - Buses not flagged as delayed despite being late; check `transport.alert_delay_minutes` configuration.
+  - Timezone differences affecting delay calculations; ensure server timezone alignment.
 
 **Section sources**
 - [auth.service.ts:74-113](file://backend/src/modules/auth/services/auth.service.ts#L74-L113)
 - [role.middleware.ts:32-44](file://backend/src/modules/auth/middlewares/role.middleware.ts#L32-L44)
 - [permission.guard.ts:68-81](file://backend/src/modules/auth/guards/permission.guard.ts#L68-L81)
 - [configuration.controller.ts:55-65](file://backend/src/modules/configuration/controllers/configuration.controller.ts#L55-L65)
+- [cantine.service.ts:148-160](file://backend/src/modules/cantine/services/cantine.service.ts#L148-L160)
+- [transport.service.ts:123-137](file://backend/src/modules/transport/services/transport.service.ts#L123-L137)
 
 ## Conclusion
 The administrative modules provide a robust, configurable, and auditable foundation for institutional governance. Centralized configuration enables dynamic control of application behavior, while strict role and permission enforcement ensures least-privilege access. The integration across authentication, institutional settings, HR, and user administration promotes compliance and operational consistency.
+
+**Updated** Recent enhancements include operational module configuration capabilities with cantine debt limit validation and transport real-time tracking, providing administrators with powerful tools to monitor and control critical school services while maintaining system integrity and compliance.

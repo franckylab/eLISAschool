@@ -101,6 +101,7 @@ export const createParametreSchema = z.object({
         value: z.string(),
         label: z.string(),
     })).optional(),
+    etablissementId: z.string().uuid().optional(),
 });
 
 /**
@@ -124,6 +125,7 @@ export const updateParametresBulkSchema = z.object({
     parametres: z.array(z.object({
         cle: z.string(),
         valeur: z.any(),
+        etablissementId: z.string().uuid().optional(),
     })),
 });
 
@@ -136,6 +138,7 @@ export const queryParametresSchema = z.object({
     modifiableRuntime: z.boolean().optional(),
     visible: z.boolean().optional(),
     search: z.string().optional(),
+    etablissementId: z.string().uuid().optional(),
 });
 
 /**

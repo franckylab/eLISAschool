@@ -1,1 +1,1 @@
-Unifies backend, frontend, and shared modules into a cohesive educational management platform via npm workspaces and Docker Compose.
+Orchestrates a full-stack educational management monorepo by unifying backend, frontend, and shared libraries through npm workspaces and Docker Compose.

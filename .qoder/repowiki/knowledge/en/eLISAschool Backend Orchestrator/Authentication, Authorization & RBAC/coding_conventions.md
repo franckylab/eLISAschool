@@ -1,3 +1,0 @@
-- Services are exported as both a class and a singleton instance (e.g., `export const authService = new AuthService()`) to facilitate dependency injection or direct import.
-- Request validation is centralized using Zod schemas within controllers, throwing a standardized `AppError` with a `VALIDATION_ERROR` code upon failure.
-- Audit logging is consistently integrated into critical auth flows (login, logout, password change) via `auditService.log()` calls within service methods.

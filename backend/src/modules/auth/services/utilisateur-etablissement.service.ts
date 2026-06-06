@@ -46,7 +46,7 @@ export class UtilisateurEtablissementService {
         }
 
         // Valeurs par défaut selon le rôle
-        const defaults: Record<Role, Partial<RoleLimitationEtablissement>> = {
+        const defaults: Partial<Record<Role, Partial<RoleLimitationEtablissement>>> = {
             [Role.SUPER_ADMIN]: { maxEtablissements: 999, peutChanger: true, necessiteValidation: false },
             [Role.ADMIN]: { maxEtablissements: 10, peutChanger: true, necessiteValidation: false },
             [Role.CHEF_ETABLISSEMENT]: { maxEtablissements: 5, peutChanger: true, necessiteValidation: false },
@@ -60,9 +60,9 @@ export class UtilisateurEtablissementService {
 
         return {
             role,
-            maxEtablissements: defaults[role].maxEtablissements || 1,
-            peutChanger: defaults[role].peutChanger || false,
-            necessiteValidation: defaults[role].necessiteValidation || false,
+            maxEtablissements: defaults[role]?.maxEtablissements || 1,
+            peutChanger: defaults[role]?.peutChanger || false,
+            necessiteValidation: defaults[role]?.necessiteValidation || false,
         } as RoleLimitationEtablissement;
     }
 

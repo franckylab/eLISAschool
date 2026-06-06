@@ -7,10 +7,11 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Classe, AffectationEleve } from '../entities';
-import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto } from '../dto';
+import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, QueryClassesDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
 export class ClassesService {
     private classeRepo: Repository<Classe>;
@@ -35,20 +36,52 @@ export class ClassesService {
         return classe;
     }
 
-    async findAll(niveauId?: string, anneeId?: string, etablissementId?: string): Promise<Classe[]> {
-        const where: any = {};
-        if (niveauId) where.niveauId = niveauId;
-        if (anneeId) where.anneeScolaireId = anneeId;
-        if (etablissementId) where.etablissementId = etablissementId;
+    /**
+     * Rechercher toutes les classes avec pagination et filtres
+     */
+    async findAll(query: QueryClassesDto, etablissementId?: string): Promise<PaginatedResult<Classe>> {
+        const { page, limit, search, niveauId, anneeScolaireId, actif } = query;
 
-        // Si anneeId non fourni mais filtre par niveau, on essaie de filtrer par année active par défaut ?
-        // Non, si pas de filtre, on retourne tout ou on laisse le controller décider.
+        const qb = this.classeRepo
+            .createQueryBuilder('c')
+            .leftJoinAndSelect('c.niveau', 'n')
+            .leftJoinAndSelect('c.professeurPrincipal', 'pp')
+            .leftJoinAndSelect('c.anneeScolaire', 'a')
+            .where('1=1');
 
-        return this.classeRepo.find({
-            where,
-            relations: ['niveau', 'professeurPrincipal', 'professeurPrincipal.utilisateur', 'anneeScolaire'],
-            order: { nom: 'ASC' },
-        });
+        // Filtre par établissement (multi-tenancy)
+        if (etablissementId) {
+            qb.andWhere('c.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        // Filtres optionnels
+        if (niveauId) {
+            qb.andWhere('c.niveauId = :niveauId', { niveauId });
+        }
+
+        if (anneeScolaireId) {
+            qb.andWhere('c.anneeScolaireId = :anneeScolaireId', { anneeScolaireId });
+        }
+
+        if (actif !== undefined) {
+            qb.andWhere('c.actif = :actif', { actif });
+        }
+
+        // Recherche textuelle
+        if (search) {
+            qb.andWhere(
+                '(c.nom ILIKE :search OR c.code ILIKE :search OR c.sallePrincipale ILIKE :search)',
+                { search: `%${search}%` }
+            );
+        }
+
+        // Tri avec validation
+        const allowedFields = ['createdAt', 'nom', 'code', 'effectifActuel'];
+        const orderField = allowedFields.includes(query.sortBy) ? query.sortBy : 'nom';
+        qb.orderBy(`c.${orderField}`, query.sortOrder);
+
+        // Pagination optimisée
+        return paginateWithQueryBuilder(qb, page, limit, false);
     }
 
     async findOne(id: string, etablissementId?: string): Promise<Classe> {

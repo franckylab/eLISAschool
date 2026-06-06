@@ -1,0 +1,4 @@
+- Centralized orchestration in `src/app.ts` mounts all feature module routers under the `/api/` prefix after applying global security and tenant isolation middleware.
+- Cross-cutting concerns like multi-tenancy (`tenantMiddleware`), audit logging, and error handling are enforced globally before requests reach specific domain controllers.
+- Shared infrastructure including database connections (`AppDataSource`) and environment configuration is initialized at startup in `src/index.ts` before the HTTP server boots.
+- Domain modules remain isolated as self-contained units (controller/service/entity) but rely on the parent's dependency injection and shared utility libraries for consistent behavior.

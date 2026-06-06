@@ -1,0 +1,108 @@
+/**
+ * ==================================
+ * eLISAschool - Migration: Système de Backup Production-Grade
+ * ==================================
+ * Version: 1.0.0
+ * Date: 2025-06-06
+ * 
+ * Crée la table backup_records pour le nouveau système de sauvegarde
+ * avec support multi-tenant, chiffrement, compression et rétention.
+ * 
+ * CHANGEMENTS:
+ * 1. Table backup_records avec métadonnées complètes
+ * 2. Index optimisés pour requêtes multi-tenant
+ * 3. Support soft delete avec deleted_at
+ * 4. Contraintes de validation sur backup_type et storage_provider
+ * 
+ * BACKWARD COMPATIBILITY:
+ * - Ne supprime PAS historique_configuration (ancien système)
+ * - Les deux systèmes coexistent pendant la transition
+ * - Migration réversible
+ */
+
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class BackupSystemV2_1737500000000 implements MigrationInterface {
+    name = 'BackupSystemV2_1737500000000';
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        console.log('📝 Migration: Système de backup production-grade v2...');
+
+        // 1. Créer la table backup_records
+        await queryRunner.query(`
+            CREATE TABLE backup_records (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                etablissement_id UUID REFERENCES etablissements(id) ON DELETE CASCADE,
+                backup_type VARCHAR(50) NOT NULL CHECK (backup_type IN ('config', 'database', 'full')),
+                version VARCHAR(100) NOT NULL,
+                checksum VARCHAR(64) NOT NULL,
+                storage_provider VARCHAR(50) NOT NULL DEFAULT 'database' 
+                    CHECK (storage_provider IN ('database', 's3', 'filesystem')),
+                storage_key VARCHAR(500) NOT NULL,
+                encrypted BOOLEAN DEFAULT false,
+                compressed BOOLEAN DEFAULT false,
+                size_bytes BIGINT,
+                metadata JSONB,
+                retention_until TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW(),
+                deleted_at TIMESTAMP
+            )
+        `);
+
+        console.log('✅ Table backup_records créée');
+
+        // 2. Créer les index
+        await queryRunner.query(`
+            CREATE INDEX idx_backup_records_tenant 
+            ON backup_records(etablissement_id, backup_type, created_at DESC)
+        `);
+        console.log('✅ Index tenant créé');
+
+        await queryRunner.query(`
+            CREATE INDEX idx_backup_records_checksum 
+            ON backup_records(checksum)
+        `);
+        console.log('✅ Index checksum créé');
+
+        await queryRunner.query(`
+            CREATE INDEX idx_backup_records_retention 
+            ON backup_records(retention_until)
+            WHERE retention_until IS NOT NULL
+        `);
+        console.log('✅ Index retention créé');
+
+        await queryRunner.query(`
+            CREATE INDEX idx_backup_records_deleted_at 
+            ON backup_records(deleted_at)
+            WHERE deleted_at IS NOT NULL
+        `);
+        console.log('✅ Index soft delete créé');
+
+        // 3. Ajouter un commentaire sur la table
+        await queryRunner.query(`
+            COMMENT ON TABLE backup_records IS 
+            'Système de backup production-grade v2 - Supporte multi-tenant, chiffrement, compression, rétention'
+        `);
+
+        console.log('\n✅ Migration terminée avec succès!');
+        console.log('\n📊 STATISTIQUES:');
+        console.log('   - Table créée: backup_records');
+        console.log('   - Index créés: 4');
+        console.log('   - Ancien système (historique_configuration): PRÉSERVÉ');
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        console.log('↩️ Rollback: Suppression du système de backup v2...');
+
+        // Supprimer les index
+        await queryRunner.query(`DROP INDEX IF EXISTS idx_backup_records_tenant`);
+        await queryRunner.query(`DROP INDEX IF EXISTS idx_backup_records_checksum`);
+        await queryRunner.query(`DROP INDEX IF EXISTS idx_backup_records_retention`);
+        await queryRunner.query(`DROP INDEX IF EXISTS idx_backup_records_deleted_at`);
+
+        // Supprimer la table
+        await queryRunner.query(`DROP TABLE IF EXISTS backup_records`);
+
+        console.log('✅ Rollback terminé');
+    }
+}

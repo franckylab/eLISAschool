@@ -1,3 +1,0 @@
-- All feature modules follow a consistent directory structure with `controllers/`, `services/`, `entities/`, and `dto/` subdirectories.
-- Module exports are centralized in `src/modules/index.ts` using barrel exports (`export * from './module-name'`) for clean imports.
-- Controllers are mounted in `src/app.ts` using a consistent pattern of `app.use('/api/<resource>', <controller>)`.

@@ -1,4 +1,0 @@
-- Centralized Express application (`src/app.ts`) acts as the composition root, importing and mounting all domain module controllers under specific `/api/*` routes.
-- Cross-cutting concerns are enforced globally: `tenantMiddleware` is applied after public routes to inject multi-tenancy context, while `helmet`, `cors`, and `rateLimit` secure the entire surface.
-- Shared infrastructure (`src/common/`) provides standardized error handling, request logging, and API response formatting used uniformly by all feature modules.
-- Application lifecycle is managed in `src/index.ts`, which initializes the TypeORM data source before bootstrapping the Express server, ensuring database readiness for all modules.

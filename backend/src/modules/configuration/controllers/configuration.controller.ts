@@ -211,41 +211,92 @@ router.get('/parametres/module/:module', authMiddleware, canViewParams, async (r
 
 router.get('/parametres/:cle', authMiddleware, canViewParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const param = await configurationService.getParametreByKey(req.params.cle);
-        if (!param) throw new AppError('Paramètre non trouvé', 404, 'NOT_FOUND');
-        res.json({ success: true, data: param });
+        // Utiliser req.etablissementId pour la résolution avec fallback
+        const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
+            ? (req.query.etablissementId as string | undefined)
+            : req.etablissementId;
+
+        const valeur = await configurationService.getParametre(req.params.cle, etablissementId);
+        
+        if (valeur === null) {
+            throw new AppError('Paramètre non trouvé', 404, 'NOT_FOUND');
+        }
+        
+        // Retourner aussi les métadonnées du paramètre
+        const paramGlobal = await configurationService.getParametreByKey(req.params.cle);
+        
+        res.json({ 
+            success: true, 
+            data: {
+                cle: req.params.cle,
+                valeur,
+                etablissementId: etablissementId || null,
+                metadata: paramGlobal ? {
+                    description: paramGlobal.description,
+                    typeValeur: paramGlobal.typeValeur,
+                    categorie: paramGlobal.categorie,
+                } : null
+            }
+        });
     } catch (error) { next(error); }
 });
 
 router.post('/parametres', authMiddleware, canCreateParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createParametreSchema, req.body);
-        const param = await configurationService.createParametre(dto);
+        
+        // SUPER_ADMIN peut créer pour un établissement spécifique
+        const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
+            ? dto.etablissementId
+            : req.etablissementId;
+        
+        const param = await configurationService.createParametre({
+            ...dto,
+            etablissementId
+        }, req.utilisateur?.id, req);
 
         await historyService.logAction({
             utilisateurId: req.utilisateur?.id,
             action: ActionConfiguration.CREATE,
             cible: CibleConfiguration.PARAMETRE,
-            cibleNom: dto.cle,
+            cibleNom: etablissementId ? `${dto.cle} [${etablissementId}]` : dto.cle,
             nouvelleValeur: dto.valeur,
             req,
         });
 
-        res.status(201).json({ success: true, data: param, message: 'Paramètre créé' });
+        res.status(201).json({ 
+            success: true, 
+            data: param, 
+            message: `Paramètre créé${etablissementId ? ' pour cet établissement' : ''}` 
+        });
     } catch (error) { next(error); }
 });
 
 router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const ancienParam = await configurationService.getParametreByKey(req.params.cle);
         const dto = validate(updateParametreSchema, req.body);
-        const param = await configurationService.updateParametre(req.params.cle, dto);
+        
+        // Utiliser req.etablissementId pour le scopage
+        const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
+            ? (req.query.etablissementId as string | undefined)
+            : req.etablissementId;
+        
+        const ancienParam = await configurationService.getParametreByKey(req.params.cle);
+        
+        // Utiliser setParametre qui gère le scopage
+        const param = await configurationService.setParametre(
+            req.params.cle, 
+            dto.valeur,
+            etablissementId,
+            req.utilisateur?.id,
+            req
+        );
 
         await historyService.logAction({
             utilisateurId: req.utilisateur?.id,
             action: ActionConfiguration.UPDATE,
             cible: CibleConfiguration.PARAMETRE,
-            cibleNom: req.params.cle,
+            cibleNom: etablissementId ? `${req.params.cle} [${etablissementId}]` : req.params.cle,
             ancienneValeur: ancienParam?.valeur,
             nouvelleValeur: param.valeur,
             restaurable: true,
@@ -262,32 +313,68 @@ router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Reques
             utilisateurId: req.utilisateur?.id,
         });
 
-        res.json({ success: true, data: param, message: 'Paramètre mis à jour' });
+        res.json({ 
+            success: true, 
+            data: param, 
+            message: `Paramètre mis à jour${etablissementId ? ' pour cet établissement' : ''}` 
+        });
     } catch (error) { next(error); }
 });
 
 router.delete('/parametres/:cle', authMiddleware, canDeleteParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const param = await configurationService.getParametreByKey(req.params.cle);
-        await configurationService.deleteParametre(req.params.cle);
+        // Utiliser req.etablissementId pour le scopage
+        const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
+            ? (req.query.etablissementId as string | undefined)
+            : req.etablissementId;
+        
+        if (etablissementId) {
+            // Supprimer l'override pour cet établissement (retour au global)
+            const param = await configurationService.getParametre(req.params.cle, etablissementId);
+            await configurationService.resetParametre(
+                req.params.cle,
+                etablissementId,
+                req.utilisateur?.id,
+                req
+            );
 
-        await historyService.logAction({
-            utilisateurId: req.utilisateur?.id,
-            action: ActionConfiguration.DELETE,
-            cible: CibleConfiguration.PARAMETRE,
-            cibleNom: req.params.cle,
-            ancienneValeur: param?.valeur,
-            req,
-        });
+            await historyService.logAction({
+                utilisateurId: req.utilisateur?.id,
+                action: ActionConfiguration.DELETE,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleNom: `${req.params.cle} [${etablissementId}] (override)`,
+                ancienneValeur: param ? JSON.stringify(param) : undefined,
+                req,
+            });
 
-        res.json({ success: true, message: 'Paramètre supprimé' });
+            res.json({ 
+                success: true, 
+                message: `Override supprimé - retour au paramètre global` 
+            });
+        } else {
+            // Supprimer le paramètre global (seulement si aucun override n'existe)
+            const param = await configurationService.getParametreByKey(req.params.cle);
+            await configurationService.deleteParametre(req.params.cle, req.utilisateur?.id, req);
+
+            await historyService.logAction({
+                utilisateurId: req.utilisateur?.id,
+                action: ActionConfiguration.DELETE,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleNom: req.params.cle,
+                ancienneValeur: param?.valeur,
+                req,
+            });
+
+            res.json({ success: true, message: 'Paramètre global supprimé' });
+        }
     } catch (error) { next(error); }
 });
 
 router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const ancienParam = await configurationService.getParametreByKey(req.params.cle);
-        const param = await configurationService.resetParametre(req.params.cle);
+        await configurationService.resetParametre(req.params.cle);
+        const nouveauParam = await configurationService.getParametreByKey(req.params.cle);
 
         await historyService.logAction({
             utilisateurId: req.utilisateur?.id,
@@ -295,11 +382,11 @@ router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req
             cible: CibleConfiguration.PARAMETRE,
             cibleNom: req.params.cle,
             ancienneValeur: ancienParam?.valeur,
-            nouvelleValeur: param.valeur,
+            nouvelleValeur: nouveauParam?.valeur,
             req,
         });
 
-        res.json({ success: true, data: param, message: 'Paramètre réinitialisé' });
+        res.json({ success: true, data: nouveauParam, message: 'Paramètre réinitialisé' });
     } catch (error) { next(error); }
 });
 

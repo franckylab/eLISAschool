@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/core_framework
+title: Core Framework & Shared Infrastructure
+scope:
+    - backend/src/common/
+    - backend/src/config/
+    - backend/src/database/
+    - backend/src/app.ts
+    - backend/src/index.ts
+source_files: []
+depends_on: []
+related_to:
+    - path: shared

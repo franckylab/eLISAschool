@@ -69,7 +69,7 @@ router.post(
 
             const affectation = await utilisateurEtablissementService.ajouter(
                 dto,
-                req.utilisateur.id
+                req.utilisateur!.id
             );
 
             res.status(201).json({

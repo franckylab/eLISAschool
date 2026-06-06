@@ -24,15 +24,6 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { authMiddleware, UtilisateurAuth } from '../middlewares/auth.middleware';
 
-// Extension de Request pour inclure l'utilisateur authentifié
-declare global {
-    namespace Express {
-        interface Request {
-            utilisateur?: UtilisateurAuth;
-        }
-    }
-}
-
 const router = Router();
 const authService = new AuthService();
 

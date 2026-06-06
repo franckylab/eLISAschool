@@ -7,9 +7,10 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { MembrePersonnel, TypePersonnel } from '../entities';
-import { CreatePersonnelDto, UpdatePersonnelDto, CreateTypePersonnelDto } from '../dto';
+import { CreatePersonnelDto, UpdatePersonnelDto, CreateTypePersonnelDto, QueryPersonnelDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
 export class PersonnelService {
     private personnelRepo: Repository<MembrePersonnel>;
@@ -55,15 +56,47 @@ export class PersonnelService {
         return membre;
     }
 
-    async findAll(typeId?: string, etablissementId?: string): Promise<MembrePersonnel[]> {
-        const where: any = {};
-        if (typeId) where.typePersonnelId = typeId;
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.personnelRepo.find({
-            where,
-            relations: ['utilisateur', 'typePersonnel'],
-            order: { createdAt: 'DESC' },
-        });
+    /**
+     * Rechercher tous les membres du personnel avec pagination et filtres
+     */
+    async findAll(query: QueryPersonnelDto, etablissementId?: string): Promise<PaginatedResult<MembrePersonnel>> {
+        const { page, limit, search, typePersonnelId, statut } = query;
+
+        const qb = this.personnelRepo
+            .createQueryBuilder('p')
+            .leftJoinAndSelect('p.utilisateur', 'u')
+            .leftJoinAndSelect('p.typePersonnel', 'tp')
+            .where('1=1');
+
+        // Filtre par établissement (multi-tenancy)
+        if (etablissementId) {
+            qb.andWhere('p.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        // Filtres optionnels
+        if (typePersonnelId) {
+            qb.andWhere('p.typePersonnelId = :typePersonnelId', { typePersonnelId });
+        }
+
+        if (statut) {
+            qb.andWhere('p.statut = :statut', { statut });
+        }
+
+        // Recherche textuelle
+        if (search) {
+            qb.andWhere(
+                '(p.matricule ILIKE :search OR p.specialites ILIKE :search OR p.diplomes ILIKE :search)',
+                { search: `%${search}%` }
+            );
+        }
+
+        // Tri avec validation
+        const allowedFields = ['createdAt', 'matricule', 'dateEmbauche', 'statut'];
+        const orderField = allowedFields.includes(query.sortBy) ? query.sortBy : 'createdAt';
+        qb.orderBy(`p.${orderField}`, query.sortOrder);
+
+        // Pagination optimisée
+        return paginateWithQueryBuilder(qb, page, limit, false);
     }
 
     async findOne(id: string): Promise<MembrePersonnel> {

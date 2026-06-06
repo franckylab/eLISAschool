@@ -2,9 +2,11 @@
  * ==================================
  * eLISAschool - DTOs Matières
  * ==================================
+ * Version: 2.0.0
  */
 
 import { z } from 'zod';
+import { paginationSchema } from '@common/dto/pagination.dto';
 
 export const createMatiereSchema = z.object({
   nom: z.string().min(2).max(100),
@@ -48,3 +50,13 @@ export type CreateGroupeMatiereDto = z.infer<typeof createGroupeMatiereSchema>;
 export type CreateMatiereNiveauDto = z.infer<typeof createMatiereNiveauSchema>;
 export type UpdateMatiereNiveauDto = z.infer<typeof updateMatiereNiveauSchema>;
 export type AffecterEnseignantDto = z.infer<typeof affecterEnseignantSchema>;
+
+/**
+ * Schéma de requête pour la liste des matières
+ */
+export const queryMatieresSchema = paginationSchema.extend({
+    groupeId: z.string().uuid().optional(),
+    actif: z.string().transform((v) => v === 'true').optional(),
+});
+
+export type QueryMatieresDto = z.infer<typeof queryMatieresSchema>;

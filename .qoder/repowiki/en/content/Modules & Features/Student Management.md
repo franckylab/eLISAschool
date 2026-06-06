@@ -13,7 +13,7 @@
 - [carte.dto.ts](file://backend/src/modules/cartes/dto/carte.dto.ts)
 - [impressions.service.ts](file://backend/src/modules/impressions/services/impressions.service.ts)
 - [impressions.entity.ts](file://backend/src/modules/impressions/entities/impressions.entity.ts)
-- [impressions.dto.ts](file://backend/src/modules/imprints/dto/impressions.dto.ts)
+- [impressions.dto.ts](file://backend/src/modules/impressions/dto/impressions.dto.ts)
 - [bulletins.service.ts](file://backend/src/modules/bulletins/services/bulletins.service.ts)
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 - [niveaux.service.ts](file://backend/src/modules/niveaux/services/niveaux.service.ts)
@@ -23,7 +23,18 @@
 - [periodes.service.ts](file://backend/src/modules/periodes/services/periodes.service.ts)
 - [periode.entity.ts](file://backend/src/modules/periodes/entities/periode.entity.ts)
 - [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [CONFIGURATION_100_PERCENT.md](file://CONFIGURATION_100_PERCENT.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for five new student management configuration parameters
+- Updated enrollment and profile management section to include automatic matricule generation
+- Enhanced photo and medical record requirements documentation
+- Added maximum class size configuration parameter coverage
+- Updated troubleshooting guide with configuration-related error handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -31,14 +42,15 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Configuration Parameters](#configuration-parameters)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document describes the student management modules within the eLISAschool backend. It focuses on student enrollment, personal records, academic tracking, and identification systems. It also explains the student lifecycle from enrollment through graduation, including academic progress tracking, behavioral records, and administrative documentation. Integration between student data and academic modules is emphasized to ensure data consistency across the system.
+This document describes the student management modules within the eLISAschool backend. It focuses on student enrollment, personal records, academic tracking, and identification systems. The system now includes advanced configuration management for enrollment limits, automatic ID generation, and documentation requirements. It also explains the student lifecycle from enrollment through graduation, including academic progress tracking, behavioral records, and administrative documentation. Integration between student data and academic modules is emphasized to ensure data consistency across the system.
 
 ## Project Structure
 The student management domain is organized around feature-based modules:
@@ -70,6 +82,9 @@ end
 subgraph "Documentation"
 I["Impressions Service<br/>Impressions Entities"]
 end
+subgraph "Configuration"
+CFG["Config Helper<br/>Parameter System"]
+end
 E --> U
 E --> N
 E --> B
@@ -80,6 +95,9 @@ O --> E
 C --> U
 I --> E
 I --> B
+CFG --> E
+CFG --> C
+CFG --> I
 ```
 
 **Diagram sources**
@@ -93,6 +111,7 @@ I --> B
 - [orientation.service.ts:1-200](file://backend/src/modules/orientation/services/orientation.service.ts#L1-L200)
 - [cartes.service.ts:1-200](file://backend/src/modules/cartes/services/cartes.service.ts#L1-L200)
 - [impressions.service.ts:1-200](file://backend/src/modules/impressions/services/impressions.service.ts#L1-L200)
+- [config.helper.ts:1-131](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L131)
 
 **Section sources**
 - [eleves.service.ts:14-78](file://backend/src/modules/eleves/services/eleves.service.ts#L14-L78)
@@ -138,7 +157,7 @@ I --> B
 - [impressions.entity.ts:21-138](file://backend/src/modules/impressions/entities/impressions.entity.ts#L21-L138)
 
 ## Architecture Overview
-The system follows a layered architecture with feature-based modules. Students are represented by the Eleve entity linked to the Utilisateur entity. Academic data is managed by dedicated services for grades, transcripts, levels, subjects, and periods. Orientation and ID modules integrate with students via user IDs. Printing leverages templates and a queued generation pipeline.
+The system follows a layered architecture with feature-based modules. Students are represented by the Eleve entity linked to the Utilisateur entity. Academic data is managed by dedicated services for grades, transcripts, levels, subjects, and periods. Orientation and ID modules integrate with students via user IDs. Printing leverages templates and a queued generation pipeline. Configuration parameters are centrally managed through the configuration helper system.
 
 ```mermaid
 classDiagram
@@ -229,6 +248,15 @@ class FileImpression {
 +string erreur
 +date dateTraitement
 }
+class ConfigurationParam {
++string cle
++string valeur
++string typeValeur
++string module
++string description
++boolean visible
++number ordre
+}
 Eleve --> Utilisateur : "utilisateurId"
 Note --> Eleve : "eleveId"
 Note --> Matiere : "matiereId"
@@ -237,6 +265,9 @@ Bulletin --> Eleve : "eleveId"
 Bulletin --> Periode : "periodeId"
 Carte --> Utilisateur : "utilisateurId"
 FileImpression --> ModeleDocument : "modeleId"
+ConfigurationParam --> Eleve : "eleves.module"
+ConfigurationParam --> Carte : "eleves.module"
+ConfigurationParam --> FileImpression : "eleves.module"
 ```
 
 **Diagram sources**
@@ -249,6 +280,7 @@ FileImpression --> ModeleDocument : "modeleId"
 - [periodes.service.ts:1-200](file://backend/src/modules/periodes/services/periodes.service.ts#L1-L200)
 - [carte.entity.ts:22-60](file://backend/src/modules/cartes/entities/carte.entity.ts#L22-L60)
 - [impressions.entity.ts:45-138](file://backend/src/modules/impressions/entities/impressions.entity.ts#L45-L138)
+- [config.helper.ts:1-131](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L131)
 
 ## Detailed Component Analysis
 
@@ -330,7 +362,7 @@ PrintQueue --> End(["Document Ready"])
 - Appointments:
   - Appointment scheduling and cancellation are supported with role-based access controls.
 - Integration:
-  - Orientation data is student-centric and relies on the Eleve entity’s identifier.
+  - Orientation data is student-centric and relies on the Eleve entity's identifier.
 
 ```mermaid
 sequenceDiagram
@@ -446,6 +478,49 @@ Abandoned --> [*]
 - [eleve.entity.ts:69-73](file://backend/src/modules/eleves/entities/eleve.entity.ts#L69-L73)
 - [eleves.service.ts:60-69](file://backend/src/modules/eleves/services/eleves.service.ts#L60-L69)
 
+## Configuration Parameters
+
+### Student Management Configuration Parameters
+The student management system now includes comprehensive configuration parameters managed through the centralized configuration system:
+
+#### Enrollment Configuration Parameters
+- **eleves.max_students_per_class**: Maximum number of students allowed per class (default: 45)
+- **eleves.auto_generate_matricule**: Automatically generate student matricules (default: true)
+- **eleves.matricule_prefix**: Prefix used for automatic matricule generation (default: "ELV")
+- **eleves.require_photo**: Require photo upload for student enrollment (default: false)
+- **eleves.require_medical_record**: Require medical record attachment (default: false)
+- **eleves.default_annee_scolaire**: Default academic year for new enrollments (default: empty)
+
+#### Configuration Implementation Details
+The configuration parameters are accessed through the centralized configuration helper system which provides:
+- Type-safe parameter retrieval with caching
+- Runtime parameter modification support
+- Module-specific parameter grouping
+- Validation and default value handling
+
+```mermaid
+flowchart TD
+ConfigStart["Configuration Access"] --> GetParam["getParam()"]
+GetParam --> CacheCheck{"Cache Hit?"}
+CacheCheck --> |Yes| ReturnCached["Return Cached Value"]
+CacheCheck --> |No| DBAccess["Database Access"]
+DBAccess --> ParseValue["Parse & Validate"]
+ParseValue --> CacheStore["Store in Cache"]
+CacheStore --> ReturnParsed["Return Parsed Value"]
+ReturnCached --> End["Configuration Value"]
+ReturnParsed --> End
+```
+
+**Diagram sources**
+- [config.helper.ts:24-37](file://backend/src/modules/configuration/utils/config.helper.ts#L24-L37)
+- [config.helper.ts:42-54](file://backend/src/modules/configuration/utils/config.helper.ts#L42-L54)
+
+**Section sources**
+- [005-complete-config-params-100.ts:134-206](file://backend/src/database/migrations/005-complete-config-params-100.ts#L134-L206)
+- [005-advanced-config-params.ts:99-136](file://backend/src/database/migrations/005-advanced-config-params.ts#L99-L136)
+- [CONFIGURATION_100_PERCENT.md:13-19](file://CONFIGURATION_100_PERCENT.md#L13-L19)
+- [config.helper.ts:1-131](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L131)
+
 ## Dependency Analysis
 - Coupling:
   - Eleve depends on Utilisateur for identity.
@@ -453,6 +528,7 @@ Abandoned --> [*]
   - Bulletins depend on Eleve and Periode for aggregation.
   - Cartes depends on Utilisateur for issuing and on configuration for parameters.
   - Impressions depends on ModeleDocument and FileImpression for templating and queueing.
+  - Configuration helper centralizes access to all module-specific parameters.
 - Cohesion:
   - Each module encapsulates related responsibilities (enrollment, orientation, ID, printing, academics).
 - External integrations:
@@ -468,6 +544,9 @@ Bulletin --> Eleve
 Bulletin --> Periode
 Carte --> Utilisateur
 FileImpression --> ModeleDocument
+ConfigHelper --> ElevesService
+ConfigHelper --> CartesService
+ConfigHelper --> ImpressionsService
 ```
 
 **Diagram sources**
@@ -477,6 +556,7 @@ FileImpression --> ModeleDocument
 - [bulletins.service.ts:1-200](file://backend/src/modules/bulletins/services/bulletins.service.ts#L1-L200)
 - [carte.entity.ts:22-60](file://backend/src/modules/cartes/entities/carte.entity.ts#L22-L60)
 - [impressions.entity.ts:45-138](file://backend/src/modules/impressions/entities/impressions.entity.ts#L45-L138)
+- [config.helper.ts:1-131](file://backend/src/modules/configuration/utils/config.helper.ts#L1-L131)
 
 **Section sources**
 - [utilisateurs.service.ts:1-200](file://backend/src/modules/utilisateurs/services/utilisateurs.service.ts#L1-L200)
@@ -491,8 +571,8 @@ FileImpression --> ModeleDocument
   - Centralized configuration parameters minimize repeated reads and improve card and print generation performance.
 - Asynchronous processing:
   - Print queue with status tracking enables non-blocking generation and retry mechanisms.
-
-[No sources needed since this section provides general guidance]
+- Parameter caching:
+  - Configuration helper implements 60-second cache TTL for frequently accessed parameters.
 
 ## Troubleshooting Guide
 - Duplicate matricule or user linkage:
@@ -503,17 +583,20 @@ FileImpression --> ModeleDocument
   - Generation pipeline captures errors and updates job status with error messages for diagnostics.
 - Card validation:
   - Verification checks status and expiration to prevent invalid scans.
+- Configuration parameter issues:
+  - Invalid parameter values trigger validation errors during parameter parsing.
+  - Missing parameters fall back to configured default values.
+  - Type conversion errors are handled gracefully with fallback defaults.
 
 **Section sources**
 - [eleves.service.ts:22-26](file://backend/src/modules/eleves/services/eleves.service.ts#L22-L26)
 - [eleves.service.ts:50-54](file://backend/src/modules/eleves/services/eleves.service.ts#L50-L54)
 - [impressions.service.ts:172-177](file://backend/src/modules/impressions/services/impressions.service.ts#L172-L177)
 - [cartes.service.ts:139-158](file://backend/src/modules/cartes/services/cartes.service.ts#L139-L158)
+- [config.helper.ts:42-54](file://backend/src/modules/configuration/utils/config.helper.ts#L42-L54)
 
 ## Conclusion
-The student management modules in eLISAschool provide a cohesive foundation for enrollment, academic tracking, guidance, ID issuance, and document printing. By linking student profiles to academic data and leveraging configuration-driven features, the system maintains consistency and scalability across the student lifecycle.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The student management modules in eLISAschool provide a cohesive foundation for enrollment, academic tracking, guidance, ID issuance, and document printing. The addition of comprehensive configuration parameters enhances system flexibility and administrative control. By linking student profiles to academic data and leveraging configuration-driven features, the system maintains consistency and scalability across the student lifecycle while supporting diverse institutional requirements.
 
 ## Appendices
 - API endpoints overview:
@@ -521,5 +604,7 @@ The student management modules in eLISAschool provide a cohesive foundation for 
   - Orientation: Profiles, suggestions, and appointments under orientation controller.
   - ID Cards: Creation, renewal, verification under cartes service.
   - Printing: Templates and print jobs under impressions service.
-
-[No sources needed since this section provides general guidance]
+- Configuration parameters:
+  - Student enrollment parameters: max_students_per_class, auto_generate_matricule, matricule_prefix
+  - Documentation requirements: require_photo, require_medical_record
+  - Academic year settings: default_annee_scolaire

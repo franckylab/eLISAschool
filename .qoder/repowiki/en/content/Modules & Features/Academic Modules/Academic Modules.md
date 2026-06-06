@@ -16,10 +16,23 @@
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
 - [bulletin.entity.ts](file://backend/src/modules/bulletins/entities/bulletin.entity.ts)
 - [bulletins.controller.ts](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts)
+- [bulletins.service.ts](file://backend/src/modules/bulletins/services/bulletins.service.ts)
 - [note.entity.ts](file://backend/src/modules/notes/entities/note.entity.ts)
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
 - [etablissement.entity.ts](file://backend/src/modules/etablissement/entities/etablissement.entity.ts)
+- [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced bulletin generation system with six new configuration parameters
+- Added customizable grade calculation methods (arithmetic vs weighted)
+- Implemented configurable validation thresholds for bulletin validation
+- Added ranking inclusion/exclusion controls
+- Integrated template selection system for bulletin PDF generation
+- Updated service implementation to utilize runtime configuration parameters
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -27,13 +40,14 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Configuration Parameters](#configuration-parameters)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the academic modules that implement the core educational management functionality. It covers academic year management, curriculum structure via cycles and levels, subject management with teaching assignments, class administration, academic periods, and grading systems. It also explains the hierarchical relationships among academic years, cycles, levels, subjects, and classes, and documents the bulletin generation system and grade recording processes. Finally, it outlines entity relationships, service implementations, and controller endpoints for each academic module.
+This document describes the academic modules that implement the core educational management functionality. It covers academic year management, curriculum structure via cycles and levels, subject management with teaching assignments, class administration, academic periods, and grading systems. It also explains the hierarchical relationships among academic years, cycles, levels, subjects, and classes, and documents the enhanced bulletin generation system with customizable configuration parameters for grade calculation and template selection. Finally, it outlines entity relationships, service implementations, and controller endpoints for each academic module.
 
 ## Project Structure
 The academic domain is organized by feature modules under backend/src/modules. Each module encapsulates entities, DTOs, services, and controllers for a specific aspect of education management. The modules relevant to this documentation are:
@@ -57,7 +71,7 @@ PER["Periods<br/>periodes"]
 GR["Grades<br/>notes"]
 BL["Reports<br/>bulletins"]
 CFG["Institution Config<br/>etablissement"]
-end
+END
 AYS --> PER
 CYC --> NV
 NV --> MT
@@ -74,6 +88,7 @@ CFG --> NV
 CFG --> MT
 CFG --> CL
 CFG --> PER
+CFG --> BL
 ```
 
 **Diagram sources**
@@ -131,9 +146,10 @@ This section summarizes the primary components and their responsibilities across
   - Grade entity: captures evaluation type, value, scale, coefficient, comments, date, status, validator metadata, and computed normalized score.
   - Controller: supports bulk and individual grade operations, filtering, and validation.
 
-- Report Generation (Bulletins)
+- Enhanced Report Generation (Bulletins)
   - Bulletin entity: aggregates computed averages, class statistics, rank, global appreciation, and sanctions/encouragements.
   - Controller: generates reports per class/period and retrieves student reports, with update capabilities.
+  - **Enhanced**: Now supports customizable grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection through runtime configuration parameters.
 
 - Institution Configuration
   - Institution configuration entity: holds school-wide settings including subsystem, cycle availability, and report preferences.
@@ -162,6 +178,7 @@ The academic modules follow a layered architecture:
 - Services encapsulate business logic and enforce rules (e.g., activating one academic year at a time).
 - Controllers expose REST endpoints with authentication and role-based authorization.
 - DTOs validate incoming requests using schema-based validation.
+- **Enhanced**: Configuration parameters are managed through a centralized configuration system with runtime caching and validation.
 
 ```mermaid
 graph TB
@@ -193,6 +210,11 @@ E_note["Note"]
 E_bul["Bulletin"]
 E_cfg["EtablissementConfig"]
 end
+subgraph "Configuration System"
+CfgHelper["Config Helper<br/>getParam, getParamBoolean,<br/>getParamNumber"]
+CfgService["Configuration Service"]
+CfgCache["Quick Cache<br/>60s TTL"]
+end
 Client --> Auth --> Roles --> C_ays
 Client --> Auth --> Roles --> C_cls
 Client --> Auth --> Roles --> C_per
@@ -211,6 +233,9 @@ E_cfg -. configuration .-> E_per
 E_cfg -. configuration .-> E_mat
 E_cfg -. configuration .-> E_note
 E_cfg -. configuration .-> E_bul
+S_bl --> CfgHelper
+CfgHelper --> CfgService
+CfgService --> CfgCache
 ```
 
 **Diagram sources**
@@ -228,6 +253,7 @@ E_cfg -. configuration .-> E_bul
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
 - [etablissement.entity.ts:41-92](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L92)
+- [config.helper.ts:15-54](file://backend/src/modules/configuration/utils/config.helper.ts#L15-L54)
 
 ## Detailed Component Analysis
 
@@ -242,7 +268,7 @@ E_cfg -. configuration .-> E_bul
 
 - Services and Business Rules
   - Creation: sets current flag off others if newly created year is marked current.
-  - Updates: toggles other years’ current flag when activating a specific year.
+  - Updates: toggles other years' current flag when activating a specific year.
   - Deletion: prevents deletion of active year.
 
 - Controllers and Endpoints
@@ -506,27 +532,44 @@ Compute --> Return["Return created/updated grade(s)"]
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [notes.controller.ts:25-71](file://backend/src/modules/notes/controllers/notes.controller.ts#L25-L71)
 
-### Report Generation (Bulletins)
+### Enhanced Report Generation (Bulletins)
 - Responsibilities
   - Generate and manage student reports per period, compute averages, class statistics, and rank.
   - Store global appreciation and disciplinary actions.
+  - **Enhanced**: Support customizable grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection through runtime configuration parameters.
 
 - Entities and Relationships
   - Bulletin entity aggregates computed averages, class stats, rank, and global comments.
+  - **Enhanced**: Supports additional fields for configuration-driven behavior including ranking inclusion, coefficient display, and template identification.
 
 - Controllers and Endpoints
   - POST /generate: generate reports for a class/period (admin/super admin/chef etablissement).
   - GET /eleve/:eleveId: retrieve all reports for a student.
   - PATCH /:id: update a report (admin/super admin/chef etablissement).
 
+- **Enhanced Configuration Parameters**
+  - `bulletins.include_ranking`: Boolean - Include ranking/rank in generated bulletins
+  - `bulletins.validation_threshold`: Number - Minimum passing grade threshold (out of 20)
+  - `bulletins.calculation_method`: String - 'arithmetique' or 'ponderee' for average calculation
+  - `bulletins.display_coefficients`: Boolean - Show subject coefficients on bulletins
+  - `bulletins.show_appreciations`: Boolean - Include class council appreciation
+  - `bulletins.template_id`: String - PDF template identifier for bulletin generation
+
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
 participant Ctrl as "BulletinsController"
 participant Svc as "BulletinsService"
+participant Cfg as "Config Helper"
 participant Repo as "Bulletin Repository"
 Client->>Ctrl : POST /generate
 Ctrl->>Svc : generate(dto)
+Svc->>Cfg : getBulletinsParams()
+Cfg-->>Svc : {includeRanking, validationThreshold, calculationMethod, displayCoefficients, templateId}
+Svc->>Svc : calculate averages using selected method
+alt includeRanking = true
+Svc->>Svc : compute rankings
+end
 Svc->>Repo : save(bulletins[])
 Repo-->>Svc : saved
 Svc-->>Ctrl : bulletins[]
@@ -535,10 +578,12 @@ Ctrl-->>Client : 200 OK + count + data
 
 **Diagram sources**
 - [bulletins.controller.ts:25-31](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts#L25-L31)
+- [bulletins.service.ts:30-39](file://backend/src/modules/bulletins/services/bulletins.service.ts#L30-L39)
 
 **Section sources**
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
 - [bulletins.controller.ts:25-46](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts#L25-L46)
+- [bulletins.service.ts:30-39](file://backend/src/modules/bulletins/services/bulletins.service.ts#L30-L39)
 
 ### Academic Calendar Management, Course Scheduling, and Student Enrollment Workflows
 - Academic Calendar Management
@@ -561,10 +606,37 @@ TP --> PD["Create Period Instances"]
 PD --> SCH["Assign Subjects to Classes<br/>with Teachers and Hours"]
 SCH --> ENR["Enroll Students into Classes"]
 ENR --> GRADE["Record Grades per Period"]
-GRADE --> REP["Generate Reports"]
+GRADE --> REP["Generate Reports with Customizable Settings"]
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
+
+## Configuration Parameters
+The bulletin generation system now supports six runtime configuration parameters that control various aspects of report generation:
+
+### Bulletins Module Configuration Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `bulletins.include_ranking` | Boolean | `true` | Include ranking/rank in generated bulletins |
+| `bulletins.validation_threshold` | Number | `10` | Minimum passing grade threshold (out of 20) |
+| `bulletins.calculation_method` | String | `'ponderee'` | `'arithmetique'` or `'ponderee'` for average calculation |
+| `bulletins.display_coefficients` | Boolean | `true` | Show subject coefficients on bulletins |
+| `bulletins.show_appreciations` | Boolean | `true` | Include class council appreciation |
+| `bulletins.template_id` | String | `'default'` | PDF template identifier for bulletin generation |
+
+### Configuration Implementation Details
+
+The configuration system uses a centralized approach with:
+- **Runtime Caching**: Quick cache with 60-second TTL for frequent parameter access
+- **Type Safety**: Strong typing with automatic conversion for different parameter types
+- **Validation**: Built-in validation for numeric ranges and format constraints
+- **Module Organization**: Parameters organized by module (bulletins, eleves, etablissement, systeme)
+
+**Section sources**
+- [config.helper.ts:15-54](file://backend/src/modules/configuration/utils/config.helper.ts#L15-L54)
+- [005-advanced-config-params.ts:21-97](file://backend/src/database/migrations/005-advanced-config-params.ts#L21-L97)
+- [005-complete-config-params-100.ts:52-129](file://backend/src/database/migrations/005-complete-config-params-100.ts#L52-L129)
 
 ## Dependency Analysis
 This section maps dependencies among entities and services to clarify coupling and cohesion.
@@ -691,6 +763,10 @@ json appreciationConseil
 json sanctions
 json encouragements
 boolean publie
+uuid etablissementId FK
+string templateId
+boolean afficherRangs
+boolean afficherCoefficients
 }
 ANNEE_SCOLAIRE ||--o{ PERIODE : "contains"
 TYPES_PERIODE ||--o{ PERIODE : "defines"
@@ -711,6 +787,7 @@ ELEVE ||--o{ BULLETIN : "has"
 CLASSE ||--o{ BULLETIN : "generates"
 PERIODE ||--o{ BULLETIN : "summarizes"
 ANNEE_SCOLAIRE ||--o{ BULLETIN : "covers"
+ETABLISSEMENT ||--o{ BULLETIN : "creates"
 ```
 
 **Diagram sources**
@@ -746,6 +823,9 @@ ANNEE_SCOLAIRE ||--o{ BULLETIN : "covers"
   - Bulk grade creation endpoints minimize round trips for teacher input.
 - Logging and Auditing
   - Services log significant operations to aid debugging and monitoring.
+- **Enhanced**: Configuration Parameter Caching
+  - Quick cache with 60-second TTL for frequently accessed configuration parameters reduces database load.
+  - Automatic type conversion and validation improve performance and reliability.
 
 [No sources needed since this section provides general guidance]
 
@@ -757,11 +837,16 @@ ANNEE_SCOLAIRE ||--o{ BULLETIN : "covers"
 - Active Year Constraints
   - Deleting the active academic year is prevented by the service.
   - Activating a year automatically deactivates others.
+- **Enhanced**: Configuration Parameter Issues
+  - Invalid parameter values are automatically validated and rejected with appropriate error messages.
+  - Default values are used when configuration parameters are missing or invalid.
+  - Cache invalidation ensures configuration changes take effect immediately.
 
 **Section sources**
 - [annees-scolaires.controller.ts:17-23](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts#L17-L23)
 - [annees-scolaires.service.ts:47-48](file://backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts#L47-L48)
 - [annees-scolaires.service.ts:71-74](file://backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts#L71-L74)
+- [config.helper.ts:15-54](file://backend/src/modules/configuration/utils/config.helper.ts#L15-L54)
 
 ## Conclusion
-The academic modules provide a cohesive, layered architecture for managing academic years, curriculum structure, subjects and programs, classes, academic periods, grades, and reports. Clear entity relationships, robust services enforcing business rules, and role-based controllers enable secure and scalable educational administration. The design supports institutional configuration, standardized grading, and efficient report generation aligned with the chosen subsystem.
+The academic modules provide a cohesive, layered architecture for managing academic years, curriculum structure, subjects and programs, classes, academic periods, grades, and reports. The enhanced bulletin generation system now offers extensive customization through six runtime configuration parameters, enabling institutions to tailor grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection according to their specific requirements. Clear entity relationships, robust services enforcing business rules, role-based controllers, and a centralized configuration system enable secure, scalable, and flexible educational administration. The design supports institutional configuration, standardized grading, and efficient report generation aligned with the chosen subsystem while maintaining backward compatibility and extensibility.

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paginationSchema, dateRangeSchema } from '@common/dto/pagination.dto';
 
 export const createMenuSchema = z.object({
     date: z.string(),
@@ -31,12 +32,11 @@ export const enregistrerConsommationSchema = z.object({
     date: z.string().optional(),
 });
 
-export const queryMenusSchema = z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('20'),
-    dateDebut: z.string().optional(),
-    dateFin: z.string().optional(),
-});
+export const queryMenusSchema = paginationSchema
+    .merge(dateRangeSchema)
+    .extend({
+        // Champs spécifiques aux menus peuvent être ajoutés ici
+    });
 
 export type CreateMenuDto = z.infer<typeof createMenuSchema>;
 export type CreateInscriptionDto = z.infer<typeof createInscriptionSchema>;

@@ -5,3 +5,4 @@
  */
 
 export { configurationController } from './configuration.controller';
+export { backupController } from './backup.controller';

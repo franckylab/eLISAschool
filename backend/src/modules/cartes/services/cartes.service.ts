@@ -67,7 +67,6 @@ export class CartesService {
             statut: StatutCarte.ACTIVE,
             qrCode: params.enableQRCode ? this.generateQRCode(numeroCarte) : undefined,
             etablissementNom,
-            includePhoto: params.includePhoto,
         });
 
         await this.carteRepo.save(carte);

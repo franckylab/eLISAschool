@@ -27,7 +27,7 @@ import { swaggerSpec } from '@config/swagger.config';
 import { authController } from '@modules/auth';
 import utilisateurEtablissementController from '@modules/auth/controllers/utilisateur-etablissement.controller';
 import { utilisateursController } from '@modules/utilisateurs';
-import { configurationController } from '@modules/configuration';
+import { configurationController, backupController } from '@modules/configuration';
 import { notificationsController } from '@modules/notifications';
 import { notesController } from '@modules/notes';
 import { messagerieController } from '@modules/messagerie';
@@ -173,6 +173,7 @@ export function createApp(): Application {
     app.use('/api/utilisateurs', utilisateurEtablissementController); // Multi-établissements (v2.0)
     app.use('/api/utilisateurs', utilisateursController);
     app.use('/api/configuration', configurationController);
+    app.use('/api/backups', backupController);
     app.use('/api/notifications', notificationsController);
     app.use('/api/notes', notesController);
     app.use('/api/rbac', rbacController);

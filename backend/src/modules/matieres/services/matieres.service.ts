@@ -7,11 +7,12 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere } from '../entities';
-import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto } from '../dto';
+import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { paginateWithRepository, PaginatedResult } from '@common/utils/pagination.util';
 
 export class MatieresService {
     private matiereRepo: Repository<Matiere>;
@@ -37,8 +38,28 @@ export class MatieresService {
         return matiere;
     }
 
-    async findAll(): Promise<Matiere[]> {
-        return this.matiereRepo.find({ order: { nom: 'ASC' } });
+    /**
+     * Rechercher toutes les matières avec pagination
+     */
+    async findAll(query?: QueryMatieresDto): Promise<PaginatedResult<Matiere>> {
+        const { page = 1, limit = 20, groupeId, actif } = query || {};
+
+        const where: any = {};
+        
+        if (groupeId) {
+            where.groupeId = groupeId;
+        }
+
+        if (actif !== undefined) {
+            where.actif = actif;
+        }
+
+        return paginateWithRepository(this.matiereRepo, {
+            where,
+            order: { nom: 'ASC' },
+            page,
+            limit,
+        });
     }
 
     async update(id: string, dto: UpdateMatiereDto): Promise<Matiere> {
@@ -57,8 +78,15 @@ export class MatieresService {
         return groupe;
     }
 
-    async findAllGroupes(): Promise<GroupeMatiere[]> {
-        return this.groupeRepo.find({ order: { ordre: 'ASC' } });
+    /**
+     * Rechercher tous les groupes avec pagination
+     */
+    async findAllGroupes(page: number = 1, limit: number = 20): Promise<PaginatedResult<GroupeMatiere>> {
+        return paginateWithRepository(this.groupeRepo, {
+            order: { ordre: 'ASC' },
+            page,
+            limit,
+        });
     }
 
     // ==== PROGRAMME (Matière-Niveau) ====

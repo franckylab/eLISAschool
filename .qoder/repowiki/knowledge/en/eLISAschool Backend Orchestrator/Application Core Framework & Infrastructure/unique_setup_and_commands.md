@@ -1,4 +1,0 @@
-- RBAC migration script: `DRY_RUN=true npm run migrate:rbac` (simulation) or `npm run migrate:rbac` (execution) runs `backend/src/database/migrations/migrate-rbac.ts` to migrate legacy single-role users to multi-role assignments without breaking existing data.
-- Seed execution: `npm run seed` runs `backend/src/database/seeds/run-seeds.ts` which initializes AppDataSource, executes initial/rbac/audit seeds, then closes the connection.
-- RBAC test script: `TEST_USER_ID=<uuid> npm run test:rbac` runs `backend/src/database/migrations/test-rbac.ts` to verify role-permission assignments for a specific user.
-- Docker development: `docker compose -f docker-compose.dev.yml up -d` starts backend with `npm run dev` command (from docker-compose.dev.yml).

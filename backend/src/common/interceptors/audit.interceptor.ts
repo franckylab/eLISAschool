@@ -75,7 +75,7 @@ export function createAuditInterceptor(config: AuditInterceptorConfig) {
             );
 
             // Déterminer l'action d'audit
-            let actionSuffix = DEFAULT_ACTION_MAP[req.method];
+            const actionSuffix = DEFAULT_ACTION_MAP[req.method];
             let auditAction: AuditAction;
 
             if (customAction) {

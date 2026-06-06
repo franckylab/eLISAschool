@@ -2,9 +2,11 @@
  * ==================================
  * eLISAschool - DTOs Classes
  * ==================================
+ * Version: 2.0.0
  */
 
 import { z } from 'zod';
+import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 
 export const createClasseSchema = z.object({
     nom: z.string().min(2).max(100),
@@ -29,3 +31,17 @@ export const affecterEleveSchema = z.object({
 export type CreateClasseDto = z.infer<typeof createClasseSchema>;
 export type UpdateClasseDto = z.infer<typeof updateClasseSchema>;
 export type AffecterEleveDto = z.infer<typeof affecterEleveSchema>;
+
+/**
+ * Schéma de requête pour la liste des classes
+ */
+export const queryClassesSchema = paginationWithSortSchema
+    .merge(searchSchema)
+    .extend({
+        niveauId: z.string().uuid().optional(),
+        anneeScolaireId: z.string().uuid().optional(),
+        etablissementId: z.string().uuid().optional(),
+        actif: z.string().transform((v) => v === 'true').optional(),
+    });
+
+export type QueryClassesDto = z.infer<typeof queryClassesSchema>;

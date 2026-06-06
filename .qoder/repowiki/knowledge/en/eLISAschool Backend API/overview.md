@@ -1,0 +1,1 @@
+Orchestrates a multi-tenant educational management system by wiring domain modules through shared middleware and centralized configuration.

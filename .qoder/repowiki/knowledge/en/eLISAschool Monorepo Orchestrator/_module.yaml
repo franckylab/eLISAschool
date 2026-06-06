@@ -7,9 +7,12 @@ scope:
     - .env.example
     - .gitignore
     - ANALYSE_ROLES_EDUCATION_AFRICAINE.md
+    - CONFIGURATION_100_PERCENT.md
+    - EXECUTIVE_SUMMARY.md
     - IMPLEMENTATION-AUDIT-TRAIL.md
     - IMPLEMENTATION_EXTENSION_ROLES.md
     - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
+    - IMPLÉMENTATION_MULTI_ÉTAT.md
     - README.md
     - docker-compose.dev.yml
     - docker-compose.yml

@@ -2,10 +2,12 @@
  * ==================================
  * eLISAschool - DTOs Élèves
  * ==================================
+ * Version: 2.0.0
  */
 
 import { z } from 'zod';
 import { SousSysteme } from '@modules/etablissement/entities';
+import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 
 export const createEleveSchema = z.object({
     utilisateurId: z.string().uuid(),
@@ -29,3 +31,17 @@ export const updateEleveSchema = createEleveSchema.partial().omit({ utilisateurI
 
 export type CreateEleveDto = z.infer<typeof createEleveSchema>;
 export type UpdateEleveDto = z.infer<typeof updateEleveSchema>;
+
+/**
+ * Schéma de requête pour la liste des élèves
+ */
+export const queryElevesSchema = paginationWithSortSchema
+    .merge(searchSchema)
+    .extend({
+        sousSysteme: z.nativeEnum(SousSysteme).optional(),
+        classeId: z.string().uuid().optional(),
+        statut: z.enum(['ACTIF', 'EXCLU', 'ABANDON', 'DIPLOME']).optional(),
+        etablissementId: z.string().uuid().optional(),
+    });
+
+export type QueryElevesDto = z.infer<typeof queryElevesSchema>;

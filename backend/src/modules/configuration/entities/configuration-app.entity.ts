@@ -4,6 +4,13 @@
  * ==================================
  * Version: 1.0.0
  * Auteur: xAI Éducation
+ * 
+ * @deprecated Cette entité est dépréciée depuis la v2.0
+ * Utiliser à la place :
+ * - EtablissementConfig pour la configuration par établissement
+ * - ParametreSysteme avec etablissementId pour les paramètres scopés
+ * 
+ * Cette entité sera supprimée dans la version 3.0
  */
 
 import {
@@ -16,7 +23,8 @@ import {
 
 /**
  * Entité ConfigurationApp
- * Stocke les paramètres globaux de l'application
+ * @deprecated Utiliser EtablissementConfig et ParametreSysteme à la place
+ * Stocke les paramètres globaux de l'application (legacy)
  */
 @Entity('configuration_app')
 export class ConfigurationApp {

@@ -121,14 +121,10 @@ export class BulletinsService {
                         periodeId: periode.id,
                         anneeScolaireId: classe.anneeScolaireId,
                         etablissementId,
-                        templateId: params.templateId,
-                        afficherRangs: params.includeRanking,
-                        afficherCoefficients: params.displayCoefficients,
                     });
                 }
 
                 bulletin.moyenneGenerale = parseFloat(moyenneGenerale.toFixed(2));
-                bulletin.valide = moyenneGenerale >= params.validationThreshold;
 
                 await queryRunner.manager.save(bulletin);
                 bulletins.push(bulletin);

@@ -23,6 +23,8 @@ import { Etablissement } from '@modules/etablissement/entities';
 @Index(['niveauId'])
 @Index(['anneeScolaireId'])
 @Index(['etablissementId'])
+@Index(['etablissementId', 'anneeScolaireId'])
+@Index(['etablissementId', 'niveauId'])
 export class Classe {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -78,9 +80,6 @@ export class Classe {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
-
-    @Index(['etablissementId', 'anneeScolaireId'])
-    @Index(['etablissementId', 'niveauId'])
 
     @CreateDateColumn()
     createdAt!: Date;

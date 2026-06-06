@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { TypeEvaluation, StatutNote } from '../entities/note.entity';
+import { paginationSchema } from '@common/dto/pagination.dto';
 
 export const createNoteSchema = z.object({
     eleveId: z.string().uuid(),
@@ -43,17 +44,16 @@ export const createBulkNotesSchema = z.object({
     })).min(1),
 });
 
-export const queryNotesSchema = z.object({
-    page: z.string().regex(/^\d+$/).transform(Number).default('1'),
-    limit: z.string().regex(/^\d+$/).transform(Number).default('50'),
-    eleveId: z.string().uuid().optional(),
-    matiereId: z.string().uuid().optional(),
-    classeId: z.string().uuid().optional(),
-    periodeId: z.string().uuid().optional(),
-    anneeScolaireId: z.string().uuid().optional(),
-    statut: z.nativeEnum(StatutNote).optional(),
-    typeEvaluation: z.nativeEnum(TypeEvaluation).optional(),
-});
+export const queryNotesSchema = paginationSchema
+    .extend({
+        eleveId: z.string().uuid().optional(),
+        matiereId: z.string().uuid().optional(),
+        classeId: z.string().uuid().optional(),
+        periodeId: z.string().uuid().optional(),
+        anneeScolaireId: z.string().uuid().optional(),
+        statut: z.nativeEnum(StatutNote).optional(),
+        typeEvaluation: z.nativeEnum(TypeEvaluation).optional(),
+    });
 
 export type CreateNoteDto = z.infer<typeof createNoteSchema>;
 export type UpdateNoteDto = z.infer<typeof updateNoteSchema>;

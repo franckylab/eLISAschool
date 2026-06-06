@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/feature_modules
+title: Feature Modules & Domain Logic
+scope:
+    - backend/src/modules/
+source_files: []
+depends_on: []
+related_to: []

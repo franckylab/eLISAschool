@@ -1,0 +1,4 @@
+- Adopts a consistent layered architecture within each feature module (e.g., auth, configuration, notes), separating concerns into controllers, services, DTOs, and entities.
+- Implements a centralized RBAC system via the `auth` and `rbac` modules, featuring a `PermissionResolverService` with in-memory caching and recursive role inheritance.
+- Utilizes a dynamic configuration module (`configuration`) that allows runtime parameter management with validation, history tracking, and helper utilities for other modules to consume settings.
+- Exposes all feature modules through a unified barrel export (`index.ts`) to facilitate clean dependency injection and module registration in the main application entry point.

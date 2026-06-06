@@ -56,9 +56,10 @@ export enum TypeValeurParametre {
  * Stocke les paramètres de configuration en base de données
  */
 @Entity('parametres_systeme')
-@Index(['cle'], { unique: true })
+@Index(['cle', 'etablissementId'], { unique: true })
 @Index(['categorie'])
 @Index(['module'])
+@Index(['etablissementId'])
 export class ParametreSysteme {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -82,6 +83,14 @@ export class ParametreSysteme {
     /** Module associé (null = global) */
     @Column({ type: 'varchar', length: 100, nullable: true })
     module?: string;
+
+    /**
+     * ID de l'établissement pour le scopage multi-tenant.
+     * NULL = paramètre global (default pour tous les établissements)
+     * UUID = override spécifique à cet établissement
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
 
     /** Description du paramètre */
     @Column({ type: 'text', nullable: true })

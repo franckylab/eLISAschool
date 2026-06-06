@@ -19,6 +19,7 @@ import { AssignRoleToUserDto, AssignPermissionToUserDto } from '@modules/rbac/dt
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { permissionResolverService } from '@modules/auth/services/permission-resolver.service';
+import { Role as RoleEnum } from '@shared/enums/roles.enum';
 
 /**
  * Service de gestion des rôles et permissions des utilisateurs
@@ -90,7 +91,7 @@ export class UserRolesService {
 
         // Mettre à jour le champ role (principal) dans utilisateur pour backward compat
         if (assignDto.estPrincipal || !utilisateur.role) {
-            utilisateur.role = role.code;
+            utilisateur.role = role.code as unknown as RoleEnum;
             await this.utilisateurRepo.save(utilisateur);
         }
 
@@ -136,7 +137,7 @@ export class UserRolesService {
                 if (utilisateur) {
                     const principalRole = await this.roleRepo.findOne({ where: { id: remainingRoles[0].roleId } });
                     if (principalRole) {
-                        utilisateur.role = principalRole.code;
+                        utilisateur.role = principalRole.code as unknown as RoleEnum;
                         await this.utilisateurRepo.save(utilisateur);
                     }
                 }
@@ -321,7 +322,7 @@ export class UserRolesService {
         // Mettre à jour le rôle principal dans utilisateur
         const primaryRole = primaryRoleId ? roles.find(r => r.id === primaryRoleId) : roles[0];
         if (primaryRole) {
-            utilisateur.role = primaryRole.code;
+            utilisateur.role = primaryRole.code as unknown as RoleEnum;
             await this.utilisateurRepo.save(utilisateur);
         }
 

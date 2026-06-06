@@ -2,11 +2,12 @@
  * ==================================
  * eLISAschool - DTOs Notifications
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
  */
 
 import { z } from 'zod';
+import { paginationSchema } from '@common/dto/pagination.dto';
 
 /**
  * Schéma de création de notification
@@ -38,9 +39,7 @@ export const createBulkNotificationSchema = z.object({
 /**
  * Schéma de filtrage des notifications
  */
-export const queryNotificationsSchema = z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('20'),
+export const queryNotificationsSchema = paginationSchema.extend({
     statut: z.enum(['EN_ATTENTE', 'ENVOYEE', 'LUE', 'ECHEC']).optional(),
     type: z.enum(['PUSH', 'EMAIL', 'IN_APP', 'SMS']).optional(),
     categorie: z.string().optional(),

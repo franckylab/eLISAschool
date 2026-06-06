@@ -1,0 +1,2 @@
+- Every feature module follows a strict directory structure with separate folders for controllers, services, entities, and DTOs.
+- Global middleware such as `tenantMiddleware` and `requestLogger` are applied in `app.ts` to enforce cross-module security and observability standards.

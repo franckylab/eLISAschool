@@ -79,20 +79,31 @@ export class MessagerieService {
     async getConversations(utilisateurId: string, query: QueryConversationsDto) {
         const { page, limit, type } = query;
 
-        const participations = await this.participantRepo.find({
-            where: { utilisateurId },
-            relations: ['conversation'],
-        });
+        // Requête optimisée avec pagination au niveau de la base de données
+        // au lieu de charger toutes les conversations en mémoire
+        const qb = this.participantRepo
+            .createQueryBuilder('p')
+            .innerJoinAndSelect('p.conversation', 'c')
+            .innerJoinAndSelect('c.dernierMessage', 'dm')
+            .where('p.utilisateurId = :utilisateurId', { utilisateurId })
+            .orderBy('c.updatedAt', 'DESC');
 
-        let conversations = participations.map(p => p.conversation);
+        // Filtre par type si fourni
         if (type) {
-            conversations = conversations.filter(c => c.type === type);
+            qb.andWhere('c.type = :type', { type });
         }
 
-        const total = conversations.length;
-        const items = conversations.slice((page - 1) * limit, page * limit);
+        // Utiliser la pagination optimisée
+        const { paginateWithQueryBuilder } = await import('@common/utils/pagination.util');
+        const result = await paginateWithQueryBuilder(qb, page, limit, false);
 
-        return { items, total };
+        // Mapper pour retourner les conversations
+        const items = result.items.map(p => p.conversation);
+
+        return {
+            items,
+            total: result.meta.totalItems,
+        };
     }
 
     async getConversation(id: string, utilisateurId: string): Promise<Conversation> {

@@ -1,1 +1,0 @@
-Provides foundational Express application setup, configuration management, database connectivity, and cross-cutting concerns including error handling, logging, multi-tenancy middleware, and standardized API response utilities.

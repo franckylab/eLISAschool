@@ -31,7 +31,7 @@ export async function seedAuditLogs(): Promise<void> {
     // Données de test
     const testLogs: Partial<AuditLog>[] = [
         {
-            utilisateurId: null,
+            utilisateurId: undefined,
             action: AuditAction.LOGIN_FAILED,
             severity: AuditSeverity.WARNING,
             description: 'Tentative de connexion échouée - email invalide',

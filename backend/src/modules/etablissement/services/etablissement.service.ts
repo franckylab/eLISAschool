@@ -11,7 +11,6 @@ import { Etablissement, EtablissementConfig } from '../entities';
 import { CreateEtablissementDto, UpdateEtablissementDto, UpdateEtablissementConfigDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/helpers/config-helpers';
 
 export class EtablissementService {
     private etablissementRepo: Repository<Etablissement>;
@@ -20,16 +19,6 @@ export class EtablissementService {
     constructor() {
         this.etablissementRepo = AppDataSource.getRepository(Etablissement);
         this.configRepo = AppDataSource.getRepository(EtablissementConfig);
-    }
-
-    private async getEtablissementParams() {
-        return {
-            defaultLanguage: await getParam<string>('etablissement.default_language', 'fr'),
-            maxUsersPerRole: await getParamNumber('etablissement.max_users_per_role', 50),
-            requireApprovalForNewUsers: await getParamBoolean('etablissement.require_approval_new_users', false),
-            defaultTimeZone: await getParam<string>('etablissement.default_timezone', 'Africa/Lagos'),
-            enableMultiLanguage: await getParamBoolean('etablissement.enable_multi_language', false),
-        };
     }
 
     // ==================================
@@ -45,38 +34,21 @@ export class EtablissementService {
         await queryRunner.startTransaction();
 
         try {
-            const params = await this.getEtablissementParams();
-
-            // Validation de la langue par défaut
-            if (dto.langueDefaut && !['fr', 'en', 'pt'].includes(dto.langueDefaut)) {
-                throw new AppError(
-                    'Langue non supportée. Utilisez: fr, en, pt',
-                    400,
-                    'INVALID_LANGUAGE'
-                );
-            }
-
-            const etablissement = this.etablissementRepo.create({
-                ...dto,
-                langueDefaut: dto.langueDefaut || params.defaultLanguage,
-                fuseauHoraire: dto.fuseauHoraire || params.defaultTimeZone,
-            });
+            const etablissement = this.etablissementRepo.create(dto);
             await queryRunner.manager.save(etablissement);
 
             // Création automatique de la configuration par défaut
             const config = this.configRepo.create({
                 etablissementId: etablissement.id,
-                cyclesActifs: dto.cyclesActifs || [],
-                configurationBulletin: dto.configurationBulletin,
             });
             await queryRunner.manager.save(config);
 
             await queryRunner.commitTransaction();
             logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
             return etablissement;
-        } catch (error) {
+        } catch (error: any) {
             await queryRunner.rollbackTransaction();
-            logger.error(`Erreur création établissement: ${error.message}`);
+            logger.error(`Erreur création établissement: ${error.message || error}`);
             throw error;
         } finally {
             await queryRunner.release();

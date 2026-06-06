@@ -1,0 +1,4 @@
+- Each feature module follows a standard directory structure containing `controllers`, `services`, `dto`, and `entities` folders to enforce separation of concerns.
+- Modules expose their public API through an `index.ts` barrel file that re-exports controllers, services, and types using wildcard or named exports.
+- Controllers use Zod schemas for request body validation, throwing standardized `AppError` instances upon validation failure.
+- Services interact with the database via TypeORM repositories obtained from a shared `AppDataSource`, often encapsulated within the service constructor.

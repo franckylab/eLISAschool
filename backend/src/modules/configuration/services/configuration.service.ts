@@ -12,7 +12,7 @@
  * - CRUD complet
  */
 
-import { Repository, Like, In } from 'typeorm';
+import { Repository, Like, In, IsNull } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { ConfigurationApp, ConfigurationModule } from '../entities';
@@ -261,9 +261,22 @@ export class ConfigurationService {
     // ============================================
 
     async createParametre(dto: CreateParametreDto, utilisateurId?: string, req?: Request): Promise<ParametreSysteme> {
-        const existing = await this.parametreRepository.findOne({ where: { cle: dto.cle } });
+        // Vérifier l'unicité avec le scopage par établissement
+        const whereCondition: any = { cle: dto.cle };
+        if (dto.etablissementId) {
+            whereCondition.etablissementId = dto.etablissementId;
+        } else {
+            whereCondition.etablissementId = IsNull();
+        }
+        const existing = await this.parametreRepository.findOne({ 
+            where: whereCondition
+        });
         if (existing) {
-            throw new AppError(`Le paramètre "${dto.cle}" existe déjà`, 409, 'PARAM_EXISTS');
+            throw new AppError(
+                `Le paramètre "${dto.cle}" existe déjà${dto.etablissementId ? ' pour cet établissement' : ' (global)'}`,
+                409, 
+                'PARAM_EXISTS'
+            );
         }
 
         const param = this.parametreRepository.create({
@@ -273,6 +286,7 @@ export class ConfigurationService {
             categorie: dto.categorie,
             module: dto.module,
             description: dto.description,
+            etablissementId: dto.etablissementId || undefined,
             valeurDefaut: JSON.stringify(dto.valeur),
             modifiableRuntime: dto.modifiableRuntime,
             visible: dto.visible,
@@ -304,16 +318,46 @@ export class ConfigurationService {
         return this.parametreRepository.findOne({ where: { cle } });
     }
 
-    async getParametre<T = any>(cle: string): Promise<T | null> {
-        if (this.cache.parametres.has(cle) && this.isCacheValid()) {
-            return this.cache.parametres.get(cle) as T;
+    /**
+     * Récupère un paramètre avec logique de fallback multi-établissement
+     * 
+     * Ordre de résolution :
+     * 1. Paramètre scopé à l'établissement (si etablissementId fourni)
+     * 2. Paramètre global (etablissementId = NULL)
+     * 3. Valeur par défaut (si fournie)
+     * 
+     * @param cle Clé du paramètre
+     * @param etablissementId ID de l'établissement (optionnel)
+     * @returns Valeur du paramètre ou null
+     */
+    async getParametre<T = any>(cle: string, etablissementId?: string): Promise<T | null> {
+        const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
+        
+        if (this.cache.parametres.has(cacheKey) && this.isCacheValid()) {
+            return this.cache.parametres.get(cacheKey) as T;
         }
 
-        const param = await this.parametreRepository.findOne({ where: { cle } });
-        if (!param) return null;
+        // 1. Chercher d'abord le paramètre scopé à l'établissement
+        if (etablissementId) {
+            const paramScope = await this.parametreRepository.findOne({
+                where: { cle, etablissementId }
+            });
+            if (paramScope) {
+                const value = this.parseParametreValue(paramScope);
+                this.cache.parametres.set(cacheKey, value);
+                return value as T;
+            }
+        }
 
-        const value = this.parseParametreValue(param);
-        this.cache.parametres.set(cle, value);
+        // 2. Fallback vers le paramètre global
+        const paramGlobal = await this.parametreRepository.findOne({
+            where: { cle, etablissementId: IsNull() }
+        });
+        
+        if (!paramGlobal) return null;
+
+        const value = this.parseParametreValue(paramGlobal);
+        this.cache.parametres.set(cacheKey, value);
         return value as T;
     }
 
@@ -361,27 +405,117 @@ export class ConfigurationService {
         return param;
     }
 
-    async setParametre(cle: string, valeur: any, utilisateurId?: string, req?: Request): Promise<ParametreSysteme> {
-        let param = await this.parametreRepository.findOne({ where: { cle } });
-        const ancienneValeur = param?.valeur;
+    /**
+     * Définit ou met à jour un paramètre avec support multi-établissement
+     * 
+     * Si etablissementId est fourni:
+     * - Crée un override pour cet établissement
+     * - Si le paramètre global n'existe pas, le crée d'abord
+     * 
+     * Si etablissementId n'est pas fourni:
+     * - Modifie le paramètre global
+     */
+    async setParametre(
+        cle: string, 
+        valeur: any, 
+        etablissementId?: string,
+        utilisateurId?: string, 
+        req?: Request
+    ): Promise<ParametreSysteme> {
+        let param: ParametreSysteme | null = null;
+        let ancienneValeur: string | undefined;
 
-        if (!param) {
-            // Pour les nouveaux paramètres, on crée avec validation
-            const typeValeur = this.detectTypeValeur(valeur);
-            param = this.parametreRepository.create({
-                cle,
-                valeur: JSON.stringify(valeur),
-                typeValeur,
-                categorie: CategorieParametre.CUSTOM,
-                modifiableRuntime: true,
+        if (etablissementId) {
+            // Chercher l'override pour cet établissement
+            param = await this.parametreRepository.findOne({
+                where: { cle, etablissementId }
             });
-        } else {
-            if (!param.modifiableRuntime) {
-                throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
+
+            if (!param) {
+                // L'override n'existe pas, on va le créer
+                // Mais d'abord, vérifier que le paramètre global existe
+                const paramGlobal = await this.parametreRepository.findOne({
+                    where: { cle, etablissementId: IsNull() }
+                });
+
+                if (!paramGlobal) {
+                    // Le paramètre global n'existe pas, on le crée
+                    const typeValeur = this.detectTypeValeur(valeur);
+                    param = this.parametreRepository.create({
+                        cle,
+                        valeur: JSON.stringify(valeur),
+                        typeValeur,
+                        categorie: CategorieParametre.CUSTOM,
+                        modifiableRuntime: true,
+                        etablissementId: undefined, // Global d'abord
+                    });
+                    await this.parametreRepository.save(param);
+                    ancienneValeur = undefined;
+                    
+                    // Maintenant créer l'override
+                    param = this.parametreRepository.create({
+                        cle,
+                        valeur: JSON.stringify(valeur),
+                        typeValeur,
+                        categorie: CategorieParametre.CUSTOM,
+                        modifiableRuntime: true,
+                        etablissementId,
+                    });
+                } else {
+                    // Le paramètre global existe, créer l'override
+                    if (!paramGlobal.modifiableRuntime) {
+                        throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
+                    }
+                    
+                    param = this.parametreRepository.create({
+                        cle,
+                        valeur: JSON.stringify(valeur),
+                        typeValeur: paramGlobal.typeValeur,
+                        categorie: paramGlobal.categorie,
+                        module: paramGlobal.module,
+                        description: paramGlobal.description,
+                        modifiableRuntime: true,
+                        visible: paramGlobal.visible,
+                        ordre: paramGlobal.ordre,
+                        validation: paramGlobal.validation,
+                        options: paramGlobal.options,
+                        etablissementId,
+                    });
+                }
+            } else {
+                // L'override existe, le mettre à jour
+                if (!param.modifiableRuntime) {
+                    throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
+                }
+                
+                this.validateParametreValue(param, valeur);
+                ancienneValeur = param.valeur;
+                param.valeur = JSON.stringify(valeur);
             }
-            // Validation avant mise à jour
-            this.validateParametreValue(param, valeur);
-            param.valeur = JSON.stringify(valeur);
+        } else {
+            // Modification du paramètre global
+            param = await this.parametreRepository.findOne({
+                where: { cle, etablissementId: IsNull() }
+            });
+            ancienneValeur = param?.valeur;
+
+            if (!param) {
+                const typeValeur = this.detectTypeValeur(valeur);
+                param = this.parametreRepository.create({
+                    cle,
+                    valeur: JSON.stringify(valeur),
+                    typeValeur,
+                    categorie: CategorieParametre.CUSTOM,
+                    modifiableRuntime: true,
+                    etablissementId: undefined,
+                });
+            } else {
+                if (!param.modifiableRuntime) {
+                    throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
+                }
+                this.validateParametreValue(param, valeur);
+                param.valeur = JSON.stringify(valeur);
+            }
         }
 
         await this.parametreRepository.save(param);
@@ -392,7 +526,7 @@ export class ConfigurationService {
             action: ancienneValeur ? ActionConfiguration.UPDATE : ActionConfiguration.CREATE,
             cible: CibleConfiguration.PARAMETRE,
             cibleId: param.id,
-            cibleNom: cle,
+            cibleNom: etablissementId ? `${cle} [${etablissementId}]` : cle,
             ancienneValeur,
             nouvelleValeur: valeur,
             restaurable: true,
@@ -403,21 +537,99 @@ export class ConfigurationService {
             ancienneValeur ? ActionConfiguration.UPDATE : ActionConfiguration.CREATE,
             CibleConfiguration.PARAMETRE,
             param.id,
-            cle,
+            etablissementId ? `${cle} [${etablissementId}]` : cle,
             ancienneValeur,
             valeur,
             utilisateurId
         );
 
-        logger.info(`Paramètre défini: ${cle} = ${valeur}`);
+        logger.info(`Paramètre défini: ${cle}${etablissementId ? ` [${etablissementId}]` : ''} = ${valeur}`);
         return param;
+    }
+
+    /**
+     * Réinitialise un paramètre :
+     * - Si etablissementId fourni : supprime l'override (retour au global)
+     * - Sinon : réinitialise vers la valeur par défaut
+     */
+    async resetParametre(
+        cle: string,
+        etablissementId?: string,
+        utilisateurId?: string,
+        req?: Request
+    ): Promise<void> {
+        if (etablissementId) {
+            // Supprimer l'override pour cet établissement
+            const paramOverride = await this.parametreRepository.findOne({
+                where: { cle, etablissementId }
+            });
+
+            if (!paramOverride) {
+                throw new AppError(
+                    `Aucun override trouvé pour le paramètre "${cle}" dans cet établissement`,
+                    404,
+                    'OVERRIDE_NOT_FOUND'
+                );
+            }
+
+            const ancienneValeur = paramOverride.valeur;
+            await this.parametreRepository.remove(paramOverride);
+            this.invalidateCache('parametres');
+
+            await this.historyService.logAction({
+                utilisateurId,
+                action: ActionConfiguration.DELETE,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleNom: `${cle} [${etablissementId}] (override)` ,
+                ancienneValeur,
+                req,
+            });
+
+            logger.info(`Override supprimé pour ${cle} [${etablissementId}] - retour au global`);
+        } else {
+            // Réinitialiser le paramètre global vers sa valeur par défaut
+            const param = await this.parametreRepository.findOne({
+                where: { cle, etablissementId: IsNull() }
+            });
+
+            if (!param) {
+                throw new AppError(`Paramètre "${cle}" non trouvé`, 404, 'PARAM_NOT_FOUND');
+            }
+
+            if (!param.valeurDefaut) {
+                throw new AppError(
+                    `Aucune valeur par défaut définie pour le paramètre "${cle}"`,
+                    400,
+                    'NO_DEFAULT_VALUE'
+                );
+            }
+
+            const ancienneValeur = param.valeur;
+            param.valeur = param.valeurDefaut;
+            await this.parametreRepository.save(param);
+            this.invalidateCache('parametres');
+
+            await this.historyService.logAction({
+                utilisateurId,
+                action: ActionConfiguration.UPDATE,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleId: param.id,
+                cibleNom: cle,
+                ancienneValeur,
+                nouvelleValeur: param.valeur,
+                restaurable: true,
+                req,
+            });
+
+            logger.info(`Paramètre réinitialisé vers valeur par défaut: ${cle}`);
+        }
     }
 
     async updateParametresBulk(dto: UpdateParametresBulkDto, utilisateurId?: string, req?: Request): Promise<number> {
         let updated = 0;
-        for (const { cle, valeur } of dto.parametres) {
+        for (const { cle, valeur, etablissementId } of dto.parametres) {
             try {
-                await this.setParametre(cle, valeur, utilisateurId, req);
+                await this.setParametre(cle, valeur, etablissementId, utilisateurId, req);
                 updated++;
             } catch (e) {
                 logger.warn(`Échec mise à jour paramètre ${cle}: ${e}`);
@@ -450,38 +662,15 @@ export class ConfigurationService {
         logger.info(`Paramètre supprimé: ${cle}`);
     }
 
-    async resetParametre(cle: string, utilisateurId?: string, req?: Request): Promise<ParametreSysteme> {
-        const param = await this.parametreRepository.findOne({ where: { cle } });
-        if (!param) {
-            throw new AppError(`Paramètre "${cle}" non trouvé`, 404, 'PARAM_NOT_FOUND');
-        }
-
-        const ancienneValeur = param.valeur;
-
-        if (param.valeurDefaut) {
-            param.valeur = param.valeurDefaut;
-            await this.parametreRepository.save(param);
-            this.invalidateCache('parametres');
-
-            await this.historyService.logAction({
-                utilisateurId,
-                action: ActionConfiguration.RESET,
-                cible: CibleConfiguration.PARAMETRE,
-                cibleId: param.id,
-                cibleNom: cle,
-                ancienneValeur,
-                nouvelleValeur: param.valeur,
-                req,
-            });
-
-            this.emitChange(ActionConfiguration.RESET, CibleConfiguration.PARAMETRE, param.id, cle, ancienneValeur, param.valeur, utilisateurId);
-        }
-
-        return param;
-    }
-
-    async getParametres(query: QueryParametresDto): Promise<ParametreSysteme[]> {
+    async getParametres(query: QueryParametresDto, etablissementId?: string): Promise<ParametreSysteme[]> {
         const qb = this.parametreRepository.createQueryBuilder('p');
+
+        // Filtrer par établissement : paramètres globaux (NULL) + paramètres scopés
+        if (etablissementId) {
+            qb.where('(p.etablissement_id IS NULL OR p.etablissement_id = :etablissementId)', { etablissementId });
+        } else {
+            qb.where('p.etablissement_id IS NULL');
+        }
 
         if (query.categorie) qb.andWhere('p.categorie = :categorie', { categorie: query.categorie });
         if (query.module) qb.andWhere('p.module = :module', { module: query.module });

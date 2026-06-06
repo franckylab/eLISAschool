@@ -1,0 +1,1 @@
+All modules share a unified TypeScript/Express.js runtime with TypeORM for database access and Zod for validation, ensuring consistent type safety and data integrity across the platform.

@@ -1,1 +1,1 @@
-npm Workspaces for monorepo management; Docker Compose for multi-service orchestration.
+Node.js >=20, npm workspaces, Docker Compose

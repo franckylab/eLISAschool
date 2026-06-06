@@ -1,0 +1,1 @@
+Provides modular domain-specific business logic, authentication, RBAC, and centralized configuration for the eLISAschool platform.

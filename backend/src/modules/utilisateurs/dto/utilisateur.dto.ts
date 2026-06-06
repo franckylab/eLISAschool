@@ -2,11 +2,12 @@
  * ==================================
  * eLISAschool - DTOs Utilisateurs
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
  */
 
 import { z } from 'zod';
+import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 
 /**
  * Schéma de création d'utilisateur
@@ -67,17 +68,15 @@ export const updateProfilSchema = z.object({
 
 /**
  * Schéma de recherche/filtrage d'utilisateurs
+ * Utilise les schémas réutilisables de pagination
  */
-export const queryUtilisateursSchema = z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('20'),
-    search: z.string().optional(),
-    role: z.string().optional(),
-    statut: z.string().optional(),
-    etablissementId: z.string().uuid().optional(),
-    sortBy: z.string().default('createdAt'),
-    sortOrder: z.enum(['ASC', 'DESC']).default('DESC'),
-});
+export const queryUtilisateursSchema = paginationWithSortSchema
+    .merge(searchSchema)
+    .extend({
+        role: z.string().optional(),
+        statut: z.string().optional(),
+        etablissementId: z.string().uuid().optional(),
+    });
 
 // Types inférés
 export type CreateUtilisateurDto = z.infer<typeof createUtilisateurSchema>;

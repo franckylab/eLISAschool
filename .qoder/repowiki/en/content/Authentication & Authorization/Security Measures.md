@@ -22,6 +22,13 @@
 - [docker/nginx.conf](file://docker/nginx.conf)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced password complexity requirements with uppercase letter and number validation
+- Improved password validation logic with new error responses
+- Added dynamic secret generation capabilities for enhanced cryptographic security
+- Strengthened authentication security measures across validation and processing layers
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -35,7 +42,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document details the security measures implemented in eLISAschool’s authentication system. It focuses on password hashing, salt generation, cryptographic practices, input validation, SQL injection prevention, XSS protections, rate limiting, brute-force mitigation, suspicious activity detection, secure session/session tokens, CSRF protection, secure cookie handling, security headers, CORS policies, HTTPS enforcement, and security monitoring/intrusion detection/incident response procedures. The analysis is grounded in the repository’s backend authentication modules, middleware, services, DTOs, entities, and configuration files.
+This document details the security measures implemented in eLISAschool's authentication system. It focuses on password hashing, salt generation, cryptographic practices, input validation, SQL injection prevention, XSS protections, rate limiting, brute-force mitigation, suspicious activity detection, secure session/session tokens, CSRF protection, secure cookie handling, security headers, CORS policies, HTTPS enforcement, and security monitoring/intrusion detection/incident response procedures. The analysis is grounded in the repository's backend authentication modules, middleware, services, DTOs, entities, and configuration files.
+
+**Updated** Enhanced authentication security now includes dynamic secret generation, strengthened password complexity requirements, and improved validation logic with comprehensive error responses.
 
 ## Project Structure
 The authentication system resides under backend/src/modules/auth and integrates with shared utilities and configuration. Key areas include:
@@ -147,6 +156,8 @@ Key security-relevant responsibilities:
 - Secure cookies and CORS policies
 - HTTPS enforcement and security headers
 
+**Updated** Enhanced with dynamic secret generation and strengthened password complexity requirements including uppercase letters and numbers validation.
+
 **Section sources**
 - [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
 - [backend/src/modules/auth/services/auth.service.ts](file://backend/src/modules/auth/services/auth.service.ts)
@@ -203,6 +214,8 @@ Ctrl-->>C : "200 OK {access_token, refresh_token}"
 - The authentication service consumes these utilities to hash passwords during registration and verify them during login.
 - Refresh tokens and access tokens are managed separately; refresh tokens are persisted securely and bound to user sessions.
 
+**Updated** Enhanced with dynamic secret generation capabilities and strengthened password validation logic.
+
 ```mermaid
 flowchart TD
 Start(["Password Received"]) --> GenSalt["Generate Random Salt"]
@@ -228,11 +241,14 @@ Result --> |No| Deny["Deny Access"]
 - Services rely on ORM-managed queries and strongly typed entities, minimizing raw SQL and preventing classic SQL injection vectors.
 - Error filtering centralizes exception handling to avoid leaking internal errors and sensitive information.
 
+**Updated** Enhanced with improved password validation logic including uppercase letter and number requirements, plus comprehensive error responses for validation failures.
+
 ```mermaid
 flowchart TD
 Req["HTTP Request"] --> DTO["DTO Validation"]
-DTO --> Valid{"Valid?"}
-Valid --> |No| ErrResp["400 Bad Request"]
+DTO --> Complex["Complexity Validation<br/>- Uppercase letters<br/>- Numbers<br/>- Special characters"]
+Complex --> Valid{"Valid?"}
+Valid --> |No| ErrResp["Enhanced Error Response"]
 Valid --> |Yes| Service["Service Layer"]
 Service --> ORM["ORM Query via Entities"]
 ORM --> DB["Database"]
@@ -503,7 +519,7 @@ ENV --> RMW
 - [docker/nginx.conf](file://docker/nginx.conf)
 
 ## Conclusion
-eLISAschool’s authentication system integrates robust cryptographic practices, strict input validation, secure token lifecycle management, and comprehensive audit logging. Together with environment-driven security controls, middleware-based rate limiting, and centralized configuration, the system provides a strong foundation for protecting user credentials and system integrity. Continuous monitoring, incident response procedures, and adherence to security headers and HTTPS enforcement further strengthen defenses against evolving threats.
+eLISAschool's authentication system integrates robust cryptographic practices, strict input validation, secure token lifecycle management, and comprehensive audit logging. The recent enhancements include dynamic secret generation, strengthened password complexity requirements with uppercase letters and numbers validation, and improved validation logic with comprehensive error responses. Together with environment-driven security controls, middleware-based rate limiting, and centralized configuration, the system provides a strong foundation for protecting user credentials and system integrity. Continuous monitoring, incident response procedures, and adherence to security headers and HTTPS enforcement further strengthen defenses against evolving threats.
 
 ## Appendices
 - Environment variables related to security (e.g., token durations, cookie flags, CORS origins, audit levels) are defined and consumed from configuration.

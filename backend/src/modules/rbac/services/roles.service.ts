@@ -18,6 +18,7 @@ import { CreateRoleDto, AssignPermissionsToRoleDto } from '../dto/create-role.dt
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { permissionResolverService } from '@modules/auth/services/permission-resolver.service';
+import { Role as RoleEnum } from '@shared/enums/roles.enum';
 
 /**
  * Service de gestion des rôles
@@ -67,7 +68,7 @@ export class RolesService {
             roleData.parentId = createDto.parentId;
         }
 
-        const role = this.roleRepo.create(roleData) as Role;
+        const role = this.roleRepo.create(roleData) as unknown as Role;
 
         // Assigner les permissions si fournies
         if (createDto.permissionIds && createDto.permissionIds.length > 0) {

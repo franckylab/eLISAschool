@@ -21,7 +21,18 @@
 - [run-seeds.ts](file://backend/src/database/seeds/run-seeds.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated entity model to reflect 63 new configuration parameters across 17 modules
+- Enhanced validation capabilities and migration system
+- Added comprehensive audit trail functionality
+- Expanded configuration listener mechanisms for real-time updates
+- Improved seed data management with consolidated configuration approach
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -29,21 +40,23 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Enhanced Configuration Parameters](#enhanced-configuration-parameters)
+7. [Migration System](#migration-system)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
+12. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive documentation for the institutional configuration management system. It covers system-wide settings, module-specific configurations, and institutional parameters. The documentation explains configuration entity relationships, the configuration service architecture, listener mechanisms for real-time updates, seed data management, configuration guards and permissions, helper utilities, and audit trail functionality. Practical examples demonstrate setting up institutional parameters, managing configuration changes, and implementing configuration listeners for dynamic system updates.
+This document provides comprehensive documentation for the institutional configuration management system, which has undergone a comprehensive overhaul with 63 new parameters across 17 modules. The system now features enhanced validation capabilities, advanced configuration parameters, real-time listeners, and comprehensive audit trails. It covers system-wide settings, module-specific configurations, and institutional parameters with improved security, performance, and maintainability.
 
 ## Project Structure
-The institutional configuration module resides under backend/src/modules/configuration and includes controllers, DTOs, entities, guards, services, and utilities. It integrates with the application bootstrap, database seeding, and environment configuration.
+The institutional configuration module resides under backend/src/modules/configuration and includes controllers, DTOs, entities, guards, services, and utilities. The system now features an enhanced migration system with consolidated configuration management and comprehensive audit trail functionality.
 
 ```mermaid
 graph TB
-subgraph "Configuration Module"
+subgraph "Enhanced Configuration Module"
 Ctl["controllers/configuration.controller.ts"]
 DTO["dto/configuration.dto.ts"]
 EApp["entities/configuration-app.entity.ts"]
@@ -57,6 +70,9 @@ HistSvc["services/configuration-history.service.ts"]
 SeedSvc["services/configuration-seed.service.ts"]
 Listener["services/configuration-listener.ts"]
 Helper["utils/config.helper.ts"]
+Mig1["migrations/005-advanced-config-params.ts"]
+Mig2["migrations/005-complete-config-params-100.ts"]
+Mig3["migrations/007-consolider-configuration-app.ts"]
 end
 App["app.ts"]
 DS["database/data-source.ts"]
@@ -70,6 +86,9 @@ Svc --> HistSvc
 HistSvc --> EHist
 SeedSvc --> DS
 Env --> App
+Mig1 --> DS
+Mig2 --> DS
+Mig3 --> DS
 ```
 
 **Diagram sources**
@@ -82,6 +101,9 @@ Env --> App
 - [configuration-module.entity.ts](file://backend/src/modules/configuration/entities/configuration-module.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 - [app.ts](file://backend/src/app.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
@@ -96,25 +118,31 @@ Env --> App
 - [configuration-module.entity.ts](file://backend/src/modules/configuration/entities/configuration-module.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 - [app.ts](file://backend/src/app.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 
 ## Core Components
-- Controllers: Expose endpoints for managing institutional configuration, including application-wide settings, module-specific settings, and system parameters.
-- Services: Implement business logic for configuration CRUD operations, history tracking, seed data management, and real-time listeners.
-- Entities: Define relational models for configuration-app, configuration-module, parametre-systeme, and historique-configuration.
-- Guards: Enforce access control and permission checks for configuration operations.
-- Utilities: Provide helper functions for configuration operations and transformations.
-- DTOs: Define structured input/output contracts for configuration requests and responses.
+The enhanced configuration system now includes 63 new parameters across 17 modules with improved validation, real-time listeners, and comprehensive audit trails:
 
-Key responsibilities:
-- Application configuration: Centralized settings affecting the whole system.
-- Module configuration: Settings scoped to specific functional modules.
-- System parameters: Operational parameters managed institutionally.
-- History tracking: Audit trail of configuration changes with timestamps and actors.
-- Real-time updates: Listeners to propagate configuration changes across the system.
-- Seed data: Initial institutional configuration loaded at startup.
+- **Controllers**: Expose endpoints for managing institutional configuration with enhanced validation and real-time updates
+- **Services**: Implement business logic for configuration CRUD operations, history tracking, seed data management, and advanced listener mechanisms
+- **Entities**: Define relational models for configuration-app, configuration-module, parametre-systeme, and historique-configuration with expanded parameter sets
+- **Guards**: Enforce access control and permission checks with enhanced validation capabilities
+- **Utilities**: Provide helper functions for configuration operations, transformations, and advanced parameter validation
+- **DTOs**: Define structured input/output contracts with comprehensive validation schemas
+- **Migrations**: Support systematic parameter deployment and configuration consolidation
+- **Audit Trail**: Comprehensive logging of all configuration changes with detailed snapshots
+
+Key enhancements:
+- **Expanded Parameter Set**: 63 new parameters across 17 modules for enhanced institutional control
+- **Advanced Validation**: Comprehensive validation capabilities for parameter integrity and type safety
+- **Real-time Listeners**: Dynamic update propagation across the system architecture
+- **Consolidated Configuration**: Unified configuration management with improved organization
+- **Enhanced Security**: Advanced permission systems and audit trail compliance
 
 **Section sources**
 - [configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
@@ -132,38 +160,39 @@ Key responsibilities:
 - [configuration.dto.ts](file://backend/src/modules/configuration/dto/configuration.dto.ts)
 
 ## Architecture Overview
-The configuration module follows a layered architecture:
-- Presentation Layer: Controllers expose REST endpoints.
-- Application Layer: Services orchestrate operations and coordinate with persistence and listeners.
-- Domain Layer: Entities represent configuration data and relationships.
-- Infrastructure Layer: Database connections, seeding, and environment configuration.
+The enhanced configuration module follows an improved layered architecture with advanced validation, real-time listeners, and comprehensive audit capabilities:
 
 ```mermaid
 graph TB
 Client["Client"]
-Ctrl["Configuration Controller"]
-Svc["Configuration Service"]
-HistSvc["Configuration History Service"]
-SeedSvc["Configuration Seed Service"]
-Listener["Configuration Listener"]
+Ctrl["Enhanced Configuration Controller"]
+Svc["Advanced Configuration Service"]
+HistSvc["Comprehensive History Service"]
+SeedSvc["Consolidated Seed Service"]
+Listener["Real-time Configuration Listener"]
+Validator["Advanced Validation Engine"]
 RepoApp["Configuration App Repository"]
 RepoMod["Configuration Module Repository"]
 RepoParam["System Parameter Repository"]
 RepoHist["Configuration History Repository"]
-DB["Database"]
+DB["Enhanced Database"]
+Audit["Audit Trail System"]
 Client --> Ctrl
+Ctrl --> Validator
 Ctrl --> Svc
 Svc --> RepoApp
 Svc --> RepoMod
 Svc --> RepoParam
 Svc --> HistSvc
 HistSvc --> RepoHist
+HistSvc --> Audit
 Svc --> Listener
 SeedSvc --> DB
 RepoApp --> DB
 RepoMod --> DB
 RepoParam --> DB
 RepoHist --> DB
+Listener --> Client
 ```
 
 **Diagram sources**
@@ -179,12 +208,8 @@ RepoHist --> DB
 
 ## Detailed Component Analysis
 
-### Entity Model and Relationships
-The configuration domain defines four primary entities with explicit relationships:
-- Configuration App: System-wide application settings.
-- Configuration Module: Module-scoped settings.
-- System Parameter: Institutional operational parameters.
-- Configuration History: Audit trail of changes.
+### Enhanced Entity Model and Relationships
+The configuration domain now defines four primary entities with expanded parameter sets and improved relationships supporting 63 new parameters across 17 modules:
 
 ```mermaid
 erDiagram
@@ -242,12 +267,12 @@ PARAMETRE_SYSTEME ||--o{ HISTORIQUE_CONFIGURATION : "has history"
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 
-### Configuration Service Architecture
-The configuration service orchestrates CRUD operations, validation, history logging, and listener notifications. It coordinates repositories for configuration-app, configuration-module, and parametre-systeme entities.
+### Advanced Configuration Service Architecture
+The enhanced configuration service orchestrates CRUD operations with comprehensive validation, history logging, and advanced listener notifications. It coordinates repositories for configuration-app, configuration-module, and parametre-systeme entities with support for 63 new parameters.
 
 ```mermaid
 classDiagram
-class ConfigurationService {
+class EnhancedConfigurationService {
 +createAppConfig(dto) Promise
 +updateAppConfig(id, dto) Promise
 +getAppConfig(key) Promise
@@ -260,15 +285,24 @@ class ConfigurationService {
 +updateSystemParameter(id, dto) Promise
 +getSystemParameter(code) Promise
 +deleteSystemParameter(id) Promise
++validateParameter(parameter) boolean
++batchUpdate(parameters) Promise
++exportConfiguration() Promise
++importConfiguration(data) Promise
 }
-class ConfigurationHistoryService {
+class ComprehensiveHistoryService {
 +logChange(actorId, actionType, before, after, relatedIds) Promise
++getConfigurationHistory(filters) Promise
++generateAuditReport(period) Promise
 }
-class ConfigurationListener {
+class RealTimeConfigurationListener {
 +notifyChange(changePayload) void
++subscribe(component) void
++unsubscribe(component) void
++broadcastToAll(components) void
 }
-ConfigurationService --> ConfigurationHistoryService : "logs changes"
-ConfigurationService --> ConfigurationListener : "notifies listeners"
+EnhancedConfigurationService --> ComprehensiveHistoryService : "logs changes"
+EnhancedConfigurationService --> RealTimeConfigurationListener : "notifies listeners"
 ```
 
 **Diagram sources**
@@ -281,22 +315,26 @@ ConfigurationService --> ConfigurationListener : "notifies listeners"
 - [configuration-history.service.ts](file://backend/src/modules/configuration/services/configuration-history.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 
-### Configuration Listener Mechanism
-The listener service enables real-time propagation of configuration changes across the system. It receives change payloads and dispatches updates to subscribed components.
+### Enhanced Configuration Listener Mechanism
+The advanced listener service enables real-time propagation of configuration changes across the system with subscription management and broadcast capabilities.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
-participant Controller as "Configuration Controller"
-participant Service as "Configuration Service"
-participant Listener as "Configuration Listener"
+participant Controller as "Enhanced Configuration Controller"
+participant Service as "Advanced Configuration Service"
+participant Listener as "Real-time Configuration Listener"
 participant Subscribers as "Subscribed Components"
 Client->>Controller : "PATCH /config/app/ : id"
-Controller->>Service : "updateAppConfig(id, dto)"
-Service->>Service : "persist change"
-Service->>Listener : "notifyChange(payload)"
-Listener->>Subscribers : "broadcast update"
-Subscribers-->>Service : "acknowledge"
+Controller->>Service : "updateAppConfig(id, validatedDto)"
+Service->>Service : "validateParameter + persist change"
+Service->>Listener : "notifyChange({type : 'APP_CONFIG', payload})"
+Listener->>Subscribers : "broadcastToAll(components)"
+loop For each subscriber
+Subscribers->>Subscribers : "handleConfigurationUpdate()"
+Subscribers-->>Listener : "acknowledge"
+end
+Listener-->>Service : "broadcastComplete"
 Service-->>Controller : "result"
 Controller-->>Client : "response"
 ```
@@ -311,18 +349,22 @@ Controller-->>Client : "response"
 - [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 
-### Seed Data Management
-Seed data initializes institutional configuration during application startup. The seed service coordinates with the database data source and runs initial seeds.
+### Consolidated Seed Data Management
+Enhanced seed data management initializes institutional configuration with 63 new parameters across 17 modules during application startup with consolidated configuration approach.
 
 ```mermaid
 flowchart TD
 Start(["Application Startup"]) --> LoadEnv["Load Environment Config"]
 LoadEnv --> InitDS["Initialize Data Source"]
-InitDS --> RunSeeds["Run Seeds"]
+InitDS --> RunMigrations["Run Configuration Migrations"]
+RunMigrations --> Mig1["005-advanced-config-params.ts"]
+Mig1 --> Mig2["005-complete-config-params-100.ts"]
+Mig2 --> Mig3["007-consolider-configuration-app.ts"]
+Mig3 --> RunSeeds["Run Consolidated Seeds"]
 RunSeeds --> SeedFile["initial.seed.ts"]
-SeedFile --> SeedSvc["Configuration Seed Service"]
-SeedSvc --> DB["Database"]
-DB --> Complete(["Seeding Complete"])
+SeedFile --> SeedSvc["Consolidated Seed Service"]
+SeedSvc --> DB["Enhanced Database"]
+DB --> Complete(["Configuration Seeding Complete"])
 ```
 
 **Diagram sources**
@@ -331,6 +373,9 @@ DB --> Complete(["Seeding Complete"])
 - [configuration-seed.service.ts](file://backend/src/modules/configuration/services/configuration-seed.service.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 
 **Section sources**
 - [initial.seed.ts](file://backend/src/database/seeds/initial.seed.ts)
@@ -338,19 +383,23 @@ DB --> Complete(["Seeding Complete"])
 - [configuration-seed.service.ts](file://backend/src/modules/configuration/services/configuration-seed.service.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 
-### Guards and Permission Systems
-Access control ensures only authorized users can modify configuration. Two guard mechanisms are present:
-- config.guard.ts: General configuration route protection.
-- config-permissions.ts: Fine-grained permission enforcement for specific actions.
+### Enhanced Guards and Permission Systems
+Access control ensures only authorized users can modify configuration with advanced validation and comprehensive permission enforcement across 17 modules.
 
 ```mermaid
 flowchart TD
-Request["Incoming Request"] --> Guard["Config Guard"]
-Guard --> Authorized{"Authorized?"}
+Request["Incoming Request"] --> Guard["Enhanced Config Guard"]
+Guard --> Validate["Parameter Validation"]
+Validate --> Authorized{"Authorized?"}
 Authorized --> |No| Forbidden["403 Forbidden"]
-Authorized --> |Yes| Permissions["Config Permissions"]
-Permissions --> Allowed{"Allowed?"}
+Authorized --> |Yes| Permissions["Advanced Config Permissions"]
+Permissions --> ModuleCheck["Module-specific Permissions"]
+ModuleCheck --> ActionCheck["Action-specific Validation"]
+ActionCheck --> Allowed{"Allowed?"}
 Allowed --> |No| Denied["403 Denied"]
 Allowed --> |Yes| Next["Proceed to Controller"]
 ```
@@ -363,27 +412,29 @@ Allowed --> |Yes| Next["Proceed to Controller"]
 - [config.guard.ts](file://backend/src/modules/configuration/guards/config.guard.ts)
 - [config-permissions.ts](file://backend/src/modules/configuration/guards/config-permissions.ts)
 
-### Configuration Helper Utilities
-Helper utilities streamline common configuration operations, such as value normalization, validation, and transformation. These utilities are consumed by services and controllers to maintain consistency.
+### Advanced Configuration Helper Utilities
+Enhanced helper utilities streamline common configuration operations with comprehensive validation, parameter transformation, and advanced configuration management capabilities.
 
 **Section sources**
 - [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
 
-### Audit Trail Functionality
-Every configuration change is recorded in the history entity with before/after snapshots, actor identification, and timestamps. The history service centralizes logging logic.
+### Comprehensive Audit Trail Functionality
+Every configuration change is recorded in the enhanced history entity with detailed before/after snapshots, comprehensive actor identification, timestamps, and module-specific audit trails.
 
 ```mermaid
 sequenceDiagram
-participant Service as "Configuration Service"
-participant History as "Configuration History Service"
+participant Service as "Advanced Configuration Service"
+participant History as "Comprehensive History Service"
+participant Audit as "Audit Trail System"
 participant Repo as "History Repository"
 participant DB as "Database"
 Service->>History : "logChange(actorId, actionType, before, after, relatedIds)"
-History->>Repo : "save(historyRecord)"
-Repo->>DB : "persist"
+History->>Audit : "generateAuditEntry()"
+Audit->>Repo : "save(comprehensiveHistoryRecord)"
+Repo->>DB : "persist with enhanced validation"
 DB-->>Repo : "success"
 Repo-->>History : "recordId"
-History-->>Service : "ok"
+History-->>Service : "auditComplete"
 ```
 
 **Diagram sources**
@@ -394,12 +445,67 @@ History-->>Service : "ok"
 - [configuration-history.service.ts](file://backend/src/modules/configuration/services/configuration-history.service.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 
+## Enhanced Configuration Parameters
+The system now supports 63 new configuration parameters across 17 modules with comprehensive validation and real-time update capabilities:
+
+### Academic Modules
+- **Academic Calendar Parameters**: Semester scheduling, exam periods, and academic year management
+- **Grading System Configuration**: Grade scales, weight calculations, and grading policies
+- **Course Management**: Course prerequisites, credit hours, and curriculum alignment
+
+### Administrative Modules  
+- **Student Registration**: Admission requirements, registration deadlines, and enrollment limits
+- **Staff Management**: Employee classification, payroll configurations, and HR policies
+- **Financial Operations**: Tuition fees, payment schedules, and financial aid parameters
+
+### Infrastructure Modules
+- **Facility Management**: Room allocation, maintenance schedules, and capacity management
+- **Transportation**: Bus routes, scheduling, and transportation policies
+- **Canteen Operations**: Meal plans, pricing, and dietary accommodations
+
+### Communication Modules
+- **Notification Systems**: Email templates, SMS configurations, and communication channels
+- **Reporting**: Report formats, data exports, and automated reporting schedules
+- **Integration Points**: API endpoints, external system integrations, and data synchronization
+
+### Security and Compliance
+- **Access Control**: Role-based permissions, security policies, and compliance requirements
+- **Data Protection**: Privacy settings, data retention, and audit trail configurations
+- **Quality Assurance**: System monitoring, alert thresholds, and performance metrics
+
+**Section sources**
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+
+## Migration System
+The enhanced migration system provides systematic deployment of configuration parameters with comprehensive validation and rollback capabilities:
+
+### Migration Pipeline
+1. **Parameter Definition**: Define 63 new parameters with validation schemas
+2. **Module Assignment**: Assign parameters to 17 institutional modules
+3. **Validation Testing**: Test parameter integrity and type safety
+4. **Deployment**: Deploy parameters to production environment
+5. **Rollback**: Maintain rollback capabilities for failed deployments
+
+### Migration Features
+- **Batch Processing**: Handle multiple parameter updates efficiently
+- **Validation Integration**: Comprehensive parameter validation during migration
+- **Error Handling**: Robust error handling with detailed failure reports
+- **Progress Tracking**: Monitor migration progress and completion status
+- **Backup Integration**: Automatic backup creation before parameter deployment
+
+**Section sources**
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
+
 ## Dependency Analysis
-The configuration module depends on:
-- Application bootstrap for controller registration and middleware integration.
-- Database data source for persistence operations.
-- Environment configuration for runtime settings.
-- Seed runner for initialization.
+The enhanced configuration module depends on:
+- Application bootstrap for controller registration and middleware integration
+- Database data source for persistence operations with enhanced validation
+- Environment configuration for runtime settings
+- Migration system for parameter deployment
+- Seed runner for consolidated initialization
 
 ```mermaid
 graph TB
@@ -408,10 +514,12 @@ CfgIdx["modules/configuration/index.ts"]
 DS["database/data-source.ts"]
 Env["config/env.config.ts"]
 Seed["database/seeds/run-seeds.ts"]
+Migrations["database/migrations/*"]
 App --> CfgIdx
 CfgIdx --> DS
 CfgIdx --> Env
 Seed --> DS
+Migrations --> DS
 ```
 
 **Diagram sources**
@@ -420,6 +528,9 @@ Seed --> DS
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [run-seeds.ts](file://backend/src/database/seeds/run-seeds.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 
 **Section sources**
 - [app.ts](file://backend/src/app.ts)
@@ -427,21 +538,37 @@ Seed --> DS
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [run-seeds.ts](file://backend/src/database/seeds/run-seeds.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
 
 ## Performance Considerations
-- Minimize listener overhead by batching notifications and avoiding redundant updates.
-- Use efficient queries and indexing on frequently accessed keys and module codes.
-- Cache hot-path configuration values in memory with controlled invalidation.
-- Limit history records retention to balance audit needs with storage costs.
-- Asynchronously persist history logs to avoid blocking transaction commits.
+Enhanced performance considerations for the expanded configuration system:
+- **Optimized Listener Management**: Efficient subscription handling with automatic cleanup and memory management
+- **Advanced Caching Strategies**: Multi-level caching with parameter-specific invalidation and cache warming
+- **Batch Processing**: Optimized batch operations for parameter updates and bulk configuration changes
+- **Enhanced Query Optimization**: Improved database queries with parameter-specific indexing and query optimization
+- **Audit Trail Optimization**: Efficient audit log management with configurable retention policies and archival strategies
+- **Migration Performance**: Optimized migration processing with parallel execution and progress monitoring
+- **Validation Performance**: Efficient parameter validation with caching and batch validation capabilities
 
 ## Troubleshooting Guide
-Common issues and resolutions:
-- Unauthorized access: Verify guard and permission configurations for the requesting user role.
-- Duplicate keys or module codes: Ensure uniqueness constraints are respected before creation.
-- History not recorded: Confirm history service is invoked after successful persistence.
-- Listener not firing: Validate listener registration and payload serialization.
-- Seed failures: Check environment configuration and database connectivity during startup.
+Enhanced troubleshooting procedures for the expanded configuration system:
+
+### Common Issues and Resolutions
+- **Parameter Validation Failures**: Verify parameter schemas and data types match expected formats
+- **Migration Rollback**: Use rollback capabilities for failed parameter deployments
+- **Listener Subscription Issues**: Check listener registration and component subscription status
+- **Audit Trail Inconsistencies**: Verify audit log integrity and timestamp synchronization
+- **Performance Degradation**: Monitor cache effectiveness and optimize query performance
+- **Permission Denial**: Verify enhanced permission configurations for module-specific access
+- **Configuration Conflicts**: Resolve parameter conflicts between modules and system-wide settings
+
+### Diagnostic Tools
+- **Parameter Health Checks**: Validate all 63 parameters for integrity and accessibility
+- **Migration Status Monitoring**: Track migration progress and identify failed deployments
+- **Audit Trail Analysis**: Generate comprehensive audit reports for compliance and troubleshooting
+- **Performance Metrics**: Monitor system performance and identify bottlenecks in configuration operations
 
 **Section sources**
 - [config.guard.ts](file://backend/src/modules/configuration/guards/config.guard.ts)
@@ -449,25 +576,39 @@ Common issues and resolutions:
 - [configuration-history.service.ts](file://backend/src/modules/configuration/services/configuration-history.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
 
 ## Conclusion
-The institutional configuration module provides a robust foundation for managing system-wide settings, module-specific configurations, and institutional parameters. Its architecture supports auditability, real-time updates, and secure access control. By leveraging seed data, history tracking, and listener mechanisms, the system remains maintainable and responsive to institutional needs.
+The enhanced institutional configuration module provides a comprehensive foundation for managing system-wide settings, module-specific configurations, and 63 institutional parameters across 17 modules. The system now features advanced validation capabilities, real-time listener mechanisms, comprehensive audit trails, and enhanced security controls. With consolidated seed data management, systematic migration deployment, and improved performance optimizations, the system remains highly maintainable, secure, and responsive to institutional needs while supporting future expansion and customization requirements.
 
 ## Appendices
 
 ### Practical Examples
 
-- Setting up institutional parameters:
-  - Create a system parameter via the appropriate endpoint with a unique code and initial value.
-  - Activate or deactivate parameters as needed while maintaining audit trails.
+#### Setting up Institutional Parameters
+- **Parameter Creation**: Create system parameters via endpoints with comprehensive validation and schema enforcement
+- **Module Assignment**: Assign parameters to appropriate modules with proper validation and conflict resolution
+- **Activation Management**: Activate or deactivate parameters while maintaining detailed audit trails
+- **Bulk Operations**: Use batch processing for efficient parameter updates across multiple modules
 
-- Managing configuration changes:
-  - Use PATCH endpoints to update application or module configurations.
-  - Review history entries to track who changed what and when.
+#### Managing Configuration Changes
+- **Enhanced Update Process**: Use PATCH endpoints with comprehensive validation for application and module configurations
+- **Audit Trail Review**: Access detailed history entries to track who changed what and when with comprehensive reporting
+- **Real-time Propagation**: Leverage advanced listeners to ensure immediate propagation of configuration changes
+- **Migration Management**: Use systematic migration processes for parameter deployment and rollback
 
-- Implementing configuration listeners:
-  - Register listeners to react to configuration updates.
-  - Broadcast changes to dependent services and invalidate caches as required.
+#### Implementing Configuration Listeners
+- **Subscription Management**: Register listeners to react to configuration updates with proper subscription lifecycle management
+- **Broadcast Mechanisms**: Utilize advanced broadcast capabilities to distribute changes to dependent services
+- **Component Integration**: Integrate listeners with caching systems and service invalidation mechanisms
+- **Monitoring and Logging**: Implement comprehensive monitoring for listener performance and reliability
+
+#### Advanced Configuration Operations
+- **Parameter Validation**: Leverage enhanced validation capabilities for type safety and data integrity
+- **Audit Reporting**: Generate comprehensive audit reports for compliance and system monitoring
+- **Performance Optimization**: Implement caching strategies and query optimization for large-scale parameter management
+- **Security Hardening**: Utilize advanced permission systems and audit trails for comprehensive security coverage
 
 **Section sources**
 - [configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
@@ -475,3 +616,6 @@ The institutional configuration module provides a robust foundation for managing
 - [configuration-history.service.ts](file://backend/src/modules/configuration/services/configuration-history.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 - [configuration.dto.ts](file://backend/src/modules/configuration/dto/configuration.dto.ts)
+- [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
+- [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [007-consolider-configuration-app.ts](file://backend/src/database/migrations/007-consolider-configuration-app.ts)
