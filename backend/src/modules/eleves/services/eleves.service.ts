@@ -12,6 +12,7 @@ import { CreateEleveDto, UpdateEleveDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';
+import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/helpers/config-helpers';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -20,12 +21,44 @@ export class ElevesService {
         this.repo = AppDataSource.getRepository(Eleve);
     }
 
+    private async getElevesParams() {
+        return {
+            maxStudentsPerClass: await getParamNumber('eleves.max_students_per_class', 45),
+            autoGenerateMatricule: await getParamBoolean('eleves.auto_generate_matricule', true),
+            matriculePrefix: await getParam<string>('eleves.matricule_prefix', 'ELV'),
+            requirePhoto: await getParamBoolean('eleves.require_photo', false),
+            requireMedicalRecord: await getParamBoolean('eleves.require_medical_record', false),
+            defaultAnneeScolaire: await getParam<string>('eleves.default_annee_scolaire', ''),
+        };
+    }
+
     async create(dto: CreateEleveDto, etablissementId?: string, req?: Request): Promise<Eleve> {
+        const params = await this.getElevesParams();
+
+        // Vérification du matricule existant
         const existing = await this.repo.findOne({ where: { matricule: dto.matricule } });
         if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
 
         const userUsed = await this.repo.findOne({ where: { utilisateurId: dto.utilisateurId } });
         if (userUsed) throw new AppError('Cet utilisateur est déjà lié à un dossier élève', 409, 'USER_ALREADY_LINKED');
+
+        // Validation photo si requise
+        if (params.requirePhoto && !dto.photoUrl) {
+            throw new AppError(
+                'La photo de l\'élève est obligatoire',
+                400,
+                'PHOTO_REQUIRED'
+            );
+        }
+
+        // Validation dossier médical si requis
+        if (params.requireMedicalRecord && !dto.antecedentsMedicaux) {
+            throw new AppError(
+                'Le dossier médical est obligatoire',
+                400,
+                'MEDICAL_RECORD_REQUIRED'
+            );
+        }
 
         const eleve = this.repo.create({
             ...dto,

@@ -1,1 +1,0 @@
-Provides centralized authentication, RBAC authorization, and a modular architecture for diverse school management features like academics, logistics, and communication.

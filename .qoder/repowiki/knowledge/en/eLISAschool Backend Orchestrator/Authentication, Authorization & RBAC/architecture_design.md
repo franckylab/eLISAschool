@@ -1,0 +1,4 @@
+- Follows a standard Controller-Service-Entity pattern where Express controllers (`auth.controller.ts`) delegate to services (`AuthService`, `TokenService`) interacting with TypeORM entities.
+- Implements a hybrid RBAC system: `PermissionResolverService` dynamically resolves permissions from roles and inheritance chains, caching results in-memory, while `permission.guard.ts` enforces these checks at the middleware level.
+- Supports multi-tenancy via `UtilisateurEtablissement` entities and context-switching logic in `auth.controller.ts`, allowing users to operate across multiple establishments within a single session.
+- Security is handled through `auth.middleware.ts` for JWT verification and `TokenService` for managing access/refresh token pairs stored in the database.

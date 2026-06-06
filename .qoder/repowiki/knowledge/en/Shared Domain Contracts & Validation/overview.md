@@ -1,1 +1,0 @@
-Provides shared TypeScript types, enums, constants, and Zod validation schemas for consistent data modeling across the eLISAschool backend and frontend.

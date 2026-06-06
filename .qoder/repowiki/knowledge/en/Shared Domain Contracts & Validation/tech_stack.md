@@ -1,1 +1,0 @@
-Uses Zod v3 for runtime schema validation and type inference, compiled with TypeScript v5 targeting ES2022/CommonJS.

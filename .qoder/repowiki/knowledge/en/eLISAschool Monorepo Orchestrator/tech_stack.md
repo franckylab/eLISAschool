@@ -1,1 +1,1 @@
-npm Workspaces for monorepo dependency management; Docker Compose for multi-service orchestration.
+npm Workspaces for monorepo management; Docker Compose for multi-service orchestration.

@@ -1,0 +1,1 @@
+Uses Zod (^3.24.1) for schema-based input validation with inferred TypeScript types (`z.infer`), compiled via TypeScript ^5.7.2 targeting ES2022/CommonJS.

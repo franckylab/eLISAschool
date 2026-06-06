@@ -7,6 +7,14 @@
  */
 
 import { z } from 'zod';
+import crypto from 'crypto';
+
+/**
+ * Génère un secret aléatoire pour le développement
+ */
+function generateDevSecret(length: number = 32): string {
+    return crypto.randomBytes(length).toString('hex').substring(0, length);
+}
 
 /**
  * Schéma de validation des variables d'environnement
@@ -72,7 +80,7 @@ function loadEnvConfig(): EnvConfig {
         console.error('❌ Erreur de configuration des variables d\'environnement:');
         console.error(result.error.format());
 
-        // En développement, on utilise des valeurs par défaut
+        // En développement, on utilise des valeurs par défaut sécurisées
         if (process.env.NODE_ENV !== 'production') {
             console.warn('⚠️ Utilisation des valeurs par défaut en mode développement');
             return {
@@ -86,10 +94,10 @@ function loadEnvConfig(): EnvConfig {
                 DB_NAME: 'elisaschool',
                 DB_USER: 'elisaschool_user',
                 DB_PASSWORD: 'dev_password',
-                JWT_SECRET: 'dev_jwt_secret_32_caracteres_min',
+                JWT_SECRET: generateDevSecret(64), // Généré dynamiquement
                 JWT_EXPIRES_IN: '7d',
                 JWT_REFRESH_EXPIRES_IN: '30d',
-                ENCRYPTION_KEY: 'dev_encryption_key_32_chars_xx',
+                ENCRYPTION_KEY: generateDevSecret(32), // Généré dynamiquement
                 REDIS_HOST: 'localhost',
                 REDIS_PORT: 6379,
                 REDIS_PASSWORD: '',

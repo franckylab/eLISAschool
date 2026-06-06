@@ -1,3 +1,0 @@
-- Standardized API responses use a consistent JSON structure with `success`, `data`, `message`, and optional `meta` fields, generated via helper functions in `api-response.util.ts`.
-- Global error handling relies on a custom `AppError` class with specific status codes and error codes, processed by a centralized `errorHandler` middleware.
-- Multi-tenancy is enforced via a `tenantMiddleware` that extracts `etablissementId` from JWT claims or query parameters, attaching it to the request object for downstream use.

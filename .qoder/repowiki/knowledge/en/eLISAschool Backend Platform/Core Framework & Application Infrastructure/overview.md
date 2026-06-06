@@ -1,1 +1,0 @@
-Provides the foundational Express application setup, standardized API response handling, multi-tenancy middleware, and database connectivity for the eLISAschool backend.

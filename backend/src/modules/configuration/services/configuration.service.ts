@@ -327,6 +327,11 @@ export class ConfigurationService {
             throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
         }
 
+        // Validation de la valeur avant sauvegarde
+        if (dto.valeur !== undefined) {
+            this.validateParametreValue(param, dto.valeur);
+        }
+
         const ancienneValeur = param.valeur;
 
         if (dto.valeur !== undefined) param.valeur = JSON.stringify(dto.valeur);
@@ -361,10 +366,12 @@ export class ConfigurationService {
         const ancienneValeur = param?.valeur;
 
         if (!param) {
+            // Pour les nouveaux paramètres, on crée avec validation
+            const typeValeur = this.detectTypeValeur(valeur);
             param = this.parametreRepository.create({
                 cle,
                 valeur: JSON.stringify(valeur),
-                typeValeur: this.detectTypeValeur(valeur),
+                typeValeur,
                 categorie: CategorieParametre.CUSTOM,
                 modifiableRuntime: true,
             });
@@ -372,6 +379,8 @@ export class ConfigurationService {
             if (!param.modifiableRuntime) {
                 throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
             }
+            // Validation avant mise à jour
+            this.validateParametreValue(param, valeur);
             param.valeur = JSON.stringify(valeur);
         }
 
@@ -596,6 +605,72 @@ export class ConfigurationService {
         if (Array.isArray(valeur)) return TypeValeurParametre.ARRAY;
         if (typeof valeur === 'object') return TypeValeurParametre.JSON;
         return TypeValeurParametre.STRING;
+    }
+
+    /**
+     * Valide la valeur d'un paramètre selon sa configuration
+     */
+    private validateParametreValue(param: ParametreSysteme, valeur: any): void {
+        // Validation par regex si définie
+        if (param.validation) {
+            try {
+                const regex = new RegExp(param.validation);
+                const valeurStr = String(valeur);
+                if (!regex.test(valeurStr)) {
+                    throw new AppError(
+                        `La valeur ne respecte pas le format requis pour le paramètre "${param.cle}"`,
+                        400,
+                        'INVALID_PARAM_VALUE'
+                    );
+                }
+            } catch (e) {
+                if (e instanceof AppError) throw e;
+                throw new AppError(
+                    `Regex de validation invalide pour le paramètre "${param.cle}"`,
+                    500,
+                    'INVALID_VALIDATION_REGEX'
+                );
+            }
+        }
+
+        // Validation des ranges pour les nombres
+        if (param.typeValeur === TypeValeurParametre.NUMBER) {
+            const numValue = typeof valeur === 'string' ? parseFloat(valeur) : valeur;
+            
+            if (isNaN(numValue)) {
+                throw new AppError(
+                    `La valeur doit être un nombre valide pour le paramètre "${param.cle}"`,
+                    400,
+                    'INVALID_NUMBER_VALUE'
+                );
+            }
+
+            // Validation min/max basée sur les options si disponibles
+            if (param.options && param.options.length >= 2) {
+                const min = parseFloat(param.options[0]?.value);
+                const max = parseFloat(param.options[param.options.length - 1]?.value);
+                
+                if (!isNaN(min) && !isNaN(max) && (numValue < min || numValue > max)) {
+                    throw new AppError(
+                        `La valeur doit être comprise entre ${min} et ${max} pour le paramètre "${param.cle}"`,
+                        400,
+                        'VALUE_OUT_OF_RANGE'
+                    );
+                }
+            }
+        }
+
+        // Validation des enums
+        if (param.options && param.options.length > 0 && param.typeValeur === TypeValeurParametre.STRING) {
+            const validValues = param.options.map(opt => opt.value);
+            if (!validValues.includes(String(valeur))) {
+                throw new AppError(
+                    `La valeur doit être l'une des suivantes : ${validValues.join(', ')} pour le paramètre "${param.cle}"`,
+                    400,
+                    'INVALID_ENUM_VALUE'
+                );
+            }
+        }
     }
 }
 

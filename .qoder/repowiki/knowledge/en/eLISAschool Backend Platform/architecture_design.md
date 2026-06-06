@@ -1,3 +1,0 @@
-- Children communicate via a shared Express application instance (`src/app.ts`) where the `core_framework` provides global middleware (tenant resolution, error handling, logging) that wraps all `feature_modules`.
-- Isolation is enforced through modular directory structures in `src/modules/`, where each feature module encapsulates its own controllers, services, and entities, relying on the core for database connectivity and request context.
-- Wiring occurs at startup in `src/index.ts`, which initializes the database connection from `core_framework` and registers all feature module routes and guards provided by the `auth` module.

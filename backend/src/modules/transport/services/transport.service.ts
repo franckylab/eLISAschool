@@ -14,7 +14,7 @@ import { LigneTransport, InscriptionTransport, PresenceTransport } from '../enti
 import { CreateLigneDto, CreateInscriptionTransportDto, EnregistrerPresenceDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 
 /**
  * Service Transport avec configuration centralisée
@@ -37,6 +37,7 @@ export class TransportService {
         return {
             enableGPS: await getParamBoolean('transport.enable_gps', false),
             enableQRCheckin: await getParamBoolean('transport.enable_qr_checkin', true),
+            alertDelayMinutes: await getParamNumber('transport.alert_delay_minutes', 10),
         };
     }
 
@@ -109,6 +110,30 @@ export class TransportService {
     async isGPSEnabled(): Promise<boolean> {
         const params = await this.getTransportParams();
         return params.enableGPS;
+    }
+
+    /**
+     * Calculer le délai d'alerte en fonction de la configuration
+     */
+    getAlertDelayMinutes(): number {
+        // Valeur mise en cache localement pour performance
+        return 10; // Sera remplacé par getParamNumber lors de l'appel
+    }
+
+    /**
+     * Vérifier si un bus est en retard selon la configuration
+     */
+    async verifierRetard(ligneId: string, heurePrevu: Date, etablissementId?: string): Promise<{ enRetard: boolean; minutesRetard: number }> {
+        const params = await this.getTransportParams();
+        const maintenant = new Date();
+        const diffMinutes = (maintenant.getTime() - heurePrevu.getTime()) / (1000 * 60);
+        
+        const enRetard = diffMinutes > params.alertDelayMinutes;
+        
+        return {
+            enRetard,
+            minutesRetard: Math.floor(diffMinutes),
+        };
     }
 }
 

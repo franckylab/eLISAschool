@@ -1,1 +1,0 @@
-Uses `bcryptjs` for password hashing and `jsonwebtoken` for stateless authentication, with `zod` for request validation in controllers.

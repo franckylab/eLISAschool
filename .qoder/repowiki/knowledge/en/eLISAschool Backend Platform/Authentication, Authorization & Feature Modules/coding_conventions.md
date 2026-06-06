@@ -1,4 +1,0 @@
-- Each feature module follows a strict directory structure containing `controllers`, `services`, `entities`, and `dto` folders to enforce separation of concerns.
-- Controllers delegate all business logic to service classes and use Zod schemas for input validation before processing requests.
-- Entities are defined using TypeORM decorators with automatic password hashing implemented via `@BeforeInsert` and `@BeforeUpdate` lifecycle hooks.
-- Modules expose their public API through barrel `index.ts` files that re-export controllers, services, and types for clean dependency injection.

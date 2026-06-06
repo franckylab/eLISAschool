@@ -27,6 +27,8 @@ ETABLISSEMENT (racine — enums partagés : SousSysteme, TypeEtablissement, Cycl
 │
 ├── AUTH (JWT, RBAC, audit) ──────── utilisé par TOUS les modules
 │   ├── Utilisateur (identité numérique)
+│   ├── UtilisateurEtablissement (multi-établissements N:N)
+│   ├── RoleLimitationEtablissement (limitations configurables)
 │   ├── ProfilUtilisateur
 │   ├── RefreshToken
 │   └── AuditLog (système d'audit trail complet)
@@ -173,13 +175,151 @@ login(email, password)
 - **Register** : statut `EN_ATTENTE_VALIDATION` → vérification email → `ACTIF`
 - **Admin create** (utilisateurs) : statut `ACTIF` directement (pas de vérification email)
 
-### RBAC (Role-Based Access Control)
+### RBAC (Role-Based Access Control) - Version 3.0
 
-- 9 rôles, ~30 permissions granulaires
-- `requireRoles(Role.XXX)` : vérification exacte de rôle
-- `requireAccess(permission)` : vérification rôle OU permission + bypass SUPER_ADMIN
-- Presets middleware : `adminOnly`, `managerOnly`, `staffOnly`, `teacherOnly`
-- Permissions config : 18 permissions granulaires pour le module Configuration
+**Système RBAC étendu** (implémenté en 2026-06 - Système éducatif africain) :
+
+#### Architecture
+```
+RBAC v3.0
+├── 67 rôles système (couvre Afrique Centrale & Ouest)
+├── ~350 permissions granulaires (format: module:action)
+├── Multi-rôles par utilisateur (illimité)
+├── Permissions personnalisées GRANTED/DENIED
+├── Cache intelligent TTL 5 minutes
+├── API REST complète (20+ endpoints)
+├── Backward compatibility avec enum Role
+├── Multi-établissements (table UtilisateurEtablissement N:N)
+└── Limitations configurables par rôle (max établissements, validation)
+```
+
+#### Entités TypeORM (7)
+- **Role** : Rôles dynamiques avec héritage (parentId)
+- **Permission** : Permissions granulaires (~350)
+- **UtilisateurRole** : Table de jointure multi-rôles
+- **UtilisateurPermission** : Overrides GRANTED/DENIED
+- **PermissionAudit** : Traçabilité des changements
+- **UtilisateurEtablissement** : Affectations multi-établissements (N:N)
+- **RoleLimitationEtablissement** : Limitations configurables par rôle
+
+#### Multi-Établissements (v2.0 - 2026-06)
+
+**Architecture :**
+```
+Utilisateur 1:N UtilisateurEtablissement N:1 Établissement
+     ↓                      ↓                      ↓
+  User X    ─────►  Établissement A (principal)  ───►  Données isolées
+                  ├────►  Établissement B         ───►  Données isolées
+                  └────►  Établissement C         ───►  Données isolées
+```
+
+**Règles métier critiques :**
+- **Élève** : 1 seul établissement (interdiction stricte multi-sites)
+- **Direction** (Proviseur, Principal, Directeur) : 1 établissement (mono-site)
+- **Enseignants** : 3-5 établissements (vacataires multi-sites)
+- **Parents** : 10 établissements max (enfants dans différentes écoles)
+- **Inspecteurs** : 40-100 établissements (contrôle régional)
+- **SUPER_ADMIN / Ministre** : Illimité (999)
+
+**Switch rapide d'établissement :**
+```bash
+POST /api/auth/switch-etablissement
+{
+  "etablissementId": "uuid-du-nouvel-etablissement"
+}
+# Retourne un nouveau JWT avec l'établissement actif
+```
+
+**Middleware tenant v2.0 :**
+- Supporte les utilisateurs multi-établissements
+- Algorithme : query param ?etablissementId= → établissement principal → fallback
+- Vérification automatique des accès
+- Logging de tous les switches (audit trail)
+
+**Limitations configurables (RoleLimitationEtablissement) :**
+```sql
+role                | max_etablissements | peut_changer | necessite_validation
+--------------------+-------------------+--------------+---------------------
+SUPER_ADMIN         | 999               | true         | false
+MINISTRE            | 999               | true         | false
+INSPECTEUR_*        | 40-100            | true         | false
+PROVISEUR           | 1                 | false        | false
+ENSEIGNANT          | 5                 | true         | false
+PARENT              | 10                | true         | false
+ELEVE               | 1                 | false        | false
+NUTRITIONNISTE      | 5                 | true         | true (validation)
+```
+
+#### Rôles système et permissions (67 rôles)
+
+**Catégories de rôles :**
+
+| Catégorie | Nombre | Exemples |
+|-----------|--------|----------|
+| Administration Nationale | 7 | MINISTRE, INSPECTEUR_GÉNÉRAL, DIRECTEUR_RÉGIONAL |
+| Direction d'Établissement | 6 | PROVISEUR, PRINCIPAL, DIRECTEUR, CENSEUR |
+| Enseignants | 10 | PROFESSEUR_CERTIFIÉ, INSTITUTEUR, PROFESSEUR_LANGUES |
+| Orientation & Conseil | 4 | CONSEILLER_ORIENTEUR, PSYCHOLOGUE_SCOLAIRE |
+| Personnel Administratif | 7 | SECRÉTAIRE_DIRECTION, COMPTABLE, BIBLIOTHÉCAIRE |
+| Personnel Technique | 5 | TECHNICIEN_LABO, TECHNICIEN_INFO, CONSEILLER_TIC |
+| Surveillance & Internat | 4 | SURVEILLANT_GÉNÉRAL, CPE, MAÎTRE_INTERNAT |
+| Santé & Bien-être | 3 | INFIRMIER_SCOLAIRE, NUTRITIONNISTE |
+| Cantine & Logistique | 3 | CUISINIER, CHAUFFEUR |
+| Clubs & Activités | 3 | COORDINATEUR_CLUBS, ENTRAÎNEUR_SPORTIF |
+| Spécialisé | 5 | COORDINATEUR_EXAMEN, RESPONSABLE_BOURSES |
+| Rôles génériques (existants) | 9 | SUPER_ADMIN, ADMIN, ENSEIGNANT, PARENT, ÉLÈVE... |
+| **TOTAL** | **67** | |
+
+#### Permissions par module (exemples)
+- **Cantine** : 9 perms (`menus:create/edit/delete`, `inscriptions:create`, `solde:recharger`, `consommations:*`)
+- **Transport** : 8 perms (`lignes:*`, `inscriptions:create`, `presences:*`)
+- **Élèves** : 6 perms (`view/create/edit`, `radiation`, `reinscription`, `documents:generate`)
+- **Notes** : 10 perms (`view/create/edit/delete`, `bulk:create`, `import/export`, `statistiques:view`)
+- **Bulletins** : 5 perms (`view/generate/edit/publier/export`)
+- **Utilisateurs** : 7 perms (`manage`, `import/export`, `reset-password`, `statut:change`, etc.)
+
+#### Scripts utilitaires
+```bash
+# Migration des utilisateurs existants
+npm run migrate:rbac              # Réel
+DRY_RUN=true npm run migrate:rbac # Simulation
+
+# Tests du système RBAC
+TEST_USER_ID=uuid npm run test:rbac
+```
+
+#### Résolution des permissions (avec cache)
+```
+PermissionResolverService.resolvePermissions(userId)
+  1. Vérifier cache (TTL 5min)
+  2. Si miss → résoudre depuis DB:
+     - Récupérer rôles utilisateur (UtilisateurRole)
+     - Récupérer permissions des rôles
+     - Récupérer permissions customs (GRANTED/DENIED)
+     - Appliquer overrides (DENIED > GRANTED)
+     - Fallback vers enum Role si aucun rôle DB
+  3. Stocker en cache
+  4. Retourner Set<permissions>
+```
+
+#### Fichiers de référence
+- `backend/src/modules/rbac/` : Module RBAC complet
+- `backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts` : Multi-établissements (N:N)
+- `backend/src/modules/auth/entities/role-limitation-etablissement.entity.ts` : Limitations configurables
+- `backend/src/modules/auth/services/utilisateur-etablissement.service.ts` : Service gestion affectations
+- `backend/src/modules/auth/controllers/auth.controller.ts` : Endpoint switch-etablissement
+- `backend/src/common/middlewares/tenant.middleware.ts` : Middleware tenant v2.0
+- `backend/src/modules/auth/middlewares/permission.middleware.ts` : Middlewares unifiés
+- `backend/src/modules/auth/services/permission-resolver.service.ts` : Résolution + cache
+- `backend/src/database/seeds/rbac.seed.ts` : Seed des rôles et permissions
+- `backend/src/database/migrations/002-multi-etablissements.sql` : Migration multi-établissements
+- `backend/src/database/migrations/003-role-limitations-etablissements.sql` : Migration limitations
+- `backend/src/database/migrations/004-roles-systeme-educatif-africain.sql` : Migration 67 rôles
+- `docs/rbac-system.md` : Documentation complète (436 lignes)
+- `docs/permissions-manquantes.md` : Analyse des permissions (422 lignes)
+- `docs/guards-exemples-implémentation.ts` : 10 exemples d'implémentation (554 lignes)
+- `ANALYSE_ROLES_EDUCATION_AFRICAINE.md` : Analyse système éducatif (327 lignes)
+- `IMPLEMENTATION_EXTENSION_ROLES.md` : Documentation extension rôles (432 lignes)
 
 ### Audit Trail (Système de traçabilité complet)
 
@@ -220,8 +360,9 @@ AuditInterceptor (automatique)
 
 **Actions d'audit disponibles** (80+) :
 
-- **Auth** : LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, PASSWORD_RESET
+- **Auth** : LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, PASSWORD_RESET, ETABLISSEMENT_SWITCH
 - **Utilisateurs** : USER_CREATE/UPDATE/DELETE, SUSPEND, ACTIVATE, ROLE_CHANGE
+- **Multi-établissements** : ETABLISSEMENT_ADD/REMOVE/UPDATE/PRINCIPAL_SET
 - **Élèves** : ELEVE_CREATE/UPDATE/DELETE, INSCRIPTION
 - **Académique** : CYCLE, NIVEAU, CLASSE, MATIERE, PERIODE, ANNEE_SCOLAIRE (CRUD + ACTIVATE)
 - **Bulletins** : BULLETIN_GENERATE, BULLETIN_UPDATE
@@ -524,12 +665,20 @@ ModeleDocument : 7 types (BULLETIN, CERTIFICAT, CARTE_SCOLAIRE, ATTESTATION, RAP
 
 ## Patterns transversaux
 
-### Multi-tenancy
+### Multi-tenancy (Version 2.0 - Multi-Établissements)
 
 - `etablissementId` sur la plupart des entités (nullable = global)
-- Résolu depuis le JWT via `tenantMiddleware`
+- **Résolution automatique** via `tenantMiddleware` (v2.0)
+- **Multi-établissements** : Table `UtilisateurEtablissement` (N:N)
+- **Algorithme de sélection** :
+  1. Query param `?etablissementId=` (si fourni et accessible)
+  2. Établissement principal (`etablissementPrincipal = true`)
+  3. Premier établissement actif (fallback)
+- **Switch rapide** : `POST /api/auth/switch-etablissement`
+- **Limitations par rôle** : Configurable dans `RoleLimitationEtablissement`
 - Modules concernés : cantine, transport, clubs, cartes, matériel, classes, notes, bulletins, etc.
 - **Non concernés** : cycles, niveaux, matières brutes (données de référence partagées)
+- **Audit complet** : Tous les changements d'établissement sont journalisés
 
 ### Unicité par vérification manuelle
 
@@ -663,6 +812,15 @@ async maNouvelleOperation(id: string, dto: MonDto): Promise<Entity> {
 | **Audit archivage** | `backend/src/modules/audit/services/archivage.service.ts` | 149 |
 | **Audit interceptor** | `backend/src/common/interceptors/audit.interceptor.ts` | 175 |
 | **Migration archivage** | `backend/src/database/migrations/003-audit-logs-archive.sql` | 129 |
+| **Multi-établissements (entité)** | `backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts` | 105 |
+| **Multi-établissements (service)** | `backend/src/modules/auth/services/utilisateur-etablissement.service.ts` | 217 |
+| **Multi-établissements (controller)** | `backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts` | 244 |
+| **Limitations rôles (entité)** | `backend/src/modules/auth/entities/role-limitation-etablissement.entity.ts` | 64 |
+| **Middleware tenant v2.0** | `backend/src/common/middlewares/tenant.middleware.ts` | ~100 |
+| **Rôles système (67)** | `shared/src/enums/roles.enum.ts` | ~200 |
+| **Migration multi-établissements** | `backend/src/database/migrations/002-multi-etablissements.sql` | 130 |
+| **Migration limitations** | `backend/src/database/migrations/003-role-limitations-etablissements.sql` | 76 |
+| **Migration 67 rôles** | `backend/src/database/migrations/004-roles-systeme-educatif-africain.sql` | 217 |
 | Enums partagés | `shared/src/enums/roles.enum.ts`, `statuts.enum.ts`, `modules.enum.ts` | — |
 | Types API | `shared/src/types/api.types.ts` | — |
 | Registre modules | `shared/src/config/config.registry.ts` | — |

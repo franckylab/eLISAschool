@@ -37,6 +37,7 @@ export class CantineService {
         return {
             menuPlanningDays: await getParamNumber('cantine.menu_planning_days', 7),
             allowPreorder: await getParamBoolean('cantine.allow_preorder', true),
+            maxDebt: await getParamNumber('cantine.max_debt', 10000),
             currency: await getParam<string>('regional.currency', 'XOF'),
         };
     }
@@ -141,9 +142,27 @@ export class CantineService {
         return inscription;
     }
 
+    /**
+     * Vérifier si le solde dépasse la dette maximale autorisée
+     */
+    async verifierLimiteDettes(inscriptionId: string, montant: number, etablissementId?: string): Promise<boolean> {
+        const params = await this.getCantineParams();
+        const inscription = await this.getInscription(inscriptionId, etablissementId);
+        
+        const nouveauSolde = inscription.solde - montant;
+        const detteMax = params.maxDebt;
+        
+        // Si le solde devient négatif, vérifier qu'il ne dépasse pas la dette max
+        if (nouveauSolde < 0 && Math.abs(nouveauSolde) > detteMax) {
+            return false;
+        }
+        return true;
+    }
+
     // ============ CONSOMMATIONS ============
 
     async enregistrerConsommation(dto: EnregistrerConsommationDto, etablissementId?: string): Promise<ConsommationCantine> {
+        const params = await this.getCantineParams();
         const inscription = await this.getInscriptionByEleve(dto.eleveId || dto.inscriptionId, etablissementId);
         if (!inscription) {
             throw new AppError('Élève non inscrit à la cantine', 400, 'NOT_ENROLLED');
@@ -151,7 +170,15 @@ export class CantineService {
 
         // Vérifier le solde
         if (inscription.solde < (dto.montant || 0)) {
-            throw new AppError('Solde insuffisant', 400, 'INSUFFICIENT_BALANCE');
+            // Vérifier si la dette maximale est respectée
+            const nouveauSolde = inscription.solde - (dto.montant || 0);
+            if (Math.abs(nouveauSolde) > params.maxDebt) {
+                throw new AppError(
+                    `Dette maximale atteinte (${params.maxDebt} ${params.currency}). Veuillez recharger votre solde.`,
+                    400,
+                    'MAX_DEBT_REACHED'
+                );
+            }
         }
 
         // Débiter le solde

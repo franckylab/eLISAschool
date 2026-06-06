@@ -1,4 +1,0 @@
-- Adopts a consistent feature-module pattern where each domain (e.g., `auth`, `notes`, `cantine`) is isolated with its own `controllers`, `services`, `entities`, and `dto` layers, exported via a central `index.ts`.
-- Implements a hybrid RBAC system in the `auth` module, using JWT middleware for session management and dynamic permission guards that resolve roles from both token payloads and database entities.
-- Relies on a shared `configuration` module for runtime parameter injection (e.g., security thresholds), decoupling business logic from hardcoded constants.
-- Defines clear interface boundaries through Express routers in controllers and TypeORM repositories in services, ensuring separation of concerns across all feature modules.

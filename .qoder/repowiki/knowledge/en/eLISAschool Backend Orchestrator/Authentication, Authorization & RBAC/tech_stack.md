@@ -1,0 +1,1 @@
+Uses `bcryptjs` for password hashing and `jsonwebtoken` for RS256/HS256 (depending on env) token management, with TypeORM for persistent session and role storage.

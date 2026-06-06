@@ -6,6 +6,9 @@ scope:
     - .env
     - .env.example
     - .gitignore
+    - ANALYSE_ROLES_EDUCATION_AFRICAINE.md
+    - IMPLEMENTATION-AUDIT-TRAIL.md
+    - IMPLEMENTATION_EXTENSION_ROLES.md
     - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
     - README.md
     - docker-compose.dev.yml

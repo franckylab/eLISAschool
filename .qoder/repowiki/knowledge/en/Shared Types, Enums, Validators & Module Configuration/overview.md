@@ -1,0 +1,1 @@
+Provides shared TypeScript types, enums, Zod validators, constants, and module registry configuration consumed by both backend and frontend.

@@ -55,6 +55,8 @@ export class AuthService {
             sessionDuration: await getParamNumber('auth.session_duration', 1440),
             passwordMinLength: await getParamNumber('auth.password_min_length', 8),
             require2FA: await getParamBoolean('auth.require_2fa', false),
+            passwordRequireUppercase: await getParamBoolean('auth.password_require_uppercase', true),
+            passwordRequireNumber: await getParamBoolean('auth.password_require_number', true),
         };
     }
 
@@ -195,6 +197,23 @@ export class AuthService {
                 `Le mot de passe doit contenir au moins ${securityParams.passwordMinLength} caractères`,
                 400,
                 'PASSWORD_TOO_SHORT'
+            );
+        }
+
+        // Validation exigences de complexité
+        if (securityParams.passwordRequireUppercase && !/[A-Z]/.test(registerDto.motDePasse)) {
+            throw new AppError(
+                'Le mot de passe doit contenir au moins une lettre majuscule',
+                400,
+                'PASSWORD_MISSING_UPPERCASE'
+            );
+        }
+
+        if (securityParams.passwordRequireNumber && !/[0-9]/.test(registerDto.motDePasse)) {
+            throw new AppError(
+                'Le mot de passe doit contenir au moins un chiffre',
+                400,
+                'PASSWORD_MISSING_NUMBER'
             );
         }
 

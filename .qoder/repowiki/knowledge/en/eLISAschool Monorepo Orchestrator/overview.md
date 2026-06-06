@@ -1,1 +1,1 @@
-Orchestrates a multi-tenant school management monorepo by unifying backend, frontend, and shared contracts through npm workspaces and Docker Compose infrastructure.
+Unifies backend, frontend, and shared modules into a cohesive educational management platform via npm workspaces and Docker Compose.

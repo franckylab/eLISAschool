@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: backend/core_framework
-title: Core Framework & Application Infrastructure
+title: Application Core Framework & Infrastructure
 scope:
     - backend/src/common/
     - backend/src/config/
@@ -9,6 +9,4 @@ scope:
     - backend/src/index.ts
 source_files: []
 depends_on: []
-related_to:
-    - path: backend/feature_modules
-    - path: shared
+related_to: []

@@ -15,6 +15,7 @@ import { periodesService } from '@modules/periodes/services';
 import { notesService } from '@modules/notes/services';
 import { matieresService } from '@modules/matieres/services';
 import { Eleve } from '@modules/eleves/entities';
+import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 
 export class BulletinsService {
     private repo: Repository<Bulletin>;
@@ -23,7 +24,22 @@ export class BulletinsService {
         this.repo = AppDataSource.getRepository(Bulletin);
     }
 
+    /**
+     * Récupère les paramètres bulletins depuis la configuration
+     */
+    private async getBulletinsParams() {
+        return {
+            includeRanking: await getParamBoolean('bulletins.include_ranking', true),
+            showAppreciations: await getParamBoolean('bulletins.show_appreciations', true),
+            validationThreshold: await getParamNumber('bulletins.validation_threshold', 10),
+            calculationMethod: await getParam<string>('bulletins.calculation_method', 'ponderee'),
+            displayCoefficients: await getParamBoolean('bulletins.display_coefficients', true),
+            templateId: await getParam<string>('bulletins.template_id', 'default'),
+        };
+    }
+
     async generate(dto: GenerateBulletinDto, etablissementId?: string): Promise<Bulletin[]> {
+        const params = await this.getBulletinsParams();
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -68,7 +84,7 @@ export class BulletinsService {
                     throw new AppError(`L'élève ${eleve.id} n'appartient pas à cet établissement`, 403, 'WRONG_ETABLISSEMENT');
                 }
 
-                // Calculer Moyenne Générale
+                // Calculer Moyenne Générale selon la méthode configurée
                 const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
 
                 let totalPoints = 0;
@@ -81,8 +97,14 @@ export class BulletinsService {
                         periode.id,
                         etablissementId
                     );
-                    totalPoints += moyenneMatiere * matiereNiveau.coefficient;
-                    totalCoeffs += matiereNiveau.coefficient;
+                    
+                    // Méthode de calcul : arithmétique ou pondérée
+                    const coefficient = params.calculationMethod === 'ponderee' 
+                        ? matiereNiveau.coefficient 
+                        : 1;
+                    
+                    totalPoints += moyenneMatiere * coefficient;
+                    totalCoeffs += coefficient;
                 }
 
                 const moyenneGenerale = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
@@ -99,17 +121,23 @@ export class BulletinsService {
                         periodeId: periode.id,
                         anneeScolaireId: classe.anneeScolaireId,
                         etablissementId,
+                        templateId: params.templateId,
+                        afficherRangs: params.includeRanking,
+                        afficherCoefficients: params.displayCoefficients,
                     });
                 }
 
                 bulletin.moyenneGenerale = parseFloat(moyenneGenerale.toFixed(2));
+                bulletin.valide = moyenneGenerale >= params.validationThreshold;
 
                 await queryRunner.manager.save(bulletin);
                 bulletins.push(bulletin);
             }
 
-            // Calcul des rangs pour tous les bulletins de la classe/période
-            await this.calculerRangs(classe.id, periode.id, etablissementId, queryRunner);
+            // Calcul des rangs pour tous les bulletins de la classe/période (si activé)
+            if (params.includeRanking) {
+                await this.calculerRangs(classe.id, periode.id, etablissementId, queryRunner);
+            }
 
             await queryRunner.commitTransaction();
             logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classe.nom}`);

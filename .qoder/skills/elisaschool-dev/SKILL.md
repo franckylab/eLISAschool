@@ -527,8 +527,14 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 | Rôles et permissions | `shared/src/enums/roles.enum.ts` |
 | **Permission middleware** | `backend/src/modules/auth/middlewares/permission.middleware.ts` |
 | **Permission resolver** | `backend/src/modules/auth/services/permission-resolver.service.ts` |
+| **Multi-établissements (entité)** | `backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts` |
+| **Multi-établissements (service)** | `backend/src/modules/auth/services/utilisateur-etablissement.service.ts` |
+| **Limitations rôles (entité)** | `backend/src/modules/auth/entities/role-limitation-etablissement.entity.ts` |
+| **Middleware tenant v2.0** | `backend/src/common/middlewares/tenant.middleware.ts` |
 | **RBAC module** | `backend/src/modules/rbac/` |
 | **RBAC seed** | `backend/src/database/seeds/rbac.seed.ts` |
+| **Migration multi-établissements** | `backend/src/database/migrations/002-multi-etablissements.sql` |
+| **Migration 67 rôles** | `backend/src/database/migrations/004-roles-systeme-educatif-africain.sql` |
 | Types API partagés | `shared/src/types/api.types.ts` |
 | DataSource TypeORM | `backend/src/database/data-source.ts` |
 | **Audit trail (entité)** | `backend/src/modules/auth/entities/audit-log.entity.ts` |
@@ -695,17 +701,19 @@ curl -H "Authorization: Bearer <token>" http://localhost:3000/api/audit/logs/sta
 
 ---
 
-## Workflow : Utiliser le Système RBAC v2.0
+## Workflow : Utiliser le Système RBAC v3.0
 
 ### Présentation du système RBAC
 
-eLISAschool dispose d'un **système RBAC avancé (v2.0)** avec :
-- **~230 permissions** granulaires (format `module:action`)
-- **9 rôles système** configurés
+eLISAschool dispose d'un **système RBAC étendu (v3.0)** avec :
+- **~350 permissions** granulaires (format `module:action`)
+- **67 rôles système** (couvre Afrique Centrale & Ouest)
 - **Multi-rôles** par utilisateur (illimité)
+- **Multi-établissements** : Table UtilisateurEtablissement (N:N)
+- **Limitations configurables** par rôle (max établissements, validation)
 - **Permissions personnalisées** GRANTED/DENIED au niveau utilisateur
 - **Cache intelligent** TTL 5 minutes
-- **API REST complète** (20 endpoints pour gestion RBAC)
+- **API REST complète** (20+ endpoints pour gestion RBAC)
 - **Backward compatibility** avec l'ancien système (enum Role)
 
 ### Étape 1 : Protéger un endpoint avec requirePermission
@@ -887,7 +895,7 @@ POST   /api/rbac/users/:userId/permissions        # Permission custom
 
 | Rôle | Code | Permissions | Description |
 |------|------|-------------|-------------|
-| **Super Admin** | `SUPER_ADMIN` | **TOUTES (~230)** | Accès total |
+| **Super Admin** | `SUPER_ADMIN` | **TOUTES (~350)** | Accès total, multi-sites illimité |
 | **Admin** | `ADMIN` | **~180** | Gestion complète établissement |
 | **Chef Établissement** | `CHEF_ETABLISSEMENT` | **~150** | Direction, validation, rapports |
 | **Enseignant** | `ENSEIGNANT` | **~60** | Notes, bulletins, messagerie |
@@ -896,6 +904,8 @@ POST   /api/rbac/users/:userId/permissions        # Permission custom
 | **Personnel Admin** | `PERSONNEL_ADMINISTRATIF` | **~100** | Administratif, inscriptions |
 | **Resp. Cantine** | `RESPONSABLE_CANTINE` | **~30** | Cantine uniquement |
 | **Resp. Transport** | `RESPONSABLE_TRANSPORT` | **~25** | Transport uniquement |
+
+> **Note :** Le système dispose maintenant de **67 rôles** couvrant l'ensemble du système éducatif africain (MINISTRE, INSPECTEUR_GÉNÉRAL, PROVISEUR, PRINCIPAL, DIRECTEUR, PROFESSEUR_CERTIFIÉ, etc.). Voir `shared/src/enums/roles.enum.ts` pour la liste complète.
 
 ### Migration des utilisateurs existants
 

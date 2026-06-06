@@ -1,0 +1,1 @@
+Manages user authentication, session lifecycle, and dynamic role-based access control with multi-tenant support.

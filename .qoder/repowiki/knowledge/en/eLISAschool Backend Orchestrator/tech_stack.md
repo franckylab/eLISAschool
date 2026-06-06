@@ -1,0 +1,1 @@
+Express.js (shared web framework for all modules), TypeORM (shared ORM via `AppDataSource`), PostgreSQL (shared database)

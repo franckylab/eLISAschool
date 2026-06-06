@@ -1,0 +1,1 @@
+Orchestrates a modular, multi-tenant educational management API by wiring domain feature modules through a shared Express application core with centralized security and tenancy enforcement.
