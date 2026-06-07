@@ -1,4 +1,0 @@
-- All enum values and constant keys use French identifiers (e.g., `CHEF_ETABLISSEMENT`, `motDePasse`) to align with the local educational context.
-- Barrel exports (`export * from './...'`) are used in every sub-directory index file to simplify import paths for consumers.
-- Zod schemas are defined with French error messages and field names, then exported alongside their inferred TypeScript types.
-- Constants are defined as `as const` objects to ensure immutability and precise type inference at compile time.

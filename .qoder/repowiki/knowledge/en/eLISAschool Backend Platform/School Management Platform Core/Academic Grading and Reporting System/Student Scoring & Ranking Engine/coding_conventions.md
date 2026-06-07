@@ -1,2 +1,0 @@
-- Services are instantiated as singletons at the module level (e.g., `export const scoringService = new ScoringService()`) rather than using dependency injection containers.
-- Entity definitions include default export objects containing all related classes and enums for bulk registration or testing purposes.

@@ -1,6 +1,0 @@
-- Layered architecture with controllers (Express Router), services (TypeORM-based business logic), entities (database models), and DTOs (Zod validation schemas).
-- Controller layer uses Express Router with middleware composition (`authMiddleware`, `staffOnly`) for role-based access control; routes delegate to a singleton `CantineService` instance.
-- Service layer uses TypeORM repositories via `AppDataSource` for data access, integrates centralized configuration parameters (e.g., `cantine.max_debt`, `regional.currency`) through helper functions from `@modules/configuration`.
-- Entity layer defines three core tables: `menus_cantine`, `inscriptions_cantine`, `consommations_cantine`, all with multi-tenancy support via `etablissementId` foreign keys cascading to `Etablissement`.
-- Module exports are re-exported through barrel files (`index.ts`) at each subdirectory level and the root, enabling clean imports like `from '@modules/cantine'`.
-- Validation is handled by Zod schemas in DTOs, with a shared `validate()` helper in the controller that throws `AppError` on failure.

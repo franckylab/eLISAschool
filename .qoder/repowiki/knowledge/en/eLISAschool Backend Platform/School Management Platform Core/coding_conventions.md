@@ -1,3 +1,0 @@
-- All business modules expose functionality through a standardized trio of controllers, services, and entities with index.ts barrel exports.
-- Cross-module authorization is enforced via shared guards and middleware provided by the central auth/rbac infrastructure rather than module-local logic.
-- Data transfer objects (DTOs) are strictly segregated into dedicated dto directories within each module to decouple API contracts from internal entity models.

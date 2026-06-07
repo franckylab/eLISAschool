@@ -1,0 +1,1 @@
+Node.js/Express with TypeScript, leveraging TypeORM for database interactions and Redis for caching/shared state across modules.

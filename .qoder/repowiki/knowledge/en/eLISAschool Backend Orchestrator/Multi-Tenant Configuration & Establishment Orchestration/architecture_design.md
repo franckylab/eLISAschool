@@ -1,0 +1,3 @@
+- **Shared Parameter Resolution**: The `etablissement` module consumes the `configuration` module's `ParametreSysteme` via the `config.helper` utility, enabling runtime feature toggles (e.g., `etablissement.require_validation`) that govern establishment workflows without code changes.
+- **Scoped Data Isolation**: Both modules enforce multi-tenancy through `etablissementId` scoping; `configuration` uses it for parameter overrides (global vs. tenant-specific), while `etablissement` uses it for core entity ownership.
+- **Decoupled Integration**: The `etablissement` module depends on `configuration` for dynamic behavior, but `configuration` remains agnostic of specific business entities, relying on generic `ConfigurationModule` records for per-tenant module settings.

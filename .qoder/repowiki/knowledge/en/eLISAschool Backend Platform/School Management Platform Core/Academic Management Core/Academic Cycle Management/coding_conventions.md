@@ -1,5 +1,0 @@
-- All controller routes wrap async handlers in try-catch blocks delegating errors to Express's next() middleware.
-- Service methods use a shared findOne() helper that throws AppError with 404 status when an entity is not found.
-- Create operations check for duplicate unique fields (e.g., code) before insertion, throwing AppError with 409 conflict status.
-- DTO schemas are defined with Zod and exported as both schema objects and inferred TypeScript types via z.infer.
-- Each sub-directory (controllers, services, dto, entities) has an index.ts barrel file re-exporting its contents.

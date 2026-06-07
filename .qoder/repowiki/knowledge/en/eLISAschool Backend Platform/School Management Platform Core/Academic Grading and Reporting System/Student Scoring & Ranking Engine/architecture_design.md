@@ -1,4 +1,0 @@
-- **Data Layer**: Defines TypeORM entities (`ScoreEleve`, `HistoriqueScore`, `RegleScoring`) with specific indices for student and period-based lookups in `entities/scoring.entity.ts`.
-- **Service Layer**: Implements a singleton `ScoringService` that handles score attribution, historical tracking, and rank calculation via direct repository access in `services/scoring.service.ts`.
-- **Configuration Integration**: Dynamically fetches scoring weights (academic, behavior, etc.) from a central configuration module using `getParamNumber` to calculate global scores.
-- **Exports**: Aggregates entities and services through barrel exports in `index.ts` for modular consumption.

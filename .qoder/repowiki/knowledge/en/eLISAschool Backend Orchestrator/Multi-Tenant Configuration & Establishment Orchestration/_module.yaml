@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/backend_establishment_config
+title: Multi-Tenant Configuration & Establishment Orchestration
+scope:
+    - backend/src/modules/etablissement/
+    - backend/src/modules/configuration/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_auth_rbac
+    - path: backend/backend_student_life

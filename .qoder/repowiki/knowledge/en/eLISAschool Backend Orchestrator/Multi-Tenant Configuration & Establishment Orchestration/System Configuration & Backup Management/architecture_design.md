@@ -1,0 +1,7 @@
+- **Layered structure**: Controllers (`configuration.controller.ts`, `backup.controller.ts`) expose REST endpoints; Services (`configuration.service.ts`, `config-backup.service.ts`, `database-backup.service.ts`, `configuration-history.service.ts`) implement business logic; Entities define the data model; DTOs use Zod schemas for validation; Guards enforce role-based permissions.
+- **Storage abstraction**: The `IBackupStorage` interface in `storage-provider.interface.ts` defines a pluggable contract (save/load/delete/list) implemented by concrete providers such as `DatabaseStorageProvider`, enabling future S3 or filesystem backends.
+- **Multi-tenant parameter resolution**: `ParametreSysteme` supports global (NULL `etablissementId`) and per-establishment overrides. The service resolves values in order: scoped override → global default → fallback value.
+- **Caching strategy**: Two-tier caching — an in-memory cache inside `ConfigurationService` (5-minute TTL) and a quick-cache layer in `config.helper.ts` (1-minute TTL) for frequently accessed parameters.
+- **Event-driven architecture**: `configuration-listener.ts` emits change events on create/update/delete/reset actions, allowing other modules to react to configuration changes.
+- **Audit trail**: `HistoriqueConfiguration` records every mutation with old/new values, IP address, and restorability flags. Full snapshots can be created and restored via `ConfigurationHistoryService`.
+- **Entry point**: `index.ts` re-exports all public symbols from entities, DTOs, services, controllers, guards, and utils.

@@ -1,1 +1,0 @@
-Zod for request-body/query validation schemas; TypeORM with UUID primary keys and enum columns; centralized runtime configuration via `@modules/configuration/utils/config.helper` (e.g., `getParamNumber`, `getParamBoolean`).

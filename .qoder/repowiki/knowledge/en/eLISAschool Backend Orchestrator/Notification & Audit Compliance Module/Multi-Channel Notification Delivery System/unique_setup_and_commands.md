@@ -1,0 +1,1 @@
+Cron jobs require timezone configuration ('Africa/Lome') in cron-jobs.ts; providers must be bootstrapped at startup via NotificationProviderService.loadActiveProviders() to populate the ProviderRegistry from database-stored configurations.

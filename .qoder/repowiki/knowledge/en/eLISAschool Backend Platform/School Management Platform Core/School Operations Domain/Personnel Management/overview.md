@@ -1,1 +1,0 @@
-Manages school staff members and personnel types with multi-tenancy support.

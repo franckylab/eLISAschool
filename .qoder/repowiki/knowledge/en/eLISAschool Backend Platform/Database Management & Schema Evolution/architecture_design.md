@@ -1,6 +1,0 @@
-- Entry point: `backend/src/database/index.ts` re-exports `AppDataSource`, `initializeDatabase`, and `closeDatabase` from `data-source.ts`.
-- Connection layer: `data-source.ts` creates a singleton `DataSource` instance configured via `@config/database.config`, with explicit init/close helpers for test isolation.
-- Migration execution: `run-migrations.ts` instantiates a dedicated `DataSource` (with `synchronize: false`) to run pending TypeORM migrations; supports both SQL files (e.g., `002-multi-etablissements.sql`, `010-dashboard-layouts.sql`) and TypeScript migration classes (e.g., `006-parametres-multi-etablissements.ts`).
-- Seed orchestration: `seeds/run-seeds.ts` bootstraps the DataSource and delegates to `initial.seed.ts`, which chains configuration seeding (`ConfigurationSeedService`), RBAC seeding (`RBACSeedService`), and super-admin creation.
-- Dual migration formats: SQL migrations handle DDL directly (table creation, indexes, triggers), while TypeScript migrations use TypeORM's `MigrationInterface` for programmatic schema changes with up/down rollback support.
-- Index optimization: A separate performance index script (`backend/database/migrations/009-performance-indexes.sql`) provides bulk index creation across all modules with verification queries.

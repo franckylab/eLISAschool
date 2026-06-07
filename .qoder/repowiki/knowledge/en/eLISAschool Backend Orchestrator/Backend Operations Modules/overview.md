@@ -1,0 +1,1 @@
+Five domain modules providing personnel management, equipment tracking, document printing, request workflows, and internal messaging for a school management system.

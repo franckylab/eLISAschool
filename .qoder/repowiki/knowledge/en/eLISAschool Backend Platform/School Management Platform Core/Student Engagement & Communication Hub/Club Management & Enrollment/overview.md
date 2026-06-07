@@ -1,1 +1,0 @@
-Manages student clubs, enrollments, and club events with multi-tenancy support and configurable enrollment limits.

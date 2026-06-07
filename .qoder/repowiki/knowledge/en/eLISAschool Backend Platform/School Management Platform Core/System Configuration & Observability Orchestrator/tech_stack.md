@@ -1,1 +1,0 @@
-Node.js EventEmitter for cross-module configuration change propagation; TypeORM Repository pattern for shared database access across configuration and monitoring

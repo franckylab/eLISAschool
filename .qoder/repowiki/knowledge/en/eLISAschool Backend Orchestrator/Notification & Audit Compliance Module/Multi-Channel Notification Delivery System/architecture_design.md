@@ -1,0 +1,6 @@
+- Layered structure: controllers (Express router) → services (business logic + TypeORM repositories) → providers (strategy pattern via INotificationProvider interface) → entities/DTOs.
+- ProviderRegistry singleton implements strategy + fallback: sendWithFallback iterates configured providers per notification type until one succeeds.
+- INotificationProvider interface defines contract (envoyer, testerConfiguration, estConfiguré, initialiser); concrete providers (EmailProvider, SmsProvider, PushProvider, InAppProvider) implement it.
+- NotificationProviderService manages CRUD for persisted provider configurations and syncs them into the registry via registerInRegistry / loadActiveProviders.
+- Entry point is index.ts re-exporting entities, DTOs, services, and controllers; cron-jobs.ts registers node-cron schedules for scheduled notifications, payment reminders, and cleanup tasks.
+- Dependency direction flows inward: controllers depend on services, services depend on providerRegistry and TypeNotification enums, providers depend only on the interface and entity types.

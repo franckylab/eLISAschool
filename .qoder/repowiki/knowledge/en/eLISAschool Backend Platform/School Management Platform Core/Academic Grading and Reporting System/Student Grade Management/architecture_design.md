@@ -1,6 +1,0 @@
-- Layered architecture: controllers (Express Router) → services (TypeORM Repository) → entities (TypeORM Entity)
-- Entry point at `index.ts` re-exports all sub-modules via barrel exports
-- Controllers use Express Router with middleware chain (`authMiddleware`, `requireRoles`) applied globally and per-route
-- Service layer handles business logic including cross-module dependencies (`periodesService`, `auditService`, `AffectationEleve`)
-- DTOs defined with Zod schemas for runtime validation, exported as both schema objects and inferred TypeScript types
-- Entity uses TypeORM decorators with multi-tenancy support via `etablissementId` and composite indexes

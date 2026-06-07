@@ -1,3 +1,0 @@
-- Controllers delegate all business logic to service instances and handle HTTP-specific concerns like status codes and response formatting.
-- Administrative endpoints are secured using a composition of `authMiddleware` and `requireRoles` to enforce role-based access control (RBAC).
-- Service methods return structured TypeScript interfaces (e.g., `SystemMetrics`, `AppStats`) to ensure consistent data shapes across the module.

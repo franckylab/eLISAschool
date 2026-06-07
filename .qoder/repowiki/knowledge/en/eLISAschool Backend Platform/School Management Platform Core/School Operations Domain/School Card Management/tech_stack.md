@@ -1,1 +1,0 @@
-Uses Zod for schema-based DTO validation and TypeORM for entity management and database interactions.

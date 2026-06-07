@@ -1,1 +1,0 @@
-Manages school transport lines, student enrollments, and daily attendance tracking with QR check-in support.

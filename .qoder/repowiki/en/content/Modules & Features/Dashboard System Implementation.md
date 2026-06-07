@@ -18,6 +18,13 @@
 - [DASHBOARD-SYSTEM.md](file://backend/docs/DASHBOARD-SYSTEM.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Added three new validation-related widgets to the widget registry
+- Updated widget categories to include validation statistics by module
+- Enhanced dashboard data service with validation-specific data retrieval methods
+- Updated widget types to support validation workflow visualization
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
@@ -34,9 +41,11 @@
 
 ## Introduction
 
-The eLISAschool Dashboard System is a comprehensive, production-ready solution for creating dynamic, personalized dashboards based on user roles, permissions, and institutional context. This system provides real-time data visualization capabilities across multiple educational domains including student statistics, academic performance, facility management, and administrative oversight.
+The eLISAschool Dashboard System is a comprehensive, production-ready solution for creating dynamic, personalized dashboards based on user roles, permissions, and institutional context. This system provides real-time data visualization capabilities across multiple educational domains including student statistics, academic performance, facility management, administrative oversight, and validation workflow management.
 
 The dashboard system is built with modern architectural principles emphasizing scalability, security, and maintainability. It leverages a declarative widget registry, intelligent caching mechanisms, and modular service architecture to deliver optimal performance while maintaining flexibility for future extensions.
+
+**Updated** The system now includes specialized validation-related widgets that provide insights into the validation workflow process, enabling administrators to monitor validation activities, track pending validations, and analyze validation performance metrics.
 
 ## System Architecture
 
@@ -61,6 +70,7 @@ end
 subgraph "External Services"
 Redis[Redis Cache]
 Auth[Authentication]
+Validation[Validation Workflow Service]
 end
 Controller --> WidgetResolver
 Controller --> DataAggregator
@@ -72,6 +82,7 @@ DataAggregator --> DB
 Cache --> Redis
 WidgetResolver --> Auth
 DataAggregator --> Auth
+DataAggregator --> Validation
 ```
 
 **Diagram sources**
@@ -222,6 +233,7 @@ participant Controller as Dashboard Controller
 participant Aggregator as Data Aggregator
 participant Cache as Dashboard Cache
 participant Service as Data Service
+participant Validation as Validation Service
 participant DB as Database
 Client->>Controller : GET /widget/ : id/data
 Controller->>Aggregator : getWidgetData(widgetId, context)
@@ -230,8 +242,12 @@ Cache-->>Aggregator : Cache Hit/Miss
 alt Cache Miss
 Aggregator->>Aggregator : Resolve Service Instance
 Aggregator->>Service : Execute Data Method
+Aggregator->>Validation : Execute Validation Method
+Validation->>DB : Query Validation Data
 Service->>DB : Query Data
 DB-->>Service : Return Results
+DB-->>Validation : Return Validation Results
+Validation-->>Aggregator : Processed Validation Data
 Service-->>Aggregator : Processed Data
 Aggregator->>Cache : set(cacheKey, data, ttl)
 end
@@ -439,6 +455,11 @@ The system supports various widget types optimized for different data visualizat
 | `alert` | Status indicators | System alerts |
 | `quick-actions` | Direct navigation | Common operations |
 | `custom` | Specialized widgets | Custom visualizations |
+| **`validation-stats`** | **Validation workflow metrics** | **Validation statistics by module** |
+| **`pending-validations`** | **Pending validation tracking** | **User-specific validation requests** |
+| **`avg-validation-times`** | **Performance analysis** | **Average validation times by level** |
+
+**Updated** Three new validation-related widget types have been added to support comprehensive validation workflow monitoring and analysis.
 
 ### Refresh Strategies
 
@@ -478,6 +499,31 @@ Error --> Fallback : Permanent failure
 **Section sources**
 - [widget-registry.ts:196-221](file://backend/src/modules/dashboard/utils/widget-registry.ts#L196-L221)
 - [dashboard-data.service.ts:20-455](file://backend/src/modules/dashboard/services/dashboard-data.service.ts#L20-L455)
+
+### Validation Widget Implementation
+
+**New** The dashboard system now includes three specialized validation-related widgets:
+
+#### Validation Statistics by Module
+- **Purpose**: Display validation metrics aggregated by module
+- **Data Source**: `getValidationStatsParModule()` method
+- **Visualization**: Bar chart or table showing validation counts by module
+- **Access Control**: Requires validation workflow permissions
+
+#### Pending Validations for Users
+- **Purpose**: Show validation requests awaiting user action
+- **Data Source**: `getValidationEnAttente()` method
+- **Visualization**: List widget with validation details and actions
+- **Access Control**: User-specific validation access based on role
+
+#### Average Validation Times by Level
+- **Purpose**: Analyze validation performance across workflow levels
+- **Data Source**: `getValidationTempsMoyen()` method
+- **Visualization**: Line chart or progress widget
+- **Access Control**: Requires validation analytics permissions
+
+**Section sources**
+- [dashboard-data.service.ts:470-505](file://backend/src/modules/dashboard/services/dashboard-data.service.ts#L470-L505)
 
 ## Troubleshooting Guide
 
@@ -552,5 +598,7 @@ Key strengths of the implementation include:
 - **High Performance**: Intelligent caching, lazy loading, and optimization strategies
 - **Extensible Design**: Easy widget registration and data service integration
 - **Production Ready**: Comprehensive monitoring, logging, and error handling
+
+**Updated** The addition of validation-related widgets significantly enhances the system's capability to monitor and analyze validation workflows, providing administrators with crucial insights into validation processes, pending requests, and performance metrics across different workflow levels and modules.
 
 The system successfully addresses the challenges of educational data management while maintaining scalability and maintainability for future enhancements. Its modular architecture ensures that new widgets and data sources can be easily integrated without disrupting existing functionality.

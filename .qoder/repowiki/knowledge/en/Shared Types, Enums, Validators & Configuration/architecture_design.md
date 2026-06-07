@@ -1,0 +1,6 @@
+- Entry point at `shared/src/index.ts` re-exports five sub-packages via barrel exports: `enums`, `constants`, `types`, `validators`, `config`.
+- Each sub-package uses an `index.ts` barrel file to aggregate its internal modules (e.g., `roles.enum.ts`, `statuts.enum.ts`, `modules.enum.ts` under `enums/`).
+- `validators/auth.validators.ts` depends on `zod` for schema-based validation and imports constants from `../constants` (cross-sub-package dependency).
+- `config/config.registry.ts` imports enums from `../enums` to define module-level metadata (`MODULE_REGISTRY`) with access-control helpers.
+- `types/user.types.ts` imports enums from `../enums`, establishing a directional dependency: types → enums.
+- Build output is compiled to `dist/` via `tsc` with declaration files enabled (`declaration: true`), making it consumable as `@elisaschool/shared` by other packages.

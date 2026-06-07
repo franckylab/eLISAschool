@@ -1,0 +1,1 @@
+Manages student extracurricular and daily-life operations including cafeteria subscriptions, transport routes, club memberships, and school ID cards.

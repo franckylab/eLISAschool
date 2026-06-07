@@ -1,3 +1,3 @@
-- Uses npm workspaces to manage `backend`, `frontend`, and `shared` packages, enabling shared dependency resolution and cross-module scripting.
-- Leverages `docker-compose.yml` to orchestrate infrastructure services (PostgreSQL, Redis) and the backend application, enforcing service health checks and network isolation.
-- Centralizes development and production workflows through root-level `package.json` scripts that delegate to workspace-specific commands or Docker Compose files.
+- Uses npm workspaces to manage `backend`, `frontend`, and `shared` packages, enabling shared TypeScript types and validators via the `shared` module.
+- Leverages Docker Compose (`docker-compose.yml`) to orchestrate infrastructure services (PostgreSQL, Redis) and the backend API, ensuring service health checks and network isolation.
+- Provides unified lifecycle scripts in the root `package.json` for concurrent development (`npm run dev`), building, and Docker-based deployment.

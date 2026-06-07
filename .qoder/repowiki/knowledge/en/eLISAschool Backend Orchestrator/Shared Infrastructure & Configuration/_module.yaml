@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/backend_infrastructure
+title: Shared Infrastructure & Configuration
+scope:
+    - backend/src/common/
+    - backend/src/config/
+    - backend/src/database/
+source_files: []
+depends_on: []
+related_to:
+    - path: shared
+    - path: docker

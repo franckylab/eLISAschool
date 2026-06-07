@@ -1,3 +1,0 @@
-- All domain modules follow a consistent directory structure with separate folders for controllers, services, entities, and DTOs.
-- Shared utilities and types are centralized in `src/common` and imported by multiple domain modules rather than duplicated.
-- Database migrations are versioned numerically and stored in a central `src/database/migrations` directory accessible to all modules.

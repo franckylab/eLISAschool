@@ -1,1 +1,0 @@
-Uses TypeORM for ORM, Zod for schema validation, and Express.js for routing.

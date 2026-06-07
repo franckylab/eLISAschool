@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/backend_auth_rbac/rbac
-title: Role-Based Access Control (RBAC) Management
-scope:
-    - backend/src/modules/rbac/
-source_files: []
-depends_on: []
-related_to: []

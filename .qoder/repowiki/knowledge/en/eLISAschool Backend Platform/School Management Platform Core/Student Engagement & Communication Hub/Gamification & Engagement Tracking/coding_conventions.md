@@ -1,3 +1,0 @@
-- Controllers use a local `validate` helper function to wrap Zod `safeParse` calls and throw `AppError` on failure.
-- Service methods retrieve dynamic gamification parameters (e.g., points per action) from a central config helper before executing logic.
-- All API responses follow a consistent JSON structure: `{ success: true, data: ..., timestamp: ... }`.

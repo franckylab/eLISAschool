@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; TypeORM with UUID primary keys and enum columns; centralized config via `@modules/configuration/utils/config.helper`.

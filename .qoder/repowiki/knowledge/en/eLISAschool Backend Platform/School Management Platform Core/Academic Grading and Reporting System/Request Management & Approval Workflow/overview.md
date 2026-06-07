@@ -1,1 +1,0 @@
-Manages formal requests (leave, certificates, equipment) with multi-level approval workflows and status tracking.

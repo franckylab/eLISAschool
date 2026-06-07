@@ -1,1 +1,0 @@
-Manages school years, academic cycles, grade levels, evaluation periods, subjects, and teacher-subject assignments for a multi-tenant educational platform.

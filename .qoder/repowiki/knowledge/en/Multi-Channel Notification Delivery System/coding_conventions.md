@@ -1,6 +1,0 @@
-- All controller route handlers wrap async logic in try/catch blocks and delegate errors to Express via next(error).
-- Every successful HTTP response uses a uniform envelope: { success: true, data: ..., timestamp: ISO string } with appropriate status codes (200 or 201).
-- Request body and query parameters are validated against Zod schemas using the shared validateDto utility before any business logic executes.
-- Each provider class implements the INotificationProvider interface with readonly type/nom/service properties and exports both a named instance and a default export.
-- Services instantiate TypeORM repositories in their constructor via AppDataSource.getRepository(Entity) rather than injecting them.
-- Module sub-packages expose barrel exports through index.ts files that re-export public symbols from their respective directories.

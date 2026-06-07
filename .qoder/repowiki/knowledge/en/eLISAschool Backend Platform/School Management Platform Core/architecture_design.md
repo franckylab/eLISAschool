@@ -1,3 +1,0 @@
-- Enforces a strict multi-tenant isolation model where all business modules (academic, operations, engagement) scope data via the `etablissement` context.
-- Centralizes cross-cutting concerns through the `auth` and `rbac` modules, which provide shared guards, middleware, and permission resolution services consumed by all other domain modules.
-- Utilizes a standardized controller-service-entity pattern across all child modules, ensuring consistent API surface areas and dependency injection wiring at the application bootstrap level.

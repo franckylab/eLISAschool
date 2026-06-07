@@ -1,1 +1,0 @@
-Zod for schema validation (cited in `dtos/dashboard.dto.ts`); Server-Sent Events (SSE) with manual stream management in `services/dashboard-sse.service.ts`; TypeORM with `@Entity('dashboard_layouts')` and `simple-json` column type for widget layout storage in `entities/dashboard-layout.entity.ts`.

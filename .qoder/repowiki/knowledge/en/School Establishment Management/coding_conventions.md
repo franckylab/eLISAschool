@@ -1,5 +1,0 @@
-- All route handlers wrap async logic in try-catch blocks that delegate errors to Express via `next(error)` for centralized error handling.
-- DTO validation schemas are defined using Zod's `z.object()` with `z.infer` to derive TypeScript types, ensuring runtime and compile-time type consistency.
-- Entity classes use TypeORM decorator-based mapping (`@Entity`, `@Column`, `@OneToOne`, `@JoinColumn`) with explicit table names and column type specifications.
-- Role-based authorization is enforced at the route level using `requireRoles(Role.SUPER_ADMIN)` or `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` middleware composition.
-- Service methods that modify multiple related entities use explicit TypeORM transaction management via `createQueryRunner` with commit/rollback in try-finally blocks.

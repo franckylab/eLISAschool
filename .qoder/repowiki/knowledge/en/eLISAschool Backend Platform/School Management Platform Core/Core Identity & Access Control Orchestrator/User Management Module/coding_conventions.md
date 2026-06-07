@@ -1,3 +1,0 @@
-- Input validation is performed using Zod schemas defined in DTOs, with a helper function in controllers to standardize error handling.
-- Services return formatted response DTOs that separate internal entity structure from API output, often joining related profile data.
-- Authorization is enforced at the controller level using specific middleware decorators like `adminOnly` and `requireRoles`.

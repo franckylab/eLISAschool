@@ -1,0 +1,1 @@
+Manages multi-tenant school establishments with lifecycle workflows, per-establishment configuration, and SaaS quota enforcement.

@@ -1,1 +1,0 @@
-Manages student grades with CRUD operations, bulk creation, validation workflows, and weighted average calculations for academic periods.

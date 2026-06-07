@@ -1,4 +1,0 @@
-- Layered structure: controllers (Express router) → services (business logic + TypeORM repository) → entities (TypeNotification/StatutNotification/PrioriteNotification enums + Notification entity).
-- DTOs use Zod schemas for request validation; a local `validate` helper converts parse failures into `AppError`.
-- Service reads channel enablement from centralized configuration (`@modules/configuration/utils/config.helper`) before dispatching to stubbed senders (`sendEmail`, `sendPush`, `sendSms`).
-- Module entry point (`index.ts`) re-exports all sub-packages; controller applies `authMiddleware` globally and `adminOnly` on write routes.

@@ -1,1 +1,0 @@
-Zod for schema-based request validation with type inference; TypeORM with UUID primary keys and enum columns for grade status tracking

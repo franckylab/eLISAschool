@@ -1,1 +1,0 @@
-Orchestrates runtime configuration, dynamic dashboards, and system monitoring through shared event listeners, centralized caching, and cross-module data aggregation.

@@ -1,0 +1,1 @@
+TypeORM with UUID primary keys and simple-json column types for flexible configuration storage; Zod for schema-based DTO validation via `validateDto` utility.

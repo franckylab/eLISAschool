@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation and type inference; TypeORM with UUID primary keys and `simple-json` column types for structured JSON storage (cyclesActifs, modulesActifs, configurationBulletin).

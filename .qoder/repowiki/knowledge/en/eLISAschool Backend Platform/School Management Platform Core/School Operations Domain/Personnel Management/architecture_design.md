@@ -1,6 +1,0 @@
-- Follows a standard MVC-like structure with controllers, services, DTOs, and entities.
-- Controllers (`personnel.controller.ts`) handle HTTP requests using Express Router, apply authentication/authorization middleware, and delegate to the service layer.
-- Services (`personnel.service.ts`) contain business logic, interact with the database via TypeORM repositories, and handle data validation and error throwing.
-- Entities (`personnel.entity.ts`) define TypeORM models for `MembrePersonnel` and `TypePersonnel`, including relationships with `Utilisateur` and `Etablissement`.
-- DTOs (`personnel.dto.ts`) use Zod schemas for input validation and type inference.
-- The module exports its components via barrel files (`index.ts`) in each subdirectory and the main module entry point.

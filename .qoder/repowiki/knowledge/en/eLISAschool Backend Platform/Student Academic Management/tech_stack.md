@@ -1,1 +1,0 @@
-Zod for schema-driven DTO validation (e.g., createEleveSchema, createNoteSchema); TypeORM QueryBuilder with raw SQL in NotesBatchLoaderService for batch aggregation; notificationTemplates for async parent alerts after bulletin generation.

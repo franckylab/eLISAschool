@@ -1,1 +1,0 @@
-Manages document templates and a print queue for generating school documents like report cards and certificates.

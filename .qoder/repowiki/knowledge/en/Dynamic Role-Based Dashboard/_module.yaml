@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/backend_dashboard_monitoring/dashboard
-title: Dynamic Role-Based Dashboard
-scope:
-    - backend/src/modules/dashboard/
-source_files: []
-depends_on: []
-related_to: []

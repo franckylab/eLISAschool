@@ -1,0 +1,1 @@
+Nodemailer for SMTP email delivery; node-cron for scheduled task execution; TypeORM with PostgreSQL enums for notification status/type/priority persistence.

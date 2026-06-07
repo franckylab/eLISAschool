@@ -1,4 +1,0 @@
-- Follows a standard MVC-like structure with controllers, services, DTOs, and entities.
-- Uses TypeORM for database interactions, defining entities for subjects (`Matiere`), subject groups (`GroupeMatiere`), curriculum assignments (`MatiereNiveau`), and teacher allocations (`AffectationMatiere`).
-- Service layer handles business logic, including validation against other modules (e.g., checking if a subject is in a level's program before assigning a teacher).
-- Controllers use Zod schemas for request validation and Express middleware for authentication and role-based access control.

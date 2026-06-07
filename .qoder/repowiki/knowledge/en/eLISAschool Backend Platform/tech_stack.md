@@ -1,1 +1,0 @@
-All children share a Node.js/TypeScript runtime with TypeORM for database access and a common pagination utility pattern.

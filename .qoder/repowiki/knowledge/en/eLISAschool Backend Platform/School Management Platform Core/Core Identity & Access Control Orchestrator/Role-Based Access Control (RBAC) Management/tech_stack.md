@@ -1,1 +1,0 @@
-Uses Zod for DTO validation schemas defined in `dto/create-role.dto.ts`.

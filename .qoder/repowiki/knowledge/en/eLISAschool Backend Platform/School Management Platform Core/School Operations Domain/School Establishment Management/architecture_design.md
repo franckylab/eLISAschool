@@ -1,5 +1,0 @@
-- Follows a standard Controller-Service-Entity pattern using Express and TypeORM.
-- `EtablissementController` handles HTTP routing and Zod validation, delegating business logic to `EtablissementService`.
-- `EtablissementService` manages data persistence for `Etablissement` and `EtablissementConfig` entities, using TypeORM transactions for atomic creation.
-- Entities define a one-to-one relationship between an establishment and its configuration, with shared enums exported from the main entity file.
-- Module exports are aggregated via barrel files (`index.ts`) in each subdirectory for clean external imports.

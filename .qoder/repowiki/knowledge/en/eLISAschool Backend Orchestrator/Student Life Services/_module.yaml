@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/backend_student_life
+title: Student Life Services
+scope:
+    - backend/src/modules/cantine/
+    - backend/src/modules/transport/
+    - backend/src/modules/clubs/
+    - backend/src/modules/cartes/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_student_academics
+    - path: backend/backend_establishment_config

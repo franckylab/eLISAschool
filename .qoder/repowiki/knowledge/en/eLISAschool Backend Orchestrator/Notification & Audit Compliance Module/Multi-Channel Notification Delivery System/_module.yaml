@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/backend_notifications_audit/notifications
+title: Multi-Channel Notification Delivery System
+scope:
+    - backend/src/modules/notifications/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_operations
+    - path: backend/backend_notifications_audit/audit

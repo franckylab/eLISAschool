@@ -1,1 +1,0 @@
-Manages academic periods and their types within school years, including CRUD operations and closure status.

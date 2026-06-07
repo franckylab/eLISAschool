@@ -1,0 +1,1 @@
+Orchestrates real-time data visualization and system health monitoring through decoupled, role-based dashboarding and infrastructure telemetry services.

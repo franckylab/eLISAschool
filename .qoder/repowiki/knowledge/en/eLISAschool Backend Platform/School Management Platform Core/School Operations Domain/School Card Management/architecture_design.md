@@ -1,5 +1,0 @@
-- Follows a standard Express controller-service-repository pattern within a TypeORM-based architecture.
-- Exposes an Express router (`cartesController`) protected by `authMiddleware` and role-based `staffOnly` guards for administrative actions.
-- The service layer (`CartesService`) handles business logic including card number generation, QR code creation, and dynamic configuration retrieval via `@modules/configuration/utils/config.helper`.
-- Uses Zod schemas in DTOs for request validation, enforced by a local `validate` helper in the controller.
-- Integrates with multi-tenancy by associating cards with `etablissementId` and fetching establishment details dynamically.

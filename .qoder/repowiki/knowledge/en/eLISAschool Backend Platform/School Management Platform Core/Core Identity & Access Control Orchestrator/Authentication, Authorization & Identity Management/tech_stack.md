@@ -1,5 +1,0 @@
-- JWT (jsonwebtoken) for access tokens; Refresh Tokens stored in DB with rotation.
-- Zod for request body validation in DTOs.
-- bcryptjs for password hashing.
-- TypeORM for database interactions (PostgreSQL implied by enum/types).
-- Express.js for HTTP routing and middleware.

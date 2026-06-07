@@ -1,5 +1,0 @@
-- All controller routes wrap async handler logic in try/catch blocks that delegate errors to Express `next(error)` for centralized error filtering.
-- Every mutating operation (create, update, delete, reset) logs an entry via `historyService.logAction()` capturing old/new values, user ID, and IP address for full auditability.
-- Cache invalidation follows a consistent pattern: after any write to config data, `invalidateCache(type)` is called to clear the relevant cache segment (app/modules/parametres) before emitting change events.
-- DTO validation uses Zod schemas imported from `dto/index.ts` — each controller handler calls a local `validate(schema, data)` helper that throws `AppError('VALIDATION_ERROR', 400)` on parse failure.
-- Parameter value storage serializes all types (string, number, boolean, JSON, array) into JSON strings via `JSON.stringify()` at write time and parses them back with type-aware logic in `parseParametreValue()` at read time.

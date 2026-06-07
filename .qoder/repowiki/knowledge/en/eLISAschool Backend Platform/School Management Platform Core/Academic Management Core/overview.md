@@ -1,1 +1,0 @@
-Orchestrates the academic lifecycle by integrating student records, curriculum structures, and temporal school year configurations into a unified educational data model.

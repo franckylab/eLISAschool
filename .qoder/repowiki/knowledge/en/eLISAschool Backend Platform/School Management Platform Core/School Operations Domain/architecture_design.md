@@ -1,4 +1,0 @@
-- Each child module (etablissement, personnel, cartes, cantine, transport, materiel) operates as an isolated domain with its own controllers, services, entities, and DTOs.
-- Multi-tenancy is enforced at the entity level across all modules, ensuring data isolation per school establishment.
-- No direct cross-module service calls are evident in the structure; integration likely occurs via a higher-level API gateway or event bus not visible in this scope.
-- Standardized NestJS module structure (controllers -> services -> entities) is uniformly applied, enabling consistent dependency injection and routing registration.

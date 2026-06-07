@@ -1,4 +1,0 @@
-- Controllers delegate validation to a local `validate` function that throws `AppError` on Zod schema failure.
-- Service methods use TypeORM repositories injected via `AppDataSource.getRepository` in the constructor.
-- Write operations (create, update, delete) are protected by `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` middleware.
-- DTOs are defined using Zod schemas with corresponding TypeScript types inferred via `z.infer`.

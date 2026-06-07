@@ -1,0 +1,3 @@
+- **Validation**: Zod schemas for rigorous DTO validation in all modules.
+- **ORM**: TypeORM with PostgreSQL-specific features (e.g., `ILIKE`, `ANY` array operators in batch loaders).
+- **Caching**: In-memory caching with TTL in `NotesBatchLoaderService` for academic averages.

@@ -1,0 +1,3 @@
+- Singleton service instances (e.g., `permissionResolverService`, `rolesService`) are exported from service files for direct cross-module import.
+- Custom Express middlewares are implemented as factory functions returning async handler closures (e.g., `requirePermission`).
+- Entities are co-located within the `auth` module even when primarily managed by the `rbac` module's business logic.

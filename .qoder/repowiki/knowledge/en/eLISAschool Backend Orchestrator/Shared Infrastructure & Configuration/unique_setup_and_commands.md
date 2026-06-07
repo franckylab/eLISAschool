@@ -1,0 +1,1 @@
+Database migrations are executed via a dedicated script `backend/src/database/run-migrations.ts` which initializes a temporary DataSource with `synchronize: false` to ensure safe schema evolution.

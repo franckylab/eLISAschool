@@ -1,1 +1,0 @@
-Manages academic cycles (educational stages) with CRUD operations, validation, and role-based access control.

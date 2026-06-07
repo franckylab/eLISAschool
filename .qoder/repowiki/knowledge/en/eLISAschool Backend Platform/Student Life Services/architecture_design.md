@@ -1,6 +1,0 @@
-- Four independent sub-modules (cantine, transport, clubs, cartes) each following a strict Controller-Service-Entity-DTO layering.
-- Controllers use Express Router with route-level auth middleware guards (`authMiddleware`, `staffOnly`, `adminOnly`) and Zod DTO validation via `validateDto`.
-- Services hold TypeORM repositories obtained from `AppDataSource` in their constructor; business logic includes centralized config lookups via `@modules/configuration/utils/config.helper`.
-- Entities are TypeORM classes with multi-tenancy enforced through an `etablissementId` column and `@Index` decorator; cross-module relations reference `Eleve`, `Utilisateur`, and `Etablissement`.
-- Each sub-module's `index.ts` is a barrel export re-exporting entities, dto, services, and controllers; a singleton service instance is exported at the bottom of each service file.
-- All controller handlers return a uniform JSON envelope `{ success: true, data, timestamp }` and delegate errors to Express `next(error)`.

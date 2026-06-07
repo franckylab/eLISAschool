@@ -1,4 +1,0 @@
-- Adopts a uniform modular architecture where each sub-domain (students, levels, cycles, periods, years, subjects, orientation) exposes a standard Controller-Service-Entity-DTO stack.
-- Enforces cross-module consistency through shared infrastructure: `@modules/auth` for role-based access control, `@common` for error handling and pagination, and `@database/data-source` for TypeORM repository access.
-- Establishes implicit domain contracts via entity relationships, such as `Periode` linking to `AnneeScolaire`, `Niveau` linking to `Cycle`, and `MatiereNiveau` bridging subjects and academic levels.
-- Utilizes a singleton service pattern (e.g., `elevesService`, `cyclesService`) exported from module index files, facilitating straightforward dependency injection or direct import across the backend.

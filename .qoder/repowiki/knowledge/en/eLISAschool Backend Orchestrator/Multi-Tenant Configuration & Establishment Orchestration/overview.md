@@ -1,0 +1,1 @@
+Orchestrates multi-tenant school establishment lifecycle and dynamic system configuration through a shared parameter resolution strategy and scoped data isolation.

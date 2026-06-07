@@ -1,0 +1,4 @@
+- Controllers delegate all business logic to singleton service instances and use a centralized `validateDto` utility for request body parsing.
+- Services enforce multi-tenancy by filtering or scoping all database queries with `etablissementId` derived from the authenticated request context.
+- Critical write operations (creation, update, deletion) trigger asynchronous audit logs via `auditService` and optional notification dispatches wrapped in try-catch blocks to prevent failure propagation.
+- DTOs are defined using Zod schemas in dedicated `dto` files, with types inferred via `z.infer` to ensure consistency between validation rules and TypeScript interfaces.

@@ -1,0 +1,1 @@
+Provides foundational cross-cutting concerns, environment management, and database connectivity for the backend application.

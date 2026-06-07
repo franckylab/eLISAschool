@@ -1,4 +1,0 @@
-- All service methods accept an optional `etablissementId` parameter for multi-tenant data scoping, applied consistently across queries and mutations.
-- Every controller route handler wraps async logic in a try-catch block that forwards errors to Express error middleware via `next(error)`.
-- All successful responses follow a uniform envelope: `{ success: true, data: <payload>, timestamp: <ISO string> }`.
-- Mutation routes (POST) require both `authMiddleware` and `staffOnly`, while read-only GET routes use only `authMiddleware` except `/prets` which also requires staff access.

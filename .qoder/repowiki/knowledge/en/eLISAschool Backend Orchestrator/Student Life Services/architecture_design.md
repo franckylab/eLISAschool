@@ -1,0 +1,5 @@
+- Four independent sub-modules (cantine, transport, clubs, cartes) each following a strict controller-service-entity-DTO layering with barrel exports via index.ts.
+- Controllers use Express Router instances exported as named constants (e.g. cantineController, transportController); services are singleton classes instantiated at module level.
+- All entities reference Etablissement for multi-tenancy scoping; queries consistently filter by etablissementId when provided from the request context.
+- DTOs use Zod schemas (z.object) with type inference via z.infer; controllers validate inputs through a shared validateDto utility before delegating to services.
+- Services depend on TypeORM repositories obtained from AppDataSource and integrate cross-module concerns: centralized configuration via getParam*/config.helper, optional approval workflows via validationWorkflowService, and parent notifications via notificationTemplates.

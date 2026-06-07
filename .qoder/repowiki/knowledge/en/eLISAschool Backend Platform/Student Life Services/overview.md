@@ -1,1 +1,0 @@
-Provides cafeteria management, school transport tracking, student club enrollment, and ID card lifecycle operations for the school platform.

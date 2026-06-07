@@ -11,6 +11,11 @@
 - [008-backup-system-v2.ts.bak](file://backend/src/database/migrations/008-backup-system-v2.ts.bak)
 - [010-notification-providers.sql](file://backend/src/database/migrations/010-notification-providers.sql)
 - [010-dashboard-layouts.sql](file://backend/src/database/migrations/010-dashboard-layouts.sql)
+- [011-validation-workflow-permissions.sql](file://backend/src/database/migrations/011-validation-workflow-permissions.sql)
+- [012-validation-academique-permissions.sql](file://backend/src/database/migrations/012-validation-academique-permissions.sql)
+- [013-validation-vie-scolaire-permissions.sql](file://backend/src/database/migrations/013-validation-vie-scolaire-permissions.sql)
+- [014-validation-cartes-annees.sql](file://backend/src/database/migrations/014-validation-cartes-annees.sql)
+- [015-validation-etablissement.sql](file://backend/src/database/migrations/015-validation-etablissement.sql)
 - [run-notification-providers-migration.ts](file://backend/src/database/migrations/run-notification-providers-migration.ts)
 - [annee-scolaire.entity.ts](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts)
 - [classe.entity.ts](file://backend/src/modules/classes/entities/classe.entity.ts)
@@ -50,17 +55,21 @@
 - [dashboard-layout.entity.ts](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts)
 - [dashboard.types.ts](file://backend/src/modules/dashboard/types/dashboard.types.ts)
 - [provider-registry.ts](file://backend/src/modules/notifications/providers/provider-registry.ts)
+- [workflow-validation.entity.ts](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
+- [validation.middleware.ts](file://backend/src/modules/validation-workflow/middlewares/validation.middleware.ts)
+- [validation-workflow.d.ts](file://backend/src/common/types/validation-workflow.d.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive notification providers system with configurable notification channels and quota tracking
-- Documented notification_providers table for managing PUSH, EMAIL, IN_APP, and SMS notification providers
-- Added dashboard layouts system for persistent user-customized dashboard configurations
-- Documented dashboard_layouts table with establishment-aware storage and widget configuration
-- Integrated notification system with provider registry and fallback mechanisms
-- Added quota management, error tracking, and priority-based routing for notification providers
-- Implemented establishment-specific dashboard layouts with global and per-establishment scopes
+- Added comprehensive validation workflow system with multi-level approval permissions across all academic and administrative modules
+- Documented five new migration files implementing validation workflow permissions, establishment-based validation isolation, and comprehensive validation workflow tables
+- Added validation workflow entity with establishment-aware multi-tenant design and generic validation framework
+- Integrated validation workflow middleware for permission-based validation level enforcement
+- Extended RBAC system with validation-specific permissions for notes, bulletins, academic modules, student services, and establishment management
+- Added establishment-based validation isolation with proper tenant separation across all validation workflows
+- Implemented comprehensive validation workflow statistics, dashboard integration, and reporting capabilities
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -69,22 +78,23 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Establishment-Centric Multi-Tenant Design](#establishment-centric-multi-tenant-design)
-7. [Backup System Implementation](#backup-system-implementation)
-8. [Notification Providers System](#notification-providers-system)
-9. [Dashboard Layouts System](#dashboard-layouts-system)
-10. [RBAC System Implementation](#rbac-system-implementation)
-11. [Migration and Data Transformation](#migration-and-data-transformation)
-12. [Dependency Analysis](#dependency-analysis)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting Guide](#troubleshooting-guide)
-15. [Conclusion](#conclusion)
-16. [Appendices](#appendices)
+7. [Validation Workflow System](#validation-workflow-system)
+8. [Backup System Implementation](#backup-system-implementation)
+9. [Notification Providers System](#notification-providers-system)
+10. [Dashboard Layouts System](#dashboard-layouts-system)
+11. [RBAC System Implementation](#rbac-system-implementation)
+12. [Migration and Data Transformation](#migration-and-data-transformation)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
-This document describes the eLISAschool academic management system database schema and data model. The system has been redesigned to support multi-establishment architecture with comprehensive RBAC (Role-Based Access Control) capabilities, a production-grade backup system, and advanced notification management with configurable providers. The establishment entity serves as the central hub coordinating all establishment-specific relationships, while the RBAC system provides fine-grained permission management across users, roles, and establishment contexts. The backup system implements multi-tenant backup management with encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
+This document describes the eLISAschool academic management system database schema and data model. The system has been redesigned to support multi-establishment architecture with comprehensive RBAC (Role-Based Access Control) capabilities, a production-grade backup system, advanced notification management with configurable providers, and a sophisticated validation workflow system. The establishment entity serves as the central hub coordinating all establishment-specific relationships, while the RBAC system provides fine-grained permission management across users, roles, and establishment contexts. The validation workflow system implements multi-level approval processes across academic and administrative modules with establishment-based isolation and comprehensive tracking capabilities. The backup system implements multi-tenant backup management with encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
 
 ## Project Structure
-The database layer is powered by TypeORM against PostgreSQL with enhanced multi-establishment support, comprehensive RBAC implementation, production-grade backup system, and advanced notification management. Entities are grouped per domain module under backend/src/modules/*/entities, with establishment relationships integrated across all domain entities. The TypeORM DataSource is configured via environment-driven settings and initialized at application startup with establishment-aware middleware, RBAC support, backup system integration, and notification provider management.
+The database layer is powered by TypeORM against PostgreSQL with enhanced multi-establishment support, comprehensive RBAC implementation, production-grade backup system, advanced notification management, and sophisticated validation workflow capabilities. Entities are grouped per domain module under backend/src/modules/*/entities, with establishment relationships integrated across all domain entities. The TypeORM DataSource is configured via environment-driven settings and initialized at application startup with establishment-aware middleware, RBAC support, backup system integration, notification provider management, and validation workflow integration.
 
 ```mermaid
 graph TB
@@ -101,6 +111,7 @@ RBAC["RBAC System"]
 BACKUP["Backup System"]
 NOTIFS["Notification Providers"]
 DASH["Dashboard Layouts"]
+VAL["Validation Workflow System"]
 END
 APP --> DS
 DS --> CFG
@@ -111,14 +122,19 @@ ENT --> RBAC
 ENT --> BACKUP
 ENT --> NOTIFS
 ENT --> DASH
+ENT --> VAL
 ETAB --> RBAC
 ETAB --> BACKUP
 ETAB --> NOTIFS
 ETAB --> DASH
+ETAB --> VAL
 RBAC --> BACKUP
 RBAC --> NOTIFS
 RBAC --> DASH
+RBAC --> VAL
 NOTIFS --> DASH
+VAL --> ETAB
+VAL --> RBAC
 ```
 
 **Diagram sources**
@@ -129,15 +145,17 @@ NOTIFS --> DASH
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
 - [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
 - [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
 
 **Section sources**
 - [data-source.ts:17](file://backend/src/database/data-source.ts#L17)
 - [database.config.ts:15-51](file://backend/src/config/database.config.ts#L15-L51)
 
 ## Core Components
-- TypeORM DataSource: Centralized database connection with establishment-aware middleware, RBAC support, backup system integration, and notification provider management
+- TypeORM DataSource: Centralized database connection with establishment-aware middleware, RBAC support, backup system integration, notification provider management, and validation workflow integration
 - Establishment Entity: Central hub managing multi-establishment architecture with OneToOne configuration relationships
 - RBAC Entities: Comprehensive role-based access control system with establishment-aware permissions
+- Validation Workflow System: Multi-level approval system with establishment-based isolation and comprehensive tracking across all modules
 - Backup System: Production-grade backup management with multi-tenant support, encryption, compression, and retention policies
 - Notification Providers: Configurable notification channel management with quota tracking, error monitoring, and fallback mechanisms
 - Dashboard Layouts: Persistent storage for user-customized dashboard configurations with establishment-aware scoping
@@ -150,6 +168,7 @@ Key configuration highlights:
 - Establishment relationships: All entities now include establishmentId foreign keys
 - OneToOne relationships: Establishment to configuration mapping
 - RBAC integration: Role and permission management with establishment context
+- Validation workflow integration: Multi-level approval system with establishment isolation
 - Backup system: Multi-tenant backup records with comprehensive metadata and retention tracking
 - Notification system: Configurable providers with quota management and fallback routing
 - Dashboard system: Establishment-aware widget layouts with persistence
@@ -164,9 +183,10 @@ Key configuration highlights:
 - [backup-record.entity.ts:23-39](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L23-L39)
 - [notification-provider.entity.ts:53](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L53)
 - [dashboard-layout.entity.ts:36](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L36)
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
 
 ## Architecture Overview
-The schema follows a normalized relational model with UUID primary keys and explicit foreign key relationships. The establishment entity serves as the central hub, with all domain entities maintaining establishment relationships for proper data isolation and tenant separation. The RBAC system provides comprehensive role-based access control with establishment-aware permissions and multi-establishment user management. The backup system implements production-grade backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
+The schema follows a normalized relational model with UUID primary keys and explicit foreign key relationships. The establishment entity serves as the central hub, with all domain entities maintaining establishment relationships for proper data isolation and tenant separation. The RBAC system provides comprehensive role-based access control with establishment-aware permissions and multi-establishment user management. The validation workflow system implements multi-level approval processes across academic and administrative modules with establishment-based isolation and comprehensive tracking capabilities. The backup system implements production-grade backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
 
 ```mermaid
 erDiagram
@@ -185,6 +205,7 @@ UTILISATEUR ||--o{ UTILISATEUR_ROLE : "has roles"
 UTILISATEUR ||--o{ UTILISATEUR_PERMISSION : "has permissions"
 UTILISATEUR ||--o{ NOTIFICATION : "receives"
 UTILISATEUR ||--o{ DASHBOARD_LAYOUT : "has layouts"
+UTILISATEUR ||--o{ WORKFLOW_VALIDATION : "validates"
 UTILISATEUR_ETABLISSEMENT ||--o{ ROLE : "assigns"
 UTILISATEUR_ETABLISSEMENT ||--o{ PERMISSION : "grants"
 UTILISATEUR_ROLE ||--o{ ROLE : "is assigned"
@@ -203,6 +224,7 @@ ETABLISSEMENT ||--o{ CANTINE : "operates"
 ETABLISSEMENT ||--o{ TRANSPORT : "manages"
 ETABLISSEMENT ||--o{ IMPRESSIONS : "prints"
 ETABLISSEMENT ||--o{ NOTIFICATION_PROVIDER : "configures"
+ETABLISSEMENT ||--o{ WORKFLOW_VALIDATION : "initiates"
 ETABLISSEMENT ||--|| CONFIG_APP : "has configuration"
 ETABLISSEMENT ||--|| CONFIG_MODULE : "has module config"
 ETABLISSEMENT ||--|| HISTORIQUE_CONFIG : "tracks changes"
@@ -212,6 +234,8 @@ NOTIFICATION_PROVIDER ||--o{ ETABLISSEMENT : "configured for"
 NOTIFICATION ||--o{ NOTIFICATION_PROVIDER : "sent via"
 DASHBOARD_LAYOUT ||--o{ UTILISATEUR : "belongs to"
 DASHBOARD_LAYOUT ||--o{ ETABLISSEMENT : "scoped to"
+WORKFLOW_VALIDATION ||--o{ ETABLISSEMENT : "for"
+WORKFLOW_VALIDATION ||--o{ UTILISATEUR : "validated by"
 BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 ```
 
@@ -250,6 +274,7 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
 - [notification.entity.ts:52](file://backend/src/modules/notifications/entities/notification.entity.ts#L52)
 - [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
 
 ## Detailed Component Analysis
 
@@ -488,6 +513,7 @@ All domain entities maintain establishment relationships to ensure proper data i
 - RBAC entities (roles, permissions, user-role assignments)
 - Notification system entities (notification providers)
 - Dashboard system entities (dashboard layouts)
+- Validation workflow entities (workflows)
 
 **Relationship Patterns:**
 - **Foreign Key Integration**: All entities include establishmentId foreign keys
@@ -521,6 +547,134 @@ The establishment-centric design enforces strict business rules for proper tenan
 - [backup-record.entity.ts:53-65](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L53-L65)
 - [notification-provider.entity.ts:98](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L98)
 - [dashboard-layout.entity.ts:47](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L47)
+- [workflow-validation.entity.ts:136](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L136)
+
+## Validation Workflow System
+
+### Validation Workflow Architecture Overview
+The validation workflow system implements a comprehensive multi-level approval system across all academic and administrative modules with establishment-based isolation and comprehensive tracking capabilities. The system provides generic validation framework reusable across different business entities while maintaining establishment-specific context and permission enforcement.
+
+```mermaid
+erDiagram
+WORKFLOW_VALIDATION ||--o{ ETABLISSEMENT : "for"
+WORKFLOW_VALIDATION ||--o{ UTILISATEUR : "validated by"
+WORKFLOW_VALIDATION {
+uuid id
+varchar module
+uuid entiteId
+varchar entiteType
+int niveauxRequis
+int niveauActuel
+enum statut
+simple-json configRoles
+simple-json historique
+uuid dernierValidateurId
+timestamp dateCompletion
+text commentaire
+uuid etablissementId
+timestamp createdAt
+timestamp updatedAt
+}
+ETABLISSEMENT {
+uuid id
+varchar nom
+varchar adresse
+uuid configurationId
+}
+UTILISATEUR {
+uuid id
+varchar username
+varchar email
+uuid etablissementPrincipalId
+}
+```
+
+**Diagram sources**
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
+- [etablissement.entity.ts:58](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L58)
+- [utilisateur.entity.ts:99-107](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L99-L107)
+
+### Validation Workflow Entity
+The WorkflowValidation entity serves as the central tracking mechanism for multi-level approval processes across all system modules with establishment-aware isolation and comprehensive validation history.
+
+**Workflow Characteristics:**
+- **Generic Framework**: Reusable across all business modules (notes, bulletins, academic, administrative)
+- **Multi-Level Support**: Configurable number of approval levels with establishment-specific roles
+- **Establishment Isolation**: All workflows scoped to specific establishments for proper tenant separation
+- **Comprehensive Tracking**: Full validation history with timestamps, decisions, and validator information
+- **Status Management**: Complete workflow lifecycle tracking from initiation to completion or rejection
+- **Permission Integration**: Seamless integration with RBAC system for validation level enforcement
+
+### Validation Workflow Levels and Permissions
+The system implements a tiered validation approach with establishment-based permissions across multiple modules and functional areas.
+
+**Academic Validation Levels:**
+- **Notes**: Level 1 (Teacher), Level 2 (School Head), Level 3 (Administrator)
+- **Bulletins**: Level 1 (Teacher), Level 2 (School Head), Level 3 (Administrator)
+- **Classes**: Level 1 (Teacher), Level 2 (School Head), Level 3 (Administrator)
+- **Matieres**: Level 1 (Teacher), Level 2 (School Head), Level 3 (Administrator)
+- **Periodes**: Level 1 (School Head), Level 2 (Administrator)
+
+**Administrative Validation Levels:**
+- **Cantine**: Level 1 (Staff), Level 2 (Canteen Supervisor), Level 3 (Administrator)
+- **Transport**: Level 1 (Staff), Level 2 (Transport Supervisor), Level 3 (Administrator)
+- **Eleves**: Level 1 (Staff), Level 2 (School Head), Level 3 (Administrator)
+- **Personnel**: Level 1 (School Head), Level 2 (Administrator)
+- **Clubs**: Level 1 (Club Coordinator), Level 2 (School Head), Level 3 (Administrator)
+- **Materiel**: Level 1 (Material Manager), Level 2 (Administrator)
+- **Cartes**: Level 1 (School Head), Level 2 (Administrator)
+- **AnneesScolaires**: Level 1 (School Head), Level 2 (Administrator)
+- **Etablissement**: Level 1 (Administrator), Level 2 (Super Administrator)
+
+### Validation Middleware and Permission Enforcement
+The validation workflow system includes sophisticated middleware for real-time permission checking and establishment-aware validation enforcement.
+
+**Middleware Features:**
+- **Level-Based Validation**: Middleware validates user permissions for specific validation levels
+- **Role Fallback**: Automatic role-based validation when direct permissions are not available
+- **Establishment Context**: All validation checks respect establishment boundaries and isolation
+- **SUPER_ADMIN Override**: System administrators can validate at any level regardless of permissions
+- **Workflow State Validation**: Ensures workflows are active and in correct state before validation
+
+### Dashboard Integration and Reporting
+The validation workflow system provides comprehensive dashboard integration and reporting capabilities for establishment management oversight.
+
+**Dashboard Features:**
+- **Multi-Module Statistics**: Aggregated statistics across all validation modules
+- **Establishment-Specific Views**: Separate dashboards for each establishment's validation activities
+- **Real-Time Monitoring**: Live tracking of validation workflows and pending approvals
+- **Performance Metrics**: Average validation times and completion rates by level
+- **Export Capabilities**: Comprehensive reporting with export functionality for compliance
+
+### Indexing Strategy for Performance
+The validation workflow system implements strategic indexing for optimal query performance across establishment boundaries and workflow states.
+
+**Index Categories:**
+- **Module-Entity Index**: Composite index on (module, entiteId) for efficient entity-specific workflow queries
+- **Status-Level Index**: Composite index on (statut, niveauActuel) for workflow state filtering
+- **Establishment Index**: Single-column index on etablissementId for establishment-scoped queries
+- **Creation Date Index**: Automatic timestamp indexing for workflow ordering and filtering
+
+### Validation Workflow Lifecycle Management
+The system implements comprehensive lifecycle management for validation workflows with proper establishment-aware operations and audit trails.
+
+**Lifecycle Stages:**
+- **Initiation**: Workflow creation with establishment context and required approval levels
+- **Active Validation**: Multi-level approval process with permission enforcement and establishment isolation
+- **Completion**: Final approval with establishment-specific completion tracking
+- **Rejection**: Validation rejection with establishment-aware audit trails
+- **Cancellation**: Workflow cancellation with establishment-specific cleanup
+- **Archival**: Historical workflow data retention with establishment isolation
+
+**Section sources**
+- [workflow-validation.entity.ts:1-162](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L1-L162)
+- [validation-workflow.service.ts:1-474](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts#L1-L474)
+- [validation.middleware.ts:1-206](file://backend/src/modules/validation-workflow/middlewares/validation.middleware.ts#L1-L206)
+- [011-validation-workflow-permissions.sql:15-53](file://backend/src/database/migrations/011-validation-workflow-permissions.sql#L15-L53)
+- [012-validation-academique-permissions.sql:16-37](file://backend/src/database/migrations/012-validation-academique-permissions.sql#L16-L37)
+- [013-validation-vie-scolaire-permissions.sql:20-48](file://backend/src/database/migrations/013-validation-vie-scolaire-permissions.sql#L20-L48)
+- [014-validation-cartes-annees.sql:18-30](file://backend/src/database/migrations/014-validation-cartes-annees.sql#L18-L30)
+- [015-validation-etablissement.sql:17-22](file://backend/src/database/migrations/015-validation-etablissement.sql#L17-L22)
 
 ## Backup System Implementation
 
@@ -950,8 +1104,9 @@ The migration to support multi-establishments follows a carefully planned approa
 **Migration Phases:**
 1. **Schema Enhancement**: Addition of utilisateur_etablissements table and RBAC entities
 2. **Data Migration**: Transformation of legacy user-establishment relationships
-3. **Validation**: Verification of migrated data and establishment isolation
-4. **Cleanup**: Optional removal of legacy columns in future migrations
+3. **Validation Workflow Integration**: Implementation of comprehensive validation workflow permissions across all modules
+4. **Validation Workflow Schema**: Addition of establishment-aware validation workflow tables and status columns
+5. **Validation Dashboard Integration**: Establishment of validation workflow dashboard and reporting capabilities
 
 ### Backup System Migration Strategy
 The backup system migration implements a production-grade backup infrastructure with comprehensive multi-tenant support and performance optimizations.
@@ -961,6 +1116,19 @@ The backup system migration implements a production-grade backup infrastructure 
 2. **Storage Provider Integration**: Setup of multi-provider storage architecture
 3. **Security Implementation**: Encryption, compression, and retention policy integration
 4. **Performance Optimization**: Index tuning and query optimization for backup operations
+
+### Validation Workflow Migration Strategy
+**Updated** Added comprehensive validation workflow migration implementation
+
+The validation workflow migration implements a complete multi-level approval system with establishment-aware permissions, comprehensive validation tracking, and dashboard integration across all academic and administrative modules.
+
+**Migration Phases:**
+1. **Permission Creation**: Implementation of validation workflow permissions across all modules and levels
+2. **Role Assignment**: Assignment of validation permissions to appropriate roles (ADMIN, CHEF_ETABLISSEMENT, ENSEIGNANT, etc.)
+3. **Schema Enhancement**: Addition of establishment-aware validation workflow tables with status columns
+4. **Status Column Migration**: Implementation of status tracking for academic entities (affectations, matieres, periodes)
+5. **Dashboard Integration**: Establishment of validation workflow dashboard and reporting capabilities
+6. **Middleware Integration**: Implementation of validation workflow middleware for permission enforcement
 
 ### Notification Providers Migration Strategy
 **Updated** Added comprehensive notification providers migration implementation
@@ -1025,6 +1193,11 @@ The RBAC system includes comprehensive seed data to support immediate functional
 - [008-backup-system-v2.ts.bak:28-108](file://backend/src/database/migrations/008-backup-system-v2.ts.bak#L28-L108)
 - [010-notification-providers.sql:14-132](file://backend/src/database/migrations/010-notification-providers.sql#L14-L132)
 - [010-dashboard-layouts.sql:8-49](file://backend/src/database/migrations/010-dashboard-layouts.sql#L8-L49)
+- [011-validation-workflow-permissions.sql:15-178](file://backend/src/database/migrations/011-validation-workflow-permissions.sql#L15-L178)
+- [012-validation-academique-permissions.sql:98-137](file://backend/src/database/migrations/012-validation-academique-permissions.sql#L98-L137)
+- [013-validation-vie-scolaire-permissions.sql:118-181](file://backend/src/database/migrations/013-validation-vie-scolaire-permissions.sql#L118-L181)
+- [014-validation-cartes-annees.sql:85-104](file://backend/src/database/migrations/014-validation-cartes-annees.sql#L85-L104)
+- [015-validation-etablissement.sql:58-71](file://backend/src/database/migrations/015-validation-etablissement.sql#L58-L71)
 - [rbac.seed.ts:297-365](file://backend/src/database/seeds/rbac.seed.ts#L297-L365)
 
 ## Dependency Analysis
@@ -1034,6 +1207,7 @@ The RBAC system includes comprehensive seed data to support immediate functional
 - Initialization: DataSource loads entities dynamically from module folders with establishment relationships; migrations and subscribers support multi-establishment deployment
 - Establishment Middleware: Tenant-aware middleware ensures proper establishment context for all operations
 - RBAC Integration: Comprehensive RBAC system integrated across authentication and authorization layers
+- Validation Workflow Integration: Multi-level approval system integrated with establishment-aware permissions and comprehensive tracking
 - Backup System Integration: Production-grade backup system integrated with establishment-aware architecture and multi-provider storage support
 - Notification System Integration: Configurable notification providers integrated with establishment-aware scoping and quota management
 - Dashboard System Integration: Persistent dashboard layouts integrated with establishment-aware widget management and user customization
@@ -1048,14 +1222,17 @@ SEED["Seed Runner"] --> DS
 ETAB["Establishment Hub"] --> ENT
 MWARE["Establishment Middleware"] --> DS
 RBAC["RBAC System"] --> ENT
+VAL["Validation Workflow System"] --> ENT
 BACKUP["Backup System"] --> ENT
 NOTIFS["Notification Providers"] --> ENT
 DASH["Dashboard Layouts"] --> ENT
 MIG --> RBAC
+MIG --> VAL
 MIG --> BACKUP
 MIG --> NOTIFS
 MIG --> DASH
 SEED --> RBAC
+SEED --> VAL
 SEED --> BACKUP
 SEED --> NOTIFS
 SEED --> DASH
@@ -1069,6 +1246,7 @@ SEED --> DASH
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
 - [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
 - [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
 
 **Section sources**
 - [database.config.ts:30-36](file://backend/src/config/database.config.ts#L30-L36)
@@ -1089,6 +1267,8 @@ Derived from configuration and schema design with establishment awareness:
   - Backup system indexes: Composite tenant index, checksum index, retention index, and soft-delete index for optimal backup operations
   - Notification providers indexes: Type-activity index, establishment index, default provider index for efficient provider lookup
   - Dashboard layouts indexes: User index, user-establishment composite index, activation index for optimal layout retrieval
+  - Validation workflow indexes: Module-entity index, status-level index, establishment index for optimal workflow queries
+  - Validation entity status indexes: Establishment-aware status tracking for academic and administrative entities
 - Query optimization patterns:
   - Use joins with establishment filters to minimize result sets and ensure tenant isolation
   - Denormalized aggregates (e.g., report summaries) can reduce runtime computation at the cost of write overhead
@@ -1098,6 +1278,8 @@ Derived from configuration and schema design with establishment awareness:
   - Backup query optimization through proper indexing and establishment-aware filtering
   - Notification provider query optimization using type-activity filtering and establishment scoping
   - Dashboard layout query optimization using user-based and establishment-aware filtering
+  - Validation workflow query optimization using establishment-aware filtering and status-based queries
+  - Academic entity status query optimization using establishment-aware status filtering
 - Multi-establishment optimization:
   - Establishment-specific query routing for optimal performance
   - Establishment-aware connection pooling for resource allocation
@@ -1106,6 +1288,7 @@ Derived from configuration and schema design with establishment awareness:
   - Backup system optimization with establishment-aware queries and retention-based cleanup
   - Notification system optimization with provider indexing and fallback routing
   - Dashboard system optimization with user-based caching and establishment-aware queries
+  - Validation workflow optimization with establishment-aware permission checking and status filtering
 
 ## Troubleshooting Guide
 - Connection failures:
@@ -1120,6 +1303,8 @@ Derived from configuration and schema design with establishment awareness:
   - Confirm backup system migration completion and index creation
   - Verify notification providers migration completion and initial provider seeding
   - Confirm dashboard layouts migration completion and foreign key constraints
+  - Validate validation workflow migration completion and permission assignments
+  - Check establishment-aware validation workflow schema and status column migrations
 - Seed execution:
   - Confirm seed runner is invoked and initial seed file is present
   - Validate seed logic idempotency to avoid duplicate inserts
@@ -1128,6 +1313,7 @@ Derived from configuration and schema design with establishment awareness:
   - Validate backup system seed data and storage provider configuration
   - Verify notification providers seed data and initial provider configuration
   - Validate dashboard layouts seed data and user-establishment relationships
+  - Verify validation workflow seed data and establishment-aware permission assignments
 - Establishment-specific issues:
   - Verify establishmentId is properly set in establishment-aware entities
   - Check establishment configuration relationships for proper setup
@@ -1138,6 +1324,13 @@ Derived from configuration and schema design with establishment awareness:
   - Check establishment-aware permission resolution and user-role inheritance
   - Validate primary establishment assignment and multi-establishment user access
   - Ensure proper RBAC middleware operation and permission checking
+- Validation workflow issues:
+  - Verify validation workflow permissions are properly assigned to roles
+  - Check establishment-aware validation workflow creation and status tracking
+  - Validate validation middleware permission checking and role fallback mechanisms
+  - Ensure proper establishment isolation in validation workflow queries
+  - Verify validation workflow dashboard integration and reporting capabilities
+  - Check establishment-aware status column migrations for academic entities
 - Backup system issues:
   - Verify backup_records table creation and proper indexing
   - Check establishment-aware backup operations and multi-provider storage configuration
@@ -1163,6 +1356,7 @@ Derived from configuration and schema design with establishment awareness:
   - Monitor backup system logs for backup operation failures and storage provider errors
   - Monitor notification system logs for provider errors and fallback attempts
   - Monitor dashboard system logs for layout access and widget rendering issues
+  - Validate validation workflow logs for approval processes and establishment isolation
 
 **Section sources**
 - [database.config.ts:15-51](file://backend/src/config/database.config.ts#L15-L51)
@@ -1172,10 +1366,15 @@ Derived from configuration and schema design with establishment awareness:
 - [008-backup-system-v2.ts.bak:28-108](file://backend/src/database/migrations/008-backup-system-v2.ts.bak#L28-L108)
 - [010-notification-providers.sql:14-132](file://backend/src/database/migrations/010-notification-providers.sql#L14-L132)
 - [010-dashboard-layouts.sql:8-49](file://backend/src/database/migrations/010-dashboard-layouts.sql#L8-L49)
+- [011-validation-workflow-permissions.sql:15-178](file://backend/src/database/migrations/011-validation-workflow-permissions.sql#L15-L178)
+- [012-validation-academique-permissions.sql:98-137](file://backend/src/database/migrations/012-validation-academique-permissions.sql#L98-L137)
+- [013-validation-vie-scolaire-permissions.sql:118-181](file://backend/src/database/migrations/013-validation-vie-scolaire-permissions.sql#L118-L181)
+- [014-validation-cartes-annees.sql:85-104](file://backend/src/database/migrations/014-validation-cartes-annees.sql#L85-L104)
+- [015-validation-etablissement.sql:58-71](file://backend/src/database/migrations/015-validation-etablissement.sql#L58-L71)
 - [rbac.seed.ts:297-365](file://backend/src/database/seeds/rbac.seed.ts#L297-L365)
 
 ## Conclusion
-The eLISAschool schema has been successfully redesigned to support multi-establishment architecture with comprehensive RBAC capabilities, production-grade backup system, and advanced notification management with configurable providers. The establishment entity serves as the central hub for tenant management, while the RBAC system provides fine-grained access control with establishment-aware permissions. The backup system implements comprehensive backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking, error monitoring, and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping and comprehensive widget management. The migration strategy ensures backward compatibility while enabling advanced multi-establishment functionality, robust backup infrastructure, comprehensive notification management, and flexible dashboard customization. TypeORM's environment-driven configuration with establishment-aware middleware, RBAC support, backup system integration, notification provider management, and dashboard system integration enables safe, scalable deployments across multiple establishments. Proper indexing, migration discipline, seed management, establishment middleware, comprehensive RBAC implementation, robust backup system, comprehensive notification management, and flexible dashboard system are essential for maintaining performance, integrity, and operability across the multi-establishment environment.
+The eLISAschool schema has been successfully redesigned to support multi-establishment architecture with comprehensive RBAC capabilities, production-grade backup system, advanced notification management with configurable providers, and sophisticated validation workflow system. The establishment entity serves as the central hub for tenant management, while the RBAC system provides fine-grained access control with establishment-aware permissions. The validation workflow system implements comprehensive multi-level approval processes across academic and administrative modules with establishment-based isolation and extensive tracking capabilities. The backup system implements comprehensive backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking, error monitoring, and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping and comprehensive widget management. The migration strategy ensures backward compatibility while enabling advanced multi-establishment functionality, robust backup infrastructure, comprehensive notification management, flexible dashboard customization, and sophisticated validation workflow capabilities. TypeORM's environment-driven configuration with establishment-aware middleware, RBAC support, validation workflow integration, backup system integration, notification provider management, and dashboard system integration enables safe, scalable deployments across multiple establishments. Proper indexing, migration discipline, seed management, establishment middleware, comprehensive RBAC implementation, robust backup system, comprehensive notification management, flexible dashboard system, and sophisticated validation workflow are essential for maintaining performance, integrity, and operability across the multi-establishment environment.
 
 ## Appendices
 
@@ -1197,6 +1396,7 @@ UTILISATEUR ||--o{ UTILISATEUR_ROLE : "has roles"
 UTILISATEUR ||--o{ UTILISATEUR_PERMISSION : "has permissions"
 UTILISATEUR ||--o{ NOTIFICATION : "receives"
 UTILISATEUR ||--o{ DASHBOARD_LAYOUT : "has layouts"
+UTILISATEUR ||--o{ WORKFLOW_VALIDATION : "validates"
 UTILISATEUR_ETABLISSEMENT ||--o{ ROLE : "assigns"
 UTILISATEUR_ETABLISSEMENT ||--o{ PERMISSION : "grants"
 UTILISATEUR_ROLE ||--o{ ROLE : "is assigned"
@@ -1215,17 +1415,20 @@ ETABLISSEMENT ||--o{ CANTINE : "operates"
 ETABLISSEMENT ||--o{ TRANSPORT : "manages"
 ETABLISSEMENT ||--o{ IMPRESSIONS : "prints"
 ETABLISSEMENT ||--o{ NOTIFICATION_PROVIDER : "configures"
+ETABLISSEMENT ||--o{ WORKFLOW_VALIDATION : "initiates"
 ETABLISSEMENT ||--|| CONFIG_APP : "has configuration"
 ETABLISSEMENT ||--|| CONFIG_MODULE : "has module config"
 ETABLISSEMENT ||--|| HISTORIQUE_CONFIG : "tracks changes"
 ETABLISSEMENT ||--|| PARAMETRE_SYSTEME : "uses parameters"
 ETABLISSEMENT ||--o{ BACKUP_RECORD : "creates backups"
 NOTIFICATION_PROVIDER ||--o{ ETABLISSEMENT : "configured for"
-NOTIFICATION_PROVIDER ||--o{ NOTIFICATION : "sends"
 NOTIFICATION ||--o{ NOTIFICATION_PROVIDER : "via"
+NOTIFICATION ||--o{ ETABLISSEMENT : "for"
 DASHBOARD_LAYOUT ||--o{ UTILISATEUR : "belongs to"
 DASHBOARD_LAYOUT ||--o{ ETABLISSEMENT : "scoped to"
 BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
+WORKFLOW_VALIDATION ||--o{ ETABLISSEMENT : "for"
+WORKFLOW_VALIDATION ||--o{ UTILISATEUR : "validated by"
 ```
 
 **Diagram sources**
@@ -1263,6 +1466,7 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
 - [notification.entity.ts:52](file://backend/src/modules/notifications/entities/notification.entity.ts#L52)
 - [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
+- [workflow-validation.entity.ts:54](file://backend/src/modules/validation-workflow/entities/workflow-validation.entity.ts#L54)
 
 ### Data Lifecycle and Retention Policies with Establishment Context
 - Academic data (grades, reports) typically retained per institutional policy per establishment; consider establishment-specific archiving for older periods
@@ -1274,10 +1478,23 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - Establishment isolation: Data retention policies enforced per establishment with proper tenant separation
 - RBAC data: Role and permission data retained for access control continuity; establishment-specific audit trails for permission changes
 - User-establishment relationships: Historical user-establishment associations maintained for access control history and compliance tracking
+- Validation workflow data: Comprehensive validation history retained with establishment-aware isolation; workflow completion and rejection tracking
+- Validation entity status data: Establishment-aware status tracking for academic and administrative entities; historical status changes maintained
 - Backup system retention: Establishment-specific backup retention policies with automated cleanup; system-wide backups may have different retention requirements
 - Notification providers data: Provider configurations retained with establishment-aware scoping; quota and error tracking data maintained for operational insights
 - Dashboard layouts data: User-customized layouts retained with establishment-aware scoping; widget configurations maintained for user experience continuity
 - Notification delivery data: Notification history and delivery status tracked with establishment-aware retention; provider error logs maintained for troubleshooting
+
+### Validation Workflow System Implementation Details
+- **Multi-Level Approval**: Comprehensive validation workflow system supporting 1-3 approval levels across all academic and administrative modules
+- **Establishment Isolation**: All validation workflows scoped to specific establishments for proper tenant separation and compliance
+- **Permission Integration**: Seamless integration with RBAC system for validation level enforcement and role-based validation
+- **Status Tracking**: Comprehensive status tracking for all validation workflows including establishment-aware state management
+- **Dashboard Integration**: Multi-module validation dashboard with establishment-specific views and comprehensive reporting capabilities
+- **Middleware Enforcement**: Sophisticated middleware for real-time permission checking and establishment-aware validation enforcement
+- **Historical Tracking**: Complete validation history with timestamps, decisions, validator information, and establishment context
+- **Performance Optimization**: Strategic indexing for optimal validation workflow queries and establishment-aware filtering
+- **Audit Trail**: Comprehensive audit logging for all validation activities with establishment-specific compliance tracking
 
 ### Backup System Implementation Details
 - **Multi-Tenant Architecture**: Backup records support both establishment-specific and system-wide backups through nullable establishmentId

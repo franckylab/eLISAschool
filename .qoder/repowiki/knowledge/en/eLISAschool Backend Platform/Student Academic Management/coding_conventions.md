@@ -1,5 +1,0 @@
-- Every controller route wraps handler logic in try/catch and forwards errors to Express next(error).
-- All POST/PATCH endpoints validate incoming payloads with validateDto(schema, req.body) before passing DTOs to services.
-- Services inject etablissementId as an optional parameter and apply it as a WHERE filter or entity field to enforce multi-tenancy.
-- Each module root index.ts re-exports entities, dto, services, and controllers via wildcard exports for consolidated imports.
-- Audit logging is triggered conditionally when req.utilisateur?.id is present, recording action type, target entity, and changed values.

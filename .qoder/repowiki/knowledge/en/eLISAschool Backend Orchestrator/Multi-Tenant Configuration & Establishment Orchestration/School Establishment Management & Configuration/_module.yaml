@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/backend_establishment_config/etablissement_management
+title: School Establishment Management & Configuration
+scope:
+    - backend/src/modules/etablissement/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_student_academics
+    - path: backend/backend_academic_core

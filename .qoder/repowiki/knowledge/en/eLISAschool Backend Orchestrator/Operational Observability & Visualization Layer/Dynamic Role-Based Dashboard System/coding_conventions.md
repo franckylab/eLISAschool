@@ -1,0 +1,4 @@
+- All services are instantiated as module-level singletons exported via `export const <name>Service = new <Name>Service();` pattern.
+- Services consistently use `dashboardCacheService` for read-through caching with context-scoped keys (`userId:etablissementId`) and invalidate by context on mutation operations.
+- Controller handlers uniformly extract `utilisateurId` from `req.utilisateur?.id`, throw `AppError` with 401 if absent, and delegate business logic to service singletons.
+- Widget data resolvers are specified as dot-separated strings (`'serviceName.methodName'`) in the registry, resolved at runtime via lazy dynamic `require()` in `DataAggregatorService.getServiceInstance()`.

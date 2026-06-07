@@ -1,1 +1,0 @@
-Zod for schema-based request validation and TypeScript type inference; TypeORM with UUID primary keys and JSON column storage for stop arrays; centralized runtime configuration via `@modules/configuration/utils/config.helper` for feature toggles (GPS, QR check-in, alert delays).

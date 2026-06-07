@@ -1,0 +1,5 @@
+- Every sub-package exposes a barrel `index.ts` that re-exports all internal modules using `export * from './...'`.
+- Each enum or constant file ends with a default export object aggregating all named exports from that file.
+- Constants are declared with `as const` to enforce immutability and literal typing.
+- Zod schemas use French field names (e.g., `motDePasse`, `confirmationMotDePasse`) and reference shared constants like `LIMITS.PASSWORD_MIN_LENGTH` for constraint values.
+- All source files include a standardized header comment block with module name, version, and author.

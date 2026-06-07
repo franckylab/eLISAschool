@@ -1,6 +1,0 @@
-- Three sub-packages: `common/` (cross-cutting concerns), `config/` (environment and database configuration), `database/` (TypeORM data source, migrations, seeds).
-- `config/env.config.ts` uses Zod schema validation to parse and structure environment variables into domain-scoped objects (`app`, `database`, `jwt`, `redis`, etc.), with dev-mode fallback defaults.
-- `config/database.config.ts` builds a TypeORM `DataSourceOptions` object from `envConfig`, adapting entity/migration paths dynamically for development (.ts) vs production (.js).
-- `database/data-source.ts` exports a singleton `AppDataSource` instance plus `initializeDatabase()` / `closeDatabase()` helpers; `database/run-migrations.ts` provides a standalone CLI script that disables `synchronize` and calls `runMigrations()`.
-- `common/` exposes filters (`error.filter.ts`, `not-found.filter.ts`), interceptors (`audit.interceptor.ts`, `request-logger.interceptor.ts`), middlewares (`tenant.middleware.ts`), DTOs (`pagination.dto.ts`), utilities (`api-response.util.ts`, `pagination.util.ts`, `logger.util.ts`, etc.), and a Redis service (`redis.service.ts`).
-- Each sub-package has an `index.ts` barrel export, enabling clean imports like `@common/filters`, `@config/env.config`, `@database/data-source`.

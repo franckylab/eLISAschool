@@ -1,1 +1,0 @@
-Manages multi-tenant school establishments, their configurations, and lifecycle states.

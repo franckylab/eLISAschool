@@ -1,8 +1,0 @@
-- Two sub-packages: `common/` (cross-cutting Express concerns) and `config/` (application configuration). Entry points are `backend/src/common/index.ts` and `backend/src/config/index.ts`, which re-export all public APIs.
-- `common/filters/` defines a global error-handling pipeline via `errorHandler` and a custom `AppError` class with structured error codes; `not-found.filter.ts` handles 404 cases.
-- `common/interceptors/` provides factory-style Express middlewares (`createAuditInterceptor`) that hook into response lifecycle to emit audit logs without controller instrumentation.
-- `common/middlewares/` contains `tenantMiddleware` for multi-tenancy enforcement, attaching `etablissementId` to `req` based on JWT claims and role hierarchy.
-- `common/dto/` ships Zod schemas for pagination, sorting, search, and date ranges, with helper functions (`createCustomPaginationSchema`, `validatePaginationQuery`) for composing query DTOs.
-- `common/utils/` centralizes API response builders (`sendSuccess`, `sendPaginatedV2`), TypeORM-aware pagination helpers (`paginateWithRepository`, `paginateWithQueryBuilder`, cursor-based pagination), a Winston logger, crypto/QR utilities, and a Zod-based DTO validator.
-- `common/types/express.d.ts` extends the Express `Request` interface with `utilisateur` and `etablissementId`, enabling type-safe access in downstream modules.
-- `config/` uses Zod to validate and structure environment variables into domain-scoped objects (`envConfig.app`, `envConfig.database`, etc.), with dev-mode fallbacks for missing secrets. Dependency direction flows inward: config is consumed by other layers; common utilities depend only on Express, Zod, TypeORM, and Winston.

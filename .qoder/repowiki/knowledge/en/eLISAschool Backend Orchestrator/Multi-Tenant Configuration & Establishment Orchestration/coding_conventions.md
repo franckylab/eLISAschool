@@ -1,0 +1,2 @@
+- Both modules expose singleton service instances (e.g., `etablissementService`, `configurationService`) as named exports alongside their class definitions.
+- Both modules utilize TypeORM `simple-json` column types for storing complex, semi-structured configuration objects within their respective entities.

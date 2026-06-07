@@ -1,1 +1,0 @@
-Orchestrates core school operational modules by enforcing a shared multi-tenant architecture and standardized CRUD patterns across establishment, personnel, and service domains.

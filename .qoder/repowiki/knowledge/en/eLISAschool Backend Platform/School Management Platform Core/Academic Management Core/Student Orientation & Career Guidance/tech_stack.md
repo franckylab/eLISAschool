@@ -1,3 +1,0 @@
-- TypeORM for database interaction with PostgreSQL-specific features (ILIKE, enums).
-- Zod for schema-based request validation.
-- Express.js for HTTP routing.

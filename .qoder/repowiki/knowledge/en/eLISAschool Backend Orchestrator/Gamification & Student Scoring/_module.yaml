@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/backend_gamification_scoring
+title: Gamification & Student Scoring
+scope:
+    - backend/src/modules/gamification/
+    - backend/src/modules/scoring/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_student_academics
+    - path: backend/backend_establishment_config/system_configuration

@@ -1,4 +1,0 @@
-- Follows a standard layered architecture: Controllers (Express routers) -> Services (Business logic) -> Entities (TypeORM models).
-- Uses Zod for request validation in DTOs, enforced via a local `validate` helper in the controller.
-- Exports modules via barrel files (`index.ts`) in each subdirectory and the root.
-- Depends on `@modules/auth` for middleware and `@database/data-source` for TypeORM repository access.

@@ -1,4 +1,0 @@
-- All services instantiate repositories via `AppDataSource.getRepository()` in their constructors.
-- All controllers implement a local `validate()` helper using Zod schemas for request validation.
-- All API responses follow a uniform JSON structure: `{ success: boolean, data: any, timestamp: string }`.
-- All services import configuration helpers from `@modules/configuration/utils/config.helper` to retrieve dynamic parameters.

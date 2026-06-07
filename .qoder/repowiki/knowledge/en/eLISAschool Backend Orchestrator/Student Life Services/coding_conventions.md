@@ -1,0 +1,4 @@
+- Each sub-module exports a singleton service instance alongside the class (e.g. export const cantineService = new CantineService()) for direct import without manual instantiation.
+- All route handlers wrap business logic in try/catch blocks that delegate errors to Express next(error), relying on a global error filter for consistent response formatting.
+- Every HTTP response includes a uniform envelope with success: true, data payload, and an ISO timestamp generated inline via new Date().toISOString().
+- Services read module-specific feature flags and thresholds from centralized configuration using getParamBoolean/getParamNumber with sensible defaults, enabling runtime toggling without code changes.

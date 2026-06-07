@@ -1,3 +1,0 @@
-- Services are exported as singleton instances (e.g., `export const widgetResolverService = new WidgetResolverService()`) for direct import and usage.
-- Widget data resolvers are defined as string paths (e.g., 'service.method') in the registry and dynamically invoked by the data aggregator.
-- Cache keys are consistently prefixed with 'dashboard:' and often include user or establishment context for scoped invalidation.

@@ -1,4 +1,0 @@
-- Follows a standard Express controller-service-repository pattern using TypeORM for persistence.
-- Integrates with a centralized configuration module (`@modules/configuration`) to dynamically adjust point values and feature flags (e.g., leaderboard visibility).
-- Uses Zod schemas in DTOs for request validation, enforced by a local `validate` helper in the controller.
-- Exports entities, services, and controllers via barrel files (`index.ts`) for clean module boundaries.

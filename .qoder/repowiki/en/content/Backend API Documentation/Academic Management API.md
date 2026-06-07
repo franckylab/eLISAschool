@@ -14,6 +14,9 @@
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 - [bulletins.controller.ts](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts)
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
+- [validation-workflow.controller.ts](file://backend/src/modules/validation-workflow/controllers/validation-workflow.controller.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [role.middleware.ts](file://backend/src/modules/auth/middlewares/role.middleware.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
@@ -23,20 +26,29 @@
 - [index.ts](file://backend/src/index.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced Notes module documentation to include validation workflow integration
+- Added new Validation Workflow module documentation covering automatic workflow creation and intelligent validation routing
+- Updated Grades endpoint documentation to reflect automatic workflow creation upon note creation
+- Added intelligent validation routing based on status changes for notes module
+- Included validation workflow statistics and configuration endpoints
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Validation Workflow System](#validation-workflow-system)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, and establishment management. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, and institutional hierarchy management. The documentation also outlines data relationships between academic entities, validation rules, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
+This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, establishment management, and the integrated validation workflow system. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, institutional hierarchy management, and automated validation processes. The documentation also outlines data relationships between academic entities, validation rules, workflow automation, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
 
 ## Project Structure
 The Academic Management module is organized by domain entities under the backend/src/modules directory. Each domain includes:
@@ -59,6 +71,9 @@ X["CyclesController<br/>Cycles"]
 S["EtablissementController<br/>Establishment"]
 B["BulletinsController<br/>Reports"]
 T["NotesController<br/>Grades"]
+end
+subgraph "Validation Workflow System"
+VW["ValidationWorkflowController<br/>Validation Workflows"]
 end
 subgraph "Auth & Common"
 AM["Auth Middleware"]
@@ -117,6 +132,11 @@ T --> RM
 T --> PG
 T --> EF
 T --> RI
+VW --> AM
+VW --> RM
+VW --> PG
+VW --> EF
+VW --> RI
 ```
 
 **Diagram sources**
@@ -130,6 +150,7 @@ T --> RI
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 - [bulletins.controller.ts](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts)
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [validation-workflow.controller.ts](file://backend/src/modules/validation-workflow/controllers/validation-workflow.controller.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [role.middleware.ts](file://backend/src/modules/auth/middlewares/role.middleware.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
@@ -315,12 +336,12 @@ This section documents the primary academic management endpoints and their assoc
 **Section sources**
 - [bulletins.controller.ts](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts)
 
-### Grades (Notes)
+### Grades (Notes) - Enhanced
 - Base URL: `/api/notes`
 - Methods:
   - GET /: List grades
-  - POST /: Create a grade
-  - PATCH /:id: Update a grade
+  - POST /: Create a grade (automatically creates validation workflow)
+  - PATCH /:id: Update a grade (intelligent validation routing based on status changes)
   - DELETE /:id: Delete a grade
 - Authentication and Roles:
   - Requires authentication middleware
@@ -330,15 +351,22 @@ This section documents the primary academic management endpoints and their assoc
   - Responses include success flag and data payload
 - Business Rules:
   - Validation errors return structured error response
+  - Automatic workflow creation upon grade creation
+  - Intelligent validation routing based on status changes
+  - Status synchronization with validation workflow state
+
+**Updated** Enhanced with automatic validation workflow creation and intelligent status-based routing
 
 **Section sources**
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 
 ## Architecture Overview
-The Academic Management API follows a layered architecture:
+The Academic Management API follows a layered architecture with integrated validation workflow support:
 - Controllers handle HTTP requests, enforce authentication/authorization, and delegate to services
 - Services encapsulate business logic and coordinate with repositories/entities
 - DTOs validate request/response payloads
+- Validation workflow service manages automated approval processes
 - Middlewares and guards enforce authentication and role-based access
 - Filters and interceptors standardize error handling and logging
 
@@ -350,6 +378,7 @@ AuthMW["Auth Middleware"]
 RoleMW["Role Middleware"]
 Guard["Permission Guard"]
 Service["Services"]
+ValidationService["Validation Workflow Service"]
 DTO["DTOs"]
 Entity["Entities"]
 Filter["Error Filter"]
@@ -359,6 +388,7 @@ Ctrl --> AuthMW
 Ctrl --> RoleMW
 Ctrl --> Guard
 Ctrl --> Service
+Service --> ValidationService
 Service --> DTO
 Service --> Entity
 Ctrl --> Filter
@@ -372,6 +402,7 @@ Ctrl --> Interceptor
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
 ## Detailed Component Analysis
 
@@ -438,8 +469,42 @@ EtabCtrl-->>Admin : 200 OK
 **Diagram sources**
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 
+### Enhanced Grade Validation Workflow
+The enhanced notes module now integrates with validation workflows for automatic approval processes.
+
+```mermaid
+sequenceDiagram
+participant Teacher as "Teacher"
+participant NotesCtrl as "NotesController"
+participant NotesSvc as "NotesService"
+participant ValidationSvc as "ValidationWorkflowService"
+participant Admin as "Administrator"
+Teacher->>NotesCtrl : POST /api/notes (create grade)
+NotesCtrl->>NotesSvc : create(noteDto)
+NotesSvc->>ValidationSvc : createWorkflow('notes', noteId)
+ValidationSvc-->>NotesSvc : workflowCreated
+NotesSvc-->>NotesCtrl : gradeCreated + workflow
+NotesCtrl-->>Teacher : 201 Created (BROUILLON status)
+Teacher->>NotesCtrl : PATCH /api/notes/ : id (change to VALIDEE)
+NotesCtrl->>NotesSvc : update(validatedDto)
+NotesSvc->>ValidationSvc : findByModuleAndEntite('notes', noteId)
+ValidationSvc-->>NotesSvc : workflowFound
+NotesSvc->>ValidationSvc : traiterValidation(workflowId, APPROUVE)
+ValidationSvc-->>NotesSvc : workflowCompleted
+NotesSvc->>NotesSvc : update note status to PUBLIEE
+NotesSvc-->>NotesCtrl : gradeUpdated
+NotesCtrl-->>Teacher : 200 OK (PUBLIEE status)
+```
+
+**Updated** Added validation workflow integration for automatic approval processes
+
+**Diagram sources**
+- [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
+
 ### Validation and Error Handling Flow
-Validation and error handling are centralized across controllers.
+Validation and error handling are centralized across controllers with enhanced workflow integration.
 
 ```mermaid
 flowchart TD
@@ -449,17 +514,55 @@ Roles --> Validate["DTO Validation"]
 Validate --> Valid{"Valid?"}
 Valid --> |No| Error["AppError (400 VALIDATION_ERROR)"]
 Valid --> |Yes| ServiceCall["Service Operation"]
-ServiceCall --> Success["Success Response"]
+ServiceCall --> WorkflowCheck{"Workflow Required?"}
+WorkflowCheck --> |Yes| WorkflowProcess["Validation Workflow Process"]
+WorkflowCheck --> |No| DirectUpdate["Direct Update"]
+WorkflowProcess --> StatusSync["Status Synchronization"]
+DirectUpdate --> Success["Success Response"]
+StatusSync --> Success
 Error --> End(["End"])
 Success --> End
 ```
 
+**Updated** Added workflow processing step for validation-integrated operations
+
 **Diagram sources**
 - [eleves.controller.ts:17-23](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L17-L23)
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
+- [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
+
+## Validation Workflow System
+The validation workflow system provides automated approval processes for academic data with intelligent routing and status management.
+
+### Core Validation Workflow Endpoints
+- Base URL: `/api/validation-workflows`
+- Methods:
+  - GET /check/:module/:entityId: Check if an entity is validated
+  - PUT /config/:module: Configure validation roles for a module
+  - GET /stats/:module: Get validation statistics for a module
+
+### Automatic Workflow Creation
+When creating grades (notes), the system automatically creates a validation workflow with appropriate routing based on the establishment's configuration.
+
+### Intelligent Validation Routing
+The system intelligently routes validation decisions based on:
+- Module-specific validation requirements
+- User role hierarchy
+- Establishment configuration
+- Status change patterns
+
+### Validation Workflow Types
+- Simple Validation (1 level): Basic approval processes
+- Standard Validation (2 levels): Academic approvals with supervisor review
+- Advanced Validation (3 levels): Critical academic decisions
+- Validation with Rejection: Flexible approval process with correction capability
+
+**Section sources**
+- [validation-workflow.controller.ts](file://backend/src/modules/validation-workflow/controllers/validation-workflow.controller.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
 ## Dependency Analysis
-The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints.
+The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints, with enhanced integration for validation workflows.
 
 ```mermaid
 graph TB
@@ -470,10 +573,17 @@ ElevesCtrl --> ErrorF["Error Filter"]
 ElevesCtrl --> LoggerI["Request Logger Interceptor"]
 ElevesCtrl --> ElevesDTO["Eleves DTO"]
 ElevesCtrl --> EleveEntity["Eleve Entity"]
+NotesCtrl["NotesController"] --> ValidationService["Validation Workflow Service"]
+NotesCtrl --> NotesService["Notes Service"]
+ValidationService --> WorkflowEntity["Workflow Validation Entity"]
 ```
+
+**Updated** Added validation workflow service integration for notes module
 
 **Diagram sources**
 - [eleves.controller.ts:1-58](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L58)
+- [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [role.middleware.ts](file://backend/src/modules/auth/middlewares/role.middleware.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
@@ -484,27 +594,35 @@ ElevesCtrl --> EleveEntity["Eleve Entity"]
 
 **Section sources**
 - [eleves.controller.ts:1-58](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L58)
+- [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 
 ## Performance Considerations
 - Centralized validation reduces redundant checks and improves error consistency
 - Logging interceptor enables request tracing without modifying controller logic
 - Role-based access control minimizes unauthorized operations and reduces downstream failures
 - DTO-driven validation prevents malformed payloads and reduces service-level error handling overhead
+- **Enhanced** Validation workflow integration optimizes approval processes and reduces manual intervention
+- **Enhanced** Automatic workflow creation eliminates manual setup overhead for academic data
 
 ## Troubleshooting Guide
 Common issues and resolutions:
 - Validation errors: Ensure request payloads conform to DTO schemas; errors are returned with a structured format indicating validation failures
 - Authentication failures: Verify bearer tokens and ensure the user has the required roles
-- Authorization failures: Confirm the requesting user’s role aligns with endpoint permissions
+- Authorization failures: Confirm the requesting user's role aligns with endpoint permissions
 - Logging: Enable request logging to capture request/response metadata for debugging
+- **New** Validation workflow issues: Check workflow configuration and role assignments for the specific module
+- **New** Status synchronization problems: Verify that validation workflow completion triggers proper status updates
+
+**Updated** Added troubleshooting guidance for validation workflow integration
 
 **Section sources**
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
+- [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
 ## Conclusion
-The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The documented endpoints, schemas, and workflows enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, and establishment hierarchies while supporting reporting and grading operations.
+The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data with integrated validation workflow support. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The enhanced notes module now supports automatic workflow creation and intelligent validation routing, streamlining academic approval processes. The documented endpoints, schemas, validation workflows, and automated approval processes enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, establishment hierarchies, and grading operations while supporting comprehensive reporting and validation capabilities.
 
 ## Appendices
 
@@ -519,3 +637,11 @@ The Academic Management API provides a robust, secure, and scalable foundation f
 - Establishment: GET /api/etablissement, PATCH /api/etablissement
 - Reports: GET /api/bulletins, POST /api/bulletins, PATCH /api/bulletins/:id, DELETE /api/bulletins/:id
 - Grades: GET /api/notes, POST /api/notes, PATCH /api/notes/:id, DELETE /api/notes/:id
+- **New** Validation Workflows: GET /api/validation-workflows/check/:module/:entityId, PUT /api/validation-workflows/config/:module, GET /api/validation-workflows/stats/:module
+
+### Validation Workflow Configuration
+- **Automatic Creation**: Validation workflows are automatically created when grades are submitted
+- **Intelligent Routing**: Status changes trigger appropriate validation decisions based on established rules
+- **Status Synchronization**: Workflow completion automatically updates grade status (PUBLIEE/BROUILLON/VALIDEE)
+- **Statistics Tracking**: Real-time monitoring of validation workflow performance and completion rates
+- **Role-Based Configuration**: Establishment-specific validation role assignments for different academic modules

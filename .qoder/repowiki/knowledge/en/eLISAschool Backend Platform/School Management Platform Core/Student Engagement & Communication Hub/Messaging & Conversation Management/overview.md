@@ -1,1 +1,0 @@
-Provides conversation creation, message sending, participant management, and unread tracking for user-to-user and group messaging.

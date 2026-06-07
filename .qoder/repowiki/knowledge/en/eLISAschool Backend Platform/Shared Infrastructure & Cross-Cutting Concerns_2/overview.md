@@ -1,1 +1,0 @@
-Provides centralized configuration, database connectivity, shared middleware, interceptors, error handling, pagination utilities, and Redis caching for the backend application.

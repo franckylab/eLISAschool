@@ -1,5 +1,0 @@
-- Layered architecture: controllers (Express router) → services (TypeORM business logic) → entities (database models), with DTOs using Zod schemas for validation.
-- Two core entities: `Etablissement` (school establishment metadata) and `EtablissementConfig` (per-establishment settings including themes, quotas, modules, regional params) linked via a bidirectional 1:1 relation.
-- Controllers apply `authMiddleware` and `requireRoles` for role-based access; CRUD operations restricted to SUPER_ADMIN, config updates allow ADMIN + SUPER_ADMIN.
-- Service layer uses TypeORM repositories via `AppDataSource`; the `create` method employs explicit transaction management (`createQueryRunner`, `startTransaction`, `commitTransaction`/`rollbackTransaction`) to atomically create both the establishment and its default config.
-- Module entry point (`index.ts`) re-exports all sub-modules (entities, dto, services, controllers) for consolidated imports.

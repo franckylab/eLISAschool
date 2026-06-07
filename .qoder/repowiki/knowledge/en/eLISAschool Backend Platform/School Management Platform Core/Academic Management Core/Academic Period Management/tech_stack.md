@@ -1,1 +1,0 @@
-Uses Zod for schema-based validation and TypeORM for database interaction with UUID primary keys.

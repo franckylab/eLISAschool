@@ -1,1 +1,0 @@
-Manages academic year lifecycle including creation, activation, closure, and multi-tenancy scoping for educational institutions.

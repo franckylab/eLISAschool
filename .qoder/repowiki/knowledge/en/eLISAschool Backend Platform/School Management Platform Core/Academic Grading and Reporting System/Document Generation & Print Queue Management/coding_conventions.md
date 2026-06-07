@@ -1,4 +1,0 @@
-- Controllers delegate all business logic to service classes and only handle HTTP request/response cycles.
-- Zod schemas are defined in DTO files and used for input validation in controllers via a shared validate helper.
-- Services use TypeORM repositories obtained from a global AppDataSource for database operations.
-- Entities use UUIDs as primary keys and include createdAt/updateDate timestamps.

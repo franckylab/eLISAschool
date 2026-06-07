@@ -1,5 +1,0 @@
-- Layered structure: controllers (Express router with Zod-validated routes), services (TypeORM repository-based business logic), entities (Conversation, ParticipantConversation, Message), and DTOs (Zod schemas).
-- Module entry point (`index.ts`) re-exports all sub-packages via barrel exports.
-- Controller applies `authMiddleware` globally, delegates to `MessagerieService`, and wraps responses in a `{ success, data, timestamp }` envelope.
-- Service uses centralized configuration helpers (`getParamNumber`, `getParamBoolean`) for runtime limits like max participants and message length.
-- Dependency direction: controller → service → TypeORM repositories/entities; DTOs are shared across controller validation and service typing.

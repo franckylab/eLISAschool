@@ -1,1 +1,0 @@
-Manages runtime application configuration, system parameters with multi-tenant scoping, change history tracking, and backup/restore capabilities for eLISAschool.

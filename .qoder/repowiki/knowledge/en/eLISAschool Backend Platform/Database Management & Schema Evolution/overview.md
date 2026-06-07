@@ -1,1 +1,0 @@
-Manages database connection lifecycle, schema migrations, and seed data for the eLISAschool application using TypeORM.

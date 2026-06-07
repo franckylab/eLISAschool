@@ -1,1 +1,0 @@
-TypeORM DataSource with PostgreSQL (UUID primary keys, JSONB columns, PL/pgSQL triggers); mixed SQL and TypeScript migration formats; dotenv for environment loading in seed scripts.

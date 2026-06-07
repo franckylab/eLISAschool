@@ -1,1 +1,0 @@
-Zod for schema-based request validation; TypeORM with PostgreSQL enums and simple-json columns for flexible data storage; centralized parameter configuration via `@modules/configuration/utils/config.helper`.

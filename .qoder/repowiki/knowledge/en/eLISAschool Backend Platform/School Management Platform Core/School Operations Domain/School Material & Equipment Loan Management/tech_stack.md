@@ -1,1 +1,0 @@
-Zod for runtime schema validation; TypeORM with UUID primary keys and enum columns; Express Router for HTTP routing; centralized configuration via `@modules/configuration/utils/config.helper`.

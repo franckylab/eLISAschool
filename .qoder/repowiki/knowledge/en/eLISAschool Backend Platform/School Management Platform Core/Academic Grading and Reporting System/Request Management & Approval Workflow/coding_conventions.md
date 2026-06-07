@@ -1,4 +1,0 @@
-- All controller routes wrap async logic in try-catch blocks delegating errors to Express error-handling middleware via `next(error)`.
-- Every successful API response follows a uniform envelope: `{ success: true, data: ..., timestamp: ISO string }`.
-- Input validation uses a local `validate()` helper that calls Zod's `safeParse()` and throws an `AppError` on failure.
-- Service methods retrieve dynamic configuration parameters (e.g., approval levels, auto-notify flags) via async helper calls before executing business logic.

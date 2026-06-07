@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/backend_dashboard_monitoring/dashboard
+title: Dynamic Role-Based Dashboard System
+scope:
+    - backend/src/modules/dashboard/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_auth_rbac
+    - path: backend/backend_dashboard_monitoring/monitoring
+    - path: backend/backend_operations

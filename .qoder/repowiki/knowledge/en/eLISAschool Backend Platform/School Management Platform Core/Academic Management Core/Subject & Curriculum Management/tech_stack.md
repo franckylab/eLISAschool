@@ -1,1 +1,0 @@
-Uses Zod for schema-based validation of DTOs.

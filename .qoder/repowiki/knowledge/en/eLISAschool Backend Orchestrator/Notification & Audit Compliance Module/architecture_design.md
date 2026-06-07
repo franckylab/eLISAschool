@@ -1,0 +1,3 @@
+- Children operate as independent NestJS modules with no direct cross-module imports, relying on the parent backend application for shared infrastructure (database, auth guards).
+- `notifications` handles real-time event dispatching via provider registry pattern, while `audit` provides retrospective querying and archival of system events.
+- Integration is implicit at the service layer: notification actions likely trigger audit log entries via shared domain events or service calls not visible in this module scope, enforced by application-level business logic rather than direct module coupling.

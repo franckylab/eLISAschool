@@ -1,1 +1,0 @@
-Zod schema validation for all DTOs (`dto/configuration.dto.ts`), TypeORM repositories with composite unique index on `(cle, etablissementId)` for parameter scoping, Node.js zlib for gzip compression of backup snapshots, EventEmitter pattern for cross-module config change notifications.

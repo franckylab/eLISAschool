@@ -1,4 +1,0 @@
-- Children communicate through a shared `src/common` layer providing cross-cutting concerns (pagination, audit interceptors, error filters, tenant middleware) that all business modules depend on.
-- Identity and access control are centralized in the `auth` and `rbac` modules, with guards and middlewares enforcing permissions across all other domain modules.
-- Database schema evolution is managed centrally via `src/database/migrations` and seeds, ensuring consistent state across all modules.
-- The `app.ts` entry point wires together all modules, applying global middleware and establishing the multi-tenant context before routing to individual domain controllers.

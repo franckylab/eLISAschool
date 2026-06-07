@@ -1,0 +1,3 @@
+- All API responses adhere to a standardized envelope structure (`success`, `data`, `meta`) enforced by shared utility functions in `common/utils/api-response.util.ts`.
+- Multi-tenancy is implemented via a global `tenantMiddleware` that resolves and injects `etablissementId` into the request context based on JWT claims and query parameters.
+- Audit logging is automated through a reusable `createAuditInterceptor` that captures CRUD operations post-response without requiring manual instrumentation in each controller.

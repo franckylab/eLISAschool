@@ -1,0 +1,5 @@
+- Layered structure: controllers (Express router with auth/role guards) → services (TypeORM repository operations with transactional workflows) → entities (Etablissement + EtablissementConfig 1:1 relationship) → DTOs (Zod schemas for validation).
+- Entry point: `index.ts` re-exports all sub-modules; controller exported as `etablissementController` router.
+- Service layer uses TypeORM query runners for atomic transactions during establishment creation (entity + config + optional validation workflow).
+- Dependency direction: controllers depend on services; services depend on TypeORM repositories and external modules (`@modules/validation-workflow`, `@modules/configuration`).
+- Architectural evidence: `controllers/etablissement.controller.ts` defines REST routes with `authMiddleware` and `requireRoles`; `services/etablissement.service.ts` orchestrates CRUD with transaction boundaries; `entities/etablissement.entity.ts` and `etablissement-config.entity.ts` define the domain model with TypeORM decorators.

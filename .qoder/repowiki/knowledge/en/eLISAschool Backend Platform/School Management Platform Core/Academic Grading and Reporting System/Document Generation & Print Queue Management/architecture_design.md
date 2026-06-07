@@ -1,5 +1,0 @@
-- Follows a standard MVC-like structure with controllers, services, entities, and DTOs.
-- Uses Express.js for routing and TypeORM for database interactions with `ModeleDocument` and `FileImpression` entities.
-- Implements Zod schemas in DTOs for request validation, enforced by a helper function in the controller.
-- Service layer handles business logic, including template processing, placeholder replacement, and managing print job statuses.
-- Integrates with an external configuration module to fetch establishment details for document headers and footers.

@@ -1,4 +1,0 @@
-- Each sub-module defines a createXxxSchema and derives updateXxxSchema via .partial(), with TypeScript types inferred via z.infer.
-- All controller routes are protected by authMiddleware; mutation routes additionally enforce requireRoles(Role.ADMIN, Role.SUPER_ADMIN).
-- Service classes instantiate their TypeORM repository in the constructor using AppDataSource.getRepository(EntityClass) and store it as a private field.
-- Controllers wrap every route handler in try/catch and forward errors to Express via next(error), returning { success: true, data: ... } on success.

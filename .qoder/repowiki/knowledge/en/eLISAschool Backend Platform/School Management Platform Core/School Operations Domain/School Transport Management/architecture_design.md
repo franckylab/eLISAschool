@@ -1,6 +1,0 @@
-- Follows a layered architecture: controllers (Express router) → services (TypeORM business logic) → entities (database models), with Zod DTOs for validation.
-- Entry point is `index.ts`, which re-exports all sub-modules (entities, dto, services, controllers) for external consumption.
-- Controllers use Express Router with middleware-based auth (`authMiddleware`, `adminOnly`, `staffOnly`) and a local `validate` helper wrapping Zod's `safeParse`.
-- Services depend on TypeORM repositories via a shared `AppDataSource` singleton and integrate centralized configuration parameters (e.g., GPS enablement, QR check-in toggle, alert delay) through helper functions from the configuration module.
-- Entities define three core aggregates: `LigneTransport` (routes with stops and driver), `InscriptionTransport` (student enrollment linking to lines), and `PresenceTransport` (daily attendance records). All include multi-tenancy via optional `etablissementId` foreign keys.
-- Dependency direction flows inward: controllers depend on services, services depend on entities and external config/auth modules; no circular dependencies within the module.

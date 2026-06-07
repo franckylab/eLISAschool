@@ -1,5 +1,0 @@
-- All controller routes enforce ADMIN-only access using the `requireRoles('ADMIN')` middleware after global authentication.
-- Services are instantiated as singletons (e.g., `export const rolesService = new RolesService()`) and exported for use in controllers.
-- Input validation is performed using `validateDto` with Zod schemas before passing data to service methods.
-- Successful API responses are standardized using the `successResponse` utility with consistent message formatting.
-- Cache invalidation is triggered via `permissionResolverService.invalidateUserCache` or `invalidateCacheForRole` after any role or permission mutation.

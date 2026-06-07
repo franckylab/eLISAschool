@@ -1,1 +1,0 @@
-Zod for runtime schema validation; TypeORM with PostgreSQL-style enums and UUID primary keys; centralized configuration system via `@modules/configuration/utils/config.helper` for parameterized behavior (planning days, max debt, currency).

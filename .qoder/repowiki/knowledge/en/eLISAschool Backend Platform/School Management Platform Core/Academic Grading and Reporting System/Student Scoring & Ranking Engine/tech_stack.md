@@ -1,1 +1,0 @@
-Uses TypeORM for ORM mapping with UUID primary keys and simple-json columns for flexible score details storage.

@@ -1,0 +1,1 @@
+Manages core academic entities including school years, cycles, grade levels, periods, and subjects with validation workflows and multi-tenancy support.

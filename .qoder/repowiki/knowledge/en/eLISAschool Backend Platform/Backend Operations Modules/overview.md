@@ -1,1 +1,0 @@
-Five domain modules (personnel, materiel, impressions, requetes, messagerie) implementing school management business logic with consistent layered architecture.

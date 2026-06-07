@@ -1,1 +1,0 @@
-Zod for request validation; TypeORM for data access; Express for HTTP routing.

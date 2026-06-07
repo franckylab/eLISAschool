@@ -1,1 +1,0 @@
-Manages student orientation profiles, career path suggestions, job descriptions, and counseling appointments.

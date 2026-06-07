@@ -1,0 +1,1 @@
+Build via `npm run build` (runs `tsc`); lint via `npm run lint` / `npm run lint:fix` using ESLint on `src/**/*.ts`. Output goes to `dist/` with type declarations.

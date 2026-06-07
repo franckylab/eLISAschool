@@ -1,4 +1,0 @@
-- Services are instantiated as singletons and exported as constants (e.g., `export const bulletinsService = new BulletinsService();`).
-- Controllers use a local `validate` helper function to enforce Zod schema validation before calling service methods.
-- Entities use UUIDs as primary keys and include multi-tenancy support via an `etablissementId` field.
-- DTOs are defined using Zod schemas and then inferred into TypeScript types using `z.infer`.

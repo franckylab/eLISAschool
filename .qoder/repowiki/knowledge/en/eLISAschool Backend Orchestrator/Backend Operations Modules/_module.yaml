@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: backend/backend_operations
+title: Backend Operations Modules
+scope:
+    - backend/src/modules/personnel/
+    - backend/src/modules/materiel/
+    - backend/src/modules/impressions/
+    - backend/src/modules/requetes/
+    - backend/src/modules/messagerie/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_notifications_audit/notifications
+    - path: backend/backend_academic_core
+    - path: backend/backend_dashboard_monitoring/dashboard
+    - path: backend/backend_auth_rbac
