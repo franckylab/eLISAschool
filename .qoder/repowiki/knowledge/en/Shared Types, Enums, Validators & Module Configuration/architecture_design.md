@@ -1,5 +1,0 @@
-- The module is organized into five sub-packages under `src/`: `enums`, `types`, `constants`, `validators`, and `config`, each with its own `index.ts` barrel export.
-- The top-level entry point `shared/src/index.ts` re-exports all sub-packages via `export * from './...'`, forming a single public API surface for consumers.
-- Build output targets CommonJS (`tsconfig.json` sets `"module": "commonjs"`) with declaration files enabled (`"declaration": true`), producing `dist/index.js` and `dist/index.d.ts` as specified in `package.json` (`"main"` and `"types"`).
-- Dependency direction is inward: validators import constants (e.g., `auth.validators.ts` imports `LIMITS` from `../constants`), and config imports enums (e.g., `config.registry.ts` imports `ModuleName`, `Role`, `Permission`), but no sub-package depends on another's internal implementation beyond these explicit imports.
-- The `MODULE_REGISTRY` in `config/config.registry.ts` acts as a central metadata hub, mapping every application module to its permissions, default roles, dependencies, and settings — establishing a declarative boundary between module metadata and runtime logic elsewhere.

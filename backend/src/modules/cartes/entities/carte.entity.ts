@@ -15,6 +15,7 @@ export enum TypeCarte {
 
 export enum StatutCarte {
     ACTIVE = 'ACTIVE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
     INACTIVE = 'INACTIVE',
     PERDUE = 'PERDUE',
     EXPIREE = 'EXPIREE',
@@ -43,7 +44,7 @@ export class Carte {
     @Column({ type: 'text', nullable: true })
     qrCode?: string;
 
-    @Column({ type: 'enum', enum: StatutCarte, default: StatutCarte.ACTIVE })
+    @Column({ type: 'varchar', length: 30, default: StatutCarte.ACTIVE })
     statut!: StatutCarte;
 
     @Column({ type: 'date', nullable: true })

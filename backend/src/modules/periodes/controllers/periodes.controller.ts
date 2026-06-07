@@ -53,7 +53,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePeriodeSchema, req.body);
-        const periode = await service.update(req.params.id, dto);
+        const periode = await service.update(req.params.id, dto, req.utilisateur?.id, req.etablissementId);
         res.json({ success: true, data: periode });
     } catch (error) { next(error); }
 });

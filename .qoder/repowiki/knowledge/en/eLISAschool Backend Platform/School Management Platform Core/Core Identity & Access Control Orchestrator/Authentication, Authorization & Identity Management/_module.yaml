@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: a17b88ea4be113645d51681fb2876530
+title: Authentication, Authorization & Identity Management
+scope:
+    - backend/src/modules/auth/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/core_identity/rbac
+    - path: backend/business_modules/core_identity/utilisateurs
+    - path: backend/business_modules/core_identity/audit
+    - path: backend/business_modules/system_configuration/monitoring
+    - path: backend/business_modules/academic_management

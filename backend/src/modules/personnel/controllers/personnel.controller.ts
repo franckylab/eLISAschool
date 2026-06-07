@@ -42,7 +42,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPersonnelSchema, req.body);
-        const membre = await service.createMembre(dto, req.etablissementId);
+        const membre = await service.createMembre(dto, req.etablissementId, req.utilisateur?.id);
         res.status(201).json({ success: true, data: membre });
     } catch (error) { next(error); }
 });

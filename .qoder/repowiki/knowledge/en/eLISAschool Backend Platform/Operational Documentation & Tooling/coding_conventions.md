@@ -1,0 +1,3 @@
+- Documentation files use French headers and content for system descriptions and API guides.
+- Shell scripts include robust environment variable parsing and explicit error handling with exit codes.
+- Unit tests follow a descriptive 'devrait' (should) naming convention for test cases in French.

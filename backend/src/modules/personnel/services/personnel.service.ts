@@ -6,11 +6,13 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, TypePersonnel } from '../entities';
+import { MembrePersonnel, TypePersonnel, StatutPersonnel } from '../entities';
 import { CreatePersonnelDto, UpdatePersonnelDto, CreateTypePersonnelDto, QueryPersonnelDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
 export class PersonnelService {
     private personnelRepo: Repository<MembrePersonnel>;
@@ -38,7 +40,7 @@ export class PersonnelService {
 
     // ==== MEMBRES PERSONNEL ====
 
-    async createMembre(dto: CreatePersonnelDto, etablissementId?: string): Promise<MembrePersonnel> {
+    async createMembre(dto: CreatePersonnelDto, etablissementId?: string, createurId?: string): Promise<MembrePersonnel> {
         const existing = await this.personnelRepo.findOne({ where: { matricule: dto.matricule } });
         if (existing) throw new AppError('Matricule déjà utilisé', 409, 'MATRICULE_EXISTS');
 
@@ -46,12 +48,29 @@ export class PersonnelService {
         const userUsed = await this.personnelRepo.findOne({ where: { utilisateurId: dto.utilisateurId } });
         if (userUsed) throw new AppError('Cet utilisateur est déjà membre du personnel', 409, 'USER_ALREADY_MEMBER');
 
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('personnel.require_validation', false);
+
         const membre = this.personnelRepo.create({
             ...dto,
             dateEmbauche: new Date(dto.dateEmbauche),
             etablissementId,
+            statut: requireValidation ? StatutPersonnel.EN_ATTENTE_VALIDATION : StatutPersonnel.ACTIF,
         });
         await this.personnelRepo.save(membre);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'personnel',
+                entiteId: membre.id,
+                entiteType: 'MembrePersonnel',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Embauche personnel: ${dto.matricule}`,
+            }, createurId);
+        }
+
         logger.info(`Nouveau membre personnel: ${dto.matricule}`);
         return membre;
     }

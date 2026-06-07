@@ -1,0 +1,3 @@
+- Database migrations are executed via `backend/src/database/run-migrations.ts` (standalone script that initializes a dedicated DataSource with `synchronize: false` and calls `runMigrations()`).
+- Seeds are managed through `backend/src/database/seeds/run-seeds.ts`.
+- In development, `env.config.ts` auto-generates `JWT_SECRET` and `ENCRYPTION_KEY` if missing, allowing zero-config local startup.

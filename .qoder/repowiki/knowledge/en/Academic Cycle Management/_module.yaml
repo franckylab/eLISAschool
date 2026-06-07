@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/business_modules/academic_management/cycles
-title: Academic Cycle Management
-scope:
-    - backend/src/modules/cycles/
-source_files: []
-depends_on: []
-related_to: []

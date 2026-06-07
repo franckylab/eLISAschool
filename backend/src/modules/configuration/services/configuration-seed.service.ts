@@ -197,16 +197,36 @@ export class ConfigurationSeedService {
             { cle: 'notes.show_ranking', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Afficher le classement', modifiableRuntime: true, visible: true, ordre: 2 },
             { cle: 'notes.require_validation', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Validation obligatoire des notes', modifiableRuntime: true, visible: true, ordre: 3 },
             { cle: 'notes.allow_bulk_entry', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Autoriser la saisie en masse', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'notes.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Niveaux de validation des notes', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'notes.validation_roles', valeur: JSON.stringify({ '1': 'ENSEIGNANT', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 6 },
+            { cle: 'notes.auto_notify_on_validation', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'notes', description: 'Notifier les parents après validation', modifiableRuntime: true, visible: true, ordre: 7 },
 
             // ============ CANTINE ============
             { cle: 'cantine.menu_planning_days', valeur: 7, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Jours de planification des menus', modifiableRuntime: true, visible: true, ordre: 1 },
             { cle: 'cantine.allow_preorder', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Autoriser les précommandes', modifiableRuntime: true, visible: true, ordre: 2 },
             { cle: 'cantine.max_debt', valeur: 10000, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Dette maximale autorisée (FCFA)', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'cantine.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Niveaux de validation inscriptions', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'cantine.validation_roles', valeur: JSON.stringify({ '1': 'PERSONNEL', '2': 'RESPONSABLE_CANTINE', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Rôles requis par niveau', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'cantine.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'cantine', description: 'Validation obligatoire des inscriptions cantine', modifiableRuntime: true, visible: true, ordre: 6 },
 
             // ============ TRANSPORT ============
             { cle: 'transport.enable_gps', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Activer le suivi GPS', modifiableRuntime: true, visible: true, ordre: 1 },
             { cle: 'transport.enable_qr_checkin', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Activer le pointage par QR code', modifiableRuntime: true, visible: true, ordre: 2 },
             { cle: 'transport.alert_delay_minutes', valeur: 10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Délai avant alerte retard (minutes)', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'transport.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Niveaux de validation inscriptions', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'transport.validation_roles', valeur: JSON.stringify({ '1': 'PERSONNEL', '2': 'RESPONSABLE_TRANSPORT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Rôles requis par niveau', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'transport.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'transport', description: 'Validation obligatoire des inscriptions transport', modifiableRuntime: true, visible: true, ordre: 6 },
+
+            // ============ BULLETINS ============
+            { cle: 'bulletins.include_ranking', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Inclure le classement', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'bulletins.show_appreciations', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Afficher les appréciations', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'bulletins.validation_threshold', valeur: 10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Seuil de validation (/20)', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'bulletins.calculation_method', valeur: 'ponderee', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Méthode de calcul', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'bulletins.display_coefficients', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Afficher les coefficients', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'bulletins.template_id', valeur: 'default', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Template par défaut', modifiableRuntime: true, visible: true, ordre: 6 },
+            { cle: 'bulletins.validation_workflow', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Activer workflow validation', modifiableRuntime: true, visible: true, ordre: 7 },
+            { cle: 'bulletins.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Niveaux de validation', modifiableRuntime: true, visible: true, ordre: 8 },
+            { cle: 'bulletins.validation_roles', valeur: JSON.stringify({ '1': 'ENSEIGNANT', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'bulletins', description: 'Rôles requis par niveau', modifiableRuntime: true, visible: true, ordre: 9 },
 
             // ============ GAMIFICATION ============
             { cle: 'gamification.points_attendance', valeur: 5, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Points par présence journalière', modifiableRuntime: true, visible: true, ordre: 1 },
@@ -230,6 +250,59 @@ export class ConfigurationSeedService {
             // ============ REQUÊTES ============
             { cle: 'requetes.approval_levels', valeur: 1, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'requetes', description: 'Niveaux d\'approbation', modifiableRuntime: true, visible: true, ordre: 1 },
             { cle: 'requetes.auto_notify', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'requetes', description: 'Notification automatique', modifiableRuntime: true, visible: true, ordre: 2 },
+
+            // ============ CLASSES ============
+            { cle: 'classes.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'classes', description: 'Validation obligatoire des affectations d\'élèves', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'classes.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'classes', description: 'Niveaux de validation des affectations', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'classes.validation_roles', valeur: JSON.stringify({ '1': 'ENSEIGNANT', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'classes', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 3 },
+
+            // ============ MATIÈRES ============
+            { cle: 'matieres.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'matieres', description: 'Validation obligatoire des affectations enseignants et programmes', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'matieres.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'matieres', description: 'Niveaux de validation des affectations/programmes', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'matieres.validation_roles', valeur: JSON.stringify({ '1': 'ENSEIGNANT', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'matieres', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 3 },
+
+            // ============ PÉRIODES ============
+            { cle: 'periodes.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'periodes', description: 'Validation obligatoire de la clôture des périodes', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'periodes.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'periodes', description: 'Niveaux de validation de la clôture', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'periodes.validation_roles', valeur: JSON.stringify({ '1': 'CHEF_ETABLISSEMENT', '2': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'periodes', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 3 },
+
+            // ============ ÉLÈVES ============
+            { cle: 'eleves.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'eleves', description: 'Validation obligatoire des inscriptions d\'élèves', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'eleves.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'eleves', description: 'Niveaux de validation des inscriptions', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'eleves.validation_roles', valeur: JSON.stringify({ '1': 'PERSONNEL', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'eleves', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 3 },
+
+            // ============ PERSONNEL ============
+            { cle: 'personnel.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'personnel', description: 'Validation obligatoire des embauches de personnel', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'personnel.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'personnel', description: 'Niveaux de validation des embauches', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'personnel.validation_roles', valeur: JSON.stringify({ '1': 'CHEF_ETABLISSEMENT', '2': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'personnel', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 3 },
+
+            // ============ CLUBS (workflow) ============
+            { cle: 'clubs.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'clubs', description: 'Validation obligatoire de la création de clubs', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'clubs.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'clubs', description: 'Niveaux de validation des clubs', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'clubs.validation_roles', valeur: JSON.stringify({ '1': 'COORDINATEUR_CLUBS', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'clubs', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'clubs.inscription_require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'clubs', description: 'Validation obligatoire des inscriptions aux clubs', modifiableRuntime: true, visible: true, ordre: 6 },
+
+            // ============ MATÉRIEL (workflow) ============
+            { cle: 'materiel.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'materiel', description: 'Validation obligatoire des acquisitions de matériel', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'materiel.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'materiel', description: 'Niveaux de validation du matériel', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'materiel.validation_roles', valeur: JSON.stringify({ '1': 'GESTIONNAIRE', '2': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'materiel', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'materiel.pret_require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'materiel', description: 'Validation obligatoire des prêts de matériel', modifiableRuntime: true, visible: true, ordre: 6 },
+
+            // ============ CARTES ============
+            { cle: 'cartes.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'cartes', description: 'Validation obligatoire des demandes de carte', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'cartes.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'cartes', description: 'Niveaux de validation des cartes', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'cartes.validation_roles', valeur: JSON.stringify({ '1': 'CHEF_ETABLISSEMENT', '2': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'cartes', description: 'Rôles requis par niveau de validation des cartes', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'cartes.renouvellement_require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'cartes', description: 'Validation obligatoire des renouvellements de carte', modifiableRuntime: true, visible: true, ordre: 6 },
+
+            // ============ ANNÉES SCOLAIRES ============
+            { cle: 'annees_scolaires.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'annees-scolaires', description: 'Validation obligatoire des années scolaires (création et clôture)', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'annees_scolaires.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'annees-scolaires', description: 'Niveaux de validation des années scolaires', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'annees_scolaires.validation_roles', valeur: JSON.stringify({ '1': 'CHEF_ETABLISSEMENT', '2': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'annees-scolaires', description: 'Rôles requis par niveau de validation des années scolaires', modifiableRuntime: true, visible: true, ordre: 5 },
+
+            // ============ ÉTABLISSEMENT ============
+            { cle: 'etablissement.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Validation obligatoire des créations/désactivations d\'établissement', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'etablissement.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Niveaux de validation des établissements', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'etablissement.validation_roles', valeur: JSON.stringify({ '1': 'ADMIN', '2': 'SUPER_ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Rôles requis par niveau de validation des établissements', modifiableRuntime: true, visible: true, ordre: 5 },
 
             // ============ RÉGIONAL ============
             { cle: 'regional.currency', valeur: 'XOF', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.REGIONAL, description: 'Devise monétaire', modifiableRuntime: true, visible: true, ordre: 1, options: [{ value: 'XOF', label: 'Franc CFA (FCFA)' }, { value: 'EUR', label: 'Euro (€)' }, { value: 'USD', label: 'Dollar ($)' }] },

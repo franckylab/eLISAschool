@@ -1,0 +1,6 @@
+- Each module follows a strict four-layer structure: controllers (Express Router), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod validation schemas).
+- Module entry points (`index.ts`) re-export all layers via barrel exports (`export * from './entities'`, etc.), enabling clean imports like `@modules/personnel`.
+- Controllers instantiate service classes directly (`new PersonnelService()`) and delegate all business logic; they handle HTTP concerns (validation via `validateDto`, auth middleware attachment, error forwarding to Express).
+- Services obtain TypeORM repositories from a shared `AppDataSource` in constructors, encapsulating all data access. Some services (`materiel`, `requetes`, `messagerie`) read runtime configuration via `@modules/configuration/utils/config.helper` for parameterized behavior.
+- Dependency direction flows inward: controllers → services → entities/DTOs, with cross-module imports limited to shared auth middlewares (`@modules/auth/middlewares`) and common utilities (`@common/utils`).
+- Multi-tenancy is enforced at the entity level via `etablissementId` foreign keys on most aggregate roots, with services filtering queries by establishment context passed from controllers.

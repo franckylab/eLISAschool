@@ -334,6 +334,55 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
         icon: 'School',
         complexite: 2,
     },
+
+    // ==================================
+    // WIDGETS VALIDATION WORKFLOW
+    // ==================================
+    {
+        id: 'validation-stats-par-module',
+        nom: 'Statistiques Validations',
+        description: 'Validations en cours, complétées, rejetées par module',
+        type: 'stats-cards',
+        roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: ['validation:dashboard:view'],
+        dataResolver: 'dashboardDataService.getValidationStatsParModule',
+        cacheTTL: 300,
+        refreshStrategy: 'interval',
+        etablissementScope: true,
+        module: 'validation-workflow',
+        icon: 'CheckCircle',
+        complexite: 2,
+    },
+    {
+        id: 'validation-en-attente',
+        nom: 'Validations en Attente',
+        description: 'Liste des validations nécessitant votre approbation',
+        type: 'list',
+        roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT, Role.RESPONSABLE_CANTINE, Role.RESPONSABLE_TRANSPORT],
+        permissions: ['validation:dashboard:view'],
+        dataResolver: 'dashboardDataService.getValidationEnAttente',
+        cacheTTL: 180,
+        refreshStrategy: 'interval',
+        etablissementScope: true,
+        module: 'validation-workflow',
+        icon: 'Clock',
+        complexite: 2,
+    },
+    {
+        id: 'validation-temps-moyen',
+        nom: 'Temps Moyen de Validation',
+        description: 'Temps moyen de traitement par niveau et module',
+        type: 'chart-bar',
+        roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: ['validation:dashboard:view'],
+        dataResolver: 'dashboardDataService.getValidationTempsMoyen',
+        cacheTTL: 600,
+        refreshStrategy: 'interval',
+        etablissementScope: true,
+        module: 'validation-workflow',
+        icon: 'Timer',
+        complexite: 3,
+    },
 ];
 
 /**

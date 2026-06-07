@@ -1,0 +1,1 @@
+Orchestrates user lifecycle, authentication, dynamic RBAC authorization, and audit trails through shared entities and cross-module service dependencies.

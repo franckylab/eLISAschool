@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/business_modules/core_identity/rbac
+module_path: backend/backend_auth_rbac/rbac
 title: Role-Based Access Control (RBAC) Management
 scope:
     - backend/src/modules/rbac/

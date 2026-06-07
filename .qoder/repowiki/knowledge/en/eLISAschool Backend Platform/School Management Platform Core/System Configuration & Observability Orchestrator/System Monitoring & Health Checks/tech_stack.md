@@ -1,0 +1,1 @@
+Uses Node.js `os` module for system resource introspection and TypeORM `AppDataSource` for database health verification.

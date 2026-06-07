@@ -1,0 +1,6 @@
+- Two sub-modules: `gamification` (badges, user points, leaderboard) and `scoring` (multi-indicator student scores, ranking rules).
+- Each follows a layered structure: entities define TypeORM models, services encapsulate business logic with repository access via `AppDataSource`, and the gamification module exposes an Express router controller.
+- Both services depend on a centralized configuration helper (`@modules/configuration/utils/config.helper`) for runtime-tunable parameters (e.g., point values, scoring weights, leaderboard toggle).
+- The gamification controller applies `authMiddleware` and `adminOnly` guards on mutation routes, while read-only routes remain public.
+- DTOs use Zod schemas for request validation via a shared `validateDto` utility.
+- Export barrels (`index.ts`) re-export entities, services, DTOs, and controllers for clean module consumption.

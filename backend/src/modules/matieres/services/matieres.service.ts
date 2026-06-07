@@ -6,10 +6,12 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere } from '../entities';
+import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, StatutAffectationMatiere, StatutMatiereNiveau } from '../entities';
 import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithRepository, PaginatedResult } from '@common/utils/pagination.util';
@@ -91,14 +93,38 @@ export class MatieresService {
 
     // ==== PROGRAMME (Matière-Niveau) ====
 
-    async addMatiereToNiveau(dto: CreateMatiereNiveauDto): Promise<MatiereNiveau> {
+    async addMatiereToNiveau(dto: CreateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         const existing = await this.niveauRepo.findOne({
             where: { matiereId: dto.matiereId, niveauId: dto.niveauId }
         });
         if (existing) throw new AppError('Matière déjà dans ce niveau', 409, 'MATIERE_IN_LEVEL_EXISTS');
 
-        const prog = this.niveauRepo.create(dto);
+        // Vérifier si la validation est requise
+        const requireValidation = await getParamBoolean('matieres.require_validation', false);
+
+        const prog = this.niveauRepo.create({
+            ...dto,
+            statut: requireValidation
+                ? StatutMatiereNiveau.EN_ATTENTE_VALIDATION
+                : StatutMatiereNiveau.ACTIF,
+        });
         await this.niveauRepo.save(prog);
+
+        // Créer un workflow de validation si requis
+        if (requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'matieres',
+                entiteId: prog.id,
+                entiteType: 'MatiereNiveau',
+                niveauxRequis: 2,
+                etablissementId,
+            }, createurId);
+
+            logger.info(`[${etablissementId}] Programme matière-niveau créé en attente de validation: ${prog.id}`);
+        } else {
+            logger.info(`Programme matière-niveau créé: ${prog.id}`);
+        }
+
         return prog;
     }
 
@@ -110,17 +136,33 @@ export class MatieresService {
         });
     }
 
-    async updateProgramme(id: string, dto: UpdateMatiereNiveauDto): Promise<MatiereNiveau> {
+    async updateProgramme(id: string, dto: UpdateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         const prog = await this.niveauRepo.findOne({ where: { id } });
         if (!prog) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
         Object.assign(prog, dto);
         await this.niveauRepo.save(prog);
+
+        // Créer un workflow de validation si requis (pour suivi des modifications)
+        const requireValidation = await getParamBoolean('matieres.require_validation', false);
+        if (requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'matieres',
+                entiteId: prog.id,
+                entiteType: 'MatiereNiveau',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: 'Modification du programme',
+            }, createurId);
+
+            logger.info(`[${etablissementId}] Programme modifié avec workflow: ${id}`);
+        }
+
         return prog;
     }
 
     // ==== AFFECTATIONS ENSEIGNANTS ====
 
-    async affecterEnseignant(dto: AffecterEnseignantDto): Promise<AffectationMatiere> {
+    async affecterEnseignant(dto: AffecterEnseignantDto, createurId: string, etablissementId?: string): Promise<AffectationMatiere> {
         const classe = await classesService.findOne(dto.classeId);
 
         // Vérifier si matière est enseignée dans ce niveau (programme)
@@ -129,6 +171,9 @@ export class MatieresService {
         });
         // Warning: Pas obligatoire que ce soit dans le programme pour être enseigné ? Si, logiquement.
         if (!prog) throw new AppError('Cette matière n\'est pas au programme de ce niveau', 400, 'MATIERE_NOT_IN_LEVEL');
+
+        // Vérifier si la validation est requise
+        const requireValidation = await getParamBoolean('matieres.require_validation', false);
 
         // Vérifier doublons ? Un enseignant par matière par classe par année ?
         // Ou plusieurs enseignants possible (co-enseignement) ?
@@ -144,15 +189,50 @@ export class MatieresService {
         if (existing) {
             existing.enseignantId = dto.enseignantId; // Mise à jour de l'enseignant
             if (dto.volumeHoraireHebdo) existing.volumeHoraireHebdo = dto.volumeHoraireHebdo;
+            existing.statut = requireValidation
+                ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
+                : StatutAffectationMatiere.ACTIVE;
             await this.affectationRepo.save(existing);
+
+            // Créer un workflow si requis
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'matieres',
+                    entiteId: existing.id,
+                    entiteType: 'AffectationMatiere',
+                    niveauxRequis: 2,
+                    etablissementId,
+                    commentaire: 'Modification affectation enseignant',
+                }, createurId);
+            }
+
             return existing;
         }
 
         const affectation = this.affectationRepo.create({
             ...dto,
-            anneeScolaireId: classe.anneeScolaireId
+            anneeScolaireId: classe.anneeScolaireId,
+            statut: requireValidation
+                ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
+                : StatutAffectationMatiere.ACTIVE,
         });
         await this.affectationRepo.save(affectation);
+
+        // Créer un workflow de validation si requis
+        if (requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'matieres',
+                entiteId: affectation.id,
+                entiteType: 'AffectationMatiere',
+                niveauxRequis: 2,
+                etablissementId,
+            }, createurId);
+
+            logger.info(`[${etablissementId}] Affectation enseignant créée en attente de validation: ${dto.enseignantId} → ${dto.matiereId}`);
+        } else {
+            logger.info(`Affectation enseignant créée: ${dto.enseignantId} → ${dto.matiereId}`);
+        }
+
         return affectation;
     }
 }

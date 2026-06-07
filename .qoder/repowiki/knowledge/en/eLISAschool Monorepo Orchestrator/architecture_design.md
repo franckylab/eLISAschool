@@ -1,4 +1,3 @@
-- Uses npm workspaces to manage `backend`, `frontend`, and `shared` packages, enabling unified dependency resolution and cross-package scripting.
-- Leverages `docker-compose.yml` to orchestrate the runtime environment, wiring the Node.js backend and React frontend with PostgreSQL and Redis services via a shared bridge network.
-- Enforces environment consistency through root-level `.env` files consumed by both Docker services and local development scripts.
-- Provides unified lifecycle commands (e.g., `npm run dev`, `npm run build`) that parallelize or sequence operations across child modules.
+- Uses npm workspaces to manage `backend`, `frontend`, and `shared` packages, enabling shared dependency resolution and cross-module scripting.
+- Leverages `docker-compose.yml` to orchestrate infrastructure services (PostgreSQL, Redis) and the backend application, enforcing service health checks and network isolation.
+- Centralizes development and production workflows through root-level `package.json` scripts that delegate to workspace-specific commands or Docker Compose files.

@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: 027e093a3a34a37093b97067dac4686f
+title: Academic Period Management
+scope:
+    - backend/src/modules/periodes/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/academic_management/annees_scolaires
+    - path: backend/business_modules/grading_reporting/notes
+    - path: backend/business_modules/grading_reporting/bulletins
+    - path: backend/business_modules/engagement_communication/clubs

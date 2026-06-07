@@ -62,8 +62,16 @@ router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Res
 router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMatiereNiveauSchema, req.body);
-        const prog = await service.addMatiereToNiveau(dto);
+        const prog = await service.addMatiereToNiveau(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: prog });
+    } catch (error) { next(error); }
+});
+
+router.patch('/programme/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(updateMatiereNiveauSchema, req.body);
+        const prog = await service.updateProgramme(req.params.id, dto, req.utilisateur?.id!, req.etablissementId);
+        res.json({ success: true, data: prog });
     } catch (error) { next(error); }
 });
 
@@ -71,7 +79,7 @@ router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
 router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(affecterEnseignantSchema, req.body);
-        const affectation = await service.affecterEnseignant(dto);
+        const affectation = await service.affecterEnseignant(dto, req.utilisateur?.id!, req.etablissementId);
         res.json({ success: true, data: affectation });
     } catch (error) { next(error); }
 });

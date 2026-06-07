@@ -1,0 +1,1 @@
+Orchestrates student engagement through clubs, gamification, messaging, and notifications by enforcing a unified configuration-driven architecture and shared infrastructure contracts.

@@ -1,0 +1,4 @@
+- Uniform module structure with dedicated `controllers`, `services`, `entities`, and `dto` directories for each academic sub-domain.
+- Standardized Zod schema validation in DTOs (e.g., `createXxxSchema`, `updateXxxSchema`) paired with a local `validate` helper in controllers.
+- Consistent use of TypeORM decorators for entity definition and repository-based data access patterns in services.
+- Centralized error handling using `AppError` from `@common/filters/error.filter` for standardized API error responses.

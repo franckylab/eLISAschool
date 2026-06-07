@@ -31,7 +31,7 @@ router.get('/active', authMiddleware, async (req: Request, res: Response, next: 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createAnneeScolaireSchema, req.body);
-        const annee = await service.create(dto);
+        const annee = await service.create(dto, req.utilisateur?.id, req.etablissementId);
         res.status(201).json({ success: true, data: annee });
     } catch (error) { next(error); }
 });
@@ -39,7 +39,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateAnneeScolaireSchema, req.body);
-        const annee = await service.update(req.params.id, dto);
+        const annee = await service.update(req.params.id, dto, req.utilisateur?.id, req.etablissementId);
         res.json({ success: true, data: annee });
     } catch (error) { next(error); }
 });

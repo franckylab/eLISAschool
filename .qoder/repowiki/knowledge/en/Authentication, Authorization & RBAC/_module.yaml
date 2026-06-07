@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/backend_auth_rbac/auth
+title: Authentication, Authorization & RBAC
+scope:
+    - backend/src/modules/auth/
+source_files: []
+depends_on: []
+related_to: []

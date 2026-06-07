@@ -1,0 +1,4 @@
+- Organized into five logical sub-packages: `config` (module registry), `constants` (app-wide limits and metadata), `enums` (roles, permissions, statuses), `types` (API and user interfaces), and `validators` (Zod schemas).
+- Acts as a single source of truth for domain definitions, exported via barrel files (`index.ts`) in each sub-directory and the root.
+- Depends on `zod` for runtime validation, ensuring type safety across the application boundary.
+- Centralizes module metadata in `MODULE_REGISTRY`, defining access control, dependencies, and default settings for all system modules.

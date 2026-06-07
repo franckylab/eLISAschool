@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/backend_operational_assets
+title: Operational Documentation & Tooling
+scope:
+    - backend/docs/
+    - backend/scripts/
+    - backend/test/
+source_files: []
+depends_on: []
+related_to: []

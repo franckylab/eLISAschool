@@ -1,5 +1,4 @@
-- Multi-stage Dockerfiles separate dependency installation, TypeScript compilation, and runtime execution for both backend (Node.js/Express) and frontend (React/Vite) services.
-- docker-compose.yml defines four interconnected services (postgres, redis, backend, frontend) on a shared bridge network with health checks ensuring dependency ordering.
-- Backend uses npm workspaces monorepo structure, building shared libraries before the main application; frontend serves static assets through Nginx with SPA routing support.
-- Development mode mounts source volumes with hot-reload via nodemon, while production builds compile TypeScript to optimized JavaScript bundles.
-- Nginx configuration provides reverse proxy to backend API, static asset caching, gzip compression, and security headers for the frontend service.
+- Multi-stage Dockerfiles separate dependency installation, TypeScript compilation, and production runtime for both backend (Node.js/Express) and frontend (React/Vite) services.
+- docker-compose.yml orchestrates four services (PostgreSQL, Redis, backend, frontend) on a shared bridge network with health-check dependencies ensuring database readiness before API startup.
+- Nginx acts as a reverse proxy in the frontend container, routing static assets and SPA fallbacks locally while proxying /api requests to the backend service.
+- Shared code is mounted as volumes in development but compiled into distinct dist directories in production builds.

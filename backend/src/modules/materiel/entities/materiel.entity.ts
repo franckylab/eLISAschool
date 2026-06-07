@@ -22,6 +22,15 @@ export enum EtatMateriel {
     HS = 'HS',
 }
 
+/**
+ * Statut workflow du matériel
+ */
+export enum StatutMateriel {
+    DISPONIBLE = 'DISPONIBLE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INDISPONIBLE = 'INDISPONIBLE',
+}
+
 @Entity('materiels')
 @Index(['etablissementId'])
 export class Materiel {
@@ -61,6 +70,9 @@ export class Materiel {
     @Column({ type: 'boolean', default: true })
     disponible!: boolean;
 
+    @Column({ type: 'varchar', length: 30, default: StatutMateriel.DISPONIBLE })
+    statut!: StatutMateriel;
+
     /**
      * Établissement du matériel (multi-tenancy)
      */
@@ -76,6 +88,16 @@ export class Materiel {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+}
+
+/**
+ * Statut workflow d'un prêt de matériel
+ */
+export enum StatutPretMateriel {
+    EN_COURS = 'EN_COURS',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    RETOURNE = 'RETOURNE',
+    REFUSE = 'REFUSE',
 }
 
 @Entity('prets_materiels')
@@ -114,6 +136,9 @@ export class PretMateriel {
 
     @Column({ type: 'boolean', default: false })
     retourne!: boolean;
+
+    @Column({ type: 'varchar', length: 30, default: StatutPretMateriel.EN_COURS })
+    statut!: StatutPretMateriel;
 
     /**
      * Établissement du prêt (multi-tenancy)

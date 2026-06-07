@@ -1,1 +1,1 @@
-Node.js 20 Alpine base images, PostgreSQL 16, Redis 7, Nginx Alpine for static serving, npm workspaces monorepo build system, TypeScript compilation pipeline
+Node.js 20 Alpine, PostgreSQL 16, Redis 7, Nginx Alpine, Docker Compose v3.9

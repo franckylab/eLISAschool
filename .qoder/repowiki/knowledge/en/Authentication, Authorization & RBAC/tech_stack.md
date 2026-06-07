@@ -1,0 +1,1 @@
+JWT with HS256 signing via `jsonwebtoken`; password hashing with `bcryptjs` (salt rounds 12); TypeORM with PostgreSQL for persistent storage of users, roles, permissions, refresh tokens, and audit logs.

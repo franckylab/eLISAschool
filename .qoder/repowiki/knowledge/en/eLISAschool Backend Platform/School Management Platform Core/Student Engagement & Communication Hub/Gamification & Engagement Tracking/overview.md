@@ -1,0 +1,1 @@
+Manages user points, badges, and leaderboards to drive engagement through configurable reward mechanics.

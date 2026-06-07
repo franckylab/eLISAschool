@@ -1,0 +1,5 @@
+- Each route handler wraps async logic in try/catch and forwards errors to Express via next(error).
+- All successful responses follow a uniform envelope: { success: true, data: ..., timestamp: ISO string }. 
+- Zod schemas define input contracts in DTOs and are validated through a local validate() helper that throws AppError on failure.
+- Services instantiate TypeORM repositories in the constructor via AppDataSource.getRepository().
+- Barrel index files in each sub-directory re-export module symbols for clean external imports.

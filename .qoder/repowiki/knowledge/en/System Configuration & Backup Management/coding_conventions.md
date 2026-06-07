@@ -1,0 +1,4 @@
+- Services expose both instance methods and a pre-instantiated singleton export (e.g., `export const configurationService = new ConfigurationService()`) for ease of use in controllers and listeners.
+- Configuration values in `ParametreSysteme` are stored as JSON-stringified text in the database and parsed into their native types (boolean, number, JSON) upon retrieval using helper methods like `parseParametreValue`.
+- Multi-tenant parameter resolution follows a strict fallback order: establishment-specific override first, then global default (where `etablissementId` is NULL), and finally an optional hardcoded default value.
+- Backup services implement integrity checks using SHA-256 checksums calculated before storage and verified during restoration to prevent data corruption.

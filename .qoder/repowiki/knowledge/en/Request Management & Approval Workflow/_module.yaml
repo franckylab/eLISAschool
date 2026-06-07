@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/business_modules/grading_reporting/requetes
-title: Request Management & Approval Workflow
-scope:
-    - backend/src/modules/requetes/
-source_files: []
-depends_on: []
-related_to: []

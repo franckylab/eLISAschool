@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/business_modules/grading_reporting/bulletins
-title: Student Report Card Generation and Management
-scope:
-    - backend/src/modules/bulletins/
-source_files: []
-depends_on: []
-related_to: []

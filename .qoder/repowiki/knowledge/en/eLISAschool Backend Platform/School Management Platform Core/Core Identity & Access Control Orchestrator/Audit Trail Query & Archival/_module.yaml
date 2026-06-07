@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: 13805fde1612f5227be7915668b12d56
+title: Audit Trail Query & Archival
+scope:
+    - backend/src/modules/audit/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/core_identity/auth
+    - path: backend/business_modules/academic_management/annees_scolaires
+    - path: backend/business_modules/grading_reporting/notes
+    - path: backend/business_modules/academic_management/eleves
+    - path: backend/business_modules/core_identity/utilisateurs
+    - path: backend/business_modules/system_configuration/configuration
+    - path: backend/business_modules/school_operations/etablissement

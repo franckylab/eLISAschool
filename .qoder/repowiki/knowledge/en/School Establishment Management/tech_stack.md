@@ -1,1 +1,1 @@
-Uses Zod for schema-based request validation and TypeORM for relational database mapping with UUID primary keys.
+Zod for schema-based DTO validation and type inference; TypeORM with UUID primary keys and `simple-json` column types for structured JSON storage (cyclesActifs, modulesActifs, configurationBulletin).

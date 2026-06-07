@@ -49,7 +49,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(affecterEleveSchema, req.body);
-        const affectation = await service.affecterEleve(dto, req.etablissementId);
+        const affectation = await service.affecterEleve(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: affectation });
     } catch (error) { next(error); }
 });

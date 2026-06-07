@@ -1,0 +1,1 @@
+Provides a role- and permission-driven dynamic dashboard with configurable widget layouts, real-time SSE updates, intelligent caching, and cross-module data aggregation.

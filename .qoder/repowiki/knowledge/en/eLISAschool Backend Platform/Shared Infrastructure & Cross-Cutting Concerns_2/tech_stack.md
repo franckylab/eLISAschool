@@ -1,0 +1,1 @@
+Zod for runtime env validation (`config/env.config.ts`); TypeORM with PostgreSQL (`database/data-source.ts`, `config/database.config.ts`); Winston for structured logging (`common/utils/logger.util.ts`); ioredis singleton service (`common/services/redis.service.ts`).

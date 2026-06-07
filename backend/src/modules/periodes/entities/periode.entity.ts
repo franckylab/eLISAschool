@@ -16,6 +16,15 @@ import {
 } from 'typeorm';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 
+/**
+ * Statut de la période (support workflow de clôture)
+ */
+export enum StatutPeriode {
+    OUVERTE = 'OUVERTE',
+    EN_ATTENTE_CLOTURE = 'EN_ATTENTE_CLOTURE',
+    CLOTUREE = 'CLOTUREE',
+}
+
 @Entity('types_periodes')
 export class TypePeriode {
     @PrimaryGeneratedColumn('uuid')
@@ -69,6 +78,12 @@ export class Periode {
 
     @Column({ type: 'boolean', default: false })
     cloturee!: boolean;
+
+    /**
+     * Statut de la période (support workflow de clôture)
+     */
+    @Column({ type: 'varchar', length: 30, default: StatutPeriode.OUVERTE })
+    statut!: StatutPeriode;
 
     @CreateDateColumn()
     createdAt!: Date;

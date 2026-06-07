@@ -16,6 +16,16 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 
+/**
+ * Statut workflow d'une année scolaire
+ */
+export enum StatutAnneeScolaire {
+    OUVERTE = 'OUVERTE',
+    EN_COURS = 'EN_COURS',
+    EN_ATTENTE_CLOTURE = 'EN_ATTENTE_CLOTURE',
+    CLOTUREE = 'CLOTUREE',
+}
+
 @Entity('annees_scolaires')
 @Index(['etablissementId'])
 @Index(['libelle', 'etablissementId'], { unique: true })
@@ -37,6 +47,9 @@ export class AnneeScolaire {
 
     @Column({ type: 'boolean', default: false })
     cloturee!: boolean;
+
+    @Column({ type: 'varchar', length: 30, default: StatutAnneeScolaire.OUVERTE })
+    statut!: StatutAnneeScolaire;
 
     /**
      * Établissement de l'année scolaire (multi-tenancy)

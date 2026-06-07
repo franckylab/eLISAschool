@@ -23,6 +23,17 @@ import {
 import { EtablissementConfig } from './etablissement-config.entity';
 
 // ==================================
+// Statut workflow d'un établissement
+// ==================================
+
+export enum StatutEtablissement {
+    ACTIF = 'ACTIF',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    EN_ATTENTE_DESACTIVATION = 'EN_ATTENTE_DESACTIVATION',
+    INACTIF = 'INACTIF',
+}
+
+// ==================================
 // Enums partagés (utilisés par d'autres modules)
 // ==================================
 
@@ -90,6 +101,9 @@ export class Etablissement {
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    @Column({ type: 'varchar', length: 30, default: StatutEtablissement.ACTIF })
+    statut!: StatutEtablissement;
 
     /**
      * Relation 1:1 vers la configuration de l'établissement.

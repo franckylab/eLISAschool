@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: ced5e5bacba2514df2b7315e926347dd
+title: School Operations Domain
+scope:
+    - backend/src/modules/etablissement/
+    - backend/src/modules/personnel/
+    - backend/src/modules/cartes/
+    - backend/src/modules/cantine/
+    - backend/src/modules/transport/
+    - backend/src/modules/materiel/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/system_configuration/configuration

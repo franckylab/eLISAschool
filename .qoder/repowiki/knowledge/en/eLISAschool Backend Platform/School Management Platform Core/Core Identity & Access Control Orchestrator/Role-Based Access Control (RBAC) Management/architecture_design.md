@@ -1,0 +1,5 @@
+- Follows a standard Controller-Service architecture with Express routers in `controllers/` delegating to singleton services in `services/`.
+- Exposes a unified Express router via `index.ts` that mounts three sub-routers: `roles`, `permissions`, and `user-roles`.
+- Services (`RolesService`, `PermissionsService`, `UserRolesService`) interact directly with TypeORM repositories for `Role`, `Permission`, `UtilisateurRole`, and `UtilisateurPermission` entities.
+- Integrates with an external `permissionResolverService` from the `auth` module to invalidate permission caches upon role or permission changes.
+- All routes are protected by `authMiddleware` and further restricted to `ADMIN` roles using `requireRoles('ADMIN')`.

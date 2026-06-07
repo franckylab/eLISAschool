@@ -18,6 +18,8 @@ import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Utilisateur } from '@modules/utilisateurs/entities';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 
 export class NotesService {
     private noteRepository: Repository<Note>;
@@ -73,6 +75,17 @@ export class NotesService {
         });
 
         await this.noteRepository.save(note);
+
+        // Créer un workflow de validation si requis
+        if (params.requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'notes',
+                entiteId: note.id,
+                entiteType: 'Note',
+                niveauxRequis: 2,
+                etablissementId,
+            }, enseignantId);
+        }
 
         await auditService.log({
             utilisateurId: enseignantId,
@@ -165,6 +178,19 @@ export class NotesService {
 
         await this.noteRepository.save(notes);
 
+        // Créer des workflows de validation si requis (un par note)
+        if (params.requireValidation) {
+            for (const note of notes) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'notes',
+                    entiteId: note.id,
+                    entiteType: 'Note',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, enseignantId);
+            }
+        }
+
         await auditService.log({
             utilisateurId: enseignantId,
             action: AuditAction.NOTE_CREATE,
@@ -211,19 +237,45 @@ export class NotesService {
     async update(id: string, updateDto: UpdateNoteDto, utilisateurId: string): Promise<Note> {
         const note = await this.findOne(id);
 
-        if (note.enseignantId !== utilisateurId && !updateDto.statut) {
-            // Check roles if needed, but for now strict owner check if not just validation
-            // Actually, admin might update. But service usually trusts controller passed checks.
-            // Let's assume controller checks roles.
-            // But here we check ownership if not validation. 
-            // Better flexibility: admin can update.
-        }
+        // Si on change le statut, utiliser le workflow de validation
+        if (updateDto.statut) {
+            const workflow = await validationWorkflowService.findByModuleAndEntite('notes', id);
+            
+            if (workflow && workflow.statut === StatutWorkflow.EN_COURS) {
+                // Déterminer la décision basée sur le statut demandé
+                const decision = updateDto.statut === StatutNote.VALIDEE || updateDto.statut === StatutNote.PUBLIEE
+                    ? DecisionValidation.APPROUVE
+                    : DecisionValidation.REJETE;
 
-        Object.assign(note, updateDto);
+                // Traiter la validation via le workflow
+                const updatedWorkflow = await validationWorkflowService.traiterValidation(
+                    workflow.id,
+                    { decision, commentaire: updateDto.commentaire },
+                    utilisateurId
+                );
 
-        if (updateDto.statut === StatutNote.VALIDEE) {
-            note.validateurId = utilisateurId;
-            note.valideeAt = new Date();
+                // Mettre à jour le statut de la note selon le workflow
+                if (updatedWorkflow.statut === StatutWorkflow.COMPLETEE) {
+                    note.statut = StatutNote.PUBLIEE; // Workflow complet = publiée
+                } else if (updatedWorkflow.statut === StatutWorkflow.REJETEE) {
+                    note.statut = StatutNote.BROUILLON; // Rejet = retour brouillon
+                } else {
+                    note.statut = StatutNote.VALIDEE; // En cours = validée partiellement
+                }
+
+                note.validateurId = utilisateurId;
+                note.valideeAt = new Date();
+            } else {
+                // Pas de workflow ou déjà complet, mise à jour directe
+                Object.assign(note, updateDto);
+                if (updateDto.statut === StatutNote.VALIDEE || updateDto.statut === StatutNote.PUBLIEE) {
+                    note.validateurId = utilisateurId;
+                    note.valideeAt = new Date();
+                }
+            }
+        } else {
+            // Mise à jour normale sans changement de statut
+            Object.assign(note, updateDto);
         }
 
         await this.noteRepository.save(note);

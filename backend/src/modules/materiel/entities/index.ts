@@ -1,1 +1,1 @@
-export { Materiel, PretMateriel, CategorieMateriel, EtatMateriel } from './materiel.entity';
+export { Materiel, PretMateriel, CategorieMateriel, EtatMateriel, StatutMateriel, StatutPretMateriel } from './materiel.entity';

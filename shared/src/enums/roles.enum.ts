@@ -570,6 +570,49 @@ export enum Permission {
     MONITORING_STATS_VIEW = 'monitoring:stats:view',
     MONITORING_HEALTH_VIEW = 'monitoring:health:view',
     MONITORING_MAINTENANCE_TOGGLE = 'monitoring:maintenance:toggle',
+
+    // ==================================
+    // VALIDATION WORKFLOW
+    // ==================================
+    VALIDATION_NOTES_LEVEL1 = 'validation:notes:level1',
+    VALIDATION_NOTES_LEVEL2 = 'validation:notes:level2',
+    VALIDATION_NOTES_LEVEL3 = 'validation:notes:level3',
+    VALIDATION_BULLETINS_LEVEL1 = 'validation:bulletins:level1',
+    VALIDATION_BULLETINS_LEVEL2 = 'validation:bulletins:level2',
+    VALIDATION_BULLETINS_LEVEL3 = 'validation:bulletins:level3',
+    VALIDATION_CANTINE_LEVEL1 = 'validation:cantine:level1',
+    VALIDATION_CANTINE_LEVEL2 = 'validation:cantine:level2',
+    VALIDATION_CANTINE_LEVEL3 = 'validation:cantine:level3',
+    VALIDATION_TRANSPORT_LEVEL1 = 'validation:transport:level1',
+    VALIDATION_TRANSPORT_LEVEL2 = 'validation:transport:level2',
+    VALIDATION_TRANSPORT_LEVEL3 = 'validation:transport:level3',
+    VALIDATION_DASHBOARD_VIEW = 'validation:dashboard:view',
+    VALIDATION_RAPPORTS_VIEW = 'validation:rapports:view',
+    VALIDATION_RAPPORTS_EXPORT = 'validation:rapports:export',
+    VALIDATION_CLASSES_LEVEL1 = 'validation:classes:level1',
+    VALIDATION_CLASSES_LEVEL2 = 'validation:classes:level2',
+    VALIDATION_CLASSES_LEVEL3 = 'validation:classes:level3',
+    VALIDATION_MATIERES_LEVEL1 = 'validation:matieres:level1',
+    VALIDATION_MATIERES_LEVEL2 = 'validation:matieres:level2',
+    VALIDATION_MATIERES_LEVEL3 = 'validation:matieres:level3',
+    VALIDATION_PERIODES_LEVEL1 = 'validation:periodes:level1',
+    VALIDATION_PERIODES_LEVEL2 = 'validation:periodes:level2',
+    VALIDATION_ELEVES_LEVEL1 = 'validation:eleves:level1',
+    VALIDATION_ELEVES_LEVEL2 = 'validation:eleves:level2',
+    VALIDATION_ELEVES_LEVEL3 = 'validation:eleves:level3',
+    VALIDATION_PERSONNEL_LEVEL1 = 'validation:personnel:level1',
+    VALIDATION_PERSONNEL_LEVEL2 = 'validation:personnel:level2',
+    VALIDATION_CLUBS_LEVEL1 = 'validation:clubs:level1',
+    VALIDATION_CLUBS_LEVEL2 = 'validation:clubs:level2',
+    VALIDATION_CLUBS_LEVEL3 = 'validation:clubs:level3',
+    VALIDATION_MATERIEL_LEVEL1 = 'validation:materiel:level1',
+    VALIDATION_MATERIEL_LEVEL2 = 'validation:materiel:level2',
+    VALIDATION_CARTES_LEVEL1 = 'validation:cartes:level1',
+    VALIDATION_CARTES_LEVEL2 = 'validation:cartes:level2',
+    VALIDATION_ANNEES_SCOLAIRES_LEVEL1 = 'validation:annees_scolaires:level1',
+    VALIDATION_ANNEES_SCOLAIRES_LEVEL2 = 'validation:annees_scolaires:level2',
+    VALIDATION_ETABLISSEMENT_LEVEL1 = 'validation:etablissement:level1',
+    VALIDATION_ETABLISSEMENT_LEVEL2 = 'validation:etablissement:level2',
 }
 
 /**
@@ -588,6 +631,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.NOTIFICATIONS_MANAGE,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        // Validation permissions
+        Permission.VALIDATION_NOTES_LEVEL1, Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
+        Permission.VALIDATION_BULLETINS_LEVEL1, Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
+        Permission.VALIDATION_CANTINE_LEVEL1, Permission.VALIDATION_CANTINE_LEVEL2, Permission.VALIDATION_CANTINE_LEVEL3,
+        Permission.VALIDATION_TRANSPORT_LEVEL1, Permission.VALIDATION_TRANSPORT_LEVEL2, Permission.VALIDATION_TRANSPORT_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW, Permission.VALIDATION_RAPPORTS_EXPORT,
+        Permission.VALIDATION_CLASSES_LEVEL1, Permission.VALIDATION_CLASSES_LEVEL2, Permission.VALIDATION_CLASSES_LEVEL3,
+        Permission.VALIDATION_MATIERES_LEVEL1, Permission.VALIDATION_MATIERES_LEVEL2, Permission.VALIDATION_MATIERES_LEVEL3,
+        Permission.VALIDATION_PERIODES_LEVEL1, Permission.VALIDATION_PERIODES_LEVEL2,
+        Permission.VALIDATION_ELEVES_LEVEL1, Permission.VALIDATION_ELEVES_LEVEL2, Permission.VALIDATION_ELEVES_LEVEL3,
+        Permission.VALIDATION_PERSONNEL_LEVEL1, Permission.VALIDATION_PERSONNEL_LEVEL2,
+        Permission.VALIDATION_CLUBS_LEVEL1, Permission.VALIDATION_CLUBS_LEVEL2, Permission.VALIDATION_CLUBS_LEVEL3,
+        Permission.VALIDATION_MATERIEL_LEVEL1, Permission.VALIDATION_MATERIEL_LEVEL2,
+        Permission.VALIDATION_CARTES_LEVEL1, Permission.VALIDATION_CARTES_LEVEL2,
+        Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL1, Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL2,
+        Permission.VALIDATION_ETABLISSEMENT_LEVEL1, Permission.VALIDATION_ETABLISSEMENT_LEVEL2,
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
@@ -598,6 +657,21 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.CONFIG_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        // Validation permissions
+        Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
+        Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
+        Permission.VALIDATION_CANTINE_LEVEL2, Permission.VALIDATION_CANTINE_LEVEL3,
+        Permission.VALIDATION_TRANSPORT_LEVEL2, Permission.VALIDATION_TRANSPORT_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW,
+        Permission.VALIDATION_CLASSES_LEVEL2, Permission.VALIDATION_CLASSES_LEVEL3,
+        Permission.VALIDATION_MATIERES_LEVEL2, Permission.VALIDATION_MATIERES_LEVEL3,
+        Permission.VALIDATION_PERIODES_LEVEL1, Permission.VALIDATION_PERIODES_LEVEL2,
+        Permission.VALIDATION_ELEVES_LEVEL2, Permission.VALIDATION_ELEVES_LEVEL3,
+        Permission.VALIDATION_PERSONNEL_LEVEL1, Permission.VALIDATION_PERSONNEL_LEVEL2,
+        Permission.VALIDATION_CLUBS_LEVEL2, Permission.VALIDATION_CLUBS_LEVEL3,
+        Permission.VALIDATION_MATERIEL_LEVEL1, Permission.VALIDATION_MATERIEL_LEVEL2,
+        Permission.VALIDATION_CARTES_LEVEL1, Permission.VALIDATION_CARTES_LEVEL2,
+        Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL1, Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL2,
     ],
 
     [Role.ENSEIGNANT]: [
@@ -607,6 +681,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MESSAGES_SEND,
         Permission.GAMIFICATION_VIEW,
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Validation permissions (niveau 1 seulement)
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_BULLETINS_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.VALIDATION_CLASSES_LEVEL1,
+        Permission.VALIDATION_MATIERES_LEVEL1,
+        Permission.VALIDATION_ELEVES_LEVEL1,
     ],
 
     [Role.PERSONNEL]: [
@@ -614,16 +695,24 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.DOCUMENTS_VIEW,
         Permission.MESSAGES_SEND,
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_ELEVES_LEVEL1,
+        Permission.VALIDATION_MATERIEL_LEVEL1,
     ],
 
     [Role.RESPONSABLE_CANTINE]: [
         Permission.CANTINE_VIEW, Permission.CANTINE_MANAGE,
         Permission.MESSAGES_SEND,
+        // Validation permissions
+        Permission.VALIDATION_CANTINE_LEVEL2, Permission.VALIDATION_CANTINE_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW,
     ],
 
     [Role.RESPONSABLE_TRANSPORT]: [
         Permission.TRANSPORT_VIEW, Permission.TRANSPORT_MANAGE,
         Permission.MESSAGES_SEND,
+        // Validation permissions
+        Permission.VALIDATION_TRANSPORT_LEVEL2, Permission.VALIDATION_TRANSPORT_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW,
     ],
 
     [Role.PARENT]: [

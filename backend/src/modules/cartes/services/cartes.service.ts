@@ -15,6 +15,7 @@ import { CreateCarteDto, UpdateCarteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 /**
  * Service Cartes avec configuration centralisée
@@ -40,7 +41,7 @@ export class CartesService {
     /**
      * Crée une nouvelle carte avec paramètres de configuration
      */
-    async create(dto: CreateCarteDto, etablissementId?: string): Promise<CarteScolaire> {
+    async create(dto: CreateCarteDto, etablissementId?: string, createurId?: string): Promise<CarteScolaire> {
         const params = await this.getCartesParams();
         
         // Récupérer le nom de l'établissement
@@ -58,18 +59,34 @@ export class CartesService {
         // Générer le numéro de carte
         const numeroCarte = this.generateNumeroCarte(dto.type as TypeCarte);
 
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('cartes.require_validation', false);
+
         const carte: CarteScolaire = this.carteRepo.create({
             ...dto,
             etablissementId,
             type: dto.type as TypeCarte,
             numeroCarte,
             dateExpiration,
-            statut: StatutCarte.ACTIVE,
+            statut: requireValidation ? StatutCarte.EN_ATTENTE_VALIDATION : StatutCarte.ACTIVE,
             qrCode: params.enableQRCode ? this.generateQRCode(numeroCarte) : undefined,
             etablissementNom,
         });
 
         await this.carteRepo.save(carte);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'cartes',
+                entiteId: carte.id,
+                entiteType: 'CarteScolaire',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Demande de carte: ${numeroCarte}`,
+            }, createurId);
+        }
+
         logger.info(`[${etablissementId}] Carte créée: ${numeroCarte} pour ${dto.utilisateurId}`);
         return carte;
     }
@@ -117,9 +134,28 @@ export class CartesService {
     /**
      * Renouvelle une carte avec les paramètres configurés
      */
-    async renouveler(id: string): Promise<CarteScolaire> {
+    async renouveler(id: string, createurId?: string, etablissementId?: string): Promise<CarteScolaire> {
         const params = await this.getCartesParams();
         const oldCarte = await this.findOne(id);
+
+        // Vérifier si le workflow de validation est requis pour le renouvellement
+        const requireValidation = await getParamBoolean('cartes.renouvellement_require_validation', false);
+
+        if (requireValidation && createurId) {
+            // Ne PAS désactiver l'ancienne carte, créer un workflow
+            const workflow = await validationWorkflowService.createWorkflow({
+                module: 'cartes',
+                entiteId: oldCarte.id,
+                entiteType: 'CarteScolaire',
+                niveauxRequis: 2,
+                etablissementId: etablissementId || oldCarte.etablissementId,
+                commentaire: `Renouvellement carte: ${oldCarte.numeroCarte}`,
+            }, createurId);
+
+            // Retourner l'ancienne carte avec un flag de workflow en cours
+            logger.info(`Renouvellement en attente de validation pour carte: ${oldCarte.numeroCarte}`);
+            return oldCarte;
+        }
 
         // Désactiver l'ancienne
         oldCarte.statut = StatutCarte.EXPIREE;

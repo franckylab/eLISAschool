@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: 7c4b16491862d234cfbe85c7a8af35f6
+title: Student Report Card Generation and Management
+scope:
+    - backend/src/modules/bulletins/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/grading_reporting/notes
+    - path: backend/business_modules/grading_reporting/scoring
+    - path: backend/business_modules/grading_reporting/impressions
+    - path: backend/business_modules/academic_management/periodes
+    - path: backend/business_modules/academic_management/matieres
+    - path: backend/business_modules/engagement_communication/notifications

@@ -1,0 +1,1 @@
+Provides health checks, system metrics, application statistics, maintenance mode control, and log retrieval for the eLISAschool backend.

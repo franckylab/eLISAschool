@@ -16,6 +16,7 @@ import { Eleve } from '@modules/eleves/entities';
 import { Note } from '@modules/notes/entities';
 import Utilisateur from '@modules/auth/entities/utilisateur.entity';
 import { ConfigurationModule } from '@modules/configuration/entities';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 export class DashboardDataService {
     private eleveRepo: Repository<Eleve>;
@@ -447,6 +448,56 @@ export class DashboardDataService {
         } catch (error) {
             logger.error('[DashboardDataService] Erreur getClassesActives:', error);
             return { classes: [], total: 0 };
+        }
+    }
+
+    // ==================================
+    // WIDGETS VALIDATION WORKFLOW
+    // ==================================
+
+    /**
+     * Statistiques validations par module pour le dashboard
+     */
+    async getValidationStatsParModule(context: { etablissementId?: string }): Promise<any> {
+        try {
+            return await validationWorkflowService.getDashboardStats(context.etablissementId);
+        } catch (error) {
+            logger.error('[DashboardDataService] Erreur validation stats:', error);
+            return { parModule: {}, totalGlobal: 0, enCoursGlobal: 0 };
+        }
+    }
+
+    /**
+     * Validations en attente pour l'utilisateur connecté
+     */
+    async getValidationEnAttente(context: { userId: string; etablissementId?: string }): Promise<any> {
+        try {
+            // Récupérer le rôle de l'utilisateur pour filtrer
+            const utilisateur = await this.utilisateurRepo.findOne({ where: { id: context.userId } });
+            const role = utilisateur?.role || 'ADMIN';
+            
+            const validations = await validationWorkflowService.getValidationsEnAttente(
+                role,
+                context.etablissementId,
+                10
+            );
+            
+            return { validations, total: validations.length };
+        } catch (error) {
+            logger.error('[DashboardDataService] Erreur validation en attente:', error);
+            return { validations: [], total: 0 };
+        }
+    }
+
+    /**
+     * Temps moyen de validation par niveau
+     */
+    async getValidationTempsMoyen(context: { etablissementId?: string }): Promise<any> {
+        try {
+            return await validationWorkflowService.getTempsMoyenValidation(undefined, context.etablissementId);
+        } catch (error) {
+            logger.error('[DashboardDataService] Erreur temps moyen:', error);
+            return { parNiveau: {}, moyenneGlobale: 0 };
         }
     }
 }

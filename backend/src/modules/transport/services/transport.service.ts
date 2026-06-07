@@ -17,6 +17,7 @@ import { logger } from '@common/utils/logger.util';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 /**
  * Service Transport avec configuration centralisée
@@ -64,14 +65,38 @@ export class TransportService {
         return ligne;
     }
 
-    async createInscription(dto: CreateInscriptionTransportDto, etablissementId?: string): Promise<InscriptionTransport> {
+    async createInscription(dto: CreateInscriptionTransportDto, createurId: string, etablissementId?: string): Promise<InscriptionTransport> {
+        // Vérifier si déjà inscrit
         const where: any = { eleveId: dto.eleveId, actif: true };
         if (etablissementId) where.etablissementId = etablissementId;
         const existant = await this.inscriptionRepo.findOne({ where });
         if (existant) throw new AppError('Élève déjà inscrit au transport', 409, 'ALREADY_ENROLLED');
-        const inscription = this.inscriptionRepo.create({ ...dto, etablissementId });
+
+        // Vérifier si la validation est requise
+        const requireValidation = await getParamBoolean('transport.require_validation', false);
+
+        const inscription = this.inscriptionRepo.create({
+            ...dto,
+            etablissementId,
+            actif: !requireValidation, // Inactif si en attente de validation
+        });
         await this.inscriptionRepo.save(inscription);
-        logger.info(`[${etablissementId}] Inscription transport créée pour élève ${dto.eleveId}`);
+
+        // Créer un workflow de validation si requis
+        if (requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'transport',
+                entiteId: inscription.id,
+                entiteType: 'InscriptionTransport',
+                niveauxRequis: 2,
+                etablissementId,
+            }, createurId);
+
+            logger.info(`[${etablissementId}] Inscription transport créée en attente de validation pour élève ${dto.eleveId}`);
+        } else {
+            logger.info(`[${etablissementId}] Inscription transport créée pour élève ${dto.eleveId}`);
+        }
+
         return inscription;
     }
 

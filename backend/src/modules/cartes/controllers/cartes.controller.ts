@@ -33,7 +33,7 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(createCarteSchema, req.body);
-        const carte = await cartesService.create(dto);
+        const carte = await cartesService.create(dto, req.etablissementId, req.utilisateur?.id);
         res.status(201).json({ success: true, data: carte, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -50,6 +50,13 @@ router.post('/:id/desactiver', staffOnly, async (req, res, next) => {
     try {
         const carte = await cartesService.desactiver(req.params.id);
         res.json({ success: true, data: carte, message: 'Carte désactivée', timestamp: new Date().toISOString() });
+    } catch (error) { next(error); }
+});
+
+router.post('/:id/renouveler', staffOnly, async (req, res, next) => {
+    try {
+        const carte = await cartesService.renouveler(req.params.id, req.utilisateur?.id, req.etablissementId);
+        res.json({ success: true, data: carte, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
 

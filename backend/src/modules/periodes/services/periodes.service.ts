@@ -6,8 +6,10 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Periode, TypePeriode } from '../entities';
+import { Periode, TypePeriode, StatutPeriode } from '../entities';
 import { CreatePeriodeDto, UpdatePeriodeDto, CreateTypePeriodeDto } from '../dto';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -60,13 +62,53 @@ export class PeriodesService {
         return periode;
     }
 
-    async update(id: string, dto: UpdatePeriodeDto): Promise<Periode> {
+    async update(id: string, dto: UpdatePeriodeDto, createurId?: string, etablissementId?: string): Promise<Periode> {
         const periode = await this.findOne(id);
+
+        // Détecter si on demande la clôture
+        const demandeCloture = dto.cloturee === true && !periode.cloturee;
+
+        if (demandeCloture) {
+            // Vérifier si la validation est requise
+            const requireValidation = await getParamBoolean('periodes.require_validation', false);
+
+            if (requireValidation && createurId) {
+                // Ne pas clôturer immédiatement, créer un workflow
+                periode.statut = StatutPeriode.EN_ATTENTE_CLOTURE;
+
+                if (dto.dateDebut) dto.dateDebut = new Date(dto.dateDebut) as any;
+                if (dto.dateFin) dto.dateFin = new Date(dto.dateFin) as any;
+
+                // Appliquer les autres modifications mais pas cloturee
+                const { cloturee, ...autresModifs } = dto;
+                Object.assign(periode, autresModifs);
+                await this.periodeRepo.save(periode);
+
+                // Créer le workflow de validation
+                await validationWorkflowService.createWorkflow({
+                    module: 'periodes',
+                    entiteId: periode.id,
+                    entiteType: 'Periode',
+                    niveauxRequis: 2,
+                    etablissementId,
+                    commentaire: `Demande de clôture: ${periode.nom}`,
+                }, createurId);
+
+                logger.info(`[${etablissementId}] Clôture période en attente de validation: ${periode.nom}`);
+                return periode;
+            }
+        }
 
         if (dto.dateDebut) dto.dateDebut = new Date(dto.dateDebut) as any;
         if (dto.dateFin) dto.dateFin = new Date(dto.dateFin) as any;
 
         Object.assign(periode, dto);
+
+        // Si clôture effective, mettre le statut CLOTUREE
+        if (dto.cloturee === true) {
+            periode.statut = StatutPeriode.CLOTUREE;
+        }
+
         await this.periodeRepo.save(periode);
         return periode;
     }

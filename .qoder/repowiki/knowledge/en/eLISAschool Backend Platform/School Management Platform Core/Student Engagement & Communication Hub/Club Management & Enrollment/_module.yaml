@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: 617e2c4bde6289cfe8a82197e64ac408
+title: Club Management & Enrollment
+scope:
+    - backend/src/modules/clubs/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/engagement_communication/gamification
+    - path: backend/business_modules/engagement_communication/notifications
+    - path: backend/business_modules/school_operations/cartes
+    - path: backend/business_modules/system_configuration/dashboard
+    - path: backend/business_modules/system_configuration/monitoring
+    - path: backend/business_modules/core_identity/utilisateurs
+    - path: backend/business_modules/academic_management/periodes
+    - path: backend/business_modules/school_operations/etablissement

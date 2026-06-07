@@ -1,0 +1,5 @@
+- Entry point: `index.ts` re-exports controller, service, and DTOs.
+- Controller layer (`audit.controller.ts`) defines Express routes under `/api/audit/logs`, delegating read operations to an external `auditService` from the auth module.
+- Service layer (`archivage.service.ts`) handles archival/purge logic using TypeORM repositories directly against the `AuditLog` entity from the auth module.
+- DTO layer (`audit-filters.dto.ts`) uses Zod schemas for request validation, consumed via a shared `validateDto` utility.
+- Dependency direction: this module depends on `@modules/auth` for audit data access and entities, and on shared utilities for validation and logging.

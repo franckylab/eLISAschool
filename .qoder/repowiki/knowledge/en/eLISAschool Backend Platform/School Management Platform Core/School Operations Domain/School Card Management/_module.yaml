@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: afad72cb302aabaf4ce7a21ab46c8bbe
+title: School Card Management
+scope:
+    - backend/src/modules/cartes/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/academic_management/eleves
+    - path: backend/business_modules/engagement_communication/clubs
+    - path: backend/business_modules/school_operations/cantine
+    - path: backend/business_modules/school_operations/transport

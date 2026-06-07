@@ -1,1 +1,1 @@
-Uses Zod for DTO validation schemas defined in `dto/create-role.dto.ts`.
+Zod for schema-based DTO validation; TypeORM with `AppDataSource` for repository access; Express Router for modular route composition.

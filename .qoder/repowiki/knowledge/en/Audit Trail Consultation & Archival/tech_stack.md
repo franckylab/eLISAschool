@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation; TypeORM for direct repository access in the archival service.

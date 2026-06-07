@@ -71,6 +71,7 @@ export enum StatutInscriptionCantine {
     ACTIVE = 'ACTIVE',
     SUSPENDUE = 'SUSPENDUE',
     RESILIEE = 'RESILIEE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
 }
 
 @Entity('inscriptions_cantine')

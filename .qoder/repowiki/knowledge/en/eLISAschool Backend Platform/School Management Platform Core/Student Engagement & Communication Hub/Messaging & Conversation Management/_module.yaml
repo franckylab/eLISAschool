@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: 8d9ec0ac21a61725a3ff3e675605bf05
+title: Messaging & Conversation Management
+scope:
+    - backend/src/modules/messagerie/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/core_identity/utilisateurs
+    - path: backend/business_modules/school_operations/personnel
+    - path: backend/business_modules/grading_reporting/requetes
+    - path: backend/business_modules/academic_management/orientation
+    - path: backend/business_modules/school_operations/etablissement
+    - path: backend/business_modules/grading_reporting/notes

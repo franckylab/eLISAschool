@@ -1,0 +1,19 @@
+schema_version: 1
+module_path: 12d8ac40c23b033b4162f851c79f41bf
+title: Academic Management Core
+scope:
+    - backend/src/modules/eleves/
+    - backend/src/modules/niveaux/
+    - backend/src/modules/cycles/
+    - backend/src/modules/periodes/
+    - backend/src/modules/annees-scolaires/
+    - backend/src/modules/matieres/
+    - backend/src/modules/orientation/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/database_management
+    - path: backend/business_modules/core_identity/auth
+    - path: backend/business_modules/system_configuration/dashboard
+    - path: backend/business_modules/school_operations/etablissement
+    - path: backend/shared_infrastructure

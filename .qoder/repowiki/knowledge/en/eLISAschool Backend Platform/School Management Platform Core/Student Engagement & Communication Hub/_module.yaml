@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: 6d3ca17f76d22c73ae4b0dfb39d65295
+title: Student Engagement & Communication Hub
+scope:
+    - backend/src/modules/clubs/
+    - backend/src/modules/gamification/
+    - backend/src/modules/messagerie/
+    - backend/src/modules/notifications/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/system_configuration/configuration
+    - path: backend/shared_infrastructure

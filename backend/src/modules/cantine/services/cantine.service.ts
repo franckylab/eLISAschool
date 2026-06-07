@@ -8,7 +8,7 @@
  * Utilise le système de configuration centralisé
  */
 
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { MenuCantine, InscriptionCantine, ConsommationCantine, StatutRepas, StatutInscriptionCantine } from '../entities';
 import { CreateMenuDto, CreateInscriptionDto, EnregistrerConsommationDto, RechargerSoldeDto } from '../dto';
@@ -17,6 +17,7 @@ import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 /**
  * Service Cantine avec configuration centralisée
@@ -93,23 +94,48 @@ export class CantineService {
 
     // ============ INSCRIPTIONS ============
 
-    async createInscription(dto: CreateInscriptionDto, etablissementId?: string): Promise<InscriptionCantine> {
-        const where: any = { eleveId: dto.eleveId, statut: StatutInscriptionCantine.ACTIVE };
+    async createInscription(dto: CreateInscriptionDto, createurId: string, etablissementId?: string): Promise<InscriptionCantine> {
+        // Vérifier si l'élève est déjà inscrit (actif ou en attente de validation)
+        const where: any = { 
+            eleveId: dto.eleveId, 
+            statut: In([StatutInscriptionCantine.ACTIVE, StatutInscriptionCantine.EN_ATTENTE_VALIDATION]) 
+        };
         if (etablissementId) where.etablissementId = etablissementId;
         const existant = await this.inscriptionRepo.findOne({ where });
         if (existant) {
             throw new AppError('Élève déjà inscrit à la cantine', 409, 'ALREADY_ENROLLED');
         }
 
+        // Vérifier si la validation est requise
+        const requireValidation = await getParamBoolean('cantine.require_validation', false);
+
         const inscription: InscriptionCantine = this.inscriptionRepo.create({
             ...dto,
             etablissementId,
+            statut: requireValidation 
+                ? StatutInscriptionCantine.EN_ATTENTE_VALIDATION 
+                : StatutInscriptionCantine.ACTIVE,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : new Date(),
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             solde: 0,
         });
         await this.inscriptionRepo.save(inscription);
-        logger.info(`[${etablissementId}] Inscription cantine créée pour élève ${dto.eleveId}`);
+
+        // Créer un workflow de validation si requis
+        if (requireValidation) {
+            await validationWorkflowService.createWorkflow({
+                module: 'cantine',
+                entiteId: inscription.id,
+                entiteType: 'InscriptionCantine',
+                niveauxRequis: 2,
+                etablissementId,
+            }, createurId);
+
+            logger.info(`[${etablissementId}] Inscription cantine créée en attente de validation pour élève ${dto.eleveId}`);
+        } else {
+            logger.info(`[${etablissementId}] Inscription cantine créée pour élève ${dto.eleveId}`);
+        }
+
         return inscription;
     }
 

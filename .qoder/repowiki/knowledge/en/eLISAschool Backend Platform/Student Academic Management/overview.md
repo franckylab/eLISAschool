@@ -1,0 +1,1 @@
+Manages student records, grades, report cards, and academic orientation within a multi-tenant school system.

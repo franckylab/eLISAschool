@@ -1,0 +1,1 @@
+Provides system health checks, resource metrics, application statistics, and maintenance mode management for the eLISAschool platform.

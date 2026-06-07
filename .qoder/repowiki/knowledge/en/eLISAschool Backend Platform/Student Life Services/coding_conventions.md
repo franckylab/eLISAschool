@@ -1,0 +1,6 @@
+- Every controller handler wraps its body in a try/catch that calls `next(error)` on failure and returns `{ success: true, data, timestamp: new Date().toISOString() }` on success.
+- Request payloads are validated against Zod schemas using the shared `validateDto(schema, source)` utility before being passed to the service layer.
+- Services initialize TypeORM repositories in the constructor via `AppDataSource.getRepository(EntityClass)` and store them as private fields.
+- All entities include an `etablissementId` column with a `@ManyToOne(() => Etablissement)` relation and an `@Index(['etablissementId'])` decorator for multi-tenancy scoping.
+- Each service file exports both the class and a pre-instantiated singleton (e.g., `export const cantineService = new CantineService()`) for direct import by controllers or other modules.
+- Module-level `index.ts` files use barrel exports (`export * from './entities'`, etc.) to expose all public symbols from the sub-module.

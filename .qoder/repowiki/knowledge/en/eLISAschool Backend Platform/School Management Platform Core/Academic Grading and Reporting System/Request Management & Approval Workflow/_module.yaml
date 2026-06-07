@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: bcdc5f201433b32894a4cffc0d0950b4
+title: Request Management & Approval Workflow
+scope:
+    - backend/src/modules/requetes/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/engagement_communication/notifications
+    - path: backend/business_modules/engagement_communication/messagerie
+    - path: backend/business_modules/grading_reporting/impressions
+    - path: backend/business_modules/core_identity/rbac

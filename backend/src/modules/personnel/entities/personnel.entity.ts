@@ -36,6 +36,16 @@ export class TypePersonnel {
     createdAt!: Date;
 }
 
+/**
+ * Statut workflow d'un membre du personnel
+ */
+export enum StatutPersonnel {
+    ACTIF = 'ACTIF',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INACTIF = 'INACTIF',
+    CONGE = 'CONGE',
+}
+
 @Entity('membres_personnel')
 @Index(['utilisateurId'])
 @Index(['etablissementId'])
@@ -63,8 +73,8 @@ export class MembrePersonnel {
     @Column({ type: 'date' })
     dateEmbauche!: Date;
 
-    @Column({ type: 'enum', enum: ['ACTIF', 'INACTIF', 'CONGE'], default: 'ACTIF' })
-    statut!: 'ACTIF' | 'INACTIF' | 'CONGE';
+    @Column({ type: 'varchar', length: 30, default: StatutPersonnel.ACTIF })
+    statut!: StatutPersonnel;
 
     @Column({ type: 'simple-json', nullable: true })
     specialites?: string[]; // IDs des matières ou noms

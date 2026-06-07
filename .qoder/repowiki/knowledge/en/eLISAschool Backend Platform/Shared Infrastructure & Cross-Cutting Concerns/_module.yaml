@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: 53f5b29404ebf365a004fe631da18e55
+title: Shared Infrastructure & Cross-Cutting Concerns
+scope:
+    - backend/src/common/
+    - backend/src/config/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules
+    - path: backend/business_modules/grading_reporting
+    - path: backend/business_modules/engagement_communication
+    - path: backend/business_modules/academic_management

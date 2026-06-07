@@ -24,7 +24,7 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', authMiddleware, adminOnly, async (req, res, next) => {
     try {
         const dto = validateDto(createClubSchema, req.body);
-        const club = await clubsService.createClub(dto);
+        const club = await clubsService.createClub(dto, undefined, req.utilisateur?.id);
         res.status(201).json({ success: true, data: club, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -39,7 +39,7 @@ router.get('/:id/inscrits', authMiddleware, staffOnly, async (req, res, next) =>
 router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(inscrireClubSchema, req.body);
-        const inscription = await clubsService.inscrire(dto);
+        const inscription = await clubsService.inscrire(dto, undefined, req.utilisateur?.id);
         res.status(201).json({ success: true, data: inscription, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });

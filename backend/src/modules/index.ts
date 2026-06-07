@@ -35,6 +35,7 @@ export * from './scoring';
 export * from './monitoring';
 export * from './audit';
 export * from './dashboard';
+export * from './validation-workflow';
 
 // Modules complémentaires
 export * from './orientation';

@@ -6,6 +6,15 @@ import { Utilisateur } from '@modules/auth/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
+/**
+ * Statut workflow d'un club
+ */
+export enum StatutClub {
+    ACTIF = 'ACTIF',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INACTIF = 'INACTIF',
+}
+
 @Entity('clubs')
 @Index(['etablissementId'])
 export class Club {
@@ -39,6 +48,9 @@ export class Club {
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    @Column({ type: 'varchar', length: 30, default: StatutClub.ACTIF })
+    statut!: StatutClub;
 
     /**
      * Établissement du club (multi-tenancy)

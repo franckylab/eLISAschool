@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: backend/database_management
-title: Database Management & Schema Evolution
-scope:
-    - backend/src/database/
-    - backend/database/
-source_files: []
-depends_on: []
-related_to: []

@@ -1,0 +1,5 @@
+- Four sub-modules (eleves, notes, bulletins, orientation) each follow a strict controller-service-entity-dto layered structure with barrel exports via index.ts.
+- Controllers use Express Router instances with authMiddleware and role-based guards; all request validation delegates to validateDto(schema, payload) using Zod schemas defined in dto/.
+- Services obtain TypeORM repositories from AppDataSource, enforce multi-tenancy by filtering on etablissementId, and optionally log audit events via auditService.log for create/update/delete operations.
+- The notes module includes a dedicated batch-loader service (notes-batch-loader.service.ts) that consolidates N+1 average calculations into single SQL queries with in-memory caching, consumed by the bulletins generation workflow.
+- Cross-module dependencies flow inward: bulletins depends on notes, classes, matieres, and periodes services; notes references eleves, matieres, and configuration helpers; orientation remains self-contained.

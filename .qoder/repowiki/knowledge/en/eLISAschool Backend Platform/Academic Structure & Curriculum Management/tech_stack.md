@@ -1,0 +1,1 @@
+Zod for runtime DTO validation with schema inference (z.infer); TypeORM with UUID primary keys and enum columns; Express Router for HTTP layer.

@@ -1,5 +1,0 @@
-- Entry Point: `backend/src/index.ts` bootstraps the application by initializing the TypeORM `AppDataSource` and starting the Express server defined in `backend/src/app.ts`.
-- Configuration Layer: `backend/src/config/` manages environment variables using Zod schema validation (`env.config.ts`) and exports database/Swagger configurations.
-- Database Layer: `backend/src/database/` centralizes the TypeORM `DataSource` instance and organizes SQL/TS migrations and seed scripts for schema management.
-- Shared Components: `backend/src/common/` exposes reusable Express artifacts, including global error handling (`filters`), request logging and auditing (`interceptors`), multi-tenancy resolution (`middlewares`), and standardized API response utilities (`utils`).
-- Dependency Flow: The main application (`app.ts`) depends on `config` for settings, `database` for persistence, and `common` for cross-cutting concerns, while feature modules (imported in `app.ts`) rely on these core primitives.

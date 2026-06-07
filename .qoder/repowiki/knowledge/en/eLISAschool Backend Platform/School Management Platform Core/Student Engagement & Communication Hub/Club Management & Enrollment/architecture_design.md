@@ -1,0 +1,5 @@
+- Follows a standard MVC-like structure with controllers, services, DTOs, and entities.
+- Uses Express for routing and TypeORM for database interactions via a shared `AppDataSource`.
+- Implements multi-tenancy by filtering all queries with an optional `etablissementId`.
+- Relies on Zod schemas in the controller layer for input validation before passing DTOs to the service layer.
+- Exports module components through barrel files (`index.ts`) in each subdirectory and the root.

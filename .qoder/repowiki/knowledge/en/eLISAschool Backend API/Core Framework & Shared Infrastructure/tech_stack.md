@@ -1,1 +1,0 @@
-Uses TypeORM with PostgreSQL via a centralized `DataSource` in `backend/src/database/data-source.ts` and Zod for runtime environment variable validation in `backend/src/config/env.config.ts`.

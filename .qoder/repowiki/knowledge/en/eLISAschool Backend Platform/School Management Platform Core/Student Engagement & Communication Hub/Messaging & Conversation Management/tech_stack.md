@@ -1,0 +1,1 @@
+Zod for request/response schema validation; TypeORM with UUID primary keys and enum columns; Express Router with middleware-based auth.

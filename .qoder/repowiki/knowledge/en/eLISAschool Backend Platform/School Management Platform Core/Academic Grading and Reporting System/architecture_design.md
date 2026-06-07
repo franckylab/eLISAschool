@@ -1,0 +1,3 @@
+- Each child module (notes, bulletins, scoring, impressions, requetes) follows a consistent NestJS-style structure with separate controllers, services, DTOs, and entities.
+- Modules are independently exported via index.ts files, suggesting loose coupling and potential for independent deployment or lazy loading.
+- Cross-module coordination likely occurs at a higher application layer (not visible here), where services from different modules interact to produce final outputs like report cards or approved requests.

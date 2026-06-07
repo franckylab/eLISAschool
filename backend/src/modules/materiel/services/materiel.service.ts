@@ -10,11 +10,12 @@
 
 import { Repository, LessThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Materiel, PretMateriel, CategorieMateriel, EtatMateriel } from '../entities';
+import { Materiel, PretMateriel, CategorieMateriel, EtatMateriel, StatutMateriel, StatutPretMateriel } from '../entities';
 import { CreateMaterielDto, PretMaterielDto, RetourMaterielDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 /**
  * Service Matériel avec configuration centralisée
@@ -35,8 +36,11 @@ export class MaterielService {
         };
     }
 
-    async create(dto: CreateMaterielDto, etablissementId?: string): Promise<Materiel> {
+    async create(dto: CreateMaterielDto, etablissementId?: string, createurId?: string): Promise<Materiel> {
         const params = await this.getMaterielParams();
+
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('materiel.require_validation', false);
 
         const materiel: Materiel = this.materielRepo.create({
             ...dto,
@@ -44,8 +48,23 @@ export class MaterielService {
             categorie: dto.categorie as CategorieMateriel,
             etat: dto.etat as EtatMateriel,
             dateAcquisition: dto.dateAcquisition ? new Date(dto.dateAcquisition) : undefined,
+            disponible: !requireValidation,
+            statut: requireValidation ? StatutMateriel.EN_ATTENTE_VALIDATION : StatutMateriel.DISPONIBLE,
         });
         await this.materielRepo.save(materiel);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'materiel',
+                entiteId: materiel.id,
+                entiteType: 'Materiel',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Acquisition matériel: ${dto.nom}`,
+            }, createurId);
+        }
+
         logger.info(`[${etablissementId}] Matériel créé: ${dto.nom}`);
         return materiel;
     }
@@ -66,7 +85,7 @@ export class MaterielService {
         return materiel;
     }
 
-    async preter(dto: PretMaterielDto, etablissementId?: string): Promise<PretMateriel> {
+    async preter(dto: PretMaterielDto, etablissementId?: string, createurId?: string): Promise<PretMateriel> {
         const params = await this.getMaterielParams();
         const materiel = await this.findOne(dto.materielId, etablissementId);
 
@@ -90,17 +109,36 @@ export class MaterielService {
             );
         }
 
-        materiel.quantite -= dto.quantite;
-        if (materiel.quantite === 0) materiel.disponible = false;
-        await this.materielRepo.save(materiel);
+        // Vérifier si le workflow de validation est requis pour les prêts
+        const requireValidation = await getParamBoolean('materiel.pret_require_validation', false);
+
+        // Si validation requise, ne pas décrémenter le stock
+        if (!requireValidation) {
+            materiel.quantite -= dto.quantite;
+            if (materiel.quantite === 0) materiel.disponible = false;
+            await this.materielRepo.save(materiel);
+        }
 
         const pret: PretMateriel = this.pretRepo.create({
             ...dto,
             etablissementId,
             datePret: new Date(),
             dateRetourPrevue,
+            statut: requireValidation ? StatutPretMateriel.EN_ATTENTE_VALIDATION : StatutPretMateriel.EN_COURS,
         });
         await this.pretRepo.save(pret);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'materiel',
+                entiteId: pret.id,
+                entiteType: 'PretMateriel',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Prêt matériel: ${materiel.nom} à ${dto.emprunteurId}`,
+            }, createurId);
+        }
 
         logger.info(`[${etablissementId}] Prêt matériel: ${materiel.nom} à ${dto.emprunteurId}`);
         return pret;

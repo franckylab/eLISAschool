@@ -17,6 +17,15 @@ import {
 import { Matiere, GroupeMatiere } from './matiere.entity';
 import { Niveau } from '@modules/niveaux/entities';
 
+/**
+ * Statut du programme matière-niveau (support workflow de validation)
+ */
+export enum StatutMatiereNiveau {
+    ACTIF = 'ACTIF',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INACTIF = 'INACTIF',
+}
+
 @Entity('matieres_niveaux')
 @Index(['niveauId'])
 @Index(['matiereId'])
@@ -61,6 +70,12 @@ export class MatiereNiveau {
 
     @Column({ type: 'boolean', default: true })
     obligatoire!: boolean;
+
+    /**
+     * Statut du programme (support workflow de validation)
+     */
+    @Column({ type: 'varchar', length: 30, default: StatutMatiereNiveau.ACTIF })
+    statut!: StatutMatiereNiveau;
 
     @CreateDateColumn()
     createdAt!: Date;

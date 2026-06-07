@@ -1,0 +1,1 @@
+Manages application-wide settings, module-specific configurations, and system parameters with multi-tenant support, audit logging, and robust backup/restore capabilities.

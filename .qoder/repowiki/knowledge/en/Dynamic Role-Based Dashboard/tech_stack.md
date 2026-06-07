@@ -1,0 +1,1 @@
+Uses Express.js for REST endpoints and SSE streaming. Implements a hybrid caching strategy with Redis (via `redisService`) and in-memory fallback. Uses TypeORM for `DashboardLayout` persistence.

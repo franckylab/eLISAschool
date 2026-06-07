@@ -1,0 +1,3 @@
+- Singleton service instances (e.g., `authService`, `rolesService`) are exported from module index files for cross-module import.
+- Cross-module imports rely on direct paths to `auth` entities and services rather than abstract interfaces or shared contracts.
+- Audit logging is performed via direct calls to `auditService.log()` or specialized helpers like `logCRUD()` within business logic.

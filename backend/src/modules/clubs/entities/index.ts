@@ -1,1 +1,1 @@
-export { Club, InscriptionClub, EvenementClub } from './club.entity';
+export { Club, InscriptionClub, EvenementClub, StatutClub } from './club.entity';

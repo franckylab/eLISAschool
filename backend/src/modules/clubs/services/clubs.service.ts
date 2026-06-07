@@ -10,11 +10,12 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Club, InscriptionClub, EvenementClub } from '../entities';
+import { Club, InscriptionClub, EvenementClub, StatutClub } from '../entities';
 import { CreateClubDto, InscrireClubDto, CreateEvenementDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 /**
  * Service Clubs avec configuration centralisée
@@ -40,9 +41,30 @@ export class ClubsService {
         };
     }
 
-    async createClub(dto: CreateClubDto, etablissementId?: string): Promise<Club> {
-        const club = this.clubRepo.create({ ...dto, etablissementId });
+    async createClub(dto: CreateClubDto, etablissementId?: string, createurId?: string): Promise<Club> {
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('clubs.require_validation', false);
+
+        const club = this.clubRepo.create({
+            ...dto,
+            etablissementId,
+            actif: !requireValidation,
+            statut: requireValidation ? StatutClub.EN_ATTENTE_VALIDATION : StatutClub.ACTIF,
+        });
         await this.clubRepo.save(club);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'clubs',
+                entiteId: club.id,
+                entiteType: 'Club',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Création club: ${dto.nom}`,
+            }, createurId);
+        }
+
         logger.info(`[${etablissementId}] Club créé: ${dto.nom}`);
         return club;
     }
@@ -62,9 +84,9 @@ export class ClubsService {
     }
 
     /**
-     * Inscription à un club (vérifie la limite configurable)
+     * Inscription à un club (vérifie la limite configurable + workflow optionnel)
      */
-    async inscrire(dto: InscrireClubDto, etablissementId?: string): Promise<InscriptionClub> {
+    async inscrire(dto: InscrireClubDto, etablissementId?: string, createurId?: string): Promise<InscriptionClub> {
         const params = await this.getClubsParams();
 
         // Vérifier le nombre d'inscriptions de l'élève
@@ -90,13 +112,28 @@ export class ClubsService {
         });
         if (existing) throw new AppError('Déjà inscrit', 409, 'ALREADY_ENROLLED');
 
+        // Vérifier si le workflow de validation est requis pour les inscriptions
+        const requireValidation = await getParamBoolean('clubs.inscription_require_validation', false);
+
         // Créer l'inscription avec approbation si requise
         const inscription = this.inscriptionRepo.create({
             ...dto,
             etablissementId,
-            actif: !params.requireApproval,
+            actif: !(params.requireApproval || requireValidation),
         });
         await this.inscriptionRepo.save(inscription);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'clubs',
+                entiteId: inscription.id,
+                entiteType: 'InscriptionClub',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Inscription club: élève ${dto.eleveId}`,
+            }, createurId);
+        }
 
         logger.info(`[${etablissementId}] Inscription club: élève ${dto.eleveId} -> club ${dto.clubId}`);
         return inscription;

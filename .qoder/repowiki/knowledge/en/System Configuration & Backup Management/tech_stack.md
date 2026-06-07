@@ -1,0 +1,3 @@
+- **Validation**: Uses `zod` for schema-based DTO validation and type inference.
+- **Compression/Encryption**: Utilizes Node.js `zlib` for gzip compression and `crypto` for AES-256-GCM encryption of backup data.
+- **ORM**: Leverages `TypeORM` for entity management, complex querying (fallback resolution), and transactional backup/restore operations.

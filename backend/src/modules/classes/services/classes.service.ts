@@ -6,9 +6,11 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Classe, AffectationEleve } from '../entities';
+import { Classe, AffectationEleve, StatutAffectationEleve } from '../entities';
 import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, QueryClassesDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
@@ -115,7 +117,7 @@ export class ClassesService {
 
     // ==== AFFECTATIONS ====
 
-    async affecterEleve(dto: AffecterEleveDto, etablissementId?: string): Promise<AffectationEleve> {
+    async affecterEleve(dto: AffecterEleveDto, createurId: string, etablissementId?: string): Promise<AffectationEleve> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -143,21 +145,44 @@ export class ClassesService {
                 throw new AppError('Élève déjà affecté à une classe pour cette année', 409, 'ALREADY_ASSIGNED');
             }
 
+            // Vérifier si la validation est requise
+            const requireValidation = await getParamBoolean('classes.require_validation', false);
+
             const affectation = this.affectationRepo.create({
                 eleveId: dto.eleveId,
                 classeId: dto.classeId,
                 anneeScolaireId: classe.anneeScolaireId,
                 dateAffectation: dto.dateAffectation ? new Date(dto.dateAffectation) : new Date(),
                 etablissementId,
+                statut: requireValidation
+                    ? StatutAffectationEleve.EN_ATTENTE_VALIDATION
+                    : StatutAffectationEleve.ACTIVE,
             });
 
             await queryRunner.manager.save(affectation);
 
-            // Mettre à jour effectif
-            await queryRunner.manager.increment(Classe, { id: dto.classeId }, 'effectifActuel', 1);
+            // Mettre à jour effectif seulement si validation non requise
+            if (!requireValidation) {
+                await queryRunner.manager.increment(Classe, { id: dto.classeId }, 'effectifActuel', 1);
+            }
 
             await queryRunner.commitTransaction();
-            logger.info(`[${etablissementId}] Élève ${dto.eleveId} affecté à la classe ${classe.nom}`);
+
+            // Créer un workflow de validation si requis
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'classes',
+                    entiteId: affectation.id,
+                    entiteType: 'AffectationEleve',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, createurId);
+
+                logger.info(`[${etablissementId}] Affectation élève créée en attente de validation: ${dto.eleveId} → ${classe.nom}`);
+            } else {
+                logger.info(`[${etablissementId}] Élève ${dto.eleveId} affecté à la classe ${classe.nom}`);
+            }
+
             return affectation;
         } catch (error: any) {
             await queryRunner.rollbackTransaction();

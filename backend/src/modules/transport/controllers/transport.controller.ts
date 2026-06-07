@@ -39,7 +39,7 @@ router.get('/lignes/:id/inscriptions', authMiddleware, staffOnly, async (req, re
 router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(createInscriptionTransportSchema, req.body);
-        const inscription = await transportService.createInscription(dto);
+        const inscription = await transportService.createInscription(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: inscription, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });

@@ -7,10 +7,12 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Etablissement, EtablissementConfig } from '../entities';
+import { Etablissement, EtablissementConfig, StatutEtablissement } from '../entities';
 import { CreateEtablissementDto, UpdateEtablissementDto, UpdateEtablissementConfigDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
 export class EtablissementService {
     private etablissementRepo: Repository<Etablissement>;
@@ -28,13 +30,19 @@ export class EtablissementService {
     /**
      * Crée un nouvel établissement avec sa configuration par défaut
      */
-    async create(dto: CreateEtablissementDto): Promise<Etablissement> {
+    async create(dto: CreateEtablissementDto, createurId?: string): Promise<Etablissement> {
+        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
-            const etablissement = this.etablissementRepo.create(dto);
+            const etablissement = this.etablissementRepo.create({
+                ...dto,
+                actif: !requireValidation,
+                statut: requireValidation ? StatutEtablissement.EN_ATTENTE_VALIDATION : StatutEtablissement.ACTIF,
+            });
             await queryRunner.manager.save(etablissement);
 
             // Création automatique de la configuration par défaut
@@ -44,6 +52,19 @@ export class EtablissementService {
             await queryRunner.manager.save(config);
 
             await queryRunner.commitTransaction();
+
+            // Créer le workflow de validation si requis
+            if (requireValidation && createurId) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'etablissement',
+                    entiteId: etablissement.id,
+                    entiteType: 'Etablissement',
+                    niveauxRequis: 2,
+                    etablissementId: etablissement.id,
+                    commentaire: `Création établissement: ${dto.nom}`,
+                }, createurId);
+            }
+
             logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
             return etablissement;
         } catch (error: any) {
@@ -98,11 +119,31 @@ export class EtablissementService {
      * Désactive un établissement (suppression logique)
      * Empêche la suppression physique pour préserver l'intégrité des données
      */
-    async desactiver(id: string): Promise<Etablissement> {
+    async desactiver(id: string, createurId?: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
+        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+
+        if (requireValidation && createurId) {
+            // Ne PAS désactiver, mettre en attente
+            etablissement.statut = StatutEtablissement.EN_ATTENTE_DESACTIVATION;
+            await this.etablissementRepo.save(etablissement);
+
+            await validationWorkflowService.createWorkflow({
+                module: 'etablissement',
+                entiteId: id,
+                entiteType: 'Etablissement',
+                niveauxRequis: 2,
+                etablissementId: id,
+                commentaire: `Demande de désactivation: ${etablissement.nom}`,
+            }, createurId);
+
+            logger.info(`Désactivation en attente de validation: ${etablissement.nom} (${id})`);
+            return etablissement;
+        }
 
         // Désactivation logique au lieu de suppression physique
         etablissement.actif = false;
+        etablissement.statut = StatutEtablissement.INACTIF;
         await this.etablissementRepo.save(etablissement);
 
         logger.info(`Établissement désactivé: ${etablissement.nom} (${id})`);
@@ -112,10 +153,30 @@ export class EtablissementService {
     /**
      * Réactive un établissement
      */
-    async activer(id: string): Promise<Etablissement> {
+    async activer(id: string, createurId?: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
+        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+
+        if (requireValidation && createurId) {
+            // Ne PAS activer, mettre en attente
+            etablissement.statut = StatutEtablissement.EN_ATTENTE_VALIDATION;
+            await this.etablissementRepo.save(etablissement);
+
+            await validationWorkflowService.createWorkflow({
+                module: 'etablissement',
+                entiteId: id,
+                entiteType: 'Etablissement',
+                niveauxRequis: 2,
+                etablissementId: id,
+                commentaire: `Demande de réactivation: ${etablissement.nom}`,
+            }, createurId);
+
+            logger.info(`Réactivation en attente de validation: ${etablissement.nom} (${id})`);
+            return etablissement;
+        }
 
         etablissement.actif = true;
+        etablissement.statut = StatutEtablissement.ACTIF;
         await this.etablissementRepo.save(etablissement);
 
         logger.info(`Établissement réactivé: ${etablissement.nom} (${id})`);

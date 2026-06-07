@@ -65,7 +65,7 @@ router.post(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createEtablissementSchema, req.body);
-            const etablissement = await etablissementService.create(dto);
+            const etablissement = await etablissementService.create(dto, req.utilisateur?.id);
             res.status(201).json({ success: true, data: etablissement });
         } catch (error) { next(error); }
     }
@@ -98,7 +98,7 @@ router.patch(
     requireRoles(Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const etablissement = await etablissementService.desactiver(req.params.id);
+            const etablissement = await etablissementService.desactiver(req.params.id, req.utilisateur?.id);
             res.json({ success: true, data: etablissement, message: 'Établissement désactivé' });
         } catch (error) { next(error); }
     }
@@ -114,7 +114,7 @@ router.patch(
     requireRoles(Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const etablissement = await etablissementService.activer(req.params.id);
+            const etablissement = await etablissementService.activer(req.params.id, req.utilisateur?.id);
             res.json({ success: true, data: etablissement, message: 'Établissement réactivé' });
         } catch (error) { next(error); }
     }

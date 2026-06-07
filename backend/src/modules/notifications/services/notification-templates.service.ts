@@ -491,6 +491,54 @@ export class NotificationTemplatesService {
             logger.error('[Template] Erreur envoi message administration', error);
         }
     }
+
+    /**
+     * ============================================
+     * TEMPLATES - WORKFLOW VALIDATION
+     * ============================================
+     */
+
+    /**
+     * Notification : Validation workflow approuvée
+     */
+    async workflowValidation(context: NotificationContext, variables: {
+        module: string;
+        niveau: string;
+        entiteType: string;
+        validateur: string;
+    }): Promise<void> {
+        try {
+            const moduleLabels: Record<string, string> = {
+                notes: 'Notes',
+                bulletins: 'Bulletins',
+                cantine: 'Cantine',
+                transport: 'Transport',
+                requetes: 'Requête',
+            };
+
+            const moduleLabel = moduleLabels[variables.module] || variables.module;
+
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: this.renderTemplate(`✅ Validation ${moduleLabel} - Niveau {{niveau}}`, variables),
+                contenu: this.renderTemplate(
+                    `{{validateur}} a validé le niveau {{niveau}} pour {{entiteType}}.`,
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'workflow_validation',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.NORMALE,
+            });
+
+            logger.info(`[Template] Notification workflow validation envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification workflow', error);
+        }
+    }
 }
 
 // Singleton export

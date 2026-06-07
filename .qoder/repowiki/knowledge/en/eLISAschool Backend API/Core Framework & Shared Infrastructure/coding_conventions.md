@@ -1,3 +1,0 @@
-- Standardized API responses use a consistent JSON structure with a `success` boolean, optional `data` payload, and `meta` object for pagination details as seen in `api-response.util.ts`.
-- Global error handling relies on a custom `AppError` class with operational flags and standardized error codes, processed by a central Express error middleware in `error.filter.ts`.
-- Multi-tenancy is enforced via a `tenantMiddleware` that resolves the `etablissementId` from JWT claims or query parameters, attaching it to the request object for downstream filtering.

@@ -1,0 +1,5 @@
+- Layered structure with controllers (Express router), services (MonitoringService), and DTOs (Zod schemas) under a unified module entry point (`index.ts`).
+- The controller defines REST endpoints (`/health`, `/metrics`, `/stats`, `/maintenance`, `/logs`) with role-based access via `authMiddleware` and `requireRoles` from the auth module.
+- The service layer collects OS-level metrics (memory, CPU via `os` module), database connectivity status (via `AppDataSource`), and application stats (user/request counts).
+- DTOs use Zod for request validation (`maintenanceSchema`, `queryLogsSchema`), consumed via a shared `validateDto` utility.
+- Dependency direction: controllers → services → external modules (auth middlewares, configuration utils, database data-source, logger).

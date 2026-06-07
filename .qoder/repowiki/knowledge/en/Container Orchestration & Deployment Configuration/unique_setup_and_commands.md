@@ -1,5 +1,1 @@
-- Start all services: `docker-compose up -d`
-- Stop all services: `docker-compose down`
-- Environment variables configured via .env file (DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, ENCRYPTION_KEY, APP_PORT, FRONTEND_PORT)
-- Backend development uses volume mounting at ../backend:/app with nodemon hot-reload
-- Frontend development runs Vite dev server with --host flag for container accessibility
+Development environment uses volume mounts for hot-reloading (npm run dev) while production relies on multi-stage builds; startup requires docker-compose up -d after setting environment variables via .env file.

@@ -33,7 +33,7 @@ router.post('/menus', authMiddleware, staffOnly, async (req, res, next) => {
 router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(createInscriptionSchema, req.body);
-        const inscription = await cantineService.createInscription(dto);
+        const inscription = await cantineService.createInscription(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: inscription, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });

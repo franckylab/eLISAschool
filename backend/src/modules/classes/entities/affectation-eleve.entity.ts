@@ -18,6 +18,15 @@ import { Classe } from './classe.entity';
 import { Eleve } from '@modules/eleves/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
+/**
+ * Statut de l'affectation élève (support workflow de validation)
+ */
+export enum StatutAffectationEleve {
+    ACTIVE = 'ACTIVE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INACTIVE = 'INACTIVE',
+}
+
 @Entity('affectations_eleves')
 @Index(['eleveId'])
 @Index(['classeId'])
@@ -49,6 +58,12 @@ export class AffectationEleve {
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    /**
+     * Statut de l'affectation (support workflow de validation)
+     */
+    @Column({ type: 'varchar', length: 30, default: StatutAffectationEleve.ACTIVE })
+    statut!: StatutAffectationEleve;
 
     /**
      * Établissement de l'affectation (multi-tenancy)

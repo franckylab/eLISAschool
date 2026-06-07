@@ -1,0 +1,1 @@
+Uses `zod` (^3.24.1) for schema validation and TypeScript (^5.7.2) for type definitions, compiled to CommonJS/ESM via `tsc`.

@@ -1,0 +1,1 @@
+Manages creation, delivery, and lifecycle of multi-channel user notifications with configurable routing.

@@ -1,4 +1,3 @@
-- Multi-stage Docker builds use standardized stage names: base, deps, builder, production/development for consistent layer caching and image optimization
-- All services configure health checks with 10s interval, 5s timeout, and 5 retries to ensure reliable service dependency resolution
-- Environment variables follow pattern of providing development defaults via ${VAR:-default_value} syntax for seamless dev/prod configuration switching
-- Volume mounts exclude node_modules directories (/app/node_modules) to prevent host-container dependency conflicts in development mode
+- Environment variables use default fallback syntax (${VAR:-default}) for all configurable parameters including database credentials and service ports.
+- Service containers use explicit restart policies (unless-stopped) and health checks to ensure reliability and automatic recovery.
+- Multi-stage builds consistently use 'base', 'deps', 'builder', and 'production'/'runner' stage naming conventions across Dockerfiles.

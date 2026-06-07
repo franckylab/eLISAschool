@@ -1,0 +1,1 @@
+Uses Bash for database orchestration scripts relying on `psql` CLI, and TypeScript for utility verification and unit testing with Jest-style assertions.

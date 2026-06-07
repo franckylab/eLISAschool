@@ -1,0 +1,8 @@
+- Layered structure: controllers (Express routers) → services (business logic + TypeORM repositories) → provider registry (singleton strategy pattern) → concrete providers implementing INotificationProvider interface.
+- Core abstraction is `INotificationProvider` (`providers/interfaces/notification-provider.interface.ts`) defining `envoyer`, `testerConfiguration`, `initialiser`, `estConfiguré` contract; four implementations exist: EmailProvider (nodemailer), SmsProvider, PushProvider, InAppProvider.
+- `ProviderRegistry` (`providers/provider-registry.ts`) is a singleton that indexes providers by notification type and executes `sendWithFallback` — iterates configured providers until one succeeds.
+- `NotificationsService` (`services/notifications.service.ts`) orchestrates persistence (TypeORM), channel enablement checks via centralized config params, and delegates actual delivery to `providerRegistry.sendWithFallback`.
+- Two controllers: `notifications.controller.ts` handles user-facing CRUD and read-state operations; `notification-provider.controller.ts` manages provider registration/configuration (admin-only).
+- DTOs use Zod schemas (`dto/notification.dto.ts`) validated via shared `validateDto` utility before reaching service layer.
+- Cron jobs (`cron-jobs.ts`) handle scheduled notification processing every 5 minutes plus domain-specific reminders (canteen payments, daily menu).
+- Module entry point (`index.ts`) re-exports entities, DTOs, services, and controllers for external consumption.

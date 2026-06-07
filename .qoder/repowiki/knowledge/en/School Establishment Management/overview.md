@@ -1,1 +1,1 @@
-Manages multi-tenant school establishments, their configurations, and lifecycle states.
+Manages multi-tenant school establishments with per-establishment configuration, lifecycle control, and SaaS quota management.

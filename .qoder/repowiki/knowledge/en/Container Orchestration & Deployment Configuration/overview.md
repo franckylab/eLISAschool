@@ -1,1 +1,1 @@
-Defines multi-service Docker infrastructure for the eLISAschool application, orchestrating PostgreSQL, Redis, Node.js backend, and React frontend with development and production build pipelines.
+Defines Docker-based infrastructure for the eLISAschool application, including multi-stage builds, service composition, and reverse proxy configuration.

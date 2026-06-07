@@ -18,6 +18,17 @@ import {
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 import { SousSysteme, Etablissement } from '@modules/etablissement/entities';
 
+/**
+ * Statut workflow d'un dossier élève
+ */
+export enum StatutEleve {
+    ACTIF = 'ACTIF',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    EXCLU = 'EXCLU',
+    ABANDON = 'ABANDON',
+    DIPLOME = 'DIPLOME',
+}
+
 @Entity('eleves')
 @Index(['utilisateurId'])
 @Index(['matricule'])
@@ -67,8 +78,8 @@ export class Eleve {
     @Column({ type: 'date' })
     dateInscription!: Date;
 
-    @Column({ type: 'enum', enum: ['ACTIF', 'EXCLU', 'ABANDON', 'DIPLOME'], default: 'ACTIF' })
-    statut!: 'ACTIF' | 'EXCLU' | 'ABANDON' | 'DIPLOME';
+    @Column({ type: 'varchar', length: 30, default: StatutEleve.ACTIF })
+    statut!: StatutEleve;
 
     @Column({ type: 'enum', enum: ['COMPLET', 'INCOMPLET'], default: 'INCOMPLET' })
     etatDossier!: 'COMPLET' | 'INCOMPLET';

@@ -1,0 +1,1 @@
+Manages user badges, points, leaderboards, and multi-dimensional student scoring with configurable weights and rule-based point attribution.

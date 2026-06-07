@@ -1,0 +1,1 @@
+Orchestrates a modular school management ecosystem by unifying academic, operational, and engagement domains under a shared multi-tenant architecture and centralized identity governance.

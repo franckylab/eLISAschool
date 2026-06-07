@@ -1,5 +1,0 @@
-- Every sub-package exposes its public API through a barrel `index.ts` using `export * from './file'` statements, and the root `src/index.ts` re-exports all sub-package barrels.
-- Each source file ends with a `export default { ... }` object that aggregates all named exports from that file for convenience imports.
-- Enum values use SCREAMING_SNAKE_CASE string literals that mirror the enum member name (e.g., `SUPER_ADMIN = 'SUPER_ADMIN'`).
-- Constants are defined as `as const` frozen objects grouped by concern (e.g., `LIMITS`, `CURRENCIES`, `LANGUAGES`) rather than individual `const` declarations.
-- Zod validator schemas are paired with inferred TypeScript types using `z.infer<typeof schemaName>` and exported alongside the schema.

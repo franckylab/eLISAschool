@@ -1,0 +1,1 @@
+Manages dynamic roles, permissions, and user-role assignments with hierarchical role support and cache invalidation.

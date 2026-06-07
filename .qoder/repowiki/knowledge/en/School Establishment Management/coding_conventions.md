@@ -1,4 +1,5 @@
-- Services use TypeORM QueryRunners for transactional operations to ensure data consistency during complex writes.
-- Controllers delegate all validation logic to Zod schemas defined in the DTO layer before calling services.
-- Entities use UUIDs as primary keys and include automatic timestamp columns for creation and updates.
-- Soft deletion is preferred over physical deletion, using an 'actif' boolean flag to maintain data integrity.
+- All route handlers wrap async logic in try-catch blocks that delegate errors to Express via `next(error)` for centralized error handling.
+- DTO validation schemas are defined using Zod's `z.object()` with `z.infer` to derive TypeScript types, ensuring runtime and compile-time type consistency.
+- Entity classes use TypeORM decorator-based mapping (`@Entity`, `@Column`, `@OneToOne`, `@JoinColumn`) with explicit table names and column type specifications.
+- Role-based authorization is enforced at the route level using `requireRoles(Role.SUPER_ADMIN)` or `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` middleware composition.
+- Service methods that modify multiple related entities use explicit TypeORM transaction management via `createQueryRunner` with commit/rollback in try-finally blocks.

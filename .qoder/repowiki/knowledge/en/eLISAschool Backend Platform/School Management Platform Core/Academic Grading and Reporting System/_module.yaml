@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: 3cf3983a45e74bb3bc928de704fc1db8
+title: Academic Grading and Reporting System
+scope:
+    - backend/src/modules/notes/
+    - backend/src/modules/bulletins/
+    - backend/src/modules/scoring/
+    - backend/src/modules/impressions/
+    - backend/src/modules/requetes/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/shared_infrastructure
+    - path: backend/business_modules/core_identity/rbac

@@ -6,10 +6,12 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { AnneeScolaire } from '../entities';
+import { AnneeScolaire, StatutAnneeScolaire } from '../entities';
 import { CreateAnneeScolaireDto, UpdateAnneeScolaireDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
 export class AnneesScolairesService {
     private repo: Repository<AnneeScolaire>;
@@ -18,9 +20,12 @@ export class AnneesScolairesService {
         this.repo = AppDataSource.getRepository(AnneeScolaire);
     }
 
-    async create(dto: CreateAnneeScolaireDto): Promise<AnneeScolaire> {
+    async create(dto: CreateAnneeScolaireDto, createurId?: string, etablissementId?: string): Promise<AnneeScolaire> {
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('annees_scolaires.require_validation', false);
+
         // Si nouvelle année active, désactiver les autres
-        if (dto.enCours) {
+        if (dto.enCours && !requireValidation) {
             await this.repo.update({ enCours: true }, { enCours: false });
         }
 
@@ -28,8 +33,23 @@ export class AnneesScolairesService {
             ...dto,
             dateDebut: new Date(dto.dateDebut),
             dateFin: new Date(dto.dateFin),
+            enCours: requireValidation ? false : dto.enCours,
+            statut: requireValidation ? StatutAnneeScolaire.OUVERTE : (dto.enCours ? StatutAnneeScolaire.EN_COURS : StatutAnneeScolaire.OUVERTE),
         });
         await this.repo.save(annee);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && createurId) {
+            await validationWorkflowService.createWorkflow({
+                module: 'annees_scolaires',
+                entiteId: annee.id,
+                entiteType: 'AnneeScolaire',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Création année scolaire: ${dto.libelle}`,
+            }, createurId);
+        }
+
         logger.info(`Année scolaire créée: ${dto.libelle}`);
         return annee;
     }
@@ -48,12 +68,45 @@ export class AnneesScolairesService {
         return annee;
     }
 
-    async update(id: string, dto: UpdateAnneeScolaireDto): Promise<AnneeScolaire> {
+    async update(id: string, dto: UpdateAnneeScolaireDto, createurId?: string, etablissementId?: string): Promise<AnneeScolaire> {
         const annee = await this.findOne(id);
+
+        // Détecter une demande de clôture
+        const demandeCloture = dto.cloturee === true && !annee.cloturee;
+
+        if (demandeCloture) {
+            const requireValidation = await getParamBoolean('annees_scolaires.require_validation', false);
+            if (requireValidation && createurId) {
+                // Ne PAS clôturer, mettre en attente
+                annee.statut = StatutAnneeScolaire.EN_ATTENTE_CLOTURE;
+                const { cloturee, ...autresModifs } = dto;
+                if (autresModifs.dateDebut) annee.dateDebut = new Date(autresModifs.dateDebut);
+                if (autresModifs.dateFin) annee.dateFin = new Date(autresModifs.dateFin);
+                if (autresModifs.libelle) annee.libelle = autresModifs.libelle;
+                await this.repo.save(annee);
+
+                await validationWorkflowService.createWorkflow({
+                    module: 'annees_scolaires',
+                    entiteId: annee.id,
+                    entiteType: 'AnneeScolaire',
+                    niveauxRequis: 2,
+                    etablissementId,
+                    commentaire: `Demande de clôture: ${annee.libelle}`,
+                }, createurId);
+
+                return annee;
+            }
+        }
 
         // Si on active cette année
         if (dto.enCours && !annee.enCours) {
             await this.repo.update({ enCours: true }, { enCours: false });
+            annee.statut = StatutAnneeScolaire.EN_COURS;
+        }
+
+        // Si on clôture
+        if (dto.cloturee === true && !annee.cloturee) {
+            annee.statut = StatutAnneeScolaire.CLOTUREE;
         }
 
         if (dto.dateDebut) annee.dateDebut = new Date(dto.dateDebut);

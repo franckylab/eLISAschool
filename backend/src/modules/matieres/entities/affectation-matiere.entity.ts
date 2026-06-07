@@ -19,6 +19,15 @@ import { Classe } from '@modules/classes/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 
+/**
+ * Statut de l'affectation matière (support workflow de validation)
+ */
+export enum StatutAffectationMatiere {
+    ACTIVE = 'ACTIVE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    INACTIVE = 'INACTIVE',
+}
+
 @Entity('affectations_matieres')
 @Index(['classeId'])
 @Index(['enseignantId'])
@@ -56,6 +65,12 @@ export class AffectationMatiere {
 
     @Column({ type: 'int', nullable: true })
     volumeHoraireHebdo?: number;
+
+    /**
+     * Statut de l'affectation (support workflow de validation)
+     */
+    @Column({ type: 'varchar', length: 30, default: StatutAffectationMatiere.ACTIVE })
+    statut!: StatutAffectationMatiere;
 
     @CreateDateColumn()
     createdAt!: Date;

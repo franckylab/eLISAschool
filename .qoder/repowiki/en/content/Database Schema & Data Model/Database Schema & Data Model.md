@@ -9,6 +9,9 @@
 - [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
 - [002-multi-etablissements.sql](file://backend/src/database/migrations/002-multi-etablissements.sql)
 - [008-backup-system-v2.ts.bak](file://backend/src/database/migrations/008-backup-system-v2.ts.bak)
+- [010-notification-providers.sql](file://backend/src/database/migrations/010-notification-providers.sql)
+- [010-dashboard-layouts.sql](file://backend/src/database/migrations/010-dashboard-layouts.sql)
+- [run-notification-providers-migration.ts](file://backend/src/database/migrations/run-notification-providers-migration.ts)
 - [annee-scolaire.entity.ts](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts)
 - [classe.entity.ts](file://backend/src/modules/classes/entities/classe.entity.ts)
 - [affectation-eleve.entity.ts](file://backend/src/modules/classes/entities/affectation-eleve.entity.ts)
@@ -42,16 +45,22 @@
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [backup-record.entity.ts](file://backend/src/modules/configuration/entities/backup-record.entity.ts)
+- [notification.entity.ts](file://backend/src/modules/notifications/entities/notification.entity.ts)
+- [notification-provider.entity.ts](file://backend/src/modules/notifications/entities/notification-provider.entity.ts)
+- [dashboard-layout.entity.ts](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts)
+- [dashboard.types.ts](file://backend/src/modules/dashboard/types/dashboard.types.ts)
+- [provider-registry.ts](file://backend/src/modules/notifications/providers/provider-registry.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive backup system documentation with new backup record entity
-- Documented backup_records table for production-grade backup management with multi-tenant support
-- Added backup type enumeration (CONFIG, DATABASE, FULL) and storage provider enumeration (DATABASE, S3, FILESYSTEM)
-- Integrated backup system with establishment-aware architecture for tenant-specific backups
-- Enhanced configuration management with backup metadata tracking and retention policies
-- Added backup system migration with comprehensive indexing strategy for performance optimization
+- Added comprehensive notification providers system with configurable notification channels and quota tracking
+- Documented notification_providers table for managing PUSH, EMAIL, IN_APP, and SMS notification providers
+- Added dashboard layouts system for persistent user-customized dashboard configurations
+- Documented dashboard_layouts table with establishment-aware storage and widget configuration
+- Integrated notification system with provider registry and fallback mechanisms
+- Added quota management, error tracking, and priority-based routing for notification providers
+- Implemented establishment-specific dashboard layouts with global and per-establishment scopes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -61,19 +70,21 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Establishment-Centric Multi-Tenant Design](#establishment-centric-multi-tenant-design)
 7. [Backup System Implementation](#backup-system-implementation)
-8. [RBAC System Implementation](#rbac-system-implementation)
-9. [Migration and Data Transformation](#migration-and-data-transformation)
-10. [Dependency Analysis](#dependency-analysis)
-11. [Performance Considerations](#performance-considerations)
-12. [Troubleshooting Guide](#troubleshooting-guide)
-13. [Conclusion](#conclusion)
-14. [Appendices](#appendices)
+8. [Notification Providers System](#notification-providers-system)
+9. [Dashboard Layouts System](#dashboard-layouts-system)
+10. [RBAC System Implementation](#rbac-system-implementation)
+11. [Migration and Data Transformation](#migration-and-data-transformation)
+12. [Dependency Analysis](#dependency-analysis)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting Guide](#troubleshooting-guide)
+15. [Conclusion](#conclusion)
+16. [Appendices](#appendices)
 
 ## Introduction
-This document describes the eLISAschool academic management system database schema and data model. The system has been redesigned to support multi-establishment architecture with comprehensive RBAC (Role-Based Access Control) capabilities and a production-grade backup system. The establishment entity serves as the central hub coordinating all establishment-specific relationships, while the RBAC system provides fine-grained permission management across users, roles, and establishment contexts. The backup system implements multi-tenant backup management with encryption, compression, and retention policies.
+This document describes the eLISAschool academic management system database schema and data model. The system has been redesigned to support multi-establishment architecture with comprehensive RBAC (Role-Based Access Control) capabilities, a production-grade backup system, and advanced notification management with configurable providers. The establishment entity serves as the central hub coordinating all establishment-specific relationships, while the RBAC system provides fine-grained permission management across users, roles, and establishment contexts. The backup system implements multi-tenant backup management with encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
 
 ## Project Structure
-The database layer is powered by TypeORM against PostgreSQL with enhanced multi-establishment support, comprehensive RBAC implementation, and production-grade backup system. Entities are grouped per domain module under backend/src/modules/*/entities, with establishment relationships integrated across all domain entities. The TypeORM DataSource is configured via environment-driven settings and initialized at application startup with establishment-aware middleware, RBAC support, and backup system integration.
+The database layer is powered by TypeORM against PostgreSQL with enhanced multi-establishment support, comprehensive RBAC implementation, production-grade backup system, and advanced notification management. Entities are grouped per domain module under backend/src/modules/*/entities, with establishment relationships integrated across all domain entities. The TypeORM DataSource is configured via environment-driven settings and initialized at application startup with establishment-aware middleware, RBAC support, backup system integration, and notification provider management.
 
 ```mermaid
 graph TB
@@ -88,6 +99,8 @@ SEED["Seeds"]
 ETAB["Establishment Hub"]
 RBAC["RBAC System"]
 BACKUP["Backup System"]
+NOTIFS["Notification Providers"]
+DASH["Dashboard Layouts"]
 END
 APP --> DS
 DS --> CFG
@@ -96,9 +109,16 @@ DS --> SEED
 ENT --> ETAB
 ENT --> RBAC
 ENT --> BACKUP
+ENT --> NOTIFS
+ENT --> DASH
 ETAB --> RBAC
 ETAB --> BACKUP
+ETAB --> NOTIFS
+ETAB --> DASH
 RBAC --> BACKUP
+RBAC --> NOTIFS
+RBAC --> DASH
+NOTIFS --> DASH
 ```
 
 **Diagram sources**
@@ -107,16 +127,20 @@ RBAC --> BACKUP
 - [etablissement.entity.ts:58](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L58)
 - [utilisateur-etablissement.entity.ts](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts)
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
+- [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
+- [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
 
 **Section sources**
 - [data-source.ts:17](file://backend/src/database/data-source.ts#L17)
 - [database.config.ts:15-51](file://backend/src/config/database.config.ts#L15-L51)
 
 ## Core Components
-- TypeORM DataSource: Centralized database connection with establishment-aware middleware, RBAC support, and backup system integration
+- TypeORM DataSource: Centralized database connection with establishment-aware middleware, RBAC support, backup system integration, and notification provider management
 - Establishment Entity: Central hub managing multi-establishment architecture with OneToOne configuration relationships
 - RBAC Entities: Comprehensive role-based access control system with establishment-aware permissions
 - Backup System: Production-grade backup management with multi-tenant support, encryption, compression, and retention policies
+- Notification Providers: Configurable notification channel management with quota tracking, error monitoring, and fallback mechanisms
+- Dashboard Layouts: Persistent storage for user-customized dashboard configurations with establishment-aware scoping
 - Entity Modules: Academic and administrative domains with establishment-specific foreign keys
 - Seeds: Initial dataset provisioning with establishment context and RBAC seed data
 - Configuration Management: Establishment-specific settings, backup metadata tracking, and parameters
@@ -127,6 +151,8 @@ Key configuration highlights:
 - OneToOne relationships: Establishment to configuration mapping
 - RBAC integration: Role and permission management with establishment context
 - Backup system: Multi-tenant backup records with comprehensive metadata and retention tracking
+- Notification system: Configurable providers with quota management and fallback routing
+- Dashboard system: Establishment-aware widget layouts with persistence
 - Synchronization enabled only in development
 - Logging controlled by environment
 - Connection pooling and SSL options tuned for multi-establishment deployment
@@ -136,9 +162,11 @@ Key configuration highlights:
 - [data-source.ts:17](file://backend/src/database/data-source.ts#L17)
 - [etablissement.entity.ts:96-98](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L96-L98)
 - [backup-record.entity.ts:23-39](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L23-L39)
+- [notification-provider.entity.ts:53](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L53)
+- [dashboard-layout.entity.ts:36](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L36)
 
 ## Architecture Overview
-The schema follows a normalized relational model with UUID primary keys and explicit foreign key relationships. The establishment entity serves as the central hub, with all domain entities maintaining establishment relationships for proper data isolation and tenant separation. The RBAC system provides comprehensive role-based access control with establishment-aware permissions and multi-establishment user management. The backup system implements production-grade backup management with multi-tenant support, encryption, compression, and retention policies.
+The schema follows a normalized relational model with UUID primary keys and explicit foreign key relationships. The establishment entity serves as the central hub, with all domain entities maintaining establishment relationships for proper data isolation and tenant separation. The RBAC system provides comprehensive role-based access control with establishment-aware permissions and multi-establishment user management. The backup system implements production-grade backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping.
 
 ```mermaid
 erDiagram
@@ -155,6 +183,8 @@ UTILISATEUR ||--o{ REFRESH_TOKEN : "holds tokens"
 UTILISATEUR ||--o{ UTILISATEUR_ETABLISSEMENT : "belongs to"
 UTILISATEUR ||--o{ UTILISATEUR_ROLE : "has roles"
 UTILISATEUR ||--o{ UTILISATEUR_PERMISSION : "has permissions"
+UTILISATEUR ||--o{ NOTIFICATION : "receives"
+UTILISATEUR ||--o{ DASHBOARD_LAYOUT : "has layouts"
 UTILISATEUR_ETABLISSEMENT ||--o{ ROLE : "assigns"
 UTILISATEUR_ETABLISSEMENT ||--o{ PERMISSION : "grants"
 UTILISATEUR_ROLE ||--o{ ROLE : "is assigned"
@@ -172,11 +202,16 @@ ETABLISSEMENT ||--o{ CARTES : "issues"
 ETABLISSEMENT ||--o{ CANTINE : "operates"
 ETABLISSEMENT ||--o{ TRANSPORT : "manages"
 ETABLISSEMENT ||--o{ IMPRESSIONS : "prints"
+ETABLISSEMENT ||--o{ NOTIFICATION_PROVIDER : "configures"
 ETABLISSEMENT ||--|| CONFIG_APP : "has configuration"
 ETABLISSEMENT ||--|| CONFIG_MODULE : "has module config"
 ETABLISSEMENT ||--|| HISTORIQUE_CONFIG : "tracks changes"
 ETABLISSEMENT ||--|| PARAMETRE_SYSTEME : "uses parameters"
 ETABLISSEMENT ||--o{ BACKUP_RECORD : "creates backups"
+NOTIFICATION_PROVIDER ||--o{ ETABLISSEMENT : "configured for"
+NOTIFICATION ||--o{ NOTIFICATION_PROVIDER : "sent via"
+DASHBOARD_LAYOUT ||--o{ UTILISATEUR : "belongs to"
+DASHBOARD_LAYOUT ||--o{ ETABLISSEMENT : "scoped to"
 BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 ```
 
@@ -212,6 +247,9 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
+- [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
+- [notification.entity.ts:52](file://backend/src/modules/notifications/entities/notification.entity.ts#L52)
+- [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
 
 ## Detailed Component Analysis
 
@@ -448,6 +486,8 @@ All domain entities maintain establishment relationships to ensure proper data i
 - User management entities (authentication, authorization)
 - Backup system entities (backup records)
 - RBAC entities (roles, permissions, user-role assignments)
+- Notification system entities (notification providers)
+- Dashboard system entities (dashboard layouts)
 
 **Relationship Patterns:**
 - **Foreign Key Integration**: All entities include establishmentId foreign keys
@@ -479,6 +519,8 @@ The establishment-centric design enforces strict business rules for proper tenan
 - [carte.entity.ts:67-72](file://backend/src/modules/cartes/entities/carte.entity.ts#L67-L72)
 - [cantine.entity.ts:56-60](file://backend/src/modules/cantine/entities/cantine.entity.ts#L56-L60)
 - [backup-record.entity.ts:53-65](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L53-L65)
+- [notification-provider.entity.ts:98](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L98)
+- [dashboard-layout.entity.ts:47](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L47)
 
 ## Backup System Implementation
 
@@ -561,6 +603,264 @@ The backup system implements comprehensive lifecycle management with establishme
 **Section sources**
 - [backup-record.entity.ts:11-65](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L11-L65)
 - [008-backup-system-v2.ts.bak:28-108](file://backend/src/database/migrations/008-backup-system-v2.ts.bak#L28-L108)
+
+## Notification Providers System
+
+### Notification Providers Architecture Overview
+The notification providers system enables dynamic configuration of multiple notification channels with comprehensive management capabilities including quota tracking, error monitoring, and fallback mechanisms. The system supports four notification types: PUSH, EMAIL, IN_APP, and SMS with establishment-aware scoping.
+
+```mermaid
+erDiagram
+NOTIFICATION_PROVIDER ||--o{ ETABLISSEMENT : "configured for"
+NOTIFICATION_PROVIDER ||--o{ NOTIFICATION : "sends"
+NOTIFICATION_PROVIDER {
+uuid id
+varchar nom
+enum type
+enum service
+boolean actif
+boolean estDefaut
+jsonb configuration
+integer quotaJournalier
+integer quotaUtilise
+integer priorite
+uuid etablissementId
+text description
+timestamp derniereErreurAt
+text dernierMessageErreur
+integer erreursConsecutives
+timestamp createdAt
+timestamp updatedAt
+}
+NOTIFICATION {
+uuid id
+uuid destinataireId
+uuid expediteurId
+varchar titre
+text contenu
+enum type
+enum statut
+enum priorite
+varchar categorie
+varchar lienAction
+jsonb metadata
+timestamp lueAt
+timestamp envoyeeAt
+timestamp programmeePour
+timestamp createdAt
+}
+```
+
+**Diagram sources**
+- [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
+- [notification.entity.ts:52](file://backend/src/modules/notifications/entities/notification.entity.ts#L52)
+- [etablissement.entity.ts:58](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L58)
+
+### Notification Provider Entity
+The NotificationProvider entity manages configurable notification channels with comprehensive tracking and establishment-aware scoping.
+
+**Provider Characteristics:**
+- **Multi-Type Support**: Supports PUSH, EMAIL, IN_APP, and SMS notification types
+- **Service Integration**: Configurable service providers (nodemailer, firebase-fcm, twilio, etc.)
+- **Establishment Scoping**: Nullable establishmentId enables global and establishment-specific providers
+- **Quota Management**: Daily quota tracking with unlimited option (quota = 0)
+- **Priority Routing**: Priority-based fallback mechanism for provider selection
+- **Error Monitoring**: Comprehensive error tracking with consecutive failure counters
+- **Configuration Storage**: JSONB configuration field for service-specific parameters
+
+### Supported Services and Types
+The system supports multiple service providers across different notification types with comprehensive configuration options.
+
+**Email Services:**
+- **Nodemailer**: Standard SMTP configuration with host, port, credentials, TLS settings
+- **SendGrid**: API-based email service with API key authentication
+- **Mailgun**: Email delivery service with domain-based configuration
+- **AWS SES**: Amazon Simple Email Service integration
+
+**SMS Services:**
+- **Twilio**: Comprehensive SMS and MMS service with account-based authentication
+- **Vonage**: Communication platform with SMS capabilities
+- **Africa's Talking**: African-focused SMS service
+- **OVH SMS**: French cloud provider SMS service
+
+**Push Notification Services:**
+- **Firebase FCM**: Google's Firebase Cloud Messaging service
+- **OneSignal**: Cross-platform push notification service
+
+**In-App Services:**
+- **In-App**: Built-in application notification storage
+
+### Quota Management and Error Tracking
+The notification providers system implements comprehensive quota management and error tracking for reliable notification delivery.
+
+**Quota Features:**
+- **Daily Limits**: Configurable daily quotas per provider (0 = unlimited)
+- **Usage Tracking**: Automatic quota utilization counting
+- **Reset Mechanism**: Daily quota reset for accurate tracking
+- **Attestation**: Helper methods for quota validation and incrementing
+
+**Error Management:**
+- **Failure Tracking**: Last error timestamp and message recording
+- **Consecutive Failure Count**: Error counter for monitoring reliability
+- **Automatic Reset**: Error counters reset on successful delivery
+- **Monitoring Integration**: Error statistics for provider health monitoring
+
+### Provider Registry and Fallback Mechanisms
+The system implements a centralized provider registry with sophisticated fallback mechanisms for reliable notification delivery.
+
+**Registry Features:**
+- **Singleton Pattern**: Centralized provider management with global access
+- **Type-Based Organization**: Providers organized by notification type
+- **Registration Management**: Dynamic provider registration and unregistration
+- **Default Provider Selection**: Automatic default provider selection by type
+
+**Fallback Strategy:**
+- **Sequential Attempts**: Try providers in priority order until success
+- **Configuration Validation**: Only attempt providers with valid configurations
+- **Error Propagation**: Capture and propagate error information through the chain
+- **Success Detection**: Immediate success termination of fallback attempts
+
+### Indexing Strategy for Performance
+The notification providers system implements strategic indexing for optimal query performance and establishment isolation.
+
+**Index Categories:**
+- **Type and Status Index**: Composite index on (type, actif) for efficient provider filtering
+- **Establishment Index**: Index on etablissementId for establishment-specific queries
+- **Default Provider Index**: Index on estDefaut for quick default provider lookup
+- **Updated Timestamp Index**: Automatic timestamp updates for provider maintenance
+
+### Initial Provider Configuration
+The system includes comprehensive initial provider configuration with establishment-aware defaults.
+
+**Default Providers:**
+- **In-App Provider**: Always active default provider for internal messaging
+- **Global Scope**: Default provider applicable across all establishments
+- **Zero Quota**: Unlimited quota for default in-app provider
+- **Priority One**: Highest priority for default provider selection
+
+**Configuration Examples:**
+- **Email Configuration**: Host, port, authentication, sender information
+- **Push Configuration**: Project IDs, server keys, VAPID keys, service accounts
+- **SMS Configuration**: Account credentials, authentication tokens, sender numbers
+
+**Section sources**
+- [notification-provider.entity.ts:1-170](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L1-L170)
+- [010-notification-providers.sql:14-132](file://backend/src/database/migrations/010-notification-providers.sql#L14-L132)
+- [provider-registry.ts:1-191](file://backend/src/modules/notifications/providers/provider-registry.ts#L1-L191)
+- [notification.entity.ts:1-109](file://backend/src/modules/notifications/entities/notification.entity.ts#L1-L109)
+
+## Dashboard Layouts System
+
+### Dashboard Layouts Architecture Overview
+The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping and comprehensive widget management. The system enables users to create, manage, and share personalized dashboard layouts across different establishments.
+
+```mermaid
+erDiagram
+DASHBOARD_LAYOUT ||--o{ UTILISATEUR : "belongs to"
+DASHBOARD_LAYOUT ||--o{ ETABLISSEMENT : "scoped to"
+DASHBOARD_LAYOUT {
+uuid id
+uuid utilisateurId
+uuid etablissementId
+varchar nom
+jsonb widgets
+boolean actif
+timestamp createdAt
+timestamp updatedAt
+}
+UTILISATEUR {
+uuid id
+varchar username
+varchar email
+uuid etablissementPrincipalId
+}
+ETABLISSEMENT {
+uuid id
+varchar nom
+varchar adresse
+uuid configurationId
+}
+```
+
+**Diagram sources**
+- [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
+- [utilisateur.entity.ts:99-107](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L99-L107)
+- [etablissement.entity.ts:58](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L58)
+
+### Dashboard Layout Entity
+The DashboardLayout entity manages user-customized dashboard configurations with comprehensive widget management and establishment-aware scoping.
+
+**Layout Characteristics:**
+- **User Association**: Direct association with specific users via utilisateurId foreign key
+- **Establishment Scoping**: Nullable etablissementId enables global and establishment-specific layouts
+- **Widget Configuration**: JSONB field storing comprehensive widget configurations
+- **Activation Control**: Boolean flag for layout activation and deactivation
+- **Persistence**: Full CRUD operations with establishment-aware cascade deletion
+
+### Widget Configuration and Management
+The dashboard system supports comprehensive widget configuration with detailed positioning, sizing, and customization options.
+
+**Widget Configuration Structure:**
+- **Widget Identification**: Unique widget IDs for proper identification and management
+- **Visibility Control**: Boolean flag for widget visibility in the layout
+- **Positioning System**: Grid-based positioning with X, Y coordinates
+- **Sizing Options**: Width and height specifications for responsive layouts
+- **Custom Configuration**: Arbitrary configuration objects for widget-specific settings
+- **Order Management**: Display order control for widget arrangement
+
+**Widget Types and Capabilities:**
+- **Statistics Cards**: Performance metrics and KPI displays
+- **Chart Visualizations**: Line, bar, and pie chart implementations
+- **Data Tables**: Structured data presentation with sorting and filtering
+- **Calendar Integration**: Event and schedule visualization
+- **Progress Indicators**: Completion and milestone tracking
+- **Alert Systems**: Notification and alert widget implementations
+- **Quick Actions**: Direct access to common operations
+- **Custom Widgets**: Extensible widget system for specialized functionality
+
+### Establishment-Aware Layout Scoping
+The dashboard layouts system implements comprehensive establishment-aware scoping for proper tenant separation and data isolation.
+
+**Scoping Mechanisms:**
+- **Global Layouts**: etablissementId = NULL for layouts accessible across all establishments
+- **Establishment-Specific**: etablissementId references specific establishment for localized layouts
+- **User Association**: Direct user association ensures proper ownership and access control
+- **Cascade Deletion**: Automatic cleanup when associated users or establishments are removed
+
+**Access Control:**
+- **User Ownership**: Direct user association for layout ownership and modification rights
+- **Establishment Isolation**: Proper establishment boundaries for layout access
+- **Permission Validation**: Establishment-aware permission checking for layout operations
+- **Data Integrity**: Foreign key constraints ensure referential integrity
+
+### Indexing Strategy for Performance
+The dashboard layouts system implements strategic indexing for optimal query performance and establishment isolation.
+
+**Index Categories:**
+- **User-Based Queries**: Index on utilisateurId for efficient user-specific layout retrieval
+- **Multi-Criteria Filtering**: Composite index on (utilisateurId, etablissementId) for establishment-aware queries
+- **Activation Filtering**: Index on actif for efficient active layout filtering
+- **Timestamp Management**: Automatic timestamp updates for layout maintenance
+
+### Layout Lifecycle Management
+The dashboard system implements comprehensive lifecycle management for dashboard layouts with proper validation and cleanup.
+
+**Lifecycle Stages:**
+- **Creation**: Layout creation with user association and establishment scoping
+- **Modification**: User-driven layout modifications with validation
+- **Activation**: Toggle activation for layout enablement/disablement
+- **Deletion**: Cascade deletion with proper cleanup of associated data
+
+**Validation Rules:**
+- **User Association**: Mandatory user association for layout ownership
+- **Establishment Scoping**: Proper establishment scoping validation
+- **Widget Configuration**: JSONB validation for widget configuration integrity
+- **Name Uniqueness**: Layout name uniqueness within user and establishment scope
+
+**Section sources**
+- [dashboard-layout.entity.ts:1-65](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L1-L65)
+- [010-dashboard-layouts.sql:8-49](file://backend/src/database/migrations/010-dashboard-layouts.sql#L8-L49)
+- [dashboard.types.ts:1-204](file://backend/src/modules/dashboard/types/dashboard.types.ts#L1-L204)
 
 ## RBAC System Implementation
 
@@ -662,6 +962,30 @@ The backup system migration implements a production-grade backup infrastructure 
 3. **Security Implementation**: Encryption, compression, and retention policy integration
 4. **Performance Optimization**: Index tuning and query optimization for backup operations
 
+### Notification Providers Migration Strategy
+**Updated** Added comprehensive notification providers migration implementation
+
+The notification providers migration implements a complete notification channel management system with establishment-aware configuration and comprehensive tracking capabilities.
+
+**Migration Phases:**
+1. **Schema Creation**: Implementation of notification_providers table with comprehensive field definitions
+2. **Index Implementation**: Creation of strategic indexes for performance optimization
+3. **Trigger Setup**: Implementation of automatic timestamp management triggers
+4. **Initial Data Seeding**: Insertion of default in-app provider configuration
+5. **Documentation Integration**: Addition of configuration examples and comments
+
+### Dashboard Layouts Migration Strategy
+**Updated** Added comprehensive dashboard layouts migration implementation
+
+The dashboard layouts migration establishes persistent storage for user-customized dashboard configurations with establishment-aware scoping and comprehensive widget management.
+
+**Migration Phases:**
+1. **Schema Creation**: Implementation of dashboard_layouts table with user and establishment relationships
+2. **Foreign Key Integration**: Establishment of proper foreign key constraints and cascade behaviors
+3. **Index Implementation**: Creation of indexes for efficient querying and establishment filtering
+4. **Trigger Setup**: Implementation of automatic timestamp management for layout updates
+5. **Comment Integration**: Addition of comprehensive table and column comments for documentation
+
 ### Backward Compatibility Preservation
 The migration maintains backward compatibility through careful column preservation and gradual transition.
 
@@ -699,6 +1023,8 @@ The RBAC system includes comprehensive seed data to support immediate functional
 **Section sources**
 - [002-multi-etablissements.sql:47-129](file://backend/src/database/migrations/002-multi-etablissements.sql#L47-L129)
 - [008-backup-system-v2.ts.bak:28-108](file://backend/src/database/migrations/008-backup-system-v2.ts.bak#L28-L108)
+- [010-notification-providers.sql:14-132](file://backend/src/database/migrations/010-notification-providers.sql#L14-L132)
+- [010-dashboard-layouts.sql:8-49](file://backend/src/database/migrations/010-dashboard-layouts.sql#L8-L49)
 - [rbac.seed.ts:297-365](file://backend/src/database/seeds/rbac.seed.ts#L297-L365)
 
 ## Dependency Analysis
@@ -709,6 +1035,8 @@ The RBAC system includes comprehensive seed data to support immediate functional
 - Establishment Middleware: Tenant-aware middleware ensures proper establishment context for all operations
 - RBAC Integration: Comprehensive RBAC system integrated across authentication and authorization layers
 - Backup System Integration: Production-grade backup system integrated with establishment-aware architecture and multi-provider storage support
+- Notification System Integration: Configurable notification providers integrated with establishment-aware scoping and quota management
+- Dashboard System Integration: Persistent dashboard layouts integrated with establishment-aware widget management and user customization
 
 ```mermaid
 graph LR
@@ -721,10 +1049,16 @@ ETAB["Establishment Hub"] --> ENT
 MWARE["Establishment Middleware"] --> DS
 RBAC["RBAC System"] --> ENT
 BACKUP["Backup System"] --> ENT
+NOTIFS["Notification Providers"] --> ENT
+DASH["Dashboard Layouts"] --> ENT
 MIG --> RBAC
 MIG --> BACKUP
+MIG --> NOTIFS
+MIG --> DASH
 SEED --> RBAC
 SEED --> BACKUP
+SEED --> NOTIFS
+SEED --> DASH
 ```
 
 **Diagram sources**
@@ -733,6 +1067,8 @@ SEED --> BACKUP
 - [etablissement.entity.ts:58](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L58)
 - [utilisateur-etablissement.entity.ts](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts)
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
+- [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
+- [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
 
 **Section sources**
 - [database.config.ts:30-36](file://backend/src/config/database.config.ts#L30-L36)
@@ -751,6 +1087,8 @@ Derived from configuration and schema design with establishment awareness:
   - Establishment-specific indexes for high-volume establishment queries
   - RBAC-specific indexes on utilisateur_etablissements (etablissement_id, actif) and (utilisateur_id, etablissement_principal)
   - Backup system indexes: Composite tenant index, checksum index, retention index, and soft-delete index for optimal backup operations
+  - Notification providers indexes: Type-activity index, establishment index, default provider index for efficient provider lookup
+  - Dashboard layouts indexes: User index, user-establishment composite index, activation index for optimal layout retrieval
 - Query optimization patterns:
   - Use joins with establishment filters to minimize result sets and ensure tenant isolation
   - Denormalized aggregates (e.g., report summaries) can reduce runtime computation at the cost of write overhead
@@ -758,12 +1096,16 @@ Derived from configuration and schema design with establishment awareness:
   - Establishment-aware caching strategies for frequently accessed establishment data
   - RBAC query optimization using proper indexing on role and permission relationships
   - Backup query optimization through proper indexing and establishment-aware filtering
+  - Notification provider query optimization using type-activity filtering and establishment scoping
+  - Dashboard layout query optimization using user-based and establishment-aware filtering
 - Multi-establishment optimization:
   - Establishment-specific query routing for optimal performance
   - Establishment-aware connection pooling for resource allocation
   - Tenant isolation enforcement at query execution level
   - RBAC query optimization through proper indexing and join strategies
   - Backup system optimization with establishment-aware queries and retention-based cleanup
+  - Notification system optimization with provider indexing and fallback routing
+  - Dashboard system optimization with user-based caching and establishment-aware queries
 
 ## Troubleshooting Guide
 - Connection failures:
@@ -776,12 +1118,16 @@ Derived from configuration and schema design with establishment awareness:
   - Verify establishment relationships in migration scripts
   - Validate RBAC seed data generation and role-permission assignments
   - Confirm backup system migration completion and index creation
+  - Verify notification providers migration completion and initial provider seeding
+  - Confirm dashboard layouts migration completion and foreign key constraints
 - Seed execution:
   - Confirm seed runner is invoked and initial seed file is present
   - Validate seed logic idempotency to avoid duplicate inserts
   - Check establishment foreign keys in seed data
   - Verify RBAC seed data integrity and role-permission mappings
   - Validate backup system seed data and storage provider configuration
+  - Verify notification providers seed data and initial provider configuration
+  - Validate dashboard layouts seed data and user-establishment relationships
 - Establishment-specific issues:
   - Verify establishmentId is properly set in establishment-aware entities
   - Check establishment configuration relationships for proper setup
@@ -797,12 +1143,26 @@ Derived from configuration and schema design with establishment awareness:
   - Check establishment-aware backup operations and multi-provider storage configuration
   - Validate backup type enumeration and storage provider compatibility
   - Ensure retention policies are properly enforced and cleanup operations function correctly
+- Notification providers issues:
+  - Verify notification_providers table creation and proper indexing
+  - Check establishment-aware provider configuration and service integration
+  - Validate provider types, services, and configuration JSONB fields
+  - Ensure quota management and error tracking are functioning correctly
+  - Verify provider registry initialization and fallback mechanisms
+- Dashboard layouts issues:
+  - Verify dashboard_layouts table creation and proper foreign key constraints
+  - Check establishment-aware layout scoping and user association
+  - Validate widget configuration JSONB structure and integrity
+  - Ensure proper indexing for user-based and establishment-aware queries
+  - Verify cascade deletion behavior for user and establishment removal
 - Audit and logs:
   - Review audit log entries for failed operations and error messages
   - Monitor database logs for slow queries and deadlocks
   - Check establishment-specific audit trails for compliance tracking
   - Validate RBAC audit logging and permission change tracking
   - Monitor backup system logs for backup operation failures and storage provider errors
+  - Monitor notification system logs for provider errors and fallback attempts
+  - Monitor dashboard system logs for layout access and widget rendering issues
 
 **Section sources**
 - [database.config.ts:15-51](file://backend/src/config/database.config.ts#L15-L51)
@@ -810,10 +1170,12 @@ Derived from configuration and schema design with establishment awareness:
 - [etablissement.service.ts:119-153](file://backend/src/modules/etablissement/services/etablissement.service.ts#L119-L153)
 - [002-multi-etablissements.sql:47-129](file://backend/src/database/migrations/002-multi-etablissements.sql#L47-L129)
 - [008-backup-system-v2.ts.bak:28-108](file://backend/src/database/migrations/008-backup-system-v2.ts.bak#L28-L108)
+- [010-notification-providers.sql:14-132](file://backend/src/database/migrations/010-notification-providers.sql#L14-L132)
+- [010-dashboard-layouts.sql:8-49](file://backend/src/database/migrations/010-dashboard-layouts.sql#L8-L49)
 - [rbac.seed.ts:297-365](file://backend/src/database/seeds/rbac.seed.ts#L297-L365)
 
 ## Conclusion
-The eLISAschool schema has been successfully redesigned to support multi-establishment architecture with comprehensive RBAC capabilities and a production-grade backup system. The establishment entity serves as the central hub for tenant management, while the RBAC system provides fine-grained access control with establishment-aware permissions. The backup system implements comprehensive backup management with multi-tenant support, encryption, compression, and retention policies. The migration strategy ensures backward compatibility while enabling advanced multi-establishment functionality and robust backup infrastructure. TypeORM's environment-driven configuration with establishment-aware middleware, RBAC support, and backup system integration enables safe, scalable deployments across multiple establishments. Proper indexing, migration discipline, seed management, establishment middleware, comprehensive RBAC implementation, and robust backup system are essential for maintaining performance, integrity, and operability across the multi-establishment environment.
+The eLISAschool schema has been successfully redesigned to support multi-establishment architecture with comprehensive RBAC capabilities, production-grade backup system, and advanced notification management with configurable providers. The establishment entity serves as the central hub for tenant management, while the RBAC system provides fine-grained access control with establishment-aware permissions. The backup system implements comprehensive backup management with multi-tenant support, encryption, compression, and retention policies. The notification providers system enables dynamic configuration of multiple notification channels with quota tracking, error monitoring, and fallback mechanisms. The dashboard layouts system provides persistent storage for user-customized dashboard configurations with establishment-aware scoping and comprehensive widget management. The migration strategy ensures backward compatibility while enabling advanced multi-establishment functionality, robust backup infrastructure, comprehensive notification management, and flexible dashboard customization. TypeORM's environment-driven configuration with establishment-aware middleware, RBAC support, backup system integration, notification provider management, and dashboard system integration enables safe, scalable deployments across multiple establishments. Proper indexing, migration discipline, seed management, establishment middleware, comprehensive RBAC implementation, robust backup system, comprehensive notification management, and flexible dashboard system are essential for maintaining performance, integrity, and operability across the multi-establishment environment.
 
 ## Appendices
 
@@ -833,6 +1195,8 @@ UTILISATEUR ||--o{ REFRESH_TOKEN : "tokens"
 UTILISATEUR ||--o{ UTILISATEUR_ETABLISSEMENT : "belongs to"
 UTILISATEUR ||--o{ UTILISATEUR_ROLE : "has roles"
 UTILISATEUR ||--o{ UTILISATEUR_PERMISSION : "has permissions"
+UTILISATEUR ||--o{ NOTIFICATION : "receives"
+UTILISATEUR ||--o{ DASHBOARD_LAYOUT : "has layouts"
 UTILISATEUR_ETABLISSEMENT ||--o{ ROLE : "assigns"
 UTILISATEUR_ETABLISSEMENT ||--o{ PERMISSION : "grants"
 UTILISATEUR_ROLE ||--o{ ROLE : "is assigned"
@@ -850,11 +1214,17 @@ ETABLISSEMENT ||--o{ CARTES : "issues"
 ETABLISSEMENT ||--o{ CANTINE : "operates"
 ETABLISSEMENT ||--o{ TRANSPORT : "manages"
 ETABLISSEMENT ||--o{ IMPRESSIONS : "prints"
+ETABLISSEMENT ||--o{ NOTIFICATION_PROVIDER : "configures"
 ETABLISSEMENT ||--|| CONFIG_APP : "has configuration"
 ETABLISSEMENT ||--|| CONFIG_MODULE : "has module config"
 ETABLISSEMENT ||--|| HISTORIQUE_CONFIG : "tracks changes"
 ETABLISSEMENT ||--|| PARAMETRE_SYSTEME : "uses parameters"
 ETABLISSEMENT ||--o{ BACKUP_RECORD : "creates backups"
+NOTIFICATION_PROVIDER ||--o{ ETABLISSEMENT : "configured for"
+NOTIFICATION_PROVIDER ||--o{ NOTIFICATION : "sends"
+NOTIFICATION ||--o{ NOTIFICATION_PROVIDER : "via"
+DASHBOARD_LAYOUT ||--o{ UTILISATEUR : "belongs to"
+DASHBOARD_LAYOUT ||--o{ ETABLISSEMENT : "scoped to"
 BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 ```
 
@@ -890,6 +1260,9 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [backup-record.entity.ts:45](file://backend/src/modules/configuration/entities/backup-record.entity.ts#L45)
+- [notification-provider.entity.ts:49](file://backend/src/modules/notifications/entities/notification-provider.entity.ts#L49)
+- [notification.entity.ts:52](file://backend/src/modules/notifications/entities/notification.entity.ts#L52)
+- [dashboard-layout.entity.ts:32](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32)
 
 ### Data Lifecycle and Retention Policies with Establishment Context
 - Academic data (grades, reports) typically retained per institutional policy per establishment; consider establishment-specific archiving for older periods
@@ -902,6 +1275,9 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - RBAC data: Role and permission data retained for access control continuity; establishment-specific audit trails for permission changes
 - User-establishment relationships: Historical user-establishment associations maintained for access control history and compliance tracking
 - Backup system retention: Establishment-specific backup retention policies with automated cleanup; system-wide backups may have different retention requirements
+- Notification providers data: Provider configurations retained with establishment-aware scoping; quota and error tracking data maintained for operational insights
+- Dashboard layouts data: User-customized layouts retained with establishment-aware scoping; widget configurations maintained for user experience continuity
+- Notification delivery data: Notification history and delivery status tracked with establishment-aware retention; provider error logs maintained for troubleshooting
 
 ### Backup System Implementation Details
 - **Multi-Tenant Architecture**: Backup records support both establishment-specific and system-wide backups through nullable establishmentId
@@ -912,6 +1288,26 @@ BACKUP_RECORD ||--o{ ETABLISSEMENT : "for"
 - **Audit Trail**: Comprehensive backup operation logging with establishment context for compliance and troubleshooting
 - **Error Handling**: Robust error handling and retry mechanisms for backup operations across multiple storage providers
 - **Monitoring**: Backup system monitoring and alerting for backup failures, storage provider issues, and retention policy violations
+
+### Notification Providers Implementation Details
+- **Multi-Type Support**: Comprehensive support for PUSH, EMAIL, IN_APP, and SMS notification types with establishment-aware scoping
+- **Service Integration**: Flexible service provider integration with JSONB configuration storage for arbitrary service parameters
+- **Quota Management**: Daily quota tracking with unlimited option (quota = 0) and automatic quota reset mechanisms
+- **Error Monitoring**: Comprehensive error tracking with last error timestamps, error messages, and consecutive failure counters
+- **Priority Routing**: Priority-based fallback mechanism for provider selection and reliable notification delivery
+- **Performance Optimization**: Strategic indexing for type-activity filtering, establishment scoping, and default provider lookup
+- **Registry Management**: Centralized provider registry with dynamic registration, unregistration, and fallback mechanisms
+- **Security Integration**: Establishment-aware provider configuration with proper access control and tenant isolation
+
+### Dashboard Layouts Implementation Details
+- **User-Centric Design**: Direct user association with comprehensive widget management and customization capabilities
+- **Establishment Awareness**: Establishment-aware scoping with global and establishment-specific layout options
+- **Widget Management**: Comprehensive widget configuration with positioning, sizing, visibility, and custom settings
+- **Performance Optimization**: Strategic indexing for user-based queries, establishment-aware filtering, and activation control
+- **Data Persistence**: Full CRUD operations with proper foreign key constraints and cascade deletion behavior
+- **Extensibility**: Widget registry system supporting custom widget types and specialized functionality
+- **Access Control**: Establishment-aware access control with proper user ownership and permission validation
+- **Integration Points**: Seamless integration with dashboard system services and widget resolver mechanisms
 
 ### RBAC Implementation Details
 - **Role Hierarchy**: Roles can inherit permissions from parent roles with establishment context

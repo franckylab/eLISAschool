@@ -7,12 +7,14 @@
 import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Eleve } from '../entities';
+import { Eleve, StatutEleve } from '../entities';
 import { CreateEleveDto, UpdateEleveDto, QueryElevesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -31,14 +33,30 @@ export class ElevesService {
         if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
         if (userUsed) throw new AppError('Cet utilisateur est déjà lié à un dossier élève', 409, 'USER_ALREADY_LINKED');
 
+        // Vérifier si le workflow de validation est requis
+        const requireValidation = await getParamBoolean('eleves.require_validation', false);
+
         const eleve = this.repo.create({
             ...dto,
             dateNaissance: new Date(dto.dateNaissance),
             dateInscription: dto.dateInscription ? new Date(dto.dateInscription) : new Date(),
             etablissementId,
+            statut: requireValidation ? StatutEleve.EN_ATTENTE_VALIDATION : StatutEleve.ACTIF,
         });
 
         await this.repo.save(eleve);
+
+        // Créer le workflow de validation si requis
+        if (requireValidation && req?.utilisateur?.id) {
+            await validationWorkflowService.createWorkflow({
+                module: 'eleves',
+                entiteId: eleve.id,
+                entiteType: 'Eleve',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Inscription élève: ${dto.matricule}`,
+            }, req.utilisateur.id);
+        }
         
         // Audit
         if (req?.utilisateur?.id) {

@@ -1,0 +1,4 @@
+- Each sub-package exposes an index.ts barrel export that re-exports its public symbols.
+- Controller responses follow a uniform envelope: { success, data?, message?, timestamp }.
+- Service methods enforce recipient ownership by filtering on destinataireId and throwing AppError on mismatch.
+- Notification status transitions are explicit: EN_ATTENTE → ENVOYEE → LUE or ECHEC, with timestamps recorded.

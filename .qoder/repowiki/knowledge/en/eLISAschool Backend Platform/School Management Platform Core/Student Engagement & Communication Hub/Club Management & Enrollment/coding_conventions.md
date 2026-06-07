@@ -1,0 +1,4 @@
+- All successful API responses include a `success: true` flag and an ISO 8601 `timestamp` field.
+- Service methods accept an optional `etablissementId` parameter to enforce multi-tenancy isolation at the query level.
+- Input validation is performed in controllers using a local `validate` helper that wraps Zod's `safeParse` and throws an `AppError` on failure.
+- Significant state-changing operations in services are logged using `logger.info` with the establishment ID prefixed in brackets.

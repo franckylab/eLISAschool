@@ -1,0 +1,4 @@
+- Follows a standard Controller-Service pattern with Express routing in `controllers/monitoring.controller.ts` delegating to `services/monitoring.service.ts`.
+- Exposes a public `/health` endpoint for uptime monitoring and protected admin endpoints (`/metrics`, `/stats`, `/logs`) for detailed system insights.
+- Integrates with the central configuration module via `config.helper.ts` to manage and query the `system.maintenance_mode` state.
+- Aggregates low-level OS metrics (via Node.js `os` module) and database connectivity status (via TypeORM `AppDataSource`) into unified diagnostic responses.

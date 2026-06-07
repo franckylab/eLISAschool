@@ -1,0 +1,4 @@
+- All utility modules export both named exports and a default object bundling all public functions (e.g., `api-response.util.ts`, `pagination.util.ts`, `pagination.dto.ts`, `logger.util.ts`).
+- Error responses follow a uniform shape: `{ success: false, error: { code, message, details?, stack? }, timestamp, path }`, produced by `errorHandler` in `error.filter.ts` and `notFoundHandler` in `not-found.filter.ts`.
+- Pagination DTOs and utilities use Zod schemas with `z.coerce.number()` for query-string parsing, centralized limits from `LIMITS.PAGINATION_MAX` / `LIMITS.PAGINATION_DEFAULT`, and reusable composed schemas (`paginationWithSortSchema`, `queryWithSearchSchema`).
+- Middleware and interceptors never block request flow on internal errors — they catch exceptions, log via `logger`, and call `next()` or `next(error)` to delegate to the global error handler.

@@ -1,0 +1,3 @@
+- Singleton service instances exported from module index files for global access
+- In-memory Map-based caching with manual TTL management in service layers
+- Lazy-loading of external module services via dynamic require() in aggregator patterns

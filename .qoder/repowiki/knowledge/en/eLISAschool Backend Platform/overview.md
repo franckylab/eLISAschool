@@ -1,0 +1,1 @@
+Orchestrates a multi-tenant school management ecosystem by unifying domain modules under shared infrastructure, centralized identity governance, and standardized data access patterns.

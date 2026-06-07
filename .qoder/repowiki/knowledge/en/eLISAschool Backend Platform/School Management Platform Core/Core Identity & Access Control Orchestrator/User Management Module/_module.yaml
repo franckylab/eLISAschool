@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: 5f7ef1c774b43a5d231f7d24348cb08d
+title: User Management Module
+scope:
+    - backend/src/modules/utilisateurs/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/business_modules/core_identity/auth
+    - path: backend/business_modules/core_identity/rbac
+    - path: backend/business_modules/engagement_communication/messagerie
+    - path: backend/business_modules/engagement_communication/notifications
+    - path: backend/business_modules/core_identity/audit
+    - path: backend/business_modules/engagement_communication/clubs

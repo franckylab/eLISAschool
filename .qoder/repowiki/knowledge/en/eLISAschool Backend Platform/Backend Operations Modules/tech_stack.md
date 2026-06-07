@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation and type inference; TypeORM with UUID primary keys and enum columns for persistence; Express Router for HTTP routing with centralized auth middleware from `@modules/auth/middlewares`.

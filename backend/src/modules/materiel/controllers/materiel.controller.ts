@@ -31,7 +31,7 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
 router.post('/', authMiddleware, staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(createMaterielSchema, req.body);
-        const materiel = await materielService.create(dto);
+        const materiel = await materielService.create(dto, undefined, req.utilisateur?.id);
         res.status(201).json({ success: true, data: materiel, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -39,7 +39,7 @@ router.post('/', authMiddleware, staffOnly, async (req, res, next) => {
 router.post('/prets', authMiddleware, staffOnly, async (req, res, next) => {
     try {
         const dto = validateDto(pretMaterielSchema, req.body);
-        const pret = await materielService.preter(dto);
+        const pret = await materielService.preter(dto, undefined, req.utilisateur?.id);
         res.status(201).json({ success: true, data: pret, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });

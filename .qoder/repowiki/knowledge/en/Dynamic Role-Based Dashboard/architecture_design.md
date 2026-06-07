@@ -1,0 +1,6 @@
+- **Layered Structure**: Follows a standard Controller-Service-Entity pattern. `dashboard.controller.ts` handles HTTP requests, while services like `widget-resolver.service.ts` and `data-aggregator.service.ts` manage business logic.
+- **Declarative Widget Registry**: Uses a static `WIDGET_REGISTRY` in `utils/widget-registry.ts` to define widget metadata, permissions, and data resolvers decoupled from the UI.
+- **Data Aggregation & Lazy Loading**: `data-aggregator.service.ts` dynamically loads external module services (e.g., `elevesService`, `notesService`) via lazy require calls to resolve widget data, preventing circular dependencies.
+- **Caching Strategy**: Implements a dual-layer caching system in `dashboard-cache.service.ts` that prefers Redis for distributed state but falls back to an in-memory LRU cache if Redis is unavailable.
+- **Real-time Communication**: `dashboard-sse.service.ts` manages Server-Sent Events (SSE) connections to push live updates to clients, including heartbeat monitoring and inactive client cleanup.
+- **Persistence**: Uses TypeORM entity `DashboardLayout` to store user-specific widget configurations and layout preferences.

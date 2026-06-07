@@ -55,6 +55,7 @@ import { monitoringController } from '@modules/monitoring';
 import rbacController from '@modules/rbac';
 import { auditController } from '@modules/audit';
 import { dashboardController } from '@modules/dashboard';
+import { validationWorkflowController } from '@modules/validation-workflow';
 
 /**
  * Crée et configure l'application Express
@@ -209,6 +210,7 @@ export function createApp(): Application {
     app.use('/api/impressions', impressionsController);
     app.use('/api/monitoring', monitoringController);
     app.use('/api/dashboard', dashboardController);
+    app.use('/api/validation-workflows', validationWorkflowController);
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);

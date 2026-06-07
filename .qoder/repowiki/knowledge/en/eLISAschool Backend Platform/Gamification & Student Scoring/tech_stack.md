@@ -1,0 +1,1 @@
+TypeORM with UUID primary keys and enum columns; Zod for schema-based DTO validation; Express Router for HTTP endpoint definitions.
