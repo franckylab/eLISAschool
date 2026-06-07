@@ -13,9 +13,11 @@ import { logger } from '@common/utils/logger.util';
 import { classesService } from '@modules/classes/services';
 import { periodesService } from '@modules/periodes/services';
 import { notesService } from '@modules/notes/services';
+import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
 import { matieresService } from '@modules/matieres/services';
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
+import { notificationTemplates } from '@modules/notifications/services';
 
 export class BulletinsService {
     private repo: Repository<Bulletin>;
@@ -78,25 +80,40 @@ export class BulletinsService {
 
             const bulletins: Bulletin[] = [];
 
+            // OPTIMISATION : Charger toutes les moyennes en UNE requête batch
+            const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
+            
+            // Préparer les clés de batch pour tous les élèves et matières
+            const batchKeys = [];
+            for (const eleve of eleves) {
+                for (const matiereNiveau of programme) {
+                    batchKeys.push({
+                        eleveId: eleve.id,
+                        matiereId: matiereNiveau.matiereId,
+                        periodeId: periode.id,
+                    });
+                }
+            }
+
+            // Exécuter le batch loading (1 requête au lieu de N×M)
+            const moyennesMap = await notesBatchLoaderService.batchLoadMoyennes(batchKeys);
+            logger.info(`[Bulletins] Batch loading: ${batchKeys.length} combinaisons en 1 requête`);
+
+            // Traiter chaque élève avec les données déjà chargées
             for (const eleve of eleves) {
                 // Vérifier que l'élève appartient au même établissement
                 if (etablissementId && eleve.etablissementId !== etablissementId) {
                     throw new AppError(`L'élève ${eleve.id} n'appartient pas à cet établissement`, 403, 'WRONG_ETABLISSEMENT');
                 }
 
-                // Calculer Moyenne Générale selon la méthode configurée
-                const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
-
+                // Calculer Moyenne Générale avec les données batchées
                 let totalPoints = 0;
                 let totalCoeffs = 0;
 
+                const eleveMoyennes = moyennesMap.get(eleve.id) || new Map();
+
                 for (const matiereNiveau of programme) {
-                    const moyenneMatiere = await notesService.calculerMoyenne(
-                        eleve.id,
-                        matiereNiveau.matiereId,
-                        periode.id,
-                        etablissementId
-                    );
+                    const moyenneMatiere = eleveMoyennes.get(matiereNiveau.matiereId) || 0;
                     
                     // Méthode de calcul : arithmétique ou pondérée
                     const coefficient = params.calculationMethod === 'ponderee' 
@@ -137,6 +154,14 @@ export class BulletinsService {
 
             await queryRunner.commitTransaction();
             logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classe.nom}`);
+            
+            // NOTIFICATION : Envoyer les notifications aux parents (après commit)
+            try {
+                await this.envoyerNotificationsBulletins(bulletins, classe, periode, etablissementId);
+            } catch (error) {
+                logger.warn('[Bulletins] Échec envoi notifications (non bloquant)', error);
+            }
+            
             return bulletins;
         } catch (error: any) {
             await queryRunner.rollbackTransaction();
@@ -195,6 +220,68 @@ export class BulletinsService {
         Object.assign(bulletin, dto);
         await this.repo.save(bulletin);
         return bulletin;
+    }
+
+    /**
+     * Envoyer les notifications de bulletin disponible aux parents
+     */
+    private async envoyerNotificationsBulletins(
+        bulletins: Bulletin[],
+        classe: any,
+        periode: any,
+        etablissementId?: string
+    ): Promise<void> {
+        const eleveRepo = AppDataSource.getRepository(Eleve);
+        
+        // Compter le total d'élèves pour le rang
+        const totalEleves = bulletins.length;
+        
+        for (const bulletin of bulletins) {
+            try {
+                // Récupérer l'élève avec son utilisateur
+                const eleve = await eleveRepo.findOne({
+                    where: { id: bulletin.eleveId },
+                    relations: ['utilisateur'],
+                });
+
+                if (!eleve?.utilisateurId) {
+                    continue;
+                }
+
+                // Trouver les responsables
+                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+                const responsabilités = await responsableRepo.find({
+                    where: { enfantId: eleve.utilisateurId }
+                }) as any[];
+
+                if (!responsabilités || responsabilités.length === 0) {
+                    continue;
+                }
+
+                // Notifier chaque responsable
+                for (const resp of responsabilités) {
+                    await notificationTemplates.bulletinDisponible({
+                        destinataireId: resp.utilisateurId,
+                        etablissementId,
+                        metadata: {
+                            bulletinId: bulletin.id,
+                            eleveId: eleve.id,
+                            email: resp.email, // Pour envoi email
+                        },
+                    }, {
+                        eleveNom: `Élève ${eleve.id.substring(0, 8)}`,
+                        periode: periode.nom,
+                        moyenne: bulletin.moyenneGenerale || 0,
+                        rang: bulletin.rang || undefined,
+                        totalEleves: totalEleves,
+                    });
+                }
+
+                logger.info(`[Bulletins] Notification envoyée pour élève ${eleve.id.substring(0, 8)}`);
+            } catch (error) {
+                logger.warn(`[Bulletins] Erreur notification bulletin ${bulletin.id}`, error);
+            }
+        }
     }
 }
 

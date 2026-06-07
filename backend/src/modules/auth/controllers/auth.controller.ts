@@ -19,8 +19,11 @@ import {
     resetPasswordSchema,
     changePasswordSchema,
     verifyEmailSchema,
+    logoutSchema,
 } from '../dto';
+import { switchEtablissementSchema } from '../dto/utilisateur-etablissement.dto';
 import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 import { logger } from '@common/utils/logger.util';
 import { authMiddleware, UtilisateurAuth } from '../middlewares/auth.middleware';
 
@@ -28,27 +31,12 @@ const router = Router();
 const authService = new AuthService();
 
 /**
- * Helper pour valider les données avec Zod
- */
-function validateBody(schema: any, body: unknown): any {
-    const result = schema.safeParse(body);
-    if (!result.success) {
-        const errors = result.error.errors.map((e: any) => ({
-            field: e.path.join('.'),
-            message: e.message,
-        }));
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', true, { errors });
-    }
-    return result.data;
-}
-
-/**
  * POST /api/auth/login
  * Connexion d'un utilisateur
  */
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const loginDto = validateBody(loginSchema, req.body);
+        const loginDto = validateDto(loginSchema, req.body);
 
         const result = await authService.login(
             loginDto,
@@ -73,7 +61,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
  */
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const registerDto = validateBody(registerSchema, req.body);
+        const registerDto = validateDto(registerSchema, req.body);
 
         const result = await authService.register(registerDto);
 
@@ -94,7 +82,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
  */
 router.post('/refresh', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { refreshToken } = validateBody(refreshTokenSchema, req.body);
+        const { refreshToken } = validateDto(refreshTokenSchema, req.body);
 
         const result = await authService.refreshTokens(
             refreshToken,
@@ -119,7 +107,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
  */
 router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { refreshToken } = req.body;
+        const { refreshToken } = validateDto(logoutSchema, req.body);
 
         if (refreshToken) {
             await authService.logout(refreshToken);
@@ -160,7 +148,7 @@ router.post('/logout-all', authMiddleware, async (req: Request, res: Response, n
  */
 router.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const forgotPasswordDto = validateBody(forgotPasswordSchema, req.body);
+        const forgotPasswordDto = validateDto(forgotPasswordSchema, req.body);
 
         const result = await authService.forgotPassword(forgotPasswordDto);
 
@@ -180,7 +168,7 @@ router.post('/forgot-password', async (req: Request, res: Response, next: NextFu
  */
 router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const resetPasswordDto = validateBody(resetPasswordSchema, req.body);
+        const resetPasswordDto = validateDto(resetPasswordSchema, req.body);
 
         const result = await authService.resetPassword(resetPasswordDto);
 
@@ -201,7 +189,7 @@ router.post('/reset-password', async (req: Request, res: Response, next: NextFun
  */
 router.post('/change-password', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const changePasswordDto = validateBody(changePasswordSchema, req.body);
+        const changePasswordDto = validateDto(changePasswordSchema, req.body);
 
         const result = await authService.changePassword(
             req.utilisateur!.id,
@@ -224,7 +212,7 @@ router.post('/change-password', authMiddleware, async (req: Request, res: Respon
  */
 router.post('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { token } = validateBody(verifyEmailSchema, req.body);
+        const { token } = validateDto(verifyEmailSchema, req.body);
 
         const result = await authService.verifyEmail(token);
 
@@ -266,12 +254,8 @@ router.get('/me', authMiddleware, async (req: Request, res: Response, next: Next
  */
 router.post('/switch-etablissement', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { etablissementId } = req.body;
+        const { etablissementId } = validateDto(switchEtablissementSchema, req.body);
         const utilisateurId = req.utilisateur!.id;
-
-        if (!etablissementId) {
-            throw new AppError('etablissementId est requis', 400, 'MISSING_FIELD');
-        }
 
         // Vérifier que l'utilisateur a accès à cet établissement
         const hasAccess = await utilisateurEtablissementService.hasAccess(

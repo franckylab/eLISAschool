@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/core_framework
+module_path: d7d612e8ab3f23c6707e9189cbde287c
 title: Core Framework & Shared Infrastructure
 scope:
     - backend/src/common/

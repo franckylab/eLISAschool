@@ -1,0 +1,1 @@
+Manages school material inventory, tracking equipment categories and conditions, and handles lending operations with return workflows.

@@ -9,18 +9,11 @@ import { PeriodesService } from '../services';
 import { createPeriodeSchema, updatePeriodeSchema, createTypePeriodeSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 const service = new PeriodesService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // Types - Généralement initialisés une fois
 router.get('/types', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +25,7 @@ router.get('/types', authMiddleware, async (req: Request, res: Response, next: N
 
 router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createTypePeriodeSchema, req.body);
+        const dto = validateDto(createTypePeriodeSchema, req.body);
         const type = await service.createType(dto);
         res.status(201).json({ success: true, data: type });
     } catch (error) { next(error); }
@@ -51,7 +44,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createPeriodeSchema, req.body);
+        const dto = validateDto(createPeriodeSchema, req.body);
         const periode = await service.create(dto);
         res.status(201).json({ success: true, data: periode });
     } catch (error) { next(error); }
@@ -59,7 +52,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updatePeriodeSchema, req.body);
+        const dto = validateDto(updatePeriodeSchema, req.body);
         const periode = await service.update(req.params.id, dto);
         res.json({ success: true, data: periode });
     } catch (error) { next(error); }

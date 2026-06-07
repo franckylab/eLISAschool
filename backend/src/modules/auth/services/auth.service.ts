@@ -38,6 +38,10 @@ export class AuthService {
     private utilisateurEtablissementRepo: Repository<UtilisateurEtablissement>;
     private tokenService: TokenService;
 
+    // Cache local pour les paramètres de sécurité (TTL court: 1 min)
+    private securityParamsCache: { data: any; timestamp: number } | null = null;
+    private readonly SECURITY_PARAMS_TTL = 60000; // 1 minute
+
     constructor() {
         this.utilisateurRepository = AppDataSource.getRepository(Utilisateur);
         this.profilRepository = AppDataSource.getRepository(ProfilUtilisateur);
@@ -47,9 +51,19 @@ export class AuthService {
 
     /**
      * Récupère les paramètres de sécurité depuis la configuration
+     * Optimisé avec cache local (TTL: 1 min)
      */
     private async getSecurityParams() {
-        return {
+        // Vérifier le cache local
+        if (this.securityParamsCache) {
+            const age = Date.now() - this.securityParamsCache.timestamp;
+            if (age < this.SECURITY_PARAMS_TTL) {
+                return this.securityParamsCache.data;
+            }
+        }
+
+        // Charger depuis la configuration (utilise déjà le cache du configurationService)
+        const params = {
             maxLoginAttempts: await getParamNumber('auth.max_login_attempts', 5),
             lockoutDuration: await getParamNumber('auth.lockout_duration', 15),
             sessionDuration: await getParamNumber('auth.session_duration', 1440),
@@ -58,6 +72,11 @@ export class AuthService {
             passwordRequireUppercase: await getParamBoolean('auth.password_require_uppercase', true),
             passwordRequireNumber: await getParamBoolean('auth.password_require_number', true),
         };
+
+        // Mettre en cache
+        this.securityParamsCache = { data: params, timestamp: Date.now() };
+
+        return params;
     }
 
     /**

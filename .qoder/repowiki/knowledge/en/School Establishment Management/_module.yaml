@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/school_operations/etablissement
+title: School Establishment Management
+scope:
+    - backend/src/modules/etablissement/
+source_files: []
+depends_on: []
+related_to: []

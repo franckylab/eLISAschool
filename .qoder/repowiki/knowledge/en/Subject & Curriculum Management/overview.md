@@ -1,0 +1,1 @@
+Manages academic subjects, their grouping, assignment to educational levels, and teacher allocations for classes.

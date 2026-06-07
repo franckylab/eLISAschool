@@ -159,6 +159,16 @@ export const importConfigSchema = z.object({
     overwrite: z.boolean().default(false),
 });
 
+/**
+ * Schéma pour toggler l'activation d'un module
+ */
+export const toggleModuleSchema = z.object({
+    actif: z.boolean({
+        required_error: 'Le paramètre "actif" est requis et doit être un booléen',
+        invalid_type_error: 'Le paramètre "actif" doit être un booléen',
+    }),
+});
+
 // Types inférés
 export type UpdateConfigAppDto = z.infer<typeof updateConfigAppSchema>;
 export type ActiverLicenceDto = z.infer<typeof activerLicenceSchema>;
@@ -171,6 +181,7 @@ export type UpdateParametresBulkDto = z.infer<typeof updateParametresBulkSchema>
 export type QueryParametresDto = z.infer<typeof queryParametresSchema>;
 export type ExportConfigDto = z.infer<typeof exportConfigSchema>;
 export type ImportConfigDto = z.infer<typeof importConfigSchema>;
+export type ToggleModuleDto = z.infer<typeof toggleModuleSchema>;
 
 export default {
     updateConfigAppSchema,
@@ -182,4 +193,5 @@ export default {
     queryParametresSchema,
     exportConfigSchema,
     importConfigSchema,
+    toggleModuleSchema,
 };

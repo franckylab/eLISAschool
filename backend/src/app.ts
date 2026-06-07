@@ -28,7 +28,7 @@ import { authController } from '@modules/auth';
 import utilisateurEtablissementController from '@modules/auth/controllers/utilisateur-etablissement.controller';
 import { utilisateursController } from '@modules/utilisateurs';
 import { configurationController, backupController } from '@modules/configuration';
-import { notificationsController } from '@modules/notifications';
+import { notificationsController, notificationProviderController } from '@modules/notifications';
 import { notesController } from '@modules/notes';
 import { messagerieController } from '@modules/messagerie';
 import { cantineController } from '@modules/cantine';
@@ -54,6 +54,7 @@ import { bulletinsController } from '@modules/bulletins';
 import { monitoringController } from '@modules/monitoring';
 import rbacController from '@modules/rbac';
 import { auditController } from '@modules/audit';
+import { dashboardController } from '@modules/dashboard';
 
 /**
  * Crée et configure l'application Express
@@ -104,7 +105,13 @@ export function createApp(): Application {
     // ==================================
 
     // Compression gzip des réponses
-    app.use(compression() as any);
+    app.use(compression({
+        level: 6, // Équilibre entre CPU et ratio de compression
+        threshold: 1024, // Ne compresser que les réponses > 1KB
+    }) as any);
+
+    // ETag pour le cache HTTP
+    app.set('etag', 'strong');
 
     // Parsing JSON avec limite de taille
     app.use(express.json({ limit: '10mb' }));
@@ -145,14 +152,18 @@ export function createApp(): Application {
         });
     });
 
-    // Documentation API interactive (Swagger UI)
-    app.use('/api/docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
+    // Documentation API interactive (Swagger UI) - Cache 1h
+    app.use('/api/docs', (req, res, next) => {
+        res.set('Cache-Control', 'public, max-age=3600'); // 1 heure
+        next();
+    }, swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
         customCss: '.swagger-ui .topbar { display: none }',
         customSiteTitle: 'eLISAschool API Docs',
     }) as any);
 
-    // Route JSON de la spécification OpenAPI
-    app.get('/api/docs.json', (_req: Request, res: Response) => {
+    // Route JSON de la spécification OpenAPI - Cache 1h
+    app.get('/api/docs.json', (req, res: Response) => {
+        res.set('Cache-Control', 'public, max-age=3600');
         res.json(swaggerSpec);
     });
 
@@ -175,6 +186,7 @@ export function createApp(): Application {
     app.use('/api/configuration', configurationController);
     app.use('/api/backups', backupController);
     app.use('/api/notifications', notificationsController);
+    app.use('/api/notification-providers', notificationProviderController);
     app.use('/api/notes', notesController);
     app.use('/api/rbac', rbacController);
 
@@ -192,10 +204,11 @@ export function createApp(): Application {
     app.use('/api/gamification', gamificationController);
     app.use('/api/cartes', cartesController);
 
-    // Nouveaux modules
+    // Modules système
     app.use('/api/orientation', orientationController);
     app.use('/api/impressions', impressionsController);
     app.use('/api/monitoring', monitoringController);
+    app.use('/api/dashboard', dashboardController);
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);

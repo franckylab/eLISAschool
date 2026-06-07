@@ -1,0 +1,4 @@
+- Each subdirectory (controllers, services, dto, entities) uses an index.ts barrel file to re-export its contents.
+- Service methods throw AppError for business rule violations (e.g., duplicate matricule, user already member).
+- Controllers use a local validate helper function to parse request bodies against Zod schemas and throw AppError on failure.
+- Entities use UUIDs as primary keys and include createdAt/updateDate timestamps where appropriate.

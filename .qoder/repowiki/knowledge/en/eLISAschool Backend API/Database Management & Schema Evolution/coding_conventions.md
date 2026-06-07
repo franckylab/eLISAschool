@@ -1,0 +1,5 @@
+- All migration files include a standardized header block with version, author, and description metadata before the actual SQL or TypeScript code.
+- SQL migrations use IF NOT EXISTS guards on CREATE TABLE and CREATE INDEX statements to ensure idempotent execution.
+- Seed services are organized as dedicated classes (e.g., RBACSeedService, ConfigurationSeedService) with a runAllSeeds method that returns structured counts of created records.
+- Database scripts log progress using emoji-prefixed console messages (🚀, ✅, ❌, ℹ️) for visual scanability during execution.
+- TypeScript migrations implement the TypeORM MigrationInterface with both up() and down() methods for reversible schema changes.

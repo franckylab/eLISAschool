@@ -1,0 +1,1 @@
+Manages student performance metrics, weighted global scoring, and leaderboard generation based on configurable academic and behavioral rules.

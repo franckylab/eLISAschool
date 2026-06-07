@@ -1,0 +1,1 @@
+Manages student enrollment, profiles, and academic records with multi-tenancy support for educational institutions.

@@ -1,0 +1,3 @@
+- All admin-only endpoints use `authMiddleware` combined with `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` for access control.
+- Request query parameters are validated through Zod schemas passed to a shared `validateDto` utility before use.
+- Every route handler wraps logic in try/catch and forwards errors to Express via `next(error)`.

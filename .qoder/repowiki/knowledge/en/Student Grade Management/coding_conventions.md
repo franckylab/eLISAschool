@@ -1,0 +1,5 @@
+- All controller route handlers wrap async logic in try-catch blocks that delegate errors to Express error middleware via next(error)
+- Request validation uses a shared validate() helper that calls schema.safeParse() and throws AppError on failure
+- Service methods accept etablissementId as an optional parameter for multi-tenancy filtering across all queries
+- Audit logging is performed after successful create operations using auditService.log() with module identifier 'notes'
+- Each sub-module directory provides an index.ts barrel export file that re-exports public APIs from implementation files

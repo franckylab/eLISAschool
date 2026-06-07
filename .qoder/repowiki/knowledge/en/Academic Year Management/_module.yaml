@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/academic_management/annees_scolaires
+title: Academic Year Management
+scope:
+    - backend/src/modules/annees-scolaires/
+source_files: []
+depends_on: []
+related_to: []

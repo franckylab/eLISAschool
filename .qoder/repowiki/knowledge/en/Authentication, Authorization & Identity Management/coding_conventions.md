@@ -1,0 +1,4 @@
+- Services are exported as both a class and a singleton instance (e.g., `export const authService = new AuthService()`).
+- Controllers use a centralized `validateBody` helper with Zod schemas for input validation before calling services.
+- Entities use TypeORM lifecycle decorators (`@BeforeInsert`, `@BeforeUpdate`) for automatic password hashing.
+- Audit logging is integrated into critical auth flows (login, logout, password change) via `auditService`.

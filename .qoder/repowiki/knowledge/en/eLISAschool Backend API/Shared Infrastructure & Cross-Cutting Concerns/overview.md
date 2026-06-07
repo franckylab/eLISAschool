@@ -1,0 +1,1 @@
+Provides reusable middleware, interceptors, error handling, pagination utilities, Zod-based DTOs, and environment configuration for the eLISAschool backend.

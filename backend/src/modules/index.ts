@@ -30,11 +30,15 @@ export * from './clubs';
 export * from './gamification';
 export * from './cartes';
 
-// Nouveaux modules
-export * from './orientation';
-export * from './impressions';
+// Modules système
 export * from './scoring';
 export * from './monitoring';
+export * from './audit';
+export * from './dashboard';
+
+// Modules complémentaires
+export * from './orientation';
+export * from './impressions';
 
 // Modules académiques (multi-établissements)
 export * from './etablissement';

@@ -1,0 +1,4 @@
+- Layered structure: controllers (`requetes.controller.ts`) handle HTTP routing with Zod validation and Express middleware; services (`requetes.service.ts`) implement business logic including multi-level approval state machine; entities (`requete.entity.ts`) define TypeORM models with enum-based statuses.
+- Dependency direction flows inward: controller → service → repository. The module imports auth middlewares (`authMiddleware`, `managerOnly`) for role-based access control and a centralized configuration helper (`getParamNumber`, `getParamBoolean`) for dynamic approval level settings.
+- Entry point is `index.ts` which re-exports all sub-modules (entities, dto, services, controllers) for external consumption.
+- Multi-tenancy is enforced via `etablissementId` foreign key on the Requete entity, scoping queries to specific establishments.

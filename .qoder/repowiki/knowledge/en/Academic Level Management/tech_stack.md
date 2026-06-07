@@ -1,0 +1,1 @@
+Uses TypeORM for ORM-based data access and Zod for schema-based input validation.

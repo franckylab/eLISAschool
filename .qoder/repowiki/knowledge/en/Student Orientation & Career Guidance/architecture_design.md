@@ -1,0 +1,4 @@
+- Follows a standard layered architecture: Controllers (Express Router) -> Services (Business Logic) -> Entities (TypeORM).
+- Uses Zod schemas in DTOs for input validation, enforced via a local `validate` helper in the controller.
+- Integrates with a shared authentication module using `authMiddleware` and `requireRoles` for access control.
+- Exports all public components (entities, DTOs, services, controllers) through barrel files (`index.ts`) for clean module consumption.

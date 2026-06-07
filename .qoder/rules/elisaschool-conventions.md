@@ -1,3 +1,6 @@
+---
+trigger: always_on
+---
 # Conventions eLISAschool — Backend API
 
 > **Portée** : Cette règle s'applique à tout le code backend TypeScript (Express + TypeORM).
@@ -335,12 +338,256 @@ Avant toute modification impactant la logique métier, **toujours** consulter le
 
 ---
 
-## 16. Maintenance et skills disponibles
+## 16. Système de Backup
+
+### Architecture
+
+- **Storage abstraction** : Interface `IBackupStorage` extensible (DB, S3, FileSystem)
+- **Services** : `ConfigBackupService` (config), `DatabaseBackupService` (DB)
+- **Entities** : `BackupRecord` (métadonnées), `ParametreVersion` (historique)
+- **DTOs** : 9 schémas Zod pour validation complète
+
+### Conventions Backup
+
+- **Nommage versions** : `v{major}.{minor}.{patch}-{scope}-{timestamp}`
+- **Chiffrement** : AES-256-GCM avec IV unique (16 bytes random)
+- **Checksum** : SHA-256 sur données compressées/chiffrées
+- **Compression** : gzip (60-80% réduction)
+- **Soft delete** : Toujours utiliser `@DeleteDateColumn()` pour récupération
+
+### Sécurité
+
+- Clé chiffrement dans `.env` : `BACKUP_ENCRYPTION_KEY` (>= 32 caractères)
+- Jamais de clé en dur dans le code
+- RBAC : ADMIN/SUPER_ADMIN pour créer/restaurer/supprimer
+- Multi-tenant : Isolation stricte par `etablissement_id`
+
+### Pattern Storage Provider
+
+```typescript
+// Interface commune
+interface IBackupStorage {
+    readonly name: string;
+    save(data: Buffer, metadata: BackupMetadata): Promise<BackupRecord>;
+    load(recordId: string): Promise<Buffer>;
+    delete(recordId: string): Promise<void>;
+    // ...
+}
+
+// Utilisation
+const storage = new DatabaseStorageProvider();
+await storage.save(buffer, metadata);
+```
+
+### Bonnes pratiques
+
+- **Toujours** vérifier l'intégrité avant restauration
+- **Toujours** chiffrer en production (`encrypt: true`)
+- **Préférer** les backups différentiels pour config
+- **Configurer** retentionDays selon type (30/90/180 jours)
+
+---
+
+## 18. Performance et Optimisation
+
+### 18.1 Base de données — Index et Requêtes
+
+**Index stratégiques :**
+```typescript
+// ✅ TOUJOURS indexer les colonnes de filtrage et relations
+@Entity('eleves')
+@Index(['etablissementId'])
+@Index(['classeId', 'anneeScolaireId'])  // Index composite pour requêtes combinées
+@Index(['matricule'], { unique: true })   // Index unique pour unicité
+export class Eleve { ... }
+```
+
+**Règles d'index :**
+- Index sur **toutes les FK** (`etablissementId`, `classeId`, etc.)
+- Index composites pour requêtes multi-colonnes fréquentes
+- Index unique pour contraintes d'unicité (matricule, email, etc.)
+- Index sur `createdAt` pour tri chronologique
+
+**Optimisation des requêtes :**
+```typescript
+// ✅ SÉLECTIF — Ne charger que les relations nécessaires
+const eleves = await repo.find({
+    where: { etablissementId },
+    relations: ['classe'],  // PAS ['classe', 'notes', 'bulletins', ...]
+    select: ['id', 'nom', 'prenom', 'matricule'],  // Colonnes spécifiques
+    order: { createdAt: 'DESC' },
+    take: 50,  // TOUJOURS limiter
+    skip: offset
+});
+
+// ❌ ÉVITER — Select * avec toutes les relations
+const eleves = await repo.find({
+    where: { etablissementId },
+    relations: ['classe', 'notes', 'bulletins', 'utilisateur', 'parent']
+});
+```
+
+### 18.2 Cache — Stratégie et Invalidation
+
+**Pattern de cache (TTL 5 min) :**
+```typescript
+private cache = new Map<string, { value: any; timestamp: number }>();
+private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async getParametre(cle: string, etablissementId?: string): Promise<any> {
+    const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
+    
+    // 1. Vérifier cache
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.value;
+    }
+    
+    // 2. Cache miss → DB
+    const value = await this.repo.findOne({ where: { cle, etablissementId } });
+    
+    // 3. Mettre en cache
+    this.cache.set(cacheKey, { value, timestamp: Date.now() });
+    return value;
+}
+
+// Invalidation SÉLECTIVE après modification
+invalidateCache(type?: 'app' | 'modules' | 'parametres'): void {
+    if (!type || type === 'parametres') this.cache.clear();
+}
+```
+
+**Règles de cache :**
+- **TTL** : 5 min pour config, 1 min pour données volatiles
+- **Clés composées** : `"cle:etablissementId"` pour multi-tenant
+- **Invalidation** : TOUJOURS invalider après write (create/update/delete)
+- **Mémoire** : In-memory Map pour petit dataset (<1000 entrées)
+
+### 18.3 Pagination — Offset + Limit
+
+**TOUJOURS paginer les listes :**
+```typescript
+// Controller
+router.get('/', async (req, res) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Max 100
+    const offset = (page - 1) * limit;
+    
+    const [data, total] = await service.findPaginated({ limit, offset });
+    
+    res.json({
+        success: true,
+        data,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasNext: page * limit < total,
+            hasPrev: page > 1
+        }
+    });
+});
+
+// Service
+async findPaginated({ limit, offset, where }: any) {
+    return this.repo.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        skip: offset
+    });
+}
+```
+
+### 18.4 Transactions — Atomicité et Performance
+
+**Utiliser les transactions pour les opérations multi-entités :**
+```typescript
+async createEleveWithUser(dto: CreateEleveDto): Promise<Eleve> {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+        // 1. Créer utilisateur
+        const user = await queryRunner.manager.save(Utilisateur, userData);
+        
+        // 2. Créer élève
+        const eleve = await queryRunner.manager.save(Eleve, {
+            ...dto,
+            utilisateurId: user.id
+        });
+        
+        await queryRunner.commitTransaction();
+        return eleve;
+    } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+    } finally {
+        await queryRunner.release();  // TOUJOURS libérer
+    }
+}
+```
+
+**Règles de transaction :**
+- TOUJOURS utiliser `try/catch/finally`
+- TOUJOURS `release()` dans `finally`
+- ROLLBACK automatique en cas d'erreur
+- Garder les transactions COURTES (<1s)
+
+### 18.5 Anti-patterns de Performance
+
+**❌ À ÉVITER :**
+```typescript
+// N+1 Query Problem
+const eleves = await repo.find();
+for (const eleve of eleves) {
+    eleve.notes = await notesRepo.find({ where: { eleveId: eleve.id } });
+}
+
+// ✅ CORRIGER — Charger en une seule requête
+const eleves = await repo.find({ relations: ['notes'] });
+
+// ❌ Select *
+const data = await repo.find();
+
+// ✅ Colonnes spécifiques
+const data = await repo.find({ select: ['id', 'nom', 'prenom'] });
+
+// ❌ Sans limite
+const all = await repo.find();
+
+// ✅ Toujours limiter
+const data = await repo.find({ take: 100 });
+```
+
+### 18.6 Monitoring — Métriques Clés
+
+**Endpoints à monitorer :**
+- Temps de réponse > 500ms (alerte)
+- Taux d'erreur > 5% (critique)
+- Cache hit ratio < 80% (optimiser)
+- DB connections > 80% du pool (scale)
+
+**Logs structurés :**
+```typescript
+logger.info('Requête exécutée', {
+    endpoint: req.path,
+    duration: Date.now() - startTime,
+    cacheHit: false,
+    etablissementId: req.etablissementId
+});
+```
+
+---
+
+## 19. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
 
-- **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité)
-- **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config)
+- **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité, **backup**)
+- **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config, **backup**)
 
 **Modes de mise à jour** :
 - **Automatique** : Lorsque l'IA détecte un nouveau pattern récurrent, elle propose d'ajouter/modifier une section

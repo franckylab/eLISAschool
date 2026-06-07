@@ -1,0 +1,1 @@
+Zod for schema validation; TypeORM with PostgreSQL (ILIKE queries, UUID primary keys); Express.js for HTTP routing.

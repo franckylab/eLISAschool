@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/academic_management/orientation
+title: Student Orientation & Career Guidance
+scope:
+    - backend/src/modules/orientation/
+source_files: []
+depends_on: []
+related_to: []

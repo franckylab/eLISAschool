@@ -9,18 +9,10 @@ import { NiveauxService } from '../services';
 import { createNiveauSchema, updateNiveauSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const niveauxService = new NiveauxService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -32,7 +24,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createNiveauSchema, req.body);
+        const dto = validateDto(createNiveauSchema, req.body);
         const niveau = await niveauxService.create(dto);
         res.status(201).json({ success: true, data: niveau });
     } catch (error) { next(error); }
@@ -40,7 +32,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateNiveauSchema, req.body);
+        const dto = validateDto(updateNiveauSchema, req.body);
         const niveau = await niveauxService.update(req.params.id, dto);
         res.json({ success: true, data: niveau });
     } catch (error) { next(error); }

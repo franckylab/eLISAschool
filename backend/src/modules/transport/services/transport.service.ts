@@ -15,6 +15,8 @@ import { CreateLigneDto, CreateInscriptionTransportDto, EnregistrerPresenceDto }
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
+import { notificationTemplates } from '@modules/notifications/services';
+import { Eleve } from '@modules/eleves/entities';
 
 /**
  * Service Transport avec configuration centralisée
@@ -130,10 +132,83 @@ export class TransportService {
         
         const enRetard = diffMinutes > params.alertDelayMinutes;
         
+        // NOTIFICATION : Alerter les parents si retard significatif
+        if (enRetard && diffMinutes > 5) {
+            try {
+                await this.notifierRetardBus(ligneId, Math.floor(diffMinutes), etablissementId);
+            } catch (error) {
+                logger.warn('[Transport] Échec notification retard (non bloquant)', error);
+            }
+        }
+        
         return {
             enRetard,
             minutesRetard: Math.floor(diffMinutes),
         };
+    }
+
+    /**
+     * Notifier les parents d'un retard de bus
+     */
+    private async notifierRetardBus(
+        ligneId: string,
+        minutesRetard: number,
+        etablissementId?: string
+    ): Promise<void> {
+        try {
+            // Récupérer la ligne
+            const ligne = await this.ligneRepo.findOne({
+                where: { id: ligneId },
+            });
+
+            if (!ligne) return;
+
+            // Récupérer les inscriptions actives
+            const where: any = { ligneId, actif: true };
+            if (etablissementId) where.etablissementId = etablissementId;
+            const inscriptions = await this.inscriptionRepo.find({
+                where,
+                relations: ['eleve'],
+            });
+
+            // Notifier chaque parent
+            const eleveRepo = AppDataSource.getRepository(Eleve);
+            for (const inscription of inscriptions) {
+                const eleve = await eleveRepo.findOne({
+                    where: { id: inscription.eleveId },
+                    relations: ['utilisateur'],
+                });
+
+                if (!eleve?.utilisateurId) continue;
+
+                // Trouver les responsables
+                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+                const responsabilités = await responsableRepo.find({
+                    where: { enfantId: eleve.utilisateurId }
+                }) as any[];
+
+                if (!responsabilités || responsabilités.length === 0) continue;
+
+                for (const resp of responsabilités) {
+                    await notificationTemplates.retardBus({
+                        destinataireId: resp.utilisateurId,
+                        etablissementId,
+                        metadata: {
+                            email: resp.email,
+                            ligneId: ligne.id,
+                            inscriptionId: inscription.id,
+                        },
+                    }, {
+                        ligne: ligne.nom,
+                        retard: minutesRetard,
+                    });
+                }
+            }
+
+            logger.info(`[Transport] Notification retard ${minutesRetard}min envoyée pour ligne ${ligne.nom}`);
+        } catch (error) {
+            logger.warn('[Transport] Erreur notification retard', error);
+        }
     }
 }
 

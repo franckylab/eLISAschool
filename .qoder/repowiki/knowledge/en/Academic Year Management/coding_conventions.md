@@ -1,0 +1,4 @@
+- Use of Zod schemas for input validation in controllers with a shared `validate` helper function.
+- Service methods return domain entities or null, throwing `AppError` for not-found or invalid states.
+- Multi-tenancy is enforced at the entity level via `etablissementId` column and foreign key relationship.
+- Active academic year logic ensures only one year is marked `enCours` at a time via service-level updates.

@@ -1,0 +1,5 @@
+- All controller route handlers wrap async logic in try-catch blocks that delegate errors to Express's next() error handler.
+- Every successful HTTP response includes a uniform envelope with `success: true`, a `data` payload, and an ISO-formatted `timestamp` field.
+- Service methods accept an optional `etablissementId` parameter for multi-tenancy scoping, applying it conditionally in query WHERE clauses.
+- Zod schemas are defined as standalone constants (e.g., `createLigneSchema`) and inferred into TypeScript types via `z.infer` for DTO contracts.
+- Entities use TypeORM decorators with explicit column types, lengths, defaults, and `@Index` annotations on tenant-scoped foreign keys.

@@ -1,0 +1,1 @@
+Manages school canteen operations including menu planning, student enrollment, balance management, and meal consumption tracking.

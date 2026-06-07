@@ -14,21 +14,10 @@ import {
 } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const etablissementService = new EtablissementService();
-
-/**
- * Helper de validation Zod
- */
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // ==================================
 // CRUD Établissements
@@ -75,7 +64,7 @@ router.post(
     requireRoles(Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const dto = validate(createEtablissementSchema, req.body);
+            const dto = validateDto(createEtablissementSchema, req.body);
             const etablissement = await etablissementService.create(dto);
             res.status(201).json({ success: true, data: etablissement });
         } catch (error) { next(error); }
@@ -92,7 +81,7 @@ router.patch(
     requireRoles(Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const dto = validate(updateEtablissementSchema, req.body);
+            const dto = validateDto(updateEtablissementSchema, req.body);
             const etablissement = await etablissementService.update(req.params.id, dto);
             res.json({ success: true, data: etablissement });
         } catch (error) { next(error); }
@@ -160,7 +149,7 @@ router.patch(
     requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const dto = validate(updateEtablissementConfigSchema, req.body);
+            const dto = validateDto(updateEtablissementConfigSchema, req.body);
             const config = await etablissementService.updateConfig(req.params.id, dto);
             res.json({ success: true, data: config });
         } catch (error) { next(error); }

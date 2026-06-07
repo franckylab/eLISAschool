@@ -14,6 +14,10 @@ import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/co
 import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
 import { AffectationEleve } from '@modules/classes/entities';
+import { notificationTemplates } from '@modules/notifications/services';
+import { Eleve } from '@modules/eleves/entities';
+import { Matiere } from '@modules/matieres/entities';
+import { Utilisateur } from '@modules/utilisateurs/entities';
 
 export class NotesService {
     private noteRepository: Repository<Note>;
@@ -78,6 +82,54 @@ export class NotesService {
             description: `Note créée pour élève ${createDto.eleveId}`,
             module: 'notes',
         });
+
+        // NOTIFICATION : Envoyer une notification aux parents
+        try {
+            const eleveRepo = AppDataSource.getRepository(Eleve);
+            const matiereRepo = AppDataSource.getRepository(Matiere);
+            const userRepo = AppDataSource.getRepository(Utilisateur);
+
+            const eleve = await eleveRepo.findOne({ 
+                where: { id: createDto.eleveId },
+                relations: ['utilisateur']
+            });
+            
+            if (eleve) {
+                const matiere = await matiereRepo.findOne({ where: { id: createDto.matiereId } });
+                const enseignant = await userRepo.findOne({ where: { id: enseignantId } });
+                const periode = await periodesService.findOne(createDto.periodeId);
+
+                // Trouver les responsables de cet élève
+                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+                const responsabilités = await responsableRepo.find({
+                    where: { enfantId: eleve.utilisateurId }
+                }) as any[];
+
+                // Notifier chaque responsable
+                if (responsabilités && responsabilités.length > 0) {
+                    for (const resp of responsabilités) {
+                        await notificationTemplates.nouvelleNote({
+                            destinataireId: resp.utilisateurId,
+                            etablissementId,
+                            metadata: {
+                                noteId: note.id,
+                                eleveId: eleve.id,
+                            },
+                        }, {
+                            eleveNom: `Élève ${eleve.id.substring(0, 8)}`,
+                            matiere: matiere?.nom || 'Matière',
+                            note: createDto.valeur,
+                            bareme: createDto.bareme || 20,
+                            periode: periode?.nom || 'Période',
+                            enseignant: 'Enseignant',
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            // Ne pas bloquer la création de note si la notification échoue
+            logger.warn('[Notes] Échec envoi notification nouvelle note (non bloquant)', error);
+        }
 
         return note;
     }

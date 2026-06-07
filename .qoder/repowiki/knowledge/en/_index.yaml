@@ -2,7 +2,7 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-06T01:44:36Z"
+exported_at: "2026-06-06T08:10:07Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -28,6 +28,15 @@ modules:
         children: []
         depends_on: []
         related_to: []
+    91645fd8e957ab99053b50417eeb8808:
+        dir_name: Feature Modules & Domain Logic
+        title: Feature Modules & Domain Logic
+        scope:
+            - backend/src/modules/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
     backend:
         dir_name: eLISAschool Backend API
         title: eLISAschool Backend API
@@ -35,11 +44,231 @@ modules:
             - backend/
         source_files: []
         children:
-            - backend/feature_modules
-            - backend/core_framework
+            - d7d612e8ab3f23c6707e9189cbde287c
+            - backend/database_management
+            - 91645fd8e957ab99053b50417eeb8808
+            - backend/shared_infrastructure
         depends_on: []
         related_to: []
-    backend/core_framework:
+    backend/business_modules/academic_management/annees_scolaires:
+        dir_name: Academic Year Management
+        title: Academic Year Management
+        scope:
+            - backend/src/modules/annees-scolaires/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/cycles:
+        dir_name: Academic Cycle Management
+        title: Academic Cycle Management
+        scope:
+            - backend/src/modules/cycles/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/eleves:
+        dir_name: Student Management
+        title: Student Management
+        scope:
+            - backend/src/modules/eleves/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/matieres:
+        dir_name: Subject & Curriculum Management
+        title: Subject & Curriculum Management
+        scope:
+            - backend/src/modules/matieres/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/niveaux:
+        dir_name: Academic Level Management
+        title: Academic Level Management
+        scope:
+            - backend/src/modules/niveaux/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/orientation:
+        dir_name: Student Orientation & Career Guidance
+        title: Student Orientation & Career Guidance
+        scope:
+            - backend/src/modules/orientation/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/academic_management/periodes:
+        dir_name: Academic Period Management
+        title: Academic Period Management
+        scope:
+            - backend/src/modules/periodes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/core_identity/audit:
+        dir_name: Audit Trail Query & Archival
+        title: Audit Trail Query & Archival
+        scope:
+            - backend/src/modules/audit/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/core_identity/auth:
+        dir_name: Authentication, Authorization & Identity Management
+        title: Authentication, Authorization & Identity Management
+        scope:
+            - backend/src/modules/auth/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/core_identity/rbac:
+        dir_name: Role-Based Access Control (RBAC) Management
+        title: Role-Based Access Control (RBAC) Management
+        scope:
+            - backend/src/modules/rbac/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/core_identity/utilisateurs:
+        dir_name: User Management Module
+        title: User Management Module
+        scope:
+            - backend/src/modules/utilisateurs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/grading_reporting/bulletins:
+        dir_name: Student Report Card Generation and Management
+        title: Student Report Card Generation and Management
+        scope:
+            - backend/src/modules/bulletins/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/grading_reporting/impressions:
+        dir_name: Document Generation & Print Queue Management
+        title: Document Generation & Print Queue Management
+        scope:
+            - backend/src/modules/impressions/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/grading_reporting/notes:
+        dir_name: Student Grade Management
+        title: Student Grade Management
+        scope:
+            - backend/src/modules/notes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/grading_reporting/requetes:
+        dir_name: Request Management & Approval Workflow
+        title: Request Management & Approval Workflow
+        scope:
+            - backend/src/modules/requetes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/grading_reporting/scoring:
+        dir_name: Student Scoring & Ranking Engine
+        title: Student Scoring & Ranking Engine
+        scope:
+            - backend/src/modules/scoring/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/cantine:
+        dir_name: School Canteen Management
+        title: School Canteen Management
+        scope:
+            - backend/src/modules/cantine/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/cartes:
+        dir_name: School Card Management
+        title: School Card Management
+        scope:
+            - backend/src/modules/cartes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/etablissement:
+        dir_name: School Establishment Management
+        title: School Establishment Management
+        scope:
+            - backend/src/modules/etablissement/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/materiel:
+        dir_name: School Material & Equipment Loan Management
+        title: School Material & Equipment Loan Management
+        scope:
+            - backend/src/modules/materiel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/personnel:
+        dir_name: Personnel Management
+        title: Personnel Management
+        scope:
+            - backend/src/modules/personnel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/business_modules/school_operations/transport:
+        dir_name: School Transport Management
+        title: School Transport Management
+        scope:
+            - backend/src/modules/transport/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/database_management:
+        dir_name: Database Management & Schema Evolution
+        title: Database Management & Schema Evolution
+        scope:
+            - backend/src/database/
+            - backend/database/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/shared_infrastructure:
+        dir_name: Shared Infrastructure & Cross-Cutting Concerns
+        title: Shared Infrastructure & Cross-Cutting Concerns
+        scope:
+            - backend/src/common/
+            - backend/src/config/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    d7d612e8ab3f23c6707e9189cbde287c:
         dir_name: Core Framework & Shared Infrastructure
         title: Core Framework & Shared Infrastructure
         scope:
@@ -53,15 +282,6 @@ modules:
         depends_on: []
         related_to:
             - path: shared
-    backend/feature_modules:
-        dir_name: Feature Modules & Domain Logic
-        title: Feature Modules & Domain Logic
-        scope:
-            - backend/src/modules/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
     docker:
         dir_name: Container Orchestration & Deployment Configuration
         title: Container Orchestration & Deployment Configuration

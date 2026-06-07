@@ -9,24 +9,16 @@ import { NotesService } from '../services/notes.service';
 import { createNoteSchema, updateNoteSchema, createBulkNotesSchema, queryNotesSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const notesService = new NotesService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 router.use(authMiddleware);
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryNotesSchema, req.query);
+        const query = validateDto(queryNotesSchema, req.query);
         const result = await notesService.findAll(query, req.etablissementId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
@@ -41,7 +33,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createNoteSchema, req.body);
+        const dto = validateDto(createNoteSchema, req.body);
         const note = await notesService.create(dto, req.utilisateur!.id, req.etablissementId);
         res.status(201).json({ success: true, data: note });
     } catch (error) { next(error); }
@@ -49,7 +41,7 @@ router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEME
 
 router.post('/bulk', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createBulkNotesSchema, req.body);
+        const dto = validateDto(createBulkNotesSchema, req.body);
         const count = await notesService.createBulk(dto, req.utilisateur!.id, req.etablissementId);
         res.status(201).json({ success: true, count, message: `${count} notes créées` });
     } catch (error) { next(error); }
@@ -57,7 +49,7 @@ router.post('/bulk', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLIS
 
 router.patch('/:id', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateNoteSchema, req.body);
+        const dto = validateDto(updateNoteSchema, req.body);
         const note = await notesService.update(req.params.id, dto, req.utilisateur!.id);
         res.json({ success: true, data: note });
     } catch (error) { next(error); }

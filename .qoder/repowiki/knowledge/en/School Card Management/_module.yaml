@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/school_operations/cartes
+title: School Card Management
+scope:
+    - backend/src/modules/cartes/
+source_files: []
+depends_on: []
+related_to: []

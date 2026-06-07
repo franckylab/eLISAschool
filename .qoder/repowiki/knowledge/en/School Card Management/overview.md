@@ -1,0 +1,1 @@
+Manages the lifecycle, validation, and status of school identification cards with configurable QR code generation and expiration policies.

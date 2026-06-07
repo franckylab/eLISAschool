@@ -458,6 +458,75 @@ Puis mettre à jour le DTO si la FK est requise en entrée, et ajouter la relati
 
 ---
 
+## Workflow : Développer avec le multi-établissement (v2.0)
+
+### Règle 1 : Scopage automatique par établissement
+
+**Toutes les entités métier doivent avoir :**
+```typescript
+@Column({ type: 'uuid' })
+etablissementId!: string;
+
+@Index()
+etablissementId!: string;
+```
+
+### Règle 2 : Utilisation de la configuration scopée
+
+```typescript
+// Dans un service ou controller
+const config = await configurationService.getParametre('theme.primary_color', req.etablissementId);
+// Résolution : override établissement → fallback global
+```
+
+### Règle 3 : Éviter les références circulaires
+
+**Problème :** Deux entités dans le même fichier qui se référencent mutuellement
+**Solution :** Séparer dans des fichiers distincts
+
+```typescript
+// ❌ Incorrect (même fichier)
+@Entity('a')
+class A { @OneToOne(() => B) b?: B; }
+@Entity('b')
+class B { @OneToOne(() => A) a?: A; }
+
+// ✅ Correct (fichiers séparés)
+// a.entity.ts
+@Entity('a')
+class A { @OneToOne('B', 'a') b?: B; }
+
+// b.entity.ts
+@Entity('b')
+class B { @OneToOne(() => A, a => a.b) a?: A; }
+```
+
+### Règle 4 : TypeORM et les valeurs NULL
+
+**Toujours utiliser `IsNull()` pour les conditions WHERE avec NULL :**
+```typescript
+import { IsNull } from 'typeorm';
+
+// ❌ Incorrect
+where: { etablissementId: null }
+
+// ✅ Correct
+where: { etablissementId: IsNull() }
+```
+
+### Règle 5 : Migrations PostgreSQL
+
+**Pour les contraintes UNIQUE sur colonnes existantes :**
+```sql
+-- ❌ Ne pas utiliser DROP INDEX sur une contrainte
+DROP INDEX IF EXISTS "UQ_xxx";
+
+-- ✅ Utiliser DROP CONSTRAINT
+ALTER TABLE table DROP CONSTRAINT IF EXISTS "UQ_xxx";
+```
+
+---
+
 ## Checklist finale avant commit
 
 - [ ] Tous les fichiers ont la **bannière eLISAschool**
@@ -480,6 +549,7 @@ Puis mettre à jour le DTO si la FK est requise en entrée, et ajouter la relati
 | `auth` | `/api/auth` | Critiques | Authentification JWT, login, register, refresh |
 | `utilisateurs` | `/api/utilisateurs` | Critiques | Gestion des comptes utilisateurs |
 | `configuration` | `/api/configuration` | Critiques | Configuration établissement, paramètres |
+| `backups` | `/api/backups` | Critiques | **Backup & restore** (config, DB, monitoring) |
 | `notifications` | `/api/notifications` | Communication | Notifications push et in-app |
 | `notes` | `/api/notes` | Académiques | Saisie et gestion des notes |
 | `messagerie` | `/api/messagerie` | Communication | Messagerie interne |
@@ -531,6 +601,10 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 | **Multi-établissements (service)** | `backend/src/modules/auth/services/utilisateur-etablissement.service.ts` |
 | **Limitations rôles (entité)** | `backend/src/modules/auth/entities/role-limitation-etablissement.entity.ts` |
 | **Middleware tenant v2.0** | `backend/src/common/middlewares/tenant.middleware.ts` |
+| **Configuration multi-établissement** | `backend/src/modules/configuration/services/configuration.service.ts` |
+| **EtablissementConfig (entité)** | `backend/src/modules/etablissement/entities/etablissement-config.entity.ts` |
+| **Migration scopage** | `backend/src/database/migrations/006-parametres-multi-etablissements.ts` |
+| **Migration consolidation** | `backend/src/database/migrations/007-consolider-configuration-app.ts` |
 | **RBAC module** | `backend/src/modules/rbac/` |
 | **RBAC seed** | `backend/src/database/seeds/rbac.seed.ts` |
 | **Migration multi-établissements** | `backend/src/database/migrations/002-multi-etablissements.sql` |
@@ -962,6 +1036,272 @@ Les tests vérifient :
 | `backend/src/database/migrations/test-rbac.ts` | Script de test (400 lignes) |
 | `backend/src/modules/rbac/` | Module RBAC complet |
 | `backend/src/modules/auth/middlewares/permission.middleware.ts` | Middleware unifié (200 lignes) |
+
+---
+
+## Workflow : Utiliser le Système de Backup (v1.0)
+
+### Présentation
+
+eLISAschool dispose d'un **système de backup production-grade** avec :
+- **Sauvegarde configuration** : Snapshots avec versioning sémantique + backups différentiels
+- **Sauvegarde database** : Par établissement avec chiffrement AES-256-GCM
+- **Storage abstraction** : Interface extensible (DB, S3, FileSystem)
+- **Planification** : Cron scheduling + file d'attente avec retry
+- **API REST complète** : 15+ endpoints pour gestion backups
+- **Monitoring** : Métriques temps réel + usage stockage
+- **Clonage inter-établissements** : Avec résolution de conflits
+
+### Étape 1 : Créer un backup configuration
+
+```typescript
+import { configBackupService } from '@modules/configuration/services/backup/config-backup.service';
+
+// Snapshot complet
+const backup = await configBackupService.createSnapshot('uuid-etablissement', {
+    differential: false,
+    compress: true,
+    encrypt: true,
+    retentionDays: 30,
+});
+
+// Snapshot différentiel (60-80% plus petit)
+const diffBackup = await configBackupService.createSnapshot('uuid', {
+    differential: true,
+    compress: true,
+});
+```
+
+### Étape 2 : Créer un backup database
+
+```typescript
+import { databaseBackupService } from '@modules/configuration/services/backup/database-backup.service';
+
+const backup = await databaseBackupService.backupEtablissement('uuid-etablissement', {
+    compress: true,
+    encrypt: true,
+    retentionDays: 90,
+});
+```
+
+### Étape 3 : Restaurer un backup
+
+```typescript
+// Config
+await configBackupService.restoreBackup('uuid-backup', false);
+
+// Database
+await databaseBackupService.restoreBackup('uuid-backup', false);
+```
+
+### Étape 4 : Cloner une configuration
+
+```typescript
+const results = await configBackupService.cloneConfiguration(
+    'source-uuid',
+    ['target1-uuid', 'target2-uuid'],
+    {
+        includeModules: true,
+        includeParametres: true,
+        conflictResolution: 'merge',
+        dryRun: false,
+    }
+);
+```
+
+### Étape 5 : Vérifier l'intégrité
+
+```typescript
+const integrity = await databaseBackupService.verifyBackupIntegrity('backup-id');
+if (!integrity.valid) {
+    console.error('Backup corrompu:', integrity.error);
+}
+```
+
+### API REST (15+ endpoints)
+
+```bash
+# Créer backup config
+POST   /api/backups/config
+
+# Créer backup database
+POST   /api/backups/database/:etablissementId
+
+# Lister backups
+GET    /api/backups?backupType=config&limit=10
+
+# Restaurer
+POST   /api/backups/:id/restore
+
+# Vérifier intégrité
+POST   /api/backups/:id/verify
+
+# Cloner configuration
+POST   /api/configuration/clone
+
+# Métriques
+GET    /api/backups/metrics/summary
+GET    /api/backups/metrics/:etablissementId
+GET    /api/backups/storage-usage
+```
+
+### Bonnes pratiques backup
+
+1. **Toujours chiffrer en production** (`encrypt: true`)
+2. **Utiliser backups différentiels** pour config (`differential: true`)
+3. **Vérifier intégrité** avant restauration (`verifyBackupIntegrity()`)
+4. **Configurer BACKUP_ENCRYPTION_KEY** dans `.env` (>= 32 caractères)
+5. **Fréquence recommandée** : Config quotidien (30j), DB quotidien (90j)
+6. **Tester restaurations** régulièrement sur environnement de test
+
+### Configuration requise
+
+```env
+# .env
+BACKUP_ENCRYPTION_KEY=votre-cle-secrete-d-au-moins-32-caracteres
+```
+
+Générer une clé :
+```bash
+openssl rand -hex 32
+```
+
+### Fichiers de référence Backup
+
+| Fichier | Description |
+|---------|-------------|
+| `backup.controller.ts` | Controller API REST (466 lignes) |
+| `config-backup.service.ts` | Service backup config (604 lignes) |
+| `database-backup.service.ts` | Service backup DB (319 lignes) |
+| `database-storage.provider.ts` | Provider stockage DB (284 lignes) |
+| `backup-record.entity.ts` | Entité métadonnées (177 lignes) |
+| `backup.dto.ts` | 9 schémas Zod validation (151 lignes) |
+| `008-backup-system-v2.ts` | Migration backup_records |
+| `009-backup-schedules-jobs.ts` | Migration planification |
+| `BACKUP-SYSTEM-USER-GUIDE.md` | Guide utilisateur complet |
+| `BACKUP-SYSTEM-README-FINAL.md` | Documentation technique |
+
+---
+
+## Workflow : Optimiser les Performances
+
+### Règle 1 : Index de base de données
+
+**TOUJOURS créer des index pour :**
+- Colonnes de filtrage (`etablissementId`, `statut`, etc.)
+- Relations FK (`classeId`, `matiereId`, etc.)
+- Contraintes d'unicité (`email`, `matricule`)
+- Tri fréquent (`createdAt`)
+
+```typescript
+@Entity('eleves')
+@Index(['etablissementId'])
+@Index(['classeId', 'anneeScolaireId'])  // Composite
+@Index(['matricule'], { unique: true })
+export class Eleve { ... }
+```
+
+### Règle 2 : Requêtes optimisées
+
+```typescript
+// ✅ SÉLECTIF
+repo.find({
+    where: { etablissementId },
+    relations: ['classe'],  // Uniquement nécessaire
+    select: ['id', 'nom', 'prenom'],  // Colonnes spécifiques
+    take: 50,  // TOUJOURS limiter
+    skip: offset
+});
+
+// ❌ ÉVITER
+repo.find({
+    relations: ['classe', 'notes', 'bulletins', 'utilisateur']  // Trop de relations
+});
+```
+
+### Règle 3 : Cache in-memory
+
+```typescript
+private cache = new Map<string, any>();
+private readonly CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+async getConfig(cle: string) {
+    const cached = this.cache.get(cle);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.value;
+    }
+    
+    const value = await this.repo.findOne({ where: { cle } });
+    this.cache.set(cle, { value, timestamp: Date.now() });
+    return value;
+}
+
+// Invalidation après modification
+invalidateCache(): void {
+    this.cache.clear();
+}
+```
+
+### Règle 4 : Pagination obligatoire
+
+```typescript
+// Controller
+const page = parseInt(req.query.page as string) || 1;
+const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+const [data, total] = await service.findPaginated({ page, limit });
+
+res.json({
+    success: true,
+    data,
+    pagination: {
+        page, limit, total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total
+    }
+});
+```
+
+### Règle 5 : Transactions atomiques
+
+```typescript
+const queryRunner = AppDataSource.createQueryRunner();
+await queryRunner.connect();
+await queryRunner.startTransaction();
+
+try {
+    await queryRunner.manager.save(Entity1, data1);
+    await queryRunner.manager.save(Entity2, data2);
+    await queryRunner.commitTransaction();
+} catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+} finally {
+    await queryRunner.release();  // TOUJOURS
+}
+```
+
+### Anti-patterns critiques
+
+**❌ N+1 Query Problem :**
+```typescript
+// ❌ Lent (N+1 requêtes)
+const eleves = await repo.find();
+for (const e of eleves) {
+    e.notes = await notesRepo.find({ where: { eleveId: e.id } });
+}
+
+// ✅ Rapide (1 requête)
+const eleves = await repo.find({ relations: ['notes'] });
+```
+
+**❌ Sans limite :**
+```typescript
+// ❌ Memory leak potentiel
+const all = await repo.find();
+
+// ✅ Contrôlé
+const data = await repo.find({ take: 100 });
+```
 
 ---
 

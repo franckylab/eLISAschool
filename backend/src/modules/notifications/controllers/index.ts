@@ -5,3 +5,4 @@
  */
 
 export { notificationsController } from './notifications.controller';
+export { notificationProviderController } from './notification-provider.controller';

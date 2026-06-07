@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/feature_modules
+module_path: 91645fd8e957ab99053b50417eeb8808
 title: Feature Modules & Domain Logic
 scope:
     - backend/src/modules/

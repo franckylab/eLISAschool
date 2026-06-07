@@ -1,0 +1,4 @@
+- Services use TypeORM QueryRunners for transactional operations to ensure data consistency during complex writes.
+- Controllers delegate all validation logic to Zod schemas defined in the DTO layer before calling services.
+- Entities use UUIDs as primary keys and include automatic timestamp columns for creation and updates.
+- Soft deletion is preferred over physical deletion, using an 'actif' boolean flag to maintain data integrity.

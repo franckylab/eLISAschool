@@ -10,18 +10,10 @@ import { createModeleSchema, updateModeleSchema, createImpressionSchema } from '
 import { TypeDocument } from '../entities';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const impressionsService = new ImpressionsService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // Modèles
 router.get('/modeles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
@@ -41,7 +33,7 @@ router.get('/modeles/:id', authMiddleware, async (req: Request, res: Response, n
 
 router.post('/modeles', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createModeleSchema, req.body);
+        const dto = validateDto(createModeleSchema, req.body);
         const modele = await impressionsService.createModele(dto);
         res.status(201).json({ success: true, data: modele });
     } catch (error) { next(error); }
@@ -49,7 +41,7 @@ router.post('/modeles', authMiddleware, requireRoles(Role.ADMIN), async (req: Re
 
 router.patch('/modeles/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateModeleSchema, req.body);
+        const dto = validateDto(updateModeleSchema, req.body);
         const modele = await impressionsService.updateModele(req.params.id, dto);
         res.json({ success: true, data: modele });
     } catch (error) { next(error); }
@@ -72,7 +64,7 @@ router.get('/file', authMiddleware, async (req: Request, res: Response, next: Ne
 
 router.post('/file', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createImpressionSchema, req.body);
+        const dto = validateDto(createImpressionSchema, req.body);
         const impression = await impressionsService.createImpression(dto, req.utilisateur!.id);
         res.status(201).json({ success: true, data: impression });
     } catch (error) { next(error); }

@@ -1,0 +1,4 @@
+- Controllers delegate all business logic to service classes and only handle request/response transformation, validation, and error forwarding via `next(error)`.
+- Service methods accept an optional `req?: Request` parameter to enable audit logging when called from authenticated contexts.
+- DTOs use Zod schemas with type inference (`z.infer`) to define both runtime validation rules and TypeScript types simultaneously.
+- Multi-tenancy is enforced by passing `etablissementId` as a service method parameter and applying it as a query filter condition.

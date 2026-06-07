@@ -1,0 +1,1 @@
+Manages academic levels (niveaux) within educational cycles, supporting CRUD operations with role-based access control.

@@ -12,6 +12,10 @@ import { AppDataSource } from '@database/data-source';
 import { createApp } from './app';
 import { logger } from '@common/utils/logger.util';
 import { envConfig } from '@config/env.config';
+import { notificationProviderService, seedDefaultNotificationProviders } from '@modules/notifications/services';
+import { inAppProvider, providerRegistry } from '@modules/notifications/providers';
+import { TypeNotification } from '@modules/notifications/entities';
+import { initNotificationCronJobs } from '@modules/notifications/cron-jobs';
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -26,9 +30,49 @@ async function bootstrap(): Promise<void> {
         await AppDataSource.initialize();
         logger.info('✅ Connexion à la base de données établie avec succès');
 
+        // Chargement des providers de notifications
+        // NOTE: synchronize:true crée automatiquement la table notification_providers
+        // Le seed insère les providers par défaut si la table est vide
+        try {
+            logger.info('📧 Initialisation du système de notifications...');
+            
+            // Seed automatique des providers par défaut (si table vide)
+            const seedCount = await seedDefaultNotificationProviders();
+            
+            // Enregistrer le provider In-App par défaut (toujours disponible)
+            providerRegistry.register(inAppProvider);
+            logger.info('✅ Provider In-App enregistré');
+            
+            // Charger TOUS les providers depuis la DB (y compris les nouveaux seedés)
+            const loadedCount = await notificationProviderService.loadActiveProviders();
+            if (loadedCount > 0) {
+                logger.info(`✅ ${loadedCount} providers chargés depuis la base de données`);
+            } else {
+                logger.info('ℹ️  Aucun provider actif en DB (In-App uniquement)');
+            }
+            
+            // Vérifier les providers disponibles
+            const emailProviders = providerRegistry.countProviders(TypeNotification.EMAIL);
+            const smsProviders = providerRegistry.countProviders(TypeNotification.SMS);
+            const pushProviders = providerRegistry.countProviders(TypeNotification.PUSH);
+            const inAppProviders = providerRegistry.countProviders(TypeNotification.IN_APP);
+            
+            logger.info(`📊 Providers actifs: In-App=${inAppProviders}, Email=${emailProviders}, SMS=${smsProviders}, Push=${pushProviders}`);
+        } catch (error) {
+            logger.warn('⚠️  Système de notifications en mode dégradé (In-App uniquement)', error);
+        }
+
         // Création et configuration de l'application Express
         const app = createApp();
         const port = envConfig.app.port;
+
+        // Initialiser les cron jobs de notifications (uniquement en production ou si activé)
+        if (envConfig.app.nodeEnv === 'production' || process.env.ENABLE_CRON_JOBS === 'true') {
+            initNotificationCronJobs();
+        } else {
+            logger.info('ℹ️  Cron jobs désactivés (mode développement)');
+            logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');
+        }
 
         // Démarrage du serveur HTTP
         app.listen(port, () => {

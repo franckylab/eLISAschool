@@ -2,16 +2,10 @@ import { Router } from 'express';
 import { GamificationService } from '../services/gamification.service';
 import { createBadgeSchema, attribuerPointsSchema, attribuerBadgeSchema } from '../dto';
 import { authMiddleware, adminOnly } from '@modules/auth/middlewares';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const gamificationService = new GamificationService();
-
-function validate(schema: any, data: unknown): any {
-  const result = schema.safeParse(data);
-  if (!result.success) throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-  return result.data;
-}
 
 router.get('/badges', async (req, res, next) => {
   try {
@@ -22,7 +16,7 @@ router.get('/badges', async (req, res, next) => {
 
 router.post('/badges', authMiddleware, adminOnly, async (req, res, next) => {
   try {
-    const dto = validate(createBadgeSchema, req.body);
+    const dto = validateDto(createBadgeSchema, req.body);
     const badge = await gamificationService.createBadge(dto);
     res.status(201).json({ success: true, data: badge, timestamp: new Date().toISOString() });
   } catch (error) { next(error); }
@@ -59,7 +53,7 @@ router.get('/utilisateurs/:id/historique', authMiddleware, async (req, res, next
 
 router.post('/points', authMiddleware, adminOnly, async (req, res, next) => {
   try {
-    const dto = validate(attribuerPointsSchema, req.body);
+    const dto = validateDto(attribuerPointsSchema, req.body);
     const points = await gamificationService.attribuerPoints(dto);
     res.status(201).json({ success: true, data: points, timestamp: new Date().toISOString() });
   } catch (error) { next(error); }
@@ -67,7 +61,7 @@ router.post('/points', authMiddleware, adminOnly, async (req, res, next) => {
 
 router.post('/attribuer-badge', authMiddleware, adminOnly, async (req, res, next) => {
   try {
-    const dto = validate(attribuerBadgeSchema, req.body);
+    const dto = validateDto(attribuerBadgeSchema, req.body);
     const badge = await gamificationService.attribuerBadge(dto);
     res.status(201).json({ success: true, data: badge, timestamp: new Date().toISOString() });
   } catch (error) { next(error); }

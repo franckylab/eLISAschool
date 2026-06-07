@@ -1,0 +1,1 @@
+Provides REST endpoints for querying, exporting, and analyzing audit logs, plus a service to archive and purge old records.

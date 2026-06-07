@@ -126,6 +126,22 @@ export const propagateParametreSchema = z.object({
     }).default({}),
 });
 
+/**
+ * Schéma pour créer un backup de base de données
+ */
+export const createDatabaseBackupSchema = z.object({
+    compress: z.boolean().optional().default(true),
+    encrypt: z.boolean().optional().default(true),
+    retentionDays: z.number().int().min(1).max(365).optional().default(90),
+});
+
+/**
+ * Schéma pour créer un backup complet (config + database)
+ */
+export const createFullBackupSchema = z.object({
+    retentionDays: z.number().int().min(1).max(365).optional().default(90),
+});
+
 // Types inférés
 export type CreateBackupDto = z.infer<typeof createBackupSchema>;
 export type RestoreBackupDto = z.infer<typeof restoreBackupSchema>;
@@ -136,6 +152,8 @@ export type UpdateScheduleDto = z.infer<typeof updateScheduleSchema>;
 export type CloneConfigDto = z.infer<typeof cloneConfigSchema>;
 export type ImportBackupConfigDto = z.infer<typeof importBackupConfigSchema>;
 export type PropagateParametreDto = z.infer<typeof propagateParametreSchema>;
+export type CreateDatabaseBackupDto = z.infer<typeof createDatabaseBackupSchema>;
+export type CreateFullBackupDto = z.infer<typeof createFullBackupSchema>;
 
 export default {
     createBackupSchema,
@@ -147,4 +165,6 @@ export default {
     cloneConfigSchema,
     importBackupConfigSchema,
     propagateParametreSchema,
+    createDatabaseBackupSchema,
+    createFullBackupSchema,
 };

@@ -9,31 +9,23 @@ import { ClassesService } from '../services';
 import { createClasseSchema, updateClasseSchema, affecterEleveSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new ClassesService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
-        const classes = await service.findAll(niveauId, anneeId, req.etablissementId);
+        const classes = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC' as const, niveauId, anneeScolaireId: anneeId }, req.etablissementId);
         res.json({ success: true, data: classes });
     } catch (error) { next(error); }
 });
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createClasseSchema, req.body);
+        const dto = validateDto(createClasseSchema, req.body);
         const classe = await service.create(dto, req.etablissementId);
         res.status(201).json({ success: true, data: classe });
     } catch (error) { next(error); }
@@ -41,7 +33,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateClasseSchema, req.body);
+        const dto = validateDto(updateClasseSchema, req.body);
         const classe = await service.update(req.params.id, dto);
         res.json({ success: true, data: classe });
     } catch (error) { next(error); }
@@ -56,7 +48,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 
 router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(affecterEleveSchema, req.body);
+        const dto = validateDto(affecterEleveSchema, req.body);
         const affectation = await service.affecterEleve(dto, req.etablissementId);
         res.status(201).json({ success: true, data: affectation });
     } catch (error) { next(error); }

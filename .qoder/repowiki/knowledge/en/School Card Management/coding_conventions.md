@@ -1,0 +1,3 @@
+- Controllers use a local `validate` helper function to enforce Zod schema validation before passing data to services.
+- Service methods return standardized JSON responses with `success`, `data`, and `timestamp` fields in controller handlers.
+- Entity aliases are used in barrel exports (e.g., exporting `Carte` as `CarteScolaire`) to provide domain-specific naming.

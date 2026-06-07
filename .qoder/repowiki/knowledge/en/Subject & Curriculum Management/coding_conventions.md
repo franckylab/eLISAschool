@@ -1,0 +1,3 @@
+- Controllers delegate all business logic to service instances and handle only request/response formatting and error forwarding.
+- DTOs are defined using Zod schemas, with TypeScript types inferred from these schemas.
+- Service methods perform existence checks and throw `AppError` for conflicts or not-found scenarios before executing database operations.

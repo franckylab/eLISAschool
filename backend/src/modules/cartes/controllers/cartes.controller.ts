@@ -2,16 +2,10 @@ import { Router } from 'express';
 import { CartesService } from '../services/cartes.service';
 import { createCarteSchema, updateCarteSchema } from '../dto';
 import { authMiddleware, staffOnly } from '@modules/auth/middlewares';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const cartesService = new CartesService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    return result.data;
-}
 
 router.use(authMiddleware);
 
@@ -38,7 +32,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', staffOnly, async (req, res, next) => {
     try {
-        const dto = validate(createCarteSchema, req.body);
+        const dto = validateDto(createCarteSchema, req.body);
         const carte = await cartesService.create(dto);
         res.status(201).json({ success: true, data: carte, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -46,7 +40,7 @@ router.post('/', staffOnly, async (req, res, next) => {
 
 router.patch('/:id', staffOnly, async (req, res, next) => {
     try {
-        const dto = validate(updateCarteSchema, req.body);
+        const dto = validateDto(updateCarteSchema, req.body);
         const carte = await cartesService.update(req.params.id, dto);
         res.json({ success: true, data: carte, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }

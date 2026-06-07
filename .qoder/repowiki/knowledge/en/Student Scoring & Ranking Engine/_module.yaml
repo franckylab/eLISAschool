@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/grading_reporting/scoring
+title: Student Scoring & Ranking Engine
+scope:
+    - backend/src/modules/scoring/
+source_files: []
+depends_on: []
+related_to: []

@@ -15,6 +15,8 @@ import { CreateNotificationDto, CreateBulkNotificationDto, QueryNotificationsDto
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
+import { providerRegistry } from '../providers/provider-registry';
+import { EnvoiResult } from '../providers/interfaces';
 
 /**
  * Service de gestion des notifications avec configuration centralisée
@@ -191,66 +193,86 @@ export class NotificationsService {
     }
 
     /**
+     * Compter le total des notifications d'un utilisateur
+     */
+    async countByUser(utilisateurId: string): Promise<number> {
+        return this.notificationRepository.count({
+            where: { destinataireId: utilisateurId },
+        });
+    }
+
+    /**
+     * Récupérer une notification par son ID (avec vérification de propriété)
+     */
+    async getOne(id: string, utilisateurId: string): Promise<Notification> {
+        const notification = await this.notificationRepository.findOne({
+            where: { id, destinataireId: utilisateurId },
+        });
+
+        if (!notification) {
+            throw new AppError('Notification non trouvée', 404, 'NOTIFICATION_NOT_FOUND');
+        }
+
+        return notification;
+    }
+
+    /**
      * Envoyer une notification selon le type et la configuration
+     * Utilise le ProviderRegistry avec fallback automatique
      */
     private async envoyerNotification(notification: Notification): Promise<void> {
         const params = await this.getNotificationsParams();
 
-        try {
-            switch (notification.type) {
-                case TypeNotification.EMAIL:
-                    if (params.enableEmail) {
-                        await this.sendEmail(notification);
-                    }
-                    break;
-                case TypeNotification.PUSH:
-                    if (params.enablePush) {
-                        await this.sendPush(notification);
-                    }
-                    break;
-                case TypeNotification.SMS:
-                    if (params.enableSms) {
-                        await this.sendSms(notification);
-                    }
-                    break;
-                case TypeNotification.IN_APP:
-                default:
-                    // In-app: juste mettre à jour le statut
-                    break;
-            }
+        // Vérifier si le type de notification est activé
+        if (notification.type === TypeNotification.PUSH && !params.enablePush) {
+            logger.warn(`[NotificationsService] Push désactivé, notification ${notification.id} ignorée`);
+            return;
+        }
+        if (notification.type === TypeNotification.EMAIL && !params.enableEmail) {
+            logger.warn(`[NotificationsService] Email désactivé, notification ${notification.id} ignorée`);
+            return;
+        }
+        if (notification.type === TypeNotification.SMS && !params.enableSms) {
+            logger.warn(`[NotificationsService] SMS désactivé, notification ${notification.id} ignorée`);
+            return;
+        }
 
-            notification.statut = StatutNotification.ENVOYEE;
-            notification.envoyeeAt = new Date();
-            await this.notificationRepository.save(notification);
+        try {
+            // Utiliser le registry avec fallback automatique
+            const result: EnvoiResult = await providerRegistry.sendWithFallback(notification);
+
+            if (result.succes) {
+                notification.statut = StatutNotification.ENVOYEE;
+                notification.envoyeeAt = new Date();
+                notification.metadata = {
+                    ...notification.metadata,
+                    envoiResult: result,
+                };
+                await this.notificationRepository.save(notification);
+                
+                logger.info(
+                    `[NotificationsService] Notification ${notification.id} envoyée avec succès`
+                );
+            } else {
+                notification.statut = StatutNotification.ECHEC;
+                notification.metadata = {
+                    ...notification.metadata,
+                    erreur: result.erreur,
+                };
+                await this.notificationRepository.save(notification);
+                
+                logger.error(
+                    `[NotificationsService] Échec envoi notification ${notification.id}: ${result.erreur}`
+                );
+            }
         } catch (error) {
             notification.statut = StatutNotification.ECHEC;
             await this.notificationRepository.save(notification);
-            logger.error(`Échec envoi notification ${notification.id}`, error);
+            logger.error(
+                `[NotificationsService] Erreur envoi notification ${notification.id}`,
+                error
+            );
         }
-    }
-
-    /**
-     * Envoyer un email
-     */
-    private async sendEmail(notification: Notification): Promise<void> {
-        // TODO: Implémenter avec Nodemailer ou autre service email
-        logger.info(`Email envoyé: ${notification.titre} -> ${notification.destinataireId}`);
-    }
-
-    /**
-     * Envoyer une notification push
-     */
-    private async sendPush(notification: Notification): Promise<void> {
-        // TODO: Implémenter avec Firebase FCM ou autre service push
-        logger.info(`Push envoyé: ${notification.titre} -> ${notification.destinataireId}`);
-    }
-
-    /**
-     * Envoyer un SMS
-     */
-    private async sendSms(notification: Notification): Promise<void> {
-        // TODO: Implémenter avec Twilio ou autre service SMS
-        logger.info(`SMS envoyé: ${notification.titre} -> ${notification.destinataireId}`);
     }
 
     /**

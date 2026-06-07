@@ -1,0 +1,4 @@
+- Every sub-package exposes an `index.ts` barrel export that re-exports public symbols, and the top-level `common/index.ts` re-exports all sub-package indices.
+- Utility modules provide both named exports and a default object export bundling all functions for convenience imports.
+- Deprecated functions are retained alongside v2 replacements with `@deprecated` JSDoc tags pointing consumers to the newer API.
+- Express middlewares and interceptors follow a non-blocking error strategy: internal failures are logged but never interrupt the request pipeline.

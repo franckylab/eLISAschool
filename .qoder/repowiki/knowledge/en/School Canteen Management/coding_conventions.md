@@ -1,0 +1,4 @@
+- All service methods accept an optional `etablissementId` parameter for multi-tenancy scoping, applied consistently across queries and mutations.
+- Controllers wrap async route handlers in try-catch blocks that forward errors to Express's `next(error)` for centralized error handling.
+- Every successful response follows a uniform JSON envelope: `{ success: true, data: ..., timestamp: ... }` with appropriate HTTP status codes (201 for creation).
+- DTOs use Zod schemas with type inference (`z.infer`) to derive TypeScript types, ensuring single-source-of-truth validation and typing.

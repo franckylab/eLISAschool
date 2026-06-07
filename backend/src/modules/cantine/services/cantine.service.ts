@@ -15,6 +15,8 @@ import { CreateMenuDto, CreateInscriptionDto, EnregistrerConsommationDto, Rechar
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
+import { notificationTemplates } from '@modules/notifications/services';
+import { Eleve } from '@modules/eleves/entities';
 
 /**
  * Service Cantine avec configuration centralisée
@@ -139,6 +141,14 @@ export class CantineService {
         await this.inscriptionRepo.save(inscription);
 
         logger.info(`[${etablissementId}] Solde rechargé: +${dto.montant} ${params.currency} pour inscription ${inscriptionId}`);
+        
+        // NOTIFICATION : Confirmer le rechargement aux parents
+        try {
+            await this.notifierRechargement(inscription, dto.montant, params.currency, etablissementId);
+        } catch (error) {
+            logger.warn('[Cantine] Échec notification rechargement (non bloquant)', error);
+        }
+        
         return inscription;
     }
 
@@ -207,6 +217,123 @@ export class CantineService {
             qb.andWhere('TO_CHAR(c.date, \'YYYY-MM\') = :mois', { mois });
         }
         return qb.orderBy('c.date', 'DESC').getMany();
+    }
+
+    /**
+     * Notifier les parents du rechargement de solde
+     */
+    private async notifierRechargement(
+        inscription: InscriptionCantine,
+        montant: number,
+        devise: string,
+        etablissementId?: string
+    ): Promise<void> {
+        try {
+            const eleveRepo = AppDataSource.getRepository(Eleve);
+            const eleve = await eleveRepo.findOne({
+                where: { id: inscription.eleveId },
+                relations: ['utilisateur'],
+            });
+
+            if (!eleve?.utilisateurId) return;
+
+            // Trouver les responsables
+            const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+            const responsabilités = await responsableRepo.find({
+                where: { enfantId: eleve.utilisateurId }
+            }) as any[];
+
+            if (!responsabilités || responsabilités.length === 0) return;
+
+            for (const resp of responsabilités) {
+                // Utiliser le template message administration pour confirmation
+                await notificationTemplates.messageAdministration({
+                    destinataireId: resp.utilisateurId,
+                    etablissementId,
+                    metadata: {
+                        email: resp.email,
+                        type: 'cantine_rechargement',
+                        inscriptionId: inscription.id,
+                    },
+                }, {
+                    titre: `💰 Rechargement cantine - Élève ${eleve.id.substring(0, 8)}`,
+                    message: `Le solde cantine de l'élève ${eleve.id.substring(0, 8)} a été rechargé de ${montant} ${devise}.\n\nNouveau solde: ${inscription.solde} ${devise}`,
+                    expediteur: 'Service Cantine',
+                });
+            }
+
+            logger.info(`[Cantine] Notification rechargement envoyée pour élève ${eleve.id.substring(0, 8)}`);
+        } catch (error) {
+            logger.warn('[Cantine] Erreur notification rechargement', error);
+        }
+    }
+
+    /**
+     * Envoyer des rappels de paiement pour les soldes faibles
+     * À appeler via un cron job quotidien
+     */
+    async envoyerRappelsPaiement(etablissementId?: string): Promise<number> {
+        const params = await this.getCantineParams();
+        const seuilAlerte = params.maxDebt * 0.8; // 80% de la dette max
+
+        // Trouver les inscriptions avec solde faible
+        const qb = this.inscriptionRepo.createQueryBuilder('i')
+            .innerJoin('i.eleve', 'e')
+            .where('i.statut = :statut', { statut: StatutInscriptionCantine.ACTIVE })
+            .andWhere('i.solde < :seuil', { seuil: -seuilAlerte });
+        
+        if (etablissementId) {
+            qb.andWhere('i.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        const inscriptions = await qb.getMany();
+        let count = 0;
+
+        for (const inscription of inscriptions) {
+            try {
+                const eleveRepo = AppDataSource.getRepository(Eleve);
+                const eleve = await eleveRepo.findOne({
+                    where: { id: inscription.eleveId },
+                    relations: ['utilisateur'],
+                });
+
+                if (!eleve?.utilisateurId) continue;
+
+                // Trouver les responsables
+                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+                const responsabilités = await responsableRepo.find({
+                    where: { enfantId: eleve.utilisateurId }
+                }) as any[];
+
+                if (!responsabilités || responsabilités.length === 0) continue;
+
+                for (const resp of responsabilités) {
+                    await notificationTemplates.rappelPaiementCantine({
+                        destinataireId: resp.utilisateurId,
+                        etablissementId,
+                        metadata: {
+                            email: resp.email,
+                            type: 'cantine_rappel',
+                            inscriptionId: inscription.id,
+                        },
+                    }, {
+                        eleveNom: `Élève ${eleve.id.substring(0, 8)}`,
+                        montant: Math.abs(inscription.solde),
+                        echeance: '7 jours',
+                        solde: inscription.solde,
+                    });
+                    count++;
+                }
+            } catch (error) {
+                logger.warn(`[Cantine] Erreur rappel paiement inscription ${inscription.id}`, error);
+            }
+        }
+
+        if (count > 0) {
+            logger.info(`[Cantine] ${count} rappels de paiement envoyés`);
+        }
+
+        return count;
     }
 }
 

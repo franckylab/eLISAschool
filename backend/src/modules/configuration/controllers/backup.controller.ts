@@ -14,29 +14,19 @@ import { databaseBackupService } from '../services/backup/database-backup.servic
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 import {
     createBackupSchema,
     restoreBackupSchema,
     filterBackupsSchema,
     cloneConfigSchema,
     importBackupConfigSchema,
-} from '../dto/backup.dto';
+    createDatabaseBackupSchema,
+    createFullBackupSchema,
+} from '../dto';
 import { BackupType } from '../entities/backup-record.entity';
 
 const router = Router();
-
-// Helper validation
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        const errors = result.error.errors.map((e: any) => ({
-            field: e.path.join('.'),
-            message: e.message,
-        }));
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', true, { errors });
-    }
-    return result.data;
-}
 
 // ============================================
 // BACKUP MANAGEMENT
@@ -48,7 +38,7 @@ function validate(schema: any, data: unknown): any {
  */
 router.post('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createBackupSchema, req.body);
+        const dto = validateDto(createBackupSchema, req.body);
         
         // Vérifier les permissions multi-tenant
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
@@ -84,12 +74,12 @@ router.post('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
  */
 router.post('/database/:etablissementId', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { compress = true, encrypt = true, retentionDays = 90 } = req.body;
+        const dto = validateDto(createDatabaseBackupSchema, req.body);
 
         const backup = await databaseBackupService.backupEtablissement(req.params.etablissementId, {
-            compress,
-            encrypt,
-            retentionDays,
+            compress: dto.compress,
+            encrypt: dto.encrypt,
+            retentionDays: dto.retentionDays,
         });
 
         res.status(201).json({
@@ -114,20 +104,20 @@ router.post('/database/:etablissementId', authMiddleware, requireRoles(Role.ADMI
  */
 router.post('/full/:etablissementId', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { retentionDays = 90 } = req.body;
+        const dto = validateDto(createFullBackupSchema, req.body);
 
         // Backup config
         const configBackup = await configBackupService.createSnapshot(req.params.etablissementId, {
             compress: true,
             encrypt: true,
-            retentionDays,
+            retentionDays: dto.retentionDays,
         });
 
         // Backup database
         const dbBackup = await databaseBackupService.backupEtablissement(req.params.etablissementId, {
             compress: true,
             encrypt: true,
-            retentionDays,
+            retentionDays: dto.retentionDays,
         });
 
         res.status(201).json({
@@ -155,7 +145,7 @@ router.post('/full/:etablissementId', authMiddleware, requireRoles(Role.SUPER_AD
  */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(filterBackupsSchema, req.query);
+        const dto = validateDto(filterBackupsSchema, req.query);
 
         // Scopage multi-tenant
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
@@ -231,7 +221,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
  */
 router.post('/:id/restore', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(restoreBackupSchema, req.body);
+        const dto = validateDto(restoreBackupSchema, req.body);
         const { force = false } = dto;
 
         // Déterminer le type de backup à restaurer
@@ -307,7 +297,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  */
 router.post('/clone', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(cloneConfigSchema, req.body);
+        const dto = validateDto(cloneConfigSchema, req.body);
 
         const results = await configBackupService.cloneConfiguration(
             dto.sourceEtablissementId,
@@ -342,7 +332,7 @@ router.post('/clone', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  */
 router.post('/import', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(importBackupConfigSchema, req.body);
+        const dto = validateDto(importBackupConfigSchema, req.body);
         const { dryRun = false } = dto.options;
 
         // TODO: Implémenter l'import complet

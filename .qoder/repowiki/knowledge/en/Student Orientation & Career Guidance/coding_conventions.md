@@ -1,0 +1,5 @@
+- Use of `simple-json` TypeORM column type for storing flexible structured data like aptitudes, interests, and recommendations.
+- Implementation of role-based access control where read operations often require only authentication, while write operations restrict access to `ENSEIGNANT` or `ADMIN` roles.
+- Centralized error handling using a custom `AppError` class thrown from services and caught by controller-level try/catch blocks passed to `next()`.
+- Consistent use of UUIDs for primary keys and foreign key references (e.g., `eleveId`, `conseillerId`).
+- Service methods return domain entities or null, leaving HTTP status code determination to the controller layer.

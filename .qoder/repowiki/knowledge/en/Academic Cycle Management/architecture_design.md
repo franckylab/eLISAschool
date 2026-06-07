@@ -1,0 +1,5 @@
+- Layered architecture: controllers handle HTTP routing with Express Router, services encapsulate business logic using TypeORM repositories, entities define the data model, and DTOs provide Zod-based schema validation.
+- Dependency direction flows inward: controllers depend on services, services depend on entities via TypeORM's AppDataSource.
+- Entry point is `index.ts` which re-exports all sub-modules (entities, dto, services, controllers).
+- Authentication middleware (`authMiddleware`) guards all routes; write operations additionally require ADMIN or SUPER_ADMIN roles via `requireRoles`.
+- Validation uses a local `validate()` helper wrapping Zod's `safeParse`, throwing `AppError` on failure.

@@ -22,11 +22,13 @@ export class ElevesService {
     }
 
     async create(dto: CreateEleveDto, etablissementId?: string, req?: Request): Promise<Eleve> {
-        // Vérification du matricule existant
-        const existing = await this.repo.findOne({ where: { matricule: dto.matricule } });
-        if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
+        // OPTIMISATION : Vérifications en parallèle
+        const [existing, userUsed] = await Promise.all([
+            this.repo.findOne({ where: { matricule: dto.matricule } }),
+            this.repo.findOne({ where: { utilisateurId: dto.utilisateurId } }),
+        ]);
 
-        const userUsed = await this.repo.findOne({ where: { utilisateurId: dto.utilisateurId } });
+        if (existing) throw new AppError('Matricule élève déjà existant', 409, 'MATRICULE_EXISTS');
         if (userUsed) throw new AppError('Cet utilisateur est déjà lié à un dossier élève', 409, 'USER_ALREADY_LINKED');
 
         const eleve = this.repo.create({
@@ -157,6 +159,116 @@ export class ElevesService {
         }
         
         logger.info(`Dossier élève supprimé: ${id}`);
+    }
+
+    // ==================================
+    // MÉTHODES DASHBOARD
+    // ==================================
+
+    /**
+     * Statistiques générales pour le dashboard
+     */
+    async getDashboardStats(context?: { etablissementId?: string }): Promise<{
+        total: number;
+        actifs: number;
+        inactifs: number;
+        parGenre: { masculin: number; feminin: number };
+    }> {
+        const where: any = {};
+        if (context?.etablissementId) {
+            where.etablissementId = context.etablissementId;
+        }
+
+        const total = await this.repo.count({ where });
+        const actifs = await this.repo.count({ where: { ...where, statut: 'ACTIF' } });
+        const inactifs = await this.repo.count({ where: { ...where, statut: 'INACTIF' } });
+
+        // Par genre
+        const males = await this.repo.count({ where: { ...where, genre: 'M' } });
+        const females = await this.repo.count({ where: { ...where, genre: 'F' } });
+
+        return {
+            total,
+            actifs,
+            inactifs,
+            parGenre: {
+                masculin: males,
+                feminin: females,
+            }
+        };
+    }
+
+    /**
+     * Répartition des élèves par classe
+     */
+    async getRepartitionParClasse(context?: { etablissementId?: string }): Promise<{
+        classes: Array<{ nom: string; effectif: number }>;
+    }> {
+        const qb = this.repo
+            .createQueryBuilder('e')
+            .leftJoin('e.classe', 'c')
+            .select('c.libelle', 'nom')
+            .addSelect('COUNT(e.id)', 'effectif')
+            .where('e.statut = :statut', { statut: 'ACTIF' });
+
+        if (context?.etablissementId) {
+            qb.andWhere('e.etablissementId = :etablissementId', { etablissementId: context.etablissementId });
+        }
+
+        qb.groupBy('c.libelle')
+          .orderBy('effectif', 'DESC');
+
+        const result = await qb.getRawMany();
+
+        return {
+            classes: result.map((r: any) => ({
+                nom: r.nom || 'Sans classe',
+                effectif: parseInt(r.effectif),
+            }))
+        };
+    }
+
+    /**
+     * Dernières inscriptions d'élèves
+     */
+    async getDernieresInscriptions(
+        limit: number = 10,
+        context?: { etablissementId?: string }
+    ): Promise<{
+        inscriptions: Array<{
+            id: string;
+            matricule: string;
+            nom: string;
+            prenom: string;
+            dateInscription: Date;
+            classe?: string;
+        }>;
+    }> {
+        const qb = this.repo
+            .createQueryBuilder('e')
+            .leftJoin('e.classe', 'c')
+            .select(['e.id', 'e.matricule', 'e.nom', 'e.prenom', 'e.dateInscription', 'c.libelle'])
+            .where('e.statut = :statut', { statut: 'ACTIF' });
+
+        if (context?.etablissementId) {
+            qb.andWhere('e.etablissementId = :etablissementId', { etablissementId: context.etablissementId });
+        }
+
+        qb.orderBy('e.dateInscription', 'DESC')
+          .limit(limit);
+
+        const inscriptions = await qb.getMany();
+
+        return {
+            inscriptions: inscriptions.map(e => ({
+                id: e.id,
+                matricule: e.matricule,
+                nom: (e as any).nom || '',
+                prenom: (e as any).prenom || '',
+                dateInscription: e.dateInscription,
+                classe: (e as any).classe?.libelle,
+            }))
+        };
     }
 }
 

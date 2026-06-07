@@ -1,0 +1,5 @@
+- Layered architecture with Express controller, TypeORM-based service, and Zod-validated DTOs.
+- Entry point exports all sub-modules via `index.ts`.
+- Controller delegates to `AnneesScolairesService` which uses a shared `AppDataSource` for TypeORM repository access.
+- Entity defines multi-tenancy via `etablissementId` foreign key and unique constraints on label per establishment.
+- Validation is handled by Zod schemas in DTOs, enforced in the controller before service calls.

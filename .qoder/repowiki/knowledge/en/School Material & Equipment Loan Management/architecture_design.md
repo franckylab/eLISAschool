@@ -1,0 +1,5 @@
+- Layered structure: controllers (Express router) → services (TypeORM repository logic) → entities (Materiel, PretMateriel) → DTOs (Zod schemas). Entry point is `index.ts` re-exporting all sub-modules.
+- Controller (`materiel.controller.ts`) defines REST routes for CRUD on materials and loan lifecycle (lend/return), guarded by `authMiddleware` and `staffOnly` for mutations. All handlers use a local `validate()` helper wrapping Zod `safeParse`.
+- Service (`materiel.service.ts`) uses TypeORM repositories via `AppDataSource`, enforces multi-tenancy through optional `etablissementId` filtering on every query, and reads configurable loan limits from centralized config (`getParamNumber`, `getParamBoolean`).
+- Entities define two tables: `materiels` (inventory items with category/condition enums) and `prets_materiels` (loan records linked to borrower and material), both scoped to an `Etablissement` via foreign key.
+- DTOs use Zod schemas (`createMaterielSchema`, `pretMaterielSchema`, `retourMaterielSchema`) for input validation, with inferred TypeScript types exported alongside.

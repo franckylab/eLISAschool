@@ -1,0 +1,5 @@
+- Layered architecture: Controllers (Express Router) → Services (Business Logic) → Entities (TypeORM) with DTOs for validation.
+- Authentication flow: `auth.controller.ts` handles HTTP requests, delegating to `auth.service.ts` which interacts with `Utilisateur` entities and `TokenService` for JWT generation/validation.
+- Authorization: Implements a hybrid RBAC system via `permission-resolver.service.ts` (resolving roles/permissions with caching) and `permission.guard.ts` for route protection.
+- Multi-tenancy: Supports multi-establishment users via `utilisateur-etablissement.entity.ts` and context switching in `auth.controller.ts`.
+- Security: Password hashing (bcrypt) in `Utilisateur` entity hooks; refresh token rotation and revocation in `token.service.ts`.

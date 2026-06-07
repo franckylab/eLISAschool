@@ -14,18 +14,10 @@ import {
 } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new MatieresService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // Matières CRUD
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
@@ -37,7 +29,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createMatiereSchema, req.body);
+        const dto = validateDto(createMatiereSchema, req.body);
         const matiere = await service.create(dto);
         res.status(201).json({ success: true, data: matiere });
     } catch (error) { next(error); }
@@ -53,7 +45,7 @@ router.get('/groupes', authMiddleware, async (req: Request, res: Response, next:
 
 router.post('/groupes', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createGroupeMatiereSchema, req.body);
+        const dto = validateDto(createGroupeMatiereSchema, req.body);
         const groupe = await service.createGroupe(dto);
         res.status(201).json({ success: true, data: groupe });
     } catch (error) { next(error); }
@@ -69,7 +61,7 @@ router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Res
 
 router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createMatiereNiveauSchema, req.body);
+        const dto = validateDto(createMatiereNiveauSchema, req.body);
         const prog = await service.addMatiereToNiveau(dto);
         res.status(201).json({ success: true, data: prog });
     } catch (error) { next(error); }
@@ -78,7 +70,7 @@ router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
 // Affectation Enseignant
 router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(affecterEnseignantSchema, req.body);
+        const dto = validateDto(affecterEnseignantSchema, req.body);
         const affectation = await service.affecterEnseignant(dto);
         res.json({ success: true, data: affectation });
     } catch (error) { next(error); }

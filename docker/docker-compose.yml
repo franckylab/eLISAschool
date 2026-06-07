@@ -33,6 +33,12 @@ services:
     image: redis:7-alpine
     container_name: elisaschool_redis
     restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -40,7 +46,7 @@ services:
     networks:
       - elisaschool_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,6 +69,23 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev_encryption_key_32chars}
+      
+      # Email (SMTP)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@elisaschool.cm}
+      
+      # SMS (Twilio)
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      
+      # Push (Firebase FCM)
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
+      FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
     ports:
       - "${APP_PORT:-3000}:3000"
     volumes:

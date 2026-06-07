@@ -15,12 +15,13 @@
  */
 
 import { Request, Response, Router } from 'express';
-import { utilisateurEtablissementService, AffecterUtilisateurDto } from '../services/utilisateur-etablissement.service';
+import { utilisateurEtablissementService } from '../services/utilisateur-etablissement.service';
 import { Role } from '@modules/auth/entities';
 import { authMiddleware } from '@modules/auth/middlewares/auth.middleware';
 import { checkPermission } from '@modules/auth/guards/check-permission.middleware';
 import { AppError } from '@common/filters/error.filter';
-import { logger } from '@common/utils/logger.util';
+import { validateDto } from '@common/utils';
+import { affecterEtablissementSchema, updateRoleEtablissementSchema } from '../dto/utilisateur-etablissement.dto';
 
 const router = Router();
 
@@ -38,37 +39,18 @@ router.post(
     checkPermission('utilisateurs:manage'),
     async (req: Request, res: Response, next) => {
         try {
-            const { etablissementId, role, etablissementPrincipal, dateDebut, dateFin, motif } = req.body;
-
-            // Validation
-            if (!etablissementId || !role) {
-                throw new AppError(
-                    'etablissementId et role sont requis',
-                    400,
-                    'MISSING_FIELDS'
-                );
-            }
-
-            if (!Object.values(Role).includes(role)) {
-                throw new AppError(
-                    `Rôle invalide. Valeurs acceptées: ${Object.values(Role).join(', ')}`,
-                    400,
-                    'INVALID_ROLE'
-                );
-            }
-
-            const dto: AffecterUtilisateurDto = {
-                utilisateurId: req.params.id,
-                etablissementId,
-                role,
-                etablissementPrincipal: etablissementPrincipal || false,
-                dateDebut,
-                dateFin,
-                motif,
-            };
+            const dto = validateDto(affecterEtablissementSchema, req.body);
 
             const affectation = await utilisateurEtablissementService.ajouter(
-                dto,
+                {
+                    utilisateurId: req.params.id,
+                    etablissementId: dto.etablissementId,
+                    role: dto.role as Role,
+                    etablissementPrincipal: dto.etablissementPrincipal || false,
+                    dateDebut: dto.dateDebut,
+                    dateFin: dto.dateFin,
+                    motif: dto.motif,
+                },
                 req.utilisateur!.id
             );
 
@@ -213,9 +195,9 @@ router.patch(
     checkPermission('utilisateurs:manage'),
     async (req: Request, res: Response, next) => {
         try {
-            const { role } = req.body;
+            const { role } = validateDto(updateRoleEtablissementSchema, req.body);
 
-            if (!role || !Object.values(Role).includes(role)) {
+            if (!Object.values(Role).includes(role as Role)) {
                 throw new AppError(
                     `Rôle invalide. Valeurs acceptées: ${Object.values(Role).join(', ')}`,
                     400,
@@ -226,7 +208,7 @@ router.patch(
             const affectation = await utilisateurEtablissementService.updateRole(
                 req.params.id,
                 req.params.etablissementId,
-                role
+                role as Role
             );
 
             res.status(200).json({

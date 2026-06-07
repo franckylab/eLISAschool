@@ -1,0 +1,4 @@
+- Controllers use a local `validate` function to wrap Zod schema parsing and throw `AppError` on failure.
+- Services instantiate TypeORM repositories in the constructor using `AppDataSource.getRepository`.
+- All routes are protected by `authMiddleware`, with write operations restricted to ADMIN/SUPER_ADMIN roles.
+- DTOs are defined as Zod schemas with corresponding TypeScript types inferred via `z.infer`.

@@ -2,16 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { TransportService } from '../services/transport.service';
 import { createLigneSchema, createInscriptionTransportSchema, enregistrerPresenceSchema } from '../dto';
 import { authMiddleware, staffOnly, adminOnly } from '@modules/auth/middlewares';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const transportService = new TransportService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    return result.data;
-}
 
 router.get('/lignes', async (req, res, next) => {
     try {
@@ -29,7 +23,7 @@ router.get('/lignes/:id', async (req, res, next) => {
 
 router.post('/lignes', authMiddleware, adminOnly, async (req, res, next) => {
     try {
-        const dto = validate(createLigneSchema, req.body);
+        const dto = validateDto(createLigneSchema, req.body);
         const ligne = await transportService.createLigne(dto);
         res.status(201).json({ success: true, data: ligne, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -44,7 +38,7 @@ router.get('/lignes/:id/inscriptions', authMiddleware, staffOnly, async (req, re
 
 router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) => {
     try {
-        const dto = validate(createInscriptionTransportSchema, req.body);
+        const dto = validateDto(createInscriptionTransportSchema, req.body);
         const inscription = await transportService.createInscription(dto);
         res.status(201).json({ success: true, data: inscription, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -52,7 +46,7 @@ router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) =
 
 router.post('/presences', authMiddleware, staffOnly, async (req, res, next) => {
     try {
-        const dto = validate(enregistrerPresenceSchema, req.body);
+        const dto = validateDto(enregistrerPresenceSchema, req.body);
         const presence = await transportService.enregistrerPresence(dto);
         res.status(201).json({ success: true, data: presence, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }

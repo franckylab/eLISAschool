@@ -384,6 +384,24 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         dependencies: [ModuleName.AUTH],
         defaultSettings: {},
     },
+
+    [ModuleName.DASHBOARD]: {
+        name: ModuleName.DASHBOARD,
+        label: 'Dashboard',
+        description: 'Tableaux de bord dynamiques personnalisés',
+        icon: 'LayoutDashboard',
+        basePath: '/dashboard',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT, Role.PARENT, Role.ELEVE],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {
+            autoRefresh: true,
+            refreshInterval: 300,
+            defaultLayout: 'grid',
+        },
+    },
 };
 
 /**

@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/academic_management/matieres
+title: Subject & Curriculum Management
+scope:
+    - backend/src/modules/matieres/
+source_files: []
+depends_on: []
+related_to: []

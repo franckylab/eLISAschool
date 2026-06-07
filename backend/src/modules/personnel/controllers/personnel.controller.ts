@@ -9,18 +9,10 @@ import { PersonnelService } from '../services';
 import { createPersonnelSchema, updatePersonnelSchema, createTypePersonnelSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new PersonnelService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // Types Personnel
 router.get('/types', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +24,7 @@ router.get('/types', authMiddleware, async (req: Request, res: Response, next: N
 
 router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createTypePersonnelSchema, req.body);
+        const dto = validateDto(createTypePersonnelSchema, req.body);
         const type = await service.createType(dto);
         res.status(201).json({ success: true, data: type });
     } catch (error) { next(error); }
@@ -42,14 +34,14 @@ router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const typeId = req.query.typeId as string;
-        const membres = await service.findAll(typeId, req.etablissementId);
+        const membres = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC', typePersonnelId: typeId }, req.etablissementId);
         res.json({ success: true, data: membres });
     } catch (error) { next(error); }
 });
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createPersonnelSchema, req.body);
+        const dto = validateDto(createPersonnelSchema, req.body);
         const membre = await service.createMembre(dto, req.etablissementId);
         res.status(201).json({ success: true, data: membre });
     } catch (error) { next(error); }
@@ -57,7 +49,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updatePersonnelSchema, req.body);
+        const dto = validateDto(updatePersonnelSchema, req.body);
         const membre = await service.update(req.params.id, dto);
         res.json({ success: true, data: membre });
     } catch (error) { next(error); }

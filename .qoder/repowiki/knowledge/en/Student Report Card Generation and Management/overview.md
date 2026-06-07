@@ -1,0 +1,1 @@
+Generates, updates, and retrieves student report cards with calculated averages and rankings based on configurable academic parameters.

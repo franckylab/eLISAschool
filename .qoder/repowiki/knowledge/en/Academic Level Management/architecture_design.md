@@ -1,0 +1,4 @@
+- Follows a standard layered architecture: controllers handle HTTP routing and validation, services manage business logic and data persistence via TypeORM repositories, and entities define the database schema.
+- Uses Zod schemas in DTOs for request validation, enforced by a local `validate` helper in the controller.
+- Integrates with shared authentication middleware (`authMiddleware`, `requireRoles`) to restrict write operations to ADMIN and SUPER_ADMIN roles.
+- Exports all public components (entities, DTOs, services, controllers) through a central `index.ts` barrel file.

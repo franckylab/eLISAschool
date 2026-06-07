@@ -1,0 +1,6 @@
+- Layered architecture following controller-service-entity pattern: Express router in `controllers/eleves.controller.ts` delegates to `services/eleves.service.ts`, which uses TypeORM repositories backed by `entities/eleve.entity.ts`.
+- Input validation via Zod schemas defined in `dto/eleves.dto.ts`, applied in controllers before service calls.
+- Role-based access control enforced at the route level using `authMiddleware` and `requireRoles` from the auth module.
+- Multi-tenancy implemented through `etablissementId` filtering on queries and entity relationships.
+- Audit logging integrated into create/update/delete operations via `auditService` from the auth module.
+- Module exports aggregated through barrel files (`index.ts`) in each subdirectory and the root `index.ts`.

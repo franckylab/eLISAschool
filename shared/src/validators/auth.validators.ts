@@ -1,9 +1,17 @@
 /**
  * ==================================
- * eLISAschool - Validateurs d'authentification
+ * eLISAschool - Validateurs d'authentification (partagés)
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: xAI Éducation
+ * 
+ * Schémas partagés entre backend et frontend.
+ * Noms de champs en FRANÇAIS (convention eLISAschool).
+ * 
+ * Changelog v2.0:
+ * - Tous les champs renommés en français (motDePasse, confirmationMotDePasse, etc.)
+ * - Ajout de refreshTokenSchema et verifyEmailSchema
+ * - Source unique de vérité : le backend réexporte depuis ce fichier
  */
 
 import { z } from 'zod';
@@ -17,11 +25,10 @@ export const loginSchema = z.object({
         .email('Adresse email invalide')
         .max(255, 'L\'email ne peut pas dépasser 255 caractères'),
 
-    password: z.string()
-        .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`)
-        .max(LIMITS.PASSWORD_MAX_LENGTH, `Le mot de passe ne peut pas dépasser ${LIMITS.PASSWORD_MAX_LENGTH} caractères`),
+    motDePasse: z.string()
+        .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`),
 
-    rememberMe: z.boolean().optional().default(false),
+    seRappelerDeMoi: z.boolean().optional().default(false),
 });
 
 /**
@@ -32,14 +39,14 @@ export const registerSchema = z.object({
         .email('Adresse email invalide')
         .max(255, 'L\'email ne peut pas dépasser 255 caractères'),
 
-    password: z.string()
+    motDePasse: z.string()
         .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`)
         .max(LIMITS.PASSWORD_MAX_LENGTH, `Le mot de passe ne peut pas dépasser ${LIMITS.PASSWORD_MAX_LENGTH} caractères`)
         .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
         .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
         .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
 
-    confirmPassword: z.string(),
+    confirmationMotDePasse: z.string(),
 
     nom: z.string()
         .min(2, 'Le nom doit faire au moins 2 caractères')
@@ -52,29 +59,31 @@ export const registerSchema = z.object({
     telephone: z.string()
         .regex(/^\+?[0-9]{9,15}$/, 'Numéro de téléphone invalide')
         .optional(),
-}).refine((data) => data.password === data.confirmPassword, {
+
+    langue: z.string().default('fr'),
+}).refine((data) => data.motDePasse === data.confirmationMotDePasse, {
     message: 'Les mots de passe ne correspondent pas',
-    path: ['confirmPassword'],
+    path: ['confirmationMotDePasse'],
 });
 
 /**
  * Schéma de validation pour le changement de mot de passe
  */
 export const changePasswordSchema = z.object({
-    currentPassword: z.string()
+    motDePasseActuel: z.string()
         .min(1, 'Le mot de passe actuel est requis'),
 
-    newPassword: z.string()
+    nouveauMotDePasse: z.string()
         .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`)
         .max(LIMITS.PASSWORD_MAX_LENGTH, `Le mot de passe ne peut pas dépasser ${LIMITS.PASSWORD_MAX_LENGTH} caractères`)
         .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
         .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
         .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
 
-    confirmNewPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    confirmationMotDePasse: z.string(),
+}).refine((data) => data.nouveauMotDePasse === data.confirmationMotDePasse, {
     message: 'Les mots de passe ne correspondent pas',
-    path: ['confirmNewPassword'],
+    path: ['confirmationMotDePasse'],
 });
 
 /**
@@ -92,14 +101,38 @@ export const resetPasswordSchema = z.object({
     token: z.string()
         .min(1, 'Le token est requis'),
 
-    newPassword: z.string()
+    nouveauMotDePasse: z.string()
         .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`)
-        .max(LIMITS.PASSWORD_MAX_LENGTH, `Le mot de passe ne peut pas dépasser ${LIMITS.PASSWORD_MAX_LENGTH} caractères`),
+        .max(LIMITS.PASSWORD_MAX_LENGTH, `Le mot de passe ne peut pas dépasser ${LIMITS.PASSWORD_MAX_LENGTH} caractères`)
+        .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+        .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
+        .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
 
-    confirmNewPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    confirmationMotDePasse: z.string(),
+}).refine((data) => data.nouveauMotDePasse === data.confirmationMotDePasse, {
     message: 'Les mots de passe ne correspondent pas',
-    path: ['confirmNewPassword'],
+    path: ['confirmationMotDePasse'],
+});
+
+/**
+ * Schéma de validation pour le rafraîchissement de token
+ */
+export const refreshTokenSchema = z.object({
+    refreshToken: z.string().min(1, 'Le token de rafraîchissement est requis'),
+});
+
+/**
+ * Schéma de validation pour la vérification email
+ */
+export const verifyEmailSchema = z.object({
+    token: z.string().min(1, 'Le token de vérification est requis'),
+});
+
+/**
+ * Schéma de déconnexion (refreshToken optionnel)
+ */
+export const logoutSchema = z.object({
+    refreshToken: z.string().optional(),
 });
 
 // Types inférés
@@ -108,6 +141,9 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type LogoutInput = z.infer<typeof logoutSchema>;
 
 export default {
     loginSchema,
@@ -115,4 +151,7 @@ export default {
     changePasswordSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
+    refreshTokenSchema,
+    verifyEmailSchema,
+    logoutSchema,
 };

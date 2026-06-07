@@ -8,6 +8,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { MonitoringService } from '../services';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { validateDto } from '@common/utils';
+import { maintenanceSchema, queryLogsSchema } from '../dto';
 
 const router = Router();
 const monitoringService = new MonitoringService();
@@ -49,7 +51,7 @@ router.get('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), async
 
 router.post('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { enabled } = req.body;
+        const { enabled } = validateDto(maintenanceSchema, req.body);
         await monitoringService.setMaintenanceMode(enabled);
         res.json({ success: true, message: `Mode maintenance ${enabled ? 'activé' : 'désactivé'}` });
     } catch (error) { next(error); }
@@ -58,7 +60,7 @@ router.post('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), asyn
 // Logs (admin)
 router.get('/logs', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const limit = parseInt(req.query.limit as string) || 100;
+        const { limit } = validateDto(queryLogsSchema, req.query);
         const logs = await monitoringService.getRecentLogs(limit);
         res.json({ success: true, data: logs });
     } catch (error) { next(error); }

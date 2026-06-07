@@ -8,22 +8,16 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { MessagerieService } from '../services/messagerie.service';
 import { createConversationSchema, sendMessageSchema, queryConversationsSchema, queryMessagesSchema } from '../dto';
 import { authMiddleware } from '@modules/auth/middlewares';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const messagerieService = new MessagerieService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    return result.data;
-}
 
 router.use(authMiddleware);
 
 router.get('/conversations', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryConversationsSchema, req.query);
+        const query = validateDto(queryConversationsSchema, req.query);
         const result = await messagerieService.getConversations(req.utilisateur!.id, query);
         res.json({ success: true, data: result, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -31,7 +25,7 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
 
 router.post('/conversations', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createConversationSchema, req.body);
+        const dto = validateDto(createConversationSchema, req.body);
         const conversation = await messagerieService.createConversation(dto, req.utilisateur!.id);
         res.status(201).json({ success: true, data: conversation, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -39,7 +33,7 @@ router.post('/conversations', async (req: Request, res: Response, next: NextFunc
 
 router.get('/conversations/:id/messages', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryMessagesSchema, req.query);
+        const query = validateDto(queryMessagesSchema, req.query);
         const result = await messagerieService.getMessages(req.params.id, req.utilisateur!.id, query);
         res.json({ success: true, data: result, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
@@ -47,7 +41,7 @@ router.get('/conversations/:id/messages', async (req: Request, res: Response, ne
 
 router.post('/conversations/:id/messages', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(sendMessageSchema, req.body);
+        const dto = validateDto(sendMessageSchema, req.body);
         const message = await messagerieService.sendMessage(req.params.id, dto, req.utilisateur!.id);
         res.status(201).json({ success: true, data: message, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }

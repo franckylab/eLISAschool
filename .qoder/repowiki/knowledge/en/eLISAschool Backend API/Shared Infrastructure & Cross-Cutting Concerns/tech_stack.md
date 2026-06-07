@@ -1,0 +1,1 @@
+Zod for schema validation across DTOs and env config; Winston for structured logging with file rotation; TypeORM integration in pagination utilities (`paginateWithRepository`, `paginateWithQueryBuilder`).

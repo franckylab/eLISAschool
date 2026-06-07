@@ -17,24 +17,10 @@ import {
 import { authMiddleware, requireRoles, adminOnly } from '@modules/auth/middlewares';
 import { Role, StatutUtilisateur } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const utilisateursService = new UtilisateursService();
-
-/**
- * Helper de validation Zod
- */
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        const errors = result.error.errors.map((e: any) => ({
-            field: e.path.join('.'),
-            message: e.message,
-        }));
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', true, { errors });
-    }
-    return result.data;
-}
 
 // Toutes les routes nécessitent une authentification
 router.use(authMiddleware);
@@ -46,7 +32,7 @@ router.use(authMiddleware);
  */
 router.get('/', requireRoles(Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryUtilisateursSchema, req.query);
+        const query = validateDto(queryUtilisateursSchema, req.query);
         const result = await utilisateursService.findAll(query);
 
         res.status(200).json({
@@ -91,7 +77,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.post('/', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const createDto = validate(createUtilisateurSchema, req.body);
+        const createDto = validateDto(createUtilisateurSchema, req.body);
         const utilisateur = await utilisateursService.create(createDto);
 
         res.status(201).json({
@@ -113,7 +99,7 @@ router.post('/', adminOnly, async (req: Request, res: Response, next: NextFuncti
 router.patch('/:id', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const updateDto = validate(updateUtilisateurSchema, req.body);
+        const updateDto = validateDto(updateUtilisateurSchema, req.body);
         const utilisateur = await utilisateursService.update(id, updateDto);
 
         res.status(200).json({
@@ -141,7 +127,7 @@ router.patch('/:id/profil', async (req: Request, res: Response, next: NextFuncti
             throw new AppError('Accès non autorisé', 403, 'FORBIDDEN');
         }
 
-        const updateDto = validate(updateProfilSchema, req.body);
+        const updateDto = validateDto(updateProfilSchema, req.body);
         const utilisateur = await utilisateursService.updateProfil(id, updateDto);
 
         res.status(200).json({

@@ -9,18 +9,10 @@ import { AnneesScolairesService } from '../services';
 import { createAnneeScolaireSchema, updateAnneeScolaireSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new AnneesScolairesService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -38,7 +30,7 @@ router.get('/active', authMiddleware, async (req: Request, res: Response, next: 
 
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createAnneeScolaireSchema, req.body);
+        const dto = validateDto(createAnneeScolaireSchema, req.body);
         const annee = await service.create(dto);
         res.status(201).json({ success: true, data: annee });
     } catch (error) { next(error); }
@@ -46,7 +38,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateAnneeScolaireSchema, req.body);
+        const dto = validateDto(updateAnneeScolaireSchema, req.body);
         const annee = await service.update(req.params.id, dto);
         res.json({ success: true, data: annee });
     } catch (error) { next(error); }

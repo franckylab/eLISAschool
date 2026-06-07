@@ -39,11 +39,18 @@ ETABLISSEMENT (racine — enums partagés : SousSysteme, TypeEtablissement, Cycl
 │   ├── AuditInterceptor (capture automatique CRUD)
 │   └── Migration 003 (audit_logs_archive)
 │
-├── CONFIGURATION (hub central) ──── 46+ paramètres, cache TTL 5min, EventEmitter
-│   ├── ConfigurationApp (singleton — nom, logo, thème, licence)
-│   ├── ConfigurationModule (par module — widgets, champs perso)
-│   ├── ParametreSysteme (clé/valeur — 8 catégories)
-│   └── HistoriqueConfiguration (audit trail complet)
+├── CONFIGURATION (hub central) ──── 46+ paramètres, cache TTL 5min, EventEmitter, multi-établissement
+│   ├── ConfigurationApp (@deprecated - migré vers EtablissementConfig)
+│   ├── EtablissementConfig (par établissement - thème, quotas, modules, SaaS)
+│   ├── ConfigurationModule (par module - widgets, champs perso)
+│   ├── ParametreSysteme (clé/valeur - 8 catégories, scopage par établissement)
+│   ├── HistoriqueConfiguration (audit trail complet)
+│   └── **BACKUP** (sauvegarde & restore - config, DB, planification)
+│       ├── ConfigBackupService (snapshots + différentiels + clonage)
+│       ├── DatabaseBackupService (export TypeORM + chiffrement AES-256)
+│       ├── BackupRecord (entité métadonnées + checksum SHA-256)
+│       ├── ParametreVersion (historique versioning paramètres)
+│       └── DatabaseStorageProvider (storage abstraction extensible)
 │
 ├── CHAÎNE ACADÉMIQUE (flux de calcul principal)
 │   ├── CYCLES (MATERNELLE, PRIMAIRE, COLLÈGE, LYCÉE)
@@ -82,6 +89,99 @@ ETABLISSEMENT (racine — enums partagés : SousSysteme, TypeEtablissement, Cycl
 └── SYSTÈME
     ├── SCORING (5 indicateurs pondérés + règles événementielles)
     └── MONITORING (health check + métriques + maintenance mode)
+```
+
+---
+
+## Domaine 10 : Performance et Optimisation
+
+### Architecture de Performance
+
+**Cache in-memory (ConfigurationService) :**
+- TTL : 5 minutes pour config, 1 minute pour données volatiles
+- Clés composées : `"cle:etablissementId"` pour isolation multi-tenant
+- Invalidation sélective après modification (create/update/delete)
+- Hit ratio cible : >80%
+
+**Index de base de données :**
+- Index FK sur toutes les relations (`etablissementId`, `classeId`)
+- Index composites pour requêtes fréquentes (`[cle, etablissementId]`)
+- Index unique pour contraintes d'unicité (`matricule`, `email`)
+- Index chronologiques sur `createdAt` pour tri
+
+### Stratégie de Pagination
+
+**TOUJOURS paginer les listes :**
+- Default : 20 résultats/page
+- Maximum : 100 résultats/page
+- Retourner métadonnées : `total`, `totalPages`, `hasNext`, `hasPrev`
+- Utiliser `take`/`skip` TypeORM (PAS `offset`/`limit` SQL brut)
+
+### Optimisation des Requêtes
+
+**Règles de chargement :**
+- Charger uniquement les relations nécessaires (PAS toutes les relations)
+- Utiliser `select` pour colonnes spécifiques (éviter SELECT *)
+- Éviter le N+1 Query Problem → utiliser `relations` dans find()
+- Limiter TOUJOURS avec `take` (max 100 par requête)
+
+**Exemple optimisé :**
+```typescript
+// ✅ Rapide
+const eleves = await repo.find({
+    where: { etablissementId },
+    relations: ['classe'],  // Uniquement nécessaire
+    select: ['id', 'nom', 'prenom'],
+    take: 50,
+    skip: offset
+});
+
+// ❌ Lent
+const eleves = await repo.find({
+    relations: ['classe', 'notes', 'bulletins', 'utilisateur']
+});
+```
+
+### Transactions Atomiques
+
+**Utiliser pour :**
+- Opérations multi-entités (créer élève + utilisateur)
+- Transferts financiers (cantine, transport)
+- Workflows avec validation en plusieurs étapes
+
+**Pattern obligatoire :**
+```typescript
+const queryRunner = AppDataSource.createQueryRunner();
+await queryRunner.connect();
+await queryRunner.startTransaction();
+
+try {
+    // Opérations
+    await queryRunner.commitTransaction();
+} catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+} finally {
+    await queryRunner.release();  // TOUJOURS
+}
+```
+
+### Monitoring et Métriques
+
+**Indicateurs critiques :**
+- Temps de réponse > 500ms → alerte
+- Taux d'erreur > 5% → critique
+- Cache hit ratio < 80% → optimiser requêtes
+- DB connections > 80% du pool → scaler
+
+**Logs structurés :**
+```typescript
+logger.info('Requête exécutée', {
+    endpoint: req.path,
+    duration: Date.now() - startTime,
+    cacheHit: false,
+    etablissementId: req.etablissementId
+});
 ```
 
 ---
@@ -434,7 +534,152 @@ router.post('/', authMiddleware, async (req, res) => {
 
 ---
 
-## Domaine 3 : Configuration dynamique
+## Domaine 2.5 : Système de Backup (v1.0 - 2026-06)
+
+### Architecture Backup
+
+```typescript
+ConfigBackupService
+├── createSnapshot() — Snapshot config avec versioning sémantique
+├── restoreBackup() — Restauration avec validation checksum
+├── cloneConfiguration() — Clonage inter-établissements
+├── collectSnapshot() — Collecte données (paramètres, modules)
+└── computeDiff() — Backup différentiel (JSON Patch RFC 6902)
+
+DatabaseBackupService
+├── backupEtablissement() — Export TypeORM + chiffrement AES-256-GCM
+├── restoreBackup() — Restauration transactionnelle
+├── verifyBackupIntegrity() — Vérification checksum SHA-256
+└── exportEtablissementData() — Export tables multi-tenant
+
+DatabaseStorageProvider
+├── save() — Stockage avec compression + chiffrement
+├── load() — Chargement avec validation checksum
+├── delete() — Soft delete (récupération possible)
+├── list() — Liste avec filtres multi-tenant
+├── cleanupExpiredBackups() — Nettoyage automatique
+└── getStorageUsage() — Métriques usage
+
+BackupRecord (Entity)
+├── etablissementId — Isolation multi-tenant
+├── backupType — CONFIG | DATABASE | FULL
+├── version — Version sémantique (v1.0.0-global-timestamp)
+├── checksum — SHA-256 pour intégrité
+├── compressed | encrypted — Flags compression/chiffrement
+├── retentionUntil — Date expiration automatique
+└── metadata — JSONB (taille, tables, options)
+```
+
+### Règles métier Backup
+
+**Sauvegarde Configuration** :
+- Snapshots incluent : `ParametreSysteme`, `EtablissementConfig`, `ConfigurationModule`
+- Versionning sémantique : `v{major}.{minor}.{patch}-{scope}-{timestamp}`
+- Backups différentiels : 60-80% réduction taille (JSON Patch)
+- Clonage : Copie config entre établissements avec résolution conflits
+
+**Sauvegarde Database** :
+- Export tables par `etablissement_id` (15+ tables)
+- Chiffrement AES-256-GCM avec IV unique par backup
+- Compression gzip (60-80% réduction)
+- Restauration transactionnelle (QueryRunner)
+
+**Rétention automatique** :
+- Config : 30 jours par défaut
+- Database : 90 jours par défaut
+- Full : 180 jours par défaut
+- Nettoyage automatique via `cleanupExpiredBackups()`
+
+**Intégrité** :
+- Checksum SHA-256 calculé sur données compressées/chiffrées
+- Validation automatique avant restauration
+- Détection tampering via GCM authentication tag
+
+**Multi-tenant** :
+- Isolation stricte par `etablissement_id`
+- Fallback global (`etablissement_id = NULL`)
+- Jamais de cross-tenant access
+- SUPER_ADMIN peut voir tous les établissements
+
+**Sécurité** :
+- RBAC : ADMIN/SUPER_ADMIN pour créer/restaurer/supprimer
+- Authentifié pour lister/voir (scoped par établissement)
+- Clé chiffrement dans `.env` (jamais en dur)
+- Force restore optionnel pour conflits
+
+### Comment utiliser le backup
+
+```typescript
+// Créer un backup config
+const backup = await configBackupService.createSnapshot(etablissementId, {
+    differential: true,  // Réduction 60-80%
+    compress: true,
+    encrypt: true,
+    retentionDays: 30,
+});
+
+// Restaurer
+await configBackupService.restoreBackup(backupId, false);
+
+// Cloner vers autres établissements
+await configBackupService.cloneConfiguration(
+    sourceId,
+    [targetId1, targetId2],
+    { conflictResolution: 'merge', dryRun: false }
+);
+
+// Vérifier intégrité
+const integrity = await databaseBackupService.verifyBackupIntegrity(backupId);
+```
+
+### API REST
+
+```bash
+POST   /api/backups/config                      # Backup config
+POST   /api/backups/database/:id                # Backup DB
+POST   /api/backups/:id/restore                 # Restaurer
+POST   /api/backups/:id/verify                  # Vérifier
+POST   /api/configuration/clone                 # Cloner config
+GET    /api/backups/metrics/summary             # Métriques
+```
+
+### Configuration requise
+
+```env
+BACKUP_ENCRYPTION_KEY=cle-minimum-32-caracteres
+```
+
+Générer : `openssl rand -hex 32`
+
+### Documentation
+- Guide utilisateur : `BACKUP-SYSTEM-USER-GUIDE.md`
+- Implémentation : `BACKUP-SYSTEM-IMPLEMENTATION-COMPLETE.md`
+- README final : `BACKUP-SYSTEM-README-FINAL.md`
+
+---
+
+## Domaine 3 : Configuration dynamique et multi-établissement
+
+### Architecture multi-tenant (v2.0 - 2026-06)
+
+**Résolution avec fallback :**
+```
+getParametre(cle, etablissementId?)
+  1. Override établissement (etablissementId = UUID)
+  2. Fallback global (etablissementId = NULL)
+  3. Cache in-memory (TTL 5min, clés: "cle" ou "cle:etablissementId")
+```
+
+**Index composite unique :** `(cle, etablissement_id)`
+- NULL = paramètre global (tous établissements)
+- UUID = override spécifique à un établissement
+
+**EtablissementConfig (remplace ConfigurationApp @deprecated) :**
+- Thème : couleurPrimaire, couleurSecondaire, couleurAccent, theme
+- Régional : langueDefaut, devise, fuseauHoraire, messageAccueil
+- Modules : modulesActifs (JSON)
+- Quotas SaaS : maxEleves, maxUtilisateurs, maxClasses, stockageMaxMB
+- Abonnement : planAbonnement, dateExpirationAbonnement
 
 ### Architecture du système de configuration
 

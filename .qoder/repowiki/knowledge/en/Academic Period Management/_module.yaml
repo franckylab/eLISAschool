@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/academic_management/periodes
+title: Academic Period Management
+scope:
+    - backend/src/modules/periodes/
+source_files: []
+depends_on: []
+related_to: []

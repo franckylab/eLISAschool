@@ -1,0 +1,7 @@
+- Follows a standard MVC-like structure with controllers handling HTTP requests, services managing business logic, and entities defining the data model.
+- Uses TypeORM for database interactions, with a dedicated repository pattern within the service layer.
+- Integrates with other modules (classes, periodes, notes, matieres) via their respective services to gather necessary data for report card generation.
+- Employs Zod for request validation in the controller layer before passing data to the service.
+- Implements role-based access control using middleware from the auth module.
+- The main entry point is `bulletins.controller.ts`, which routes requests to `bulletins.service.ts` for processing.
+- Data models are defined in `bulletin.entity.ts` and validated against schemas in `bulletins.dto.ts`.

@@ -10,18 +10,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { NotificationsService } from '../services/notifications.service';
 import { createNotificationSchema, createBulkNotificationSchema, queryNotificationsSchema } from '../dto';
 import { authMiddleware, adminOnly } from '@modules/auth/middlewares';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 const notificationsService = new NotificationsService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-    }
-    return result.data;
-}
 
 // Toutes les routes nécessitent une authentification
 router.use(authMiddleware);
@@ -32,7 +24,7 @@ router.use(authMiddleware);
  */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryNotificationsSchema, req.query);
+        const query = validateDto(queryNotificationsSchema, req.query);
         const result = await notificationsService.findByUser(req.utilisateur!.id, query);
 
         res.status(200).json({
@@ -69,7 +61,7 @@ router.get('/count', async (req: Request, res: Response, next: NextFunction) => 
  */
 router.post('/', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const createDto = validate(createNotificationSchema, req.body);
+        const createDto = validateDto(createNotificationSchema, req.body);
         const notification = await notificationsService.create(createDto, req.utilisateur!.id);
 
         res.status(201).json({
@@ -89,7 +81,7 @@ router.post('/', adminOnly, async (req: Request, res: Response, next: NextFuncti
  */
 router.post('/bulk', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const createDto = validate(createBulkNotificationSchema, req.body);
+        const createDto = validateDto(createBulkNotificationSchema, req.body);
         const count = await notificationsService.createBulk(createDto, req.utilisateur!.id);
 
         res.status(201).json({
@@ -153,6 +145,87 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
         res.status(200).json({
             success: true,
             message: 'Notification supprimée',
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/notifications/recentes
+ * Récupérer les 10 notifications les plus récentes (pour le header)
+ */
+router.get('/recentes', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await notificationsService.findByUser(req.utilisateur!.id, {
+            page: 1,
+            limit: 10,
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result.items,
+            count: result.total,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/notifications/stats
+ * Statistiques détaillées pour le centre de notifications
+ */
+router.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.utilisateur!.id;
+        
+        // Compter par statut
+        const nonLues = await notificationsService.countUnread(userId);
+        
+        // Total des notifications
+        const total = await notificationsService.countByUser(userId);
+        
+        // Compter par type (à implémenter si besoin)
+        const stats = {
+            total,
+            nonLues,
+            lues: total - nonLues,
+        };
+
+        res.status(200).json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/notifications/:id/action
+ * Exécuter une action liée à une notification (ex: voir bulletin)
+ */
+router.post('/:id/action', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.body;
+
+        // Marquer comme lue automatiquement
+        await notificationsService.markAsRead(id, req.utilisateur!.id);
+
+        // Récupérer la notification pour extraire les metadata
+        const notification = await notificationsService.getOne(id, req.utilisateur!.id);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                action,
+                metadata: notification.metadata,
+            },
             timestamp: new Date().toISOString(),
         });
     } catch (error) {

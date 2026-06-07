@@ -1,0 +1,1 @@
+Manages user authentication, JWT-based session handling, and RBAC authorization with multi-tenant establishment support.

@@ -1,0 +1,5 @@
+- Follows a standard Controller-Service-Entity layered architecture within the `utilisateurs` module scope.
+- Controllers (`utilisateurs.controller.ts`) handle HTTP routing, input validation via Zod schemas, and authorization checks using shared auth middlewares.
+- Services (`utilisateurs.service.ts`) contain business logic, interacting with TypeORM repositories for data persistence and formatting responses.
+- Entities are re-exported from the `auth` module (`@modules/auth/entities`), indicating a shared domain model for user identity across modules.
+- DTOs define strict input/output contracts using Zod for validation and TypeScript interfaces for response shaping.

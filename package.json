@@ -21,6 +21,7 @@
     "lint": "npm run lint --workspaces",
     "db:migrate": "npm run migration:run --workspace=backend",
     "db:seed": "npm run seed --workspace=backend",
+    "redis:test": "bash scripts/test-redis.sh",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:build": "docker compose -f docker-compose.dev.yml up -d --build",
     "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",

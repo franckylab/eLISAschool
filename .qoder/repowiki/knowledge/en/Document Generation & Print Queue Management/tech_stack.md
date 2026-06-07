@@ -1,0 +1,1 @@
+Uses Zod for schema validation and TypeORM with a shared data source for persistence.

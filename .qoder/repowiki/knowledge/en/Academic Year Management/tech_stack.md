@@ -1,0 +1,1 @@
+Zod for schema validation, TypeORM for ORM, Express for HTTP routing.

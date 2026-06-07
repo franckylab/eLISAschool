@@ -23,11 +23,13 @@ import {
     updateParametresBulkSchema,
     queryParametresSchema,
     exportConfigSchema,
+    toggleModuleSchema,
 } from '../dto';
 import { CategorieParametre } from '../entities/parametre-systeme.entity';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 import {
     canViewConfigApp,
     canEditConfigApp,
@@ -51,18 +53,6 @@ const router = Router();
 const configurationService = new ConfigurationService();
 const seedService = new ConfigurationSeedService();
 const historyService = new ConfigurationHistoryService();
-
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        const errors = result.error.errors.map((e: any) => ({
-            field: e.path.join('.'),
-            message: e.message,
-        }));
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', true, { errors });
-    }
-    return result.data;
-}
 
 // =============================================
 // CONFIGURATION APPLICATION
@@ -99,7 +89,7 @@ router.get('/full', authMiddleware, canViewConfigApp, async (req: Request, res: 
 router.patch('/', authMiddleware, canEditConfigApp, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const ancienneValeur = await configurationService.getConfigApp();
-        const dto = validate(updateConfigAppSchema, req.body);
+        const dto = validateDto(updateConfigAppSchema, req.body);
         const config = await configurationService.updateConfigApp(dto);
 
         await historyService.logAction({
@@ -126,7 +116,7 @@ router.patch('/', authMiddleware, canEditConfigApp, async (req: Request, res: Re
 
 router.post('/licence', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(activerLicenceSchema, req.body);
+        const dto = validateDto(activerLicenceSchema, req.body);
         const result = await configurationService.activerLicence(dto);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
@@ -152,7 +142,7 @@ router.get('/modules/:moduleNom', authMiddleware, canViewConfigModule, async (re
 
 router.patch('/modules/:moduleNom', authMiddleware, canEditConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateConfigModuleSchema, req.body);
+        const dto = validateDto(updateConfigModuleSchema, req.body);
         const config = await configurationService.updateConfigModule(req.params.moduleNom, dto, req.utilisateur?.etablissementId);
 
         configurationListener.emitChange({
@@ -170,8 +160,7 @@ router.patch('/modules/:moduleNom', authMiddleware, canEditConfigModule, async (
 
 router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { actif } = req.body;
-        if (typeof actif !== 'boolean') throw new AppError('Le paramètre "actif" doit être un booléen', 400, 'INVALID_PARAM');
+        const { actif } = validateDto(toggleModuleSchema, req.body);
         const config = await configurationService.toggleModule(req.params.moduleNom, actif);
         res.json({ success: true, data: { modulesActifs: config.modulesActifs }, message: `Module ${req.params.moduleNom} ${actif ? 'activé' : 'désactivé'}` });
     } catch (error) { next(error); }
@@ -183,7 +172,7 @@ router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async
 
 router.get('/parametres', authMiddleware, canViewParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validate(queryParametresSchema, req.query);
+        const query = validateDto(queryParametresSchema, req.query);
         const parametres = await configurationService.getParametres(query);
         res.json({ success: true, data: parametres, total: parametres.length });
     } catch (error) { next(error); }
@@ -243,7 +232,7 @@ router.get('/parametres/:cle', authMiddleware, canViewParams, async (req: Reques
 
 router.post('/parametres', authMiddleware, canCreateParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createParametreSchema, req.body);
+        const dto = validateDto(createParametreSchema, req.body);
         
         // SUPER_ADMIN peut créer pour un établissement spécifique
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
@@ -274,7 +263,7 @@ router.post('/parametres', authMiddleware, canCreateParams, async (req: Request,
 
 router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateParametreSchema, req.body);
+        const dto = validateDto(updateParametreSchema, req.body);
         
         // Utiliser req.etablissementId pour le scopage
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
@@ -392,7 +381,7 @@ router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req
 
 router.put('/parametres/bulk', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateParametresBulkSchema, req.body);
+        const dto = validateDto(updateParametresBulkSchema, req.body);
         const count = await configurationService.updateParametresBulk(dto);
         res.json({ success: true, data: { updated: count }, message: `${count} paramètres mis à jour` });
     } catch (error) { next(error); }
@@ -474,7 +463,7 @@ router.post('/cache/invalidate', authMiddleware, canInvalidateCache, async (req:
 
 router.get('/export', authMiddleware, canExportConfig, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const options = validate(exportConfigSchema, {
+        const options = validateDto(exportConfigSchema, {
             includeApp: req.query.includeApp !== 'false',
             includeModules: req.query.includeModules !== 'false',
             includeParametres: req.query.includeParametres !== 'false',
