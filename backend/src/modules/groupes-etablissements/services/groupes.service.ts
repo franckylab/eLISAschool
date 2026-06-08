@@ -8,7 +8,7 @@
  * Gestion CRUD des groupes et associations établissements/admins.
  */
 
-import { Repository, In } from 'typeorm';
+import { Repository, In, EntityManager } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import {
     GroupeEtablissement,
@@ -26,6 +26,9 @@ export class GroupesService {
     private lienRepo: Repository<GroupeEtablissementLien>;
     private adminRepo: Repository<GroupeAdmin>;
     private etablissementRepo: Repository<Etablissement>;
+
+    // Limite maximale d'établissements par groupe
+    private readonly MAX_ETABLISSEMENTS_PAR_GROUPE = 50;
 
     constructor() {
         this.groupeRepo = AppDataSource.getRepository(GroupeEtablissement);
@@ -178,6 +181,16 @@ export class GroupesService {
             throw new AppError('Groupe non trouvé ou inactif', 404, 'NOT_FOUND');
         }
 
+        // Vérifier la limite maximale
+        const currentCount = await this.lienRepo.count({ where: { groupeId } });
+        if (currentCount + etablissementIds.length > this.MAX_ETABLISSEMENTS_PAR_GROUPE) {
+            throw new AppError(
+                `Un groupe ne peut pas avoir plus de ${this.MAX_ETABLISSEMENTS_PAR_GROUPE} établissements (${currentCount} actuels + ${etablissementIds.length} demandés)`,
+                400,
+                'GROUPE_MAX_ETABLISSEMENTS'
+            );
+        }
+
         await this.addEtablissementsTransaction(
             AppDataSource.manager,
             groupeId,
@@ -195,7 +208,7 @@ export class GroupesService {
      * Version transactionnelle pour usage interne
      */
     private async addEtablissementsTransaction(
-        manager: any,
+        manager: EntityManager,
         groupeId: string,
         etablissementIds: string[],
         ajoutePar: string

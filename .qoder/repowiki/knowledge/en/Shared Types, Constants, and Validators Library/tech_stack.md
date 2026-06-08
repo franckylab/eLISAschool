@@ -1,0 +1,1 @@
+Zod v3.24.1 for runtime schema validation; TypeScript v5.7.2 compiling to CommonJS with strict mode and declaration generation.

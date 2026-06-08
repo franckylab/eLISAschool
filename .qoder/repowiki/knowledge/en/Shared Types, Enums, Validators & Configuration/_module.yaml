@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: shared
-title: Shared Types, Enums, Validators & Configuration
-scope:
-    - shared/
-source_files: []
-depends_on: []
-related_to:
-    - path: backend/backend_infrastructure

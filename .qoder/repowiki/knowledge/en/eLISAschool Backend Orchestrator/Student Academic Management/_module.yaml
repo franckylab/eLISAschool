@@ -1,0 +1,21 @@
+schema_version: 1
+module_path: backend/backend_student_academics
+title: Student Academic Management
+scope:
+    - backend/src/modules/eleves/
+    - backend/src/modules/notes/
+    - backend/src/modules/bulletins/
+    - backend/src/modules/orientation/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_academic_core
+    - path: backend/backend_gamification_scoring
+    - path: backend/backend_dashboard_monitoring/dashboard
+    - path: backend/backend_establishment_config/etablissement_management
+    - path: backend/backend_notifications_audit/notifications
+    - path: backend/backend_infrastructure
+    - path: backend/backend_notifications_audit/audit
+    - path: backend/backend_establishment_config/system_configuration
+    - path: backend/backend_operations
+    - path: shared

@@ -1,1 +1,1 @@
-Orchestrates a multi-tenant school management PWA by unifying backend, frontend, and shared modules through npm workspaces and Docker Compose.
+Orchestrates a modular school management monorepo by unifying backend, frontend, and shared libraries through npm workspaces and Docker Compose service composition.

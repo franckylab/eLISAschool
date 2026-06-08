@@ -1,0 +1,1 @@
+TypeORM for shared entity management across configuration and establishment scopes; Node.js EventEmitter for cross-module configuration state propagation

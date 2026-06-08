@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; TypeORM with PostgreSQL (UUID columns, ILIKE queries, QueryBuilder); Express.js with custom role-based middleware; centralized configuration via `getParamNumber`/`getParamBoolean` helpers.

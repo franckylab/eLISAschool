@@ -1,1 +1,1 @@
-TypeORM for PostgreSQL ORM with migration support; Zod for runtime schema validation of environment variables and DTOs; Winston for structured logging with file rotation.
+TypeORM with PostgreSQL, Zod for runtime schema validation, Redis service integration, and Express.js middleware pipeline.

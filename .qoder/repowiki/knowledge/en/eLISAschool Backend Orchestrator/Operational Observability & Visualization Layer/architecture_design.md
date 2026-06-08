@@ -1,3 +1,0 @@
-- Children operate as independent NestJS modules with no direct cross-module dependencies, communicating only via shared backend infrastructure (e.g., global exception filters, common logging).
-- Dashboard module handles user-facing data aggregation and SSE streams, while Monitoring module exposes system-level metrics and health endpoints, ensuring separation of application logic from infrastructure observability.
-- Both modules follow a consistent controller-service-DTO pattern, exposing RESTful endpoints that are aggregated at the backend application root level.

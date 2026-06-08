@@ -1,3 +1,5 @@
+
+
 /**
  * ==================================
  * eLISAschool - Entité Responsable Élève
@@ -112,6 +114,39 @@ export class ResponsableEleve {
      */
     @Column({ type: 'varchar', length: 255, nullable: true })
     adresse?: string;
+
+    /**
+     * Champs d'identification additionnels (v2.0)
+     */
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    profession?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    lieuTravail?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    telephoneTravail?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    emailTravail?: string;
+
+    @Column({ type: 'text', nullable: true })
+    adresseProfessionnelle?: string;
+
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+    revenuMensuel?: number;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    personneContactUrgence?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    telephoneContactUrgence?: string;
+
+    @Column({ type: 'boolean', default: true })
+    autorisationSortie!: boolean;
+
+    @Column({ type: 'boolean', default: true })
+    autorisationMedicale!: boolean;
 
     /**
      * Date d'ajout de cette relation

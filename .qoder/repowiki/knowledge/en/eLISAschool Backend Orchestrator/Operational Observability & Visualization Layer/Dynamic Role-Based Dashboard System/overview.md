@@ -1,1 +1,0 @@
-Provides a role- and permission-driven dynamic dashboard with configurable widget layouts, cached data aggregation, and real-time SSE updates for multi-tenant school management.

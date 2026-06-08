@@ -1,3 +1,4 @@
-- All API responses adhere to a standardized envelope structure (`success`, `data`, `meta`) enforced by shared utility functions in `common/utils/api-response.util.ts`.
-- Multi-tenancy is implemented via a global `tenantMiddleware` that resolves and injects `etablissementId` into the request context based on JWT claims and query parameters.
-- Audit logging is automated through a reusable `createAuditInterceptor` that captures CRUD operations post-response without requiring manual instrumentation in each controller.
+- All child modules follow a standard directory structure with `controllers`, `services`, `entities`, and `dto` subdirectories.
+- API responses are standardized using shared utility functions in `src/common/utils/api-response.util.ts`.
+- Error handling is centralized via a global `errorHandler` and custom `AppError` class, ensuring consistent error formats across all modules.
+- Multi-tenancy is enforced at the middleware level, with `etablissementId` automatically attached to requests for downstream service filtering.

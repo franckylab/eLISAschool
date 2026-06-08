@@ -5,3 +5,4 @@ export * from './absence-personnel.dto';
 export * from './evaluation.dto';
 export * from './progression-programme.dto';
 export * from './bulletin-paie.dto';
+export * from './paie-etendue.dto';

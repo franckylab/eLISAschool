@@ -1,0 +1,1 @@
+Independent modules for notification delivery and audit trail management with no direct cross-module coupling.

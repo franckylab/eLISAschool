@@ -1,1 +1,0 @@
-Provides JWT-based authentication, multi-role authorization with granular permission resolution, audit logging, and multi-tenancy support for establishment switching.

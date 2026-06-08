@@ -10,9 +10,11 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { BulletinPaie } from '../entities/bulletin-paie.entity';
+import { BulletinPaie, StatutBulletinPaie } from '../entities/bulletin-paie.entity';
 import { CreateBulletinPaieDto, UpdateBulletinPaieDto, QueryBulletinPaieDto } from '../dto/bulletin-paie.dto';
 import { heureCoursService } from './heure-cours.service';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 export class BulletinPaieService {
     private repo: Repository<BulletinPaie>;
@@ -22,6 +24,9 @@ export class BulletinPaieService {
     }
 
     async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: any) {
+        // Vérifier si validation requise
+        const requireValidation = await getParamBoolean('personnel.paie.require_validation', true);
+        
         // Calculer le salaire net
         const salaireNet = this.calculerSalaireNet(dto);
 
@@ -30,10 +35,27 @@ export class BulletinPaieService {
             salaireNet,
             heuresEffectuees: 0,
             montantHeuresSup: 0,
-            statut: 'GENERE',
+            statut: requireValidation ? StatutBulletinPaie.EN_ATTENTE_VALIDATION : StatutBulletinPaie.GENERE,
             etablissementId,
         });
         await this.repo.save(entity);
+
+        // Créer workflow si nécessaire
+        if (requireValidation && createurId) {
+            try {
+                await validationWorkflowService.createWorkflow({
+                    module: 'personnel',
+                    entiteId: entity.id,
+                    entiteType: 'BulletinPaie',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, createurId);
+                
+                logger.info(`[Paie] Workflow créé pour bulletin: ${entity.id}`);
+            } catch (error) {
+                logger.warn(`[Paie] Échec création workflow bulletin (non bloquant)`, error);
+            }
+        }
 
         if (createurId) {
             await auditService.log({
@@ -41,13 +63,13 @@ export class BulletinPaieService {
                 action: AuditAction.BULLETIN_PAI_CREATE,
                 cible: 'BulletinPaie',
                 cibleId: entity.id,
-                description: `Création bulletin paie ${entity.id}`,
+                description: `Création bulletin paie ${entity.id} - Statut: ${entity.statut}`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
             }, req);
         }
 
-        logger.info(`Bulletin de paie créé: ${entity.id}`);
+        logger.info(`Bulletin de paie créé: ${entity.id} - Statut: ${entity.statut}`);
         return entity;
     }
 

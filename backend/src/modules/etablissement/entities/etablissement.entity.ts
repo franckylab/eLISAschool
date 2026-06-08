@@ -105,6 +105,52 @@ export class Etablissement {
     @Column({ type: 'varchar', length: 30, default: StatutEtablissement.ACTIF })
     statut!: StatutEtablissement;
 
+    // ==================================
+    // Champs d'identification additionnels (v2.0)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+    codeEtablissement?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    numeroContribuable?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    numeroCompteBancaire?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    siteWeb?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    facebook?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    twitter?: string;
+
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    heuresOuverture?: string;
+
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    heuresFermeture?: string;
+
+    @Column({ type: 'int', nullable: true })
+    effectifMax?: number;
+
+    @Column({ type: 'int', default: 0 })
+    effectifActuel!: number;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    directeurNom?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    directeurAdjointNom?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    censeurNom?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    surveillantGeneralNom?: string;
+
     /**
      * Relation 1:1 vers la configuration de l'établissement.
      * Chargée à la demande pour éviter les requêtes inutiles.

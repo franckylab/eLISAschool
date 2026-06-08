@@ -1,1 +1,0 @@
-Manages dynamic application and module-level configuration parameters with multi-tenant scoping, audit history, backup/restore, and pluggable storage providers.

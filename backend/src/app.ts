@@ -39,6 +39,9 @@ import { clubsController } from '@modules/clubs';
 import { materielController } from '@modules/materiel';
 import { financesController } from '@modules/finances';
 import { cartesController } from '@modules/cartes';
+import { suiviElevesController } from '@modules/suivi-eleves';
+import { suiviPersonnelController } from '@modules/suivi-personnel';
+import { santeController } from '@modules/sante';
 import { orientationController } from '@modules/orientation';
 import { impressionsController } from '@modules/impressions';
 import { scoringService } from '@modules/scoring';
@@ -210,6 +213,13 @@ export function createApp(): Application {
     app.use('/api/clubs', requireModuleActive('clubs'), clubsController);
     app.use('/api/gamification', requireModuleActive('gamification'), gamificationController);
     app.use('/api/cartes', requireModuleActive('cartes'), cartesController);
+
+    // Modules suivi (nouveau v2.0)
+    app.use('/api/suivi-eleves', requireModuleActive('suivi-eleves'), suiviElevesController);
+    app.use('/api/suivi-personnel', requireModuleActive('suivi-personnel'), suiviPersonnelController);
+
+    // Module santé (nouveau v2.0) - Accès sécurisé
+    app.use('/api/sante', requireModuleActive('sante'), santeController);
 
     // Modules système
     app.use('/api/orientation', requireModuleActive('orientation'), orientationController);

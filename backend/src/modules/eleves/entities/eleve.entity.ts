@@ -78,6 +78,49 @@ export class Eleve {
     @Column({ type: 'date' })
     dateInscription!: Date;
 
+    // ==================================
+    // Champs d'identification additionnels (v2.0)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    photo?: string;
+
+    @Column({ type: 'varchar', length: 5, nullable: true })
+    groupeSanguin?: string; // A+, A-, B+, B-, AB+, AB-, O+, O-
+
+    @Column({ type: 'simple-json', nullable: true })
+    allergies?: string[];
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    nomContactUrgence?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    telephoneContactUrgence?: string;
+
+    @Column({ type: 'text', nullable: true })
+    adresseDomicile?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    ville?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    quartier?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    ecoleProvenance?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    classeAnterieure?: string;
+
+    @Column({ type: 'boolean', default: false })
+    redoublement!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    boursier!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    regimeInterne!: boolean;
+
     @Column({ type: 'varchar', length: 30, default: StatutEleve.ACTIF })
     statut!: StatutEleve;
 

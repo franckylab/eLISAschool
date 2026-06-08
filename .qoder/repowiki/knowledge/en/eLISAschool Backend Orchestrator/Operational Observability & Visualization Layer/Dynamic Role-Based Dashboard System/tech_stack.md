@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; TypeORM with `simple-json` column type for layout storage; Server-Sent Events (SSE) for real-time widget updates via `dashboard-sse.service.ts`.

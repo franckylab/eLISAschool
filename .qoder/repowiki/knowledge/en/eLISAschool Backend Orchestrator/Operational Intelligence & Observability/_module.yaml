@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/backend_dashboard_monitoring
+title: Operational Intelligence & Observability
+scope:
+    - backend/src/modules/dashboard/
+    - backend/src/modules/monitoring/
+source_files: []
+depends_on: []
+related_to: []

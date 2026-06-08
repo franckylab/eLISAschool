@@ -1,1 +1,1 @@
-Node.js/Express with TypeScript, leveraging TypeORM for database interactions and Redis for caching/shared state across modules.
+Node.js/Express with TypeScript, leveraging TypeORM for database interactions, Redis for caching/session management, and Swagger UI for API documentation.

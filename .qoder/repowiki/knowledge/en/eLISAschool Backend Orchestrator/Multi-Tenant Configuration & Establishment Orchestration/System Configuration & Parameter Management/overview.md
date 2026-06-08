@@ -1,0 +1,1 @@
+Manages application-wide settings, module activation states, and multi-tenant system parameters with caching, history tracking, and event-driven updates.

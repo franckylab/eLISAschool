@@ -1,0 +1,5 @@
+- **Entry Point**: `controllers/dashboard.controller.ts` exposes REST endpoints for widget resolution, data fetching, layout management, and SSE streaming, all protected by `authMiddleware`.
+- **Core Services**: `WidgetResolverService` filters available widgets based on user roles and permissions using a declarative `WIDGET_REGISTRY`. `DataAggregatorService` orchestrates data fetching by dynamically resolving service methods defined in widget configurations, with fallback to mock data.
+- **Performance Layer**: `DashboardCacheService` implements a dual-layer caching strategy (Redis with in-memory fallback) with context-aware invalidation. `DashboardSSEService` manages Server-Sent Events connections for real-time widget updates.
+- **Configuration**: `utils/widget-registry.ts` serves as the central declarative registry for all widget definitions, including their data resolvers, access controls, and refresh strategies.
+- **Data Model**: `entities/dashboard-layout.entity.ts` persists user-specific dashboard layouts, while `types/dashboard.types.ts` defines the structural contracts for widgets and responses.

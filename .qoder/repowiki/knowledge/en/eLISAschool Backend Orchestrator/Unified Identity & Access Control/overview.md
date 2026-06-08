@@ -1,1 +1,0 @@
-Orchestrates authentication, dynamic RBAC management, and granular permission enforcement through a shared entity model and cross-module cache invalidation.

@@ -1,3 +1,0 @@
-- **Shared Entity Model**: The `rbac` module manages CRUD operations for `Role` and `Permission` entities that physically reside in the `auth` module's directory, creating a tight structural coupling.
-- **Cross-Module Cache Invalidation**: The `auth` module exposes a singleton `PermissionResolverService` with an in-memory cache. The `rbac` module directly imports this service to call `invalidateCacheForRole()` whenever roles or permissions are modified, ensuring runtime consistency without external messaging.
-- **Middleware Enforcement**: The `auth` module provides Express middlewares (`requirePermission`) that consume the resolved permissions from the shared resolver, acting as the enforcement layer for routes defined across the application.

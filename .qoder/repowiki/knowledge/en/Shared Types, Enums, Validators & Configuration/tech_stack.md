@@ -1,1 +1,0 @@
-Zod v3.24.1 for runtime schema validation; TypeScript v5.7.2 targeting ES2022 with CommonJS modules and declaration file generation.

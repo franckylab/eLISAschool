@@ -18,12 +18,20 @@ import { z } from 'zod';
 import { LIMITS } from '../constants';
 
 /**
- * Schéma de validation pour le login
+ * Schéma de validation pour le login (v2.0 - multi-mode)
+ * Supporte : email, pseudonyme, matricule, QR code, ID
  */
 export const loginSchema = z.object({
+    // Nouveau champ principal (v2.0)
+    identifiant: z.string()
+        .min(1, 'L\'identifiant est requis')
+        .max(255, 'L\'identifiant ne peut pas dépasser 255 caractères'),
+
+    // Ancien champ email (déprécié mais supporté pour transition)
     email: z.string()
         .email('Adresse email invalide')
-        .max(255, 'L\'email ne peut pas dépasser 255 caractères'),
+        .max(255, 'L\'email ne peut pas dépasser 255 caractères')
+        .optional(),
 
     motDePasse: z.string()
         .min(LIMITS.PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${LIMITS.PASSWORD_MIN_LENGTH} caractères`),

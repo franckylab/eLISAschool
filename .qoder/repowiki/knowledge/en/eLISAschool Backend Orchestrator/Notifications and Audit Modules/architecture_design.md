@@ -1,0 +1,3 @@
+- The notifications and audit modules operate independently with no shared interfaces, services, or direct communication patterns.
+- Each module exposes its own REST API controllers and internal services without relying on the other.
+- No common orchestration layer, shared event bus, or cross-module dependency exists between them.

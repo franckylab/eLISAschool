@@ -1,4 +1,0 @@
-- All DTOs are defined as Zod schemas with inferred TypeScript types, ensuring consistent request/response validation across controllers.
-- Permission guards follow the naming convention `can<Action><Resource>` (e.g., `canEditParams`, `canViewConfigApp`) and are created via the `requireConfigPermission` factory function.
-- Service methods that mutate state accept optional `utilisateurId` and `req` parameters to enable automatic audit logging and IP capture in the history service.
-- Parameter keys use dot-separated namespacing (e.g., `notes.bareme_defaut`, `auth.session_duration`) to group settings by module or category.

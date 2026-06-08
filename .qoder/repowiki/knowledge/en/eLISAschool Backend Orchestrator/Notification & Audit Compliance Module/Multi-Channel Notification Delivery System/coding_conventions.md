@@ -1,4 +1,0 @@
-- All service methods enforce ownership checks by requiring utilisateurId alongside resource id, throwing NOTIFICATION_NOT_FOUND (404) when the record does not belong to the caller.
-- Controller responses follow a uniform envelope: { success: boolean, data?: any, message?: string, timestamp: ISO string } returned with appropriate HTTP status codes.
-- DTO validation uses Zod schemas passed through validateDto utility before reaching service layer, applied consistently across all controller endpoints.
-- Provider implementations check estConfiguré() before attempting envoyer(), returning { succes: false, erreur: string } rather than throwing exceptions for delivery failures.

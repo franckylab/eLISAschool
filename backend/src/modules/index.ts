@@ -31,6 +31,13 @@ export * from './clubs';
 export * from './gamification';
 export * from './cartes';
 
+// Modules suivi (nouveau v2.0)
+export * from './suivi-eleves';
+export * from './suivi-personnel';
+
+// Module santé (nouveau v2.0)
+export * from './sante';
+
 // Modules système
 export * from './scoring';
 export * from './monitoring';

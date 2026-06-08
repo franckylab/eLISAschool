@@ -1,3 +1,0 @@
-- Standardized API responses consistently use a `{ success: boolean, data?: any, meta?: any }` structure across all utility functions.
-- Environment variables are strictly validated at startup using Zod schemas, with safe defaults provided only in non-production environments.
-- Pagination logic is centralized in utility files, offering both offset-based and cursor-based strategies with consistent metadata structures.

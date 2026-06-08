@@ -9,5 +9,12 @@ scope:
 source_files: []
 depends_on: []
 related_to:
-    - path: backend/backend_student_academics
-    - path: backend/backend_establishment_config
+    - path: backend/backend_operations
+    - path: backend/backend_academic_core
+    - path: backend/backend_gamification_scoring
+    - path: backend/backend_establishment_config/system_configuration
+    - path: backend/backend_auth_rbac/auth
+    - path: backend/backend_infrastructure
+    - path: backend/backend_notifications_audit/notifications
+    - path: backend/backend_dashboard_monitoring/dashboard
+    - path: shared

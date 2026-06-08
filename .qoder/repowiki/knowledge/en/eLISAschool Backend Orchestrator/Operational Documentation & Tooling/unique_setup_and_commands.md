@@ -1,2 +1,0 @@
-- Run `backend/scripts/run-indexes.sh` to apply performance indexes after loading `DATABASE_URL` from `.env`.
-- Execute `backend/scripts/verify-pagination.sh` to audit codebase compliance with the new pagination v2.0 standards.

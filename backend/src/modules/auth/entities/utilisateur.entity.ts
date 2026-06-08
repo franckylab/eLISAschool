@@ -55,6 +55,18 @@ export class Utilisateur {
     @Column({ type: 'varchar', length: 50, unique: true })
     matricule!: string;
 
+    // ==================================
+    // Champs auth multi-mode (v2.0)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
+    @Index()
+    pseudonyme?: string;
+
+    @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
+    @Index()
+    qrCodeId?: string;
+
     @Column({ type: 'varchar', length: 255, select: false })
     motDePasse!: string;
 

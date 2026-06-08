@@ -31,7 +31,10 @@ export const updateGroupeSchema = z.object({
 });
 
 export const addEtablissementSchema = z.object({
-    etablissementId: z.string().uuid('ID d\'établissement invalide'),
+    etablissementId: z.string().uuid('ID d\'établissement invalide').optional(),
+    etablissementIds: z.array(z.string().uuid()).min(1, 'Au moins un établissement est requis').optional(),
+}).refine(data => data.etablissementId || data.etablissementIds, {
+    message: 'Au moins un établissement est requis (etablissementId ou etablissementIds)',
 });
 
 export const addAdminSchema = z.object({

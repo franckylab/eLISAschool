@@ -1,5 +1,6 @@
-- Four independent sub-modules (cantine, transport, clubs, cartes) each following a strict controller-service-entity-DTO layering with barrel exports via index.ts.
-- Controllers use Express Router instances exported as named constants (e.g. cantineController, transportController); services are singleton classes instantiated at module level.
-- All entities reference Etablissement for multi-tenancy scoping; queries consistently filter by etablissementId when provided from the request context.
-- DTOs use Zod schemas (z.object) with type inference via z.infer; controllers validate inputs through a shared validateDto utility before delegating to services.
-- Services depend on TypeORM repositories obtained from AppDataSource and integrate cross-module concerns: centralized configuration via getParam*/config.helper, optional approval workflows via validationWorkflowService, and parent notifications via notificationTemplates.
+- Four independent sub-modules (cantine, transport, clubs, cartes) each following a strict layered architecture: controllers → services → entities, with DTOs for input validation.
+- Each sub-module exports its controller as a named Express Router via an index barrel file (e.g. `export { cantineController }`), enabling centralized route registration at the application level.
+- Controllers delegate all business logic to singleton service instances (e.g. `new CantineService()`), which use TypeORM repositories obtained from a shared `AppDataSource`.
+- Entities are TypeORM-decorated classes with multi-tenancy enforced via an `etablissementId` foreign key on every entity, scoped to an `Etablissement` aggregate.
+- Cross-cutting concerns (authentication, role-based access control, DTO validation) are handled by imported middlewares (`authMiddleware`, `staffOnly`, `adminOnly`) and a shared `validateDto` utility using Zod schemas defined in each module's dto directory.
+- Optional workflow validation is integrated via `validationWorkflowService` for cantine inscriptions, transport inscriptions, club creation/inscriptions, and card issuance — controlled by runtime configuration parameters fetched through `@modules/configuration/utils/config.helper`.

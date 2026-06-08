@@ -43,6 +43,6 @@ export class GroupeEtablissementLien {
     @Column({ type: 'uuid', nullable: true })
     ajoutePar?: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'date_ajout' })
     dateAjout!: Date;
 }

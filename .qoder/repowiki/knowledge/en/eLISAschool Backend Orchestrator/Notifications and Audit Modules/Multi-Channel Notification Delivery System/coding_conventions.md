@@ -1,0 +1,4 @@
+- Each provider class implements the INotificationProvider interface with readonly type/nom/service properties, an initialiser method accepting a config record, and an estConfiguré boolean check before sending.
+- Services expose both a named class export and a pre-instantiated singleton export (e.g., NotificationsService class plus notificationsService instance) for flexible dependency injection.
+- Controllers apply authMiddleware at the router level via router.use(), then selectively add adminOnly middleware on mutation routes rather than per-route duplication.
+- DTO validation uses a shared validateDto utility with Zod-like schemas imported from the dto module, called at the start of each controller handler before service delegation.

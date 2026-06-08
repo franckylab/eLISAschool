@@ -6,3 +6,4 @@ export * from './evaluation.service';
 export * from './progression-programme.service';
 export * from './bulletin-paie.service';
 export * from './personnel-dashboard.service';
+export * from './calcul-paie.service';

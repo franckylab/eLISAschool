@@ -6,5 +6,12 @@ scope:
 source_files: []
 depends_on: []
 related_to:
+    - path: backend/backend_establishment_config/system_configuration
+    - path: backend/backend_notifications_audit/notifications
     - path: backend/backend_student_academics
+    - path: backend/backend_notifications_audit/audit
+    - path: backend/backend_auth_rbac/auth
+    - path: shared
+    - path: backend/backend_dashboard_monitoring/dashboard
+    - path: backend/backend_dashboard_monitoring/monitoring
     - path: backend/backend_academic_core

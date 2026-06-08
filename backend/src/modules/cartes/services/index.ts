@@ -1,1 +1,9 @@
-export { CartesService, cartesService } from './cartes.service';
+/**
+ * ==================================
+ * eLISAschool - Export Services Cartes
+ * ==================================
+ */
+
+export * from './cartes.service';
+export * from './modele-carte.service';
+export * from './generation-batch.service';

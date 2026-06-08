@@ -80,7 +80,8 @@ export class AuthService {
     }
 
     /**
-     * Connexion d'un utilisateur
+     * Connexion d'un utilisateur (v2.0 - multi-mode)
+     * Supporte : email, pseudonyme, matricule, QR code, ID
      */
     async login(
         loginDto: LoginDto,
@@ -90,14 +91,40 @@ export class AuthService {
     ): Promise<LoginResponseDto> {
         const securityParams = await this.getSecurityParams();
 
+        // Déterminer l'identifiant à utiliser (nouveau champ ou fallback ancien)
+        const identifiant = (loginDto as any).identifiant || loginDto.email;
+        if (!identifiant) {
+            throw new AppError('Identifiant requis', 400, 'MISSING_IDENTIFIER');
+        }
+
+        const identifiantNormalise = identifiant.toLowerCase().trim();
+
+        // Recherche multi-critère optimisée avec OR
+        const whereConditions: any[] = [];
+        
+        // Si contient @, c'est probablement un email
+        if (identifiantNormalise.includes('@')) {
+            whereConditions.push({ email: identifiantNormalise });
+        }
+        
+        // Chercher dans tous les cas par matricule, pseudonyme, qrCodeId
+        whereConditions.push({ matricule: identifiantNormalise });
+        whereConditions.push({ pseudonyme: identifiantNormalise });
+        whereConditions.push({ qrCodeId: identifiantNormalise });
+        
+        // Si c'est un UUID valide, chercher par ID
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifiantNormalise)) {
+            whereConditions.push({ id: identifiantNormalise });
+        }
+
         const utilisateur = await this.utilisateurRepository.findOne({
-            where: { email: loginDto.email.toLowerCase() },
-            select: ['id', 'email', 'matricule', 'motDePasse', 'role', 'statut', 'tentativesConnexion', 'bloqueJusqua', 'etablissementId'],
+            where: whereConditions,
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut', 'tentativesConnexion', 'bloqueJusqua', 'etablissementId'],
         });
 
         if (!utilisateur) {
-            await auditService.logLogin('unknown', false, req, 'Email non trouvé');
-            throw new AppError('Email ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
+            await auditService.logLogin('unknown', false, req, 'Identifiant non trouvé');
+            throw new AppError('Identifiant ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
         }
 
         // Vérification du blocage

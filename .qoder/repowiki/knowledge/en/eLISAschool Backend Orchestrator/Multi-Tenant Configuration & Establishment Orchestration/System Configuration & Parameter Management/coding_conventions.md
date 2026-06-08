@@ -1,0 +1,4 @@
+- Services emit domain events via `configurationListener` immediately after successful state mutations to ensure loose coupling with consumers.
+- Multi-tenant parameter resolution follows a strict fallback chain: establishment-scoped override -> global default -> hardcoded fallback value.
+- Cache invalidation is performed explicitly within service methods after database writes, often triggering corresponding event emissions.
+- Permission checks are implemented as dedicated Express middleware functions (e.g., `canEditParams`) derived from a central `requireConfigPermission` factory.

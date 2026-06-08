@@ -2,7 +2,7 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-07T08:51:32Z"
+exported_at: "2026-06-08T00:47:52Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -13,6 +13,11 @@ modules:
             - .env.example
             - .env.production.example
             - .gitignore
+            - AMELIORATIONS-GROUPES-V1.1.md
+            - AMÉLIORATIONS-FINANCES-FINAL.md
+            - ANALYSE-FRAIS-REMISES-COHERENCE.md
+            - ANALYSE-GESTION-FINANCIERE.md
+            - ANALYSE-OPTIMISATIONS-ACTIVATION-MODULES.md
             - ANALYSE_ROLES_EDUCATION_AFRICAINE.md
             - BACKUP-SYSTEM-IMPLEMENTATION-COMPLETE.md
             - BACKUP-SYSTEM-PROGRESS.md
@@ -27,11 +32,21 @@ modules:
             - FIX-ERREURS-NOTIFICATIONS.md
             - FIX-ERREURS-TYPESCRIPT-COMPLETE.md
             - FIX-TYPESCRIPT-ERRORS.md
+            - GUIDE-GROUPES-CONSOLIDATION.md
+            - GUIDE-TEST-ACTIVATION-MODULES.md
+            - IMPLEMENTATION-ACTIVATION-MODULES.md
             - IMPLEMENTATION-AUDIT-TRAIL.md
+            - IMPLEMENTATION-COMPLETE-FINANCES-PHASE1-2.md
+            - IMPLEMENTATION-COMPLETE-FINANCES.md
+            - IMPLEMENTATION-FINANCES-COMPLETE.md
+            - IMPLEMENTATION-FINANCES-FINAL.md
+            - IMPLEMENTATION-PHASE1-FRAIS-REMISES.md
+            - IMPLEMENTATION-RESPONSABLES-ELEVES.md
             - IMPLEMENTATION_EXTENSION_ROLES.md
             - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
             - IMPLÉMENTATION_MULTI-ETABLISSEMENTS-TERMINEE.md
             - IMPLÉMENTATION_MULTI_ÉTAT.md
+            - MAJ-SKILLS-ACTIVATION-MODULES.md
             - NOTIFICATION-AUDIT-SUMMARY.md
             - NOTIFICATION-IMPLEMENTATION-COMPLETE.md
             - NOTIFICATION-INTEGRATION-GUIDE.md
@@ -39,14 +54,22 @@ modules:
             - NOTIFICATION-SESSION-FINALE.md
             - NOTIFICATION-SYSTEM-COMPLETE.md
             - NOTIFICATION-SYSTEM-GUIDE.md
+            - OPTIMISATIONS-IMPLÉMENTATION-COMPLETE.md
+            - OPTIMISATIONS-RESUME-FINAL.md
             - PAGINATION-QUICK-REF.md
+            - PORTAL-PARENT-IMPLEMENTATION.md
             - RAPPORT-ETAPES-COMPLETES.md
             - RAPPORT-FINAL-PAGINATION.md
             - RAPPORT-PAGINATION-IMPROVEMENTS.md
             - README.md
             - REDIS-CONFIGURATION.md
             - RESUME-EXECUTIF.md
+            - RESUME-FINAL-FINANCES.md
+            - RH-PHASES-2-5-COMPLETE.md
+            - UPDATE-REGLES-SKILLS-NOTIFICATIONS.md
             - VALIDATION-WORKFLOW-SYSTEM.md
+            - VERIFICATION-AUDIT-FINANCES.md
+            - VERIFICATION-INTEGRATION-FINANCES.md
             - docker-compose.dev.yml
             - docker-compose.yml
             - package-lock.json
@@ -63,16 +86,16 @@ modules:
         source_files: []
         children:
             - backend/backend_operations
-            - backend/backend_operational_assets
-            - backend/backend_dashboard_monitoring
             - backend/backend_infrastructure
-            - backend/backend_student_life
-            - backend/backend_gamification_scoring
+            - backend/backend_academic_core
             - backend/backend_establishment_config
-            - backend/backend_notifications_audit
             - backend/backend_auth_rbac
             - backend/backend_student_academics
-            - backend/backend_academic_core
+            - backend/backend_dashboard_monitoring
+            - backend/backend_operational_assets
+            - backend/backend_student_life
+            - backend/backend_gamification_scoring
+            - backend/backend_notifications_audit
         depends_on: []
         related_to: []
     backend/backend_academic_core:
@@ -89,34 +112,47 @@ modules:
         depends_on: []
         related_to:
             - path: backend/backend_student_academics
+            - path: backend/backend_student_life
             - path: backend/backend_operations
+            - path: backend/backend_infrastructure
+            - path: backend/backend_notifications_audit/audit
             - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_gamification_scoring
     backend/backend_auth_rbac:
-        dir_name: Unified Identity & Access Control
-        title: Unified Identity & Access Control
+        dir_name: Unified Identity & Access Control Plane
+        title: Unified Identity & Access Control Plane
         scope:
             - backend/src/modules/auth/
             - backend/src/modules/rbac/
         source_files: []
         children:
-            - backend/backend_auth_rbac/rbac
             - backend/backend_auth_rbac/auth
+            - backend/backend_auth_rbac/rbac
         depends_on: []
         related_to:
             - path: backend/backend_establishment_config
-            - path: backend/backend_dashboard_monitoring/dashboard
-            - path: backend/backend_operations
+            - path: shared
     backend/backend_auth_rbac/auth:
-        dir_name: Authentication, Authorization & RBAC
-        title: Authentication, Authorization & RBAC
+        dir_name: Authentication, Session Management & RBAC Authorization
+        title: Authentication, Session Management & RBAC Authorization
         scope:
             - backend/src/modules/auth/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_notifications_audit/audit
             - path: backend/backend_auth_rbac/rbac
+            - path: shared
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_dashboard_monitoring/monitoring
+            - path: backend/backend_student_life
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_infrastructure
     backend/backend_auth_rbac/rbac:
         dir_name: Role-Based Access Control (RBAC) Management
         title: Role-Based Access Control (RBAC) Management
@@ -127,9 +163,15 @@ modules:
         depends_on: []
         related_to:
             - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_infrastructure
+            - path: shared
+            - path: backend/backend_notifications_audit/notifications
     backend/backend_dashboard_monitoring:
-        dir_name: Operational Observability & Visualization Layer
-        title: Operational Observability & Visualization Layer
+        dir_name: Operational Intelligence & Observability
+        title: Operational Intelligence & Observability
         scope:
             - backend/src/modules/dashboard/
             - backend/src/modules/monitoring/
@@ -140,17 +182,26 @@ modules:
         depends_on: []
         related_to: []
     backend/backend_dashboard_monitoring/dashboard:
-        dir_name: Dynamic Role-Based Dashboard System
-        title: Dynamic Role-Based Dashboard System
+        dir_name: Dynamic Role-Based Dashboard
+        title: Dynamic Role-Based Dashboard
         scope:
             - backend/src/modules/dashboard/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_auth_rbac
             - path: backend/backend_dashboard_monitoring/monitoring
+            - path: backend/backend_student_academics
             - path: backend/backend_operations
+            - path: backend/backend_auth_rbac/rbac
+            - path: backend/backend_auth_rbac/auth
+            - path: shared
+            - path: backend/backend_gamification_scoring
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_student_life
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_academic_core
     backend/backend_dashboard_monitoring/monitoring:
         dir_name: System Health & Application Monitoring
         title: System Health & Application Monitoring
@@ -161,6 +212,11 @@ modules:
         depends_on: []
         related_to:
             - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_infrastructure
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_establishment_config/etablissement_management
     backend/backend_establishment_config:
         dir_name: Multi-Tenant Configuration & Establishment Orchestration
         title: Multi-Tenant Configuration & Establishment Orchestration
@@ -169,12 +225,12 @@ modules:
             - backend/src/modules/configuration/
         source_files: []
         children:
-            - backend/backend_establishment_config/system_configuration
             - backend/backend_establishment_config/etablissement_management
+            - backend/backend_establishment_config/system_configuration
         depends_on: []
         related_to:
             - path: backend/backend_auth_rbac
-            - path: backend/backend_student_life
+            - path: backend/backend_infrastructure
     backend/backend_establishment_config/etablissement_management:
         dir_name: School Establishment Management & Configuration
         title: School Establishment Management & Configuration
@@ -184,11 +240,18 @@ modules:
         children: []
         depends_on: []
         related_to:
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_notifications_audit/notifications
             - path: backend/backend_student_academics
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_auth_rbac/auth
+            - path: shared
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_dashboard_monitoring/monitoring
             - path: backend/backend_academic_core
     backend/backend_establishment_config/system_configuration:
-        dir_name: System Configuration & Backup Management
-        title: System Configuration & Backup Management
+        dir_name: System Configuration & Parameter Management
+        title: System Configuration & Parameter Management
         scope:
             - backend/src/modules/configuration/
         source_files: []
@@ -196,6 +259,16 @@ modules:
         depends_on: []
         related_to:
             - path: backend/backend_gamification_scoring
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_student_life
+            - path: backend/backend_auth_rbac/rbac
+            - path: backend/backend_operations
+            - path: shared
+            - path: backend/backend_student_academics
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_infrastructure
+            - path: backend/backend_academic_core
+            - path: backend/backend_dashboard_monitoring/dashboard
     backend/backend_gamification_scoring:
         dir_name: Gamification & Student Scoring
         title: Gamification & Student Scoring
@@ -208,6 +281,12 @@ modules:
         related_to:
             - path: backend/backend_student_academics
             - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_student_life
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_operations
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_infrastructure
+            - path: backend/backend_academic_core
     backend/backend_infrastructure:
         dir_name: Shared Infrastructure & Configuration
         title: Shared Infrastructure & Configuration
@@ -219,18 +298,28 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: shared
-            - path: docker
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_establishment_config
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_academic_core
+            - path: backend/backend_dashboard_monitoring/monitoring
+            - path: backend/backend_student_academics
+            - path: backend/backend_operations
+            - path: backend/backend_student_life
+            - path: backend/backend_auth_rbac/rbac
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_gamification_scoring
     backend/backend_notifications_audit:
-        dir_name: Notification & Audit Compliance Module
-        title: Notification & Audit Compliance Module
+        dir_name: Notifications and Audit Modules
+        title: Notifications and Audit Modules
         scope:
             - backend/src/modules/notifications/
             - backend/src/modules/audit/
         source_files: []
         children:
-            - backend/backend_notifications_audit/notifications
             - backend/backend_notifications_audit/audit
+            - backend/backend_notifications_audit/notifications
         depends_on: []
         related_to: []
     backend/backend_notifications_audit/audit:
@@ -242,8 +331,16 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_infrastructure
             - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_dashboard_monitoring/monitoring
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_auth_rbac/rbac
+            - path: backend/backend_student_academics
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_academic_core
+            - path: backend/backend_gamification_scoring
+            - path: backend/backend_operations
     backend/backend_notifications_audit/notifications:
         dir_name: Multi-Channel Notification Delivery System
         title: Multi-Channel Notification Delivery System
@@ -255,6 +352,15 @@ modules:
         related_to:
             - path: backend/backend_operations
             - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_infrastructure
+            - path: backend/backend_dashboard_monitoring/monitoring
+            - path: backend/backend_student_academics
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_student_life
+            - path: shared
+            - path: backend/backend_auth_rbac/rbac
     backend/backend_operational_assets:
         dir_name: Operational Documentation & Tooling
         title: Operational Documentation & Tooling
@@ -280,12 +386,18 @@ modules:
         depends_on: []
         related_to:
             - path: backend/backend_notifications_audit/notifications
-            - path: backend/backend_academic_core
+            - path: backend/backend_student_life
             - path: backend/backend_dashboard_monitoring/dashboard
-            - path: backend/backend_auth_rbac
+            - path: backend/backend_academic_core
+            - path: shared
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_gamification_scoring
+            - path: backend/backend_infrastructure
+            - path: backend/backend_student_academics
+            - path: backend/backend_notifications_audit/audit
     backend/backend_student_academics:
-        dir_name: Student Academic Lifecycle & Reporting
-        title: Student Academic Lifecycle & Reporting
+        dir_name: Student Academic Management
+        title: Student Academic Management
         scope:
             - backend/src/modules/eleves/
             - backend/src/modules/notes/
@@ -295,10 +407,16 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_gamification_scoring
             - path: backend/backend_academic_core
-            - path: backend/backend_student_life
+            - path: backend/backend_gamification_scoring
+            - path: backend/backend_dashboard_monitoring/dashboard
             - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_infrastructure
+            - path: backend/backend_notifications_audit/audit
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_operations
+            - path: shared
     backend/backend_student_life:
         dir_name: Student Life Services
         title: Student Life Services
@@ -311,8 +429,15 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_student_academics
-            - path: backend/backend_establishment_config
+            - path: backend/backend_operations
+            - path: backend/backend_academic_core
+            - path: backend/backend_gamification_scoring
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_infrastructure
+            - path: backend/backend_notifications_audit/notifications
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: shared
     docker:
         dir_name: Container Orchestration & Deployment Configuration
         title: Container Orchestration & Deployment Configuration
@@ -321,15 +446,23 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend/backend_infrastructure
+        related_to: []
     shared:
-        dir_name: Shared Types, Enums, Validators & Configuration
-        title: Shared Types, Enums, Validators & Configuration
+        dir_name: Shared Types, Constants, and Validators Library
+        title: Shared Types, Constants, and Validators Library
         scope:
             - shared/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_infrastructure
+            - path: backend/backend_auth_rbac
+            - path: backend/backend_auth_rbac/auth
+            - path: backend/backend_operations
+            - path: backend/backend_dashboard_monitoring/dashboard
+            - path: backend/backend_establishment_config/etablissement_management
+            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/backend_auth_rbac/rbac
+            - path: backend/backend_student_academics
+            - path: backend/backend_student_life
+            - path: backend/backend_notifications_audit/notifications

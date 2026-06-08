@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: backend/backend_dashboard_monitoring/monitoring
+title: System Health & Application Monitoring
+scope:
+    - backend/src/modules/monitoring/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_dashboard_monitoring/dashboard
+    - path: backend/backend_notifications_audit/audit
+    - path: backend/backend_notifications_audit/notifications
+    - path: backend/backend_infrastructure
+    - path: backend/backend_auth_rbac/auth
+    - path: backend/backend_establishment_config/etablissement_management

@@ -1,4 +1,3 @@
-- **Common Utilities Layer**: Centralizes reusable logic including Zod-based DTO validation (`pagination.dto.ts`), standardized API response helpers (`api-response.util.ts`), and a global Express error handling filter (`error.filter.ts`).
-- **Configuration Management**: Uses `env.config.ts` to validate and structure environment variables via Zod schemas, providing typed access to app, DB, JWT, and Redis settings.
-- **Database Access Layer**: Configures a TypeORM `DataSource` (`data-source.ts`) with environment-aware entity/migration paths and connection pooling, exposing initialization utilities.
-- **Middleware & Interceptors**: Implements multi-tenancy filtering (`tenant.middleware.ts`) and automatic audit logging (`audit.interceptor.ts`) as Express middleware to enforce security and compliance boundaries.
+- **Common Layer**: Centralizes shared utilities including Zod-based DTOs (`pagination.dto.ts`), Express middleware (`tenant.middleware.ts`), global error handling (`error.filter.ts`), and audit interceptors.
+- **Configuration Layer**: Manages environment variables via Zod schema validation (`env.config.ts`) and constructs TypeORM DataSource options (`database.config.ts`).
+- **Database Layer**: Exposes a singleton TypeORM `AppDataSource` (`data-source.ts`) and organizes schema evolution through SQL/TS migrations and seed scripts.

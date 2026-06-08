@@ -1,6 +1,6 @@
-- Every controller instantiates its service as a module-level constant (e.g., `const service = new PersonnelService()`) and wraps route handlers in try/catch blocks that forward errors to `next(error)`.
-- All POST/PATCH routes validate request bodies using `validateDto(schema, req.body)` before passing DTOs to service methods.
-- Services obtain TypeORM repositories in their constructor via `AppDataSource.getRepository(EntityClass)` and store them as private instance properties.
-- Multi-tenancy is enforced by filtering queries with `etablissementId` — passed from controllers via `req.etablissementId` or applied as a WHERE clause in service methods.
-- Each module's `index.ts` uses barrel exports (`export * from './entities'`, etc.) to expose all public symbols from subdirectories.
-- Controllers return uniform JSON responses with `{ success: true, data: ... }` structure, optionally including `message` or `timestamp` fields.
+- Every controller route handler wraps its body in a try/catch that forwards errors to Express via `next(error)`.
+- All POST/PATCH routes validate incoming request bodies or query parameters using `validateDto(schema, req.body|req.query)` before passing data to services.
+- Services instantiate TypeORM repositories in their constructor using `AppDataSource.getRepository(EntityClass)` and store them as private instance fields.
+- Controllers export both a named constant (e.g., `personnelController`) and a default export of the Express router.
+- Each module's top-level `index.ts` uses barrel exports (`export * from './entities'`, etc.) to expose all layers uniformly.
+- Service classes provide both a class export and a singleton instance export (e.g., `export const personnelService = new PersonnelService()`).

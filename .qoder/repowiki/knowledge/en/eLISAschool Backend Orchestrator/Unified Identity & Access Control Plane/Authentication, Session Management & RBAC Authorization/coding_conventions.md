@@ -1,0 +1,5 @@
+- All controller route handlers wrap async logic in try/catch blocks and delegate errors to Express via `next(error)` for centralized error handling.
+- DTO validation is performed using `validateDto(schema, req.body)` at the controller layer before invoking service methods.
+- Services instantiate singleton instances exported as both named exports (e.g., `export const authService = new AuthService()`) and default class exports for flexible import patterns.
+- Security-sensitive operations (login, password change, permission checks) are consistently logged through `auditService` with contextual request metadata (IP, user-agent).
+- JWT payloads embed both backward-compatible single-role fields (`role`) and new multi-role/permission arrays (`roles`, `permissions`) to support gradual migration of the RBAC system.

@@ -16,11 +16,22 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 import { MembrePersonnel } from './personnel.entity';
 
+export enum StatutBulletinPaie {
+    GENERE = 'GENERE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    VALIDE = 'VALIDE',
+    PAYE = 'PAYE',
+    ANNULE = 'ANNULE',
+}
+
 @Entity('bulletins_paie')
 @Index(['membrePersonnelId'])
 @Index(['mois'])
 @Index(['annee'])
 @Index(['statut'])
+@Index(['etablissementId'])
+@Index(['membrePersonnelId', 'annee', 'mois'], { unique: true }) // Unique: 1 bulletin/mois/personne
+@Index(['etablissementId', 'annee', 'mois']) // Composite pour rapports périodiques
 export class BulletinPaie {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -59,8 +70,8 @@ export class BulletinPaie {
     @Column({ type: 'decimal', precision: 12, scale: 2 })
     salaireNet!: number;
 
-    @Column({ type: 'varchar', length: 20, default: 'GENERE' })
-    statut!: string; // GENERE, VALIDE, PAYE
+    @Column({ type: 'varchar', length: 30, default: StatutBulletinPaie.GENERE })
+    statut!: StatutBulletinPaie; // GENERE, EN_ATTENTE_VALIDATION, VALIDE, PAYE, ANNULE
 
     @Column({ type: 'date', nullable: true })
     datePaiement?: Date;

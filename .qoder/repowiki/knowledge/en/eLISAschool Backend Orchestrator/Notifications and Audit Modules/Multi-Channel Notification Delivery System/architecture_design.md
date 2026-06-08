@@ -1,0 +1,7 @@
+- Layered structure: controllers (Express routers) → services (business logic + TypeORM repos) → providers (channel-specific implementations) → entities/DTOs.
+- Core abstraction is `INotificationProvider` interface (`providers/interfaces/notification-provider.interface.ts`) defining `envoyer`, `testerConfiguration`, `initialiser`, `estConfiguré`; all channel providers (email, SMS, push, in-app) implement it.
+- `ProviderRegistry` (`providers/provider-registry.ts`) is a singleton that registers providers by type and executes `sendWithFallback` — iterates configured providers for a notification type until one succeeds.
+- `NotificationsService` (`services/notifications.service.ts`) orchestrates CRUD, read-status tracking, bulk creation, scheduled dispatch, and delegates actual sending to `providerRegistry.sendWithFallback`.
+- Controllers (`controllers/notifications.controller.ts`, `controllers/notification-provider.controller.ts`) use Express Router with `authMiddleware` applied globally; admin-only routes guard write operations.
+- Scheduled tasks are defined externally in `cron-jobs.ts` using `node-cron`, invoking service methods for payment reminders, scheduled notifications, and cleanup.
+- Module entry point (`index.ts`) re-exports entities, DTOs, services, and controllers for external consumption.

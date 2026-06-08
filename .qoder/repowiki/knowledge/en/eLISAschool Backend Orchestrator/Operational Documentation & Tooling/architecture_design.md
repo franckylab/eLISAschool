@@ -1,3 +1,3 @@
-- **Documentation Layer**: Centralizes system architecture and migration guides in `backend/docs/`, covering dynamic dashboard RBAC resolution and v2.0 pagination standards.
-- **Tooling Layer**: Implements executable Bash and TypeScript scripts in `backend/scripts/` for database index management (`run-indexes.sh`) and automated migration verification (`verify-pagination.sh`).
-- **Testing Layer**: Contains isolated unit tests in `backend/test/unit/` validating core utilities like `pagination.util` and `redis.service` to ensure reliability of shared infrastructure components.
+- **Documentation Layer**: Centralizes system architecture, API contracts, and integration guides in `backend/docs/` (e.g., `DASHBOARD-SYSTEM.md`, `pagination-guide.md`).
+- **Tooling Layer**: Contains executable shell and TypeScript scripts in `backend/scripts/` for database maintenance, index analysis, and migration verification (e.g., `run-indexes.sh`, `verify-pagination.sh`).
+- **Testing Layer**: Hosts unit tests in `backend/test/unit/` for core utilities like pagination logic and Redis service interactions, ensuring reliability of shared components.

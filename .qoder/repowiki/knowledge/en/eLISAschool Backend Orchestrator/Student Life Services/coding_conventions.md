@@ -1,4 +1,5 @@
-- Each sub-module exports a singleton service instance alongside the class (e.g. export const cantineService = new CantineService()) for direct import without manual instantiation.
-- All route handlers wrap business logic in try/catch blocks that delegate errors to Express next(error), relying on a global error filter for consistent response formatting.
-- Every HTTP response includes a uniform envelope with success: true, data payload, and an ISO timestamp generated inline via new Date().toISOString().
-- Services read module-specific feature flags and thresholds from centralized configuration using getParamBoolean/getParamNumber with sensible defaults, enabling runtime toggling without code changes.
+- Every controller handler wraps its async logic in a try/catch block that forwards errors to Express's `next(error)` middleware, returning a uniform JSON response shape `{ success: true, data: ..., timestamp: ... }` on success.
+- Each sub-module defines Zod schemas for all DTOs in a dedicated dto file, then derives TypeScript types via `z.infer<typeof schemaName>` for compile-time type safety.
+- Services obtain TypeORM repositories in their constructor via `AppDataSource.getRepository(EntityClass)` and store them as private instance fields for reuse across methods.
+- All entities include an `etablissementId` column with a `@ManyToOne` relation to `Etablissement` and a corresponding `@Index` decorator for multi-tenancy query performance.
+- Module-level index.ts files re-export all public symbols from entities, dto, services, and controllers subdirectories using `export * from './...'` barrel patterns.

@@ -1,0 +1,1 @@
+Uses TypeORM for data persistence with JSON/text columns for flexible parameter storage, Express.js for REST API endpoints, and Node.js EventEmitter for internal pub/sub messaging.

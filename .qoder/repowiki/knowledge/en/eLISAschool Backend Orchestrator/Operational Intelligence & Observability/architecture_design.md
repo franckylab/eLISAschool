@@ -1,0 +1,3 @@
+- Both modules operate as independent NestJS feature modules with standard controller-service architectures, exposing distinct API surfaces for dashboard widgets and system metrics.
+- Isolation is enforced through separate module boundaries (`dashboard/` and `monitoring/`) with no direct cross-module service dependencies visible in the entry points.
+- The modules are wired into the application independently, likely imported by a shared app or core module, serving complementary observability and user-facing data aggregation roles.

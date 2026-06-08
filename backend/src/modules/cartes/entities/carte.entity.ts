@@ -4,6 +4,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { ModeleCarte } from './modele-carte.entity';
 
 export enum TypeCarte {
     SCOLAIRE = 'SCOLAIRE',
@@ -61,6 +62,20 @@ export class Carte {
 
     @Column({ type: 'simple-json', nullable: true })
     metadata?: Record<string, any>;
+
+    // ==================================
+    // Champs améliorés (v2.0)
+    // ==================================
+
+    @Column({ type: 'uuid', nullable: true })
+    modeleCarteId?: string;
+
+    @ManyToOne(() => ModeleCarte, { nullable: true })
+    @JoinColumn({ name: 'modeleCarteId' })
+    modeleCarte?: ModeleCarte;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    categorieTitulaire?: string; // 'ELEVE', 'PERSONNEL', 'ENSEIGNANT', 'RESPONSABLE'
 
     /**
      * Établissement de la carte (multi-tenancy)

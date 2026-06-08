@@ -43,6 +43,6 @@ export class GroupeAdmin {
     @Column({ type: 'uuid', nullable: true })
     assignePar?: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'date_assignation' })
     dateAssignation!: Date;
 }

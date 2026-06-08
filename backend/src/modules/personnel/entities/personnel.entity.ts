@@ -83,6 +83,47 @@ export class MembrePersonnel {
     diplomes?: string;
 
     /**
+     * Champs d'identification additionnels (v2.0)
+     */
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    posteExact?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    service?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    responsableHierarchiqueId?: string;
+
+    @ManyToOne(() => MembrePersonnel, { nullable: true })
+    @JoinColumn({ name: 'responsableHierarchiqueId' })
+    responsableHierarchique?: MembrePersonnel;
+
+    @Column({ type: 'simple-json', nullable: true })
+    competences?: string[];
+
+    // Spécifique enseignant
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    specialitePrincipale?: string;
+
+    @Column({ type: 'int', nullable: true })
+    anneesExperience?: number;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    educationNiveau?: string; // LICENCE, MASTER, DOCTORAT, AUTRE
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    etablissementOrigine?: string;
+
+    @Column({ type: 'simple-json', nullable: true })
+    disponibilites?: Record<string, any>;
+
+    @Column({ type: 'int', nullable: true })
+    heuresMaxSemaine?: number;
+
+    @Column({ type: 'simple-json', nullable: true })
+    horairesTravail?: Record<string, any>;
+
+    /**
      * Établissement du membre du personnel (multi-tenancy)
      */
     @Column({ type: 'uuid' })

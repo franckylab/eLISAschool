@@ -1,0 +1,6 @@
+- Entry point at `shared/src/index.ts` re-exports all sub-modules via barrel exports (`enums`, `constants`, `types`, `validators`, `config`).
+- Five domain sub-packages under `src/`: `enums/` (roles, statuses, modules), `constants/` (app limits, themes), `types/` (API response shapes, user types), `validators/` (Zod auth schemas), `config/` (module registry with access-control metadata).
+- Each sub-package has its own `index.ts` barrel file that re-exports constituent files, enabling selective imports.
+- The config registry (`config.registry.ts`) is the largest artifact, defining a `MODULE_REGISTRY` mapping every `ModuleName` to a `ModuleConfig` with roles, permissions, dependencies, and default settings — serving as the single source of truth for module-level authorization and feature flags.
+- Validators use Zod (`zod` dependency) with French field names, referencing constants from `LIMITS` for cross-cutting constraints like password length.
+- Build output targets CommonJS (`tsconfig.json`: `module: commonjs`, `outDir: ./dist`) with declaration files enabled for type distribution.

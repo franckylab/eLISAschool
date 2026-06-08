@@ -1,5 +1,0 @@
-- **Modular Structure**: Composed of four distinct sub-modules (`eleves`, `notes`, `bulletins`, `orientation`), each following a strict Controller-Service-Entity-DTO layered architecture.
-- **Entry Points**: Each sub-module exposes an Express `Router` via its controller (e.g., `eleves.controller.ts`) and aggregates exports through a root `index.ts`.
-- **Data Layer**: Uses TypeORM entities with explicit multi-tenancy support (`etablissementId`) and complex relationships (e.g., `Note` linking to `Eleve`, `Matiere`, `Periode`).
-- **Service Logic**: Services handle business rules, including validation workflows (`validationWorkflowService`), audit logging (`auditService`), and cross-module dependencies (e.g., `bulletins.service` consuming `notesBatchLoaderService`).
-- **Performance Optimization**: The `notes` module includes a specialized `NotesBatchLoaderService` to resolve N+1 query problems during bulk report card generation by batching average calculations.

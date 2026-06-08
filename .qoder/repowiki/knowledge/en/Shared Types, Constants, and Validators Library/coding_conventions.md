@@ -1,0 +1,6 @@
+- Every sub-package directory provides an index.ts barrel file that re-exports all sibling files using `export * from './...'` syntax.
+- All constant objects are declared with `as const` to enforce immutability and literal type inference.
+- Each implementation file ends with a default export object aggregating all named exports from that file.
+- Zod validator schemas use French field names (e.g., `motDePasse`, `confirmationMotDePasse`) consistent with the application's French-language convention.
+- Enum values use SCREAMING_SNAKE_CASE string literals matching the enum member name (e.g., `SUPER_ADMIN = 'SUPER_ADMIN'`).
+- Permission strings follow a colon-separated resource-action pattern (e.g., `'users:view'`, `'notes:create'`, `'finances:scolarite:config'`).

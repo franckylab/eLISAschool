@@ -1,0 +1,1 @@
+Orchestrates runtime authentication and session management with dynamic RBAC policy enforcement through shared entities and cross-module cache invalidation.

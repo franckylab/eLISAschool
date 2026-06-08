@@ -1,5 +1,0 @@
-- All service classes instantiate a singleton export alongside the class (e.g., `export const authService = new AuthService(); export default AuthService;`) enabling both dependency injection and direct import patterns.
-- Controllers wrap every route handler in try/catch blocks delegating errors to Express `next(error)` for centralized error handling via `AppError`.
-- DTO validation uses a shared `validateDto(schema, req.body)` utility that applies Zod schemas imported from `@shared/validators`, keeping validation logic outside controllers.
-- Security-sensitive operations (login, password change, permission denial) trigger audit log entries via `auditService.log()` or specialized helpers like `logLogin()`, `logAccessDenied()`, capturing user ID, action type, severity, IP, and user agent.
-- Middleware and guard functions attach a typed `utilisateur` object to the Express `Request` interface, carrying `id`, `email`, `role`, `roles[]`, `permissions[]`, and optional `etablissementId` / `etablissements[]` for downstream authorization checks.

@@ -1,1 +1,0 @@
-Zod for runtime DTO validation (see `configuration.dto.ts`, `backup.dto.ts`); TypeORM repositories for entity persistence; EventEmitter pattern via `configurationListener` for intra-module event propagation.

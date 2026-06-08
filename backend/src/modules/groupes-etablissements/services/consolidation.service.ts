@@ -194,12 +194,13 @@ export class ConsolidationService {
         // Agrégation SQL côté DB
         const rawResults = await this.eleveRepo
             .createQueryBuilder('e')
+            .innerJoin('utilisateurs', 'u', 'e.utilisateurId = u.id')
             .select('e.etablissementId', 'etablissementId')
             .addSelect('COUNT(e.id)', 'total')
             .addSelect('COUNT(CASE WHEN e.statut = \'ACTIF\' THEN 1 END)', 'actifs')
             .addSelect('COUNT(CASE WHEN e.statut = \'INACTIF\' THEN 1 END)', 'inactifs')
-            .addSelect('COUNT(CASE WHEN e.genre = \'M\' THEN 1 END)', 'males')
-            .addSelect('COUNT(CASE WHEN e.genre = \'F\' THEN 1 END)', 'females')
+            .addSelect('COUNT(CASE WHEN u.genre = \'M\' THEN 1 END)', 'males')
+            .addSelect('COUNT(CASE WHEN u.genre = \'F\' THEN 1 END)', 'females')
             .where('e.etablissementId IN (:...etabIds)', { etabIds })
             .groupBy('e.etablissementId')
             .getRawMany();

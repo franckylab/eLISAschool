@@ -1,4 +1,4 @@
-- Centralized Express application (`app.ts`) mounts decoupled domain modules under a unified `/api` prefix, ensuring consistent routing and lifecycle management.
-- Cross-cutting concerns are enforced via global middleware: `tenantMiddleware` injects establishment context for data isolation, while `audit.interceptor` provides automatic, non-intrusive audit logging for all mutating operations.
-- Shared infrastructure in `src/common` supplies standardized response formatting (`api-response.util`), error handling, and pagination logic, guaranteeing uniform API behavior across all child modules.
-- Dependency injection and module exports (`src/modules/index.ts`) facilitate loose coupling, allowing domain modules to rely on shared services (e.g., auth, notifications) without direct circular dependencies.
+- Centralized Express application (`app.ts`) mounts all child module routers under a unified `/api` prefix, applying global security (Helmet, CORS, Rate Limiting) and parsing middleware.
+- Cross-cutting concerns are enforced via shared middleware: `tenantMiddleware` injects establishment context for multi-tenancy, while `requireModuleActive` dynamically gates access to non-critical modules based on per-establishment configuration.
+- Observability and audit trails are standardized through `audit.interceptor` and `requestLogger`, which automatically capture CRUD operations and request metadata without requiring manual instrumentation in child modules.
+- Shared infrastructure services (Redis, Database, Logger) and common utilities (Pagination, Error Handling, API Response formatting) are provided via the `src/common` and `src/config` packages, ensuring consistent behavior and reducing duplication across child modules.

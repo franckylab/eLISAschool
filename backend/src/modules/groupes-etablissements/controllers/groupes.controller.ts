@@ -20,7 +20,7 @@ import {
 import { authMiddleware } from '@modules/auth/middlewares';
 import { requireRoles } from '@modules/auth/middlewares/role.middleware';
 import { requireGroupeAccess } from '../guards/groupe-access.guard';
-import { Role, Permission } from '@shared/enums/roles.enum';
+import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
 
@@ -213,7 +213,8 @@ router.get('/:id/rapports/finances', requireGroupeAccess, async (req: Request, r
 
 /**
  * POST /api/groupes/:id/etablissements
- * Ajoute un établissement au groupe (nécessite GROUPES_ETABLISSEMENTS_MANAGE)
+ * Ajoute un ou plusieurs établissements au groupe (nécessite GROUPES_ETABLISSEMENTS_MANAGE)
+ * Supporte l'ajout multiple: { "etablissementIds": ["uuid1", "uuid2"] }
  */
 router.post(
     '/:id/etablissements',
@@ -222,13 +223,21 @@ router.post(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(addEtablissementSchema, req.body);
+            
+            // Supporter etablissementId seul OU etablissementIds
+            const idsToAdd = dto.etablissementIds || 
+                (dto.etablissementId ? [dto.etablissementId] : []);
+            
             await groupesService.addEtablissements(
                 req.params.id,
-                [dto.etablissementId],
+                idsToAdd,
                 req.utilisateur!.id
             );
 
-            res.json({ success: true, message: 'Établissement ajouté au groupe' });
+            res.json({ 
+                success: true, 
+                message: `${idsToAdd.length} établissement(s) ajouté(s) au groupe` 
+            });
         } catch (error) {
             next(error);
         }

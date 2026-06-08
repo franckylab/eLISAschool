@@ -1,0 +1,1 @@
+Handles user authentication, JWT-based session management, multi-tenant establishment switching, and fine-grained role-based access control with dynamic permission resolution.

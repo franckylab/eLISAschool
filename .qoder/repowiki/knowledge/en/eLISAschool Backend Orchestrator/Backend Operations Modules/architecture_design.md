@@ -1,5 +1,6 @@
-- Each module follows a strict four-layer structure: controllers (Express routers), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod schemas). Entry points are `index.ts` files that re-export all layers via barrel exports.
-- Controllers handle HTTP routing, authentication middleware (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`), DTO validation via `validateDto()`, and error forwarding to Express error handlers.
-- Services encapsulate business rules, interact with TypeORM repositories obtained from `AppDataSource`, and integrate cross-cutting concerns like centralized configuration (`@modules/configuration/utils/config.helper`), validation workflows (`validationWorkflowService`), and logging (`logger`).
-- Entities define TypeORM models with UUID primary keys, multi-tenancy support via `etablissementId`, and enum-based status fields. DTOs use Zod schemas for input validation, often extending shared pagination/search schemas from `@common/dto/pagination.dto`.
-- Dependency direction flows inward: controllers → services → entities/DTOs, with external dependencies on auth middlewares, common utilities, and the configuration/validation-workflow modules.
+- Each sub-module (personnel, materiel, impressions, requetes, messagerie) follows a strict four-layer structure: controllers (Express routers), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod validation schemas).
+- Module entry points (`index.ts`) re-export all layers via barrel exports, enabling clean imports from `@modules/<name>`.
+- Controllers delegate to service instances; services obtain repositories through `AppDataSource.getRepository()` in constructors.
+- Cross-cutting concerns are handled by shared middlewares (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`) imported from `@modules/auth/middlewares`.
+- Validation is centralized via `validateDto()` from `@common/utils`, applied to Zod schemas defined in each module's `dto/` directory.
+- The personnel module is the most complex, containing eight domain controllers/services covering absences, payroll bulletins, contracts, evaluations, teaching hours, dashboard, programme progression, and core personnel CRUD.
