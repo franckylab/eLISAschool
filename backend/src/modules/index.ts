@@ -24,6 +24,7 @@ export * from './requetes';
 export * from './cantine';
 export * from './transport';
 export * from './materiel';
+export * from './finances';
 
 // Modules activités
 export * from './clubs';
@@ -36,6 +37,7 @@ export * from './monitoring';
 export * from './audit';
 export * from './dashboard';
 export * from './validation-workflow';
+export * from './groupes-etablissements';
 
 // Modules complémentaires
 export * from './orientation';
@@ -52,3 +54,4 @@ export * from './matieres';
 export * from './periodes';
 export * from './eleves';
 export * from './bulletins';
+export * from './responsables-eleves';

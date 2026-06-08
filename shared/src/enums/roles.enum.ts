@@ -439,6 +439,19 @@ export enum Permission {
     CARTES_IMPORT = 'cartes:import',
 
     // ==================================
+    // FINANCES
+    // ==================================
+    FINANCES_VIEW = 'finances:view',
+    FINANCES_MANAGE = 'finances:manage',
+    FINANCES_PAIEMENTS_CREATE = 'finances:paiements:create',
+    FINANCES_PAIEMENTS_EDIT = 'finances:paiements:edit',
+    FINANCES_PAIEMENTS_DELETE = 'finances:paiements:delete',
+    FINANCES_FACTURES_CREATE = 'finances:factures:create',
+    FINANCES_FACTURES_EDIT = 'finances:factures:edit',
+    FINANCES_STATISTIQUES_VIEW = 'finances:statistiques:view',
+    FINANCES_EXPORT = 'finances:export',
+
+    // ==================================
     // CLUBS & GAMIFICATION
     // ==================================
     CLUBS_VIEW = 'clubs:view',
@@ -613,6 +626,95 @@ export enum Permission {
     VALIDATION_ANNEES_SCOLAIRES_LEVEL2 = 'validation:annees_scolaires:level2',
     VALIDATION_ETABLISSEMENT_LEVEL1 = 'validation:etablissement:level1',
     VALIDATION_ETABLISSEMENT_LEVEL2 = 'validation:etablissement:level2',
+
+    // ==================================
+    // FINANCES - SCOLARITÉ (12 permissions)
+    // ==================================
+    FINANCES_SCOLARITE_VIEW = 'finances:scolarite:view',
+    FINANCES_SCOLARITE_CONFIG = 'finances:scolarite:config',
+    FINANCES_PAIEMENT_CREATE = 'finances:paiement:create',
+    FINANCES_PAIEMENT_VALIDATE = 'finances:paiement:validate',
+    FINANCES_PAIEMENT_REFUND = 'finances:paiement:refund',
+    FINANCES_PAIEMENT_DELETE = 'finances:paiement:delete',
+    FINANCES_RECU_GENERATE = 'finances:recu:generate',
+    FINANCES_RECU_DOWNLOAD = 'finances:recu:download',
+    FINANCES_RELANCE_SEND = 'finances:relance:send',
+    FINANCES_ETAT_COMPTE_VIEW = 'finances:etat-compte:view',
+    FINANCES_REMISE_GRANT = 'finances:remise:grant',
+    FINANCES_ECHEANCIER_GENERATE = 'finances:echeancier:generate',
+
+    // ==================================
+    // FINANCES - DÉPENSES (18 permissions)
+    // ==================================
+    FINANCES_DEPENSES_VIEW = 'finances:depenses:view',
+    FINANCES_DEPENSES_CREATE = 'finances:depenses:create',
+    FINANCES_DEPENSES_EDIT = 'finances:depenses:edit',
+    FINANCES_DEPENSES_VALIDATE = 'finances:depenses:validate',
+    FINANCES_DEPENSES_PAYER = 'finances:depenses:payer',
+    FINANCES_DEPENSES_DELETE = 'finances:depenses:delete',
+    FINANCES_DEPENSES_EXPORT = 'finances:depenses:export',
+    FINANCES_DEPENSES_CONFIG = 'finances:depenses:config',
+    FINANCES_DEPENSES_RAPPORTS = 'finances:depenses:rapports',
+    FINANCES_DEMANDE_CREATE = 'finances:demande:create',
+    FINANCES_DEMANDE_VALIDATE = 'finances:demande:validate',
+    FINANCES_DEMANDE_REJECT = 'finances:demande:reject',
+    FINANCES_DEMANDE_VIEW_ALL = 'finances:demande:view-all',
+    FINANCES_BON_COMMANDE_CREATE = 'finances:bon-commande:create',
+    FINANCES_BON_COMMANDE_VALIDATE = 'finances:bon-commande:validate',
+    FINANCES_FOURNISSEURS_VIEW = 'finances:fournisseurs:view',
+    FINANCES_FOURNISSEURS_MANAGE = 'finances:fournisseurs:manage',
+    FINANCES_FACTURE_VALIDATE = 'finances:facture:validate',
+
+    // ==================================
+    // FINANCES - COMPTABILITÉ (7 permissions)
+    // ==================================
+    FINANCES_COMPTABILITE_VIEW = 'finances:comptabilite:view',
+    FINANCES_COMPTABILITE_ECRIRE = 'finances:comptabilite:ecrire',
+    FINANCES_COMPTABILITE_VALIDER = 'finances:comptabilite:valider',
+    FINANCES_COMPTABILITE_ANNULER = 'finances:comptabilite:annuler',
+    FINANCES_COMPTABILITE_BALANCE = 'finances:comptabilite:balance',
+    FINANCES_COMPTABILITE_RAPPORT = 'finances:comptabilite:rapport',
+    FINANCES_COMPTABILITE_EXPORT = 'finances:comptabilite:export',
+
+    // ==================================
+    // FINANCES - TRÉSORERIE (6 permissions)
+    // ==================================
+    FINANCES_TRESORERIE_VIEW = 'finances:tresorerie:view',
+    FINANCES_TRESORERIE_MANAGE = 'finances:tresorerie:manage',
+    FINANCES_CAISSE_ENTRER = 'finances:caisse:entrer',
+    FINANCES_CAISSE_SORTIR = 'finances:caisse:sortir',
+    FINANCES_CAISSE_CLOTURER = 'finances:caisse:cloturer',
+    FINANCES_BANQUE_VIRER = 'finances:banque:virer',
+
+    // ==================================
+    // FINANCES - BUDGET (8 permissions)
+    // ==================================
+    FINANCES_BUDGET_VIEW = 'finances:budget:view',
+    FINANCES_BUDGET_CREATE = 'finances:budget:create',
+    FINANCES_BUDGET_VALIDATE = 'finances:budget:validate',
+    FINANCES_BUDGET_EDIT = 'finances:budget:edit',
+    FINANCES_BUDGET_CLOTURER = 'finances:budget:cloturer',
+    FINANCES_BUDGET_RAPPORTS = 'finances:budget:rapports',
+    FINANCES_BUDGET_ENGAGER = 'finances:budget:engager',
+    FINANCES_BUDGET_CONSOMMER = 'finances:budget:consommer',
+
+    // ==================================
+    // FINANCES - DASHBOARD & RAPPORTS (4 permissions)
+    // ==================================
+    FINANCES_DASHBOARD_VIEW = 'finances:dashboard:view',
+    FINANCES_DASHBOARD_EXPORT = 'finances:dashboard:export',
+    FINANCES_DASHBOARD_KPI = 'finances:dashboard:kpi',
+    FINANCES_RAPPORTS_GENERER = 'finances:rapports:generer',
+
+    // ==================================
+    // GROUPES & CONSOLIDATION (6 permissions)
+    // ==================================
+    GROUPES_VIEW = 'groupes:view',
+    GROUPES_MANAGE = 'groupes:manage',
+    GROUPES_DASHBOARD_CONSOLIDE = 'groupes:dashboard:consolide',
+    GROUPES_RAPPORTS_SCOLARITE = 'groupes:rapports:scolarite',
+    GROUPES_RAPPORTS_FINANCES = 'groupes:rapports:finances',
+    GROUPES_ETABLISSEMENTS_MANAGE = 'groupes:etablissements:manage',
 }
 
 /**
@@ -647,6 +749,71 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.VALIDATION_CARTES_LEVEL1, Permission.VALIDATION_CARTES_LEVEL2,
         Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL1, Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL2,
         Permission.VALIDATION_ETABLISSEMENT_LEVEL1, Permission.VALIDATION_ETABLISSEMENT_LEVEL2,
+        // Finances - Configuration complète
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_SCOLARITE_CONFIG,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_DEPENSES_CONFIG,
+        Permission.FINANCES_DEPENSES_RAPPORTS,
+        Permission.FINANCES_BON_COMMANDE_VALIDATE,
+        Permission.FINANCES_COMPTABILITE_VIEW,
+        Permission.FINANCES_COMPTABILITE_VALIDER,
+        Permission.FINANCES_TRESORERIE_VIEW,
+        Permission.FINANCES_BUDGET_VIEW,
+        Permission.FINANCES_BUDGET_CREATE,
+        Permission.FINANCES_BUDGET_EDIT,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.FINANCES_RAPPORTS_GENERER,
+    ],
+
+    [Role.COMPTABLE]: [
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_SCOLARITE_CONFIG,
+        Permission.FINANCES_PAIEMENT_CREATE,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_PAIEMENT_REFUND,
+        Permission.FINANCES_RECU_GENERATE,
+        Permission.FINANCES_RECU_DOWNLOAD,
+        Permission.FINANCES_RELANCE_SEND,
+        Permission.FINANCES_ETAT_COMPTE_VIEW,
+        Permission.FINANCES_REMISE_GRANT,
+        Permission.FINANCES_ECHEANCIER_GENERATE,
+        Permission.FINANCES_DEPENSES_VIEW,
+        Permission.FINANCES_DEPENSES_CREATE,
+        Permission.FINANCES_DEPENSES_EDIT,
+        Permission.FINANCES_DEPENSES_VALIDATE,
+        Permission.FINANCES_DEPENSES_PAYER,
+        Permission.FINANCES_DEPENSES_EXPORT,
+        Permission.FINANCES_DEPENSES_RAPPORTS,
+        Permission.FINANCES_DEMANDE_CREATE,
+        Permission.FINANCES_DEMANDE_VALIDATE,
+        Permission.FINANCES_DEMANDE_VIEW_ALL,
+        Permission.FINANCES_BON_COMMANDE_CREATE,
+        Permission.FINANCES_BON_COMMANDE_VALIDATE,
+        Permission.FINANCES_FOURNISSEURS_VIEW,
+        Permission.FINANCES_FOURNISSEURS_MANAGE,
+        Permission.FINANCES_FACTURE_VALIDATE,
+        Permission.FINANCES_COMPTABILITE_VIEW,
+        Permission.FINANCES_COMPTABILITE_ECRIRE,
+        Permission.FINANCES_COMPTABILITE_VALIDER,
+        Permission.FINANCES_COMPTABILITE_BALANCE,
+        Permission.FINANCES_COMPTABILITE_RAPPORT,
+        Permission.FINANCES_COMPTABILITE_EXPORT,
+        Permission.FINANCES_TRESORERIE_VIEW,
+        Permission.FINANCES_TRESORERIE_MANAGE,
+        Permission.FINANCES_CAISSE_ENTRER,
+        Permission.FINANCES_CAISSE_SORTIR,
+        Permission.FINANCES_BANQUE_VIRER,
+        Permission.FINANCES_BUDGET_VIEW,
+        Permission.FINANCES_BUDGET_CREATE,
+        Permission.FINANCES_BUDGET_EDIT,
+        Permission.FINANCES_BUDGET_ENGAGER,
+        Permission.FINANCES_BUDGET_CONSOMMER,
+        Permission.FINANCES_BUDGET_RAPPORTS,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.FINANCES_DASHBOARD_EXPORT,
+        Permission.FINANCES_DASHBOARD_KPI,
+        Permission.FINANCES_RAPPORTS_GENERER,
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
@@ -672,6 +839,43 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.VALIDATION_MATERIEL_LEVEL1, Permission.VALIDATION_MATERIEL_LEVEL2,
         Permission.VALIDATION_CARTES_LEVEL1, Permission.VALIDATION_CARTES_LEVEL2,
         Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL1, Permission.VALIDATION_ANNEES_SCOLAIRES_LEVEL2,
+        // Finances (18 permissions)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_SCOLARITE_CONFIG,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_PAIEMENT_REFUND,
+        Permission.FINANCES_RECU_DOWNLOAD,
+        Permission.FINANCES_ETAT_COMPTE_VIEW,
+        Permission.FINANCES_DEPENSES_VIEW,
+        Permission.FINANCES_DEPENSES_CREATE,
+        Permission.FINANCES_DEPENSES_EDIT,
+        Permission.FINANCES_DEPENSES_VALIDATE,
+        Permission.FINANCES_DEPENSES_EXPORT,
+        Permission.FINANCES_DEPENSES_RAPPORTS,
+        Permission.FINANCES_DEMANDE_CREATE,
+        Permission.FINANCES_DEMANDE_VALIDATE,
+        Permission.FINANCES_DEMANDE_REJECT,
+        Permission.FINANCES_DEMANDE_VIEW_ALL,
+        Permission.FINANCES_BON_COMMANDE_VALIDATE,
+        Permission.FINANCES_FOURNISSEURS_VIEW,
+        Permission.FINANCES_FACTURE_VALIDATE,
+        Permission.FINANCES_COMPTABILITE_VIEW,
+        Permission.FINANCES_COMPTABILITE_VALIDER,
+        Permission.FINANCES_COMPTABILITE_BALANCE,
+        Permission.FINANCES_COMPTABILITE_RAPPORT,
+        Permission.FINANCES_TRESORERIE_VIEW,
+        Permission.FINANCES_CAISSE_SORTIR,
+        Permission.FINANCES_BUDGET_VIEW,
+        Permission.FINANCES_BUDGET_VALIDATE,
+        Permission.FINANCES_BUDGET_RAPPORTS,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.FINANCES_DASHBOARD_KPI,
+        Permission.FINANCES_RAPPORTS_GENERER,
+        // Groupes & Consolidation
+        Permission.GROUPES_VIEW,
+        Permission.GROUPES_DASHBOARD_CONSOLIDE,
+        Permission.GROUPES_RAPPORTS_SCOLARITE,
+        Permission.GROUPES_RAPPORTS_FINANCES,
     ],
 
     [Role.ENSEIGNANT]: [

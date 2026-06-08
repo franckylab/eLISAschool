@@ -72,8 +72,8 @@ export async function getParamArray<T = string>(cle: string, defaultValue: T[] =
 /**
  * Vérifie si un module est actif
  */
-export async function isModuleActive(moduleNom: string): Promise<boolean> {
-    return configurationService.isModuleActive(moduleNom);
+export async function isModuleActive(moduleNom: string, etablissementId?: string): Promise<boolean> {
+    return configurationService.isModuleActive(moduleNom, etablissementId);
 }
 
 /**

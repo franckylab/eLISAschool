@@ -1,1 +1,7 @@
 export * from './personnel.dto';
+export * from './contrat.dto';
+export * from './heure-cours.dto';
+export * from './absence-personnel.dto';
+export * from './evaluation.dto';
+export * from './progression-programme.dto';
+export * from './bulletin-paie.dto';

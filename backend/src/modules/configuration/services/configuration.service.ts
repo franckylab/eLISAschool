@@ -42,6 +42,7 @@ interface ConfigCache {
     app: ConfigurationApp | null;
     modules: Map<string, ConfigurationModule>;
     parametres: Map<string, any>;
+    modulesActifs: Map<string, { value: boolean; expiry: number }>;
     lastRefresh: number;
 }
 
@@ -60,8 +61,13 @@ export class ConfigurationService {
         app: null,
         modules: new Map(),
         parametres: new Map(),
+        modulesActifs: new Map(),
         lastRefresh: 0,
     };
+
+    // Compteur d'erreurs DB pour monitoring
+    private dbErrorCount = 0;
+    private readonly MAX_DB_ERRORS = 5;
 
     constructor() {
         this.configAppRepository = AppDataSource.getRepository(ConfigurationApp);
@@ -220,14 +226,50 @@ export class ConfigurationService {
         return config;
     }
 
-    async toggleModule(moduleNom: string, actif: boolean, utilisateurId?: string, req?: Request): Promise<ConfigurationApp> {
-        const config = await this.getConfigApp();
-        const ancienEtat = config.modulesActifs[moduleNom];
+    async toggleModule(
+        moduleNom: string,
+        actif: boolean,
+        etablissementId?: string,
+        utilisateurId?: string,
+        req?: Request
+    ): Promise<{ success: boolean; message: string; modulesAutoActive?: string[] }> {
+        // Validation: module existe dans le registre
+        const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+        if (!registryConfig) {
+            throw new AppError(
+                `Module "${moduleNom}" non reconnu. Modules valides: ${Object.keys(MODULE_REGISTRY).join(', ')}`,
+                400,
+                'INVALID_MODULE'
+            );
+        }
 
-        config.modulesActifs[moduleNom] = actif;
-        await this.configAppRepository.save(config);
-        this.invalidateCache('app');
+        const modulesAutoActivés: string[] = [];
 
+        // 1. Vérifier les dépendances (avec détection de cycles)
+        const verification = await this.verifierDependances(moduleNom, actif, etablissementId, new Set());
+        if (!verification.valide) {
+            throw new AppError(
+                `Impossible ${actif ? "d'activer" : 'de désactiver'} le module: ${verification.erreurs.join(', ')}`,
+                400,
+                actif ? 'DEPENDENCIES_NOT_MET' : 'DEPENDENT_MODULES_ACTIVE'
+            );
+        }
+        modulesAutoActivés.push(...verification.modulesAutoActivés);
+
+        // 2. Récupérer l'ancien état
+        const ancienEtat = await this.isModuleActive(moduleNom, etablissementId);
+
+        // 3. Écrire dans EtablissementConfig (priorité) ou ConfigurationApp (fallback)
+        if (etablissementId) {
+            await this.toggleModuleEtablissement(moduleNom, actif, etablissementId);
+        } else {
+            await this.toggleModuleApp(moduleNom, actif);
+        }
+
+        // 4. Synchroniser ConfigurationModule.actif
+        await this.syncConfigurationModule(moduleNom, actif, etablissementId);
+
+        // 5. Historique
         await this.historyService.logAction({
             utilisateurId,
             action: ActionConfiguration.UPDATE,
@@ -239,10 +281,70 @@ export class ConfigurationService {
             req,
         });
 
-        this.emitChange(ActionConfiguration.UPDATE, CibleConfiguration.MODULE, undefined, moduleNom, { actif: ancienEtat }, { actif }, utilisateurId);
+        // 6. Invalidation granulaire du cache
+        this.invalidateModuleCache(moduleNom, etablissementId);
+        modulesAutoActivés.forEach(dep => this.invalidateModuleCache(dep, etablissementId));
 
-        logger.info(`Module ${moduleNom} ${actif ? 'activé' : 'désactivé'}`);
-        return config;
+        // 7. Événement
+        this.emitChange(
+            ActionConfiguration.UPDATE,
+            CibleConfiguration.MODULE,
+            undefined,
+            moduleNom,
+            { actif: ancienEtat },
+            { actif },
+            utilisateurId
+        );
+
+        logger.info(`Module ${moduleNom} ${actif ? 'activé' : 'désactivé'}${etablissementId ? ` (établissement: ${etablissementId})` : ''}`);
+
+        return {
+            success: true,
+            message: `Module ${moduleNom} ${actif ? 'activé' : 'désactivé'}`,
+            modulesAutoActive: modulesAutoActivés.length > 0 ? modulesAutoActivés : undefined,
+        };
+    }
+
+    private async toggleModuleEtablissement(moduleNom: string, actif: boolean, etablissementId: string): Promise<void> {
+        const configRepo = AppDataSource.getRepository('EtablissementConfig');
+        let config = await configRepo.findOne({ where: { etablissementId } });
+        
+        if (!config) {
+            config = configRepo.create({ etablissementId, modulesActifs: {} });
+        }
+
+        if (!config.modulesActifs) {
+            config.modulesActifs = {};
+        }
+
+        config.modulesActifs[moduleNom] = actif;
+        await configRepo.save(config);
+    }
+
+    private async toggleModuleApp(moduleNom: string, actif: boolean): Promise<void> {
+        const config = await this.getConfigApp();
+        config.modulesActifs[moduleNom] = actif;
+        await this.configAppRepository.save(config);
+    }
+
+    private async syncConfigurationModule(moduleNom: string, actif: boolean, etablissementId?: string): Promise<void> {
+        let config = await this.configModuleRepository.findOne({
+            where: { moduleNom, etablissementId: etablissementId || undefined }
+        });
+
+        if (!config) {
+            const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+            config = this.configModuleRepository.create({
+                moduleNom,
+                etablissementId,
+                actif,
+                parametres: registryConfig?.defaultSettings || {},
+            });
+        } else {
+            config.actif = actif;
+        }
+
+        await this.configModuleRepository.save(config);
     }
 
     async getAllModulesConfig(etablissementId?: string): Promise<ConfigurationModule[]> {
@@ -251,9 +353,188 @@ export class ConfigurationService {
         });
     }
 
-    async isModuleActive(moduleNom: string): Promise<boolean> {
-        const config = await this.getConfigApp();
-        return config.modulesActifs[moduleNom] ?? false;
+    // ============================================
+    // GESTION DES DÉPENDANCES
+    // ============================================
+
+    private async verifierDependances(
+        moduleNom: string,
+        actif: boolean,
+        etablissementId?: string,
+        visited: Set<string> = new Set()
+    ): Promise<{ valide: boolean; erreurs: string[]; modulesAutoActivés: string[] }> {
+        // Détection de dépendances circulaires
+        if (visited.has(moduleNom)) {
+            return { 
+                valide: false, 
+                erreurs: [`Dépendance circulaire détectée: ${moduleNom}`], 
+                modulesAutoActivés: [] 
+            };
+        }
+        visited.add(moduleNom);
+
+        const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+        if (!registryConfig || !registryConfig.dependencies || registryConfig.dependencies.length === 0) {
+            return { valide: true, erreurs: [], modulesAutoActivés: [] };
+        }
+
+        const erreurs: string[] = [];
+        const modulesAutoActivés: string[] = [];
+
+        if (actif) {
+            // Activation: vérifier que toutes les dépendances sont actives
+            for (const dep of registryConfig.dependencies) {
+                const estActive = await this.isModuleActive(dep, etablissementId);
+                if (!estActive) {
+                    // Auto-activation de la dépendance
+                    try {
+                        if (etablissementId) {
+                            await this.toggleModuleEtablissement(dep, true, etablissementId);
+                        } else {
+                            await this.toggleModuleApp(dep, true);
+                        }
+                        await this.syncConfigurationModule(dep, true, etablissementId);
+                        modulesAutoActivés.push(dep);
+                    } catch (error) {
+                        const depConfig = MODULE_REGISTRY[dep];
+                        erreurs.push(`Dépendance requise: ${depConfig?.label || dep} (auto-activation échouée)`);
+                    }
+                }
+            }
+        } else {
+            // Désactivation: vérifier les reverse dependencies
+            const reverseDeps = this.getReverseDependencies(moduleNom);
+            const reverseDepsActives: string[] = [];
+
+            for (const revDep of reverseDeps) {
+                const estActive = await this.isModuleActive(revDep, etablissementId);
+                if (estActive) {
+                    const revConfig = MODULE_REGISTRY[revDep];
+                    reverseDepsActives.push(revConfig?.label || revDep);
+                }
+            }
+
+            if (reverseDepsActives.length > 0) {
+                erreurs.push(
+                    `Modules dépendants actifs: ${reverseDepsActives.join(', ')}. Désactivez-les d'abord`
+                );
+            }
+        }
+
+        return {
+            valide: erreurs.length === 0,
+            erreurs,
+            modulesAutoActivés,
+        };
+    }
+
+    /**
+     * Vérifie si un module peut être activé (endpoint public)
+     */
+    public async verifierActivationModule(moduleNom: string, etablissementId?: string) {
+        return this.verifierDependances(moduleNom, true, etablissementId, new Set());
+    }
+
+    getReverseDependencies(moduleNom: string): ModuleName[] {
+        const reverseDeps: ModuleName[] = [];
+        
+        for (const [name, config] of Object.entries(MODULE_REGISTRY)) {
+            if (config.dependencies && config.dependencies.includes(moduleNom as ModuleName)) {
+                reverseDeps.push(name as ModuleName);
+            }
+        }
+
+        return reverseDeps;
+    }
+
+    async isModuleActive(moduleNom: string, etablissementId?: string): Promise<boolean> {
+        const startTime = Date.now();
+        const cacheKey = `${moduleNom}:${etablissementId || 'global'}`;
+        
+        // Check cache (TTL 30s)
+        const cached = this.cache.modulesActifs.get(cacheKey);
+        if (cached && Date.now() < cached.expiry) {
+            return cached.value;
+        }
+
+        let result = false;
+
+        // 1. Priorité: EtablissementConfig (multi-tenant)
+        if (etablissementId) {
+            try {
+                const configRepo = AppDataSource.getRepository('EtablissementConfig');
+                const config = await configRepo.findOne({ where: { etablissementId } });
+                if (config?.modulesActifs && moduleNom in config.modulesActifs) {
+                    result = config.modulesActifs[moduleNom];
+                    this.dbErrorCount = 0; // Reset compteur
+                }
+            } catch (error) {
+                this.dbErrorCount++;
+                logger.warn(`Erreur lecture EtablissementConfig (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
+                if (this.dbErrorCount >= this.MAX_DB_ERRORS) {
+                    logger.error(`⚠️ Trop d'erreurs DB consecutives (${this.dbErrorCount}). Vérifier la connection!`);
+                }
+            }
+        }
+
+        // 2. Fallback: ConfigurationApp (legacy)
+        if (!result || !etablissementId) {
+            try {
+                const appConfig = await this.getConfigApp();
+                if (appConfig.modulesActifs && moduleNom in appConfig.modulesActifs) {
+                    result = appConfig.modulesActifs[moduleNom];
+                    this.dbErrorCount = 0;
+                }
+            } catch (error) {
+                this.dbErrorCount++;
+                logger.warn(`Erreur lecture ConfigurationApp (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
+            }
+        }
+
+        // 3. Fallback: ConfigurationModule.actif
+        if (!result) {
+            try {
+                const moduleConfig = await this.configModuleRepository.findOne({
+                    where: { moduleNom, etablissementId: etablissementId || undefined }
+                });
+                if (moduleConfig) {
+                    result = moduleConfig.actif;
+                    this.dbErrorCount = 0;
+                }
+            } catch (error) {
+                this.dbErrorCount++;
+                logger.warn(`Erreur lecture ConfigurationModule (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
+            }
+        }
+
+        // 4. Fallback: MODULE_REGISTRY defaultActive
+        if (!result) {
+            const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+            result = registryConfig?.defaultActive ?? false;
+        }
+
+        // Cache le résultat (TTL 30s)
+        this.cache.modulesActifs.set(cacheKey, {
+            value: result,
+            expiry: Date.now() + 30 * 1000
+        });
+
+        // Métriques de performance
+        const duration = Date.now() - startTime;
+        if (duration > 50) {
+            logger.warn(`⚠️ isModuleActive(${moduleNom}) took ${duration}ms`);
+        }
+
+        return result;
+    }
+
+    /**
+     * Invalidation granulaire du cache des modules actifs
+     */
+    private invalidateModuleCache(moduleNom: string, etablissementId?: string): void {
+        const cacheKey = `${moduleNom}:${etablissementId || 'global'}`;
+        this.cache.modulesActifs.delete(cacheKey);
+        this.cache.modules.delete(cacheKey);
     }
 
     // ============================================

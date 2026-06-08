@@ -539,6 +539,223 @@ export class NotificationTemplatesService {
             logger.error('[Template] Erreur envoi notification workflow', error);
         }
     }
+
+    /**
+     * ============================================
+     * TEMPLATES - MODULE FINANCES (SCOLARITÉ)
+     * ============================================
+     */
+
+    /**
+     * Notification : Confirmation de paiement de scolarité
+     */
+    async confirmationPaiementScolarite(context: NotificationContext, variables: {
+        eleveNom: string;
+        montant: number;
+        numeroRecu: string;
+        methodePaiement: string;
+    }): Promise<void> {
+        try {
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: '✅ Paiement scolarité confirmé',
+                contenu: this.renderTemplate(
+                    'Paiement de {{montant}} FCFA reçu pour {{eleveNom}}. Reçu n°{{numeroRecu}} ({{methodePaiement}}).',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_paiement_confirmation',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.HAUTE,
+            });
+
+            logger.info(`[Template] Notification confirmation paiement envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification confirmation paiement', error);
+        }
+    }
+
+    /**
+     * Notification : Relance paiement scolarité en retard
+     */
+    async relancePaiementScolarite(context: NotificationContext, variables: {
+        eleveNom: string;
+        montantDu: number;
+        dateEcheance: string;
+        numeroTranche: number;
+    }): Promise<void> {
+        try {
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: '⚠️ Rappel : Paiement scolarité en retard',
+                contenu: this.renderTemplate(
+                    'La tranche {{numeroTranche}} de {{montantDu}} FCFA pour {{eleveNom}} (échéance: {{dateEcheance}}) est en retard. Merci de régulariser.',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_relance_scolarite',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.HAUTE,
+            });
+
+            logger.info(`[Template] Notification relance scolarité envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification relance', error);
+        }
+    }
+
+    /**
+     * ============================================
+     * TEMPLATES - MODULE FINANCES (DÉPENSES)
+     * ============================================
+     */
+
+    /**
+     * Notification : Nouvelle demande de dépense soumise
+     */
+    async demandeDepenseSoumise(context: NotificationContext, variables: {
+        demandeur: string;
+        libelle: string;
+        montantEstime: number;
+        urgence: string;
+    }): Promise<void> {
+        try {
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: '📋 Nouvelle demande de dépense',
+                contenu: this.renderTemplate(
+                    '{{demandeur}} a soumis une demande: "{{libelle}}" ({{montantEstime}} FCFA, urgence: {{urgence}}). À valider.',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_demande_depense',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.HAUTE,
+            });
+
+            logger.info(`[Template] Notification demande dépense envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification demande dépense', error);
+        }
+    }
+
+    /**
+     * Notification : Demande de dépense validée/rejetée
+     */
+    async demandeDepenseDecision(context: NotificationContext, variables: {
+        decision: string;
+        libelle: string;
+        montantEstime: number;
+        motifRejet?: string;
+    }): Promise<void> {
+        try {
+            const emoji = variables.decision === 'APPROUVEE' ? '✅' : '❌';
+            const titre = variables.decision === 'APPROUVEE' 
+                ? 'Demande de dépense approuvée'
+                : 'Demande de dépense rejetée';
+
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: `${emoji} ${titre}`,
+                contenu: this.renderTemplate(
+                    variables.decision === 'APPROUVEE'
+                        ? 'Votre demande "{{libelle}}" ({{montantEstime}} FCFA) a été approuvée.'
+                        : 'Votre demande "{{libelle}}" ({{montantEstime}} FCFA) a été rejetée. Motif: {{motifRejet}}',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_demande_decision',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.NORMALE,
+            });
+
+            logger.info(`[Template] Notification décision demande envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification décision demande', error);
+        }
+    }
+
+    /**
+     * Notification : Dépense validée et payée
+     */
+    async depensePayee(context: NotificationContext, variables: {
+        libelle: string;
+        montant: number;
+        fournisseur: string;
+        methodePaiement: string;
+    }): Promise<void> {
+        try {
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: '💰 Dépense payée',
+                contenu: this.renderTemplate(
+                    'Dépense "{{libelle}}" ({{montant}} FCFA) payée à {{fournisseur}} via {{methodePaiement}}.',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_depense_payee',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.NORMALE,
+            });
+
+            logger.info(`[Template] Notification dépense payée envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification dépense payée', error);
+        }
+    }
+
+    /**
+     * ============================================
+     * TEMPLATES - MODULE FINANCES (BUDGET)
+     * ============================================
+     */
+
+    /**
+     * Notification : Alerte dépassement budget
+     */
+    async alerteBudget(context: NotificationContext, variables: {
+        categorie: string;
+        montantConsomme: number;
+        budgetPrevu: number;
+        pourcentage: number;
+    }): Promise<void> {
+        try {
+            await notificationsService.create({
+                type: TypeNotification.IN_APP,
+                titre: '🚨 Alerte budget',
+                contenu: this.renderTemplate(
+                    'Catégorie "{{categorie}}": {{montantConsomme}} FCFA consommés sur {{budgetPrevu}} FCFA ({{pourcentage}}%). Budget {{pourcentage > 100 ? "dépassé" : "presque épuisé"}}.',
+                    variables
+                ),
+                destinataireId: context.destinataireId,
+                metadata: {
+                    ...context.metadata,
+                    type: 'finances_alerte_budget',
+                    ...variables,
+                },
+                priorite: PrioriteNotification.URGENTE,
+            });
+
+            logger.info(`[Template] Notification alerte budget envoyée à ${context.destinataireId}`);
+        } catch (error) {
+            logger.error('[Template] Erreur envoi notification alerte budget', error);
+        }
+    }
 }
 
 // Singleton export

@@ -1305,6 +1305,268 @@ const data = await repo.find({ take: 100 });
 
 ---
 
+## Intégration de Notifications dans un Service Métier
+
+### Quand utiliser ce workflow
+
+- Ajouter des notifications lors de la création/mise à jour d'une entité
+- Notifier les responsables/parents d'un événement (nouvelle note, bulletin disponible, etc.)
+- Envoyer des rappels automatiques (paiement cantine, retard bus, etc.)
+
+### Pattern d'Intégration Standardisé
+
+**Étape 1** : Importer le service de templates
+
+```typescript
+import { notificationTemplates } from '@modules/notifications/services/notification-templates.service';
+import { logger } from '@common/utils/logger.util';
+```
+
+**Étape 2** : Ajouter la notification dans la méthode du service (TOUJOURS non-bloquant)
+
+```typescript
+async create(dto: CreateNoteDto, enseignantId: string, etablissementId?: string): Promise<Note> {
+    // 1. Logique métier principale
+    const note = this.repo.create({ ...dto });
+    await this.repo.save(note);
+    
+    // 2. Récupérer les données nécessaires
+    const eleve = await eleveRepo.findOne({ 
+        where: { id: dto.eleveId },
+        relations: ['utilisateur']
+    });
+    
+    if (eleve) {
+        // 3. Trouver les responsables via table de jointure
+        const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+        const responsabilités = await responsableRepo.find({
+            where: { enfantId: eleve.utilisateurId }
+        }) as any[];
+        
+        // 4. Notifier chaque responsable (NON-BLOQUANT)
+        for (const resp of responsabilités) {
+            try {
+                await notificationTemplates.nouvelleNote({
+                    destinataireId: resp.utilisateurId,
+                    etablissementId,
+                    metadata: { noteId: note.id, eleveId: eleve.id },
+                }, {
+                    eleveNom: `Élève ${eleve.id.substring(0, 8)}`,
+                    matiere: matiere?.nom || 'Matière',
+                    note: dto.valeur,
+                    bareme: dto.bareme || 20,
+                });
+            } catch (error) {
+                logger.warn(`[Notes] Échec notification (non bloquant)`, error);
+            }
+        }
+    }
+    
+    return note;
+}
+```
+
+### Points Clés
+
+1. **TOUJOURS** utiliser `try/catch` autour des notifications
+2. **JAMAIS** laisser une erreur de notification bloquer la logique métier
+3. Utiliser `logger.warn()` pour tracker les échecs de notification
+4. Accéder aux responsables via `ResponsableEleve` (PAS via relation `eleve.responsables`)
+5. Vérifier la signature du template avant utilisation (variables attendues)
+
+### Templates Disponibles
+
+Consulter `notification-templates.service.ts` pour la liste complète :
+- `nouvelleNote` — Nouvelle note publiée
+- `bulletinDisponible` — Bulletin prêt
+- `rechargementCantine` — Solde rechargé
+- `retardBus` — Bus en retard
+- `rappelPaiementCantine` — Rappel de paiement (cron job)
+
+---
+
+## Système d'Activation des Modules
+
+### Contexte
+
+eLISAschool supporte l'activation et la désactivation dynamique des modules fonctionnels. Chaque module peut être activé/désactivé par établissement (multi-tenant) avec vérification des dépendances et protection par middleware.
+
+### Architecture
+
+**Trois niveaux de stockage des modules actifs** (résolution en cascade) :
+1. `EtablissementConfig.modulesActifs` (priorité, multi-tenant)
+2. `ConfigurationApp.modulesActifs` (fallback legacy)
+3. `ConfigurationModule.actif` (config détaillée par module)
+4. `MODULE_REGISTRY[module].defaultActive` (fallback par défaut)
+
+### Workflow : Activer/Désactiver un Module
+
+**Endpoint API :**
+```typescript
+POST /api/configuration/modules/:moduleNom/toggle
+Body: { "actif": true | false }
+```
+
+**Service :**
+```typescript
+import { configurationService } from '@modules/configuration';
+
+const result = await configurationService.toggleModule(
+    'bulletins',           // moduleNom
+    true,                  // actif
+    etablissementId,       // optionnel (multi-tenant)
+    utilisateurId,         // pour l'historique
+    req                    // pour l'audit
+);
+
+// Retour: { success: true, message: '...', modulesAutoActive?: ['notes'] }
+```
+
+### Vérification des Dépendances
+
+Le système vérifie **automatiquement** les dépendances lors de l'activation/désactivation :
+
+**Activation :**
+- Si le module a des dépendances inactives → auto-activation des dépendances
+- Retourne la liste des modules auto-activés dans `modulesAutoActive`
+
+**Désactivation :**
+- Si d'autres modules actifs dépendent de celui-ci → **blocage** avec erreur 400
+- Message explicite listant les modules dépendants à désactiver d'abord
+
+**Exemple :**
+```typescript
+// bulletins dépend de notes
+// Si notes est inactif et qu'on active bulletins :
+// → notes est automatiquement activé
+// → result.modulesAutoActive = ['notes']
+
+// Si on désactive notes alors que bulletins est actif :
+// → Erreur 400: "Modules dépendants actifs: Bulletins. Désactivez-les d'abord"
+```
+
+### Middleware de Protection
+
+**TOUJOURS** appliquer le middleware `requireModuleActive()` sur les routes des modules optionnels :
+
+```typescript
+import { requireModuleActive } from '@modules/configuration/middlewares/module-active.middleware';
+
+// Dans app.ts ou le router du module
+app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
+app.use('/api/gamification', requireModuleActive('gamification'), gamificationController);
+```
+
+**Comportement du middleware :**
+- Vérifie `isModuleActive(moduleNom, etablissementId)`
+- Si module inactif → retourne `403 MODULE_INACTIVE`
+- Logue la tentative dans l'audit trail
+- **Exempte** les modules critiques : `auth`, `utilisateurs`, `configuration`, `notifications`
+
+### Helper : Vérifier si un Module est Actif
+
+```typescript
+import { isModuleActive, getParamBoolean } from '@modules/configuration/utils/config.helper';
+
+// Méthode 1: Via le service (recommandé)
+const actif = await isModuleActive('bulletins', etablissementId);
+
+// Méthode 2: Via les paramètres système
+const actif = await getParamBoolean('bulletins.actif');
+```
+
+### Endpoint : Voir les Dépendances d'un Module
+
+```typescript
+GET /api/configuration/modules/:moduleNom/dependencies
+
+// Réponse :
+{
+  "success": true,
+  "data": {
+    "moduleNom": "bulletins",
+    "label": "Bulletins",
+    "dependances": [
+      { "nom": "notes", "label": "Notes", "actif": true, "requis": true }
+    ],
+    "reverseDependances": [
+      { "nom": "orientation", "label": "Orientation", "actif": false }
+    ],
+    "estActif": true,
+    "peutEtreActive": true,
+    "bloquages": []
+  }
+}
+```
+
+### Ajouter un Module au Registre
+
+**1. Ajouter à l'enum `ModuleName`** (`shared/src/enums/modules.enum.ts`) :
+```typescript
+export enum ModuleName {
+  // ...
+  MON_MODULE = 'mon_module',
+}
+
+export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
+  // ...
+  [ModuleName.MON_MODULE]: ModuleCategory.SYSTEME,
+};
+```
+
+**2. Ajouter les permissions** (`shared/src/enums/roles.enum.ts`) :
+```typescript
+export enum Permission {
+  // ...
+  MON_MODULE_VIEW = 'mon_module:view',
+  MON_MODULE_MANAGE = 'mon_module:manage',
+}
+```
+
+**3. Configurer dans le registre** (`shared/src/config/config.registry.ts`) :
+```typescript
+[ModuleName.MON_MODULE]: {
+    name: ModuleName.MON_MODULE,
+    label: 'Mon Module',
+    description: 'Description du module',
+    icon: 'IconName',
+    basePath: '/mon-module',
+    defaultActive: false,  // false = désactivé par défaut
+    premium: false,
+    defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN],
+    permissions: [Permission.MON_MODULE_VIEW, Permission.MON_MODULE_MANAGE],
+    dependencies: [ModuleName.AUTH],  // Modules requis
+    defaultSettings: {
+        // Paramètres par défaut du module
+    },
+},
+```
+
+**4. Appliquer le middleware dans `app.ts`** :
+```typescript
+app.use('/api/mon-module', requireModuleActive('mon-module'), monModuleController);
+```
+
+### Points Clés
+
+1. **TOUJOURS** utiliser `EtablissementConfig` pour le multi-tenant (pas `ConfigurationApp`)
+2. **TOUJOURS** passer `etablissementId` à `isModuleActive()` et `toggleModule()`
+3. **TOUJOURS** appliquer `requireModuleActive()` sur les routes des modules optionnels
+4. **VÉRIFIER** les dépendances avant d'activer un module (auto-activation ou erreur)
+5. **LOGUER** toutes les activations/désactivations (fait automatiquement par le service)
+6. **PARAMÈTRES SYSTÈME** : Chaque module a un paramètre `{module}.actif` créé par le seed
+
+### Fichiers de Référence
+
+- Middleware : `backend/src/modules/configuration/middlewares/module-active.middleware.ts`
+- Service : `backend/src/modules/configuration/services/configuration.service.ts`
+  - `toggleModule()`, `isModuleActive()`, `verifierDependances()`, `getReverseDependencies()`
+- Registre : `shared/src/config/config.registry.ts`
+- Helper : `backend/src/modules/configuration/utils/config.helper.ts`
+- Migration : `backend/database/migrations/013-sync-modules-actifs.sql`
+
+---
+
 ## Maintenance et évolution
 
 Ce skill, la règle associée (`elisaschool-conventions`) et le skill métier (`elisaschool-business-logic`) sont des documents **vivants** qui évoluent avec le projet.

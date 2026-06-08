@@ -169,6 +169,28 @@ export const toggleModuleSchema = z.object({
     }),
 });
 
+/**
+ * Schéma de réponse pour les dépendances d'un module
+ */
+export const moduleDependenciesSchema = z.object({
+    moduleNom: z.string(),
+    label: z.string(),
+    dependances: z.array(z.object({
+        nom: z.string(),
+        label: z.string(),
+        actif: z.boolean(),
+        requis: z.boolean(),
+    })),
+    reverseDependances: z.array(z.object({
+        nom: z.string(),
+        label: z.string(),
+        actif: z.boolean(),
+    })),
+    estActif: z.boolean(),
+    peutEtreActive: z.boolean(),
+    bloquages: z.array(z.string()),
+});
+
 // Types inférés
 export type UpdateConfigAppDto = z.infer<typeof updateConfigAppSchema>;
 export type ActiverLicenceDto = z.infer<typeof activerLicenceSchema>;
@@ -182,6 +204,7 @@ export type QueryParametresDto = z.infer<typeof queryParametresSchema>;
 export type ExportConfigDto = z.infer<typeof exportConfigSchema>;
 export type ImportConfigDto = z.infer<typeof importConfigSchema>;
 export type ToggleModuleDto = z.infer<typeof toggleModuleSchema>;
+export type ModuleDependenciesDto = z.infer<typeof moduleDependenciesSchema>;
 
 export default {
     updateConfigAppSchema,
@@ -194,4 +217,5 @@ export default {
     exportConfigSchema,
     importConfigSchema,
     toggleModuleSchema,
+    moduleDependenciesSchema,
 };

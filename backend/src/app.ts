@@ -37,6 +37,7 @@ import { gamificationController } from '@modules/gamification';
 import { requetesController } from '@modules/requetes';
 import { clubsController } from '@modules/clubs';
 import { materielController } from '@modules/materiel';
+import { financesController } from '@modules/finances';
 import { cartesController } from '@modules/cartes';
 import { orientationController } from '@modules/orientation';
 import { impressionsController } from '@modules/impressions';
@@ -45,17 +46,20 @@ import { etablissementController } from '@modules/etablissement';
 import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
 import { anneesScolairesController } from '@modules/annees-scolaires';
-import { personnelController } from '@modules/personnel';
+import { personnelController, contratController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
 import { classesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
 import { periodesController } from '@modules/periodes';
 import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
+import { responsablesElevesController } from '@modules/responsables-eleves';
 import { monitoringController } from '@modules/monitoring';
 import rbacController from '@modules/rbac';
 import { auditController } from '@modules/audit';
 import { dashboardController } from '@modules/dashboard';
 import { validationWorkflowController } from '@modules/validation-workflow';
+import { groupesController } from '@modules/groupes-etablissements';
+import { requireModuleActive } from '@modules/configuration/middlewares/module-active.middleware';
 
 /**
  * Crée et configure l'application Express
@@ -188,29 +192,32 @@ export function createApp(): Application {
     app.use('/api/backups', backupController);
     app.use('/api/notifications', notificationsController);
     app.use('/api/notification-providers', notificationProviderController);
-    app.use('/api/notes', notesController);
+    app.use('/api/notes', requireModuleActive('notes'), notesController);
     app.use('/api/rbac', rbacController);
 
     // Modules communication
     app.use('/api/messagerie', messagerieController);
     app.use('/api/requetes', requetesController);
 
-    // Modules logistiques
-    app.use('/api/cantine', cantineController);
-    app.use('/api/transport', transportController);
-    app.use('/api/materiel', materielController);
+    // Modules académiques
+    app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
+    app.use('/api/cantine', requireModuleActive('cantine'), cantineController);
+    app.use('/api/transport', requireModuleActive('transport'), transportController);
+    app.use('/api/materiel', requireModuleActive('materiel'), materielController);
+    app.use('/api/finances', requireModuleActive('finances'), financesController);
 
     // Modules activités
-    app.use('/api/clubs', clubsController);
-    app.use('/api/gamification', gamificationController);
-    app.use('/api/cartes', cartesController);
+    app.use('/api/clubs', requireModuleActive('clubs'), clubsController);
+    app.use('/api/gamification', requireModuleActive('gamification'), gamificationController);
+    app.use('/api/cartes', requireModuleActive('cartes'), cartesController);
 
     // Modules système
-    app.use('/api/orientation', orientationController);
-    app.use('/api/impressions', impressionsController);
-    app.use('/api/monitoring', monitoringController);
-    app.use('/api/dashboard', dashboardController);
+    app.use('/api/orientation', requireModuleActive('orientation'), orientationController);
+    app.use('/api/impressions', requireModuleActive('impressions'), impressionsController);
+    app.use('/api/monitoring', requireModuleActive('monitoring'), monitoringController);
+    app.use('/api/dashboard', requireModuleActive('dashboard'), dashboardController);
     app.use('/api/validation-workflows', validationWorkflowController);
+    app.use('/api/groupes', groupesController);
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);
@@ -218,11 +225,19 @@ export function createApp(): Application {
     app.use('/api/niveaux', niveauxController);
     app.use('/api/annees-scolaires', anneesScolairesController);
     app.use('/api/personnel', personnelController);
+    app.use('/api/personnel/contrats', contratController);
+    app.use('/api/personnel/heures-cours', heureCoursController);
+    app.use('/api/personnel/absences', requireModuleActive('personnel'), absencePersonnelController);
+    app.use('/api/personnel/evaluations', requireModuleActive('personnel'), evaluationController);
+    app.use('/api/personnel/progressions', requireModuleActive('personnel'), progressionProgrammeController);
+    app.use('/api/personnel/bulletins', requireModuleActive('personnel'), bulletinPaieController);
+    app.use('/api/personnel/dashboard', requireModuleActive('personnel'), personnelDashboardController);
     app.use('/api/classes', classesController);
     app.use('/api/matieres', matieresController);
     app.use('/api/periodes', periodesController);
     app.use('/api/eleves', elevesController);
     app.use('/api/bulletins', bulletinsController);
+    app.use('/api/responsables-eleves', responsablesElevesController);
 
     // Module audit (doit être après tenantMiddleware)
     app.use('/api/audit', auditController);

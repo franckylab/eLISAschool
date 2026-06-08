@@ -9,6 +9,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { AppDataSource } from '@database/data-source';
 import { ConfigurationService } from '../services/configuration.service';
 import { ConfigurationSeedService } from '../services/configuration-seed.service';
 import { ConfigurationHistoryService } from '../services/configuration-history.service';
@@ -30,6 +31,8 @@ import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
+import { MODULE_REGISTRY } from '@shared/config/config.registry';
+import { ModuleName } from '@shared/enums/modules.enum';
 import {
     canViewConfigApp,
     canEditConfigApp,
@@ -161,8 +164,89 @@ router.patch('/modules/:moduleNom', authMiddleware, canEditConfigModule, async (
 router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { actif } = validateDto(toggleModuleSchema, req.body);
-        const config = await configurationService.toggleModule(req.params.moduleNom, actif);
-        res.json({ success: true, data: { modulesActifs: config.modulesActifs }, message: `Module ${req.params.moduleNom} ${actif ? 'activé' : 'désactivé'}` });
+        const result = await configurationService.toggleModule(
+            req.params.moduleNom,
+            actif,
+            req.utilisateur?.etablissementId,
+            req.utilisateur?.id,
+            req
+        );
+        res.json({ success: true, data: result, message: result.message });
+    } catch (error) { next(error); }
+});
+
+router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const moduleNom = req.params.moduleNom;
+        const etablissementId = req.utilisateur?.etablissementId;
+        
+        const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+        if (!registryConfig) {
+            throw new AppError(`Module "${moduleNom}" non trouvé dans le registre`, 404, 'MODULE_NOT_FOUND');
+        }
+
+        // Optimisation: Charger tous les modules actifs en UNE SEULE requête
+        const modulesActifsData: Record<string, boolean> = {};
+        
+        if (etablissementId) {
+            const configRepo = AppDataSource.getRepository('EtablissementConfig');
+            const config = await configRepo.findOne({ where: { etablissementId } });
+            if (config?.modulesActifs) {
+                Object.assign(modulesActifsData, config.modulesActifs);
+            }
+        }
+        
+        // Fallback: ConfigurationApp
+        if (Object.keys(modulesActifsData).length === 0) {
+            const appConfig = await configurationService.getConfigApp();
+            if (appConfig.modulesActifs) {
+                Object.assign(modulesActifsData, appConfig.modulesActifs);
+            }
+        }
+
+        // Dépendances (calcul en mémoire, pas de requêtes DB)
+        const dependances = (registryConfig.dependencies || []).map((dep) => {
+            const depConfig = MODULE_REGISTRY[dep];
+            const actif = modulesActifsData[dep] ?? depConfig?.defaultActive ?? false;
+            return {
+                nom: dep,
+                label: depConfig?.label || dep,
+                actif,
+                requis: true,
+            };
+        });
+
+        // Reverse dépendances (calcul en mémoire)
+        const reverseDependances = configurationService.getReverseDependencies(moduleNom).map((revDep) => {
+            const revConfig = MODULE_REGISTRY[revDep];
+            const actif = modulesActifsData[revDep] ?? revConfig?.defaultActive ?? false;
+            return {
+                nom: revDep,
+                label: revConfig?.label || revDep,
+                actif,
+            };
+        });
+
+        // État actuel (utilise le cache maintenant)
+        const estActif = await configurationService.isModuleActive(moduleNom, etablissementId);
+
+        // Peut être activé? (utilise la méthode publique)
+        const verification = await configurationService.verifierActivationModule(moduleNom, etablissementId);
+        const peutEtreActive = verification.valide;
+        const bloquages = verification.erreurs;
+
+        res.json({
+            success: true,
+            data: {
+                moduleNom,
+                label: registryConfig.label,
+                dependances,
+                reverseDependances,
+                estActif,
+                peutEtreActive,
+                bloquages,
+            }
+        });
     } catch (error) { next(error); }
 });
 

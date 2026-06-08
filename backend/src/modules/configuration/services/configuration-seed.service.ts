@@ -318,6 +318,20 @@ export class ConfigurationSeedService {
             // ============ SYSTÈME ============
             { cle: 'system.backup_retention_days', valeur: 30, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.SYSTEME, description: 'Jours de rétention des sauvegardes', modifiableRuntime: false, visible: true, ordre: 1 },
             { cle: 'system.log_level', valeur: 'info', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.SYSTEME, description: 'Niveau de log', modifiableRuntime: true, visible: true, ordre: 2, options: [{ value: 'debug', label: 'Debug' }, { value: 'info', label: 'Info' }, { value: 'warn', label: 'Warning' }, { value: 'error', label: 'Error' }] },
+
+            // ============ MODULES - ÉTAT ACTIF ============
+            // Paramètres pour permettre getParamBoolean('{module}.actif')
+            ...Object.entries(MODULE_REGISTRY).map(([moduleName, config], index) => ({
+                cle: `${moduleName}.actif`,
+                valeur: config.defaultActive,
+                typeValeur: TypeValeurParametre.BOOLEAN,
+                categorie: CategorieParametre.MODULE,
+                module: moduleName,
+                description: `Module ${config.label} actif`,
+                modifiableRuntime: true,
+                visible: true,
+                ordre: 100 + index,
+            })),
             { cle: 'system.maintenance_mode', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.SYSTEME, description: 'Mode maintenance', modifiableRuntime: true, visible: true, ordre: 3 },
         ];
     }

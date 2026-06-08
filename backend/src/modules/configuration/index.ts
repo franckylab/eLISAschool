@@ -12,3 +12,4 @@ export * from './services';
 export * from './controllers';
 export * from './guards';
 export * from './utils';
+export * from './middlewares';

@@ -189,6 +189,24 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.ELEVES]: {
+        name: ModuleName.ELEVES,
+        label: 'Élèves',
+        description: 'Gestion des dossiers élèves',
+        icon: 'UserCheck',
+        basePath: '/eleves',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT, Role.PERSONNEL, Role.PARENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {
+            requireValidation: false,
+            validationLevels: 2,
+            autoGenerateMatricule: true,
+        },
+    },
+
     [ModuleName.ORIENTATION]: {
         name: ModuleName.ORIENTATION,
         label: 'Orientation',
@@ -201,6 +219,24 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         permissions: [],
         dependencies: [ModuleName.NOTES],
         defaultSettings: {},
+    },
+
+    [ModuleName.RESPONSABLES_ELEVES]: {
+        name: ModuleName.RESPONSABLES_ELEVES,
+        label: 'Responsables Élèves',
+        description: 'Gestion des relations parents-élèves',
+        icon: 'Users',
+        basePath: '/responsables-eleves',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL, Role.PARENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.ELEVES],
+        defaultSettings: {
+            allowMultipleParents: true,
+            requireLegalGuardian: true,
+            enablePaymentAccess: false,
+        },
     },
 
     // ============ MODULES LOGISTIQUES ============
@@ -253,6 +289,23 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         defaultSettings: {
             enableBarcode: true,
             maxLoanDays: 30,
+        },
+    },
+    
+    [ModuleName.FINANCES]: {
+        name: ModuleName.FINANCES,
+        label: 'Finances',
+        description: 'Gestion financière et paiements',
+        icon: 'CreditCard',
+        basePath: '/finances',
+        defaultActive: false,
+        premium: true,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [Permission.FINANCES_VIEW, Permission.FINANCES_MANAGE],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {
+            defaultCurrency: 'XOF',
+            enableOnlinePayment: false,
         },
     },
 

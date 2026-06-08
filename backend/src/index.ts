@@ -16,6 +16,7 @@ import { notificationProviderService, seedDefaultNotificationProviders } from '@
 import { inAppProvider, providerRegistry } from '@modules/notifications/providers';
 import { TypeNotification } from '@modules/notifications/entities';
 import { initNotificationCronJobs } from '@modules/notifications/cron-jobs';
+import { initFinanceCronJobs } from '@modules/finances/services/cron-jobs';
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -66,9 +67,11 @@ async function bootstrap(): Promise<void> {
         const app = createApp();
         const port = envConfig.app.port;
 
-        // Initialiser les cron jobs de notifications (uniquement en production ou si activé)
+        // Initialiser les cron jobs (uniquement en production ou si activé)
         if (envConfig.app.nodeEnv === 'production' || process.env.ENABLE_CRON_JOBS === 'true') {
             initNotificationCronJobs();
+            initFinanceCronJobs();
+            logger.info('✅ Cron jobs activés (notifications + finances)');
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');

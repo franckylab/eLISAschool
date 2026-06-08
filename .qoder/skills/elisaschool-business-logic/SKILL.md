@@ -1072,6 +1072,114 @@ async maNouvelleOperation(id: string, dto: MonDto): Promise<Entity> {
 
 ---
 
+## Système de Notifications Multi-Canal
+
+### Architecture
+
+Le système de notifications supporte **4 providers** avec routage intelligent basé sur les préférences utilisateur :
+
+- **In-App** — Base de données (toujours actif)
+- **Email** — SMTP (SendGrid, Mailgun, etc.)
+- **SMS** — API SMS (Twilio, Orange, etc.)
+- **Push** — Firebase/Expo (mobile)
+
+### Composants Clés
+
+| Composant | Fichier | Rôle |
+|-----------|---------|------|
+| **Provider Registry** | `notifications/services/provider-registry.service.ts` | Gère les providers actifs |
+| **Notification Templates** | `notifications/services/notification-templates.service.ts` | Templates centralisés |
+| **Notifications Service** | `notifications/services/notifications.service.ts` | CRUD + envoi multi-provider |
+| **Cron Jobs** | `notifications/cron-jobs.ts` | Tâches automatisées |
+| **Notification Entity** | `notifications/entities/notification.entity.ts` | Modèle de données |
+
+### Templates Disponibles
+
+**Académique** :
+- `nouvelleNote` — Nouvelle note publiée
+- `bulletinDisponible` — Bulletin prêt à consulter
+
+**Vie Scolaire** :
+- `rechargementCantine` — Solde cantine rechargé
+- `retardBus` — Bus en retard (>5 min)
+- `rappelPaiementCantine` — Rappel de paiement (cron job quotidien 8h)
+
+### Règles Métier
+
+1. **Non-bloquant** : Les erreurs de notification ne doivent JAMAIS bloquer la logique métier
+2. **Multi-destinataire** : Un élève peut avoir plusieurs responsables → notifier tous
+3. **Scope établissement** : Toutes les notifications sont isolées par `etablissementId`
+4. **Priorisation** : 4 niveaux — `NORMALE`, `HAUTE`, `URGENTE`, `CRITIQUE`
+5. **Cache** : TTL 5 min pour les préférences de notification
+
+### Intégration dans les Modules Métier
+
+**Modules intégrés** (4) :
+- `notes` — Notification aux responsables lors de la création d'une note
+- `bulletins` — Notification aux responsables quand bulletin généré
+- `cantine` — Notification rechargement + rappels paiement (cron)
+- `transport` — Notification retard bus si >5 min
+
+**Pattern d'intégration** :
+```typescript
+// TOUJOURS non-bloquant
+try {
+    await notificationTemplates.xxx({
+        destinataireId: resp.utilisateurId,
+        etablissementId,
+        metadata: { ... },
+    }, {
+        // variables du template
+    });
+} catch (error) {
+    logger.warn(`[Module] Échec notification (non bloquant)`, error);
+}
+```
+
+### Accès aux Responsables
+
+**IMPORTANT** : L'entité `Eleve` n'a PAS de relation directe `responsables`.
+
+Utiliser la table de jointure `ResponsableEleve` :
+```typescript
+const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+const responsabilités = await responsableRepo.find({
+    where: { enfantId: eleve.utilisateurId }  // ← FK vers utilisateur du parent
+});
+```
+
+### Cron Jobs Configurés
+
+| Job | Schedule | Action |
+|-----|----------|--------|
+| **Rappels cantine** | `0 8 * * *` (8h/jour) | Envoyer rappels paiement solde < seuil |
+| **Nettoyage notifications** | `0 2 * * *` (2h/jour) | Supprimer notifications >30 jours |
+| **Notifications programmées** | `*/5 * * * *` (toutes les 5min) | Traiter notifications planifiées |
+| **Menu du jour** | `0 7 * * 1-5` (7h/semaine) | Envoyer menu cantine du jour |
+
+**Activation** : `ENABLE_CRON_JOBS=true` dans `.env` (désactivé en dev par défaut)
+
+### Activation des Providers
+
+Voir `NOTIFICATION-PROVIDERS-ACTIVATION.md` pour la configuration complète :
+
+```bash
+# Email
+NOTIFICATION_EMAIL_PROVIDER=smtp
+NOTIFICATION_EMAIL_HOST=smtp.sendgrid.net
+NOTIFICATION_EMAIL_PORT=587
+NOTIFICATION_EMAIL_USER=apikey
+NOTIFICATION_EMAIL_PASS=SG.xxx
+
+# SMS
+NOTIFICATION_SMS_PROVIDER=twilio
+NOTIFICATION_SMS_ACCOUNT_SID=ACxxx
+NOTIFICATION_SMS_AUTH_TOKEN=xxx
+NOTIFICATION_SMS_FROM=+1234567890
+```
+
+---
+
 ## Maintenance et évolution
 
 Ce skill doit être **mis à jour** lorsque :

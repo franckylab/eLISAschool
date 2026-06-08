@@ -10,6 +10,7 @@ import { Bulletin } from '../entities';
 import { GenerateBulletinDto, UpdateBulletinDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { parentsService } from '@modules/responsables-eleves/services';
 import { classesService } from '@modules/classes/services';
 import { periodesService } from '@modules/periodes/services';
 import { notesService } from '@modules/notes/services';
@@ -249,17 +250,14 @@ export class BulletinsService {
                 }
 
                 // Trouver les responsables
-                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-                const responsabilités = await responsableRepo.find({
-                    where: { enfantId: eleve.utilisateurId }
-                }) as any[];
+                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
 
-                if (!responsabilités || responsabilités.length === 0) {
+                if (!responsables || responsables.length === 0) {
                     continue;
                 }
 
                 // Notifier chaque responsable
-                for (const resp of responsabilités) {
+                for (const resp of responsables) {
                     await notificationTemplates.bulletinDisponible({
                         destinataireId: resp.utilisateurId,
                         etablissementId,

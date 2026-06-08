@@ -10,6 +10,7 @@ import { Note, TypeEvaluation, StatutNote } from '../entities';
 import { CreateNoteDto, UpdateNoteDto, CreateBulkNotesDto, QueryNotesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { parentsService } from '@modules/responsables-eleves/services';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
@@ -113,14 +114,11 @@ export class NotesService {
                 const periode = await periodesService.findOne(createDto.periodeId);
 
                 // Trouver les responsables de cet élève
-                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-                const responsabilités = await responsableRepo.find({
-                    where: { enfantId: eleve.utilisateurId }
-                }) as any[];
+                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
 
                 // Notifier chaque responsable
-                if (responsabilités && responsabilités.length > 0) {
-                    for (const resp of responsabilités) {
+                if (responsables && responsables.length > 0) {
+                    for (const resp of responsables) {
                         await notificationTemplates.nouvelleNote({
                             destinataireId: resp.utilisateurId,
                             etablissementId,

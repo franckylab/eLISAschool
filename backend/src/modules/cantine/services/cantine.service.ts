@@ -14,6 +14,7 @@ import { MenuCantine, InscriptionCantine, ConsommationCantine, StatutRepas, Stat
 import { CreateMenuDto, CreateInscriptionDto, EnregistrerConsommationDto, RechargerSoldeDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { parentsService } from '@modules/responsables-eleves/services';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
@@ -264,14 +265,11 @@ export class CantineService {
             if (!eleve?.utilisateurId) return;
 
             // Trouver les responsables
-            const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-            const responsabilités = await responsableRepo.find({
-                where: { enfantId: eleve.utilisateurId }
-            }) as any[];
+            const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
 
-            if (!responsabilités || responsabilités.length === 0) return;
+            if (!responsables || responsables.length === 0) return;
 
-            for (const resp of responsabilités) {
+            for (const resp of responsables) {
                 // Utiliser le template message administration pour confirmation
                 await notificationTemplates.messageAdministration({
                     destinataireId: resp.utilisateurId,
@@ -326,14 +324,11 @@ export class CantineService {
                 if (!eleve?.utilisateurId) continue;
 
                 // Trouver les responsables
-                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-                const responsabilités = await responsableRepo.find({
-                    where: { enfantId: eleve.utilisateurId }
-                }) as any[];
+                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
 
-                if (!responsabilités || responsabilités.length === 0) continue;
+                if (!responsables || responsables.length === 0) continue;
 
-                for (const resp of responsabilités) {
+                for (const resp of responsables) {
                     await notificationTemplates.rappelPaiementCantine({
                         destinataireId: resp.utilisateurId,
                         etablissementId,

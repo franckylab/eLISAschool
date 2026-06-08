@@ -388,6 +388,74 @@ await storage.save(buffer, metadata);
 
 ---
 
+## 17. Système de Validation Workflow
+
+### Architecture
+
+- **Service central** : `validationWorkflowService` gère les niveaux d'approbation multi-niveaux
+- **Middleware** : `requireValidation()` intercepte les opérations nécessitant validation
+- **Entités** : Chaque module workflow a un `enum StatutXxx` avec `EN_ATTENTE_VALIDATION` et variantes
+- **Configuration** : Paramètres dynamiques `{module}.require_validation`, `{module}.validation_levels`, `{module}.validation_roles`
+- **RBAC** : Permissions `validation:{module}:level{N}` attribuées aux rôles de validation
+- **Dashboard** : Endpoint `/api/validation-workflow/dashboard` agrège tous les modules (15 au total)
+
+### Conventions
+
+- **Nommage statut** : `EN_ATTENTE_VALIDATION` (création), `EN_ATTENTE_CLOTURE` (clôture), `EN_ATTENTE_DESACTIVATION` (désactivation)
+- **Type colonne** : Toujours `varchar(30)` (pas d'enum PostgreSQL natif) pour supporter l'ajout de valeurs
+- **Service** : `create()` accepte `(dto, createurId?, etablissementId?)` et crée un workflow si `requireValidation` est `true`
+- **Controller** : Toujours passer `req.utilisateur?.id` comme `createurId`
+- **Migration** : SQL idempotente (`ON CONFLICT DO NOTHING`, `ADD COLUMN IF NOT EXISTS`, `NOT EXISTS` pour attributions)
+- **Index** : Toujours indexer la colonne `statut` pour les requêtes de dashboard
+
+### Pattern d'intégration
+
+```typescript
+// 1. Entity : ajouter enum Statut + colonne varchar
+@Column({ type: 'varchar', length: 30, default: StatutXxx.ACTIF })
+statut!: StatutXxx;
+
+// 2. Service : validation conditionnelle
+async create(dto: CreateXxxDto, createurId?: string, etablissementId?: string): Promise<Xxx> {
+    const requireValidation = await getParamBoolean('xxx.require_validation', false);
+    const xxx = this.repo.create({
+        ...dto,
+        statut: requireValidation ? StatutXxx.EN_ATTENTE_VALIDATION : StatutXxx.ACTIF,
+    });
+    await this.repo.save(xxx);
+    if (requireValidation && createurId) {
+        await validationWorkflowService.createWorkflow({
+            module: 'xxx', entiteId: xxx.id, entiteType: 'Xxx',
+            niveauxRequis: 2, etablissementId,
+        }, createurId);
+    }
+    return xxx;
+}
+
+// 3. Controller : passer createurId
+const created = await service.create(dto, req.utilisateur?.id, req.etablissementId);
+
+// 4. Config seed : 3 paramètres
+{ cle: 'xxx.require_validation', valeur: false, ... },
+{ cle: 'xxx.validation_levels', valeur: 2, ... },
+{ cle: 'xxx.validation_roles', valeur: JSON.stringify({ '1': 'ROLE_1', '2': 'ROLE_2' }), ... },
+
+// 5. RBAC : permissions dans roles.enum.ts
+VALIDATION_XXX_LEVEL1 = 'validation:xxx:level1',
+VALIDATION_XXX_LEVEL2 = 'validation:xxx:level2',
+
+// 6. Workflow service + middleware : ajouter au getDefaultRoles()
+xxx: { '1': 'ROLE_1', '2': 'ROLE_2' },
+
+// 7. Migration SQL : permissions + colonne statut + index
+```
+
+### Modules couverts (15)
+
+`notes`, `bulletins`, `cantine`, `transport`, `requetes`, `classes`, `matieres`, `periodes`, `eleves`, `personnel`, `clubs`, `materiel`, `cartes`, `annees_scolaires`, `etablissement`
+
+---
+
 ## 18. Performance et Optimisation
 
 ### 18.1 Base de données — Index et Requêtes
@@ -582,12 +650,228 @@ logger.info('Requête exécutée', {
 
 ---
 
-## 19. Maintenance et skills disponibles
+## 19. Intégration de Notifications dans les Services Métier
+
+### Pattern d'Intégration Non-Bloquante
+
+**Règle d'or** : Les notifications doivent TOUJOURS être non-bloquantes pour ne pas impacter la logique métier.
+
+```typescript
+// ✅ CORRECT — Try/catch autour de chaque notification
+try {
+    await notificationTemplates.nouvelleNote({
+        destinataireId: responsableId,
+        etablissementId,
+        metadata: { noteId: note.id, eleveId: eleve.id },
+    }, {
+        eleveNom: `Élève ${eleve.id.substring(0, 8)}`,
+        matiere: matiere?.nom || 'Matière',
+        note: createDto.valeur,
+    });
+} catch (error) {
+    logger.warn(`[Notes] Échec notification (non bloquant)`, error);
+}
+```
+
+### Accès aux Responsables d'un Élève
+
+L'entité `Eleve` n'a **PAS** de relation directe `responsables`. Utiliser la table de jointure :
+
+```typescript
+// ✅ CORRECT — Via table ResponsableEleve
+const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+const responsabilités = await responsableRepo.find({
+    where: { enfantId: eleve.utilisateurId }  // ← enfantId = utilisateurId du parent
+}) as any[];
+
+for (const resp of responsabilités) {
+    await notificationTemplates.xxx({
+        destinataireId: resp.utilisateurId,  // ← ID du responsable
+        ...
+    });
+}
+```
+
+### Template de Notification — Variables
+
+**Vérifier la signature du template** avant utilisation :
+
+```typescript
+// Template définit ces variables :
+async retardBus(context, variables: {
+    ligne: string;      // ← PAS ligneNom
+    retard: number;     // ← PAS minutesRetard
+    raison?: string;
+})
+
+// ✅ Appel correct
+await notificationTemplates.retardBus(context, {
+    ligne: ligne.nom,
+    retard: minutesRetard,
+});
+```
+
+---
+
+## 20. Bonnes Pratiques TypeScript Strictes
+
+### Types Littéraux avec `as const`
+
+Quand un DTO attend un type littéral (`'ASC' | 'DESC'`), TOUJOURS utiliser `as const` :
+
+```typescript
+// ❌ INCORRECT — Type: string (erreur TS2345)
+sortOrder: 'DESC'
+
+// ✅ CORRECT — Type: 'DESC' (literal type)
+sortOrder: 'DESC' as const
+```
+
+### DTO Complet pour les Services Paginés
+
+**TOUJOURS** passer un objet DTO complet aux services :
+
+```typescript
+// ❌ INCORRECT — Paramètres séparés
+const result = await service.findAll(typeId, etablissementId);
+
+// ✅ CORRECT — Objet DTO complet
+const result = await service.findAll({
+    page: 1,
+    limit: 100,
+    sortBy: 'createdAt',
+    sortOrder: 'DESC' as const,  // ← IMPORTANT: as const
+    typePersonnelId: typeId
+}, etablissementId);
+```
+
+### Déclaration de Variables avant Utilisation
+
+Toujours déclarer une variable avant de l'utiliser :
+
+```typescript
+// ✅ CORRECT
+const cacheKey = `batch:${periodKey}:${ids.join(',')}`;  // Déclaration
+const cachedData = this.batchCache.get(cacheKey);        // Utilisation
+
+// ❌ INCORRECT — Variable utilisée avant déclaration
+const cachedData = this.batchCache.get(cacheKey);  // ← cacheKey n'existe pas
+const cacheKey = `batch:${periodKey}:${ids.join(',')}`;
+```
+
+### Cast Double pour Types Incompatibles
+
+Quand TypeScript refuse un cast direct, utiliser un cast via `unknown` :
+
+```typescript
+// ❌ Refusé par TypeScript
+value as Map<string, number>
+
+// ✅ Accepté — Double cast
+value as unknown as Map<string, number>
+```
+
+---
+
+## 22. Système d'Activation des Modules
+
+### Architecture
+
+Le système d'activation/désactivation des modules repose sur **trois niveaux de stockage** avec résolution en cascade :
+
+| Niveau | Entité | Usage | Priorité |
+|--------|--------|-------|----------|
+| 1 | `EtablissementConfig.modulesActifs` | Multi-tenant (recommandé) | **Priorité 1** |
+| 2 | `ConfigurationApp.modulesActifs` | Legacy (déprécié) | Fallback |
+| 3 | `ConfigurationModule.actif` | Config détaillée par module | Fallback |
+| 4 | `MODULE_REGISTRY.defaultActive` | Valeur par défaut | Dernier fallback |
+
+### Conventions d'Implémentation
+
+**1. Middleware de Protection**
+
+```typescript
+// TOUJOURS appliquer sur les modules optionnels
+app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
+
+// JAMAIS sur les modules critiques
+app.use('/api/auth', authController);  // Pas de middleware
+```
+
+**Modules critiques exemptés** : `auth`, `utilisateurs`, `configuration`, `notifications`
+
+**2. Signature des Méthodes de Service**
+
+```typescript
+// toggleModule() — TOUJOURS passer etablissementId
+async toggleModule(
+    moduleNom: string,
+    actif: boolean,
+    etablissementId?: string,  // ← Multi-tenant
+    utilisateurId?: string,    // ← Historique
+    req?: Request              // ← Audit
+)
+
+// isModuleActive() — TOUJOURS passer etablissementId
+async isModuleActive(moduleNom: string, etablissementId?: string): Promise<boolean>
+```
+
+**3. Vérification des Dépendances**
+
+- **Activation** : Auto-active les dépendances manquantes
+- **Désactivation** : Bloque si modules dépendants actifs (erreur 400)
+- **TOUJOURS** retourner la liste des modules auto-activés dans `modulesAutoActive`
+
+**4. Paramètres Système**
+
+Chaque module a un paramètre `{module}.actif` créé par le seed :
+```typescript
+// Utilisable dans n'importe quel service
+const actif = await getParamBoolean('notes.actif');
+```
+
+### Bonnes Pratiques
+
+- **TOUJOURS** utiliser `EtablissementConfig` pour le multi-tenant
+- **TOUJOURS** invalider le cache après modification (`this.invalidateCache()`)
+- **TOUJOURS** logger dans l'historique (`this.historyService.logAction()`)
+- **JAMAIS** bypasser le middleware de protection
+- **VÉRIFIER** les dépendances avant d'activer un module
+- **EXCLURE** les modules critiques de la vérification
+
+### Sécurité
+
+- **RBAC** : Seuls `ADMIN` et `SUPER_ADMIN` peuvent toggler les modules
+- **Permission** : `config:module:toggle` requise
+- **Audit** : Toutes les actions sont loguées avec utilisateur et timestamp
+- **Multi-tenant** : Isolation stricte par `etablissementId`
+
+### Pattern d'Intégration d'un Nouveau Module
+
+```typescript
+// 1. Ajouter au registre (shared/src/config/config.registry.ts)
+[ModuleName.MON_MODULE]: {
+    name: ModuleName.MON_MODULE,
+    label: 'Mon Module',
+    defaultActive: false,
+    dependencies: [ModuleName.AUTH],
+    // ...
+}
+
+// 2. Appliquer le middleware (app.ts)
+app.use('/api/mon-module', requireModuleActive('mon-module'), monModuleController);
+
+// 3. Le seed crée automatiquement le paramètre 'mon_module.actif'
+```
+
+---
+
+## 21. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
 
-- **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité, **backup**)
-- **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config, **backup**)
+- **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité, **backup**, **activation modules**)
+- **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config, **backup**, **activation modules**)
 
 **Modes de mise à jour** :
 - **Automatique** : Lorsque l'IA détecte un nouveau pattern récurrent, elle propose d'ajouter/modifier une section
