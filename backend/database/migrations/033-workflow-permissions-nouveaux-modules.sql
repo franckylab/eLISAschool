@@ -2,7 +2,7 @@
 -- eLISAschool - Migration 033: Workflow et Permissions Nouveaux Modules
 -- ==================================
 -- Version: 2.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description:
 --   - Ajout colonnes statut pour validation workflow
 --   - Permissions RBAC pour nouveaux modules

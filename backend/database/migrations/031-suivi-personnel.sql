@@ -2,7 +2,7 @@
 -- eLISAschool - Migration 031: Suivi-Personnel
 -- ==================================
 -- Version: 2.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Module de suivi du personnel
 --   - Incidents disciplinaires
 --   - Évaluations périodiques

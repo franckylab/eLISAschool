@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Archivage Audit Logs
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- 
 -- Création de la table d'archivage pour les logs d'audit
 -- Stratégie :

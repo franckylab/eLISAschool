@@ -3,7 +3,7 @@
  * eLISAschool - Entités Etablissement
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Support multi-établissements : chaque établissement est une entité
  * distincte avec sa propre configuration (relation 1:1).

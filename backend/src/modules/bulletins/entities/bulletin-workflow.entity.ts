@@ -3,7 +3,7 @@
  * eLISAschool - Entité Bulletin Workflow
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Extension du bulletin pour supporter le workflow de validation
  */

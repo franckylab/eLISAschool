@@ -1,0 +1,6 @@
+- Every controller route handler wraps async logic in try/catch blocks that delegate errors to Express next(error) for centralized error handling.
+- All successful responses follow a uniform JSON envelope: { success: true, data: <payload>, timestamp: ISO string }, with 201 status codes for POST creations.
+- DTO validation uses Zod schemas imported from the module's dto directory, passed through validateDto() before service calls in every mutating endpoint.
+- Services obtain TypeORM repositories via AppDataSource.getRepository(EntityClass) in their constructors rather than injecting repositories.
+- Multi-tenancy filtering applies etablissementId constraints in service-layer where clauses whenever an etablissementId parameter is provided.
+- Centralized configuration parameters are read asynchronously via getParamNumber/getParamBoolean helpers with sensible defaults instead of hardcoding business thresholds.

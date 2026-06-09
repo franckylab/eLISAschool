@@ -3,7 +3,7 @@
  * eLISAschool - Entité ElementSalaire
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Composants détaillés du bulletin de paie
  */

@@ -3,7 +3,7 @@
  * eLISAschool - Entité Paiement
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';

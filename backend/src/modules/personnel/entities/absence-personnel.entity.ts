@@ -3,7 +3,7 @@
  * eLISAschool - Entité Absence Personnel
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, Index } from 'typeorm';

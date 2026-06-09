@@ -1,0 +1,5 @@
+- Controllers delegate all business logic to service instances and use a centralized `validateDto` utility for input validation before service calls.
+- Services interact with the database exclusively through TypeORM repositories injected or retrieved via `AppDataSource`.
+- All API responses follow a consistent envelope structure: `{ success: boolean, data?: any, message?: string, timestamp?: string }`.
+- Route handlers wrap asynchronous service calls in try/catch blocks, forwarding errors to the Express error handling middleware via `next(error)`.
+- Entities use UUIDs as primary keys and include `createdAt`/`updatedAt` timestamps managed by TypeORM decorators.

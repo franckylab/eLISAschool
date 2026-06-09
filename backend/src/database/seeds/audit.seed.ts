@@ -3,7 +3,7 @@
  * eLISAschool - Seed Audit Trail
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Données de test pour le système d'audit trail
  */

@@ -3,7 +3,7 @@
  * eLISAschool Backend - Point d'entrée principal
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import 'reflect-metadata';
@@ -17,6 +17,8 @@ import { inAppProvider, providerRegistry } from '@modules/notifications/provider
 import { TypeNotification } from '@modules/notifications/entities';
 import { initNotificationCronJobs } from '@modules/notifications/cron-jobs';
 import { initFinanceCronJobs } from '@modules/finances/services/cron-jobs';
+import { initGamificationCronJobs } from '@modules/gamification/cron-jobs';
+import { initScoringPersonnelCronJobs } from '@modules/suivi-personnel/cron-jobs';
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -71,7 +73,9 @@ async function bootstrap(): Promise<void> {
         if (envConfig.app.nodeEnv === 'production' || process.env.ENABLE_CRON_JOBS === 'true') {
             initNotificationCronJobs();
             initFinanceCronJobs();
-            logger.info('✅ Cron jobs activés (notifications + finances)');
+            initGamificationCronJobs();
+            initScoringPersonnelCronJobs();
+            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel)');
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');

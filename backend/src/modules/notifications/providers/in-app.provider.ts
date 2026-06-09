@@ -3,7 +3,7 @@
  * eLISAschool - In-App Notification Provider
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Provider pour les notifications in-app (stockage en base de données)
  * C'est le provider par défaut et le plus simple

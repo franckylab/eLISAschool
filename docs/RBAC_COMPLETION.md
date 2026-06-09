@@ -388,7 +388,7 @@ curl -X POST http://localhost:3000/api/rbac/roles \
 - 📂 [Entités](../backend/src/modules/auth/entities/)
 
 ### Contacts
-- **Développeur**: xAI Éducation
+- **Développeur**: franck arlos chendjou
 - **Version**: 2.0.0
 - **Date**: 2026-06-05
 
@@ -412,4 +412,4 @@ Le système RBAC d'eLISAschool est maintenant **COMPLET** et **PRODUCTION READY*
 
 *Document généré le 2026-06-05*  
 *eLISAschool RBAC System v2.0.0*  
-*© xAI Éducation 2026*
+*© franck arlos chendjou 2026*

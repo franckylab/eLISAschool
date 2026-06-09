@@ -3,7 +3,7 @@
  * eLISAschool - Service Consolidation Multi-Établissements
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Agrégation des statistiques et rapports pour plusieurs établissements.
  */

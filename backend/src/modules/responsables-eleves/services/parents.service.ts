@@ -3,7 +3,7 @@
  * eLISAschool - Service Responsables Élèves
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Service pour gérer les relations entre parents et élèves.
  * Permet de créer, modifier, supprimer et consulter les responsabilités.

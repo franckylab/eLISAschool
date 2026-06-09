@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Module Finances
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Création des tables pour le module de gestion financière
 --              (scolarité, dépenses, comptabilité, trésorerie, budget)
 -- Date: 7 juin 2026

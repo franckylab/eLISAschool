@@ -1,0 +1,5 @@
+- The module comprises three distinct sub-domains: `eleves` (student records), `responsables-eleves` (parent-student relationships), and `orientation` (career/academic guidance).
+- Each sub-domain follows a strict layered architecture: Controllers (Express routers) delegate to Services (business logic), which interact with TypeORM Repositories.
+- `responsables-eleves` introduces a specialized `PortalParentService` to aggregate data from external modules (grades, billing) for parent dashboards, enforcing access checks via `ParentsService`.
+- A custom `requireParentAccess` middleware in `responsables-eleves` provides route-level security for parent-specific endpoints, verifying relationship permissions before execution.
+- All sub-domains expose their components via barrel exports (`index.ts`) to maintain clean internal boundaries and facilitate module-wide imports.

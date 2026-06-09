@@ -1,0 +1,6 @@
+- All POST endpoints validate request bodies using a shared validate() helper that wraps Zod schema.safeParse and throws AppError with code VALIDATION_ERROR on failure.
+- Every route handler is wrapped in try-catch blocks that forward errors to the Express next() middleware for centralized error handling.
+- Service methods accept an optional Request parameter to extract utilisateur context for audit trail logging via auditService.log after write operations.
+- List/query endpoints for student-related records enforce mandatory anneeScolaireId query parameter validation, throwing MISSING_ANNEE_SCOLAIRE error when absent.
+- Controllers return consistent JSON response envelopes with { success: true, data: ... } structure, optionally including pagination and metadata fields.
+- Entities use composite TypeORM indexes on etablissementId combined with entity-specific foreign keys to support multi-tenant query isolation.

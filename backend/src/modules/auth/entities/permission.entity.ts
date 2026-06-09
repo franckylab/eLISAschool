@@ -3,7 +3,7 @@
  * eLISAschool - Entité Permission
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Permissions granulaires stockées en base de données
  * pour le système RBAC dynamique

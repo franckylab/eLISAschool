@@ -3,7 +3,7 @@
  * eLISAschool - Service Dashboard Data
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Centralise toutes les méthodes de récupération de données pour les widgets
  * sans modifier les services existants

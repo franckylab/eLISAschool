@@ -1,0 +1,6 @@
+- Three independent sub-modules (clubs, gamification, cartes) each following a consistent controller-service-entity-DTO layered structure with barrel exports via index.ts.
+- Controllers use Express Router instances exported as named constants (e.g., clubsController, gamificationController, cartesController); services are instantiated as singletons at module level.
+- All three modules share cross-cutting concerns: Zod-based DTO validation via validateDto from @common/utils, role-based auth middleware (authMiddleware + adminOnly/staffOnly) from @modules/auth/middlewares, and centralized configuration reads via getParamNumber/getParamBoolean from @modules/configuration/utils/config.helper.
+- Clubs and Cartes integrate optional multi-level approval workflows through validationWorkflowService from @modules/validation-workflow/services; Gamification does not use workflow integration.
+- Cartes is the most complex sub-module with three service classes (CartesService, ModeleCarteService, GenerationBatchService) handling individual card CRUD, card template management, and bulk card generation for classes/personnel respectively.
+- All entities use TypeORM decorators with UUID primary keys, multi-tenancy via etablissementId foreign keys to Etablissement, and soft-delete patterns using boolean actif or enum statut fields.

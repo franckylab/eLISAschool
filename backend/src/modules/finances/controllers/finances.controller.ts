@@ -3,7 +3,7 @@
  * eLISAschool - Controller Finances
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Routes API pour la gestion financière (scolarité + dépenses)
  */

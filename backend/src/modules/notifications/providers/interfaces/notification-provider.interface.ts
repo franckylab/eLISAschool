@@ -3,7 +3,7 @@
  * eLISAschool - Interface Notification Provider
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Interface commune pour tous les providers de notifications
  * Permet d'ajouter, configurer et switcher entre providers

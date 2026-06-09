@@ -3,7 +3,7 @@
  * eLISAschool - Migration 036: Module Types Enum
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Création de la table types_enum pour la gestion dynamique
  * des types énumérés simples avec protection des types système

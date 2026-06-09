@@ -3,7 +3,7 @@
  * eLISAschool - Provider Registry
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Registre centralisé des providers de notifications
  * Permet d'enregistrer, récupérer et gérer les providers actifs

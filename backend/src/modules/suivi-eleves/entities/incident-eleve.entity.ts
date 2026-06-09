@@ -3,7 +3,7 @@
  * eLISAschool - Entité IncidentEleve
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Suivi des incidents disciplinaires des élèves
  */

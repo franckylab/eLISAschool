@@ -3,7 +3,7 @@
  * eLISAschool - Controller Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Endpoints REST pour le système de dashboard dynamique
  */

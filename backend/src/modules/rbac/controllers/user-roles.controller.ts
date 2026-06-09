@@ -3,7 +3,7 @@
  * eLISAschool - Contrôleur des rôles et permissions des utilisateurs
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * API pour gérer les rôles et permissions au niveau utilisateur
  */

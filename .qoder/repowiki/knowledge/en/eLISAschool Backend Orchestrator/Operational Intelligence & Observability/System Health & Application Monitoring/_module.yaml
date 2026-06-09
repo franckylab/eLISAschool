@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_dashboard_monitoring/monitoring
+module_path: c7960ddc6ba44a2c7561a0fd0129b72b
 title: System Health & Application Monitoring
 scope:
     - backend/src/modules/monitoring/

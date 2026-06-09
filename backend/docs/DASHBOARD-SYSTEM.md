@@ -518,5 +518,5 @@ interface DashboardContext {
 
 **Version** : 1.0.0  
 **Dernière Mise à Jour** : 2026-06-06  
-**Auteur** : xAI Éducation  
+**Auteur** : franck arlos chendjou  
 **Statut** : ✅ Production Ready

@@ -1,0 +1,1 @@
+Orchestrates a modular, multi-tenant school management system by unifying academic, administrative, and operational domains through shared authentication, configuration, and cross-cutting services.

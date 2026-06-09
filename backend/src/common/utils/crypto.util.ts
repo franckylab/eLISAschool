@@ -3,7 +3,7 @@
  * eLISAschool - Utilitaire de chiffrement AES-256
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import crypto from 'crypto';

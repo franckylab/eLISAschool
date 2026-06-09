@@ -4,6 +4,27 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities';
 
+/**
+ * Types d'actions pour l'attribution de points
+ */
+export enum TypeActionPoints {
+    ASSIDUITE = 'assiduite',
+    BONNE_NOTE = 'bonne_note',
+    FELICITATIONS = 'felicitations',
+    PARTICIPATION = 'participation',
+    COMPORTEMENT_EXEMPLAIRE = 'comportement_exemplaire',
+    PROGRES_REMARQUABLE = 'progres_remarquable',
+    ACTIVITE_PARASCOLAIRE = 'activite_parascolaire',
+    OBSERVATION_POSITIVE = 'observation_positive',
+    OBSERVATION_NEGATIVE = 'observation_negative',
+    EVALUATION_POSITIVE = 'evaluation_positive',
+    PROGRESSION_COMPLETE = 'progression_complete',
+    PROGRESSION_CONFORME = 'progression_conforme',
+    EVALUATION_EXCELLENTE = 'evaluation_excellente',
+    CHAPITRES_VALIDES = 'chapitres_valides',
+    CORRELATION_NOTES_POSITIVE = 'correlation_notes_positive',
+}
+
 @Entity('badges')
 export class Badge {
     @PrimaryGeneratedColumn('uuid')
@@ -78,10 +99,16 @@ export class HistoriquePoints {
     points!: number;
 
     @Column({ type: 'varchar', length: 50 })
-    action!: string; // assiduite, note, participation, etc.
+    action!: string; // assiduite, note, participation, felicitations, etc.
 
     @Column({ type: 'text', nullable: true })
     description?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    sourceModule?: string; // Module source (suivi-eleves, notes, etc.)
+
+    @Column({ type: 'uuid', nullable: true })
+    sourceId?: string; // ID de l'entité source
 
     @CreateDateColumn()
     createdAt!: Date;

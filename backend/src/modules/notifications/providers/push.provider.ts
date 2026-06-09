@@ -3,7 +3,7 @@
  * eLISAschool - Push Notification Provider (Firebase FCM)
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Provider pour les notifications push via Firebase Cloud Messaging
  * Support aussi OneSignal

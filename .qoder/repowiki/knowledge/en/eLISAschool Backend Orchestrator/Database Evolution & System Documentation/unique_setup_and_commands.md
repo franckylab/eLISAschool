@@ -1,0 +1,3 @@
+- Run database index analysis: `npx ts-node -r tsconfig-paths/register scripts/analyze-indexes.ts`
+- Execute configuration migrations: `npm run migrate:config` (wraps `scripts/run-config-migration.sh`)
+- Verify pagination implementation: `bash scripts/verify-pagination.sh`

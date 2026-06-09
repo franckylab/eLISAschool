@@ -2,7 +2,7 @@
 
 **Date**: 8 juin 2026  
 **Version**: eLISAschool v2.0  
-**Auditeur**: xAI Éducation  
+**Auditeur**: franck arlos chendjou  
 
 ---
 

@@ -3,7 +3,7 @@
  * eLISAschool - Entité Historique Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Suivi des modifications de configuration pour audit et restauration
  */

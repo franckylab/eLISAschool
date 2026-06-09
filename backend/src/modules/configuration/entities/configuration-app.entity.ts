@@ -3,7 +3,7 @@
  * eLISAschool - Entité Configuration Application
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * @deprecated Cette entité est dépréciée depuis la v2.0
  * Utiliser à la place :
@@ -104,6 +104,10 @@ export class ConfigurationApp {
     // Modules activés
     @Column({ type: 'simple-json', default: '{}' })
     modulesActifs!: Record<string, boolean>;
+
+    // Valeurs par défaut pour restauration
+    @Column({ type: 'simple-json', nullable: true })
+    valeurDefaut?: Record<string, any>;
 
     // Métadonnées
     @Column({ type: 'varchar', length: 20, default: '1.0.0' })

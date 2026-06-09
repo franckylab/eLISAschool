@@ -3,7 +3,7 @@
  * eLISAschool - DTOs Rapports de Validation
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Schémas Zod et types pour la génération de rapports de validation
  */

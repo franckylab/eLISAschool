@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_establishment_config/system_configuration
+module_path: 7664de88a5eea4fe1d5af9d817d2974d
 title: System Configuration & Parameter Management
 scope:
     - backend/src/modules/configuration/

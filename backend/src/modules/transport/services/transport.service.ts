@@ -3,7 +3,7 @@
  * eLISAschool - Service Transport v2.0
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Utilise le système de configuration centralisé
  */

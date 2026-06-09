@@ -1,0 +1,1 @@
+Manages subjects, student grades, and report card generation for the school management system.

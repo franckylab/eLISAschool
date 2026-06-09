@@ -3,7 +3,7 @@
  * eLISAschool - Middleware de Permission Unifié
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Ce middleware combine l'ancien système (enum Role) et le nouveau système (permissions)
  * pour une transition fluide et sans rupture.

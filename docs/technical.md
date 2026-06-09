@@ -24,4 +24,4 @@ Documentation Swagger disponible sur `/api/docs`
 
 ---
 
-**eLISAschool** - xAI Éducation - v1.0.0
+**eLISAschool** - franck arlos chendjou - v1.0.0

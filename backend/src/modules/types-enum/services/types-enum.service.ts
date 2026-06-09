@@ -3,7 +3,7 @@
  * eLISAschool - Service TypeEnum
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Logique métier pour la gestion dynamique des types enum
  * avec protection des types système

@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/business_modules/finance
+title: Financial Management & Accounting
+scope:
+    - backend/src/modules/finances/
+source_files: []
+depends_on: []
+related_to: []

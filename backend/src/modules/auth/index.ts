@@ -3,7 +3,7 @@
  * eLISAschool - Module Auth - Export principal
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 export * from './entities';

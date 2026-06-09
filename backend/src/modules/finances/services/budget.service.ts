@@ -3,7 +3,7 @@
  * eLISAschool - Service Budget
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion budgétaire : création, suivi, engagement et consommation
  */

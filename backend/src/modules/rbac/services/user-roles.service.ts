@@ -3,7 +3,7 @@
  * eLISAschool - Service de gestion des rôles et permissions des utilisateurs
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion des rôles et permissions personnalisées au niveau utilisateur
  */

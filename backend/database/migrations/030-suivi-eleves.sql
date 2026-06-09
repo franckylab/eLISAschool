@@ -2,7 +2,7 @@
 -- eLISAschool - Migration 030: Suivi-Élèves
 -- ==================================
 -- Version: 2.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Module complet de suivi comportemental des élèves
 --   - Incidents disciplinaires
 --   - Observations (positives/négatives)

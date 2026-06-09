@@ -11,7 +11,7 @@ export const swaggerSpec = {
         title: 'eLISAschool API',
         description: 'API de gestion scolaire avancée - eLISAschool\n\n## Authentification\nL\'API utilise des tokens JWT. Incluez le header `Authorization: Bearer <token>` pour les routes protégées.',
         version: '1.0.0',
-        contact: { name: 'xAI Éducation' },
+        contact: { name: 'franck arlos chendjou' },
     },
     servers: [{ url: '/api', description: 'Serveur API' }],
     components: {

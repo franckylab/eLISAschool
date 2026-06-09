@@ -373,4 +373,4 @@ npm run start:backend
 
 **Date d'implémentation :** 7 juin 2026  
 **Version :** 1.0.0  
-**Auteur :** xAI Éducation
+**Auteur :** franck arlos chendjou

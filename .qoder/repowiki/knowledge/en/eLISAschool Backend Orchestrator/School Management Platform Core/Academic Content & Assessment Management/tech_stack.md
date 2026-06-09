@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation with z.infer type derivation; TypeORM with raw SQL queries in notes-batch-loader for performance-critical batch operations; Express Router with middleware composition pattern.

@@ -2,7 +2,7 @@
 
 > **Version**: 2.0.0  
 > **Date**: Juin 2026  
-> **Auteur**: xAI Éducation  
+> **Auteur**: franck arlos chendjou  
 > **Statut**: ✅ Implémenté et opérationnel avec extensions
 
 ---

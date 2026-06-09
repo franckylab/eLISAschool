@@ -3,7 +3,7 @@
  * eLISAschool - Entités Comptabilité
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Entités pour la gestion comptable (système OHADA)
  * - EcritureComptable: Écritures comptables

@@ -3,7 +3,7 @@
  * eLISAschool - Entité Role
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Rôles dynamiques stockés en base de données
  * pour le système RBAC avancé avec support d'héritage

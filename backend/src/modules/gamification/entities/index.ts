@@ -1,1 +1,1 @@
-export { Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur } from './gamification.entity';
+export { Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur, TypeActionPoints } from './gamification.entity';

@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/support_artifacts
+title: Database Evolution & System Documentation
+scope:
+    - backend/database/migrations/
+    - backend/docs/
+    - backend/scripts/
+    - backend/test/
+source_files: []
+depends_on: []
+related_to: []

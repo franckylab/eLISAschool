@@ -3,7 +3,7 @@
  * eLISAschool - Configuration Module Finances
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Configuration centralisée du module finances
  */

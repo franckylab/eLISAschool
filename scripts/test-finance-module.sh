@@ -3,7 +3,7 @@
 # eLISAschool - Script de Test Module Finances
 # ==================================
 # Version: 1.0.0
-# Auteur: xAI Éducation
+# Auteur: franck arlos chendjou
 # 
 # Script de test complet pour le module finances
 # Usage: ./scripts/test-finance-module.sh

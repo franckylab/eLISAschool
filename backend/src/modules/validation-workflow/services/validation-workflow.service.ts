@@ -3,7 +3,7 @@
  * eLISAschool - Service Validation Workflow
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Service générique pour gérer les workflows de validation multi-niveau
  * Réutilisable par tous les modules métier

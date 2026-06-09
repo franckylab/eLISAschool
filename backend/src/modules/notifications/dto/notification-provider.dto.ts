@@ -3,7 +3,7 @@
  * eLISAschool - DTOs Notification Provider
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Schémas Zod pour la validation des providers de notifications
  */

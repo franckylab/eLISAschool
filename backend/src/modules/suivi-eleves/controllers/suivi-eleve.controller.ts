@@ -250,11 +250,24 @@ router.get('/eleve/:eleveId/sanctions', staffOnly, async (req: Request, res: Res
 // ==================== DASHBOARD ====================
 router.get('/eleve/:eleveId/dashboard', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // ← NOUVEAU: Validation année scolaire obligatoire
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const dashboard = await suiviEleveService.getDashboardEleve(
             req.params.eleveId,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            anneeScolaireId
         );
-        res.json({ success: true, data: dashboard });
+        res.json({ 
+            success: true, 
+            data: dashboard,
+            metadata: {
+                anneeScolaireId,
+            },
+        });
     } catch (error) {
         next(error);
     }

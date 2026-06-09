@@ -3,7 +3,7 @@
  * eLISAschool - Module RBAC (Role-Based Access Control)
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Module de gestion des rôles et permissions dynamiques
  */

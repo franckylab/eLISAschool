@@ -3,7 +3,7 @@
  * eLISAschool - Cron Jobs pour Notifications
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Tâches planifiées pour les notifications automatiques
  */

@@ -3,7 +3,7 @@
  * eLISAschool - Seed des données initiales
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Inclut: Configuration app, Paramètres système, Super admin
  */

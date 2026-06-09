@@ -1,0 +1,5 @@
+- The module comprises three distinct sub-domains: `messagerie` (chat/conversations), `requetes` (formal requests/approvals), and `impressions` (document templates/print queue).
+- Each sub-domain follows a strict layered architecture: `controllers` (Express routers) -> `services` (business logic/TypeORM repositories) -> `entities` (TypeORM models) -> `dto` (Zod schemas).
+- Entry points are standardized via `index.ts` files in each sub-domain, exporting controllers, services, and entities for modular registration.
+- Dependencies flow inward: Controllers depend on Services and DTOs; Services depend on Entities and external configuration/auth modules.
+- Cross-cutting concerns like authentication (`authMiddleware`) and role-based access control (`managerOnly`, `requireRoles`) are applied at the controller layer.

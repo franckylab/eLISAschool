@@ -3,7 +3,7 @@
  * eLISAschool - Script de Migration des Parents Existants
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Migre les données texte (nomPere, nomMere, telephoneTuteur)
  * depuis la table eleves vers la nouvelle table responsables_eleves.

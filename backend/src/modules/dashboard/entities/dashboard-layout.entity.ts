@@ -3,7 +3,7 @@
  * eLISAschool - Entité DashboardLayout
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Stocke la configuration des layouts de dashboard par utilisateur
  */

@@ -1,0 +1,1 @@
+Provides system health monitoring, audit log management, and a role-based dynamic dashboard with real-time data aggregation and caching.

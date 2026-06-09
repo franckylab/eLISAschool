@@ -3,7 +3,7 @@
  * eLISAschool - Contrôleur Audit Trail
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * API REST pour consultation et export des logs d'audit
  */

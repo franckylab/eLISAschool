@@ -2,7 +2,7 @@
 -- eLISAschool - Migration 032: Module Santé
 -- ==================================
 -- Version: 2.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Module de gestion de la santé
 --   - Dossiers médicaux (élèves et personnel)
 --   - Consultations médicales

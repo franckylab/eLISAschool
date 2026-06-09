@@ -333,4 +333,4 @@ Pour toute question ou problème :
 
 **Version**: 1.0.0  
 **Dernière mise à jour**: Juin 2026  
-**Auteur**: xAI Éducation
+**Auteur**: franck arlos chendjou

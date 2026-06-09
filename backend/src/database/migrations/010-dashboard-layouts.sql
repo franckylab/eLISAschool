@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Dashboard Layouts
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Crée la table pour stocker les layouts de dashboard personnalisés
 
 -- Table dashboard_layouts

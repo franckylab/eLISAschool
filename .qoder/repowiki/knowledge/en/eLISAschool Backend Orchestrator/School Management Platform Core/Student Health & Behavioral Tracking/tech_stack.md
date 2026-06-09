@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation; TypeORM with UUID primary keys and simple-json columns for array storage; in-memory Map cache with 5-minute TTL in SanteService.

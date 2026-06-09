@@ -3,7 +3,7 @@
  * eLISAschool - Service d'Archivage Audit
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion de l'archivage et de la purge des logs d'audit
  */

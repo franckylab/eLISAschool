@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_operations
+module_path: 4c8dcec1e310d1c6d55706d0b4a5d4e2
 title: Backend Operations Modules
 scope:
     - backend/src/modules/personnel/

@@ -3,7 +3,7 @@
  * eLISAschool - Entités Budget
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Entités pour la gestion budgétaire
  * - Budget: Budget annuel par établissement

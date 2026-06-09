@@ -3,7 +3,7 @@
  * eLISAschool - Entité Section
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Sections pédagogiques (Scientifique, Littéraire, Technique, etc.)
  * Utilisé principalement au lycée pour différencier les filières

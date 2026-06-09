@@ -3,7 +3,7 @@
  * eLISAschool - Service Impressions
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { Repository } from 'typeorm';
@@ -220,7 +220,7 @@ export class ImpressionsService {
         }
 
         if (modele.piedDePage.version) {
-            pied += `<span>eLISAschool - xAI Éducation - v${appConfig.version || '1.0.0'}</span>`;
+            pied += `<span>eLISAschool - franck arlos chendjou - v${appConfig.version || '1.0.0'}</span>`;
         }
 
         pied += '</div>';

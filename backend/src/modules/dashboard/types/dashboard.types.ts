@@ -3,7 +3,7 @@
  * eLISAschool - Types Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Types et interfaces pour le système de dashboard dynamique
  */

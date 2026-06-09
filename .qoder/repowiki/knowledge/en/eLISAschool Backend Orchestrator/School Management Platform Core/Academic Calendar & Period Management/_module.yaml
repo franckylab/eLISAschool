@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/business_modules/academic_calendar
+title: Academic Calendar & Period Management
+scope:
+    - backend/src/modules/annees-scolaires/
+    - backend/src/modules/periodes/
+source_files: []
+depends_on: []
+related_to: []

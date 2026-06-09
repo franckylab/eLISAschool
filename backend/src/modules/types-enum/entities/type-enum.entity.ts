@@ -3,7 +3,7 @@
  * eLISAschool - Entité TypeEnum
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion dynamique des types énumérés simples
  * avec protection des types système (immuables)

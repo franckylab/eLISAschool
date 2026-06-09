@@ -1,0 +1,7 @@
+- Two parallel sub-modules (`annees-scolaires` and `periodes`) each following a layered structure: controllers → services → entities/dto.
+- Controllers use Express Router instances with middleware chains (`authMiddleware`, `requireRoles`) and delegate to singleton service instances.
+- Services interact with TypeORM repositories via a shared `AppDataSource`, implementing business logic for state transitions (active year switching, closure workflows).
+- Entities define TypeORM mappings with UUID primary keys, indexes for query performance, and relationships (AnneeScolaire ↔ Etablissement, Periode ↔ AnneeScolaire/TypePeriode).
+- DTOs use Zod schemas for input validation, consumed by controllers via `validateDto` before service calls.
+- Both modules integrate with an external `validationWorkflowService` for conditional approval flows triggered by configuration flags (`require_validation`).
+- Module entry points (`index.ts`) re-export all layers via barrel exports for clean consumer imports.

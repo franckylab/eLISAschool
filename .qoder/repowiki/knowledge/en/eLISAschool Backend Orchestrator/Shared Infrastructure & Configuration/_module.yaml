@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_infrastructure
+module_path: f85486a2da4a858020d48af4079c5d1f
 title: Shared Infrastructure & Configuration
 scope:
     - backend/src/common/

@@ -5,3 +5,4 @@
  */
 
 export * from './suivi-personnel.service';
+export * from './scoring-personnel.service';

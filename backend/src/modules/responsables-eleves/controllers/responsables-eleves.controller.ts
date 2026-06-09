@@ -3,7 +3,7 @@
  * eLISAschool - Controller Responsables Élèves
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: API pour gérer les relations entre parents et élèves.
  */

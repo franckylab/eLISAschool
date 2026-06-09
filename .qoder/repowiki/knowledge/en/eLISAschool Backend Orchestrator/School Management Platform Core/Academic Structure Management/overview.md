@@ -1,0 +1,1 @@
+Manages school establishments, academic cycles, and grade levels with multi-tenant support and validation workflows.

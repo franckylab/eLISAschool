@@ -3,7 +3,7 @@
  * eLISAschool - Service Batch Loader pour Notes
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Résout le problème N+1 dans le calcul des bulletins
  * en batchant les requêtes de calcul de moyennes

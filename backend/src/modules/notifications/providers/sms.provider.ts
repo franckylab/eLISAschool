@@ -3,7 +3,7 @@
  * eLISAschool - SMS Notification Provider (Twilio)
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Provider pour les notifications SMS via Twilio
  * Support aussi Vonage, Africa's Talking

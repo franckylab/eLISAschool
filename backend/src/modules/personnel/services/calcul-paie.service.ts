@@ -3,7 +3,7 @@
  * eLISAschool - Service Calcul Paie
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { Repository } from 'typeorm';
@@ -37,7 +37,7 @@ export class CalculPaieService {
     private contratRepo: Repository<ContratPersonnel>;
 
     constructor() {
-        this bulletinRepo = AppDataSource.getRepository(BulletinPaie);
+        this.bulletinRepo = AppDataSource.getRepository(BulletinPaie);
         this.elementRepo = AppDataSource.getRepository(ElementSalaire);
         this.cotisationRepo = AppDataSource.getRepository(Cotisation);
         this.primeRepo = AppDataSource.getRepository(TypePrime);

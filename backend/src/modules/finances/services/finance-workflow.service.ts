@@ -3,7 +3,7 @@
  * eLISAschool - Service Workflow Validation Finances
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion des workflows de validation pour :
  * - Paiements (2 niveaux)

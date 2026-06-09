@@ -236,5 +236,5 @@ L'**Étape 1 (Architecture Providers)** est **100% complétée**. Le système es
 ---
 
 **Date :** 2025-06-06  
-**Auteur :** xAI Éducation  
+**Auteur :** franck arlos chendjou  
 **Statut :** ✅ Étape 1 complétée - Prêt pour déploiement et tests

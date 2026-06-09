@@ -3,7 +3,7 @@
  * eLISAschool - Configuration de la base de données
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { DataSourceOptions } from 'typeorm';
@@ -30,7 +30,8 @@ export const databaseConfig: DataSourceOptions = {
     database: envConfig.database.name,
 
     // Synchronisation automatique (désactivée en production)
-    synchronize: envConfig.app.isDevelopment,
+    // NOTE: synchronize désactivé temporairement - mismatch snake_case/camelCase dans entités finances
+    synchronize: false,
 
     // Journalisation des requêtes SQL
     logging: envConfig.app.isDevelopment ? ['query', 'error', 'warn'] : ['error'],

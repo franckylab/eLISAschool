@@ -295,4 +295,4 @@ router.post('/', authMiddleware, async (req, res) => {
 **Statut** : ✅ **IMPLÉMENTATION TERMINÉE**  
 **Version** : 1.0.0  
 **Date** : Juin 2026  
-**Auteur** : xAI Éducation
+**Auteur** : franck arlos chendjou

@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Groupes d'Établissements
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- 
 -- Crée le système de regroupement d'établissements
 -- pour dashboards et rapports consolidés

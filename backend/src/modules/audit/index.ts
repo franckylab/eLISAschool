@@ -3,7 +3,7 @@
  * eLISAschool - Module Audit Trail
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Module de consultation et gestion des logs d'audit
  */

@@ -3,7 +3,7 @@
  * eLISAschool - Guide d'Implémentation des Permissions RBAC
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Document de référence pour implémenter les guards de permissions
  * sur les endpoints de l'API eLISAschool

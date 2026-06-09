@@ -3,7 +3,7 @@
  * eLISAschool - Entité UtilisateurRole
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Table de jointure pour le support multi-rôles
  * Permet d'assigner plusieurs rôles à un utilisateur

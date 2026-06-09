@@ -3,7 +3,7 @@
  * eLISAschool - Service Trésorerie
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion de la caisse, des comptes bancaires et des mouvements de trésorerie
  */

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TypeActionPoints } from '../entities/gamification.entity';
 
 export const createBadgeSchema = z.object({
     code: z.string().min(1).max(100),
@@ -12,8 +13,10 @@ export const createBadgeSchema = z.object({
 export const attribuerPointsSchema = z.object({
     utilisateurId: z.string().uuid(),
     points: z.number(),
-    action: z.string().max(50),
+    action: z.nativeEnum(TypeActionPoints),
     description: z.string().optional(),
+    sourceModule: z.string().max(50).optional(), // Module source (suivi-eleves, notes, etc.)
+    sourceId: z.string().uuid().optional(), // ID de l'entité source
 });
 
 export const attribuerBadgeSchema = z.object({

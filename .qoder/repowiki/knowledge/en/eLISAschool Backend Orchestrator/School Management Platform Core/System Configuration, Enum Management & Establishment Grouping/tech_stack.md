@@ -1,0 +1,2 @@
+- Uses Node.js `crypto` and `zlib` for AES-256-GCM encryption and GZIP compression in database backups (`database-backup.service.ts`).
+- Leverages TypeORM `QueryBuilder` with raw SQL aggregation for high-performance cross-tenant reporting in `consolidation.service.ts`.

@@ -10,10 +10,12 @@ import {
     ManyToOne,
     JoinColumn,
     CreateDateColumn,
+    UpdateDateColumn,
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { MembrePersonnel } from './personnel.entity';
+import { ProgrammeChapitre } from '@modules/programmes/entities';
 
 @Entity('progressions_programme')
 @Index(['enseignantId'])
@@ -40,8 +42,18 @@ export class ProgressionProgramme {
     @Column({ type: 'uuid', nullable: true })
     periodeId?: string;
 
+    @Column({ type: 'uuid', nullable: true })
+    programmeChapitreId?: string;
+
+    @ManyToOne(() => ProgrammeChapitre, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'programmeChapitreId' })
+    programmeChapitre?: ProgrammeChapitre;
+
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     pourcentageRealise!: number; // 0-100
+
+    @Column({ type: 'varchar', length: 30, default: 'LEGACY' })
+    modeCalcul!: string; // LEGACY | CHAPITRE | MIXTE
 
     @Column({ type: 'varchar', length: 200 })
     chapitreCourant!: string;
@@ -61,4 +73,7 @@ export class ProgressionProgramme {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
 }

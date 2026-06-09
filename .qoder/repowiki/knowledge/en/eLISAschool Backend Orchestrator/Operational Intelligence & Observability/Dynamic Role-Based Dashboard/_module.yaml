@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_dashboard_monitoring/dashboard
+module_path: 0cb17a00bcdc8e9541aac1b15244f9d6
 title: Dynamic Role-Based Dashboard
 scope:
     - backend/src/modules/dashboard/

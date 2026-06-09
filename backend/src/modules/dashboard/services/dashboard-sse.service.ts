@@ -3,7 +3,7 @@
  * eLISAschool - Service SSE Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Server-Sent Events pour mise à jour temps réel du dashboard
  */

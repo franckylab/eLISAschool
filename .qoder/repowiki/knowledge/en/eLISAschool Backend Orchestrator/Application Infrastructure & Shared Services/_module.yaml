@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/infrastructure
+title: Application Infrastructure & Shared Services
+scope:
+    - backend/src/common/
+    - backend/src/config/
+    - backend/src/database/
+    - backend/src/app.ts
+    - backend/src/index.ts
+source_files: []
+depends_on: []
+related_to: []

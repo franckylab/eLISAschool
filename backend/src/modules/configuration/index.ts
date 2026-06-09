@@ -3,7 +3,7 @@
  * eLISAschool - Module Configuration - Export principal
  * ==================================
  * Version: 4.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 export * from './entities';

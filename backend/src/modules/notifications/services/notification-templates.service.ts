@@ -3,7 +3,7 @@
  * eLISAschool - Service de Templates de Notifications
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Templates réutilisables pour les notifications métier
  * Centralise la création de notifications pour tous les modules

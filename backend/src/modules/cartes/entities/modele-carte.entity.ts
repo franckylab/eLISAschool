@@ -3,7 +3,7 @@
  * eLISAschool - Entité ModeleCarte
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Modèles configurables pour les cartes scolaires
  */
@@ -48,10 +48,10 @@ export class ModeleCarte {
     etablissement?: Etablissement;
 
     // Dimensions (en mm, format carte crédit par défaut)
-    @Column({ type: 'int', default: 85.6 })
+    @Column({ type: 'decimal', precision: 6, scale: 2, default: 85.6 })
     largeur!: number;
 
-    @Column({ type: 'int', default: 53.98 })
+    @Column({ type: 'decimal', precision: 6, scale: 2, default: 53.98 })
     hauteur!: number;
 
     @Column({ type: 'varchar', length: 20, default: OrientationCarte.PORTRAIT })

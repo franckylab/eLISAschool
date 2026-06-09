@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/communication
+title: Communication & Document Management
+scope:
+    - backend/src/modules/messagerie/
+    - backend/src/modules/requetes/
+    - backend/src/modules/impressions/
+source_files: []
+depends_on: []
+related_to: []

@@ -3,7 +3,7 @@
  * eLISAschool - Service Historique Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Suivi, sauvegarde et restauration des modifications de configuration
  */

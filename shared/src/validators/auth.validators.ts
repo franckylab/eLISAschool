@@ -3,7 +3,7 @@
  * eLISAschool - Validateurs d'authentification (partagés)
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Schémas partagés entre backend et frontend.
  * Noms de champs en FRANÇAIS (convention eLISAschool).

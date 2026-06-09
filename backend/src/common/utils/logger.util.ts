@@ -3,7 +3,7 @@
  * eLISAschool - Utilitaire de journalisation (Logger)
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import winston from 'winston';

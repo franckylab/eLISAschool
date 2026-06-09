@@ -3,7 +3,7 @@
  * eLISAschool - Middleware Guard Accès Parent-Élève
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Middleware pour vérifier si un parent connecté a le droit
  * d'accéder aux données d'un élève spécifique.

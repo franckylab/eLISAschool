@@ -3,7 +3,7 @@
  * eLISAschool - Service Seed Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Initialisation des paramètres de configuration lors de la première installation
  */
@@ -49,13 +49,14 @@ export class ConfigurationSeedService {
 
     /**
      * Exécute tous les seeds de configuration
+     * @param force Si true, force la réinitialisation des valeurs existantes vers les valeurs par défaut
      */
-    async runAllSeeds(): Promise<{ app: boolean; modules: number; parametres: number }> {
-        logger.info('🌱 Démarrage du seed de configuration...');
+    async runAllSeeds(force: boolean = false): Promise<{ app: boolean; modules: number; parametres: number }> {
+        logger.info(`🌱 Démarrage du seed de configuration${force ? ' (FORCÉ)' : ''}...`);
 
-        const appCreated = await this.seedConfigurationApp();
-        const modulesCreated = await this.seedConfigurationModules();
-        const parametresCreated = await this.seedParametresSysteme();
+        const appCreated = await this.seedConfigurationApp(force);
+        const modulesCreated = await this.seedConfigurationModules(force);
+        const parametresCreated = await this.seedParametresSysteme(force);
 
         logger.info(`✅ Seed terminé: App=${appCreated}, Modules=${modulesCreated}, Paramètres=${parametresCreated}`);
 
@@ -68,15 +69,43 @@ export class ConfigurationSeedService {
 
     /**
      * Seed de la configuration application
+     * @param force Si true, force la réinitialisation même si la config existe
      */
-    async seedConfigurationApp(): Promise<boolean> {
+    async seedConfigurationApp(force: boolean = false): Promise<boolean> {
         const existing = await this.configAppRepo.findOne({ where: {} });
-        if (existing) {
+        
+        if (existing && !force) {
             logger.info('Configuration app déjà existante, skip...');
             return false;
         }
 
-        const config = this.configAppRepo.create({
+        if (existing && force) {
+            // Forcer la réinitialisation vers les valeurs par défaut
+            const defaultValues = {
+                nomEtablissement: 'eLISAschool Demo',
+                typeEtablissement: 'MIXTE',
+                langueDefaut: 'fr',
+                devise: 'XAF',
+                fuseauHoraire: 'Africa/Douala',
+                couleurPrimaire: '#28a745',
+                couleurSecondaire: '#ffc107',
+                couleurAccent: '#007bff',
+                theme: 'default',
+                messageAccueil: 'Bienvenue sur eLISAschool - Votre solution de gestion scolaire',
+                modulesActifs: this.getDefaultActiveModules(),
+                version: '1.0.0',
+            };
+            
+            Object.assign(existing, {
+                ...defaultValues,
+                valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
+            });
+            await this.configAppRepo.save(existing);
+            logger.info('✅ Configuration app réinitialisée (force)');
+            return true;
+        }
+
+        const defaultValues = {
             nomEtablissement: 'eLISAschool Demo',
             typeEtablissement: 'MIXTE',
             langueDefaut: 'fr',
@@ -89,6 +118,11 @@ export class ConfigurationSeedService {
             messageAccueil: 'Bienvenue sur eLISAschool - Votre solution de gestion scolaire',
             modulesActifs: this.getDefaultActiveModules(),
             version: '1.0.0',
+        };
+
+        const config = this.configAppRepo.create({
+            ...defaultValues,
+            valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
         });
 
         await this.configAppRepo.save(config);
@@ -98,42 +132,92 @@ export class ConfigurationSeedService {
 
     /**
      * Seed des configurations de modules
+     * @param force Si true, force la réinitialisation même si la config existe
      */
-    async seedConfigurationModules(): Promise<number> {
+    async seedConfigurationModules(force: boolean = false): Promise<number> {
         let created = 0;
+        let updated = 0;
 
         for (const moduleName of Object.values(ModuleName)) {
             const existing = await this.configModuleRepo.findOne({ where: { moduleNom: moduleName } });
+            
+            if (existing && force) {
+                // Forcer la réinitialisation
+                const registryConfig = MODULE_REGISTRY[moduleName];
+                if (!registryConfig) continue;
+
+                const defaultValues = {
+                    champsPersonnalises: [],
+                    widgets: [],
+                    parametres: registryConfig.defaultSettings || {},
+                    actif: registryConfig.defaultActive,
+                };
+
+                Object.assign(existing, {
+                    ...defaultValues,
+                    valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
+                });
+                await this.configModuleRepo.save(existing);
+                updated++;
+                continue;
+            }
+            
             if (existing) continue;
 
             const registryConfig = MODULE_REGISTRY[moduleName];
             if (!registryConfig) continue;
 
-            const config = this.configModuleRepo.create({
-                moduleNom: moduleName,
+            const defaultValues = {
                 champsPersonnalises: [],
                 widgets: [],
                 parametres: registryConfig.defaultSettings || {},
                 actif: registryConfig.defaultActive,
+            };
+
+            const config = this.configModuleRepo.create({
+                moduleNom: moduleName,
+                ...defaultValues,
+                valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
             });
 
             await this.configModuleRepo.save(config);
             created++;
         }
 
-        logger.info(`✅ ${created} configurations de modules créées`);
-        return created;
+        logger.info(`✅ ${created} configurations de modules créées, ${updated} réinitialisées (force)`);
+        return created + updated;
     }
 
     /**
      * Seed des paramètres système
+     * @param force Si true, force la réinitialisation même si le paramètre existe
      */
-    async seedParametresSysteme(): Promise<number> {
+    async seedParametresSysteme(force: boolean = false): Promise<number> {
         const defaults = this.getAllDefaultParametres();
         let created = 0;
+        let updated = 0;
 
         for (const param of defaults) {
             const existing = await this.parametreRepo.findOne({ where: { cle: param.cle } });
+            
+            if (existing && force) {
+                // Forcer la réinitialisation vers la valeur par défaut
+                existing.valeur = JSON.stringify(param.valeur);
+                existing.valeurDefaut = JSON.stringify(param.valeur);
+                existing.typeValeur = param.typeValeur;
+                existing.categorie = param.categorie;
+                existing.module = param.module;
+                existing.description = param.description;
+                existing.modifiableRuntime = param.modifiableRuntime;
+                existing.visible = param.visible;
+                existing.ordre = param.ordre;
+                existing.options = param.options;
+                
+                await this.parametreRepo.save(existing);
+                updated++;
+                continue;
+            }
+            
             if (existing) continue;
 
             const entity = this.parametreRepo.create({
@@ -154,8 +238,8 @@ export class ConfigurationSeedService {
             created++;
         }
 
-        logger.info(`✅ ${created} paramètres système créés`);
-        return created;
+        logger.info(`✅ ${created} paramètres système créés, ${updated} réinitialisés (force)`);
+        return created + updated;
     }
 
     /**
@@ -233,6 +317,18 @@ export class ConfigurationSeedService {
             { cle: 'gamification.points_good_grade', valeur: 10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Points pour bonne note (≥80%)', modifiableRuntime: true, visible: true, ordre: 2 },
             { cle: 'gamification.enable_leaderboard', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Activer le leaderboard', modifiableRuntime: true, visible: true, ordre: 3 },
             { cle: 'gamification.anonymize_ranking', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Anonymiser le classement', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'gamification.auto_attendance', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Attribution automatique des points d\'assiduité (cron job)', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'gamification.auto_notes', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Attribution automatique des points pour bonnes notes', modifiableRuntime: true, visible: true, ordre: 6 },
+            { cle: 'gamification.seuil_bonne_note', valeur: 0.8, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'gamification', description: 'Seuil pour bonne note (80% du barème)', modifiableRuntime: true, visible: true, ordre: 7 },
+
+            // ============ PROGRAMMES PÉDAGOGIQUES ============
+            { cle: 'programmes.actif', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Activer le module programmes pédagogiques', modifiableRuntime: true, visible: true, ordre: 1 },
+            { cle: 'programmes.enable_gamification', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Activer la gamification pour les enseignants (points/badges)', modifiableRuntime: true, visible: true, ordre: 2 },
+            { cle: 'programmes.auto_calcul_progression', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Calcul automatique de la progression à partir des chapitres validés', modifiableRuntime: true, visible: true, ordre: 3 },
+            { cle: 'programmes.seuil_conformite', valeur: 90, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Seuil de conformité programme (%) pour badge "programme conforme"', modifiableRuntime: true, visible: true, ordre: 4 },
+            { cle: 'programmes.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Validation obligatoire des chapitres créés', modifiableRuntime: true, visible: true, ordre: 5 },
+            { cle: 'programmes.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Niveaux de validation des chapitres', modifiableRuntime: true, visible: true, ordre: 6 },
+            { cle: 'programmes.validation_roles', valeur: JSON.stringify({ '1': 'ENSEIGNANT', '2': 'CHEF_ETABLISSEMENT', '3': 'ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'programmes', description: 'Rôles requis par niveau de validation', modifiableRuntime: true, visible: true, ordre: 7 },
 
             // ============ CARTES ============
             { cle: 'cartes.enable_qrcode', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'cartes', description: 'Inclure QR code sur les cartes', modifiableRuntime: true, visible: true, ordre: 1 },
@@ -303,6 +399,35 @@ export class ConfigurationSeedService {
             { cle: 'etablissement.require_validation', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Validation obligatoire des créations/désactivations d\'établissement', modifiableRuntime: true, visible: true, ordre: 3 },
             { cle: 'etablissement.validation_levels', valeur: 2, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Niveaux de validation des établissements', modifiableRuntime: true, visible: true, ordre: 4 },
             { cle: 'etablissement.validation_roles', valeur: JSON.stringify({ '1': 'ADMIN', '2': 'SUPER_ADMIN' }), typeValeur: TypeValeurParametre.JSON, categorie: CategorieParametre.MODULE, module: 'etablissement', description: 'Rôles requis par niveau de validation des établissements', modifiableRuntime: true, visible: true, ordre: 5 },
+
+            // ============ SUIVI-ÉLÈVES - GAMIFICATION ============
+            { cle: 'suivi-eleves.gamification.actif', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-eleves', description: 'Activer la gamification dans le suivi-élèves', modifiableRuntime: true, visible: true, ordre: 10 },
+            { cle: 'suivi-eleves.gamification.points_felicitations', valeur: 10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-eleves', description: 'Points pour une félicitation', modifiableRuntime: true, visible: true, ordre: 11 },
+            { cle: 'suivi-eleves.gamification.points_observation_positive', valeur: 5, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-eleves', description: 'Points pour observation positive', modifiableRuntime: true, visible: true, ordre: 12 },
+            { cle: 'suivi-eleves.gamification.points_observation_negative', valeur: -5, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-eleves', description: 'Points pour observation négative', modifiableRuntime: true, visible: true, ordre: 13 },
+
+            // ============ SUIVI-PERSONNEL - GAMIFICATION ============
+            { cle: 'suivi-personnel.gamification.actif', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Activer la gamification dans le suivi-personnel', modifiableRuntime: true, visible: true, ordre: 10 },
+            { cle: 'suivi-personnel.gamification.points_evaluation_positive', valeur: 20, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour évaluation positive du personnel', modifiableRuntime: true, visible: true, ordre: 11 },
+            { cle: 'suivi-personnel.gamification.seuil_evaluation_positive', valeur: 15, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Seuil de note pour évaluation positive (/20)', modifiableRuntime: true, visible: true, ordre: 12 },
+            { cle: 'suivi-personnel.gamification.points_assiduite', valeur: 5, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points d\'assiduité pour le personnel', modifiableRuntime: true, visible: true, ordre: 13 },
+
+            // ============ SUIVI-PERSONNEL - SCORING ============
+            { cle: 'scoring-personnel.actif', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Activer le système de scoring du personnel', modifiableRuntime: true, visible: true, ordre: 20 },
+            { cle: 'scoring-personnel.auto_recalcul_quotidien', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Recalcul automatique quotidien des scores', modifiableRuntime: true, visible: true, ordre: 21 },
+            { cle: 'scoring-personnel.auto_classement', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Mise à jour automatique des classements', modifiableRuntime: true, visible: true, ordre: 22 },
+            { cle: 'scoring-personnel.reset_mensuel', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Reset mensuel des scores', modifiableRuntime: true, visible: true, ordre: 23 },
+            { cle: 'scoring-personnel.nettoyage_historique', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Nettoyage automatique de l\'historique (> 1 an)', modifiableRuntime: true, visible: true, ordre: 24 },
+            { cle: 'scoring-personnel.ponderation_assiduite', valeur: 0.25, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Pondération score assiduité (0-1)', modifiableRuntime: true, visible: true, ordre: 25 },
+            { cle: 'scoring-personnel.ponderation_comportement', valeur: 0.25, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Pondération score comportement (0-1)', modifiableRuntime: true, visible: true, ordre: 26 },
+            { cle: 'scoring-personnel.ponderation_performance', valeur: 0.30, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Pondération score performance (0-1)', modifiableRuntime: true, visible: true, ordre: 27 },
+            { cle: 'scoring-personnel.ponderation_pedagogie', valeur: 0.20, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Pondération score pédagogie (0-1)', modifiableRuntime: true, visible: true, ordre: 28 },
+            { cle: 'scoring-personnel.points_incident_mineur', valeur: -5, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour incident mineur', modifiableRuntime: true, visible: true, ordre: 29 },
+            { cle: 'scoring-personnel.points_incident_modere', valeur: -10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour incident modéré', modifiableRuntime: true, visible: true, ordre: 30 },
+            { cle: 'scoring-personnel.points_incident_grave', valeur: -20, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour incident grave', modifiableRuntime: true, visible: true, ordre: 31 },
+            { cle: 'scoring-personnel.points_incident_tres_grave', valeur: -40, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour incident très grave', modifiableRuntime: true, visible: true, ordre: 32 },
+            { cle: 'scoring-personnel.points_absence_non_justifiee', valeur: -10, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour absence non justifiée', modifiableRuntime: true, visible: true, ordre: 33 },
+            { cle: 'scoring-personnel.points_retard', valeur: -3, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.MODULE, module: 'suivi-personnel', description: 'Points pour retard', modifiableRuntime: true, visible: true, ordre: 34 },
 
             // ============ RÉGIONAL ============
             { cle: 'regional.currency', valeur: 'XOF', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.REGIONAL, description: 'Devise monétaire', modifiableRuntime: true, visible: true, ordre: 1, options: [{ value: 'XOF', label: 'Franc CFA (FCFA)' }, { value: 'EUR', label: 'Euro (€)' }, { value: 'USD', label: 'Dollar ($)' }] },

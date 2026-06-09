@@ -1,0 +1,1 @@
+Uses Nodemailer for SMTP email delivery within the notifications provider layer.

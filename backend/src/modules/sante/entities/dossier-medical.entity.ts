@@ -3,7 +3,7 @@
  * eLISAschool - Entité DossierMedical
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Dossier médical de base pour une personne (élève ou personnel)
  */

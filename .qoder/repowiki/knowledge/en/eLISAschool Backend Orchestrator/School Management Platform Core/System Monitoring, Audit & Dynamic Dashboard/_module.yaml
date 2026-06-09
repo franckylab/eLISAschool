@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/system_monitoring
+title: System Monitoring, Audit & Dynamic Dashboard
+scope:
+    - backend/src/modules/audit/
+    - backend/src/modules/monitoring/
+    - backend/src/modules/dashboard/
+source_files: []
+depends_on: []
+related_to: []

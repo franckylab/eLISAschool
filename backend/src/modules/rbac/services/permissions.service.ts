@@ -3,7 +3,7 @@
  * eLISAschool - Service de gestion des permissions
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * CRUD pour les permissions
  */

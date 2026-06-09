@@ -1,0 +1,3 @@
+- **Caching**: Hybrid Redis/in-memory caching with LRU eviction and context-aware invalidation (`dashboard-cache.service.ts`).
+- **Real-time Communication**: Server-Sent Events (SSE) for push-based dashboard updates (`dashboard-sse.service.ts`).
+- **Data Access**: TypeORM repositories for direct entity access and lazy-loaded service instances for cross-module data aggregation (`dashboard-data.service.ts`, `data-aggregator.service.ts`).

@@ -3,7 +3,7 @@
  * eLISAschool - Service Génération Batch Cartes
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Génération en masse de cartes par classe ou groupe
  */

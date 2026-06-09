@@ -3,7 +3,7 @@
  * eLISAschool - Middleware Module Actif
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Middleware de vérification qu'un module est activé avant d'accéder à ses endpoints
  */

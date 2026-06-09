@@ -3,7 +3,7 @@
  * eLISAschool - Entité EtablissementConfig
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Configuration spécifique à un établissement (thème, quotas, modules, etc.)
  * Relation 1:1 avec Etablissement

@@ -339,4 +339,4 @@ L'implémentation est **COMPLETE** et **PRÊTE POUR LA PRODUCTION** :
 
 **Date d'implémentation :** 7 juin 2026
 **Version :** 1.0.0
-**Auteur :** xAI Éducation
+**Auteur :** franck arlos chendjou

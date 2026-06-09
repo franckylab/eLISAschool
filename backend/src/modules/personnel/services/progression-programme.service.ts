@@ -21,9 +21,13 @@ export class ProgressionProgrammeService {
     }
 
     async create(dto: CreateProgressionDto, etablissementId: string, createurId?: string, req?: any) {
+        // Déterminer le mode de calcul
+        const modeCalcul = dto.programmeChapitreId ? 'CHAPITRE' : (dto.modeCalcul || 'LEGACY');
+
         const entity = this.repo.create({
             ...dto,
             etablissementId,
+            modeCalcul,
         });
         await this.repo.save(entity);
 
@@ -33,13 +37,13 @@ export class ProgressionProgrammeService {
                 action: AuditAction.PROGRESSION_PROGRAMME_CREATE,
                 cible: 'ProgressionProgramme',
                 cibleId: entity.id,
-                description: `Création progression ${entity.id}`,
+                description: `Création progression ${entity.id} (mode: ${modeCalcul})`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
             }, req);
         }
 
-        logger.info(`Progression créée: ${entity.id}`);
+        logger.info(`Progression créée: ${entity.id} (mode: ${modeCalcul})`);
         return entity;
     }
 
@@ -156,6 +160,26 @@ export class ProgressionProgrammeService {
             .getMany();
 
         return alertes;
+    }
+
+    /**
+     * Obtenir une progression avec sa corrélation au programme officiel
+     */
+    async getProgressionAvecCorrelation(id: string, etablissementId: string) {
+        // Import dynamique pour éviter dépendance circulaire
+        const { correlationProgrammeService } = await import('@modules/programmes/services/correlation-programme.service');
+        
+        const progression = await this.findOne(id, etablissementId);
+
+        const correlation = await correlationProgrammeService.correlerProgressionProgramme(
+            progression.enseignantId,
+            progression.matiereId,
+            progression.classeId,
+            etablissementId,
+            progression.periodeId
+        );
+
+        return { progression, correlation };
     }
 }
 

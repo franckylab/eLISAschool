@@ -1,0 +1,2 @@
+- Uses Zod schemas for DTO validation and type inference across all three sub-domains.
+- Leverages TypeORM for entity management, including complex relationships like ManyToOne for parent-student links and JSON columns for flexible orientation data.

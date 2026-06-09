@@ -3,7 +3,7 @@
  * eLISAschool - Seed des Providers de Notifications
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Insère automatiquement les providers par défaut au premier démarrage
  * Profite de synchronize:true pour créer la table automatiquement

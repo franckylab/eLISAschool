@@ -1,0 +1,1 @@
+Handles user authentication, JWT token management, multi-tenant establishment switching, and dynamic role-based access control with granular permission resolution.

@@ -3,7 +3,7 @@
  * eLISAschool - Middlewares Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 export * from './module-active.middleware';

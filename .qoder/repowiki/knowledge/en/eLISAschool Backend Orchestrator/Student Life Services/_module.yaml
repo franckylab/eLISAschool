@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_student_life
+module_path: c2dc2cdf3d377d865817b3884d8aa2e5
 title: Student Life Services
 scope:
     - backend/src/modules/cantine/

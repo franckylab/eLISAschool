@@ -3,7 +3,7 @@
  * eLISAschool - Service Portal Parent
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Service dédié au portal parent pour consulter
  * les données de ses enfants (notes, bulletins, cantine, transport, finances).

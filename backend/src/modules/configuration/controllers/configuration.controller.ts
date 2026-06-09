@@ -3,7 +3,7 @@
  * eLISAschool - Controller Configuration v4.0
  * ==================================
  * Version: 4.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Endpoints CRUD, historique, sauvegarde, restauration
  */
@@ -463,6 +463,24 @@ router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req
     } catch (error) { next(error); }
 });
 
+router.post('/parametres/reset-all', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { etablissementId } = req.body || {};
+        
+        const result = await configurationService.resetAllParametres(
+            etablissementId,
+            req.utilisateur?.id,
+            req
+        );
+
+        res.json({ 
+            success: true, 
+            data: result, 
+            message: `${result.resetCount} paramètres réinitialisés sur ${result.total}` 
+        });
+    } catch (error) { next(error); }
+});
+
 router.put('/parametres/bulk', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateParametresBulkSchema, req.body);
@@ -531,8 +549,19 @@ router.post('/sauvegardes/:id/restore', authMiddleware, canRestoreBackup, async 
 
 router.post('/seed', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await seedService.runAllSeeds();
+        const result = await seedService.runAllSeeds(false); // force = false par défaut
         res.json({ success: true, data: result, message: 'Seeds exécutés' });
+    } catch (error) { next(error); }
+});
+
+router.post('/seed/force', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await seedService.runAllSeeds(true); // force = true
+        res.json({ 
+            success: true, 
+            data: result, 
+            message: 'Seeds forcés - toutes les valeurs par défaut restaurées' 
+        });
     } catch (error) { next(error); }
 });
 

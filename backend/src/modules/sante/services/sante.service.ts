@@ -12,7 +12,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';
 import { Request } from 'express';
-import { notificationService } from '@modules/notifications/services/notification.service';
+import { notificationService } from '@modules/notifications/services';
 
 export class SanteService {
     private dossierRepo: Repository<DossierMedical>;

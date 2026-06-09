@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_academic_core
+module_path: 08c22ff96dac2901169c53ad33400070
 title: Academic Structure & Calendar Management
 scope:
     - backend/src/modules/annees-scolaires/

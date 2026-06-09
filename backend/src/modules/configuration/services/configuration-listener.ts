@@ -3,7 +3,7 @@
  * eLISAschool - Listener de Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * EventEmitter pour les changements de configuration
  * Permet aux modules de s'abonner aux modifications

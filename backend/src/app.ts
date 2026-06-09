@@ -3,7 +3,7 @@
  * eLISAschool Backend - Configuration Express
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Support multi-établissements + réponses API standardisées
  */
@@ -31,6 +31,8 @@ import { configurationController, backupController } from '@modules/configuratio
 import { notificationsController, notificationProviderController } from '@modules/notifications';
 import { notesController } from '@modules/notes';
 import { messagerieController } from '@modules/messagerie';
+import { sondagesController } from '@modules/sondages';
+import { annoncesController } from '@modules/annonces';
 import { cantineController } from '@modules/cantine';
 import { transportController } from '@modules/transport';
 import { gamificationController } from '@modules/gamification';
@@ -40,7 +42,7 @@ import { materielController } from '@modules/materiel';
 import { financesController } from '@modules/finances';
 import { cartesController } from '@modules/cartes';
 import { suiviElevesController } from '@modules/suivi-eleves';
-import { suiviPersonnelController } from '@modules/suivi-personnel';
+import { suiviPersonnelController, scoringPersonnelController } from '@modules/suivi-personnel';
 import { santeController } from '@modules/sante';
 import { orientationController } from '@modules/orientation';
 import { impressionsController } from '@modules/impressions';
@@ -53,6 +55,7 @@ import { personnelController, contratController, heureCoursController, absencePe
 import { classesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
 import { periodesController } from '@modules/periodes';
+import { programmesController } from '@modules/programmes';
 import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
 import { responsablesElevesController } from '@modules/responsables-eleves';
@@ -156,7 +159,7 @@ export function createApp(): Application {
             name: 'eLISAschool API',
             description: 'API de gestion scolaire avancée — Multi-établissements',
             version: envConfig.app.version,
-            author: 'xAI Éducation',
+            author: 'franck arlos chendjou',
             documentation: '/api/docs',
         });
     });
@@ -202,6 +205,8 @@ export function createApp(): Application {
     // Modules communication
     app.use('/api/messagerie', messagerieController);
     app.use('/api/requetes', requetesController);
+    app.use('/api/sondages', requireModuleActive('sondages'), sondagesController);
+    app.use('/api/annonces', requireModuleActive('annonces'), annoncesController);
 
     // Modules académiques
     app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
@@ -218,6 +223,7 @@ export function createApp(): Application {
     // Modules suivi (nouveau v2.0)
     app.use('/api/suivi-eleves', requireModuleActive('suivi-eleves'), suiviElevesController);
     app.use('/api/suivi-personnel', requireModuleActive('suivi-personnel'), suiviPersonnelController);
+    app.use('/api/scoring-personnel', requireModuleActive('suivi-personnel'), scoringPersonnelController);
 
     // Module santé (nouveau v2.0) - Accès sécurisé
     app.use('/api/sante', requireModuleActive('sante'), santeController);
@@ -247,6 +253,7 @@ export function createApp(): Application {
     app.use('/api/classes', classesController);
     app.use('/api/matieres', matieresController);
     app.use('/api/periodes', periodesController);
+    app.use('/api/programmes', requireModuleActive('programmes'), programmesController);
     app.use('/api/eleves', elevesController);
     app.use('/api/bulletins', bulletinsController);
     app.use('/api/responsables-eleves', responsablesElevesController);

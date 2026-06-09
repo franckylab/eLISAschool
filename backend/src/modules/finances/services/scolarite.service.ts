@@ -3,7 +3,7 @@
  * eLISAschool - Service Scolarité et Paiements
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion complète des frais de scolarité, échéanciers, paiements et relances
  */

@@ -3,7 +3,7 @@
  * eLISAschool - Middleware Validation Workflow
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Middleware pour vérifier les permissions de validation selon le niveau
  */

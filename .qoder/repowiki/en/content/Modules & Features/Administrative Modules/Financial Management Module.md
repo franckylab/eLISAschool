@@ -10,12 +10,23 @@
 - [dashboard.service.ts](file://backend/src/modules/finances/services/dashboard.service.ts)
 - [frais-scolarite.entity.ts](file://backend/src/modules/finances/entities/frais-scolarite.entity.ts)
 - [depenses.entity.ts](file://backend/src/modules/finances/entities/depenses.entity.ts)
+- [paiement.entity.ts](file://backend/src/modules/finances/entities/paiement.entity.ts)
+- [recu-paiement.entity.ts](file://backend/src/modules/finances/entities/recu-paiement.entity.ts)
 - [finances.config.ts](file://backend/src/modules/finances/config/finances.config.ts)
 - [scolarite.dto.ts](file://backend/src/modules/finances/dto/scolarite.dto.ts)
 - [010-module-finances.sql](file://backend/database/migrations/010-module-finances.sql)
 - [011-module-finances-part2.sql](file://backend/database/migrations/011-module-finances-part2.sql)
 - [012-module-finances-part3-parametres.sql](file://backend/database/migrations/012-module-finances-part3-parametres.sql)
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new SuiviPaiementEleve entity for detailed school fee payment tracking
+- Enhanced payment tracking with automatic eligibility determination for national exams
+- Integrated grace period management and cause-based absence categorization
+- Updated database schema to include new payment tracking table
+- Expanded financial monitoring capabilities with detailed payment analytics
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -29,13 +40,16 @@
 9. [Entity Relationships](#entity-relationships)
 10. [Performance Considerations](#performance-considerations)
 11. [Security Implementation](#security-implementation)
-12. [Conclusion](#conclusion)
+12. [New SuiviPaiementEleve Entity](#new-suivipaiementeleve-entity)
+13. [Conclusion](#conclusion)
 
 ## Introduction
 
 The Financial Management Module is a comprehensive financial management system designed for educational institutions, specifically targeting the eLISAschool platform. This module provides end-to-end financial management capabilities including student fee collection, expense tracking, budget management, treasury operations, and financial reporting.
 
 The module follows enterprise-grade architecture principles with robust validation, workflow management, audit trails, and comprehensive reporting capabilities. It supports multi-establishment environments with configurable financial policies and automated workflows for approval processes.
+
+**Updated** Added new SuiviPaiementEleve entity for detailed payment tracking with automatic exam eligibility determination and grace period management.
 
 ## Module Architecture
 
@@ -51,6 +65,7 @@ ScolariteService[Scolarite Service]
 DepensesService[Depenses Service]
 WorkflowService[Finance Workflow Service]
 DashboardService[Dashboard Service]
+SuiviService[SuiviPaiement Service]
 end
 subgraph "Data Access Layer"
 Repositories[TypeORM Repositories]
@@ -64,12 +79,16 @@ Controller --> ScolariteService
 Controller --> DepensesService
 Controller --> WorkflowService
 Controller --> DashboardService
+Controller --> SuiviService
 ScolariteService --> Repositories
 DepensesService --> Repositories
 WorkflowService --> Repositories
+DashboardService --> Repositories
+SuiviService --> Repositories
 Repositories --> Entities
 Config --> ScolariteService
 Config --> DepensesService
+Config --> SuiviService
 DTOs --> Controller
 ```
 
@@ -94,6 +113,7 @@ participant Student as Student
 participant System as Financial System
 participant Payment as Payment Processing
 participant Notification as Notification Service
+participant Suivi as Payment Tracking
 Student->>System : Request Fee Configuration
 System->>System : Generate Fee Structure
 System->>Student : Display Fee Details
@@ -101,6 +121,8 @@ Student->>System : Make Payment
 System->>Payment : Process Transaction
 Payment->>System : Confirm Payment
 System->>System : Update Invoice Status
+System->>Suivi : Log Payment Activity
+Suivi->>System : Calculate Eligibility
 System->>Notification : Send Confirmation
 Notification->>Student : Payment Receipt
 Student->>System : View Payment History
@@ -230,6 +252,22 @@ varchar statut
 uuid effectue_par FK
 uuid valide_par FK
 }
+SUivi_PAIEMENTS_ELEVES {
+uuid id PK
+uuid eleve_id FK
+uuid annee_scolaire_id FK
+uuid periode_id FK
+decimal montant_total
+decimal montant_paye
+decimal reste_a_payer
+boolean est_a_jour
+date derniere_echeance_manquee
+int nombre_echeances_manquees
+varchar statut
+varchar motif_difficulte
+boolean autorisation_examen
+date date_limite_reglement
+}
 CATEGORIES_DEPENSE {
 uuid id PK
 uuid etablissement_id FK
@@ -269,6 +307,7 @@ int periode_comptable
 }
 FRAIS_SCOLARITE ||--o{ ECHEANCIERS_PAIEMENT : "generates"
 ECHEANCIERS_PAIEMENT ||--o{ PAIEMENTS : "triggers"
+ECHEANCIERS_PAIEMENT ||--o{ SUivi_PAIEMENTS_ELEVES : "tracks"
 CATEGORIES_DEPENSE ||--o{ DEPENSES : "categorizes"
 ```
 
@@ -339,6 +378,7 @@ BUD[Budget<br/>10 params]
 DASH[Dashboard/Rapports<br/>8 params]
 WORK[Workflow<br/>6 params]
 GEN[General/Security<br/>10 params]
+SUivi[Payment Tracking<br/>5 params]
 end
 subgraph "Configuration Storage"
 PARAM[Parameters Table]
@@ -353,6 +393,7 @@ BUD --> PARAM
 DASH --> PARAM
 WORK --> PARAM
 GEN --> PARAM
+SUivi --> PARAM
 DEFAULT --> CUSTOM
 CUSTOM --> PARAM
 ```
@@ -373,6 +414,7 @@ CUSTOM --> PARAM
 | **Dashboard/Rapports** | 8 | Reporting frequencies, export formats, caching |
 | **Workflow** | 6 | Approval level configurations |
 | **General/Security** | 10 | Currency, encryption, audit retention |
+| **Payment Tracking** | 5 | Exam eligibility, grace period thresholds, difficulty tracking |
 
 **Section sources**
 - [finances.config.ts:132-231](file://backend/src/modules/finances/config/finances.config.ts#L132-L231)
@@ -516,6 +558,7 @@ UTILISATEURS ||--o{ DEMANDES_DEPENSE : "creates"
 UTILISATEURS ||--o{ BONS_COMMANDE : "creates"
 ELEVES ||--o{ ECHEANCIERS_PAIEMENT : "has"
 ELEVES ||--o{ PAIEMENTS : "pays"
+ELEVES ||--o{ SUivi_PAIEMENTS_ELEVES : "tracked_by"
 ETABLISSEMENTS ||--o{ FRAIS_SCOLARITE : "contains"
 ETABLISSEMENTS ||--o{ ECHEANCIERS_PAIEMENT : "manages"
 ETABLISSEMENTS ||--o{ PAIEMENTS : "records"
@@ -524,6 +567,7 @@ ETABLISSEMENTS ||--o{ DEPENSES : "incurs"
 ETABLISSEMENTS ||--o{ DEMANDES_DEPENSE : "processes"
 ETABLISSEMENTS ||--o{ BONS_COMMANDE : "authorizes"
 ANNEES_SCOLAIRES ||--o{ FRAIS_SCOLARITE : "defines"
+ANNEES_SCOLAIRES ||--o{ SUivi_PAIEMENTS_ELEVES : "monitored_by"
 NIVEAUX ||--o{ FRAIS_SCOLARITE : "targets"
 CLASSES ||--o{ FRAIS_SCOLARITE : "supports"
 CYCLES ||--o{ FRAIS_SCOLARITE : "organizes"
@@ -594,9 +638,101 @@ Error --> Response
 **Section sources**
 - [finances.controller.ts:24-40](file://backend/src/modules/finances/controllers/finances.controller.ts#L24-L40)
 
+## New SuiviPaiementEleve Entity
+
+### Detailed Payment Tracking System
+
+**Updated** Added comprehensive payment tracking entity for detailed monitoring of student fee payments with automatic eligibility determination for national exams.
+
+The SuiviPaiementEleve entity provides advanced payment tracking capabilities with contextual awareness for African educational systems:
+
+```mermaid
+classDiagram
+class SuiviPaiementEleve {
++uuid id
++uuid eleveId
++uuid anneeScolaireId
++uuid periodeId
++decimal montantTotal
++decimal montantPaye
++decimal resteAPayer
++boolean estAjour
++date derniereEcheanceManquee
++int nombreEcheancesManquees
++StatutPaiement statut
++string motifDifficulte
++boolean autorisationExamen
++date dateLimiteReglement
+}
+class StatutPaiement {
+<<enumeration>>
+PAYANT
+RETARD
+IMPAYE
+EXONERE
+DEMI_BOURSE
+}
+class SuiviPaiementService {
++calculerStatutPaiement(eleveId, anneeId) StatutPaiement
++verifierEligibiliteExamen(eleveId, periodeId) boolean
++mettreAJourSuivi(eleveId, paiementId) void
++genererAlerteRetard(eleveId) void
+}
+SuiviPaiementService --> SuiviPaiementEleve : manages
+SuiviPaiementEleve --> StatutPaiement : uses
+```
+
+**Diagram sources**
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:342-387](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L342-L387)
+
+### Key Features
+
+| Feature | Description | Implementation |
+|---------|-------------|----------------|
+| **Payment Status Tracking** | Real-time monitoring of payment status across all installments | Automatic calculation from payment history |
+| **Exam Eligibility** | Automatic determination for BEPC/BAC eligibility | Based on payment status and deadlines |
+| **Grace Period Management** | Configurable grace periods with automatic enforcement | Integration with school fee configuration |
+| **Difficulty Tracking** | Cause-based categorization of payment difficulties | MotifDifficulte field for social context |
+| **Late Payment Alerts** | Automated notifications for overdue payments | Integration with notification system |
+| **Period-Specific Monitoring** | Trimester-based payment tracking | PeriodeId linking to academic periods |
+
+### African Context Integration
+
+The entity includes specific fields designed for African educational contexts:
+
+- **MotifDifficulte**: Captures socioeconomic factors affecting payment ability
+- **AutorisationExamen**: Automatic exam eligibility determination
+- **DateLimiteReglement**: Institutional deadline management
+- **PeriodeId**: Academic period linkage for exam scheduling
+
+### Automatic Eligibility Determination
+
+The system automatically determines exam eligibility based on payment status:
+
+```mermaid
+flowchart TD
+Payment[Payment Status] --> CheckStatus{Check Status}
+CheckStatus --> |PAYANT| Eligible[Eligible for Exam]
+CheckStatus --> |RETARD| Warning[Warning - Pending]
+CheckStatus --> |IMPAYE| NotEligible[Not Eligible]
+CheckStatus --> |EXONERE| Eligible[Eligible - Exempt]
+CheckStatus --> |DEMI_BOURSE| Conditional[Conditional - Half Scholarship]
+Warning --> GraceCheck{Within Grace Period?}
+GraceCheck --> |Yes| Eligible
+GraceCheck --> |No| NotEligible
+```
+
+**Diagram sources**
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:378-387](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L378-L387)
+
+**Section sources**
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:342-387](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L342-L387)
+
 ## Conclusion
 
 The Financial Management Module represents a comprehensive, enterprise-grade solution for educational institution financial management. The module successfully integrates multiple financial domains including student fee collection, expense management, budget control, treasury operations, and financial reporting.
+
+**Updated** The addition of the SuiviPaiementEleve entity significantly enhances the module's capabilities by providing detailed payment tracking with automatic exam eligibility determination and grace period management tailored for African educational contexts.
 
 Key strengths of the implementation include:
 
@@ -606,5 +742,7 @@ Key strengths of the implementation include:
 - **Enterprise Features**: Audit trails, notifications, and comprehensive reporting
 - **Flexible Configuration**: 74 configurable parameters for customization
 - **Security Focus**: Multi-layered security with role-based access control
+- **Contextual Intelligence**: African-specific features for exam eligibility and payment tracking
+- **Automated Compliance**: Automatic determination of exam eligibility based on payment status
 
-The module provides a solid foundation for financial operations in educational institutions while maintaining flexibility for future enhancements and institutional-specific requirements.
+The module provides a solid foundation for financial operations in educational institutions while maintaining flexibility for future enhancements and institutional-specific requirements. The new payment tracking capabilities ensure proper monitoring of student fee payments and automatic determination of exam eligibility, supporting both institutional policy and student success outcomes.

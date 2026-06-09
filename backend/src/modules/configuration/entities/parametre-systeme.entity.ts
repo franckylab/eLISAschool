@@ -3,7 +3,7 @@
  * eLISAschool - Entité Paramètre Système
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Stockage hybride des paramètres en base de données
  * avec distinction entre paramètres statiques (.env) et dynamiques (DB)

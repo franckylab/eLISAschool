@@ -3,7 +3,7 @@
  * eLISAschool - Service Pré-calcul Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Cron jobs pour pré-calculer les statistiques lourdes
  */

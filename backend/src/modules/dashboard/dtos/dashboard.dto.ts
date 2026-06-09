@@ -3,7 +3,7 @@
  * eLISAschool - DTOs Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Validation des requêtes et réponses du dashboard
  */

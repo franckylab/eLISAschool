@@ -3,7 +3,7 @@
  * eLISAschool - DTOs d'authentification
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Réexporte les schémas partagés depuis @shared/validators
  * et ajoute les types spécifiques au backend (JWT, réponses).

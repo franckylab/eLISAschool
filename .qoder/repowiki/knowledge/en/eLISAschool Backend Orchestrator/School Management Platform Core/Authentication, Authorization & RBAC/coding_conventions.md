@@ -1,0 +1,5 @@
+- All controller route handlers wrap business logic in try/catch and delegate errors to Express `next(error)` for centralized error handling.
+- Service methods validate input using Zod schemas via `validateDto()` before executing business logic.
+- Singleton service instances are exported alongside their class definitions (e.g., `export const authService = new AuthService()` and `export default AuthService`).
+- Audit logging is performed via `auditService.log()` or specialized helpers (`logLogin`, `logAccessDenied`, `logPasswordChange`) after significant auth/RBAC operations.
+- Permission checks in guards first check for SUPER_ADMIN role bypass before evaluating required permissions.

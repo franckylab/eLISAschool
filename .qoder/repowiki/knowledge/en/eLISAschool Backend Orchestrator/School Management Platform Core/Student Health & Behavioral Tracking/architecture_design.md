@@ -1,0 +1,6 @@
+- Two sub-modules (sante, suivi-eleves) each following a controller-service-entity-DTO layered architecture with Express routers as entry points.
+- Controllers delegate to singleton service instances (santeService, suiviEleveService) which use TypeORM repositories for data access via AppDataSource.
+- DTOs use Zod schemas for request validation; controllers share a local validate() helper that throws AppError on failure.
+- All routes are protected by staffOnly middleware; sante adds fine-grained requirePermission checks while suivi-eleves uses requireRoles for sensitive operations like sanctions.
+- Services integrate cross-module concerns: auditService for trail logging, notificationService for critical health alerts, gamificationService for positive reinforcement points, and validationWorkflowService for sanction approval workflows.
+- Entities include multi-tenant scoping (etablissementId), academic year/period filtering (anneeScolaireId, periodeId), and composite indexes for query performance.

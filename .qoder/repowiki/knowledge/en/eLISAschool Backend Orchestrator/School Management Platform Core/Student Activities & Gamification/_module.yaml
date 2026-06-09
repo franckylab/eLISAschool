@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/student_activities
+title: Student Activities & Gamification
+scope:
+    - backend/src/modules/clubs/
+    - backend/src/modules/gamification/
+    - backend/src/modules/cartes/
+source_files: []
+depends_on: []
+related_to: []

@@ -3,7 +3,7 @@
  * eLISAschool - Entité Cotisation
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Cotisations sociales (CNPS, AMO, IRPP, etc.)
  */

@@ -3,7 +3,7 @@
  * eLISAschool - Énumération des modules
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Source de vérité unique pour les noms de modules
  */
@@ -21,6 +21,8 @@ export enum ModuleName {
   NOTIFICATIONS = 'notifications',
   MESSAGERIE = 'messagerie',
   REQUETES = 'requetes',
+  SONDAGES = 'sondages',
+  ANNONCES = 'annonces',
   
   // Modules académiques
   NOTES = 'notes',
@@ -28,6 +30,7 @@ export enum ModuleName {
   ELEVES = 'eleves',
   ORIENTATION = 'orientation',
   RESPONSABLES_ELEVES = 'responsables-eleves',
+  PROGRAMMES = 'programmes',
   
   // Modules logistiques
   CANTINE = 'cantine',
@@ -43,6 +46,13 @@ export enum ModuleName {
   CARTES = 'cartes',
   DOCUMENTS = 'documents',
   IMPRESSIONS = 'impressions',
+  
+  // Modules suivi
+  SUIVI_ELEVES = 'suivi-eleves',
+  SUIVI_PERSONNEL = 'suivi-personnel',
+  
+  // Modules santé
+  SANTE = 'sante',
   
   // Modules système
   SCORING = 'scoring',
@@ -75,12 +85,15 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.NOTIFICATIONS]: ModuleCategory.COMMUNICATION,
   [ModuleName.MESSAGERIE]: ModuleCategory.COMMUNICATION,
   [ModuleName.REQUETES]: ModuleCategory.COMMUNICATION,
+  [ModuleName.SONDAGES]: ModuleCategory.COMMUNICATION,
+  [ModuleName.ANNONCES]: ModuleCategory.COMMUNICATION,
   
   [ModuleName.NOTES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.BULLETINS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ELEVES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ORIENTATION]: ModuleCategory.ACADEMIQUES,
   [ModuleName.RESPONSABLES_ELEVES]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.PROGRAMMES]: ModuleCategory.ACADEMIQUES,
   
   [ModuleName.CANTINE]: ModuleCategory.LOGISTIQUES,
   [ModuleName.TRANSPORT]: ModuleCategory.LOGISTIQUES,
@@ -94,6 +107,9 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.DOCUMENTS]: ModuleCategory.DOCUMENTS,
   [ModuleName.IMPRESSIONS]: ModuleCategory.DOCUMENTS,
   
+  [ModuleName.SUIVI_ELEVES]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.SUIVI_PERSONNEL]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.SANTE]: ModuleCategory.SYSTEME,
   [ModuleName.SCORING]: ModuleCategory.SYSTEME,
   [ModuleName.MONITORING]: ModuleCategory.SYSTEME,
   [ModuleName.DASHBOARD]: ModuleCategory.SYSTEME,

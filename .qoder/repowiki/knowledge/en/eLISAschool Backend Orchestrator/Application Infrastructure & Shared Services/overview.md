@@ -1,0 +1,1 @@
+Provides core application bootstrapping, multi-tenancy middleware, standardized API responses, and centralized configuration for the eLISAschool backend.

@@ -3,7 +3,7 @@
  * eLISAschool - Service Groupes Établissements
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion CRUD des groupes et associations établissements/admins.
  */

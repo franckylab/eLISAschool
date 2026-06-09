@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_notifications_audit/notifications
+module_path: dbe5b578eb44b8d92b6380c0ddbd3f18
 title: Multi-Channel Notification Delivery System
 scope:
     - backend/src/modules/notifications/

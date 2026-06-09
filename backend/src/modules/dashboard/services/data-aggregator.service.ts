@@ -3,7 +3,7 @@
  * eLISAschool - Service d'Agrégation de Données Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Orchestre l'exécution des resolveurs de données pour les widgets
  * avec gestion du cache, timeout et résolution dynamique de services

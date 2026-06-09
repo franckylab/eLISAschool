@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/student_services
+title: Student Services — Canteen, Transport & Equipment Management
+scope:
+    - backend/src/modules/cantine/
+    - backend/src/modules/transport/
+    - backend/src/modules/materiel/
+source_files: []
+depends_on: []
+related_to: []

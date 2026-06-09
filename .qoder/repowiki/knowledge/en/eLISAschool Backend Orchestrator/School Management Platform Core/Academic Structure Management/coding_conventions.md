@@ -1,0 +1,6 @@
+- Each controller instantiates its service as a module-level constant (e.g., const etablissementService = new EtablissementService()) rather than using dependency injection containers.
+- All route handlers wrap async logic in try/catch blocks and forward errors to Express via next(error).
+- Every controller exports both a named router constant (e.g., etablissementController) and a default export of the same router instance.
+- Services obtain TypeORM repositories in their constructor via AppDataSource.getRepository(EntityClass) and store them as private instance properties.
+- DTO schemas use Zod with create/update pairs where update schemas are derived via .partial() on the create schema, and types are inferred via z.infer.
+- Controllers consistently return JSON responses with a { success: true, data: ... } envelope structure.

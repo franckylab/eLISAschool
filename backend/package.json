@@ -2,7 +2,7 @@
     "name": "@elisaschool/backend",
     "version": "1.0.0",
     "description": "API Backend eLISAschool - Express.js avec TypeScript",
-    "author": "xAI Éducation",
+    "author": "franck arlos chendjou",
     "license": "UNLICENSED",
     "private": true,
     "main": "dist/index.js",

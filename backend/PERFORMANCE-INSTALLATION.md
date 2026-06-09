@@ -243,4 +243,4 @@ Pour toute question ou problème :
 
 **Version :** 1.0.0  
 **Date :** 6 juin 2026  
-**Auteur :** xAI Éducation
+**Auteur :** franck arlos chendjou

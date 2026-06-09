@@ -299,5 +299,5 @@ curl -X POST http://localhost:3000/api/notification-providers/:id/test \
 
 **Version :** 2.0.0  
 **Date :** 2025-06-06  
-**Auteur :** xAI Éducation  
+**Auteur :** franck arlos chendjou  
 **Statut :** ✅ Prêt pour déploiement et tests

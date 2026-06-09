@@ -3,7 +3,7 @@
  * eLISAschool - Entité TypePrime
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import {

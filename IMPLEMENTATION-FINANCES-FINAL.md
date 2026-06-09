@@ -4,7 +4,7 @@
 
 **Date** : 7 juin 2026  
 **Version** : 1.0.0  
-**Auteur** : xAI Éducation  
+**Auteur** : franck arlos chendjou  
 **Compilation** : ✅ 0 erreurs finances (erreurs existantes hors module non bloquantes)
 
 ---
@@ -453,4 +453,4 @@ Le module **Finances eLISAschool** est maintenant **entièrement fonctionnel** e
 **Version** : 1.0.0  
 **Statut** : ✅ **PRÊT POUR PRODUCTION**  
 **Date** : 7 juin 2026  
-**Auteur** : xAI Éducation
+**Auteur** : franck arlos chendjou

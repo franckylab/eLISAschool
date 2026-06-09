@@ -3,7 +3,7 @@
  * eLISAschool - Permissions Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Définition des permissions granulaires pour le système de configuration
  */

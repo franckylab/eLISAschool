@@ -3,7 +3,7 @@
  * eLISAschool - Service de Résolution des Widgets
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Résout les widgets disponibles pour un utilisateur selon :
  * - Ses rôles

@@ -3,7 +3,7 @@
  * eLISAschool - Seed RBAC (Rôles et Permissions)
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Initialise les rôles système, les ~85 permissions,
  * et le mapping rôle → permissions depuis DEFAULT_ROLE_PERMISSIONS

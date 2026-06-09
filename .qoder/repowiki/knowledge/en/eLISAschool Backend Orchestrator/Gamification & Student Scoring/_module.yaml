@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_gamification_scoring
+module_path: 4fab878c8649ff5a1963e9afe93e7fca
 title: Gamification & Student Scoring
 scope:
     - backend/src/modules/gamification/

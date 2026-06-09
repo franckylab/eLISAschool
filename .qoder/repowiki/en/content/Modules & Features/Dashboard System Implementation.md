@@ -18,15 +18,17 @@
 - [DASHBOARD-SYSTEM.md](file://backend/docs/DASHBOARD-SYSTEM.md)
 - [finances.controller.ts](file://backend/src/modules/finances/controllers/finances.controller.ts)
 - [dashboard.service.ts](file://backend/src/modules/finances/services/dashboard.service.ts)
+- [suivi-eleve.service.ts](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts)
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive financial dashboard integration with four distinct API endpoints
-- Integrated real-time financial insights for revenue trends, payment evolution, top overdue students, and income-expense ratios
-- Enhanced dashboard system with financial data aggregation and visualization capabilities
-- Updated widget registry to support financial dashboard widgets
-- Integrated workflow system for filtered financial statistics
+- Added comprehensive attendance monitoring capabilities with SuiviAssiduiteEleve entity featuring 100% presence indicators and trimester-specific behavioral assessments
+- Integrated attendance tracking metrics including absence counts, tardiness tracking, and behavioral evaluation indicators
+- Enhanced dashboard system with new attendance-focused widgets and statistical analysis capabilities
+- Updated widget registry to support attendance monitoring and behavioral assessment widgets
+- Integrated contextual analysis for African educational contexts with specific absence cause categorization
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -35,21 +37,22 @@
 4. [Widget Management System](#widget-management-system)
 5. [Data Processing Pipeline](#data-processing-pipeline)
 6. [Financial Dashboard Integration](#financial-dashboard-integration)
-7. [Performance Optimization](#performance-optimization)
-8. [Security and Access Control](#security-and-access-control)
-9. [API Endpoints](#api-endpoints)
-10. [Database Design](#database-design)
-11. [Implementation Details](#implementation-details)
-12. [Troubleshooting Guide](#troubleshooting-guide)
-13. [Conclusion](#conclusion)
+7. [Attendance Monitoring System](#attendance-monitoring-system)
+8. [Performance Optimization](#performance-optimization)
+9. [Security and Access Control](#security-and-access-control)
+10. [API Endpoints](#api-endpoints)
+11. [Database Design](#database-design)
+12. [Implementation Details](#implementation-details)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
 
 ## Introduction
 
-The eLISAschool Dashboard System is a comprehensive, production-ready solution for creating dynamic, personalized dashboards based on user roles, permissions, and institutional context. This system provides real-time data visualization capabilities across multiple educational domains including student statistics, academic performance, facility management, administrative oversight, validation workflow management, and **financial dashboard integration**.
+The eLISAschool Dashboard System is a comprehensive, production-ready solution for creating dynamic, personalized dashboards based on user roles, permissions, and institutional context. This system provides real-time data visualization capabilities across multiple educational domains including student statistics, academic performance, facility management, administrative oversight, validation workflow management, financial dashboard integration, and **comprehensive attendance monitoring capabilities**.
 
 The dashboard system is built with modern architectural principles emphasizing scalability, security, and maintainability. It leverages a declarative widget registry, intelligent caching mechanisms, and modular service architecture to deliver optimal performance while maintaining flexibility for future extensions.
 
-**Updated** The system now includes comprehensive financial dashboard integration with four distinct API endpoints that provide real-time financial insights, including revenue trends, payment evolution, top overdue students, and income-expense ratios. These endpoints are seamlessly integrated with the workflow system for filtered financial statistics and enhanced reporting capabilities.
+**Updated** The system now includes comprehensive attendance monitoring capabilities with the SuiviAssiduiteEleve entity featuring 100% presence indicators and trimester-specific behavioral assessments. These capabilities provide detailed tracking of student attendance patterns, behavioral indicators, and contextual analysis tailored for African educational environments with specific absence cause categorization.
 
 ## System Architecture
 
@@ -61,6 +64,7 @@ subgraph "Presentation Layer"
 Controller[Dashboard Controller]
 FinancesController[Finances Controller]
 SSE[Server-Sent Events]
+AttendanceController[Attendance Controller]
 end
 subgraph "Business Logic Layer"
 WidgetResolver[Widget Resolver Service]
@@ -68,24 +72,29 @@ DataAggregator[Data Aggregator Service]
 DataLoader[Data Loader Service]
 Precalc[Precision Calculation Service]
 FinanceDashboard[Finance Dashboard Service]
+AttendanceDashboard[Attendance Dashboard Service]
 end
 subgraph "Data Access Layer"
 Cache[Dashboard Cache Service]
 DB[(Database)]
 FinanceDB[(Finance Tables)]
+AttendanceDB[(Attendance Tables)]
 end
 subgraph "External Services"
 Redis[Redis Cache]
 Auth[Authentication]
 Validation[Validation Workflow Service]
 FinanceWorkflow[Finance Workflow Service]
+AttendanceWorkflow[Attendance Workflow Service]
 end
 Controller --> WidgetResolver
 Controller --> DataAggregator
 FinancesController --> FinanceDashboard
+AttendanceController --> AttendanceDashboard
 WidgetResolver --> Cache
 DataAggregator --> Cache
 FinanceDashboard --> FinanceDB
+AttendanceDashboard --> AttendanceDB
 WidgetResolver --> DB
 DataAggregator --> DB
 Cache --> Redis
@@ -93,6 +102,7 @@ WidgetResolver --> Auth
 DataAggregator --> Auth
 DataAggregator --> Validation
 FinanceDashboard --> FinanceWorkflow
+AttendanceDashboard --> AttendanceWorkflow
 ```
 
 **Diagram sources**
@@ -109,6 +119,7 @@ The architecture implements several key design patterns:
 - **Factory Pattern**: Dynamic service instantiation for lazy loading
 - **Observer Pattern**: Event-driven updates through Server-Sent Events
 - **Integration Pattern**: Seamless integration between dashboard and finance modules
+- **Contextual Pattern**: Specialized handling for African educational contexts
 
 ## Core Components
 
@@ -244,9 +255,11 @@ sequenceDiagram
 participant Client as Client Application
 participant Controller as Dashboard Controller
 participant FinancesController as Finances Controller
+participant AttendanceController as Attendance Controller
 participant Aggregator as Data Aggregator
 participant Cache as Dashboard Cache
 participant DashboardService as Finance Dashboard Service
+participant AttendanceService as Attendance Dashboard Service
 participant Service as Data Service
 participant Validation as Validation Service
 participant DB as Database
@@ -274,6 +287,12 @@ DashboardService->>DB : Query Financial Data
 DB-->>DashboardService : Return Results
 DashboardService-->>FinancesController : Processed Financial Data
 FinancesController-->>Client : JSON Response
+Client->>AttendanceController : GET /attendance/dashboard/ : endpoint
+AttendanceController->>AttendanceService : Attendance Data Method
+AttendanceService->>DB : Query Attendance Data
+DB-->>AttendanceService : Return Results
+AttendanceService-->>AttendanceController : Processed Attendance Data
+AttendanceController-->>Client : JSON Response
 ```
 
 **Diagram sources**
@@ -291,6 +310,7 @@ The system implements several optimization strategies:
 4. **Fallback Mechanisms**: Mock data when services unavailable
 5. **LRU Cache**: Automatic cleanup of least-used entries
 6. **Financial Data Caching**: Specialized caching for financial metrics
+7. **Attendance Data Caching**: Specialized caching for attendance metrics
 
 **Section sources**
 - [data-aggregator.service.ts:125-191](file://backend/src/modules/dashboard/services/data-aggregator.service.ts#L125-L191)
@@ -347,6 +367,101 @@ The financial dashboard provides comprehensive metrics:
 - [dashboard.service.ts:1-401](file://backend/src/modules/finances/services/dashboard.service.ts#L1-L401)
 - [finances.controller.ts:1-200](file://backend/src/modules/finances/controllers/finances.controller.ts#L1-L200)
 
+## Attendance Monitoring System
+
+**New** The dashboard system now includes comprehensive attendance monitoring capabilities with the SuiviAssiduiteEleve entity featuring 100% presence indicators and trimester-specific behavioral assessments:
+
+### SuiviAssiduiteEleve Entity
+
+The attendance monitoring system introduces a comprehensive entity for tracking student attendance and behavioral patterns:
+
+```mermaid
+classDiagram
+class SuiviAssiduiteEleve {
++string id
++string eleveId
++string anneeScolaireId
++string periodeId
++number nombreAbsences
++number nombreAbsencesJustifiees
++number nombreAbsencesNonJustifiees
++number nombreRetards
++number nombreJoursPresence
++number nombreJoursTotal
++number tauxPresence
++boolean conformeExamen
++CausesAbsences causesAbsences
++string observations
+}
+class CausesAbsences {
++number maladie
++number transport
++number travail_familial
++number insécurité
++number frais_non_payes
++number autres
+}
+class PresenceMetrics {
++number tauxPresence
++number presenceJour
++number absenceJour
++number retardJour
+}
+SuiviAssiduiteEleve --> CausesAbsences : contains
+SuiviAssiduiteEleve --> PresenceMetrics : calculates
+```
+
+**Diagram sources**
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:410-463](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L410-L463)
+
+### Attendance Dashboard Endpoints
+
+The system provides specialized attendance dashboard endpoints:
+
+| Method | Endpoint | Description | Authentication | Authorization |
+|--------|----------|-------------|----------------|---------------|
+| `GET` | `/api/attendance/dashboard/stats` | Complete attendance statistics | Required | ACADEMIC_ADMIN, TEACHER |
+| `GET` | `/api/attendance/dashboard/trend` | Attendance trend analysis | Required | ACADEMIC_ADMIN, TEACHER |
+| `GET` | `/api/attendance/dashboard/high-risk` | High-risk students analysis | Required | ACADEMIC_ADMIN, TEACHER |
+| `GET` | `/api/attendance/dashboard/behavioral-assessment` | Behavioral assessment metrics | Required | ACADEMIC_ADMIN, TEACHER |
+
+### Attendance Data Aggregation
+
+The attendance dashboard service aggregates data from multiple sources:
+
+```mermaid
+flowchart TD
+AttendanceRequest[Attendance Dashboard Request] --> ValidateParams["Validate Request Parameters"]
+ValidateParams --> LoadAttendanceData["Load Attendance Data"]
+LoadAttendanceData --> AggregatePresence["Aggregate Presence Statistics"]
+LoadAttendanceData --> AnalyzeTrends["Analyze Attendance Trends"]
+LoadAttendanceData --> RiskAssessment["Calculate Risk Scores"]
+LoadAttendanceData --> BehavioralAnalysis["Analyze Behavioral Patterns"]
+AggregatePresence --> FormatResponse["Format Attendance Response"]
+AnalyzeTrends --> FormatResponse
+RiskAssessment --> FormatResponse
+BehavioralAnalysis --> FormatResponse
+FormatResponse --> CacheResult["Cache Attendance Results"]
+CacheResult --> End([Return Attendance Data])
+```
+
+**Diagram sources**
+- [suivi-eleve.service.ts:308-322](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L308-L322)
+
+### Attendance Metrics and KPIs
+
+The attendance dashboard provides comprehensive metrics:
+
+1. **Presence Statistics**: Total presence days, absence counts, tardiness tracking
+2. **Trend Analysis**: Daily/weekly/monthly attendance trends over configurable periods
+3. **Risk Assessment**: High-risk students based on absence patterns and behavioral indicators
+4. **Behavioral Analysis**: Positive/negative behavioral indicators and gamification points
+5. **Contextual Analysis**: Specific absence cause categorization for African educational contexts
+
+**Section sources**
+- [suivi-eleve.service.ts:308-322](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L308-L322)
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:410-463](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L410-L463)
+
 ## Performance Optimization
 
 The dashboard system implements comprehensive performance optimization strategies:
@@ -359,23 +474,28 @@ subgraph "Cache Layers"
 A[Widget Data Cache] --> B[Service Instance Cache]
 B --> C[Batch Cache]
 C --> D[Financial Data Cache]
+D --> E[Attendance Data Cache]
 end
 subgraph "Invalidation Strategies"
-E[Context-based Invalidation]
-F[Pattern-based Invalidation]
-G[TTL-based Expiration]
-H[Financial Data Refresh]
+F[Context-based Invalidation]
+G[Pattern-based Invalidation]
+H[TTL-based Expiration]
+I[Financial Data Refresh]
+J[Attendance Data Refresh]
 end
 subgraph "Storage Backends"
-I[Redis Distributed Cache]
-J[In-Memory Fallback]
-K[Financial Data Persistence]
+K[Redis Distributed Cache]
+L[In-Memory Fallback]
+M[Financial Data Persistence]
+N[Attendance Data Persistence]
 end
-A --> I
-D --> K
-E --> I
-E --> J
-H --> K
+A --> K
+D --> M
+E --> N
+F --> K
+F --> L
+I --> M
+J --> N
 ```
 
 **Diagram sources**
@@ -390,15 +510,17 @@ The system tracks key performance indicators:
 - **Memory Usage**: Target < 50MB, currently ~2MB
 - **Error Rate**: Target < 1%
 - **Financial Query Performance**: Optimized for large dataset aggregation
+- **Attendance Query Performance**: Optimized for real-time presence tracking
 
 ### Optimization Techniques
 
-1. **Multi-Level Caching**: Widget data, service instances, batch results, and financial data
+1. **Multi-Level Caching**: Widget data, service instances, batch results, financial data, and attendance data
 2. **Parallel Processing**: Multiple widgets can be loaded concurrently
 3. **Lazy Initialization**: Services loaded on-demand
 4. **Automatic Cleanup**: Periodic cache maintenance
 5. **Scalable Storage**: Redis support for distributed environments
 6. **Financial Data Optimization**: Specialized caching for financial metrics
+7. **Attendance Data Optimization**: Specialized caching for real-time presence metrics
 
 **Section sources**
 - [dashboard-cache.service.ts:297-315](file://backend/src/modules/dashboard/services/dashboard-cache.service.ts#L297-L315)
@@ -420,8 +542,11 @@ RBAC --> |No Role| Forbidden[403 Forbidden]
 WidgetAccess --> |Has Permission| Proceed[Proceed to Data]
 WidgetAccess --> |No Permission| Forbidden
 Proceed --> FinancialCheck[Financial Data Access]
+Proceed --> AttendanceCheck[Attendance Data Access]
 FinancialCheck --> |Authorized| Response[Return Data]
 FinancialCheck --> |Unauthorized| Forbidden
+AttendanceCheck --> |Authorized| Response
+AttendanceCheck --> |Unauthorized| Forbidden
 ```
 
 **Diagram sources**
@@ -435,6 +560,7 @@ FinancialCheck --> |Unauthorized| Forbidden
 4. **Input Validation**: Zod schema validation for all endpoints
 5. **Audit Logging**: Comprehensive request/response logging
 6. **Financial Data Protection**: Specialized access controls for financial information
+7. **Attendance Data Protection**: Specialized access controls for student privacy
 
 **Section sources**
 - [dashboard.controller.ts:16-21](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts#L16-L21)
@@ -442,7 +568,7 @@ FinancialCheck --> |Unauthorized| Forbidden
 
 ## API Endpoints
 
-The dashboard system provides a comprehensive REST API with enhanced financial dashboard capabilities:
+The dashboard system provides a comprehensive REST API with enhanced financial dashboard capabilities and new attendance monitoring endpoints:
 
 ### Available Endpoints
 
@@ -462,6 +588,10 @@ The dashboard system provides a comprehensive REST API with enhanced financial d
 | **`GET`** | **`/api/finances/dashboard/evolution-paiements`** | **Payment trend evolution** | **Required** | **FINANCE_ADMIN, ACCOUNTANT** |
 | **`GET`** | **`/api/finances/dashboard/top-impayes`** | **Top overdue students** | **Required** | **FINANCE_ADMIN, ACCOUNTANT** |
 | **`GET`** | **`/api/finances/dashboard/ratio-revenus-depenses`** | **Income-expense ratios** | **Required** | **FINANCE_ADMIN, ACCOUNTANT** |
+| **`GET`** | **`/api/attendance/dashboard/stats`** | **Complete attendance statistics** | **Required** | **ACADEMIC_ADMIN, TEACHER** |
+| **`GET`** | **`/api/attendance/dashboard/trend`** | **Attendance trend analysis** | **Required** | **ACADEMIC_ADMIN, TEACHER** |
+| **`GET`** | **`/api/attendance/dashboard/high-risk`** | **High-risk students analysis** | **Required** | **ACADEMIC_ADMIN, TEACHER** |
+| **`GET`** | **`/api/attendance/dashboard/behavioral-assessment`** | **Behavioral assessment metrics** | **Required** | **ACADEMIC_ADMIN, TEACHER** |
 
 ### Request/Response Patterns
 
@@ -557,6 +687,88 @@ string type
 **Diagram sources**
 - [dashboard-layout.entity.ts:32-65](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32-L65)
 
+### Attendance Monitoring Tables
+
+**New** The attendance monitoring system introduces specialized tables for tracking student attendance and behavioral patterns:
+
+```mermaid
+erDiagram
+SUiviAssiduiteEleves {
+uuid id PK
+uuid eleve_id FK
+uuid annee_scolaire_id FK
+uuid periode_id FK
+int nombre_absences
+int nombre_absences_justifiees
+int nombre_absences_non_justifiees
+int nombre_retards
+int nombre_jours_presence
+int nombre_jours_total
+float taux_presence
+boolean conforme_examen
+simple_json causes_absences
+varchar observations
+}
+ELEVES {
+uuid id PK
+string nom
+string prenom
+uuid classe_id FK
+}
+ANNEES_SCOLAIRES {
+uuid id PK
+string annee
+boolean active
+}
+PERIODES {
+uuid id PK
+string nom
+string type
+date debut
+date fin
+uuid annee_scolaire_id FK
+}
+INCIDENTS_ELEVES {
+uuid id PK
+uuid eleve_id FK
+string type
+string gravite
+string description
+date date_incident
+uuid annee_scolaire_id FK
+}
+OBSERVATIONS_ELEVES {
+uuid id PK
+uuid eleve_id FK
+string type
+string description
+int points_impact
+date date_observation
+uuid annee_scolaire_id FK
+}
+SANCTIONS_ELEVES {
+uuid id PK
+uuid eleve_id FK
+string type
+string gravite
+string description
+date date_sanction
+string statut
+uuid annee_scolaire_id FK
+}
+FELICITATIONS_ELEVES {
+uuid id PK
+uuid eleve_id FK
+string description
+int points_bonus
+date date_felicitation
+uuid annee_scolaire_id FK
+}
+```
+
+**Diagram sources**
+- [ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md:410-463](file://ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md#L410-L463)
+
 ### Database Optimizations
 
 1. **Composite Indexes**: Optimized for common query patterns
@@ -564,6 +776,8 @@ string type
 3. **Cascade Deletion**: Automatic cleanup of related data
 4. **UUID Primary Keys**: Scalable identifier generation
 5. **Financial Query Optimization**: Indexes for financial data aggregation
+6. **Attendance Query Optimization**: Indexes for real-time presence tracking
+7. **Contextual Data Storage**: JSON fields for flexible behavioral assessment
 
 **Section sources**
 - [dashboard-layout.entity.ts:32-65](file://backend/src/modules/dashboard/entities/dashboard-layout.entity.ts#L32-L65)
@@ -594,8 +808,12 @@ The system supports various widget types optimized for different data visualizat
 | **`payment-trends`** | **Payment analysis** | **Daily/monthly payment trends** |
 | **`overdue-students`** | **Arrear analysis** | **Top overdue student rankings** |
 | **`financial-ratios`** | **Financial health** | **Income-expense ratios** |
+| **`attendance-overview`** | **Attendance summary** | **Overall presence statistics** |
+| **`trend-analysis`** | **Attendance trends** | **Daily/weekly/monthly trends** |
+| **`risk-assessment`** | **Student risk analysis** | **High-risk student identification** |
+| **`behavioral-metrics`** | **Behavioral indicators** | **Positive/negative behavior tracking** |
 
-**Updated** Four new financial widget types have been added to support comprehensive financial dashboard visualization and analysis.
+**Updated** Four new financial widget types and four new attendance widget types have been added to support comprehensive dashboard visualization and analysis.
 
 ### Refresh Strategies
 
@@ -630,8 +848,9 @@ Error --> Fallback : Permanent failure
 2. **Data Service Implementation**: Implement data retrieval methods in dashboard-data.service.ts
 3. **Permission Definition**: Specify required permissions for access control
 4. **Financial Data Integration**: Implement financial data services in dashboard.service.ts
-5. **Testing**: Verify widget functionality across different user roles
-6. **Documentation**: Update widget registry documentation
+5. **Attendance Data Integration**: Implement attendance data services in attendance-dashboard.service.ts
+6. **Testing**: Verify widget functionality across different user roles
+7. **Documentation**: Update widget registry documentation
 
 **Section sources**
 - [widget-registry.ts:196-221](file://backend/src/modules/dashboard/utils/widget-registry.ts#L196-L221)
@@ -669,9 +888,42 @@ Error --> Fallback : Permanent failure
 - **Visualization**: Ratio cards and financial health indicators
 - **Access Control**: Requires FINANCE_ADMIN or ACCOUNTANT permissions
 
+### Attendance Dashboard Implementation
+
+**New** The dashboard system now includes four specialized attendance dashboard endpoints:
+
+#### Complete Attendance Statistics
+- **Endpoint**: `/api/attendance/dashboard/stats`
+- **Purpose**: Provide comprehensive attendance overview including presence rates, absence patterns, and behavioral indicators
+- **Data Source**: `getStats()` method in AttendanceDashboardService
+- **Visualization**: Combined attendance metrics card layout
+- **Access Control**: Requires ACADEMIC_ADMIN or TEACHER permissions
+
+#### Attendance Trend Analysis
+- **Endpoint**: `/api/attendance/dashboard/trend`
+- **Purpose**: Show attendance trends over configurable time periods with trimester-specific analysis
+- **Data Source**: `getTrend()` method
+- **Visualization**: Line chart showing daily/weekly/monthly attendance trends
+- **Access Control**: Requires ACADEMIC_ADMIN or TEACHER permissions
+
+#### High-Risk Students Analysis
+- **Endpoint**: `/api/attendance/dashboard/high-risk`
+- **Purpose**: Display students at risk of academic failure based on attendance patterns and behavioral indicators
+- **Data Source**: `getHighRiskStudents()` method
+- **Visualization**: Ranked table with risk scores and intervention recommendations
+- **Access Control**: Requires ACADEMIC_ADMIN or TEACHER permissions
+
+#### Behavioral Assessment Metrics
+- **Endpoint**: `/api/attendance/dashboard/behavioral-assessment`
+- **Purpose**: Analyze behavioral patterns including positive/negative indicators and gamification points
+- **Data Source**: `getBehavioralAssessment()` method
+- **Visualization**: Behavioral metrics cards and trend analysis
+- **Access Control**: Requires ACADEMIC_ADMIN or TEACHER permissions
+
 **Section sources**
 - [dashboard.service.ts:1-401](file://backend/src/modules/finances/services/dashboard.service.ts#L1-L401)
 - [finances.controller.ts:1-200](file://backend/src/modules/finances/controllers/finances.controller.ts#L1-L200)
+- [suivi-eleve.service.ts:308-322](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L308-L322)
 
 ## Troubleshooting Guide
 
@@ -701,6 +953,7 @@ Error --> Fallback : Permanent failure
 3. Network latency
 4. Service overload
 5. Financial data aggregation delays
+6. Attendance data aggregation delays
 
 **Solutions**:
 1. Monitor cache statistics
@@ -708,6 +961,7 @@ Error --> Fallback : Permanent failure
 3. Check network connectivity
 4. Scale infrastructure resources
 5. Optimize financial data queries
+6. Optimize attendance data queries
 
 #### Data Accuracy Issues
 
@@ -718,6 +972,7 @@ Error --> Fallback : Permanent failure
 3. Synchronization delays
 4. Service failures
 5. Financial data inconsistencies
+6. Attendance data inconsistencies
 
 **Solutions**:
 1. Force widget refresh
@@ -725,6 +980,7 @@ Error --> Fallback : Permanent failure
 3. Verify data service implementations
 4. Check service health status
 5. Validate financial data integrity
+6. Validate attendance data integrity
 
 #### Financial Dashboard Errors
 
@@ -741,6 +997,23 @@ Error --> Fallback : Permanent failure
 3. Monitor database connectivity
 4. Review financial data service logs
 
+#### Attendance Dashboard Errors
+
+**Symptoms**: Attendance dashboard endpoints returning errors
+**Causes**:
+1. Missing academic permissions
+2. Invalid parameter values
+3. Database connection issues
+4. Attendance data calculation failures
+5. Student privacy data access issues
+
+**Solutions**:
+1. Verify ACADEMIC_ADMIN or TEACHER permissions
+2. Check endpoint parameters (periode, jours, limit, annee)
+3. Monitor database connectivity
+4. Review attendance data service logs
+5. Verify student enrollment and privacy settings
+
 ### Diagnostic Tools
 
 The system provides comprehensive diagnostic capabilities:
@@ -750,6 +1023,8 @@ The system provides comprehensive diagnostic capabilities:
 3. **Error Tracking**: Comprehensive error logging
 4. **Service Health**: Individual service status monitoring
 5. **Financial Data Monitoring**: Specialized financial query performance tracking
+6. **Attendance Data Monitoring**: Specialized attendance query performance tracking
+7. **Privacy Monitoring**: Student data access and privacy compliance tracking
 
 **Section sources**
 - [dashboard.controller.ts:216-243](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts#L216-L243)
@@ -757,7 +1032,7 @@ The system provides comprehensive diagnostic capabilities:
 
 ## Conclusion
 
-The eLISAschool Dashboard System represents a mature, production-ready solution for educational data visualization with comprehensive financial dashboard integration. Its architecture balances flexibility with performance, providing administrators and educators with powerful insights into their institution's operations.
+The eLISAschool Dashboard System represents a mature, production-ready solution for educational data visualization with comprehensive financial dashboard integration and **new attendance monitoring capabilities**. Its architecture balances flexibility with performance, providing administrators and educators with powerful insights into their institution's operations.
 
 Key strengths of the implementation include:
 
@@ -768,7 +1043,9 @@ Key strengths of the implementation include:
 - **Production Ready**: Comprehensive monitoring, logging, and error handling
 - **Financial Dashboard Integration**: Four specialized endpoints for real-time financial insights
 - **Workflow Integration**: Seamless integration with validation and financial workflow systems
+- **Attendance Monitoring System**: Comprehensive student attendance tracking with behavioral assessment
+- **Contextual Analysis**: Specialized features for African educational contexts with specific absence cause categorization
 
-**Updated** The addition of comprehensive financial dashboard integration significantly enhances the system's capability to provide real-time financial insights, including revenue trends, payment evolution analysis, top overdue student monitoring, and income-expense ratio calculations. This integration is seamlessly connected to the workflow system for filtered financial statistics, providing administrators with crucial insights into financial operations and student payment behaviors.
+**Updated** The addition of comprehensive attendance monitoring capabilities significantly enhances the system's ability to track student attendance patterns, behavioral indicators, and academic risk factors. The SuiviAssiduiteEleve entity provides 100% presence indicators, trimester-specific behavioral assessments, and contextual analysis tailored for African educational environments. This integration with the existing financial dashboard system creates a holistic view of student performance and institutional effectiveness.
 
-The system successfully addresses the challenges of educational data management while maintaining scalability and maintainability for future enhancements. Its modular architecture ensures that new widgets, financial endpoints, and data sources can be easily integrated without disrupting existing functionality.
+The system successfully addresses the challenges of educational data management while maintaining scalability and maintainability for future enhancements. Its modular architecture ensures that new widgets, financial endpoints, attendance monitoring features, and data sources can be easily integrated without disrupting existing functionality.

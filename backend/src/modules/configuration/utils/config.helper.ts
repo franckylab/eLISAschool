@@ -3,7 +3,7 @@
  * eLISAschool - Helper Configuration v2.0
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Fonctions utilitaires pour accéder aux paramètres
  * avec cache rapide et typage fort

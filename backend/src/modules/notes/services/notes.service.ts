@@ -21,6 +21,9 @@ import { Matiere } from '@modules/matieres/entities';
 import { Utilisateur } from '@modules/utilisateurs/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
+import { gamificationService } from '@modules/gamification/services';
+import { TypeActionPoints } from '@modules/gamification/entities';
+import { Eleve } from '@modules/eleves/entities';
 
 export class NotesService {
     private noteRepository: Repository<Note>;
@@ -140,6 +143,31 @@ export class NotesService {
         } catch (error) {
             // Ne pas bloquer la création de note si la notification échoue
             logger.warn('[Notes] Échec envoi notification nouvelle note (non bloquant)', error);
+        }
+
+        // GAMIFICATION : Attribution automatique de points pour bonne note
+        try {
+            const eleveRepo = AppDataSource.getRepository(Eleve);
+            const eleve = await eleveRepo.findOne({ 
+                where: { id: createDto.eleveId },
+                select: ['utilisateurId']
+            });
+            
+            if (eleve) {
+                const bareme = createDto.bareme || (await this.getNotesParams()).baremeDefaut;
+                
+                // Attribution points si note ≥ 80% du barème (ou seuil configuré)
+                await gamificationService.attribuerPointsBonneNote(
+                    eleve.utilisateurId,
+                    createDto.valeur,
+                    bareme
+                );
+                
+                logger.info(`[Notes] Points gamification attribués pour note ${createDto.valeur}/${bareme}`);
+            }
+        } catch (error) {
+            // Ne pas bloquer la création de note si la gamification échoue
+            logger.warn('[Notes] Échec attribution points gamification (non bloquant)', error);
         }
 
         return note;

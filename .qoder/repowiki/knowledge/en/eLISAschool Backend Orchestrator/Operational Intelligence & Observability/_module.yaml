@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_dashboard_monitoring
+module_path: 6bae6745cf1d317b183c1621f2fc0236
 title: Operational Intelligence & Observability
 scope:
     - backend/src/modules/dashboard/

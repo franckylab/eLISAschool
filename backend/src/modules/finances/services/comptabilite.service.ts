@@ -3,7 +3,7 @@
  * eLISAschool - Service Comptabilité
  * ==================================
  * Version: 2.0.0 (avec entités réelles)
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion comptable avec système OHADA
  * - Génération automatique des écritures comptables

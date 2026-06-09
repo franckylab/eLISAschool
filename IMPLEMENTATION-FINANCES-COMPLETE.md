@@ -346,5 +346,5 @@ PATCH  /api/finances/depenses/demandes/:id/valider # Valider/rejeter
 
 **Version** : 1.0.0  
 **Date** : 7 juin 2026  
-**Auteur** : xAI Éducation  
+**Auteur** : franck arlos chendjou  
 **Statut** : ✅ Implémentation complète - Prêt pour tests

@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Phase 1: Frais & Remises Granularité
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Date: 2026-06-07
 -- 
 -- Objectifs:

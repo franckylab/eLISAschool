@@ -469,4 +469,4 @@ npm run seed
 
 *Session terminée le 2026-06-05*  
 *eLISAschool RBAC System v2.0.0*  
-*© xAI Éducation 2026*
+*© franck arlos chendjou 2026*

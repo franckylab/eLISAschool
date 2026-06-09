@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/academic_structure
+title: Academic Structure Management
+scope:
+    - backend/src/modules/etablissement/
+    - backend/src/modules/cycles/
+    - backend/src/modules/niveaux/
+source_files: []
+depends_on: []
+related_to: []

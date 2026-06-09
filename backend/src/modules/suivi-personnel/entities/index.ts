@@ -6,3 +6,4 @@
 
 export * from './incident-personnel.entity';
 export * from './evaluation-personnel.entity';
+export * from './scoring-personnel.entity';

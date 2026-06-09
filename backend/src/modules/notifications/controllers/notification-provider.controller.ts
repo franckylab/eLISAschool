@@ -3,7 +3,7 @@
  * eLISAschool - Controller Notification Provider
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Routes CRUD pour la gestion des providers de notifications
  */

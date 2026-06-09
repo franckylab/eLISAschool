@@ -3,7 +3,7 @@
  * eLISAschool - Service Rapports de Validation
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Service de génération de rapports de validation exportables
  */

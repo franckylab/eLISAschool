@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_student_academics
+module_path: 6b30042bae5b1654044f7819380ba9f1
 title: Student Academic Records & Assessment Management
 scope:
     - backend/src/modules/eleves/

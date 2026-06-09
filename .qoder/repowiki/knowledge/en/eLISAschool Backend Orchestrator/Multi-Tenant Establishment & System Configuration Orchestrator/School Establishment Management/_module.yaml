@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_establishment_config/etablissement_management
+module_path: c6f655cddf69bdc920e063afcf4a7065
 title: School Establishment Management
 scope:
     - backend/src/modules/etablissement/

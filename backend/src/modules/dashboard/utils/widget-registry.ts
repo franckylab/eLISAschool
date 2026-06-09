@@ -3,7 +3,7 @@
  * eLISAschool - Widget Registry
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Registre déclaratif de tous les widgets disponibles
  */

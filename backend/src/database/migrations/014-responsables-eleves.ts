@@ -3,7 +3,7 @@
  * eLISAschool - Migration 014: Table Responsables Élèves
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Crée la table de jointure pour gérer les relations
  * multi-parents entre utilisateurs (rôle PARENT) et élèves.

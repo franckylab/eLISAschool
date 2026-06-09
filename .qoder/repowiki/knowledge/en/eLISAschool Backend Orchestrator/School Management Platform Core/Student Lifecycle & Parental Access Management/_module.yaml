@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/students
+title: Student Lifecycle & Parental Access Management
+scope:
+    - backend/src/modules/eleves/
+    - backend/src/modules/responsables-eleves/
+    - backend/src/modules/orientation/
+source_files: []
+depends_on: []
+related_to: []

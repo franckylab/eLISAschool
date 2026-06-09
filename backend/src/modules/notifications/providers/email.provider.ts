@@ -3,7 +3,7 @@
  * eLISAschool - Email Notification Provider (Nodemailer)
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Provider pour les notifications email via Nodemailer
  * Support SMTP, SendGrid, Mailgun, AWS SES

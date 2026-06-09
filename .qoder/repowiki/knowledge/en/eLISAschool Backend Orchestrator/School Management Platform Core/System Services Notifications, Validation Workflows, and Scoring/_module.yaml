@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/business_modules/system_services
+title: 'System Services: Notifications, Validation Workflows, and Scoring'
+scope:
+    - backend/src/modules/notifications/
+    - backend/src/modules/validation-workflow/
+    - backend/src/modules/scoring/
+source_files: []
+depends_on: []
+related_to: []

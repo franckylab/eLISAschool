@@ -3,7 +3,7 @@
  * eLISAschool - Entité Workflow Validation
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Entité générique pour gérer les workflows de validation multi-niveau
  * Réutilisable par tous les modules (notes, bulletins, cantine, transport, etc.)

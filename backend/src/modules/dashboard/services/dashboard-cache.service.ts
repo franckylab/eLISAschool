@@ -3,7 +3,7 @@
  * eLISAschool - Service de Cache Dashboard
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Système de cache intelligent avec invalidation contextuelle
  * Support Redis (distribué) + fallback in-memory

@@ -3,7 +3,7 @@
  * eLISAschool - Service DataLoader Dashboard
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Optimisation des requêtes par batching pour éviter le N+1 problem
  */

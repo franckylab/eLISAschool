@@ -3,7 +3,7 @@
  * eLISAschool - Énumérations des rôles et permissions
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 /**
@@ -476,6 +476,18 @@ export enum Permission {
     GAMIFICATION_HISTORIQUE_VIEW = 'gamification:historique:view',
 
     // ==================================
+    // PROGRAMMES PÉDAGOGIQUES
+    // ==================================
+    PROGRAMMES_CHAPITRE_READ = 'programmes:chapitre:read',
+    PROGRAMMES_CHAPITRE_CREATE = 'programmes:chapitre:create',
+    PROGRAMMES_CHAPITRE_EDIT = 'programmes:chapitre:edit',
+    PROGRAMMES_CHAPITRE_DELETE = 'programmes:chapitre:delete',
+    PROGRAMMES_CHAPITRE_VALIDATE = 'programmes:chapitre:validate',
+    PROGRAMMES_CORRELATION_READ = 'programmes:correlation:read',
+    PROGRAMMES_CORRELATION_EVALUATE = 'programmes:correlation:evaluate',
+    PROGRAMMES_DASHBOARD_READ = 'programmes:dashboard:read',
+
+    // ==================================
     // ORIENTATION & SCORING
     // ==================================
     ORIENTATION_VIEW = 'orientation:view',
@@ -555,6 +567,17 @@ export enum Permission {
     REQUETES_REFUSER = 'requetes:refuser',
     REQUETES_TRAITER = 'requetes:traiter',
     REQUETES_ANNULER = 'requetes:annuler',
+
+    // ==================================
+    // SONDAGES
+    // ==================================
+    SONDAGES_CREATE = 'sondages:create',
+    SONDAGES_VOTE = 'sondages:vote',
+    SONDAGES_ANALYZE = 'sondages:analyze',
+    SONDAGES_VIEW = 'sondages:view',
+    SONDAGES_EDIT = 'sondages:edit',
+    SONDAGES_DELETE = 'sondages:delete',
+    SONDAGES_TEMPLATES_MANAGE = 'sondages:templates:manage',
 
     // ==================================
     // ÉTABLISSEMENTS & CONFIGURATION
@@ -764,6 +787,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_BUDGET_EDIT,
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.FINANCES_RAPPORTS_GENERER,
+        // Programmes Pédagogiques
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CHAPITRE_EDIT,
+        Permission.PROGRAMMES_CHAPITRE_DELETE,
+        Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ,
+        Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
     ],
 
     [Role.COMPTABLE]: [
@@ -871,6 +903,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.FINANCES_DASHBOARD_KPI,
         Permission.FINANCES_RAPPORTS_GENERER,
+        // Programmes Pédagogiques
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CHAPITRE_EDIT,
+        Permission.PROGRAMMES_CHAPITRE_DELETE,
+        Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ,
+        Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
         // Groupes & Consolidation
         Permission.GROUPES_VIEW,
         Permission.GROUPES_DASHBOARD_CONSOLIDE,
@@ -892,6 +933,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.VALIDATION_CLASSES_LEVEL1,
         Permission.VALIDATION_MATIERES_LEVEL1,
         Permission.VALIDATION_ELEVES_LEVEL1,
+        // Programmes Pédagogiques (lecture + corrélation)
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_CORRELATION_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
     ],
 
     [Role.PERSONNEL]: [

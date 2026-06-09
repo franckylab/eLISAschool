@@ -1,0 +1,5 @@
+- Entry Points: `index.ts` handles server bootstrap (DB connection, cron jobs), while `app.ts` configures the Express middleware pipeline and mounts module routes.
+- Shared Layer (`common/`): Contains cross-cutting concerns including `tenant.middleware.ts` for multi-establishment isolation, `error.filter.ts` for global exception handling, and utility classes for standardized API responses and logging.
+- Configuration (`config/`): Uses Zod-schema validated environment variables (`env.config.ts`) and TypeORM data source setup (`database.config.ts`).
+- Database (`database/`): Manages TypeORM migrations and seeds, with a centralized `AppDataSource` instance exported for module consumption.
+- Dependency Flow: Modules depend on `common` for middleware/utilities and `config` for environment settings; `index.ts` orchestrates the startup sequence.

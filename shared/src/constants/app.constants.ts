@@ -3,7 +3,7 @@
  * eLISAschool - Constantes de l'application
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 /**
@@ -12,7 +12,7 @@
 export const APP_INFO = {
     name: 'eLISAschool',
     version: '1.0.0',
-    author: 'xAI Éducation',
+    author: 'franck arlos chendjou',
     description: 'Application de gestion scolaire avancée',
     website: 'https://elisaschool.cm',
 } as const;

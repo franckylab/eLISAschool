@@ -2,7 +2,7 @@
     "name": "@elisaschool/shared",
     "version": "1.0.0",
     "description": "Types, énumérations et validateurs partagés entre backend et frontend",
-    "author": "xAI Éducation",
+    "author": "franck arlos chendjou",
     "license": "UNLICENSED",
     "private": true,
     "main": "dist/index.js",

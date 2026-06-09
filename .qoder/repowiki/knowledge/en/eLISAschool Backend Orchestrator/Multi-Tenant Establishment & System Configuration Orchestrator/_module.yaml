@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_establishment_config
+module_path: 35099e3d2384ad2dd5bc1b893468bce9
 title: Multi-Tenant Establishment & System Configuration Orchestrator
 scope:
     - backend/src/modules/etablissement/

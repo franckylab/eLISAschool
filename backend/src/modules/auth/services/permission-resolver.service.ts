@@ -3,7 +3,7 @@
  * eLISAschool - Service de Résolution des Permissions
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Résout les permissions effectives d'un utilisateur en combinant :
  * - Permissions du rôle principal

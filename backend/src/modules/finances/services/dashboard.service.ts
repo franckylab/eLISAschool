@@ -3,7 +3,7 @@
  * eLISAschool - Service Dashboard Financier
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Statistiques et KPIs financiers pour dashboard
  */

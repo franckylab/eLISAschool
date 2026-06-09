@@ -3,7 +3,7 @@
  * eLISAschool - Guard de Permissions
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Vérification des permissions granulaires (RBAC)
  * Supporte le nouveau système dynamique avec fallback vers l'ancien système

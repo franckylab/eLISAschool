@@ -5,3 +5,4 @@
  */
 
 export * from './suivi-personnel.dto';
+export * from './scoring-personnel.dto';

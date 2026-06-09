@@ -3,7 +3,7 @@
  * eLISAschool - Interceptor Audit Automatique
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Interceptor Express pour capturer automatiquement les opérations CRUD
  * et générer des logs d'audit sans instrumentation manuelle

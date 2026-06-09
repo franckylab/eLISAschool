@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation (create/update schemas with z.infer types); TypeORM with UUID primary keys and enum columns; Express Router with custom authMiddleware and requireRoles middleware.

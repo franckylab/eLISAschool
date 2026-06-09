@@ -3,7 +3,7 @@
  * eLISAschool - Guard Configuration
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Middleware de vérification des permissions de configuration
  */

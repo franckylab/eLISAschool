@@ -26,18 +26,36 @@ import { Request } from 'express';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { gamificationService } from '@modules/gamification/services';
+import { TypeActionPoints } from '@modules/gamification/entities';
+import { Eleve } from '@modules/eleves/entities';
 
 export class SuiviEleveService {
     private incidentRepo: Repository<IncidentEleve>;
     private observationRepo: Repository<ObservationEleve>;
     private sanctionRepo: Repository<SanctionEleve>;
     private felicitationRepo: Repository<FelicitationEleve>;
+    private eleveRepo: Repository<Eleve>;
 
     constructor() {
         this.incidentRepo = AppDataSource.getRepository(IncidentEleve);
         this.observationRepo = AppDataSource.getRepository(ObservationEleve);
         this.sanctionRepo = AppDataSource.getRepository(SanctionEleve);
         this.felicitationRepo = AppDataSource.getRepository(FelicitationEleve);
+        this.eleveRepo = AppDataSource.getRepository(Eleve);
+    }
+
+    /**
+     * Helper: Récupère le utilisateurId d'un élève
+     */
+    private async getUtilisateurIdFromEleveId(eleveId: string): Promise<string> {
+        const eleve = await this.eleveRepo.findOne({
+            where: { id: eleveId },
+            select: ['utilisateurId'],
+        });
+        if (!eleve) {
+            throw new AppError(`Élève non trouvé: ${eleveId}`, 404, 'ELEVE_NOT_FOUND');
+        }
+        return eleve.utilisateurId;
     }
 
     // ==================== INCIDENTS ====================
@@ -100,6 +118,32 @@ export class SuiviEleveService {
             etablissementId,
         });
         await this.observationRepo.save(observation);
+        
+        // Attribution points gamification si pointsImpact != 0
+        if (dto.pointsImpact && dto.pointsImpact !== 0) {
+            try {
+                // Récupérer le vrai utilisateurId de l'élève
+                const utilisateurId = await this.getUtilisateurIdFromEleveId(dto.eleveId);
+                
+                // Déterminer l'action selon le type d'observation
+                const action = dto.type === 'POSITIVE' 
+                    ? TypeActionPoints.OBSERVATION_POSITIVE 
+                    : TypeActionPoints.OBSERVATION_NEGATIVE;
+                
+                await gamificationService.attribuerPoints({
+                    utilisateurId,
+                    points: dto.pointsImpact,
+                    action,
+                    description: `Observation: ${dto.categorie} - ${dto.commentaire.substring(0, 50)}...`,
+                    sourceModule: 'suivi-eleves',
+                    sourceId: observation.id,
+                });
+                
+                logger.info(`[Suivi-Élèves] Points observation attribués: ${dto.pointsImpact} à ${utilisateurId}`);
+            } catch (error) {
+                logger.warn(`[Suivi-Élèves] Échec attribution points observation (non bloquant)`, error);
+            }
+        }
         
         if (req?.utilisateur?.id) {
             await auditService.log({
@@ -211,20 +255,23 @@ export class SuiviEleveService {
         
         // Attribution points gamification
         try {
+            // Récupérer le vrai utilisateurId de l'élève
+            const utilisateurId = await this.getUtilisateurIdFromEleveId(dto.eleveId);
+            
             // Récupérer les points configurés ou utiliser ceux du DTO
             const pointsConfig = await getParamNumber('suivi-eleves.gamification.points_felicitations', dto.pointsBonus || 10);
             const points = dto.pointsBonus || pointsConfig;
             
             await gamificationService.attribuerPoints({
-                utilisateurId: dto.eleveId,
+                utilisateurId,
                 points,
-                action: 'felicitations',
+                action: TypeActionPoints.FELICITATIONS,
                 description: `Félicitation: ${dto.motif}`,
                 sourceModule: 'suivi-eleves',
                 sourceId: felicitation.id,
             });
             
-            logger.info(`[Suivi-Élèves] Points gamification attribués: ${points} à ${dto.eleveId}`);
+            logger.info(`[Suivi-Élèves] Points gamification attribués: ${points} à ${utilisateurId}`);
         } catch (error) {
             logger.warn(`[Suivi-Élèves] Échec attribution points gamification (non bloquant)`, error);
         }
@@ -297,24 +344,28 @@ export class SuiviEleveService {
     }
 
     // ==================== DASHBOARD ====================
-    async getDashboardEleve(eleveId: string, etablissementId: string) {
+    async getDashboardEleve(
+        eleveId: string, 
+        etablissementId: string,
+        anneeScolaireId: string
+    ) {
         const [incidents, observations, sanctions, felicitations] = await Promise.all([
-            this.getIncidentsByEleve(eleveId, etablissementId),
-            this.getObservationsByEleve(eleveId, etablissementId),
-            this.sanctionRepo.find({ where: { eleveId, etablissementId } }),
-            this.getFelicitationsByEleve(eleveId, etablissementId),
+            this.getIncidentsByEleve(eleveId, etablissementId, anneeScolaireId),
+            this.getObservationsByEleve(eleveId, etablissementId, anneeScolaireId),
+            this.sanctionRepo.find({ where: { eleveId, etablissementId, anneeScolaireId } }),
+            this.getFelicitationsByEleve(eleveId, etablissementId, anneeScolaireId),
         ]);
 
         return {
-            incidents: incidents.length,
-            incidentsGraves: incidents.filter(i => i.gravite === 'GRAVE' || i.gravite === 'TRES_GRAVE').length,
-            observations: observations.length,
-            observationsPositives: observations.filter(o => o.type === 'POSITIVE').length,
+            incidents: incidents.data.length,
+            incidentsGraves: incidents.data.filter(i => i.gravite === 'GRAVE' || i.gravite === 'TRES_GRAVE').length,
+            observations: observations.data.length,
+            observationsPositives: observations.data.filter(o => o.type === 'POSITIVE').length,
             sanctions: sanctions.length,
             sanctionsEnCours: sanctions.filter(s => s.statut === 'EN_COURS').length,
-            felicitations: felicitations.length,
-            pointsGamification: observations.reduce((sum, o) => sum + o.pointsImpact, 0) +
-                                felicitations.reduce((sum, f) => sum + f.pointsBonus, 0),
+            felicitations: felicitations.data.length,
+            pointsGamification: observations.data.reduce((sum, o) => sum + o.pointsImpact, 0) +
+                                felicitations.data.reduce((sum, f) => sum + f.pointsBonus, 0),
         };
     }
 }

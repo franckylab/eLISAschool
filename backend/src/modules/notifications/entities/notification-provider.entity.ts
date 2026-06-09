@@ -3,7 +3,7 @@
  * eLISAschool - Entité NotificationProvider
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Stocke la configuration des providers de notifications
  * Permet d'ajouter, configurer, activer/désactiver des providers

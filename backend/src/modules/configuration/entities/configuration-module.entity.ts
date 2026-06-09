@@ -3,7 +3,7 @@
  * eLISAschool - Entité Configuration Module
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import {
@@ -77,6 +77,10 @@ export class ConfigurationModule {
     // Module activé/désactivé
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    // Valeurs par défaut pour restauration
+    @Column({ type: 'simple-json', nullable: true })
+    valeurDefaut?: Record<string, any>;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

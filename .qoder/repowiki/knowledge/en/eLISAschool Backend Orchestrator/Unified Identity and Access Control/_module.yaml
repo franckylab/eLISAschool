@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_auth_rbac
+module_path: cbb3bc0f137f6a5ed36d359f0de8df59
 title: Unified Identity and Access Control
 scope:
     - backend/src/modules/auth/

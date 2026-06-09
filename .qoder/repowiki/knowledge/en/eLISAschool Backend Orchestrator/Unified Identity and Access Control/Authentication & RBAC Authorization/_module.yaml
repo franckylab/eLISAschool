@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_auth_rbac/auth
+module_path: b689ad91b437342aa5664ad0d7256882
 title: Authentication & RBAC Authorization
 scope:
     - backend/src/modules/auth/

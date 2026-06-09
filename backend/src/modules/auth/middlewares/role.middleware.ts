@@ -3,7 +3,7 @@
  * eLISAschool - Middleware de vérification des rôles et permissions
  * ==================================
  * Version: 3.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Middleware amélioré avec support des rôles ET permissions
  * Supporte le multi-rôles et le nouveau système RBAC dynamique

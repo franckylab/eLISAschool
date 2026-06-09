@@ -5,7 +5,7 @@
 **Date** : 6 juin 2026  
 **Version** : 1.0.0  
 **Statut** : ✅ Production Ready  
-**Auteur** : xAI Éducation
+**Auteur** : franck arlos chendjou
 
 ---
 
@@ -413,5 +413,5 @@ Le système de dashboard dynamique eLISAschool est **entièrement implémenté e
 
 **Version** : 1.0.0  
 **Date** : 6 juin 2026  
-**Auteur** : xAI Éducation  
+**Auteur** : franck arlos chendjou  
 **Statut** : ✅ Production Ready

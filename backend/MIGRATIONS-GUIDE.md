@@ -367,7 +367,7 @@ Pour toute question ou problème :
 
 | Date | Modification | Auteur |
 |------|--------------|--------|
-| 2026-06-06 | Création du guide + Migration 008 | xAI Éducation |
-| 2026-06-06 | Correction entité Classe (index) | xAI Éducation |
-| 2026-06-06 | Scripts d'analyse et correction | xAI Éducation |
+| 2026-06-06 | Création du guide + Migration 008 | franck arlos chendjou |
+| 2026-06-06 | Correction entité Classe (index) | franck arlos chendjou |
+| 2026-06-06 | Scripts d'analyse et correction | franck arlos chendjou |
 

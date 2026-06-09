@@ -3,7 +3,7 @@
  * eLISAschool - Configuration des variables d'environnement
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { z } from 'zod';

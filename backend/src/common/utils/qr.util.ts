@@ -3,7 +3,7 @@
  * eLISAschool - Utilitaire de génération QR Code
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import QRCode from 'qrcode';

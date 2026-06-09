@@ -3,7 +3,7 @@
  * eLISAschool - Service Configuration v5.0
  * ==================================
  * Version: 5.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Système de configuration hybride complet avec :
  * - Cache mémoire performant
@@ -903,6 +903,93 @@ export class ConfigurationService {
             });
 
             logger.info(`Paramètre réinitialisé vers valeur par défaut: ${cle}`);
+        }
+    }
+
+    /**
+     * Réinitialise TOUS les paramètres vers leurs valeurs par défaut
+     * 
+     * Si etablissementId fourni :
+     * - Supprime TOUS les overrides de cet établissement (retour aux valeurs globales)
+     * 
+     * Sinon :
+     * - Réinitialise TOUS les paramètres globaux vers leur valeurDefaut
+     */
+    async resetAllParametres(
+        etablissementId?: string,
+        utilisateurId?: string,
+        req?: Request
+    ): Promise<{ resetCount: number; skippedCount: number; total: number }> {
+        let resetCount = 0;
+        let skippedCount = 0;
+
+        if (etablissementId) {
+            // Supprimer TOUS les overrides de cet établissement
+            const overrides = await this.parametreRepository.find({
+                where: { etablissementId }
+            });
+
+            if (overrides.length > 0) {
+                await this.parametreRepository.remove(overrides);
+                resetCount = overrides.length;
+
+                await this.historyService.logAction({
+                    utilisateurId,
+                    action: ActionConfiguration.RESET,
+                    cible: CibleConfiguration.PARAMETRE,
+                    cibleNom: `Tous les overrides [${etablissementId}]`,
+                    description: `${resetCount} paramètres réinitialisés (overrides supprimés)`,
+                    req,
+                });
+
+                logger.info(`${resetCount} overrides supprimés pour établissement ${etablissementId}`);
+            }
+
+            this.invalidateCache('parametres');
+
+            return {
+                resetCount,
+                skippedCount: 0,
+                total: resetCount
+            };
+        } else {
+            // Réinitialiser TOUS les paramètres globaux vers valeurDefaut
+            const parametres = await this.parametreRepository.find({
+                where: { etablissementId: IsNull() }
+            });
+
+            for (const param of parametres) {
+                if (param.valeurDefaut && param.valeur !== param.valeurDefaut) {
+                    const ancienneValeur = param.valeur;
+                    param.valeur = param.valeurDefaut;
+                    await this.parametreRepository.save(param);
+                    resetCount++;
+
+                    logger.info(`Paramètre réinitialisé: ${param.cle}`);
+                } else {
+                    skippedCount++;
+                }
+            }
+
+            if (resetCount > 0) {
+                await this.historyService.logAction({
+                    utilisateurId,
+                    action: ActionConfiguration.RESET,
+                    cible: CibleConfiguration.PARAMETRE,
+                    cibleNom: 'Tous les paramètres globaux',
+                    description: `${resetCount} paramètres réinitialisés vers leurs valeurs par défaut`,
+                    req,
+                });
+
+                this.invalidateCache('parametres');
+                logger.info(`${resetCount} paramètres globaux réinitialisés vers valeurs par défaut`);
+            }
+
+            return {
+                resetCount,
+                skippedCount,
+                total: parametres.length
+            };
         }
     }
 

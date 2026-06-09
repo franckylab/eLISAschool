@@ -3,7 +3,7 @@
  * eLISAschool - Types utilisateur
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  */
 
 import { Role, StatutUtilisateur, Genre } from '../enums';

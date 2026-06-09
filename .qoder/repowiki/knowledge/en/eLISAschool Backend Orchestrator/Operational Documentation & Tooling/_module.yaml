@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_operational_assets
+module_path: 0c031c0c852e56012f4291e6e21f11bf
 title: Operational Documentation & Tooling
 scope:
     - backend/docs/

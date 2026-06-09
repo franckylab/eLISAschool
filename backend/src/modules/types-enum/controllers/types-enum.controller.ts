@@ -3,7 +3,7 @@
  * eLISAschool - Controller TypeEnum
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Endpoints CRUD pour la gestion des types enum
  * avec protection RBAC et multi-tenant

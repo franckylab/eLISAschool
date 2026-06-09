@@ -3,7 +3,7 @@
  * eLISAschool - Export de tous les modules
  * ==================================
  * Version: 3.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Tous les modules sont exportés pour permettre une utilisation
  * cohérente dans l'application.
@@ -19,6 +19,8 @@ export * from './notes';
 // Modules communication
 export * from './messagerie';
 export * from './requetes';
+export * from './sondages';
+export * from './annonces';
 
 // Modules logistiques
 export * from './cantine';
@@ -60,6 +62,7 @@ export * from './personnel';
 export * from './classes';
 export * from './matieres';
 export * from './periodes';
+export * from './programmes';
 export * from './eleves';
 export * from './bulletins';
 export * from './responsables-eleves';

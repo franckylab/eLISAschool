@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/business_modules/student_health
+title: Student Health & Behavioral Tracking
+scope:
+    - backend/src/modules/sante/
+    - backend/src/modules/suivi-eleves/
+source_files: []
+depends_on: []
+related_to: []

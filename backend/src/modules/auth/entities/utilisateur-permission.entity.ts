@@ -3,7 +3,7 @@
  * eLISAschool - Entité UtilisateurPermission
  * ==================================
  * Version: 2.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Permissions personnalisées au niveau utilisateur
  * Permet d'ajouter (GRANTED) ou retirer (DENIED) des permissions spécifiques

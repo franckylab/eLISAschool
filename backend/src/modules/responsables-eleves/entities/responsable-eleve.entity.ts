@@ -5,7 +5,7 @@
  * eLISAschool - Entité Responsable Élève
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Description: Table de jointure pour gérer la relation multi-parents
  * entre les utilisateurs (rôle PARENT) et les élèves.

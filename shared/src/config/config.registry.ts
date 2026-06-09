@@ -3,7 +3,7 @@
  * eLISAschool - Registre de Configuration des Modules
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Configuration par défaut de chaque module
  */
@@ -151,6 +151,26 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.SONDAGES]: {
+        name: ModuleName.SONDAGES,
+        label: 'Sondages',
+        description: 'Création et gestion de sondages',
+        icon: 'CircleHelp',
+        basePath: '/sondages',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: Object.values(Role),
+        permissions: [Permission.SONDAGES_CREATE, Permission.SONDAGES_VOTE, Permission.SONDAGES_ANALYZE],
+        dependencies: [ModuleName.AUTH, ModuleName.NOTIFICATIONS],
+        defaultSettings: {
+            maxDestinataires: 500,
+            maxOptions: 20,
+            dureeParDefaut: '7j',
+            allowAnonymous: true,
+            allowMultipleChoice: true,
+        },
+    },
+
     // ============ MODULES ACADÉMIQUES ============
     [ModuleName.NOTES]: {
         name: ModuleName.NOTES,
@@ -236,6 +256,24 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
             allowMultipleParents: true,
             requireLegalGuardian: true,
             enablePaymentAccess: false,
+        },
+    },
+
+    [ModuleName.PROGRAMMES]: {
+        name: ModuleName.PROGRAMMES,
+        label: 'Programmes Pédagogiques',
+        description: 'Gestion du programme scolaire par période et suivi de progression',
+        icon: 'BookOpen',
+        basePath: '/programmes',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.NOTES],
+        defaultSettings: {
+            enableGamification: true,
+            autoCalculProgression: true,
+            seuilConformite: 90,
         },
     },
 
@@ -394,6 +432,47 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
     },
 
     // ============ MODULES SYSTÈME ============
+    [ModuleName.SUIVI_ELEVES]: {
+        name: ModuleName.SUIVI_ELEVES,
+        label: 'Suivi Élèves',
+        description: 'Suivi académique et comportemental des élèves',
+        icon: 'UserCheck',
+        basePath: '/suivi-eleves',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.ELEVES],
+        defaultSettings: {},
+    },
+
+    [ModuleName.SUIVI_PERSONNEL]: {
+        name: ModuleName.SUIVI_PERSONNEL,
+        label: 'Suivi Personnel',
+        description: 'Scoring, évaluations et classement du personnel',
+        icon: 'UserCog',
+        basePath: '/suivi-personnel',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {},
+    },
+
+    [ModuleName.SANTE]: {
+        name: ModuleName.SANTE,
+        label: 'Santé',
+        description: 'Suivi sanitaire et infirmerie',
+        icon: 'Heart',
+        basePath: '/sante',
+        defaultActive: false,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {},
+    },
     [ModuleName.SCORING]: {
         name: ModuleName.SCORING,
         label: 'Scoring',

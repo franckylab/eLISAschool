@@ -1,0 +1,1 @@
+Manages school fee billing, expense tracking, budgeting, and accounting workflows with multi-level validation.

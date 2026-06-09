@@ -501,7 +501,7 @@ PATCH /api/finances/depenses/demandes/{id}/valider
 
 ## 👥 Équipe & Crédits
 
-- **Architecture** : xAI Éducation
+- **Architecture** : franck arlos chendjou
 - **Développement** : Agent IA + conventions eLISAschool
 - **Documentation** : Générée automatiquement
 - **Tests** : Scripts bash automatisés

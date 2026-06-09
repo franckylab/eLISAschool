@@ -2,7 +2,7 @@
 -- eLISAschool - Migration 029: Extension Paie
 -- ==================================
 -- Version: 2.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- Description: Tables pour la gestion avancée de la paie
 --   - Elements de salaire (détaillés)
 --   - Cotisations sociales (CNPS, AMO, IRPP)

@@ -3,7 +3,7 @@
  * eLISAschool - Service Gestion des Dépenses
  * ==================================
  * Version: 1.0.0
- * Auteur: xAI Éducation
+ * Auteur: franck arlos chendjou
  * 
  * Gestion complète des dépenses, demandes, bons de commande et factures
  */

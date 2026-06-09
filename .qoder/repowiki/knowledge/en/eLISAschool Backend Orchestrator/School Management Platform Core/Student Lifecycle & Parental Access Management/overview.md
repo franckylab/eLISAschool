@@ -1,0 +1,1 @@
+Manages student enrollment, parental relationship mapping with granular access controls, and academic orientation profiling within a multi-tenant school system.

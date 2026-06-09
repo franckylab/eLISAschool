@@ -333,5 +333,5 @@ Pour ajouter un nouveau provider :
 
 **Version :** 1.0.0  
 **Date :** 2025-06-06  
-**Auteur :** xAI Éducation  
+**Auteur :** franck arlos chendjou  
 **Statut :** ✅ Étape 1 complétée (Architecture Providers)

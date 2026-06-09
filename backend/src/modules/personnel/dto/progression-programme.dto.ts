@@ -11,6 +11,8 @@ export const createProgressionSchema = z.object({
     matiereId: z.string().uuid('ID de la matière invalide'),
     classeId: z.string().uuid('ID de la classe invalide'),
     periodeId: z.string().uuid().optional(),
+    programmeChapitreId: z.string().uuid().optional(),
+    modeCalcul: z.enum(['LEGACY', 'CHAPITRE', 'MIXTE']).default('LEGACY').optional(),
     pourcentageRealise: z.coerce.number().min(0).max(100, 'Le pourcentage doit être entre 0 et 100'),
     chapitreCourant: z.string().max(200),
     dateEvaluation: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),

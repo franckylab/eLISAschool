@@ -2,7 +2,7 @@
 -- eLISAschool - Migration Notification Providers
 -- ==================================
 -- Version: 1.0.0
--- Auteur: xAI Éducation
+-- Auteur: franck arlos chendjou
 -- 
 -- Crée la table notification_providers pour gérer les providers de notifications
 -- Permet d'ajouter, configurer, activer/désactiver des providers dynamiquement

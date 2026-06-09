@@ -1,0 +1,3 @@
+- Services are implemented as singletons exported as lowercase constants (e.g., `scolariteService`, `depensesService`) for global access.
+- Controllers extract `etablissementId` and `userId` from the JWT payload attached to the request object for multi-tenancy and audit trails.
+- Financial mutations involving multiple state changes (e.g., recording a payment and updating an installment) are wrapped in TypeORM database transactions using `createQueryRunner`.
