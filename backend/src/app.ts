@@ -63,6 +63,7 @@ import { dashboardController } from '@modules/dashboard';
 import { validationWorkflowController } from '@modules/validation-workflow';
 import { groupesController } from '@modules/groupes-etablissements';
 import { requireModuleActive } from '@modules/configuration/middlewares/module-active.middleware';
+import { typesEnumController } from '@modules/types-enum';
 
 /**
  * Crée et configure l'application Express
@@ -228,6 +229,7 @@ export function createApp(): Application {
     app.use('/api/dashboard', requireModuleActive('dashboard'), dashboardController);
     app.use('/api/validation-workflows', validationWorkflowController);
     app.use('/api/groupes', groupesController);
+    app.use('/api/types-enum', typesEnumController);
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);

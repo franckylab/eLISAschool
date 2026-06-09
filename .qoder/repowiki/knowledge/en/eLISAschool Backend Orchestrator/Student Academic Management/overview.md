@@ -1,1 +1,0 @@
-Manages student enrollment, grades, report cards, and academic orientation workflows within a multi-tenant school system.

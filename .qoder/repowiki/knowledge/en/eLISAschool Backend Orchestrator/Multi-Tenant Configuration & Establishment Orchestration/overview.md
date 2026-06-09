@@ -1,1 +1,0 @@
-Orchestrates per-establishment lifecycle and system-wide settings through a shared hierarchical configuration model with event-driven synchronization.

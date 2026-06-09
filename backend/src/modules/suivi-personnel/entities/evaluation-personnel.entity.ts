@@ -40,6 +40,8 @@ export enum StatutEvaluation {
 @Index(['etablissementId'])
 @Index(['anneeScolaireId']) // ← NOUVEAU
 @Index(['anneeScolaireId', 'membrePersonnelId']) // ← NOUVEAU
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre
+@Index(['anneeScolaireId', 'periodeId']) // ← NOUVEAU: composite
 export class EvaluationPersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

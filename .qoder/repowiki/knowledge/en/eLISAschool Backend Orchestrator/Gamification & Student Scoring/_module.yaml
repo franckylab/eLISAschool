@@ -8,10 +8,5 @@ source_files: []
 depends_on: []
 related_to:
     - path: backend/backend_student_academics
-    - path: backend/backend_establishment_config/system_configuration
     - path: backend/backend_student_life
     - path: backend/backend_dashboard_monitoring/dashboard
-    - path: backend/backend_operations
-    - path: backend/backend_notifications_audit/audit
-    - path: backend/backend_infrastructure
-    - path: backend/backend_academic_core

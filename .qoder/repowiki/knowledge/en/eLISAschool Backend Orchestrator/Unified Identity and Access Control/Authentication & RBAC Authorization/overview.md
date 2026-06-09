@@ -1,0 +1,1 @@
+Manages user authentication, JWT token lifecycle, and dynamic role-based access control with multi-tenant establishment support.

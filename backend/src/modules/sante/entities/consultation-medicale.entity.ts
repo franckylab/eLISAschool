@@ -17,6 +17,7 @@ import {
 import { DossierMedical } from './dossier-medical.entity';
 import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { Periode } from '@modules/periodes/entities';
 
 export enum TypeConsultation {
     INFIRMERIE = 'INFIRMERIE',
@@ -36,6 +37,8 @@ export enum StatutConsultation {
 @Index(['consultantId'])
 @Index(['dateConsultation'])
 @Index(['etablissementId'])
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre
+@Index(['periodeId', 'type']) // ← NOUVEAU: stats par type
 export class ConsultationMedicale {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -99,6 +102,14 @@ export class ConsultationMedicale {
     @ManyToOne(() => Etablissement)
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    // ==================== LIEN PÉRIODE/TRIMESTRE ====================
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @CreateDateColumn()
     createdAt!: Date;

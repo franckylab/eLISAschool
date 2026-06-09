@@ -46,13 +46,21 @@ router.post('/incidents', staffOnly, async (req: Request, res: Response, next: N
 
 router.get('/eleve/:eleveId/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // ← NOUVEAU: Validation année scolaire obligatoire
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU: filtre par trimestre
+        
         const result = await suiviEleveService.getIncidentsByEleve(
             req.params.eleveId,
             req.utilisateur!.etablissementId!,
-            page,
-            limit
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU: options avec periodeId
         );
         res.json({
             success: true,
@@ -64,6 +72,10 @@ router.get('/eleve/:eleveId/incidents', staffOnly, async (req: Request, res: Res
                 totalPages: Math.ceil(result.total / limit),
                 hasNext: page * limit < result.total,
                 hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
             },
         });
     } catch (error) {
@@ -78,7 +90,8 @@ router.post('/observations', staffOnly, async (req: Request, res: Response, next
         const observation = await suiviEleveService.createObservation(
             dto,
             req.utilisateur!.id,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            req // ← NOUVEAU: pour audit trail
         );
         res.status(201).json({ success: true, data: observation });
     } catch (error) {
@@ -88,13 +101,21 @@ router.post('/observations', staffOnly, async (req: Request, res: Response, next
 
 router.get('/eleve/:eleveId/observations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // ← NOUVEAU: Validation année scolaire obligatoire
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
         const result = await suiviEleveService.getObservationsByEleve(
             req.params.eleveId,
             req.utilisateur!.etablissementId!,
-            page,
-            limit
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU
         );
         res.json({
             success: true,
@@ -106,6 +127,10 @@ router.get('/eleve/:eleveId/observations', staffOnly, async (req: Request, res: 
                 totalPages: Math.ceil(result.total / limit),
                 hasNext: page * limit < result.total,
                 hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
             },
         });
     } catch (error) {
@@ -147,13 +172,20 @@ router.post('/felicitations', staffOnly, async (req: Request, res: Response, nex
 
 router.get('/eleve/:eleveId/felicitations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
         const result = await suiviEleveService.getFelicitationsByEleve(
             req.params.eleveId,
             req.utilisateur!.etablissementId!,
-            page,
-            limit
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU
         );
         res.json({
             success: true,
@@ -165,6 +197,49 @@ router.get('/eleve/:eleveId/felicitations', staffOnly, async (req: Request, res:
                 totalPages: Math.ceil(result.total / limit),
                 hasNext: page * limit < result.total,
                 hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ==================== SANCTIONS LISTE ====================
+router.get('/eleve/:eleveId/sanctions', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
+        const result = await suiviEleveService.getSanctionsByEleve(
+            req.params.eleveId,
+            req.utilisateur!.etablissementId!,
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU
+        );
+        res.json({
+            success: true,
+            data: result.data,
+            pagination: {
+                page,
+                limit,
+                total: result.total,
+                totalPages: Math.ceil(result.total / limit),
+                hasNext: page * limit < result.total,
+                hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
             },
         });
     } catch (error) {

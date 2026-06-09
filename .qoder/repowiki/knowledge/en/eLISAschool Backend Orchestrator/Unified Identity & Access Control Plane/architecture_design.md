@@ -1,3 +1,0 @@
-- Shared Entity Boundary: Both modules operate on a common set of TypeORM entities (Role, Permission, UtilisateurRole) located in the auth module, establishing auth as the data owner for identity structures.
-- Cross-Module Service Coupling: The rbac module directly imports and invokes the auth module's PermissionResolverService to invalidate permission caches upon role or permission updates, ensuring consistency between administrative changes and runtime access checks.
-- Middleware Integration: Auth module exposes middleware (authMiddleware, permission.guard) that consumes the resolved permissions from the shared resolver, bridging the gap between static route definitions and dynamic RBAC policies managed by the rbac module.

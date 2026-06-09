@@ -1,0 +1,1 @@
+Uses Zod v3 for schema validation and TypeScript v5 for type definitions, compiled to CommonJS.

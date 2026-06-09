@@ -1,1 +1,1 @@
-Orchestrates a modular, multi-tenant school management system by enforcing shared security, configuration, and observability contracts across domain-specific child modules.
+Orchestrates a modular, multi-tenant school management system by enforcing shared security, configuration, and observability contracts across diverse academic and operational domain modules.

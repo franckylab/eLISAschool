@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/backend_auth_rbac
+title: Unified Identity and Access Control
+scope:
+    - backend/src/modules/auth/
+    - backend/src/modules/rbac/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/backend_dashboard_monitoring/dashboard

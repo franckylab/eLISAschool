@@ -2,15 +2,21 @@
  * ==================================
  * eLISAschool - DTOs Suivi-Élèves
  * ==================================
+ * Version: 2.1.0 - Contexte africain + periodeId
+ * ==================================
  */
 
 import { z } from 'zod';
+import { TypeIncidentEleve } from '../entities/incident-eleve.entity';
+import { TypeSanction } from '../entities/sanction-eleve.entity';
+import { TypeFelicitation } from '../entities/felicitation-eleve.entity';
 
 export const createIncidentEleveSchema = z.object({
     eleveId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid(), // ← NOUVEAU: obligatoire
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU: trimestre concerné
     gravite: z.enum(['MINEUR', 'MODERE', 'GRAVE', 'TRES_GRAVE']),
-    type: z.string().min(2).max(200),
+    type: z.nativeEnum(TypeIncidentEleve), // ← NOUVEAU: enum structuré
     description: z.string().min(10),
     lieu: z.string().optional(),
     temoins: z.string().optional(),
@@ -24,7 +30,8 @@ export const createIncidentEleveSchema = z.object({
 
 export const createObservationEleveSchema = z.object({
     eleveId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid(), // ← NOUVEAU
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU
     type: z.enum(['POSITIVE', 'NEGATIVE', 'NEUTRE']),
     categorie: z.string().min(2).max(200),
     commentaire: z.string().min(5),
@@ -34,9 +41,10 @@ export const createObservationEleveSchema = z.object({
 
 export const createSanctionEleveSchema = z.object({
     eleveId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid(), // ← NOUVEAU
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU
     incidentId: z.string().uuid(),
-    type: z.enum(['AVERTISSEMENT', 'BLAME', 'RETENUE', 'EXCLUSION_TEMPORAIRE', 'EXCLUSION_DEFINITIVE', 'CONSEIL_DISCIPLINE']),
+    type: z.nativeEnum(TypeSanction), // ← NOUVEAU: 18 types progressifs
     motif: z.string().min(10),
     description: z.string().optional(),
     dateDebut: z.string().optional(),
@@ -47,8 +55,9 @@ export const createSanctionEleveSchema = z.object({
 
 export const createFelicitationEleveSchema = z.object({
     eleveId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid(), // ← NOUVEAU
-    type: z.enum(['EXCELLENCE_ACADEMIQUE', 'PROGRES_REMARQUABLE', 'COMPORTEMENT_EXEMPLAIRE', 'ACTIVITE_PARASCOLAIRE', 'MERITE_SPECIAL']),
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU
+    type: z.nativeEnum(TypeFelicitation), // ← NOUVEAU: 20 types contextualisés
     motif: z.string().min(10),
     description: z.string().optional(),
     pointsBonus: z.number().default(0),

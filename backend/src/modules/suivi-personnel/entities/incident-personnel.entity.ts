@@ -20,6 +20,7 @@ import { MembrePersonnel } from '@modules/personnel/entities';
 import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Periode } from '@modules/periodes/entities';
 
 export enum GraviteIncidentPersonnel {
     MINEUR = 'MINEUR',
@@ -43,6 +44,8 @@ export enum StatutIncidentPersonnel {
 @Index(['etablissementId'])
 @Index(['anneeScolaireId']) // ← NOUVEAU
 @Index(['anneeScolaireId', 'membrePersonnelId']) // ← NOUVEAU
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre
+@Index(['anneeScolaireId', 'periodeId']) // ← NOUVEAU: composite
 export class IncidentPersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -93,6 +96,14 @@ export class IncidentPersonnel {
     @ManyToOne(() => AnneeScolaire)
     @JoinColumn({ name: 'anneeScolaireId' })
     anneeScolaire?: AnneeScolaire;
+
+    // ==================== LIEN PÉRIODE/TRIMESTRE ====================
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @CreateDateColumn()
     createdAt!: Date;

@@ -66,11 +66,27 @@ router.post('/consultations', staffOnly, requirePermission('sante:consultation:w
 
 router.get('/patients/:patientId/consultations', staffOnly, requirePermission('sante:consultation:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
         const consultations = await santeService.getConsultationsByPatient(
             req.params.patientId,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            anneeScolaireId,
+            { periodeId } // ← NOUVEAU
         );
-        res.json({ success: true, data: consultations });
+        res.json({ 
+            success: true, 
+            data: consultations,
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
+            }
+        });
     } catch (error) {
         next(error);
     }
@@ -94,11 +110,23 @@ router.post('/incidents', staffOnly, requirePermission('sante:incident:write'), 
 
 router.get('/patients/:patientId/incidents', staffOnly, requirePermission('sante:incident:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const incidents = await santeService.getIncidentsByPatient(
             req.params.patientId,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            anneeScolaireId // ← NOUVEAU
         );
-        res.json({ success: true, data: incidents });
+        res.json({ 
+            success: true, 
+            data: incidents,
+            metadata: {
+                anneeScolaireId, // ← NOUVEAU
+            }
+        });
     } catch (error) {
         next(error);
     }

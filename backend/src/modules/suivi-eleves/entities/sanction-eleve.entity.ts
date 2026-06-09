@@ -19,14 +19,36 @@ import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { IncidentEleve } from './incident-eleve.entity';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Periode } from '@modules/periodes/entities';
 
+/**
+ * Types de sanctions adaptés au contexte africain/camerounais
+ * Approche progressive: observation → exclusion
+ */
 export enum TypeSanction {
-    AVERTISSEMENT = 'AVERTISSEMENT',
-    BLAME = 'BLAME',
-    RETENUE = 'RETENUE',
-    EXCLUSION_TEMPORAIRE = 'EXCLUSION_TEMPORAIRE',
-    EXCLUSION_DEFINITIVE = 'EXCLUSION_DEFINITIVE',
+    // === SANCTIONS LÉGÈRES (gestion interne) ===
+    OBSERVATION_ORALE = 'OBSERVATION_ORALE', // Verbale
+    OBSERVATION_ECRITE = 'OBSERVATION_ECRITE', // Carnet
+    EXCUSES_PUBLIQUES = 'EXCUSES_PUBLIQUES', // Devant classe
+    
+    // === SANCTIONS MOYENNES (direction) ===
+    AVERTISSEMENT = 'AVERTISSEMENT', // Lettre parents
+    BLAME = 'BLAME', // Conseil de classe
+    RETENUE = 'RETENUE', // Après cours
+    TRAVAIL_COMMUNAUTE = 'TRAVAIL_COMMUNAUTE', // Nettoyage, jardin
+    
+    // === SANCTIONS GRAVES (conseil discipline) ===
+    EXCLUSION_TEMPORAIRE = 'EXCLUSION_TEMPORAIRE', // 1-3 jours
+    EXCLUSION_TEMPORAIRE_LONGUE = 'EXCLUSION_TEMPORAIRE_LONGUE', // 1-4 semaines
     CONSEIL_DISCIPLINE = 'CONSEIL_DISCIPLINE',
+    EXCLUSION_DEFINITIVE = 'EXCLUSION_DEFINITIVE',
+    INTERDICTION_EXAMEN = 'INTERDICTION_EXAMEN', // BEPC/BAC (très grave)
+    
+    // === SPÉCIFIQUE AFRIQUE ===
+    AMENDE_SYMBOLIQUE = 'AMENDE_SYMBOLIQUE', // Participation école
+    EXCUSES_DEVANT_CHEF = 'EXCUSES_DEVANT_CHEF', // Chef traditionnel
+    CONVOCATION_CHEF_FAMILLE = 'CONVOCATION_CHEF_FAMILLE', // Oncle/grand-père
+    SUIVI_SPECIAL = 'SUIVI_SPECIAL', // Mentorat enseignant
 }
 
 export enum StatutSanction {
@@ -47,6 +69,8 @@ export enum StatutSanction {
 @Index(['etablissementId'])
 @Index(['anneeScolaireId']) // ← NOUVEAU
 @Index(['anneeScolaireId', 'eleveId']) // ← NOUVEAU
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre
+@Index(['anneeScolaireId', 'periodeId']) // ← NOUVEAU: composite
 export class SanctionEleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -110,6 +134,14 @@ export class SanctionEleve {
     @ManyToOne(() => AnneeScolaire)
     @JoinColumn({ name: 'anneeScolaireId' })
     anneeScolaire?: AnneeScolaire;
+
+    // ==================== LIEN PÉRIODE/TRIMESTRE ====================
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @CreateDateColumn()
     createdAt!: Date;

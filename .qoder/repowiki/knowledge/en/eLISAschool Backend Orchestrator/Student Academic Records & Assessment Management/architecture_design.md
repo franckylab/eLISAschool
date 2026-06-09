@@ -1,0 +1,6 @@
+- Four sub-modules (eleves, notes, bulletins, orientation) each follow a strict controller-service-entity-DTO layered pattern with barrel exports via index.ts.
+- Controllers use Express Router instances with authMiddleware and role-based guards imported from @modules/auth; services depend on TypeORM repositories via AppDataSource.
+- Cross-module dependencies flow unidirectionally: bulletins aggregates data from notes (via notesBatchLoaderService), eleves, classes, periodes, and matieres; notes integrates validation-workflow and notification services.
+- Multi-tenancy enforced at entity level through etablissementId foreign keys on Eleve, Note, Bulletin entities, filtered in service queries.
+- Validation schemas defined with Zod in DTO files; controllers invoke validateDto() before passing data to services.
+- Services expose singleton instances (e.g., elevesService, notesService) exported alongside class definitions for dependency injection elsewhere.

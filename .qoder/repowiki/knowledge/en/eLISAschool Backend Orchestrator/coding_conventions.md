@@ -1,4 +1,3 @@
-- All child modules follow a standard directory structure with `controllers`, `services`, `entities`, and `dto` subdirectories.
-- API responses are standardized using shared utility functions in `src/common/utils/api-response.util.ts`.
-- Error handling is centralized via a global `errorHandler` and custom `AppError` class, ensuring consistent error formats across all modules.
-- Multi-tenancy is enforced at the middleware level, with `etablissementId` automatically attached to requests for downstream service filtering.
+- All domain modules follow a strict Controller-Service-Entity-DTO directory structure for consistent separation of concerns.
+- Global error handling is centralized via `error.filter.ts`, ensuring all modules return standardized error responses.
+- Audit logging is implemented either through automatic interceptors or manual service calls, maintaining a unified trail across all modules.

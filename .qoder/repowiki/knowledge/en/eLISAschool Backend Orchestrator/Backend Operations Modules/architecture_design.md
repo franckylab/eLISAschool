@@ -1,6 +1,6 @@
-- Each sub-module (personnel, materiel, impressions, requetes, messagerie) follows a strict four-layer structure: controllers (Express routers), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod validation schemas).
-- Module entry points (`index.ts`) re-export all layers via barrel exports, enabling clean imports from `@modules/<name>`.
-- Controllers delegate to service instances; services obtain repositories through `AppDataSource.getRepository()` in constructors.
-- Cross-cutting concerns are handled by shared middlewares (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`) imported from `@modules/auth/middlewares`.
-- Validation is centralized via `validateDto()` from `@common/utils`, applied to Zod schemas defined in each module's `dto/` directory.
-- The personnel module is the most complex, containing eight domain controllers/services covering absences, payroll bulletins, contracts, evaluations, teaching hours, dashboard, programme progression, and core personnel CRUD.
+- Each module follows a strict four-layer structure: controllers (Express Router), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod validation schemas).
+- Module entry points (`index.ts`) re-export all layers via barrel exports, enabling clean imports like `from '../services'`.
+- Controllers instantiate service classes directly (e.g., `new PersonnelService()`) and delegate all business logic; they handle HTTP concerns including auth middleware (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`), Zod validation via `validateDto`, and uniform `{ success, data }` JSON responses.
+- Services use `AppDataSource.getRepository()` to obtain TypeORM repositories in constructors, implement CRUD and domain-specific operations, and integrate with shared utilities (`logger`, `AppError`, pagination helpers, centralized config via `getParamNumber`/`getParamBoolean`).
+- Two modules (`personnel`, `materiel`) integrate an optional validation workflow by calling `validationWorkflowService.createWorkflow()` when configuration flags require multi-level approval.
+- Dependency direction flows inward: controllers → services → entities/DTOs, with cross-module imports only from shared common utilities (`@common/*`) and the auth module (`@modules/auth/*`).

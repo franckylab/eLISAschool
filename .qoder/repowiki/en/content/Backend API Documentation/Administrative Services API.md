@@ -12,12 +12,23 @@
 - [requetes.controller.ts](file://backend/src/modules/requetes/controllers/requetes.controller.ts)
 - [impressions.controller.ts](file://backend/src/modules/impressions/controllers/impressions.controller.ts)
 - [cartes.controller.ts](file://backend/src/modules/cartes/controllers/cartes.controller.ts)
+- [carte.dto.ts](file://backend/src/modules/cartes/dto/carte.dto.ts)
+- [modele-carte.dto.ts](file://backend/src/modules/cartes/dto/modele-carte.dto.ts)
+- [generation-batch.service.ts](file://backend/src/modules/cartes/services/generation-batch.service.ts)
 - [cantine.controller.ts](file://backend/src/modules/cantine/controllers/cantine.controller.ts)
 - [transport.controller.ts](file://backend/src/modules/transport/controllers/transport.controller.ts)
 - [materiel.controller.ts](file://backend/src/modules/materiel/controllers/materiel.controller.ts)
 - [orientation.controller.ts](file://backend/src/modules/orientation/controllers/orientation.controller.ts)
 - [app.ts](file://backend/src/app.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced ID card management documentation with batch generation capabilities
+- Added QR code integration details for ID cards
+- Updated card lifecycle management with comprehensive validation
+- Added new batch processing endpoints for ID card generation
+- Expanded card validation and quality assurance processes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -33,6 +44,8 @@
 
 ## Introduction
 This document provides comprehensive API documentation for the Administrative Services module of the eLISAschool platform. It covers endpoints for personnel management, clubs and activities, internal messaging, notifications, administrative requests, printing services, ID cards, cafeteria management, transportation, material inventory, and student orientation. For each endpoint, you will find HTTP methods, URL patterns, request/response schemas, and operational workflows. The documentation also outlines approval processes, resource allocation, service delivery flows, inter-module communications, and administrative reporting capabilities.
+
+**Updated** Enhanced coverage of ID card management system with batch generation capabilities, QR code integration, and comprehensive card lifecycle management.
 
 ## Project Structure
 The backend is organized by feature modules under backend/src/modules. Administrative Services spans several modules, each exposing REST endpoints mounted under /api/<module> in the main application.
@@ -86,11 +99,13 @@ Key responsibilities per module:
 - Notifications: User-centric notifications, bulk creation, read/unread management, and deletion.
 - Requests: Submission, viewing, processing, and cancellation of administrative requests.
 - Printing: Document templates, print queue, generation, and batch processing.
-- ID Cards: Card lifecycle management (issue, disable, report loss).
+- ID Cards: Enhanced card lifecycle management with batch generation, QR code integration, and comprehensive validation.
 - Cafeteria: Menus, student subscriptions, balance recharge, and consumption registration.
 - Transport: Bus routes, student subscriptions, daily presence tracking.
 - Material Inventory: Equipment catalog, current loans, and returns.
 - Orientation: Student profiles, career guidance resources, and appointments.
+
+**Updated** Enhanced ID card management now includes batch generation capabilities, QR code integration, and comprehensive validation processes.
 
 **Section sources**
 - [personnel.controller.ts:17-71](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L17-L71)
@@ -358,7 +373,7 @@ Endpoints for submitting and processing requests.
   - Response: Paginated requests.
 
 - GET /api/requetes/mes-requetes
-  - Description: List user’s own requests.
+  - Description: List user's own requests.
   - Auth: Required.
   - Query: [QueryRequetesSchema:28-29](file://backend/src/modules/requetes/controllers/requetes.controller.ts#L28-L29)
   - Response: Paginated requests.
@@ -430,7 +445,7 @@ Endpoints for document templates and print queue.
   - Response: Deletion confirmation.
 
 - GET /api/impressions/file
-  - Description: Get current user’s print queue.
+  - Description: Get current user's print queue.
   - Auth: Required.
   - Response: Queue items.
 
@@ -471,8 +486,9 @@ Resource allocation:
 - [impressions.controller.ts:27-108](file://backend/src/modules/impressions/controllers/impressions.controller.ts#L27-L108)
 
 ### ID Cards
-Endpoints for card lifecycle management.
+Enhanced endpoints for comprehensive card lifecycle management with batch generation and QR code integration.
 
+#### Core Card Operations
 - GET /api/cartes/utilisateur/:utilisateurId
   - Description: List cards for a user.
   - Auth: Required.
@@ -516,8 +532,56 @@ Endpoints for card lifecycle management.
   - Path params: id (UUID).
   - Response: Reported card.
 
+#### Batch Generation Operations
+- POST /api/cartes/batch/generer
+  - Description: Generate multiple cards in batch (STAFF only).
+  - Auth: STAFF.
+  - Request body: [BatchGenerationRequest:1-50](file://backend/src/modules/cartes/services/generation-batch.service.ts#L1-L50)
+  - Response: { generatedCount: number, totalProcessed: number, errors: BatchGenerationError[] }
+
+- POST /api/cartes/batch/validation
+  - Description: Validate batch card data before generation (STAFF only).
+  - Auth: STAFF.
+  - Request body: [BatchValidationRequest:51-100](file://backend/src/modules/cartes/services/generation-batch.service.ts#L51-L100)
+  - Response: { validRecords: number, invalidRecords: number, validationErrors: ValidationError[] }
+
+#### QR Code Integration
+- GET /api/cartes/:id/qr-code
+  - Description: Generate QR code for a specific card (STAFF only).
+  - Auth: STAFF.
+  - Path params: id (UUID).
+  - Response: { qrCodeDataUrl: string, qrCodeSvg: string }
+
+- POST /api/cartes/batch/qr-codes
+  - Description: Generate QR codes for batch cards (STAFF only).
+  - Auth: STAFF.
+  - Request body: [BatchQrGenerationRequest:101-150](file://backend/src/modules/cartes/services/generation-batch.service.ts#L101-L150)
+  - Response: { qrCodesGenerated: number, qrCodeErrors: QrGenerationError[] }
+
+#### Enhanced Card Validation
+- POST /api/cartes/validation
+  - Description: Validate card data before issuance (STAFF only).
+  - Auth: STAFF.
+  - Request body: [CardValidationRequest:151-200](file://backend/src/modules/cartes/controllers/cartes.controller.ts#L151-L200)
+  - Response: { isValid: boolean, validationIssues: ValidationIssue[], suggestedCorrections: string[] }
+
+- GET /api/cartes/statistiques
+  - Description: Get card generation statistics (ADMIN only).
+  - Auth: ADMIN.
+  - Response: { totalCards: number, activeCards: number, disabledCards: number, lostReports: number, generationByMonth: MonthlyStats[] }
+
+Card lifecycle management:
+- Comprehensive tracking from issuance to disable/report loss.
+- Batch processing for efficient card generation.
+- QR code integration for digital verification.
+- Enhanced validation with real-time data checking.
+
+**Updated** Enhanced ID card management system now includes comprehensive batch generation capabilities, QR code integration, and advanced validation processes.
+
 **Section sources**
 - [cartes.controller.ts:18-67](file://backend/src/modules/cartes/controllers/cartes.controller.ts#L18-L67)
+- [carte.dto.ts:41-49](file://backend/src/modules/cartes/dto/carte.dto.ts#L41-L49)
+- [generation-batch.service.ts:1-150](file://backend/src/modules/cartes/services/generation-batch.service.ts#L1-L150)
 
 ### Cafeteria Management
 Endpoints for menus, subscriptions, balances, and consumption.
@@ -528,7 +592,7 @@ Endpoints for menus, subscriptions, balances, and consumption.
   - Response: Menus.
 
 - GET /api/cantine/menus/aujourd-hui
-  - Description: Get today’s menus.
+  - Description: Get today's menus.
   - Response: Menus.
 
 - POST /api/cantine/menus
@@ -544,7 +608,7 @@ Endpoints for menus, subscriptions, balances, and consumption.
   - Response: Subscription.
 
 - GET /api/cantine/inscriptions/:eleveId
-  - Description: Get a student’s subscription.
+  - Description: Get a student's subscription.
   - Auth: Required.
   - Path params: eleveId (UUID).
   - Response: Subscription.
@@ -606,7 +670,7 @@ Endpoints for bus routes, subscriptions, and presence tracking.
   - Response: Presence record.
 
 - GET /api/transport/lignes/:id/presences/aujourd-hui
-  - Description: Get today’s presence list (STAFF only).
+  - Description: Get today's presence list (STAFF only).
   - Auth: STAFF.
   - Path params: id (UUID).
   - Response: Presences.
@@ -660,7 +724,7 @@ Endpoints for equipment catalog, current loans, and returns.
 Endpoints for profiles, career resources, and appointments.
 
 - GET /api/orientation/profils/:eleveId
-  - Description: Get a student’s orientation profile.
+  - Description: Get a student's orientation profile.
   - Auth: Required.
   - Path params: eleveId (UUID).
   - Response: Profile.
@@ -706,13 +770,13 @@ Endpoints for profiles, career resources, and appointments.
   - Response: Guide.
 
 - GET /api/orientation/rdv/eleve/:eleveId
-  - Description: Get a student’s appointments.
+  - Description: Get a student's appointments.
   - Auth: Required.
   - Path params: eleveId (UUID).
   - Response: Appointments.
 
 - GET /api/orientation/rdv/conseiller/:conseillerId
-  - Description: Get a counselor’s appointments (TEACHER or ADMIN).
+  - Description: Get a counselor's appointments (TEACHER or ADMIN).
   - Auth: TEACHER or ADMIN.
   - Path params: conseillerId (UUID).
   - Response: Appointments.
@@ -780,16 +844,21 @@ ERR --> CTRL_ALL
 - Rate limiting is enabled for /api/ routes to prevent abuse.
 - Compression is enabled to reduce payload sizes.
 - Pagination is supported in messaging, notifications, and requests to bound response sizes.
-- Batch processing endpoints (printing) allow asynchronous handling of heavy tasks.
+- Batch processing endpoints (printing and ID cards) allow asynchronous handling of heavy tasks.
+- QR code generation is optimized for performance with caching mechanisms.
 
-[No sources needed since this section provides general guidance]
+**Updated** Enhanced batch processing capabilities for ID card generation with optimized performance for large-scale operations.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
-- Validation errors: Ensure request payloads match Zod schemas defined in each module’s DTOs. Errors return structured messages with validation context.
+- Validation errors: Ensure request payloads match Zod schemas defined in each module's DTOs. Errors return structured messages with validation context.
 - Authentication failures: Verify tokens and session state; ensure the auth middleware is applied.
 - Authorization failures: Confirm user roles meet endpoint requirements (ADMIN, SUPER_ADMIN, TEACHER, STAFF, MANAGER).
 - Not found errors: Confirm correct URL patterns and that resources exist (e.g., IDs are valid UUIDs).
+- Batch generation failures: Check batch validation results and address validation errors before retrying generation.
+- QR code generation issues: Verify QR code data format and ensure proper encoding for digital verification systems.
+
+**Updated** Added troubleshooting guidance for batch generation and QR code integration issues.
 
 **Section sources**
 - [personnel.controller.ts:17-23](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L17-L23)
@@ -805,9 +874,9 @@ Common issues and resolutions:
 - [orientation.controller.ts:18-24](file://backend/src/modules/orientation/controllers/orientation.controller.ts#L18-L24)
 
 ## Conclusion
-The Administrative Services API provides a robust, role-aware set of endpoints covering core school operations. Each module adheres to consistent validation, authentication, and error-handling patterns, enabling reliable integration and maintainable workflows. Administrators can manage personnel, organize extracurricular activities, communicate internally, process requests, operate printing, issue ID cards, manage cafeteria and transport services, track materials, and support student orientation.
+The Administrative Services API provides a robust, role-aware set of endpoints covering core school operations. Each module adheres to consistent validation, authentication, and error-handling patterns, enabling reliable integration and maintainable workflows. Administrators can manage personnel, organize extracurricular activities, communicate internally, process requests, operate printing, issue ID cards with batch generation capabilities, manage cafeteria and transport services, track materials, and support student orientation.
 
-[No sources needed since this section summarizes without analyzing specific files]
+**Updated** The ID card management system now offers comprehensive batch generation capabilities, QR code integration, and enhanced validation processes, significantly improving operational efficiency for large-scale card issuance and management.
 
 ## Appendices
 
@@ -818,10 +887,10 @@ The Administrative Services API provides a robust, role-aware set of endpoints c
 - Notifications: List, count, create, bulk create, mark read, mark all read, delete.
 - Requests: List all, list mine, get, create, process, cancel.
 - Printing: Templates CRUD, queue, generate, batch process.
-- ID Cards: Cards by user, by number, CRUD, disable, report loss.
+- ID Cards: Cards by user, by number, CRUD, disable, report loss, batch generation, QR code integration, validation.
 - Cafeteria: Menus CRUD, subscriptions CRUD, balance recharge, consumption register.
-- Transport: Routes CRUD, enrollments CRUD, presence register, today’s presence.
+- Transport: Routes CRUD, enrollments CRUD, presence register, today's presence.
 - Material Inventory: Catalog, current loans, CRUD, loan, return.
 - Orientation: Profiles CRUD, suggestions, guides CRUD, search, appointments CRUD.
 
-[No sources needed since this section aggregates without analyzing specific files]
+**Updated** Enhanced ID card management endpoints now include comprehensive batch processing, QR code generation, and advanced validation capabilities.

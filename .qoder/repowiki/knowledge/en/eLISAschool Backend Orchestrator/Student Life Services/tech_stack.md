@@ -1,1 +1,0 @@
-Zod schema-based DTO validation with `z.infer` type derivation; TypeORM with UUID primary keys and enum columns for status fields; centralized configuration system via `getParamNumber`/`getParamBoolean` helpers for feature toggles and limits.

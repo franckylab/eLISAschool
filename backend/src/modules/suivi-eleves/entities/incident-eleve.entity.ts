@@ -24,6 +24,7 @@ import { Etablissement } from '@modules/etablissement/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Classe } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
+import { Periode } from '@modules/periodes/entities';
 
 export enum GraviteIncident {
     MINEUR = 'MINEUR',
@@ -37,6 +38,38 @@ export enum StatutIncident {
     EN_COURS = 'EN_COURS',
     RESOLU = 'RESOLU',
     SANCTIONNE = 'SANCTIONNE',
+}
+
+/**
+ * Types d'incidents adaptés au contexte africain/camerounais
+ */
+export enum TypeIncidentEleve {
+    // === RETARDS & ABSENCES (critique en Afrique) ===
+    RETARD = 'RETARD',
+    ABSENCE_NON_JUSTIFIEE = 'ABSENCE_NON_JUSTIFIEE',
+    ABSENCE_JUSTIFIEE = 'ABSENCE_JUSTIFIEE',
+    ABANDON_TEMPORAIRE = 'ABANDON_TEMPORAIRE', // Saisons rurales
+    ABANDON_DEFINITIF = 'ABANDON_DEFINITIF', // Décrochage
+    
+    // === COMPORTEMENT ===
+    INDISCIPLINE = 'INDISCIPLINE',
+    IRRESPECT_ENSEIGNANT = 'IRRESPECT_ENSEIGNANT',
+    BAGARRE = 'BAGARRE',
+    TRICHERIE = 'TRICHERIE', // Examens BEPC/BAC
+    TENUE_NON_CONFORME = 'TENUE_NON_CONFORME', // Uniforme
+    TELEPHONE_PORTE = 'TELEPHONE_PORTE',
+    
+    // === PÉDAGOGIQUE ===
+    TRAVAIL_NON_FAIT = 'TRAVAIL_NON_FAIT',
+    NOTES_INSUFFISANTES = 'NOTES_INSUFFISANTES',
+    DIFFICULTES_APPRENTISSAGE = 'DIFFICULTES_APPRENTISSAGE',
+    RETARD_ACCUMULE = 'RETARD_ACCUMULE',
+    
+    // === SPÉCIFIQUE AFRIQUE ===
+    FRAIS_SCOLARITE_NON_PAYES = 'FRAIS_SCOLARITE_NON_PAYES',
+    RENTREE_TARDIVE = 'RENTREE_TARDIVE',
+    TRANSPORT_DIFFICILE = 'TRANSPORT_DIFFICILE',
+    TRAVAIL_ENFANT = 'TRAVAIL_ENFANT', // Aide famille
 }
 
 @Entity('incidents_eleves')
@@ -54,6 +87,8 @@ export enum StatutIncident {
 @Index(['anneeScolaireId', 'gravite']) // ← NOUVEAU: stats par gravité
 @Index(['classeId']) // ← NOUVEAU: contexte pédagogique
 @Index(['matiereId']) // ← NOUVEAU: contexte matière
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre
+@Index(['anneeScolaireId', 'periodeId']) // ← NOUVEAU: composite année+période
 export class IncidentEleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -81,8 +116,8 @@ export class IncidentEleve {
     @Column({ type: 'varchar', length: 20, default: StatutIncident.SIGNALE })
     statut!: StatutIncident;
 
-    @Column({ type: 'varchar', length: 200 })
-    type!: string; // BAGARRE, RETARD, ABSENCE, TRICHE, INSUBORDINATION, AUTRE
+    @Column({ type: 'varchar', length: 50 })
+    type!: TypeIncidentEleve; // ← MODIFIÉ: enum structuré contexte africain
 
     @Column({ type: 'text' })
     description!: string;
@@ -119,6 +154,14 @@ export class IncidentEleve {
     @ManyToOne(() => AnneeScolaire)
     @JoinColumn({ name: 'anneeScolaireId' })
     anneeScolaire?: AnneeScolaire;
+
+    // ==================== LIEN PÉRIODE/TRIMESTRE ====================
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string; // Trimestre concerné
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     // ==================== CONTEXTE PÉDAGOGIQUE ====================
     @Column({ type: 'uuid', nullable: true })

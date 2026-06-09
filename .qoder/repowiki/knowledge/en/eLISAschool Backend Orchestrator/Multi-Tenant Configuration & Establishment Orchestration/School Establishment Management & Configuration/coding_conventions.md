@@ -1,5 +1,0 @@
-- All DTOs use Zod schemas with inferred TypeScript types (z.infer) for compile-time and runtime validation consistency.
-- Entity classes use TypeORM decorator-based mapping with explicit column types, lengths, defaults, and nullable flags.
-- Service methods wrap database mutations in try-catch-finally blocks with explicit transaction rollback on error and query runner release.
-- Controllers delegate all business logic to service instances and uniformly return { success: true, data: ... } JSON responses.
-- Role-based access control is applied at the route level using requireRoles middleware with SUPER_ADMIN as the default restriction for write operations.

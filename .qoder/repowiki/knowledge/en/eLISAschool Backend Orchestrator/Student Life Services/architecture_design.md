@@ -1,6 +1,6 @@
-- Four independent sub-modules (cantine, transport, clubs, cartes) each following a strict layered architecture: controllers → services → entities, with DTOs for input validation.
-- Each sub-module exports its controller as a named Express Router via an index barrel file (e.g. `export { cantineController }`), enabling centralized route registration at the application level.
-- Controllers delegate all business logic to singleton service instances (e.g. `new CantineService()`), which use TypeORM repositories obtained from a shared `AppDataSource`.
-- Entities are TypeORM-decorated classes with multi-tenancy enforced via an `etablissementId` foreign key on every entity, scoped to an `Etablissement` aggregate.
-- Cross-cutting concerns (authentication, role-based access control, DTO validation) are handled by imported middlewares (`authMiddleware`, `staffOnly`, `adminOnly`) and a shared `validateDto` utility using Zod schemas defined in each module's dto directory.
-- Optional workflow validation is integrated via `validationWorkflowService` for cantine inscriptions, transport inscriptions, club creation/inscriptions, and card issuance — controlled by runtime configuration parameters fetched through `@modules/configuration/utils/config.helper`.
+- Four independent sub-modules (cantine, transport, clubs, cartes) each following a consistent three-layer structure: controllers (Express Router), services (TypeORM Repository-based business logic), entities (TypeORM decorators), and DTOs (Zod schemas).
+- Each sub-module exports via a barrel `index.ts` that re-exports entities, dto, services, and controllers in that order.
+- Controllers use Express Router instances exported as named constants (e.g., `cantineController`, `transportController`) with route handlers delegating to service instances; authentication/authorization is applied via imported middleware (`authMiddleware`, `staffOnly`, `adminOnly`).
+- Services depend on TypeORM repositories obtained from a shared `AppDataSource`, integrate with a centralized configuration helper (`@modules/configuration/utils/config.helper`) for runtime parameters, and optionally trigger validation workflows (`validationWorkflowService`) and notifications (`notificationTemplates`).
+- All entities include multi-tenancy support via an `etablissementId` foreign key to the `Etablissement` entity, with `@Index` decorators on that column for query performance.
+- DTOs are defined as Zod schemas with inferred TypeScript types, validated at controller boundaries using a shared `validateDto` utility.

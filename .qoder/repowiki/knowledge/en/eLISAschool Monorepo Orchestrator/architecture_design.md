@@ -1,4 +1,3 @@
-- Uses npm workspaces to link `backend`, `frontend`, and `shared` modules, enabling local dependency resolution and unified script execution.
-- Leverages `docker-compose.yml` to define the production infrastructure, wiring the backend service to PostgreSQL and Redis while exposing ports for client access.
-- Enforces environment configuration consistency across services via shared `.env` files referenced in both Docker Compose and backend startup scripts.
-- Centralizes development workflows through root-level `package.json` scripts that proxy commands to specific workspaces or trigger multi-service Docker operations.
+- Uses npm workspaces to link `backend`, `frontend`, and `shared` packages, enabling local dependency resolution and unified build/test scripts.
+- Defines a Docker Compose topology that wires the `backend` service to `postgres` and `redis` infrastructure, enforcing startup order via health checks.
+- Centralizes environment configuration through `.env` files consumed by both the Docker runtime and the Node.js applications.

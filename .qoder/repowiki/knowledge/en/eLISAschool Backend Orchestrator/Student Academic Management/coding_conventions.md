@@ -1,5 +1,0 @@
-- Each sub-module uses a four-layer directory structure (controllers, services, entities, dto) with barrel exports via index.ts that re-export all layers using export * syntax
-- All DTOs are defined as Zod schemas (z.object) with type inference via z.infer, validated in controllers through a shared validateDto utility before passing to services
-- Controllers instantiate service classes at module scope and attach route handlers using Express Router with async/try-catch error delegation to next(error)
-- Services obtain TypeORM repositories by calling AppDataSource.getRepository(EntityClass) in their constructor, storing the result as a private instance property
-- All entities use UUID primary keys via @PrimaryGeneratedColumn('uuid'), include createdAt/updatedAt timestamp columns, and enforce multi-tenancy with a required etablissementId foreign key

@@ -1,0 +1,1 @@
+Zod for runtime DTO validation (createEleveSchema, createNoteSchema, etc.); TypeORM with PostgreSQL enums and simple-json columns for flexible structured data storage.

@@ -1,4 +1,0 @@
-- Four domain sub-modules (eleves, notes, bulletins, orientation) each follow identical layered structure: controllers → services → entities/dto, with barrel exports via index.ts
-- Controllers use Express Router with authMiddleware and role-based access control; services encapsulate business logic using TypeORM repositories injected via AppDataSource
-- Entities enforce multi-tenancy through etablissementId foreign keys; cross-module dependencies flow from bulletins → notes → eleves for grade aggregation and report generation
-- Validation workflow integration is embedded in create/update flows for eleves and notes, deferring status transitions to an external approval system

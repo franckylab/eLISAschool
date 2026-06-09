@@ -1,2 +1,0 @@
-- Singleton service instances are exported from module index files for direct cross-module importation rather than using dependency injection containers.
-- Shared domain entities are defined within the auth module scope but imported and utilized by the rbac module for data manipulation.

@@ -8,6 +8,8 @@ import { z } from 'zod';
 
 export const createIncidentPersonnelSchema = z.object({
     membrePersonnelId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU: trimestre concerné
     gravite: z.enum(['MINEUR', 'MODERE', 'GRAVE', 'TRES_GRAVE']),
     type: z.string().min(2).max(200),
     description: z.string().min(10),
@@ -16,6 +18,8 @@ export const createIncidentPersonnelSchema = z.object({
 
 export const createEvaluationPersonnelSchema = z.object({
     membrePersonnelId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(), // ← NOUVEAU
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU
     periodicite: z.enum(['MENSUELLE', 'TRIMESTRIELLE', 'SEMESTRIELLE', 'ANNUELLE']),
     periode: z.string().min(4).max(50),
     noteGlobale: z.number().min(0).max(20).optional(),

@@ -22,6 +22,7 @@ import { Eleve } from '@modules/eleves/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Periode } from '@modules/periodes/entities';
 
 export enum TypePatient {
     ELEVE = 'ELEVE',
@@ -33,6 +34,7 @@ export enum TypePatient {
 @Index(['typePatient'])
 @Index(['etablissementId'])
 @Index(['etablissementId', 'patientId'], { unique: true }) // Unique composite pour multi-tenant
+@Index(['periodeId']) // ← NOUVEAU: filtre par trimestre (nullable)
 export class DossierMedical {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -88,6 +90,14 @@ export class DossierMedical {
     @ManyToOne(() => Etablissement)
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    // ==================== LIEN PÉRIODE/TRIMESTRE (optionnel) ====================
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string; // Dossier peut être lié à un trimestre spécifique
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @CreateDateColumn()
     createdAt!: Date;

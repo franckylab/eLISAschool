@@ -1,4 +1,4 @@
-# Groupes & Etablissements Module
+# Groups & Establishments Module
 
 <cite>
 **Referenced Files in This Document**
@@ -13,8 +13,16 @@
 - [lien.dto.ts](file://backend/src/modules/groupes-etablissements/dto/lien.dto.ts)
 - [groupe-access.guard.ts](file://backend/src/modules/groupes-etablissements/guards/groupe-access.guard.ts)
 - [016-groupes-etablissements.sql](file://backend/src/database/migrations/016-groupes-etablissements.sql)
-- [GUIDE-GROUPES-CONSOLIDATION.md](file://GUIDE-GROUPES-CONSOLIDATION.md)
+- [CORRECTIONS-GROUPES-V1.2.md](file://CORRECTIONS-GROUPES-V1.2.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced establishment management endpoint with batch operations support
+- Updated validation logic to handle both single and multiple establishment IDs
+- Added comprehensive error handling for establishment addition operations
+- Implemented maximum establishment limit enforcement per group
+- Improved controller response handling for batch operations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -169,7 +177,7 @@ The module exposes a comprehensive REST API for managing establishment groups an
 
 | Endpoint | Method | Description | Authentication | Authorization |
 |----------|--------|-------------|----------------|---------------|
-| `/api/groupes/:id/etablissements` | POST | Add establishment(s) | JWT Required | SUPER_ADMIN, CHEF_ETABLISSEMENT, DIRECTEUR |
+| `/api/groupes/:id/etablissements` | POST | Add establishment(s) - **Enhanced** | JWT Required | SUPER_ADMIN, CHEF_ETABLISSEMENT, DIRECTEUR |
 | `/api/groupes/:id/etablissements/:etablissementId` | DELETE | Remove establishment | JWT Required | SUPER_ADMIN, CHEF_ETABLISSEMENT, DIRECTEUR |
 
 ### Administrator Management Endpoints
@@ -180,9 +188,11 @@ The module exposes a comprehensive REST API for managing establishment groups an
 | `/api/groupes/:id/admins` | POST | Add administrator | JWT Required | SUPER_ADMIN, CHEF_ETABLISSEMENT, DIRECTEUR |
 | `/api/groupes/:id/admins/:utilisateurId` | DELETE | Remove administrator | JWT Required | SUPER_ADMIN, CHEF_ETABLISSEMENT, DIRECTEUR |
 
+**Updated** Enhanced establishment management endpoint now supports batch operations for adding multiple institutions simultaneously with improved validation logic.
+
 **Section sources**
 - [groupes.controller.ts:48-325](file://backend/src/modules/groupes-etablissements/controllers/groupes.controller.ts#L48-L325)
-- [GUIDE-GROUPES-CONSOLIDATION.md:26-241](file://GUIDE-GROUPES-CONSOLIDATION.md#L26-L241)
+- [CORRECTIONS-GROUPES-V1.2.md:76-215](file://CORRECTIONS-GROUPES-V1.2.md#L76-L215)
 
 ## Consolidation Services
 
@@ -285,7 +295,6 @@ The module implements a comprehensive RBAC (Role-Based Access Control) system wi
 
 **Section sources**
 - [groupe-access.guard.ts:15-36](file://backend/src/modules/groupes-etablissements/guards/groupe-access.guard.ts#L15-L36)
-- [GUIDE-GROUPES-CONSOLIDATION.md:208-241](file://GUIDE-GROUPES-CONSOLIDATION.md#L208-L241)
 
 ## Database Schema
 
@@ -408,16 +417,54 @@ Service-->>Admin : Operation complete
 
 ## Implementation Details
 
-### Data Validation
+### Enhanced Establishment Management
 
-The module implements comprehensive data validation using Zod schemas:
+**Updated** The establishment management system now supports both single and batch operations for adding institutions to groups:
 
-| Validation Type | Schema | Rules | Error Handling |
-|-----------------|--------|-------|----------------|
-| Group Creation | `createGroupeSchema` | Min/max lengths, regex validation, UUID arrays | 400 Bad Request |
-| Group Updates | `updateGroupeSchema` | Optional fields, boolean validation | 400 Bad Request |
-| Establishment Addition | `addEtablissementSchema` | UUID validation, array validation | 400 Bad Request |
-| Administrator Addition | `addAdminSchema` | UUID validation | 400 Bad Request |
+#### Batch Operations Support
+
+The system now accepts either a single establishment ID or an array of establishment IDs:
+
+```mermaid
+flowchart TD
+Input[Request Input] --> Validate{Validate DTO}
+Validate --> SingleCheck{Single ID?}
+SingleCheck --> |Yes| SinglePath[Use etablissementId]
+SingleCheck --> |No| ArrayCheck{Array Provided?}
+ArrayCheck --> |Yes| ArrayPath[Use etablissementIds]
+ArrayCheck --> |No| Error[Validation Error]
+SinglePath --> Process[Process Single]
+ArrayPath --> Process[Process Multiple]
+Process --> Transaction[Database Transaction]
+Transaction --> CacheInvalidate[Invalidate Cache]
+CacheInvalidate --> Success[Return Success]
+Error --> ErrorHandler[Error Handler]
+```
+
+**Diagram sources**
+- [groupes.controller.ts:219-245](file://backend/src/modules/groupes-etablissements/controllers/groupes.controller.ts#L219-L245)
+
+#### Maximum Establishment Limit
+
+The system enforces a hard limit of 50 establishments per group to prevent performance degradation:
+
+| Configuration | Value | Purpose |
+|---------------|-------|---------|
+| `MAX_ETABLISSEMENTS_PAR_GROUPE` | 50 | Prevents excessive group sizes |
+| Current Count | Dynamic | Tracks existing establishment count |
+| Validation Logic | Pre-operation check | Ensures limit compliance |
+
+#### Comprehensive Validation Logic
+
+The enhanced validation system ensures data integrity and prevents invalid operations:
+
+| Validation Type | Rule | Error Response |
+|-----------------|------|----------------|
+| Establishment IDs | Array length >= 1 | 400 Bad Request |
+| UUID Format | Valid UUID format | 400 Bad Request |
+| Existence Check | Establishments exist | 404 Not Found |
+| Duplicate Prevention | No duplicate links | 409 Conflict |
+| Limit Enforcement | <= 50 establishments | 400 Bad Request |
 
 ### Transaction Management
 
@@ -449,10 +496,12 @@ The module implements structured error handling with meaningful error codes:
 | Forbidden | 403 | ACCESS_DENIED | Insufficient permissions |
 | Unauthorized | 401 | UNAUTHORIZED | Authentication required |
 | Conflict | 409 | DUPLICATE_ENTRY | Duplicate resource detected |
+| Limit Exceeded | 400 | GROUPE_MAX_ETABLISSEMENTS | Establishment limit reached |
 
 **Section sources**
 - [groupes.controller.ts:32-42](file://backend/src/modules/groupes-etablissements/controllers/groupes.controller.ts#L32-L42)
 - [groupes.service.ts:47-92](file://backend/src/modules/groupes-etablissements/services/groupes.service.ts#L47-L92)
+- [CORRECTIONS-GROUPES-V1.2.md:76-215](file://CORRECTIONS-GROUPES-V1.2.md#L76-L215)
 
 ## Troubleshooting Guide
 
@@ -465,6 +514,17 @@ The module implements structured error handling with meaningful error codes:
 
 **Issue**: "Accès non autorisé au groupe" errors
 **Solution**: Check user's role membership in `groupe_admins` table or verify ownership via `proprietaire_id`
+
+#### Enhanced Establishment Management Issues
+
+**Issue**: "Au moins un établissement est requis" validation errors
+**Solution**: Provide either `etablissementId` or `etablissementIds` in the request body
+
+**Issue**: "Un groupe ne peut pas avoir plus de 50 établissements" errors
+**Solution**: Reduce the number of establishments being added or remove existing establishments
+
+**Issue**: "Format de UUID invalide" errors
+**Solution**: Ensure all establishment IDs are valid UUID format strings
 
 #### Data Validation Errors
 
@@ -488,11 +548,13 @@ The module implements structured error handling with meaningful error codes:
 **Solution**: Verify group is active (`actif = true`) and properly linked to establishments
 
 **Section sources**
-- [GUIDE-GROUPES-CONSOLIDATION.md:355-386](file://GUIDE-GROUPES-CONSOLIDATION.md#L355-L386)
+- [CORRECTIONS-GROUPES-V1.2.md:167-215](file://CORRECTIONS-GROUPES-V1.2.md#L167-L215)
 
 ## Conclusion
 
 The Groupes & Etablissements module represents a sophisticated solution for educational institution management, providing comprehensive tools for establishing groupings of multiple schools while maintaining strict security controls and optimal performance. The module's architecture demonstrates best practices in software design, with clear separation of concerns, robust validation, and thoughtful performance optimizations.
+
+Recent enhancements have significantly improved the establishment management capabilities with batch operations support, comprehensive validation logic, and strict limit enforcement. These improvements enable administrators to efficiently manage large educational networks while maintaining system stability and performance.
 
 Key strengths of the implementation include:
 
@@ -501,5 +563,7 @@ Key strengths of the implementation include:
 - **Scalable Architecture**: Clean separation of concerns enabling easy maintenance and extension
 - **Robust Error Handling**: Structured error responses with meaningful error codes
 - **Flexible Data Aggregation**: Sophisticated consolidation services for comprehensive reporting
+- **Enhanced Batch Operations**: Support for simultaneous establishment management operations
+- **Strict Data Integrity**: Comprehensive validation and limit enforcement mechanisms
 
 The module successfully addresses the complex requirements of educational administration while providing a foundation for future enhancements, including expanded financial integration, real-time dashboards, and advanced reporting capabilities.

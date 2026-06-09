@@ -1,4 +1,0 @@
-- Hierarchical Resolution: The configuration module provides a fallback chain (Establishment Config > Global Config > Module Default) consumed by the establishment module via shared helpers like getParamBoolean.
-- Shared State Contract: Both modules rely on the EtablissementConfig entity as the primary source of truth for per-tenant module activation and quotas, synchronized with global ConfigurationApp settings.
-- Event-Driven Wiring: A centralized ConfigurationListener broadcasts state changes (e.g., module toggles), allowing the establishment workflow to react to system-wide policy updates without direct coupling.
-- Cross-Cutting Enforcement: The requireModuleActive middleware in configuration guards endpoints across the backend, using the shared resolution logic to enforce per-tenant feature availability.

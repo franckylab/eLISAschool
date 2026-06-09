@@ -155,13 +155,26 @@ export class SanteService {
         return consultation;
     }
 
-    async getConsultationsByPatient(patientId: string, etablissementId: string): Promise<ConsultationMedicale[]> {
+    async getConsultationsByPatient(
+        patientId: string, 
+        etablissementId: string,
+        anneeScolaireId: string,
+        options?: { periodeId?: string }
+    ): Promise<ConsultationMedicale[]> {
         const dossier = await this.getDossierByPatient(patientId, etablissementId);
         if (!dossier) return [];
 
+        const where: any = { 
+            dossierMedicalId: dossier.id,
+            anneeScolaireId
+        };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+
         return this.consultationRepo.find({
-            where: { dossierMedicalId: dossier.id },
-            relations: ['consultant'],
+            where,
+            relations: ['consultant', 'anneeScolaire', 'periode'], // ← NOUVEAU
             order: { dateConsultation: 'DESC' },
         });
     }
@@ -237,12 +250,20 @@ export class SanteService {
         return incident;
     }
 
-    async getIncidentsByPatient(patientId: string, etablissementId: string): Promise<IncidentSante[]> {
+    async getIncidentsByPatient(
+        patientId: string, 
+        etablissementId: string,
+        anneeScolaireId: string // ← NOUVEAU
+    ): Promise<IncidentSante[]> {
         const dossier = await this.getDossierByPatient(patientId, etablissementId);
         if (!dossier) return [];
 
         return this.incidentRepo.find({
-            where: { dossierMedicalId: dossier.id },
+            where: { 
+                dossierMedicalId: dossier.id,
+                anneeScolaireId // ← FILTRE ANNÉE
+            },
+            relations: ['anneeScolaire'],
             order: { dateIncident: 'DESC' },
         });
     }

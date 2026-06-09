@@ -1,1 +1,1 @@
-Manages cafeteria, transport, clubs, and student ID card operations for school extracurricular and daily life services.
+Manages school cafeteria, transport, clubs, and ID card operations with centralized configuration, multi-tenancy, and optional validation workflows.

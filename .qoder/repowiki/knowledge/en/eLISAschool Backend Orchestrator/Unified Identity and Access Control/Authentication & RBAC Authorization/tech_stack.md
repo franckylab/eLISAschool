@@ -1,0 +1,1 @@
+Uses `bcryptjs` for password hashing, `jsonwebtoken` for JWT signing/verification, and `typeorm` for ORM-based persistence of users, roles, permissions, and refresh tokens.

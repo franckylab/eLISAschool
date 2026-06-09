@@ -23,16 +23,28 @@
 - [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
 - [005-advanced-config-params.ts](file://backend/src/database/migrations/005-advanced-config-params.ts)
 - [005-complete-config-params-100.ts](file://backend/src/database/migrations/005-complete-config-params-100.ts)
+- [030-suivi-eleves.sql](file://backend/database/migrations/030-suivi-eleves.sql)
+- [034-annee-scolaire-suivi.sql](file://backend/database/migrations/034-annee-scolaire-suivi.sql)
+- [suivi-eleve.controller.ts](file://backend/src/modules/suivi-eleves/controllers/suivi-eleve.controller.ts)
+- [suivi-eleve.service.ts](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts)
+- [suivi-eleve.dto.ts](file://backend/src/modules/suivi-eleves/dto/suivi-eleve.dto.ts)
+- [incident-eleve.entity.ts](file://backend/src/modules/suivi-eleves/entities/incident-eleve.entity.ts)
+- [observation-eleve.entity.ts](file://backend/src/modules/suivi-eleves/entities/observation-eleve.entity.ts)
+- [sanction-eleve.entity.ts](file://backend/src/modules/suivi-eleves/entities/sanction-eleve.entity.ts)
+- [felicitation-eleve.entity.ts](file://backend/src/modules/suivi-eleves/entities/felicitation-eleve.entity.ts)
+- [monitoring.controller.ts](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts)
+- [monitoring.service.ts](file://backend/src/modules/monitoring/services/monitoring.service.ts)
+- [monitoring.dto.ts](file://backend/src/modules/monitoring/dto/monitoring.dto.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced bulletin generation system with six new configuration parameters
-- Added customizable grade calculation methods (arithmetic vs weighted)
-- Implemented configurable validation thresholds for bulletin validation
-- Added ranking inclusion/exclusion controls
-- Integrated template selection system for bulletin PDF generation
-- Updated service implementation to utilize runtime configuration parameters
+- Added comprehensive student monitoring system with four core components: incidents, observations, sanctions, and honors
+- Implemented academic year tracking across all monitoring entities with pedagogical context fields
+- Enhanced existing services with pagination support for monitoring queries
+- Added validation workflow integration for serious sanctions
+- Integrated gamification system for academic honors
+- Added system monitoring and maintenance capabilities
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -40,14 +52,16 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Configuration Parameters](#configuration-parameters)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
+6. [Student Monitoring System](#student-monitoring-system)
+7. [System Monitoring and Maintenance](#system-monitoring-and-maintenance)
+8. [Configuration Parameters](#configuration-parameters)
+9. [Dependency Analysis](#dependency-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the academic modules that implement the core educational management functionality. It covers academic year management, curriculum structure via cycles and levels, subject management with teaching assignments, class administration, academic periods, and grading systems. It also explains the hierarchical relationships among academic years, cycles, levels, subjects, and classes, and documents the enhanced bulletin generation system with customizable configuration parameters for grade calculation and template selection. Finally, it outlines entity relationships, service implementations, and controller endpoints for each academic module.
+This document describes the academic modules that implement the core educational management functionality. It covers academic year management, curriculum structure via cycles and levels, subject management with teaching assignments, class administration, academic periods, and grading systems. It also explains the hierarchical relationships among academic years, cycles, levels, subjects, and classes, and documents the enhanced bulletin generation system with customizable configuration parameters for grade calculation and template selection. Additionally, it details the comprehensive student monitoring system including academic progress tracking, behavioral observations, disciplinary actions, and academic honors, along with system monitoring capabilities for operational oversight.
 
 ## Project Structure
 The academic domain is organized by feature modules under backend/src/modules. Each module encapsulates entities, DTOs, services, and controllers for a specific aspect of education management. The modules relevant to this documentation are:
@@ -57,6 +71,8 @@ The academic domain is organized by feature modules under backend/src/modules. E
 - Classes: classes
 - Academic periods: periodes
 - Grading and reports: notes, bulletins
+- Student monitoring: suivi-eleves
+- System monitoring: monitoring
 - Institution configuration: etablissement
 
 ```mermaid
@@ -70,6 +86,8 @@ CL["Classes<br/>classes"]
 PER["Periods<br/>periodes"]
 GR["Grades<br/>notes"]
 BL["Reports<br/>bulletins"]
+SM["Student Monitoring<br/>suivi-eleves"]
+SYS["System Monitoring<br/>monitoring"]
 CFG["Institution Config<br/>etablissement"]
 END
 AYS --> PER
@@ -82,6 +100,10 @@ CL --> GR
 PER --> GR
 PER --> BL
 GR --> BL
+SM --> AYS
+SM --> CL
+SM --> PER
+SYS --> CFG
 CFG --> AYS
 CFG --> CYC
 CFG --> NV
@@ -89,6 +111,7 @@ CFG --> MT
 CFG --> CL
 CFG --> PER
 CFG --> BL
+CFG --> SM
 ```
 
 **Diagram sources**
@@ -102,7 +125,12 @@ CFG --> BL
 - [periode.entity.ts:34-78](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L78)
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
-- [etablissement.entity.ts:41-92](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L92)
+- [incident-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/incident-eleve.entity.ts#L1-L200)
+- [observation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/observation-eleve.entity.ts#L1-L200)
+- [sanction-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/sanction-eleve.entity.ts#L1-L200)
+- [felicitation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/felicitation-eleve.entity.ts#L1-L200)
+- [monitoring.controller.ts:1-71](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L1-L71)
+- [monitoring.service.ts:1-223](file://backend/src/modules/monitoring/services/monitoring.service.ts#L1-L223)
 
 **Section sources**
 - [annee-scolaire.entity.ts:15-40](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts#L15-L40)
@@ -115,7 +143,6 @@ CFG --> BL
 - [periode.entity.ts:34-78](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L78)
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
-- [etablissement.entity.ts:41-92](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L92)
 
 ## Core Components
 This section summarizes the primary components and their responsibilities across the academic modules.
@@ -151,6 +178,18 @@ This section summarizes the primary components and their responsibilities across
   - Controller: generates reports per class/period and retrieves student reports, with update capabilities.
   - **Enhanced**: Now supports customizable grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection through runtime configuration parameters.
 
+- Student Monitoring System
+  - **New**: Comprehensive monitoring system tracking academic progress, behavioral observations, disciplinary actions, and academic honors.
+  - **New**: Academic year tracking across all monitoring entities with pedagogical context fields.
+  - **New**: Validation workflow integration for serious sanctions requiring administrative approval.
+  - **New**: Gamification integration for academic honors and rewards.
+
+- System Monitoring and Maintenance
+  - **New**: Health check endpoints for system status monitoring.
+  - **New**: Metrics collection for CPU, memory, and database connectivity.
+  - **New**: Application statistics including user counts and pending requests.
+  - **New**: Maintenance mode management with configuration parameters.
+
 - Institution Configuration
   - Institution configuration entity: holds school-wide settings including subsystem, cycle availability, and report preferences.
 
@@ -170,6 +209,8 @@ This section summarizes the primary components and their responsibilities across
 - [notes.controller.ts:25-71](file://backend/src/modules/notes/controllers/notes.controller.ts#L25-L71)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
 - [bulletins.controller.ts:25-46](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts#L25-L46)
+- [suivi-eleve.service.ts:70-86](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L70-L86)
+- [monitoring.controller.ts:17-68](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L17-L68)
 - [etablissement.entity.ts:41-92](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L92)
 
 ## Architecture Overview
@@ -179,6 +220,8 @@ The academic modules follow a layered architecture:
 - Controllers expose REST endpoints with authentication and role-based authorization.
 - DTOs validate incoming requests using schema-based validation.
 - **Enhanced**: Configuration parameters are managed through a centralized configuration system with runtime caching and validation.
+- **Enhanced**: Student monitoring system integrates with validation workflows and gamification services.
+- **Enhanced**: System monitoring provides operational insights and maintenance capabilities.
 
 ```mermaid
 graph TB
@@ -192,6 +235,8 @@ C_per["PeriodesController"]
 C_mat["MatieresController"]
 C_not["NotesController"]
 C_bl["BulletinsController"]
+C_sm["SuiviElevesController"]
+C_sys["MonitoringController"]
 end
 subgraph "Services"
 S_ays["AnneesScolairesService"]
@@ -200,6 +245,8 @@ S_per["PeriodesService"]
 S_mat["MatieresService"]
 S_not["NotesService"]
 S_bl["BulletinsService"]
+S_sm["SuiviEleveService"]
+S_sys["MonitoringService"]
 end
 subgraph "Entities"
 E_ys["AnneeScolaire"]
@@ -208,12 +255,18 @@ E_per["Periode"]
 E_mat["Matiere/MatiereNiveau/AffectationMatiere"]
 E_note["Note"]
 E_bul["Bulletin"]
+E_inc["IncidentEleve"]
+E_obs["ObservationEleve"]
+E_san["SanctionEleve"]
+E_fel["FelicitationEleve"]
 E_cfg["EtablissementConfig"]
 end
-subgraph "Configuration System"
-CfgHelper["Config Helper<br/>getParam, getParamBoolean,<br/>getParamNumber"]
-CfgService["Configuration Service"]
-CfgCache["Quick Cache<br/>60s TTL"]
+subgraph "Integration Services"
+Workflow["Validation Workflow Service"]
+Gamification["Gamification Service"]
+Audit["Audit Service"]
+Config["Configuration Service"]
+Cache["Quick Cache<br/>60s TTL"]
 end
 Client --> Auth --> Roles --> C_ays
 Client --> Auth --> Roles --> C_cls
@@ -221,21 +274,35 @@ Client --> Auth --> Roles --> C_per
 Client --> Auth --> Roles --> C_mat
 Client --> Auth --> Roles --> C_not
 Client --> Auth --> Roles --> C_bl
+Client --> Auth --> Roles --> C_sm
+Client --> Auth --> Roles --> C_sys
 C_ays --> S_ays --> E_ys
 C_cls --> S_cls --> E_cls
 C_per --> S_per --> E_per
 C_mat --> S_mat --> E_mat
 C_not --> S_not --> E_note
 C_bl --> S_bl --> E_bul
+C_sm --> S_sm --> E_inc
+C_sm --> S_sm --> E_obs
+C_sm --> S_sm --> E_san
+C_sm --> S_sm --> E_fel
+C_sys --> S_sys --> S_sys
+S_bl --> Config
+S_sm --> Workflow
+S_sm --> Gamification
+S_sm --> Audit
 E_cfg -. configuration .-> E_ys
 E_cfg -. configuration .-> E_cls
 E_cfg -. configuration .-> E_per
 E_cfg -. configuration .-> E_mat
 E_cfg -. configuration .-> E_note
 E_cfg -. configuration .-> E_bul
-S_bl --> CfgHelper
-CfgHelper --> CfgService
-CfgService --> CfgCache
+E_cfg -. configuration .-> E_inc
+E_cfg -. configuration .-> E_obs
+E_cfg -. configuration .-> E_san
+E_cfg -. configuration .-> E_fel
+S_bl --> Config
+Config --> Cache
 ```
 
 **Diagram sources**
@@ -245,6 +312,8 @@ CfgService --> CfgCache
 - [matieres.controller.ts:7-20](file://backend/src/modules/matieres/controllers/matieres.controller.ts#L7-L20)
 - [notes.controller.ts:7-15](file://backend/src/modules/notes/controllers/notes.controller.ts#L7-L15)
 - [bulletins.controller.ts:7-15](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts#L7-L15)
+- [suivi-eleve.controller.ts:1-200](file://backend/src/modules/suivi-eleves/controllers/suivi-eleve.controller.ts#L1-L200)
+- [monitoring.controller.ts:7-15](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L7-L15)
 - [annees-scolaires.service.ts:14-19](file://backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts#L14-L19)
 - [classe.entity.ts:21-75](file://backend/src/modules/classes/entities/classe.entity.ts#L21-L75)
 - [periode.entity.ts:34-78](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L78)
@@ -252,7 +321,11 @@ CfgService --> CfgCache
 - [affectation-matiere.entity.ts:22-65](file://backend/src/modules/matieres/entities/affectation-matiere.entity.ts#L22-L65)
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
-- [etablissement.entity.ts:41-92](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L92)
+- [incident-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/incident-eleve.entity.ts#L1-L200)
+- [observation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/observation-eleve.entity.ts#L1-L200)
+- [sanction-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/sanction-eleve.entity.ts#L1-L200)
+- [felicitation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/felicitation-eleve.entity.ts#L1-L200)
+- [monitoring.service.ts:17-45](file://backend/src/modules/monitoring/services/monitoring.service.ts#L17-L45)
 - [config.helper.ts:15-54](file://backend/src/modules/configuration/utils/config.helper.ts#L15-L54)
 
 ## Detailed Component Analysis
@@ -606,10 +679,200 @@ TP --> PD["Create Period Instances"]
 PD --> SCH["Assign Subjects to Classes<br/>with Teachers and Hours"]
 SCH --> ENR["Enroll Students into Classes"]
 ENR --> GRADE["Record Grades per Period"]
-GRADE --> REP["Generate Reports with Customizable Settings"]
+GRADE --> MON["Monitor Student Progress<br/>and Behavior"]
+MON --> REP["Generate Reports with Customizable Settings"]
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
+
+## Student Monitoring System
+**New Section**: The comprehensive student monitoring system tracks academic progress, behavioral observations, disciplinary actions, and academic honors across academic years with pedagogical context.
+
+### Core Components
+
+#### Incidents Disciplinaires
+- **Entity**: Tracks disciplinary incidents with severity levels (MINEUR, MODERE, GRAVE, TRES_GRAVE)
+- **Fields**: Date, type, description, location, witnesses, action taken, parent notification
+- **Context**: Linked to academic year, school establishment, and involved parties
+- **Status Tracking**: SIGNALE, SANCTIONNE, TRAITE
+
+#### Observations Comportementales
+- **Entity**: Records behavioral observations categorized as POSITIVE, NEGATIVE, or NEUTRE
+- **Fields**: Observer, category, comment, impact points, parent visibility
+- **Gamification**: Points can contribute to student gamification scores
+- **Pedagogical Context**: Linked to academic year and school establishment
+
+#### Sanctions Disciplinaires
+- **Entity**: Formal disciplinary measures linked to specific incidents
+- **Fields**: Type, status (PRONONCEE, EN_ATTENTE_VALIDATION), duration, measures
+- **Validation Workflow**: Serious sanctions require administrative approval workflow
+- **Decision Context**: Linked to decision-maker, academic year, and establishment
+
+#### Félicitations et Récompenses
+- **Entity**: Academic honors and recognition awards
+- **Fields**: Type, motivation, bonus points, visibility settings for reports and parents
+- **Gamification Integration**: Points contribute to student achievement badges
+- **Academic Context**: Tracked per academic year for progress monitoring
+
+### Academic Year Tracking
+**Enhanced**: All monitoring entities now include academic year tracking with pedagogical context:
+- **Year Filtering**: Queries can filter by specific academic year
+- **Progress Monitoring**: Longitudinal tracking across multiple years
+- **Statistical Analysis**: Year-over-year behavior trend analysis
+- **Reporting Context**: Reports can be generated for specific academic periods
+
+### Validation Workflow Integration
+**Enhanced**: Serious sanctions trigger automated validation workflows:
+- **Configuration**: `suivi-eleves.sanction.require_validation` controls workflow requirement
+- **Level Configuration**: `suivi-eleves.sanction.validation_levels` determines approval hierarchy
+- **Non-blocking**: Workflow creation failure doesn't prevent sanction creation
+- **Status Management**: Automatic transition to EN_ATTENTE_VALIDATION for serious cases
+
+### Gamification Integration
+**Enhanced**: Academic honors integrate with gamification system:
+- **Point Attribution**: Automatic point calculation based on honor type
+- **Badge Achievement**: Recognition through student achievement badges
+- **Progress Tracking**: Points contribute to overall student development metrics
+
+### Service Enhancements
+**Enhanced**: Monitoring services now support pagination and academic year filtering:
+- **Pagination**: All monitoring queries support page/limit parameters
+- **Year Context**: Academic year becomes mandatory filter for most operations
+- **Relationship Loading**: Enhanced entity relationships for reporting and analytics
+- **Performance**: Database indexes optimized for year-based queries
+
+```mermaid
+classDiagram
+class IncidentEleve {
++string id
++string eleveId
++string declarantId
++Date dateIncident
++string gravite
++string statut
++string type
++string description
++string etablissementId
++string anneeScolaireId
++Date createdAt
++Date updatedAt
+}
+class ObservationEleve {
++string id
++string eleveId
++string observateurId
++string type
++string categorie
++string commentaire
++number pointsImpact
++boolean visibleParent
++string etablissementId
++string anneeScolaireId
++Date createdAt
++Date updatedAt
+}
+class SanctionEleve {
++string id
++string eleveId
++string incidentId
++string type
++string statut
++string motif
++Date dateDebut
++Date dateFin
++number joursExclusion
++string etablissementId
++string anneeScolaireId
++Date createdAt
++Date updatedAt
+}
+class FelicitationEleve {
++string id
++string eleveId
++string type
++string motif
++number pointsBonus
++boolean visibleBulletin
++boolean visibleParent
++string attribueParId
++string etablissementId
++string anneeScolaireId
++Date createdAt
++Date updatedAt
+}
+IncidentEleve --> SanctionEleve : "linked_by_incident"
+```
+
+**Diagram sources**
+- [incident-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/incident-eleve.entity.ts#L1-L200)
+- [observation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/observation-eleve.entity.ts#L1-L200)
+- [sanction-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/sanction-eleve.entity.ts#L1-L200)
+- [felicitation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/felicitation-eleve.entity.ts#L1-L200)
+
+**Section sources**
+- [030-suivi-eleves.sql:13-112](file://backend/database/migrations/030-suivi-eleves.sql#L13-L112)
+- [034-annee-scolaire-suivi.sql:406-428](file://backend/database/migrations/034-annee-scolaire-suivi.sql#L406-L428)
+- [suivi-eleve.service.ts:44-86](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L44-L86)
+- [suivi-eleve.service.ts:131-187](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L131-L187)
+- [suivi-eleve.service.ts:190-200](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L190-L200)
+
+## System Monitoring and Maintenance
+**New Section**: Comprehensive system monitoring capabilities for operational oversight and maintenance management.
+
+### Health Check System
+- **Endpoint**: GET `/monitoring/health` - Public health status endpoint
+- **Status Levels**: ok, degraded, down with detailed component status
+- **Checks**: Database connectivity, memory availability, uptime verification
+- **Response**: Structured JSON with status and component details
+
+### System Metrics Collection
+- **CPU Metrics**: Core count, model, load averages
+- **Memory Metrics**: Total, used, free, heap usage, external memory
+- **Database Status**: Connection state, driver information
+- **Application Info**: Version, Node.js version, environment, process ID
+
+### Application Statistics
+- **User Analytics**: Total users, active users, role distribution
+- **Request Monitoring**: Pending requests, total request count
+- **Module Tracking**: Active modules, total modules
+- **Real-time Data**: Live statistics for operational insights
+
+### Maintenance Mode Management
+- **Endpoints**: GET/POST `/monitoring/maintenance` - Maintenance mode control
+- **Configuration**: Uses `system.maintenance_mode` parameter for persistence
+- **Access Control**: Super admin only operations
+- **Logging**: Comprehensive audit trail for maintenance activities
+
+### Log Management
+- **Endpoint**: GET `/monitoring/logs` - Recent system logs
+- **Pagination**: Configurable limit with min/max bounds (1-1000)
+- **Future Enhancement**: File-based or database-backed log storage
+- **Security**: Admin-only access with proper authentication
+
+```mermaid
+sequenceDiagram
+participant Client as "Client"
+participant Ctrl as "MonitoringController"
+participant Svc as "MonitoringService"
+participant DB as "Database"
+Client->>Ctrl : GET /monitoring/health
+Ctrl->>Svc : healthCheck()
+Svc->>DB : SELECT 1
+DB-->>Svc : connection_ok
+Svc->>Svc : checkMemory()
+Svc->>Svc : checkUptime()
+Svc-->>Ctrl : {status : 'ok'|'degraded'|'down', details}
+Ctrl-->>Client : 200/503 + health_status
+```
+
+**Diagram sources**
+- [monitoring.controller.ts:17-26](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L17-L26)
+- [monitoring.service.ts:169-199](file://backend/src/modules/monitoring/services/monitoring.service.ts#L169-L199)
+
+**Section sources**
+- [monitoring.controller.ts:17-68](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L17-L68)
+- [monitoring.service.ts:17-223](file://backend/src/modules/monitoring/services/monitoring.service.ts#L17-L223)
+- [monitoring.dto.ts:14-29](file://backend/src/modules/monitoring/dto/monitoring.dto.ts#L14-L29)
 
 ## Configuration Parameters
 The bulletin generation system now supports six runtime configuration parameters that control various aspects of report generation:
@@ -624,6 +887,25 @@ The bulletin generation system now supports six runtime configuration parameters
 | `bulletins.display_coefficients` | Boolean | `true` | Show subject coefficients on bulletins |
 | `bulletins.show_appreciations` | Boolean | `true` | Include class council appreciation |
 | `bulletins.template_id` | String | `'default'` | PDF template identifier for bulletin generation |
+
+### Student Monitoring Configuration Parameters
+**New**: Configuration parameters for the student monitoring system:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `suivi-eleves.sanction.require_validation` | Boolean | `false` | Require validation workflow for serious sanctions |
+| `suivi-eleves.sanction.validation_levels` | Number | `2` | Number of approval levels for validation workflow |
+| `suivi-eleves.gamification.enabled` | Boolean | `true` | Enable gamification points for honors |
+| `suivi-eleves.parent_visibility.default` | Boolean | `false` | Default parent visibility for observations |
+
+### System Configuration Parameters
+**New**: System-wide configuration parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `system.maintenance_mode` | Boolean | `false` | Enable/disable system maintenance mode |
+| `system.monitoring.enabled` | Boolean | `true` | Enable/disable system monitoring endpoints |
+| `system.log_level` | String | `'info'` | Logging verbosity level |
 
 ### Configuration Implementation Details
 
@@ -768,6 +1050,77 @@ string templateId
 boolean afficherRangs
 boolean afficherCoefficients
 }
+INCIDENT_ELEVE {
+uuid id PK
+uuid eleveId FK
+uuid declarantId FK
+timestamp dateIncident
+varchar gravite
+varchar statut
+varchar type
+text description
+varchar lieu
+text temoins
+text actionPrise
+uuid sanctionId FK
+boolean signaleParent
+timestamp dateSignalementParent
+uuid etablissementId FK
+uuid anneeScolaireId FK
+timestamp createdAt
+timestamp updatedAt
+}
+OBSERVATION_ELEVE {
+uuid id PK
+uuid eleveId FK
+uuid observateurId FK
+varchar type
+varchar categorie
+text commentaire
+int pointsImpact
+boolean visibleParent
+uuid etablissementId FK
+uuid anneeScolaireId FK
+timestamp createdAt
+timestamp updatedAt
+}
+SANCTION_ELEVE {
+uuid id PK
+uuid eleveId FK
+uuid incidentId FK
+varchar type
+varchar statut
+text motif
+text description
+timestamp dateDebut
+timestamp dateFin
+int joursExclusion
+text mesuresAccompagnement
+uuid decideParId FK
+uuid etablissementId FK
+uuid anneeScolaireId FK
+timestamp createdAt
+timestamp updatedAt
+}
+FELICITATION_ELEVE {
+uuid id PK
+uuid eleveId FK
+varchar type
+text motif
+int pointsBonus
+boolean visibleBulletin
+boolean visibleParent
+uuid attribueParId FK
+uuid etablissementId FK
+uuid anneeScolaireId FK
+timestamp createdAt
+timestamp updatedAt
+}
+MONITORING_METRICS {
+timestamp timestamp PK
+varchar status
+json details
+}
 ANNEE_SCOLAIRE ||--o{ PERIODE : "contains"
 TYPES_PERIODE ||--o{ PERIODE : "defines"
 CYCLE ||--o{ NIVEAU : "contains"
@@ -788,6 +1141,23 @@ CLASSE ||--o{ BULLETIN : "generates"
 PERIODE ||--o{ BULLETIN : "summarizes"
 ANNEE_SCOLAIRE ||--o{ BULLETIN : "covers"
 ETABLISSEMENT ||--o{ BULLETIN : "creates"
+ELEVE ||--o{ INCIDENT_ELEVE : "involved_in"
+UTILISATEUR ||--o{ INCIDENT_ELEVE : "reported_by"
+ETABLISSEMENT ||--o{ INCIDENT_ELEVE : "occurred_at"
+ANNEE_SCOLAIRE ||--o{ INCIDENT_ELEVE : "tracked_in"
+ELEVE ||--o{ OBSERVATION_ELEVE : "observed"
+UTILISATEUR ||--o{ OBSERVATION_ELEVE : "observer"
+ETABLISSEMENT ||--o{ OBSERVATION_ELEVE : "recorded_at"
+ANNEE_SCOLAIRE ||--o{ OBSERVATION_ELEVE : "contextualized"
+SANCTION_ELEVE ||--o{ INCIDENT_ELEVE : "sanction_for"
+ELEVE ||--o{ SANCTION_ELEVE : "subject_of"
+UTILISATEUR ||--o{ SANCTION_ELEVE : "decided_by"
+ETABLISSEMENT ||--o{ SANCTION_ELEVE : "implemented_at"
+ANNEE_SCOLAIRE ||--o{ SANCTION_ELEVE : "applied_in"
+ELEVE ||--o{ FELICITATION_ELEVE : "awarded"
+UTILISATEUR ||--o{ FELICITATION_ELEVE : "awarded_by"
+ETABLISSEMENT ||--o{ FELICITATION_ELEVE : "granted_at"
+ANNEE_SCOLAIRE ||--o{ FELICITATION_ELEVE : "earned_in"
 ```
 
 **Diagram sources**
@@ -801,6 +1171,10 @@ ETABLISSEMENT ||--o{ BULLETIN : "creates"
 - [affectation-matiere.entity.ts:22-65](file://backend/src/modules/matieres/entities/affectation-matiere.entity.ts#L22-L65)
 - [note.entity.ts:45-141](file://backend/src/modules/notes/entities/note.entity.ts#L45-L141)
 - [bulletin.entity.ts:23-92](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L92)
+- [incident-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/incident-eleve.entity.ts#L1-L200)
+- [observation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/observation-eleve.entity.ts#L1-L200)
+- [sanction-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/sanction-eleve.entity.ts#L1-L200)
+- [felicitation-eleve.entity.ts:1-200](file://backend/src/modules/suivi-eleves/entities/felicitation-eleve.entity.ts#L1-L200)
 
 **Section sources**
 - [annee-scolaire.entity.ts:15-40](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts#L15-L40)
@@ -817,6 +1191,7 @@ ETABLISSEMENT ||--o{ BULLETIN : "creates"
 ## Performance Considerations
 - Indexing
   - Entities use database indexes on frequently queried columns (e.g., niveauId, anneeScolaireId, matiereId, periodeId) to optimize joins and filters.
+  - **Enhanced**: New monitoring entities include academic year and establishment indexes for improved query performance.
 - Normalized Scores
   - Grade normalization to a standard scale reduces computation overhead during report generation.
 - Batch Operations
@@ -826,6 +1201,10 @@ ETABLISSEMENT ||--o{ BULLETIN : "creates"
 - **Enhanced**: Configuration Parameter Caching
   - Quick cache with 60-second TTL for frequently accessed configuration parameters reduces database load.
   - Automatic type conversion and validation improve performance and reliability.
+- **Enhanced**: Pagination Implementation
+  - All monitoring queries now support pagination with take/skip for better performance on large datasets.
+- **Enhanced**: Database Optimization
+  - New indexes on monitoring entities (eleve_id, anneeScolaireId, etablissement_id) improve query performance for year-based filtering.
 
 [No sources needed since this section provides general guidance]
 
@@ -841,12 +1220,35 @@ ETABLISSEMENT ||--o{ BULLETIN : "creates"
   - Invalid parameter values are automatically validated and rejected with appropriate error messages.
   - Default values are used when configuration parameters are missing or invalid.
   - Cache invalidation ensures configuration changes take effect immediately.
+- **Enhanced**: Monitoring System Issues
+  - Health check failures indicate database connectivity or memory issues.
+  - Maintenance mode prevents normal operations until disabled.
+  - Validation workflow failures for sanctions are non-blocking but may delay processing.
+- **Enhanced**: Student Monitoring Data Integrity
+  - Academic year filtering ensures data isolation between school years.
+  - Missing pagination in monitoring queries may cause performance issues.
+  - Gamification point attribution requires proper configuration.
 
 **Section sources**
 - [annees-scolaires.controller.ts:17-23](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts#L17-L23)
 - [annees-scolaires.service.ts:47-48](file://backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts#L47-L48)
 - [annees-scolaires.service.ts:71-74](file://backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts#L71-L74)
 - [config.helper.ts:15-54](file://backend/src/modules/configuration/utils/config.helper.ts#L15-L54)
+- [monitoring.service.ts:169-199](file://backend/src/modules/monitoring/services/monitoring.service.ts#L169-L199)
+- [suivi-eleve.service.ts:70-86](file://backend/src/modules/suivi-eleves/services/suivi-eleve.service.ts#L70-L86)
 
 ## Conclusion
-The academic modules provide a cohesive, layered architecture for managing academic years, curriculum structure, subjects and programs, classes, academic periods, grades, and reports. The enhanced bulletin generation system now offers extensive customization through six runtime configuration parameters, enabling institutions to tailor grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection according to their specific requirements. Clear entity relationships, robust services enforcing business rules, role-based controllers, and a centralized configuration system enable secure, scalable, and flexible educational administration. The design supports institutional configuration, standardized grading, and efficient report generation aligned with the chosen subsystem while maintaining backward compatibility and extensibility.
+The academic modules provide a cohesive, layered architecture for managing academic years, curriculum structure, subjects and programs, classes, academic periods, grades, and reports. The enhanced bulletin generation system now offers extensive customization through six runtime configuration parameters, enabling institutions to tailor grade calculation methods, validation thresholds, ranking inclusion, coefficient display, and template selection according to their specific requirements.
+
+**Major Enhancements**:
+- **Comprehensive Student Monitoring**: Complete behavioral tracking system with incidents, observations, sanctions, and honors
+- **Academic Year Context**: All monitoring entities now track academic year progression with pedagogical context
+- **Validation Workflows**: Automated approval processes for serious disciplinary actions
+- **Gamification Integration**: Point-based recognition system for academic achievements
+- **System Monitoring**: Health checks, metrics collection, and maintenance capabilities
+- **Enhanced Pagination**: Proper pagination support for monitoring queries
+- **Performance Optimization**: Database indexing and caching improvements
+
+The addition of the student monitoring system creates a holistic educational management platform that tracks not just academic performance but also behavioral development and character building. The integration with validation workflows ensures proper governance of serious disciplinary actions, while gamification encourages positive behavior and academic excellence. System monitoring capabilities provide operational insights and maintenance tools essential for production environments.
+
+Clear entity relationships, robust services enforcing business rules, role-based controllers, and a centralized configuration system enable secure, scalable, and flexible educational administration. The design supports institutional configuration, standardized grading, efficient report generation, comprehensive student monitoring, and operational oversight aligned with the chosen subsystem while maintaining backward compatibility and extensibility.

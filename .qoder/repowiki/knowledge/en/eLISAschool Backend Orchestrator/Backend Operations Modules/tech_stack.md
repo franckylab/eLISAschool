@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation across all modules; TypeORM with UUID primary keys and repository pattern; Express Router with custom auth middlewares (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`); centralized configuration via `@modules/configuration/utils/config.helper` (functions `getParamNumber`, `getParamBoolean`, `getAppConfig`).

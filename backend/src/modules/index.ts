@@ -45,6 +45,7 @@ export * from './audit';
 export * from './dashboard';
 export * from './validation-workflow';
 export * from './groupes-etablissements';
+export * from './types-enum';
 
 // Modules complémentaires
 export * from './orientation';

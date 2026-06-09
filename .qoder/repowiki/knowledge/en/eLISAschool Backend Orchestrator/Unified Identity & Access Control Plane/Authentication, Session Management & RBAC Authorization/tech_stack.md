@@ -1,1 +1,0 @@
-JWT access tokens signed via `jsonwebtoken` with issuer/audience claims; bcrypt password hashing (salt rounds: 12); TypeORM repositories backed by PostgreSQL; Express middleware/guard pattern for authz enforcement; centralized configuration via `@modules/configuration/utils/config.helper` for security parameters (max login attempts, lockout duration, password complexity rules).

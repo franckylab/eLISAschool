@@ -1,0 +1,4 @@
+- Hierarchical Resolution: The `configuration` module implements a fallback chain (Establishment-scoped → Global → Default) for parameters and module activation states, consumed by the `etablissement` module via shared helpers.
+- Shared State Wiring: `EtablissementConfig` (in `etablissement`) stores tenant-specific module flags, while `ConfigurationService` (in `configuration`) acts as the authoritative resolver, synchronizing state across `ConfigurationApp`, `ConfigurationModule`, and `ParametreSysteme` entities.
+- Cross-Module Contracts: The `etablissement` service depends on `configuration/utils/config.helper` for runtime feature flags (e.g., validation requirements), creating a tight coupling where configuration logic drives establishment workflows.
+- Event-Driven Consistency: Configuration changes trigger cache invalidation and history logging, ensuring that both modules reflect consistent state without direct database polling.

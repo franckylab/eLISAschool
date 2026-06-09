@@ -9,6 +9,7 @@ import { z } from 'zod';
 export const createDossierMedicalSchema = z.object({
     patientId: z.string().uuid(),
     typePatient: z.enum(['ELEVE', 'PERSONNEL']),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU: optionnel (dossier permanent)
     groupeSanguin: z.string().length(5).optional(),
     allergiesConnues: z.array(z.string()).optional(),
     antécédentsMedicaux: z.array(z.string()).optional(),
@@ -23,6 +24,8 @@ export const createDossierMedicalSchema = z.object({
 
 export const createConsultationMedicaleSchema = z.object({
     dossierMedicalId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(),
+    periodeId: z.string().uuid().optional(), // ← NOUVEAU: trimestre concerné
     type: z.enum(['INFIRMERIE', 'MEDICALE', 'URGENCES', 'SUIVI']),
     motif: z.string().min(5),
     diagnostic: z.string().optional(),
@@ -38,6 +41,7 @@ export const createConsultationMedicaleSchema = z.object({
 
 export const createIncidentSanteSchema = z.object({
     dossierMedicalId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(), // ← NOUVEAU
     type: z.enum(['ACCIDENT', 'MALAISE', 'MALADIE', 'ALLERGIE', 'AUTRE']),
     gravite: z.enum(['MINEUR', 'MODERE', 'GRAVE', 'CRITIQUE']),
     nature: z.string().min(5).max(200),

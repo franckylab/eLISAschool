@@ -38,13 +38,20 @@ router.post('/incidents', staffOnly, async (req: Request, res: Response, next: N
 
 router.get('/personnel/:membrePersonnelId/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
         const result = await suiviPersonnelService.getIncidentsByPersonnel(
             req.params.membrePersonnelId,
             req.utilisateur!.etablissementId!,
-            page,
-            limit
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU
         );
         res.json({
             success: true,
@@ -56,6 +63,10 @@ router.get('/personnel/:membrePersonnelId/incidents', staffOnly, async (req: Req
                 totalPages: Math.ceil(result.total / limit),
                 hasNext: page * limit < result.total,
                 hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
             },
         });
     } catch (error) {
@@ -80,13 +91,20 @@ router.post('/evaluations', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
 
 router.get('/personnel/:membrePersonnelId/evaluations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('Paramètre anneeScolaireId obligatoire', 400, 'MISSING_ANNEE_SCOLAIRE');
+        }
+        
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const periodeId = req.query.periodeId as string; // ← NOUVEAU
+        
         const result = await suiviPersonnelService.getEvaluationsByPersonnel(
             req.params.membrePersonnelId,
             req.utilisateur!.etablissementId!,
-            page,
-            limit
+            anneeScolaireId,
+            { page, limit, periodeId } // ← NOUVEAU
         );
         res.json({
             success: true,
@@ -98,6 +116,10 @@ router.get('/personnel/:membrePersonnelId/evaluations', staffOnly, async (req: R
                 totalPages: Math.ceil(result.total / limit),
                 hasNext: page * limit < result.total,
                 hasPrev: page > 1,
+            },
+            metadata: {
+                anneeScolaireId,
+                periodeId: periodeId || null, // ← NOUVEAU
             },
         });
     } catch (error) {

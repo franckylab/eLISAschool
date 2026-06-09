@@ -1,0 +1,4 @@
+- All service methods return domain entities directly and throw `AppError` with custom error codes (e.g., `ETABLISSEMENT_NOT_FOUND`, `CONFIG_NOT_FOUND`) on failure rather than returning null or optional types.
+- Controller handlers uniformly wrap async logic in try-catch blocks that delegate errors to Express `next(error)` and respond with `{ success: true, data: ... }` JSON envelopes.
+- DTO validation uses centralized `validateDto(schema, req.body)` calls before passing data to service layer, ensuring consistent input sanitization across all mutating endpoints.
+- Entity enums (`StatutEtablissement`, `SousSysteme`, `TypeEtablissement`, `CycleScolaire`) are defined alongside their owning entity file and re-exported through the module's `entities/index.ts` barrel export.

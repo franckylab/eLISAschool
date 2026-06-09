@@ -1,3 +1,0 @@
-- Use of getParamBoolean and similar typed helpers from config.helper.ts for consistent configuration access across modules
-- Implementation of multi-tier caching (Quick Cache + Service Cache) to optimize repeated configuration lookups
-- Adoption of a soft-delete and validation-workflow pattern for critical establishment state changes triggered by configuration flags

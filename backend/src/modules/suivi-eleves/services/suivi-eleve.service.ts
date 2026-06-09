@@ -70,14 +70,21 @@ export class SuiviEleveService {
     async getIncidentsByEleve(
         eleveId: string, 
         etablissementId: string,
-        anneeScolaireId: string, // ← NOUVEAU: obligatoire
-        page: number = 1,
-        limit: number = 20
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
     ): Promise<{ data: IncidentEleve[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
         const skip = (page - 1) * limit;
+        
+        const where: any = { eleveId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
         const [data, total] = await this.incidentRepo.findAndCount({
-            where: { eleveId, etablissementId, anneeScolaireId }, // ← FILTRE ANNÉE
-            relations: ['declarant', 'eleve', 'classe', 'matiere', 'anneeScolaire'], // ← NOUVELLES RELATIONS
+            where,
+            relations: ['declarant', 'eleve', 'classe', 'matiere', 'anneeScolaire', 'periode'], // ← NOUVEAU: relation periode
             order: { dateIncident: 'DESC' },
             take: Math.min(limit, 100),
             skip,
@@ -112,13 +119,21 @@ export class SuiviEleveService {
     async getObservationsByEleve(
         eleveId: string, 
         etablissementId: string,
-        page: number = 1,
-        limit: number = 20
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
     ): Promise<{ data: ObservationEleve[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
         const skip = (page - 1) * limit;
+        
+        const where: any = { eleveId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
         const [data, total] = await this.observationRepo.findAndCount({
-            where: { eleveId, etablissementId },
-            relations: ['observateur'],
+            where,
+            relations: ['observateur', 'eleve', 'anneeScolaire', 'periode'], // ← NOUVEAU
             order: { createdAt: 'DESC' },
             take: Math.min(limit, 100),
             skip,
@@ -181,7 +196,7 @@ export class SuiviEleveService {
             }, req);
         }
 
-        logger.info(`[Suivi-Élèves] Sanction créée: ${dto.eleveId} - Statut: ${sanction.statut}`);
+        logger.info(`[Suivi-Élèves] Sanction créée: ${dto.eleveId} - Statut: ${sanction.statut} - Année: ${dto.anneeScolaireId}`);
         return sanction;
     }
 
@@ -234,13 +249,46 @@ export class SuiviEleveService {
     async getFelicitationsByEleve(
         eleveId: string, 
         etablissementId: string,
-        page: number = 1,
-        limit: number = 20
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
     ): Promise<{ data: FelicitationEleve[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
         const skip = (page - 1) * limit;
+        
+        const where: any = { eleveId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
         const [data, total] = await this.felicitationRepo.findAndCount({
-            where: { eleveId, etablissementId },
-            relations: ['attribuePar'],
+            where,
+            relations: ['attribuePar', 'eleve', 'anneeScolaire', 'periode'], // ← NOUVEAU
+            order: { createdAt: 'DESC' },
+            take: Math.min(limit, 100),
+            skip,
+        });
+        return { data, total };
+    }
+
+    async getSanctionsByEleve(
+        eleveId: string, 
+        etablissementId: string,
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
+    ): Promise<{ data: SanctionEleve[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
+        const skip = (page - 1) * limit;
+        
+        const where: any = { eleveId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
+        const [data, total] = await this.sanctionRepo.findAndCount({
+            where,
+            relations: ['decidePar', 'eleve', 'incident', 'anneeScolaire', 'periode'], // ← NOUVEAU
             order: { createdAt: 'DESC' },
             take: Math.min(limit, 100),
             skip,

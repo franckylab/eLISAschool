@@ -1,0 +1,3 @@
+- Use of barrel exports (`export * from './...'`) in every sub-package index file to aggregate and re-export module contents.
+- Definition of immutable constant objects using `as const` assertions in `constants` files to enforce read-only access.
+- Naming of Zod validator schemas with a `Schema` suffix (e.g., `loginSchema`, `registerSchema`) and exporting inferred types with an `Input` suffix.

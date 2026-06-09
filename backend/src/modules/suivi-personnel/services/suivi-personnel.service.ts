@@ -43,20 +43,28 @@ export class SuiviPersonnelService {
             }, req);
         }
         
-        logger.info(`[Suivi-Personnel] Incident créé: ${dto.membrePersonnelId}`);
+        logger.info(`[Suivi-Personnel] Incident créé: ${dto.membrePersonnelId} - Année: ${dto.anneeScolaireId}`);
         return incident;
     }
 
     async getIncidentsByPersonnel(
         membrePersonnelId: string, 
         etablissementId: string,
-        page: number = 1,
-        limit: number = 20
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
     ): Promise<{ data: IncidentPersonnel[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
         const skip = (page - 1) * limit;
+        
+        const where: any = { membrePersonnelId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
         const [data, total] = await this.incidentRepo.findAndCount({
-            where: { membrePersonnelId, etablissementId },
-            relations: ['declarant', 'membrePersonnel'],
+            where,
+            relations: ['declarant', 'membrePersonnel', 'anneeScolaire', 'periode'], // ← NOUVEAU
             order: { dateIncident: 'DESC' },
             take: Math.min(limit, 100),
             skip,
@@ -92,13 +100,21 @@ export class SuiviPersonnelService {
     async getEvaluationsByPersonnel(
         membrePersonnelId: string, 
         etablissementId: string,
-        page: number = 1,
-        limit: number = 20
+        anneeScolaireId: string,
+        options?: { periodeId?: string; page?: number; limit?: number }
     ): Promise<{ data: EvaluationPersonnel[]; total: number }> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 20;
         const skip = (page - 1) * limit;
+        
+        const where: any = { membrePersonnelId, etablissementId, anneeScolaireId };
+        if (options?.periodeId) {
+            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+        }
+        
         const [data, total] = await this.evaluationRepo.findAndCount({
-            where: { membrePersonnelId, etablissementId },
-            relations: ['evaluateur'],
+            where,
+            relations: ['evaluateur', 'anneeScolaire', 'periodeObj'],
             order: { periode: 'DESC' },
             take: Math.min(limit, 100),
             skip,
