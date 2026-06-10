@@ -1,0 +1,4 @@
+- **Real-time**: Server-Sent Events (SSE) for messaging; Socket.IO interface abstraction for polls.
+- **Background Jobs**: `node-cron` for scheduled tasks like poll expiration and notification reminders.
+- **Email**: `nodemailer` for SMTP-based email delivery.
+- **Caching & Pub/Sub**: Redis for SSE event broadcasting across instances and performance caching.

@@ -1,0 +1,4 @@
+- Controllers consistently use a `validateDto(schema, req.body/query)` utility pattern for input validation before passing data to services.
+- Service methods frequently accept optional `utilisateurId` and `req` parameters to facilitate automatic audit logging and history tracking within the same transaction.
+- Entities and services implement multi-tenancy by checking for an `etablissementId` to scope data access, often falling back to global configurations if no tenant-specific override exists.
+- Modules expose their public API through barrel export files (`index.ts`) that re-export controllers, services, entities, and DTOs for clean dependency injection.

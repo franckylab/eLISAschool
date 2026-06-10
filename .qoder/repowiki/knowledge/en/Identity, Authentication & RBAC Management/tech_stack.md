@@ -1,0 +1,5 @@
+- **Authentication**: JWT (Access/Refresh tokens) with `jsonwebtoken` and `bcryptjs` for password hashing.
+- **Authorization**: Dynamic RBAC with hierarchical role inheritance and granular permissions stored in PostgreSQL via TypeORM.
+- **Caching**: Multi-level caching strategy using in-memory Maps (L1) and Redis (L2) for permissions and user preferences.
+- **Validation**: Zod schemas for strict DTO validation in controllers.
+- **Scheduling**: `node-cron` for automated audit log rotation and archival.

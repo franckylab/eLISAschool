@@ -2,7 +2,7 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-10T01:43:58Z"
+exported_at: "2026-06-10T05:13:16Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -220,13 +220,13 @@ modules:
             - backend/
         source_files: []
         children:
+            - backend/backend_infra
+            - c58424b5580c43c9f3ab0cc33c6968ba
+            - 5e12f74ff678421edd77690c2d791a78
             - d80f6f0d5d935b98a11784aa839130b1
             - 2c9cd0e3160d924bbaec585564256140
-            - backend/backend_infra
-            - 3323c19c72eb2f9fb60d2e706e2782b7
-            - c58424b5580c43c9f3ab0cc33c6968ba
             - 8c1a6fd5d62d014f08d283743694c2bc
-            - 5e12f74ff678421edd77690c2d791a78
+            - 3323c19c72eb2f9fb60d2e706e2782b7
             - af3a1c5948b411a02aee9940e2e70821
         depends_on: []
         related_to:
@@ -270,11 +270,44 @@ modules:
         children: []
         depends_on: []
         related_to: []
+    backend/backend_modules/communication:
+        dir_name: Communication & Notification Hub
+        title: Communication & Notification Hub
+        scope:
+            - backend/src/modules/messagerie/
+            - backend/src/modules/notifications/
+            - backend/src/modules/annonces/
+            - backend/src/modules/sondages/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
     backend/backend_modules/finance:
         dir_name: School Financial Management & Accounting
         title: School Financial Management & Accounting
         scope:
             - backend/src/modules/finances/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_modules/identity_access:
+        dir_name: Identity, Authentication & RBAC Management
+        title: Identity, Authentication & RBAC Management
+        scope:
+            - backend/src/modules/auth/
+            - backend/src/modules/rbac/
+            - backend/src/modules/utilisateurs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_modules/school_organization:
+        dir_name: School Organization & Group Consolidation
+        title: School Organization & Group Consolidation
+        scope:
+            - backend/src/modules/etablissement/
+            - backend/src/modules/groupes-etablissements/
         source_files: []
         children: []
         depends_on: []
@@ -301,6 +334,21 @@ modules:
             - backend/src/modules/cantine/
             - backend/src/modules/transport/
             - backend/src/modules/cartes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_modules/system_tools:
+        dir_name: System Configuration, Monitoring, and Workflow Management
+        title: System Configuration, Monitoring, and Workflow Management
+        scope:
+            - backend/src/modules/configuration/
+            - backend/src/modules/monitoring/
+            - backend/src/modules/audit/
+            - backend/src/modules/validation-workflow/
+            - backend/src/modules/types-enum/
+            - backend/src/modules/requetes/
+            - backend/src/modules/impressions/
         source_files: []
         children: []
         depends_on: []

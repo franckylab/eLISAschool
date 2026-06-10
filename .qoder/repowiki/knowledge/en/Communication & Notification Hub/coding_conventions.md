@@ -1,0 +1,4 @@
+- Controllers consistently use a try-catch block that delegates errors to the Express `next(error)` middleware for centralized handling.
+- Services implement multi-tenant isolation by filtering queries with `etablissementId` and validating user ownership before performing write operations.
+- Input validation is enforced at the controller layer using Zod schemas passed through a `validateDto` helper before reaching service logic.
+- Barrel exports (`index.ts`) are used in every sub-directory (controllers, services, dto) to simplify internal module imports.

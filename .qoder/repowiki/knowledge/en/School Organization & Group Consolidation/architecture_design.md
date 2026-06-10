@@ -1,0 +1,5 @@
+- The module is split into two distinct sub-packages: `etablissement` for individual school entity management and `groupes-etablissements` for cross-school aggregation.
+- Each sub-package follows a strict Controller-Service-Entity-DTO layering, with services acting as the primary boundary for business logic and TypeORM repository interactions.
+- `groupes-etablissements` introduces a custom Express middleware guard (`requireGroupeAccess`) to enforce ownership or admin-level access before controller execution.
+- Dependencies flow inward: controllers depend on services, which depend on TypeORM entities and external shared utilities (e.g., `@common/utils`, `@modules/auth`).
+- Key entry points are `etablissement.controller.ts` and `groupes.controller.ts`, which expose RESTful endpoints for CRUD operations and consolidated reporting.

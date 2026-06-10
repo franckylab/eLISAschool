@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/backend_modules/school_organization
+title: School Organization & Group Consolidation
+scope:
+    - backend/src/modules/etablissement/
+    - backend/src/modules/groupes-etablissements/
+source_files: []
+depends_on: []
+related_to: []

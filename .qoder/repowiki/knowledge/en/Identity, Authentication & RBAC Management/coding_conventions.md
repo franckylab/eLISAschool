@@ -1,0 +1,4 @@
+- Services are exported as singleton instances (e.g., `export const authService = new AuthService()`) to facilitate dependency injection and shared state like caches.
+- Controllers use a consistent error-handling pattern where async operations are wrapped in try-catch blocks that forward errors to the Express next() middleware.
+- DTO validation is performed at the controller layer using Zod schemas via a `validateDto` helper before passing data to services.
+- Entities use TypeORM decorators with explicit column types and indices, often including `@Index` for frequently queried fields like email or role codes.

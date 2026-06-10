@@ -1,0 +1,3 @@
+- Services are implemented as singleton classes exported as both a named class and a pre-instantiated constant (e.g., `export const groupesService = new GroupesService()`).
+- Controllers use a centralized error handling pattern where all async route handlers wrap logic in try-catch blocks that delegate errors to the Express `next()` function.
+- DTO validation is performed at the controller layer using a shared `validateDto` utility against Zod-like schemas before passing data to services.

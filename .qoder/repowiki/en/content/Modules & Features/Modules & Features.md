@@ -10,12 +10,16 @@
 - [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
 - [backend/src/modules/eleves/index.ts](file://backend/src/modules/eleves/index.ts)
 - [backend/src/modules/eleves/controllers/eleves.controller.ts](file://backend/src/modules/eleves/controllers/eleves.controller.ts)
+- [backend/src/modules/eleves/entities/eleve.entity.ts](file://backend/src/modules/eleves/entities/eleve.entity.ts)
 - [backend/src/modules/classes/index.ts](file://backend/src/modules/classes/index.ts)
 - [backend/src/modules/classes/controllers/classes.controller.ts](file://backend/src/modules/classes/controllers/classes.controller.ts)
 - [backend/src/modules/matieres/index.ts](file://backend/src/modules/matieres/index.ts)
 - [backend/src/modules/matieres/controllers/matieres.controller.ts](file://backend/src/modules/matieres/controllers/matieres.controller.ts)
 - [backend/src/modules/notes/index.ts](file://backend/src/modules/notes/index.ts)
 - [backend/src/modules/notes/controllers/notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [backend/src/modules/responsables-eleves/services/parents.service.ts](file://backend/src/modules/responsables-eleves/services/parents.service.ts)
+- [backend/database/migrations/052-approche-hybride-parents.sql](file://backend/database/migrations/052-approche-hybride-parents.sql)
+- [backend/scripts/migrate-parents.ts](file://backend/scripts/migrate-parents.ts)
 - [backend/src/modules/dashboard/controllers/dashboard.controller.ts](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts)
 - [backend/src/modules/dashboard/services/dashboard-cache.service.ts](file://backend/src/modules/dashboard/services/dashboard-cache.service.ts)
 - [backend/src/modules/dashboard/services/dashboard-sse.service.ts](file://backend/src/modules/dashboard/services/dashboard-sse.service.ts)
@@ -27,12 +31,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive documentation for the new Dashboard System module
-- Documented real-time capabilities with Server-Sent Events (SSE)
-- Added Redis integration details for caching and performance optimization
-- Included widget registry system and modular dashboard architecture
-- Updated module dependency analysis to include dashboard module
-- Enhanced performance considerations with caching strategies
+- Added comprehensive documentation for the new Hybrid Parent Management Module
+- Documented the intelligent fallback system for parent data management
+- Added migration automation capabilities for converting direct parent fields to responsible parent entities
+- Enhanced student management module with deprecated field documentation and migration guidance
+- Updated module dependency analysis to include hybrid parent management integration
+- Added performance considerations for parent data fallback scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -40,7 +44,7 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dashboard System Module](#dashboard-system-module)
+6. [Hybrid Parent Management Module](#hybrid-parent-management-module)
 7. [Dependency Analysis](#dependency-analysis)
 8. [Performance Considerations](#performance-considerations)
 9. [Troubleshooting Guide](#troubleshooting-guide)
@@ -48,7 +52,7 @@
 11. [Appendices](#appendices)
 
 ## Introduction
-eLISAschool is a modular Progressive Web App (PWA) backend designed for advanced school administration in Sub-Saharan Africa. It provides a comprehensive set of functional modules covering academic management, student records, grading systems, class administration, subject management, administrative functions, and now a sophisticated Dashboard System with real-time capabilities. The backend is built with Node.js, Express.js, TypeScript, and TypeORM, and integrates PostgreSQL with Row Level Security (RLS). Security is enforced via JWT, AES-256 encryption, and Role-Based Access Control (RBAC). The system exposes RESTful APIs organized by domain-focused modules, each with dedicated controllers, DTOs, entities, and services.
+eLISAschool is a modular Progressive Web App (PWA) backend designed for advanced school administration in Sub-Saharan Africa. It provides a comprehensive set of functional modules covering academic management, student records, grading systems, class administration, subject management, administrative functions, and now an integrated Hybrid Parent Management System with intelligent fallback capabilities. The backend is built with Node.js, Express.js, TypeScript, and TypeORM, and integrates PostgreSQL with Row Level Security (RLS). Security is enforced via JWT, AES-256 encryption, and Role-Based Access Control (RBAC). The system exposes RESTful APIs organized by domain-focused modules, each with dedicated controllers, DTOs, entities, and services.
 
 **Section sources**
 - [README.md:1-39](file://README.md#L1-L39)
@@ -58,22 +62,22 @@ The backend follows a modular monolith architecture with a clear separation of c
 - Root entry initializes environment, connects to PostgreSQL via TypeORM, and starts the Express server.
 - The application composes routes from individual modules and applies shared middleware (security, logging, rate limiting).
 - Each module encapsulates its own controllers, DTOs, entities, and services, exporting a consolidated index for easy consumption.
-- **New**: The Dashboard System module provides real-time analytics and customizable widgets with Redis caching.
+- **Enhanced**: The Hybrid Parent Management Module provides seamless integration between legacy direct parent fields and modern responsible parent entities with automatic migration capabilities.
 
 Key structural highlights:
 - Entry point: initializes database and server lifecycle.
 - Application factory: configures middleware, health endpoints, and mounts module routes.
 - Module composition: centralized route mounting in the application factory.
-- **Enhanced**: Dashboard module with SSE streaming, Redis caching, and widget resolution.
+- **Enhanced**: Hybrid parent management module with intelligent fallback system and automatic migration capabilities.
 
 ```mermaid
 graph TB
 A["backend/src/index.ts<br/>Bootstrap server and DB"] --> B["backend/src/app.ts<br/>Express app factory"]
-B --> C["Module Routes<br/>/api/auth, /api/classes, /api/matieres, /api/notes, /api/dashboard"]
-C --> D["Controllers<br/>auth.controller.ts, classes.controller.ts, matieres.controller.ts, notes.controller.ts, dashboard.controller.ts"]
-D --> E["Services<br/>auth.service.ts, classes.service.ts, matieres.service.ts, notes.service.ts, dashboard services"]
-E --> F["Entities<br/>TypeORM entities per module + dashboard-layout.entity.ts"]
-G["Redis Service<br/>Real-time caching & SSE"] --> E
+B --> C["Module Routes<br/>/api/auth, /api/classes, /api/matieres, /api/notes, /api/dashboard, /api/responsables-eleves"]
+C --> D["Controllers<br/>auth.controller.ts, classes.controller.ts, matieres.controller.ts, notes.controller.ts, dashboard.controller.ts, responsables-eleves.controller.ts"]
+D --> E["Services<br/>auth.service.ts, classes.service.ts, matieres.service.ts, notes.service.ts, dashboard services, parents.service.ts"]
+E --> F["Entities<br/>TypeORM entities per module + dashboard-layout.entity.ts + responsable-eleve entities"]
+G["Hybrid Parent System<br/>Intelligent fallback & migration"] --> E
 ```
 
 **Diagram sources**
@@ -100,6 +104,7 @@ This section outlines the primary modules and their responsibilities, focusing o
   - Key features: List students, create/update/delete student records, role-restricted access.
   - Data relationships: Student entity linked to classes, grades, and related academic records.
   - User workflows: Admin/SuperAdmin/Personnel create/update student; Chef d'Établissement views; deletion restricted to admin roles.
+  - **Enhanced**: Integrated with hybrid parent management system for intelligent fallback and migration.
 
 - Classes (Classes)
   - Purpose: Organize students into classes by level and academic year.
@@ -137,7 +142,7 @@ Inter-module communication:
 - Controllers depend on services within the same module.
 - Shared utilities (filters, interceptors, logging) are reused across modules.
 - RBAC guards and middlewares enforce authorization centrally.
-- **Enhanced**: Dashboard module integrates with Redis for real-time updates and SSE streaming.
+- **Enhanced**: Hybrid parent management module integrates with student management and provides intelligent fallback capabilities.
 
 ```mermaid
 graph TB
@@ -148,6 +153,7 @@ CC["classes.controller.ts"]
 MC["matieres.controller.ts"]
 NC["notes.controller.ts"]
 DC["dashboard.controller.ts"]
+PC["parents.controller.ts"]
 end
 subgraph "Application"
 AS["auth.service.ts"]
@@ -156,6 +162,7 @@ CS["classes.service.ts"]
 MS["matieres.service.ts"]
 NS["notes.service.ts"]
 DS["dashboard services"]
+PS["parents.service.ts"]
 end
 subgraph "Domain/Data"
 AE["auth entities"]
@@ -164,11 +171,13 @@ CE["classe entity"]
 ME["matiere entity"]
 NE["note entity"]
 DE["dashboard entities"]
+PE["responsable-eleve entities"]
 end
 subgraph "Infrastructure"
 RS["Redis Service"]
 SSE["Server-Sent Events"]
 WR["Widget Registry"]
+HP["Hybrid Parent System"]
 end
 AC --> AS
 EC --> ES
@@ -176,12 +185,15 @@ CC --> CS
 MC --> MS
 NC --> NS
 DC --> DS
+PC --> PS
 AS --> AE
 ES --> EE
 CS --> CE
 MS --> ME
 NS --> NE
 DS --> DE
+PS --> PE
+PS --> HP
 DS --> RS
 DS --> SSE
 DS --> WR
@@ -194,6 +206,7 @@ DS --> WR
 - [backend/src/modules/matieres/controllers/matieres.controller.ts:20](file://backend/src/modules/matieres/controllers/matieres.controller.ts#L20)
 - [backend/src/modules/notes/controllers/notes.controller.ts:15](file://backend/src/modules/notes/controllers/notes.controller.ts#L15)
 - [backend/src/modules/dashboard/controllers/dashboard.controller.ts:281](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts#L281)
+- [backend/src/modules/responsables-eleves/services/parents.service.ts](file://backend/src/modules/responsables-eleves/services/parents.service.ts#L1)
 
 ## Detailed Component Analysis
 
@@ -247,18 +260,20 @@ AuthCtrl-->>Client : { success, data }
 
 ### Students Module
 Purpose:
-- Maintain student records and support enrollment-related operations.
+- Maintain student records and support enrollment-related operations with integrated hybrid parent management.
 
 Key features:
 - List students with optional subsystem filter.
 - Create, update, and delete student records.
 - Role-based access controls for write operations.
+- **Enhanced**: Integration with hybrid parent management system for intelligent fallback and migration.
 
 User workflows:
 - Retrieve lists for reporting/administration.
 - Onboard new students with personnel/admin roles.
 - Update personal or academic details.
 - Archive student records with administrative privileges.
+- **Enhanced**: Automatic parent data migration during student conversion.
 
 ```mermaid
 flowchart TD
@@ -271,10 +286,11 @@ Operation --> |List| ListOp["Find all with filters"]
 Operation --> |Create| CreateOp["Create new student"]
 Operation --> |Update| UpdateOp["Update existing student"]
 Operation --> |Delete| DeleteOp["Soft/hard delete"]
-ListOp --> Done(["Return data"])
-CreateOp --> Done
-UpdateOp --> Done
-DeleteOp --> Done
+ListOp --> ParentCheck["Check hybrid parent integration"]
+CreateOp --> ParentCheck
+UpdateOp --> ParentCheck
+DeleteOp --> Done(["Return data"])
+ParentCheck --> Done
 Error --> Done
 ```
 
@@ -388,80 +404,77 @@ NotesCtrl-->>Client : { success, count, message }
 - [backend/src/modules/notes/index.ts:7-11](file://backend/src/modules/notes/index.ts#L7-L11)
 - [backend/src/modules/notes/controllers/notes.controller.ts:27-71](file://backend/src/modules/notes/controllers/notes.controller.ts#L27-L71)
 
-## Dashboard System Module
+## Hybrid Parent Management Module
 
-**New** The Dashboard System module provides real-time analytics, customizable widgets, and performance optimization features for school administration.
+**New** The Hybrid Parent Management Module provides seamless integration between legacy direct parent fields and modern responsible parent entities with intelligent fallback and automatic migration capabilities.
 
 ### Purpose
-- Centralized dashboard for real-time school metrics and analytics.
-- Customizable widget-based interface with role-based access control.
-- Real-time data streaming via Server-Sent Events (SSE).
-- High-performance caching with Redis integration.
+- Provide backward compatibility for existing student records with direct parent fields.
+- Enable modern parent management through responsible parent entities with granular permissions.
+- Support automatic migration during student conversion processes.
+- Maintain data integrity and minimize disruption during system upgrades.
 
 ### Key Features
-- **Real-time Analytics**: Live data streaming for instant insights.
-- **Widget System**: 18 pre-built widgets covering academic, administrative, and operational metrics.
-- **Custom Layouts**: User-configurable dashboard layouts with drag-and-drop functionality.
-- **Performance Optimization**: Intelligent caching, batch data loading, and pre-calculation jobs.
-- **SSE Integration**: Server-Sent Events for real-time updates without polling.
-- **Redis Caching**: High-speed caching for frequently accessed data and user sessions.
+- **Intelligent Fallback System**: Automatically falls back to direct parent fields when responsible parent entities are unavailable.
+- **Automatic Migration**: Converts direct parent fields to responsible parent entities during student conversion.
+- **Dual Data Source Support**: Supports both legacy direct parent fields and modern responsible parent entities.
+- **Granular Permissions**: Provides role-based access control for parent accounts.
+- **Audit Trail Integration**: Maintains complete audit history for all parent management operations.
+- **Backward Compatibility**: Ensures existing functionality continues to work without modification.
 
 ### Data Relationships
-- DashboardLayout entity stores user preferences and widget configurations.
-- WidgetRegistry manages widget definitions and their dependencies.
-- Redis service provides caching layer for performance optimization.
-- SSE service handles real-time event broadcasting.
+- **Legacy Direct Fields**: 15 deprecated parent-related fields in the Eleve entity.
+- **Responsible Parent Entities**: Modern parent management through separate entities with user accounts.
+- **Hybrid Logic**: Intelligent fallback system that prioritizes responsible parent entities with fallback to direct fields.
+- **Migration Tracking**: Database views and procedures to track migration status and progress.
 
 ### User Workflows
-- **Administrator**: Full dashboard access, widget management, cache statistics.
-- **Chef d'Établissement**: View academic metrics, student performance dashboards.
-- **Teacher**: Subject-specific widgets, grade distribution analytics.
-- **Student**: Personal progress widgets, schedule information.
+- **Administrative Conversion**: Admin converts pre-registration records to full registration with automatic parent migration.
+- **Intelligent Reading**: System automatically determines whether to use responsible parent entities or fallback to direct fields.
+- **Permission Management**: Granular permissions for different parent account types (consultation, payment, etc.).
+- **Multi-Parent Support**: Unlimited parent relationships per student with individual account management.
 
 ```mermaid
 sequenceDiagram
-participant Client as "Client Browser"
-participant DashCtrl as "dashboard.controller.ts"
-participant DashSvc as "dashboard services"
-participant Redis as "Redis Cache"
-participant SSE as "SSE Stream"
-Client->>DashCtrl : GET /api/dashboard
-DashCtrl->>DashSvc : getUserDashboard(userId)
-DashSvc->>Redis : getDashboardData()
-Redis-->>DashSvc : cached data
-DashSvc-->>DashCtrl : dashboard widgets
-DashCtrl-->>Client : dashboard layout
-Client->>DashCtrl : GET /api/dashboard/stream
-DashCtrl->>SSE : createEventSource()
-SSE-->>Client : real-time updates
+participant Admin as "Administrator"
+participant ElevesSvc as "ElevesService"
+participant ParentsSvc as "ParentsService"
+participant DB as "PostgreSQL"
+Admin->>ElevesSvc : convertirPreinscriptionEnInscription()
+ElevesSvc->>ParentsSvc : migrerDepuisChampsDirects()
+ParentsSvc->>DB : check responsable-eleve records
+DB-->>ParentsSvc : existing records
+ParentsSvc->>DB : create new responsable-eleve
+DB-->>ParentsSvc : created record
+ParentsSvc-->>ElevesSvc : migration complete
+ElevesSvc-->>Admin : conversion successful
 ```
 
 **Diagram sources**
-- [backend/src/modules/dashboard/controllers/dashboard.controller.ts:281](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts#L281)
-- [backend/src/modules/dashboard/services/dashboard-sse.service.ts](file://backend/src/modules/dashboard/services/dashboard-sse.service.ts)
+- [backend/src/modules/responsables-eleves/services/parents.service.ts](file://backend/src/modules/responsables-eleves/services/parents.service.ts)
+- [backend/database/migrations/052-approche-hybride-parents.sql](file://backend/database/migrations/052-approche-hybride-parents.sql)
 
-### Dashboard Services Architecture
-The dashboard module consists of several specialized services working together:
+### Hybrid Parent System Architecture
+The hybrid parent management module consists of several integrated components:
 
-- **DashboardCacheService**: Manages Redis caching with TTL, hit/miss statistics, and cache warming.
-- **DashboardDataLoader**: Optimizes database queries with batching and lazy loading.
-- **WidgetResolverService**: Handles RBAC-based widget visibility and dynamic widget resolution.
-- **DataAggregatorService**: Orchestrates complex data aggregation from multiple sources.
-- **DashboardPrecalcService**: Runs scheduled jobs for pre-calculating frequently accessed metrics.
-- **DashboardSSEService**: Provides real-time streaming capabilities for live updates.
+- **ParentsService**: Core service managing parent data operations with intelligent fallback logic.
+- **Deprecated Field Handling**: Comprehensive documentation and migration guidance for legacy direct parent fields.
+- **Migration Automation**: Scripts and procedures for automatic conversion of existing records.
+- **Database Views**: SQL views for tracking migration status and parent relationship states.
+- **Fallback Logic**: Intelligent decision-making system for choosing between data sources.
 
 **Section sources**
-- [backend/src/modules/dashboard/controllers/dashboard.controller.ts:281-324](file://backend/src/modules/dashboard/controllers/dashboard.controller.ts#L281-L324)
-- [backend/src/modules/dashboard/services/dashboard-cache.service.ts](file://backend/src/modules/dashboard/services/dashboard-cache.service.ts)
-- [backend/src/modules/dashboard/services/dashboard-sse.service.ts](file://backend/src/modules/dashboard/services/dashboard-sse.service.ts)
-- [backend/src/modules/dashboard/utils/widget-registry.ts](file://backend/src/modules/dashboard/utils/widget-registry.ts)
+- [backend/src/modules/responsables-eleves/services/parents.service.ts](file://backend/src/modules/responsables-eleves/services/parents.service.ts)
+- [backend/src/modules/eleves/entities/eleve.entity.ts](file://backend/src/modules/eleves/entities/eleve.entity.ts)
+- [backend/database/migrations/052-approche-hybride-parents.sql](file://backend/database/migrations/052-approche-hybride-parents.sql)
+- [backend/scripts/migrate-parents.ts](file://backend/scripts/migrate-parents.ts)
 
 ## Dependency Analysis
 Module routing and composition:
 - The application factory imports and mounts controllers from all modules under /api/<module>.
 - Controllers depend on services; services depend on entities and repositories.
 - Shared middleware (security, logging, rate limiting) is applied globally.
-- **Enhanced**: Dashboard module depends on Redis service for caching and SSE for real-time updates.
+- **Enhanced**: Hybrid parent management module integrates with student management and provides fallback capabilities.
 
 ```mermaid
 graph LR
@@ -471,14 +484,17 @@ App --> ClassesCtrl["/api/classes/*"]
 App --> MatieresCtrl["/api/matieres/*"]
 App --> NotesCtrl["/api/notes/*"]
 App --> DashCtrl["/api/dashboard/*"]
+App --> ParentsCtrl["/api/responsables-eleves/*"]
 AuthCtrl --> AuthSvc["auth.service.ts"]
 ElevesCtrl --> ElevesSvc["eleves.service.ts"]
 ClassesCtrl --> ClassesSvc["classes.service.ts"]
 MatieresCtrl --> MatieresSvc["matieres.service.ts"]
 NotesCtrl --> NotesSvc["notes.service.ts"]
 DashCtrl --> DashServices["dashboard services"]
+ParentsCtrl --> ParentsSvc["parents.service.ts"]
 DashServices --> RedisSvc["redis.service.ts"]
 DashServices --> WidgetReg["widget-registry.ts"]
+ParentsSvc --> ElevesEntity["eleve.entity.ts"]
 ```
 
 **Diagram sources**
@@ -493,17 +509,16 @@ DashServices --> WidgetReg["widget-registry.ts"]
 - Logging: Request logging interceptor helps monitor traffic and troubleshoot performance bottlenecks.
 - Scalability: Modular design allows independent scaling of services and database connections; consider connection pooling and caching strategies for high-throughput endpoints.
 - Validation: Zod-based DTO validation prevents malformed payloads and reduces error handling overhead.
-- **Enhanced**: Dashboard module implements comprehensive caching strategies:
-  - Redis-based caching for frequently accessed data
-  - Intelligent cache warming and invalidation
-  - Batch data loading to reduce database queries
-  - Pre-calculation jobs for complex metrics
-  - SSE streaming for real-time updates without additional polling
+- **Enhanced**: Hybrid parent management introduces optimized fallback mechanisms:
+  - Intelligent caching for frequently accessed parent data
+  - Batch processing for migration operations
+  - Lazy loading for parent relationship resolution
+  - Database view optimization for migration tracking
+  - Minimal performance impact through efficient fallback logic
 
 **Section sources**
 - [backend/src/modules/dashboard/services/dashboard-cache.service.ts](file://backend/src/modules/dashboard/services/dashboard-cache.service.ts)
-- [backend/src/modules/dashboard/services/dashboard-dataloader.service.ts](file://backend/src/modules/dashboard/services/dashboard-dataloader.service.ts)
-- [backend/src/modules/dashboard/services/dashboard-precalc.service.ts](file://backend/src/modules/dashboard/services/dashboard-precalc.service.ts)
+- [backend/src/modules/responsables-eleves/services/parents.service.ts](file://backend/src/modules/responsables-eleves/services/parents.service.ts)
 
 ## Troubleshooting Guide
 Common areas to inspect:
@@ -511,37 +526,39 @@ Common areas to inspect:
 - Error handling: Global error filter and not-found handler centralize error responses.
 - Logging: Request logger interceptor captures incoming requests for debugging.
 - Environment configuration: Ensure environment variables are loaded and database connection parameters are correct.
-- **Enhanced**: Dashboard troubleshooting:
-  - Redis connectivity: Verify Redis service is running and accessible.
-  - Cache statistics: Monitor cache hit rates and memory usage.
-  - SSE connections: Check for proper event stream establishment.
-  - Widget rendering: Validate widget dependencies and RBAC permissions.
+- **Enhanced**: Hybrid parent management troubleshooting:
+  - Migration script execution: Verify automatic migration processes are running correctly.
+  - Fallback logic: Check intelligent fallback system for proper parent data resolution.
+  - Deprecated field cleanup: Monitor progress of deprecated field migration.
+  - Permission issues: Validate granular permissions for parent accounts.
 
 Operational checks:
 - Confirm database initialization and migrations are executed.
 - Validate JWT secret and token expiration settings.
 - Review RBAC guard enforcement for protected endpoints.
-- **Enhanced**: Dashboard-specific checks:
-  - Redis configuration and connection pooling.
-  - Dashboard layout migration completion.
-  - Widget registry integrity and module dependencies.
+- **Enhanced**: Hybrid parent-specific checks:
+  - Database migration status verification.
+  - Fallback mechanism testing for legacy data.
+  - Parent account creation and permission assignment.
+  - Multi-parent relationship validation.
 
 **Section sources**
 - [backend/src/app.ts:124-143](file://backend/src/app.ts#L124-L143)
 - [backend/src/app.ts:197-201](file://backend/src/app.ts#L197-L201)
 - [backend/src/index.ts:25-27](file://backend/src/index.ts#L25-L27)
-- [backend/database/migrations/010-dashboard-layouts.sql](file://backend/database/migrations/010-dashboard-layouts.sql)
+- [backend/database/migrations/052-approche-hybride-parents.sql](file://backend/database/migrations/052-approche-hybride-parents.sql)
 
 ## Conclusion
-eLISAschool's modular backend provides a robust foundation for school administration across Sub-Saharan Africa. The architecture cleanly separates concerns, enforces security and access control, and organizes functionality into cohesive modules. The documented modules—authentication, students, classes, subjects, grading, and the new Dashboard System—cover core administrative needs with clear workflows and extensibility points. The Dashboard System module introduces real-time capabilities, Redis integration, and performance optimization features that significantly enhance the platform's analytical and operational capabilities. Future enhancements can focus on expanding module coverage, implementing advanced caching strategies, optimizing bulk operations, and further enhancing the real-time dashboard experience.
+eLISAschool's modular backend provides a robust foundation for school administration across Sub-Saharan Africa. The architecture cleanly separates concerns, enforces security and access control, and organizes functionality into cohesive modules. The documented modules—authentication, students, classes, subjects, grading, dashboard system, and the new Hybrid Parent Management Module—cover core administrative needs with clear workflows and extensibility points. The Hybrid Parent Management Module introduces intelligent fallback capabilities, automatic migration automation, and backward compatibility that significantly enhances the platform's data management and user experience. Future enhancements can focus on expanding module coverage, implementing advanced caching strategies, optimizing bulk operations, and further enhancing the real-time dashboard experience while maintaining the seamless parent management capabilities.
 
 ## Appendices
 - Technology stack: Node.js, Express.js, TypeScript, TypeORM, PostgreSQL with RLS, JWT, AES-256, RBAC, Redis, Server-Sent Events.
 - Deployment: Docker Compose and development scripts are available for quick setup.
-- **Enhanced**: Dashboard module dependencies include Redis for caching, SSE for real-time updates, and comprehensive widget registry system.
+- **Enhanced**: Hybrid parent management dependencies include intelligent fallback logic, automatic migration scripts, and comprehensive database migration support.
 
 **Section sources**
 - [README.md:29-39](file://README.md#L29-L39)
 - [backend/package.json:9-21](file://backend/package.json#L9-L21)
 - [backend/database/migrations/010-dashboard-layouts.sql](file://backend/database/migrations/010-dashboard-layouts.sql)
-- [backend/database/migrations/010-notification-providers.sql](file://backend/database/migrations/010-notification-providers.sql)
+- [backend/database/migrations/010/notification-providers.sql](file://backend/database/migrations/010/notification-providers.sql)
+- [backend/database/migrations/052-approche-hybride-parents.sql](file://backend/database/migrations/052-approche-hybride-parents.sql)

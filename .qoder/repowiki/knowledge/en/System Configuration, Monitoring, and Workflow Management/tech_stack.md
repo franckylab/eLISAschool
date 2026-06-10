@@ -1,0 +1,3 @@
+- **Storage Abstraction**: Uses a custom `IBackupStorage` interface with a `DatabaseStorageProvider` implementation for storing compressed/encrypted backups directly in PostgreSQL via TypeORM.
+- **Cryptography**: Utilizes Node.js `crypto` module for AES-256-GCM encryption and SHA-256 checksums for backup integrity verification.
+- **Event System**: Implements a singleton `EventEmitter` (`ConfigurationListener`) for decoupled inter-module communication on configuration changes.

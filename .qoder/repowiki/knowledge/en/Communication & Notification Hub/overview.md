@@ -1,0 +1,1 @@
+Provides real-time messaging, multi-channel notifications, announcements, and polling capabilities with role-based access control.
