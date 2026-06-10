@@ -542,7 +542,240 @@ toast.loading('Importation...', {
 
 ---
 
-## 10. Modales Personnalisées (Pas de Natif)
+## 10. Infobulles (Tooltips) Modernes
+
+### 10.1 Principe d'Utilisation
+
+Les infobulles sont des **aides contextuelles intelligentes** qui apparaissent dynamiquement pour enrichir l'expérience utilisateur sans surcharger l'interface.
+
+**Cas d'usage obligatoires :**
+- **Texte tronqué** : Élément dont le contenu n'est pas entièrement visible (overflow)
+- **Informations utiles** : Données complémentaires pertinentes mais secondaires
+- **Explications complexes** : Concepts métier ou techniques nécessitant une clarification
+- **Actions implicites** : Fonctionnalités dont le comportement n'est pas évident
+
+**Cas à éviter :**
+- Informations déjà visibles à l'écran
+- Instructions redondantes ou évidentes
+- Contenu critique (doit être affiché directement, pas masqué dans une infobulle)
+
+### 10.2 Composant ElisaTooltip
+
+```tsx
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
+interface ElisaTooltipProps {
+    contenu: string;
+    enfants: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    delai?: number;           // Délai avant affichage (ms, défaut: 300)
+    desactivation?: boolean;  // Désactiver l'infobulle
+    classe?: string;          // Classes CSS supplémentaires
+}
+
+export function ElisaTooltip({
+    contenu,
+    enfants,
+    position = 'top',
+    delai = 300,
+    desactivation = false,
+    classe,
+}: ElisaTooltipProps) {
+    if (desactivation || !contenu) {
+        return <>{enfants}</>;
+    }
+
+    return (
+        <TooltipProvider delayDuration={delai}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {enfants}
+                </TooltipTrigger>
+                <TooltipContent
+                    side={position}
+                    className={cn(
+                        'max-w-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] shadow-lg',
+                        'animate-in fade-in-0 zoom-in-95',
+                        classe
+                    )}
+                >
+                    {contenu}
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+}
+```
+
+### 10.3 Auto-Détection de Texte Tronqué
+
+**Hook useTruncated** — Détecte automatiquement si un texte est tronqué :
+
+```typescript
+import { useState, useRef, useCallback } from 'react';
+
+export function useTruncated() {
+    const [isTruncated, setIsTruncated] = useState(false);
+    const elementRef = useRef<HTMLElement>(null);
+
+    const checkTruncated = useCallback(() => {
+        const element = elementRef.current;
+        if (!element) return;
+
+        const truncated = 
+            element.scrollWidth > element.clientWidth || 
+            element.scrollHeight > element.clientHeight;
+        
+        setIsTruncated(truncated);
+    }, []);
+
+    return { elementRef, isTruncated, checkTruncated };
+}
+```
+
+**Usage avec infobulle automatique :**
+
+```tsx
+function CelluleAvecTooltip({ texte }: { texte: string }) {
+    const { elementRef, isTruncated } = useTruncated();
+
+    return (
+        <ElisaTooltip contenu={texte} desactivation={!isTruncated}>
+            <span
+                ref={elementRef}
+                className="truncate block max-w-[200px]"
+                onResize={() => {/* vérifier au redimensionnement */}}
+            >
+                {texte}
+            </span>
+        </ElisaTooltip>
+    );
+}
+```
+
+### 10.4 Positionnement Intelligent
+
+L'infobulle doit **toujours** se positionner pour maximiser la visibilité :
+
+```tsx
+// Radix Tooltip gère automatiquement le repositionnement
+// mais on peut forcer une stratégie :
+
+interface SmartTooltipProps extends ElisaTooltipProps {
+    eviterBords?: boolean;    // Éviter les bords de l'écran (défaut: true)
+    marge?: number;           // Marge par rapport aux bords (px, défaut: 8)
+}
+
+// Positionnement par défaut intelligent :
+// - Si élément en haut → infobulle en bas
+// - Si élément en bas → infobulle en haut
+// - Si élément à gauche → infobulle à droite
+// - Si élément à droite → infobulle à gauche
+// - Si élément au centre → infobulle en haut (défaut)
+```
+
+### 10.5 Design et Animation
+
+**Style épuré et moderne :**
+- Fond : `var(--color-surface)` avec bordure subtile
+- Ombre : `shadow-lg` pour profondeur
+- Coins : `rounded-lg` pour douceur
+- Texte : `text-sm` pour lisibilité
+- Largeur max : `max-w-xs` (~320px) pour lisibilité
+
+**Animation d'apparition :**
+- Durée : 150ms (rapide mais fluide)
+- Effet : `fade-in` + `zoom-in-95` (apparition douce)
+- Pas d'animation de sortie brusque
+
+```css
+/* animations.css */
+.animate-in {
+    animation-duration: 150ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-0 {
+    animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+    animation-name: zoomIn;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.95); }
+    to { transform: scale(1); }
+}
+```
+
+### 10.6 Exemples d'Usage Métier
+
+```tsx
+// 1. Texte tronqué dans tableau
+<ElisaTooltip contenu={eleve.nomComplet} desactivation={!isTruncated}>
+    <span className="truncate max-w-[150px]">{eleve.nomComplet}</span>
+</ElisaTooltip>
+
+// 2. Information utile sur icône
+<ElisaTooltip contenu="Ce bulletin est en attente de validation par le chef d'établissement">
+    <Info className="h-4 w-4 text-[var(--color-text-muted)] cursor-help" />
+</ElisaTooltip>
+
+// 3. Explication complexe
+<ElisaTooltip 
+    contenu="Le coefficient multiplie la note avant calcul de la moyenne. Ex: note 15 × coef 2 = 30 points"
+    position="right"
+>
+    <span className="border-b border-dotted border-[var(--color-text-muted)] cursor-help">
+        Coefficient
+    </span>
+</ElisaTooltip>
+
+// 4. Statut avec explication
+<ElisaTooltip contenu="Paiement partiel : 50 000 FCFA versés sur 100 000 FCFA">
+    <Badge variant="warning">Partiel</Badge>
+</ElisaTooltip>
+
+// 5. Action implicite
+<ElisaTooltip contenu="Cliquer pour trier par ordre décroissant">
+    <button className="flex items-center gap-1">
+        Moyenne <ArrowUpDown className="h-3 w-3" />
+    </button>
+</ElisaTooltip>
+```
+
+### 10.7 Accessibilité
+
+- **Navigation clavier** : `Tab` pour focus, `Échap` pour fermer
+- **ARIA** : `role="tooltip"` et `aria-describedby` automatiques via Radix
+- **Contraste** : Minimum 4.5:1 entre texte et fond
+- **Durée affichage** : Assez longue pour lecture (défaut 300ms delay)
+- **Support lecteur d'écran** : Contenu lu automatiquement au focus
+
+### 10.8 Anti-patterns
+
+- **NE PAS** utiliser pour des informations critiques (toujours visibles)
+- **NE PAS** imbriquer les infobulles (pas de tooltip dans tooltip)
+- **NE PAS** mettre de contenu interactif dans l'infobulle (boutons, liens)
+- **NE PAS** abuser : maximum 1 infobulle par élément logique
+- **NE PAS** remplacer un label de formulaire par une infobulle
+- **TOUJOURS** tester le positionnement sur mobile (max-width viewport)
+
+---
+
+## 11. Modales Personnalisées (Pas de Natif)
 
 ### 10.1 Règle Fondamentale
 
@@ -598,7 +831,7 @@ if (ok) {
 
 ---
 
-## 11. Indicateurs de Chargement
+## 12. Indicateurs de Chargement
 
 ### 11.1 Splash Screen (Premier Chargement)
 
@@ -649,7 +882,7 @@ const ProgressBar: React.FC<{
 
 ---
 
-## 12. Génération PDF
+## 13. Génération PDF
 
 ### 12.1 Architecture
 
@@ -689,7 +922,7 @@ async function genererBulletinPdf(
 
 ---
 
-## 13. QR Code
+## 14. QR Code
 
 ### 13.1 Usage Intelligent
 
@@ -714,7 +947,7 @@ interface ElisaQRCodeProps {
 
 ---
 
-## 14. Drag and Drop (@dnd-kit)
+## 15. Drag and Drop (@dnd-kit)
 
 ### 14.1 Configuration
 
@@ -746,7 +979,7 @@ interface DragDropBoardProps<T> {
 
 ---
 
-## 15. Calendrier Personnalisé
+## 16. Calendrier Personnalisé
 
 ### 15.1 Composant ElisaDatePicker
 
@@ -814,7 +1047,7 @@ interface SmartSelectProps<T> {
 
 ---
 
-## 17. Compression d'Images
+## 18. Compression d'Images
 
 ### 17.1 Utilitaire
 
@@ -843,7 +1076,7 @@ async function compresserImages(
 
 ---
 
-## 18. PWA (Progressive Web App)
+## 19. PWA (Progressive Web App)
 
 ### 18.1 Configuration
 
@@ -890,7 +1123,7 @@ export default defineConfig({
 
 ---
 
-## 19. Logos eLISAschool
+## 20. Logos eLISAschool
 
 ### 19.1 Types de Logos
 
@@ -908,7 +1141,7 @@ export default defineConfig({
 
 ---
 
-## 20. Chargement Partiel des Données
+## 21. Chargement Partiel des Données
 
 ### 20.1 Infinite Scroll / Virtualisation
 
@@ -943,7 +1176,7 @@ queryClient.setQueryData(['eleves'], (old) =>
 
 ---
 
-## 21. Boutons et Onglets Futuristes
+## 22. Boutons et Onglets Futuristes
 
 ### 21.1 Bouton Principal
 
@@ -979,7 +1212,7 @@ interface ElisaTabsProps {
 
 ---
 
-## 22. Éditeur de Texte Avancé
+## 23. Éditeur de Texte Avancé
 
 ### 22.1 Composant RichTextEditor
 
@@ -1007,7 +1240,7 @@ interface RichTextEditorProps {
 
 ---
 
-## 23. Temps Réel
+## 24. Temps Réel
 
 ### 23.1 WebSocket / SSE
 
@@ -1033,7 +1266,7 @@ function useRealtimeQuery<T>(
 
 ---
 
-## 24. Composants Modifiables et Déplaçables
+## 25. Composants Modifiables et Déplaçables
 
 ### 24.1 Dashboard Personnalisable
 
@@ -1073,7 +1306,7 @@ interface ResizablePanelProps {
 
 ---
 
-## 25. Intégration Backend Maximum
+## 26. Intégration Backend Maximum
 
 ### 25.1 Principe
 
@@ -1146,7 +1379,7 @@ POST /api/preferences/set → { cle: 'langue', valeur: 'en' }
 
 ---
 
-## 26. Page d'Accueil (Landing)
+## 27. Page d'Accueil (Landing)
 
 ### 26.1 Structure
 
@@ -1168,7 +1401,7 @@ const LandingPage = () => (
 
 ---
 
-## 27. Règles TypeScript Strictes (Frontend)
+## 28. Règles TypeScript Strictes (Frontend)
 
 - `strict: true` — Pas de `any` implicite
 - **Pas de `any`** sauf dans les callbacks génériques de librairies tierces
@@ -1180,7 +1413,7 @@ const LandingPage = () => (
 
 ---
 
-## 28. Performance Frontend
+## 29. Performance Frontend
 
 ### 28.1 Code Splitting
 
@@ -1231,7 +1464,7 @@ const handleSauvegarder = useCallback(async () => {
 
 ---
 
-## 29. Internationalisation (i18n)
+## 30. Internationalisation (i18n)
 
 ### 29.1 Configuration i18next
 
@@ -1583,7 +1816,7 @@ function useMessages() {
 
 ---
 
-## 30. Anti-patterns à Éviter
+## 31. Anti-patterns à Éviter
 
 - **NE PAS** utiliser `alert()`, `confirm()`, `prompt()` → Composants personnalisés
 - **NE PAS** utiliser de CSS inline (sauf pour les valeurs dynamiques)
@@ -1601,10 +1834,13 @@ function useMessages() {
 - **NE PAS** concaténer des fragments de traduction (`t('debut') + variable + t('fin')`) → utiliser l'interpolation `t('message', { variable })`
 - **NE PAS** appeler `i18n.changeLanguage()` directement dans un composant → utiliser le hook `useLanguage()` ou le store
 - **NE PAS** stocker des traductions dans le state React → toujours les obtenir via `t()` pour réagir au changement de langue
+- **NE PAS** abuser des infobulles → utiliser seulement pour texte tronqué, info utile, explication complexe
+- **NE PAS** imbriquer les infobulles (tooltip dans tooltip) → simplifier l'interface
+- **NE PAS** mettre de contenu interactif dans infobulle → afficher directement
 
 ---
 
-## 31. Checklist Nouveau Composant
+## 32. Checklist Nouveau Composant
 
 - [ ] Bannière eLISAschool en en-tête
 - [ ] Props typées avec interface nommée
@@ -1617,6 +1853,7 @@ function useMessages() {
 - [ ] Loading state (skeleton ou spinner)
 - [ ] Empty state illustré
 - [ ] Error state avec message clair
+- [ ] **Infobulles** : Texte tronqué → tooltip auto, informations complexes → tooltip manuel
 - [ ] **i18n** : Toutes les chaînes visibles utilisent `t()` (aucun texte en dur)
 - [ ] **i18n** : Les messages toast, labels, placeholders et erreurs sont traduits
 - [ ] **i18n** : Les dates formatées utilisent le locale courant (`date-fns`)
@@ -1626,10 +1863,10 @@ function useMessages() {
 
 ---
 
-## 32. Maintenance et Skills Disponibles
+## 33. Maintenance et Skills Disponibles
 
-- **`elisaschool-frontend-dev`** — Guide de développement frontend (créer composant, page, feature, intégration API)
-- **`elisaschool-frontend-refactor`** — Guide de refactorisation frontend (optimisation, modernisation, migration)
+- **`elisaschool-frontend-dev`** — Guide de développement frontend (créer composant, page, feature, intégration API, **infobulles**)
+- **`elisaschool-frontend-refactor`** — Guide de refactorisation frontend (optimisation, modernisation, migration, **infobulles**)
 - **`elisaschool-dev`** — Guide de développement backend
 - **`elisaschool-business-logic`** — Guide de la logique métier
 

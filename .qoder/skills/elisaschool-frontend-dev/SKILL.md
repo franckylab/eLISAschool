@@ -20,6 +20,7 @@ description: >
 - Configurer le **thème** et les couleurs dynamiques
 - Configurer le **système de traduction** (i18next, fichiers de langue, language switcher)
 - Ajouter des fonctionnalités **PWA**, **PDF**, **QR code**, **drag & drop**
+- Implémenter des **infobulles** modernes et intelligentes (auto-détection texte tronqué, positionnement dynamique)
 
 > **Note** : Pour la logique métier et les règles backend, utiliser `/elisaschool-business-logic` et `/elisaschool-dev`.
 > Pour la refactorisation, utiliser `/elisaschool-frontend-refactor`.
@@ -1118,6 +1119,300 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
 
 ---
 
+## Workflow : Créer des Infobulles Modernes
+
+### Principe
+
+Les infobulles sont des **aides contextuelles intelligentes** qui apparaissent dynamiquement. Elles doivent être :
+- **Modernes et épurées** : Design minimaliste avec ombre subtile et coins arrondis
+- **Intelligentes** : Auto-détection du texte tronqué, positionnement dynamique
+- **Non-invasives** : N'apparaître que quand nécessaire, ne pas empêcher la lisibilité
+- **Accessibles** : Navigation clavier, support lecteurs d'écran
+
+### Cas d'Usage Obligatoires
+
+| Cas | Exemple | Type |
+|-----|---------|------|
+| **Texte tronqué** | Nom complet coupé dans un tableau | Auto (hook `useTruncated`) |
+| **Information utile** | Détail sur un badge de statut | Manuel |
+| **Explication complexe** | Terme métier (coefficient, moyenne pondérée) | Manuel |
+| **Action implicite** | Bouton tri, icône configuration | Manuel |
+
+### Étape 1 : Installer la dépendance
+
+```bash
+# Déjà inclus dans les dépendances UI
+# @radix-ui/react-tooltip (installé à l'étape 2 du workflow initial)
+```
+
+### Étape 2 : Créer le hook useTruncated
+
+**Fichier :** `src/hooks/use-truncated.ts`
+
+```typescript
+/**
+ * ==================================
+ * eLISAschool - Hook Détection Texte Tronqué
+ * ==================================
+ */
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+
+export function useTruncated() {
+    const [isTruncated, setIsTruncated] = useState(false);
+    const elementRef = useRef<HTMLElement>(null);
+
+    const checkTruncated = useCallback(() => {
+        const element = elementRef.current;
+        if (!element) return;
+
+        const truncated = 
+            element.scrollWidth > element.clientWidth || 
+            element.scrollHeight > element.clientHeight;
+        
+        setIsTruncated(truncated);
+    }, []);
+
+    useEffect(() => {
+        checkTruncated();
+        
+        // Vérifier au redimensionnement
+        const observer = new ResizeObserver(checkTruncated);
+        if (elementRef.current) {
+            observer.observe(elementRef.current);
+        }
+        
+        return () => observer.disconnect();
+    }, [checkTruncated]);
+
+    return { elementRef, isTruncated, checkTruncated };
+}
+```
+
+### Étape 3 : Créer le composant ElisaTooltip
+
+**Fichier :** `src/components/ui/elisa-tooltip.tsx`
+
+```tsx
+/**
+ * ==================================
+ * eLISAschool - Infobulle Moderne
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@radix-ui/react-tooltip';
+import { cn } from '@/lib/utils';
+
+interface ElisaTooltipProps {
+    contenu: string;
+    enfants: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    delai?: number;           // Délai avant affichage (ms, défaut: 300)
+    desactivation?: boolean;  // Désactiver l'infobulle
+    classe?: string;          // Classes CSS supplémentaires
+}
+
+export function ElisaTooltip({
+    contenu,
+    enfants,
+    position = 'top',
+    delai = 300,
+    desactivation = false,
+    classe,
+}: ElisaTooltipProps) {
+    if (desactivation || !contenu) {
+        return <>{enfants}</>;
+    }
+
+    return (
+        <TooltipProvider delayDuration={delai}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {enfants}
+                </TooltipTrigger>
+                <TooltipContent
+                    side={position}
+                    sideOffset={8}
+                    className={cn(
+                        'max-w-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] shadow-lg',
+                        'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+                        classe
+                    )}
+                >
+                    {contenu}
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+}
+```
+
+### Étape 4 : Exporter le composant
+
+**Fichier :** `src/components/ui/index.ts`
+
+```typescript
+export * from './elisa-tooltip';
+// ... autres composants
+```
+
+### Étape 5 : Utiliser dans un Composant
+
+#### Exemple 1 : Auto-détection texte tronqué
+
+```tsx
+import { ElisaTooltip } from '@/components/ui/elisa-tooltip';
+import { useTruncated } from '@/hooks/use-truncated';
+
+function CelluleNom({ texte }: { texte: string }) {
+    const { elementRef, isTruncated } = useTruncated();
+
+    return (
+        <ElisaTooltip contenu={texte} desactivation={!isTruncated}>
+            <span
+                ref={elementRef}
+                className="block max-w-[200px] truncate"
+            >
+                {texte}
+            </span>
+        </ElisaTooltip>
+    );
+}
+```
+
+#### Exemple 2 : Information sur icône
+
+```tsx
+import { ElisaTooltip } from '@/components/ui/elisa-tooltip';
+import { Info } from 'lucide-react';
+
+function BadgeStatut({ statut, info }: { statut: string; info: string }) {
+    return (
+        <div className="flex items-center gap-2">
+            <Badge variant={statut === 'actif' ? 'success' : 'warning'}>
+                {statut}
+            </Badge>
+            <ElisaTooltip contenu={info}>
+                <Info className="h-4 w-4 cursor-help text-[var(--color-text-muted)]" />
+            </ElisaTooltip>
+        </div>
+    );
+}
+```
+
+#### Exemple 3 : Explication terme complexe
+
+```tsx
+import { ElisaTooltip } from '@/components/ui/elisa-tooltip';
+import { useTranslation } from 'react-i18next';
+
+function EnteteMoyenne() {
+    const { t } = useTranslation('notes');
+    
+    return (
+        <ElisaTooltip 
+            contenu="La moyenne pondérée = Σ(note × coefficient) / Σ(coefficients)"
+            position="right"
+        >
+            <span className="border-b border-dotted border-[var(--color-text-muted)] cursor-help">
+                Moy. Pondérée
+            </span>
+        </ElisaTooltip>
+    );
+}
+```
+
+### Étape 6 : Ajouter les animations CSS
+
+**Fichier :** `src/styles/animations.css`
+
+```css
+/* Animations infobulles */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.95); }
+    to { transform: scale(1); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes zoomOut {
+    from { transform: scale(1); }
+    to { transform: scale(0.95); }
+}
+
+.animate-in {
+    animation-duration: 150ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-0 {
+    animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+    animation-name: zoomIn;
+}
+
+.data-\[state\=closed\]\:animate-out[data-state="closed"] {
+    animation-duration: 100ms;
+}
+
+.data-\[state\=closed\]\:fade-out-0[data-state="closed"] {
+    animation-name: fadeOut;
+}
+
+.data-\[state\=closed\]\:zoom-out-95[data-state="closed"] {
+    animation-name: zoomOut;
+}
+```
+
+### Design System des Infobulles
+
+**Style épuré :**
+- **Fond** : `var(--color-surface)` (surface principale)
+- **Bordure** : `1px solid var(--color-border)` (subtile)
+- **Ombre** : `shadow-lg` (profondeur moderne)
+- **Coins** : `rounded-lg` (douceur)
+- **Texte** : `text-sm` (lisibilité optimale)
+- **Largeur max** : `max-w-xs` (~320px, évite les lignes trop longues)
+
+**Animation :**
+- **Apparition** : 150ms, fade + zoom (fluide mais rapide)
+- **Disparition** : 100ms (plus rapide pour ne pas gêner)
+- **Delay** : 300ms avant apparition (évite les apparitions intempestives)
+
+**Positionnement intelligent :**
+- Radix Tooltip repositionne automatiquement pour éviter les bords
+- Par défaut : `top` (au-dessus de l'élément)
+- Sur mobile : s'adapte à la taille du viewport
+
+### Anti-patterns à Éviter
+
+- **NE PAS** utiliser pour informations critiques (toujours visibles directement)
+- **NE PAS** imbriquer les infobulles (tooltip dans tooltip)
+- **NE PAS** mettre de contenu interactif (boutons, liens, formulaires)
+- **NE PAS** abuser : maximum 1 infobulle par élément logique
+- **NE PAS** remplacer un label de formulaire par une infobulle
+- **TOUJOURS** tester sur mobile (max-width viewport)
+- **TOUJOURS** vérifier l'accessibilité clavier (Tab, Échap)
+
+---
+
 ## Workflow : Configurer le Thème Dynamique
 
 ### Store Zustand pour le thème
@@ -1544,6 +1839,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 - [ ] **Build sans erreur** : `npm run build`
 - [ ] **Bundle size** vérifié (pas de dépendance inutile)
 - [ ] **Accessibilité** : aria-labels, focus visible, contraste WCAG AA
+- [ ] **Infobulles** : Texte tronqué auto-détecté, info complexe expliquée, positionnement intelligent
 - [ ] **i18n** : Toutes les chaînes utilisent `t()` (pas de texte en dur)
 - [ ] **i18n** : Messages toast, erreurs Zod, labels traduits via fichiers de langue
 - [ ] **i18n** : Dates formatées avec `date-fns/locale` (fr/en)
