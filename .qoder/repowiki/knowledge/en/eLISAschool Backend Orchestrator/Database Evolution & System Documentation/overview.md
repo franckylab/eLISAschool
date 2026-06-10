@@ -1,1 +1,0 @@
-Manages database schema migrations, operational scripts, and technical documentation for the eLISAschool backend system.

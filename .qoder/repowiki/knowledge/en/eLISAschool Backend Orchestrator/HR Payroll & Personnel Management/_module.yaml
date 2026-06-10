@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_hr_payroll
+module_path: af3a1c5948b411a02aee9940e2e70821
 title: HR Payroll & Personnel Management
 scope:
     - backend/src/modules/personnel/
@@ -7,4 +7,10 @@ scope:
     - backend/src/modules/scoring/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_finance
+    - path: backend/backend_student_lifecycle
+    - path: backend/backend_operations_support
+    - path: backend/backend_core_auth
+    - path: backend/backend_platform_infra
+    - path: shared

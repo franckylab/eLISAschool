@@ -1,6 +1,0 @@
-- Three sub-modules (matieres, notes, bulletins) follow a consistent layered architecture: controllers → services → entities, with each module exporting via index.ts barrel files.
-- Controllers use Express Router instances with authMiddleware applied globally or per-route, and validateDto with Zod schemas before delegating to service layer.
-- Services use TypeORM Repository pattern via AppDataSource.getRepository(), with singleton exports (e.g., matieresService, notesService, bulletinsService) for cross-module consumption.
-- Cross-module dependencies flow from bulletins → notes (via notesBatchLoaderService) and bulletins → matieres, establishing a clear dependency direction where higher-level aggregation modules depend on lower-level data modules.
-- The notes-batch-loader.service.ts provides an optimization layer using raw SQL batch queries with in-memory caching to solve N+1 problems during bulletin generation.
-- Validation workflow integration is embedded in service methods (addMatiereToNiveau, affecterEnseignant, create, createBulk), conditionally creating workflows based on configuration parameters fetched via getParamBoolean.

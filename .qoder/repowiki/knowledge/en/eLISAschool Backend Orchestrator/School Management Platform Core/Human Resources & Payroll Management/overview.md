@@ -1,1 +1,0 @@
-Manages personnel lifecycle, teaching hours, payroll calculation, and staff performance tracking within a multi-tenant school environment.

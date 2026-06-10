@@ -1,1 +1,0 @@
-Zod for DTO schema definition and runtime validation (e.g., createMenuSchema, createLigneSchema); TypeORM with UUID primary keys and enum columns for domain state (StatutRepas, StatutInscriptionCantine, CategorieMateriel, etc.).

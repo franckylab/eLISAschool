@@ -1,3 +1,0 @@
-- Controllers instantiate service classes locally (e.g., `new ElevesService()`) rather than relying on global singletons or dependency injection containers.
-- Input validation is performed in controllers using a shared `validateDto` utility that wraps Zod schema parsing and throws standardized `AppError` exceptions on failure.
-- Services consistently accept an optional `Request` object to enable contextual audit logging and user identification for write operations.

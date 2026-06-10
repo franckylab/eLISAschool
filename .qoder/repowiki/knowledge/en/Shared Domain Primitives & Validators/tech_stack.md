@@ -1,1 +1,0 @@
-Uses **Zod** (^3.24.1) for runtime schema validation and type inference, compiled with **TypeScript** (^5.7.2) targeting ES2022/CommonJS.

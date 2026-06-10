@@ -19,8 +19,8 @@ import {
     Index,
     Unique,
 } from 'typeorm';
-import Utilisateur from './utilisateur.entity';
-import Role from './role.entity';
+import { Utilisateur } from './utilisateur.entity';
+import { Role } from './role.entity';
 
 /**
  * Entité UtilisateurRole
@@ -71,5 +71,8 @@ export class UtilisateurRole {
     @JoinColumn({ name: 'roleId' })
     role!: Role;
 }
+
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { UtilisateurRole };
 
 export default UtilisateurRole;

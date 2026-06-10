@@ -13,6 +13,8 @@
  */
 
 import cron from 'node-cron';
+import { AppDataSource } from '@database/data-source';
+import { Etablissement } from '@modules/etablissement/entities';
 import { scolariteService } from '../services/scolarite.service';
 import { budgetService } from '../services/budget.service';
 import { logger } from '@common/utils/logger.util';
@@ -31,9 +33,19 @@ export function initFinanceCronJobs(): void {
         try {
             logger.info('[Cron Finance] Détection impayés et envoi relances...');
             
-            // Récupérer tous les établissements actifs
-            // TODO: Récupérer depuis repository
-            const etablissements: Array<{ id: string; nom: string }> = [];
+            // CORRECTION BUG: Récupérer tous les établissements actifs depuis la DB
+            const etablissementRepo = AppDataSource.getRepository(Etablissement);
+            const etablissements = await etablissementRepo.find({
+                where: { actif: true },
+                select: ['id', 'nom'],
+            });
+            
+            if (etablissements.length === 0) {
+                logger.warn('[Cron Finance] Aucun établissement actif trouvé');
+                return;
+            }
+            
+            logger.info(`[Cron Finance] ${etablissements.length} établissements actifs à traiter`);
             
             for (const etablissement of etablissements) {
                 try {
@@ -46,7 +58,8 @@ export function initFinanceCronJobs(): void {
                         );
                         
                         // Envoyer relances
-                        await scolariteService.envoyerRelances(etablissement.id);
+                        const count = await scolariteService.envoyerRelances(etablissement.id);
+                        logger.info(`[Cron Finance] ${count} relances envoyées pour ${etablissement.nom}`);
                     }
                 } catch (error) {
                     logger.error(

@@ -1,1 +1,0 @@
-Uses `node-cron` for scheduled financial tasks and `zod` (via schema imports in controller) for request validation.

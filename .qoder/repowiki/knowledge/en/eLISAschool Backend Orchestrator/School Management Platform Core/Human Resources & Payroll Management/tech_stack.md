@@ -1,1 +1,0 @@
-Uses TypeORM for entity mapping and complex query building, Express.js for routing, and Zod (via `validateDto`) for request payload validation.

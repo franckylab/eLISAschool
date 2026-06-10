@@ -1,0 +1,1 @@
+Manages student enrollment, parental relationships, disciplinary tracking, health records, and auxiliary services like canteen and transport within a multi-tenant school system.

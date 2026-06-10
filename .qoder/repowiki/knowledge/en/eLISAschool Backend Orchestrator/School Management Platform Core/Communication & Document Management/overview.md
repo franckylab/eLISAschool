@@ -1,1 +1,0 @@
-Manages internal messaging, formal request workflows with multi-level approval, and template-based document generation with print queuing.

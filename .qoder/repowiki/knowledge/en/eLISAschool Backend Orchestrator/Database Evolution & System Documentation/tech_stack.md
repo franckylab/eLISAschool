@@ -1,1 +1,0 @@
-PostgreSQL for schema migrations; TypeScript (ts-node) for operational scripts; Jest for unit testing.

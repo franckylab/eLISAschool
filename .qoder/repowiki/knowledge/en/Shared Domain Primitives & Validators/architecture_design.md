@@ -1,4 +1,0 @@
-- **Entry Point**: `src/index.ts` acts as the single public API, re-exporting all sub-modules via barrel exports.
-- **Sub-modules**: Organized into five distinct domains: `config` (registry), `constants` (app limits/currencies), `enums` (roles/permissions/status), `types` (API/User interfaces), and `validators` (Zod schemas).
-- **Dependency Direction**: Internal modules depend on `constants` for constraint values (e.g., `LIMITS` in validators), ensuring a single source of truth for business rules.
-- **Build Strategy**: Compiles to CommonJS with declaration maps (`tsconfig.json`), intended for consumption as a private npm package (`@elisaschool/shared`).

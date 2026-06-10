@@ -1,0 +1,4 @@
+- Controllers consistently delegate business logic to singleton or instantiated service classes, handling only HTTP request/response mapping and error forwarding via `next(error)`.
+- Service methods uniformly accept an optional `req: Request` argument to facilitate contextual audit logging and user identification without breaking pure function signatures.
+- Entities extensively use TypeORM `@Index` decorators, including composite indices for multi-tenancy (`etablissementId`, `eleveId`) and academic filtering (`anneeScolaireId`, `periodeId`).
+- DTOs are defined using `zod` schemas in dedicated `dto/` files, with types inferred via `z.infer` to ensure single-source-of-truth validation rules.

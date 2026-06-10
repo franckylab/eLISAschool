@@ -1,0 +1,4 @@
+- Entry point at `shared/src/index.ts` re-exports all sub-modules via barrel exports (`export * from './enums'`, etc.), establishing a flat public API.
+- Five internal sub-packages: `config/` (module registry with `ModuleConfig` interface and helper functions), `constants/` (application-wide immutable constants like `LIMITS`, `CURRENCIES`), `enums/` (role/permission/module enumerations), `types/` (TypeScript interfaces for API responses, pagination, user models), and `validators/` (Zod schemas for auth flows).
+- Dependency direction is inward: `validators/auth.validators.ts` imports from `../constants` and uses `zod`; `config/config.registry.ts` imports from `../enums/modules.enum` and `../enums/roles.enum`. No circular dependencies exist.
+- The module is built as a compiled TypeScript library (`tsc` to `dist/`) with declaration files enabled, intended for consumption by both backend and frontend packages via the `@elisaschool/shared` npm scope.

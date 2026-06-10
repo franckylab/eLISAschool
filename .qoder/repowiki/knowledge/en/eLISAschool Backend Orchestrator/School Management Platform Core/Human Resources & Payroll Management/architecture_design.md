@@ -1,5 +1,0 @@
-- The module is structured into three distinct sub-modules: `personnel` (core HR, contracts, payroll), `suivi-personnel` (incidents, evaluations), and `utilisateurs` (user account management).
-- Each sub-module follows a strict Controller-Service-Entity-DTO layered architecture, with `index.ts` files acting as facades for internal exports.
-- `personnel` serves as the primary domain, containing specialized services like `CalculPaieService` for salary simulation and `HeureCoursService` for teaching volume tracking, which are consumed by payroll controllers.
-- Cross-module dependencies exist where `suivi-personnel` and `personnel` entities reference `Utilisateur` from the `utilisateurs` module, establishing a clear separation between identity management and HR operational data.
-- Multi-tenancy is enforced at the service layer via `etablissementId` filtering in TypeORM query builders across all major entities.

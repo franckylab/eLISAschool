@@ -22,6 +22,7 @@ import {
     Index,
 } from 'typeorm';
 import { Organisation } from './organisation.entity';
+import { Poste } from './poste.entity';
 
 /**
  * Type d'unité organisationnelle

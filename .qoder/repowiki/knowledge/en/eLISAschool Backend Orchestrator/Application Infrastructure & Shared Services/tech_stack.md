@@ -1,4 +1,0 @@
-- Express.js with Helmet, CORS, and Rate Limiting for security.
-- TypeORM with PostgreSQL driver for database access.
-- Zod for runtime environment variable validation.
-- Swagger UI for API documentation generation.

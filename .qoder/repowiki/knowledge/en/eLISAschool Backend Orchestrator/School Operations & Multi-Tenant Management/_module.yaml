@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_operations_support
+module_path: d80f6f0d5d935b98a11784aa839130b1
 title: School Operations & Multi-Tenant Management
 scope:
     - backend/src/modules/etablissement/
@@ -20,4 +20,11 @@ scope:
     - backend/src/modules/utilisateurs/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_core_auth
+    - path: backend/backend_platform_infra
+    - path: backend/backend_finance
+    - path: backend/backend_hr_payroll
+    - path: backend/backend_student_lifecycle
+    - path: backend/backend_academic_structure
+    - path: shared

@@ -1,5 +1,0 @@
-- Controllers delegate all business logic to singleton or instantiated service classes, keeping route handlers thin and focused on request/response transformation.
-- Services utilize TypeORM QueryBuilder with dynamic `andWhere` clauses to implement flexible, multi-criteria filtering and pagination for list endpoints.
-- All write operations (create, update, delete) trigger asynchronous audit logs via `auditService.log` to maintain a traceable history of changes.
-- DTOs are validated at the controller entry point using schema-based validation utilities before being passed to service layers.
-- Entities consistently include `etablissementId` for multi-tenancy isolation and use UUIDs as primary keys.

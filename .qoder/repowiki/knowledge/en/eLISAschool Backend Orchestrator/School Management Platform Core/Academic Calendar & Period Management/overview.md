@@ -1,1 +1,0 @@
-Manages academic years and their subdivisions (periods) with lifecycle workflows including creation, activation, closure validation, and multi-tenancy support.

@@ -1,0 +1,2 @@
+- **Validation**: Uses `zod` schemas (e.g., `createEleveSchema`) for rigorous DTO validation and type inference across all sub-modules.
+- **ORM**: Leverages `TypeORM` with advanced features like composite indices, soft deletes, and complex query builders for academic period filtering.

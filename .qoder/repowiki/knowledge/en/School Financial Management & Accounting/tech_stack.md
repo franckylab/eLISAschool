@@ -1,0 +1,1 @@
+Zod for schema-based DTO validation; node-cron for scheduled financial tasks; OHADA accounting standard implementation in comptabilite service

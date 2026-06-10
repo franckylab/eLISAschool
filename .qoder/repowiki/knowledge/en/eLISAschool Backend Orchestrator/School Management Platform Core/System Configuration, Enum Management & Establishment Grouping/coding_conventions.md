@@ -1,4 +1,0 @@
-- Services are exported as singletons (e.g., `typeEnumService`, `consolidationService`) to maintain shared state like caches or event listeners.
-- Multi-tenant data access consistently implements a 'global OR scoped' query pattern, filtering by `etablissementId IS NULL OR etablissementId = :id`.
-- Controllers delegate all business logic to service layers and use a centralized `validateDto` utility for request body sanitization.
-- Database backups utilize a transactional `QueryRunner` to ensure atomicity during export and restore operations.

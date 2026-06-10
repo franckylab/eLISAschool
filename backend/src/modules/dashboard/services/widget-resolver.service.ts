@@ -19,7 +19,8 @@ import { WIDGET_REGISTRY, getWidgetById } from '../utils/widget-registry';
 import { PermissionResolverService } from '@modules/auth/services/permission-resolver.service';
 import { dashboardCacheService } from './dashboard-cache.service';
 import { logger } from '@common/utils/logger.util';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
+import { permissionResolverService } from '@modules/auth/services';
 
 export class WidgetResolverService {
     private permissionResolver: PermissionResolverService;
@@ -27,7 +28,8 @@ export class WidgetResolverService {
     private utilisateurRepo: Repository<Utilisateur>;
 
     constructor() {
-        this.permissionResolver = new PermissionResolverService();
+        // Utiliser le singleton plutôt que de créer une nouvelle instance
+        this.permissionResolver = permissionResolverService;
         this.layoutRepo = AppDataSource.getRepository('DashboardLayout');
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     }

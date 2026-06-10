@@ -19,8 +19,8 @@ import {
     Index,
     Unique,
 } from 'typeorm';
-import Utilisateur from './utilisateur.entity';
-import Permission from './permission.entity';
+import { Utilisateur } from './utilisateur.entity';
+import { Permission } from './permission.entity';
 
 /**
  * Type d'attribution de permission
@@ -83,5 +83,8 @@ export class UtilisateurPermission {
     @JoinColumn({ name: 'permissionId' })
     permission!: Permission;
 }
+
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { UtilisateurPermission, TypePermission };
 
 export default UtilisateurPermission;

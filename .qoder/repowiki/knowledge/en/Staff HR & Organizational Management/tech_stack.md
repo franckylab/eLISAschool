@@ -1,0 +1,3 @@
+- Validation: Zod schemas for strict DTO validation (e.g., `createPersonnelSchema`, `createOrganisationSchema`).
+- Scheduling: `node-cron` for automated daily scoring recalculations and monthly resets in `suivi-personnel/cron-jobs.ts`.
+- Caching: Hybrid caching strategy using Redis (via `redisService`) for organizational trees and in-memory maps for scoring rules.

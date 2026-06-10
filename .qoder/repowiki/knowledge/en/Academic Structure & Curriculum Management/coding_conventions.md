@@ -1,0 +1,4 @@
+- Controllers instantiate services locally (e.g., `new AnneesScolairesService()`) or import singleton service instances (e.g., `programmeChapitreService`) to handle business logic.
+- All write operations (POST, PATCH, DELETE) in controllers are protected by `authMiddleware` and `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` to enforce administrative privileges.
+- Services use a dedicated `AppDataSource.getRepository(Entity)` pattern in their constructors to obtain TypeORM repositories for database interactions.
+- DTOs are defined using Zod schemas in `dto` files, with corresponding TypeScript types inferred via `z.infer`, ensuring type safety between validation and usage.

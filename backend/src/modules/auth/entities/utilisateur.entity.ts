@@ -22,9 +22,9 @@ import {
 } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { Etablissement } from '@modules/etablissement/entities';
-import UtilisateurRole from './utilisateur-role.entity';
-import UtilisateurPermission from './utilisateur-permission.entity';
-import UtilisateurEtablissement from './utilisateur-etablissement.entity';
+import { UtilisateurRole } from './utilisateur-role.entity';
+import { UtilisateurPermission } from './utilisateur-permission.entity';
+import { UtilisateurEtablissement } from './utilisateur-etablissement.entity';
 import { Role } from '@shared/enums/roles.enum';
 
 // Ré-exporter l'enum Role pour compatibilité
@@ -170,5 +170,8 @@ export class Utilisateur {
         return `${prefix}${annee}${random}`;
     }
 }
+
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { Utilisateur, Role, StatutUtilisateur };
 
 export default Utilisateur;

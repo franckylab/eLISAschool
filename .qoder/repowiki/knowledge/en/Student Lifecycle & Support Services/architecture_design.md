@@ -1,0 +1,5 @@
+- **Modular Sub-domains**: The module is composed of seven distinct sub-modules (`eleves`, `responsables-eleves`, `suivi-eleves`, `sante`, `cantine`, `transport`, `cartes`), each following a strict Controller-Service-Entity-DTO layered architecture.
+- **Shared Core Entity**: The `Eleve` entity in `eleves` serves as the central aggregate root, linked to `Utilisateur` and `Etablissement` for multi-tenancy, while other modules reference it or its user ID.
+- **Access Control Layer**: `responsables-eleves` implements custom middleware guards (`parent-access.guard.ts`) to enforce granular parent-child data access policies before requests reach controllers.
+- **Cross-Cutting Concerns**: Services integrate with external modules for audit logging (`auditService`), validation workflows (`validationWorkflowService`), and gamification points (`gamificationService`), demonstrating a dependency-injection-like pattern via shared service instances.
+- **Configuration Isolation**: `cantine` and `transport` sub-modules include dedicated `config/` directories for default settings, decoupling operational parameters from business logic.

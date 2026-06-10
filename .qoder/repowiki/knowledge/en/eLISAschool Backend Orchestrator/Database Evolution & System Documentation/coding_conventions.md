@@ -1,3 +1,0 @@
-- Migration files use sequential numeric prefixes (e.g., 035-, 036-) to enforce execution order and include detailed header comments with objectives and dates.
-- Operational scripts utilize TypeScript with 'reflect-metadata' and TypeORM's AppDataSource for direct database interactions and analysis.
-- System documentation follows a standardized structure including Overview, Architecture, API/Usage examples, Security considerations, and Troubleshooting sections.

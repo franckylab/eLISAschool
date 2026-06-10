@@ -22,6 +22,7 @@ import {
 import { MembrePersonnel } from './personnel.entity';
 import { ContratPersonnel } from './contrat-personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
+import { Poste, UniteOrganisationnelle } from '@modules/organisation/entities';
 
 /**
  * Statut d'une affectation

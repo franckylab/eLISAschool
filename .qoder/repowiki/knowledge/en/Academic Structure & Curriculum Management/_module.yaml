@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/backend_modules/academic_structure
+title: Academic Structure & Curriculum Management
+scope:
+    - backend/src/modules/annees-scolaires/
+    - backend/src/modules/cycles/
+    - backend/src/modules/periodes/
+    - backend/src/modules/niveaux/
+    - backend/src/modules/matieres/
+    - backend/src/modules/programmes/
+source_files: []
+depends_on: []
+related_to: []

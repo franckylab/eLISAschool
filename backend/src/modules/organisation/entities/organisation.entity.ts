@@ -18,6 +18,7 @@ import {
     OneToMany,
     Index,
 } from 'typeorm';
+import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
 
 /**
  * Type d'organisation

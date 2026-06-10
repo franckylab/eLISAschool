@@ -18,7 +18,7 @@ import {
     ManyToMany,
     Index,
 } from 'typeorm';
-import Role from './role.entity';
+import { Role } from './role.entity';
 
 /**
  * Entité Permission
@@ -61,5 +61,8 @@ export class Permission {
     @ManyToMany(() => Role, role => role.permissions)
     roles!: Role[];
 }
+
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { Permission };
 
 export default Permission;

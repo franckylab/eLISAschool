@@ -1,6 +1,0 @@
-- Controllers instantiate service classes locally (new ServiceClass()) rather than using dependency injection containers, then export both named and default router exports.
-- DTOs use Zod schemas with .partial() for update variants and z.infer for TypeScript type derivation, imported from @common/dto/pagination.dto for query pagination support.
-- Services expose both class definitions and singleton instances (export const xxxService = new XxxService()) enabling direct imports across modules without DI framework overhead.
-- All route handlers wrap async logic in try/catch blocks that delegate errors to Express next(error) for centralized error handling via the error filter.
-- Entities use UUID primary keys with @PrimaryGeneratedColumn('uuid'), include multi-tenancy via etablissementId foreign key, and apply @Index decorators on frequently queried columns.
-- Configuration-driven behavior uses getParamBoolean/getParamNumber helpers from @modules/configuration/utils/config.helper to toggle features like validation workflows, ranking inclusion, and calculation methods.

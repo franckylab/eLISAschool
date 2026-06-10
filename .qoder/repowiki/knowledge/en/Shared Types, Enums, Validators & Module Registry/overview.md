@@ -1,0 +1,1 @@
+Provides shared TypeScript types, enums, Zod validators, constants, and a centralized module configuration registry for the eLISAschool application.

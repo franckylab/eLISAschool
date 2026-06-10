@@ -1,5 +1,0 @@
-- The module comprises three independent sub-modules (notifications, validation-workflow, scoring) following a standard Controller-Service-Entity pattern.
-- The notifications sub-module implements a Strategy pattern via the `INotificationProvider` interface, managed by a singleton `ProviderRegistry` that handles automatic fallback between Email, SMS, Push, and In-App providers.
-- The validation-workflow sub-module acts as a generic engine, decoupled from specific business entities, using a configuration-driven approach to determine validation levels and required roles for various modules (e.g., grades, reports).
-- The scoring sub-module provides a service-layer API for calculating and tracking student scores based on weighted indicators and configurable rules.
-- Cross-module dependencies are minimal, with the validation workflow optionally triggering notification templates upon state changes.

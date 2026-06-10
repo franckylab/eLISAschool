@@ -542,7 +542,7 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
     [ModuleName.ORGANISATION]: {
         name: ModuleName.ORGANISATION,
         label: 'Organisation',
-        description: 'Structure organisationnelle et hierarchique de l\'etablissement',
+        description: 'Structure organisationnelle et hierarchique de l etablissement',
         icon: 'Building2',
         basePath: '/organisation',
         defaultActive: true,

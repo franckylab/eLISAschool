@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: 59779d748f39fb3a75c596250ebcd729
-title: School Management Platform Core
-scope:
-    - backend/src/modules/
-source_files: []
-depends_on: []
-related_to: []

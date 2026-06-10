@@ -1,0 +1,5 @@
+- Modular Structure: Composed of three distinct sub-modules (`personnel`, `suivi-personnel`, `organisation`) following a standard Controller-Service-Entity-DTO layered architecture.
+- Entry Points: Each sub-module exposes an Express Router via barrel exports in `index.ts` (e.g., `personnel.controller.ts`, `organisation.controller.ts`).
+- Data Access: Services interact directly with TypeORM repositories using `AppDataSource`, implementing multi-tenancy by filtering queries with `etablissementId`.
+- Cross-Module Integration: The `personnel` module integrates with external validation workflows and audit services, while `suivi-personnel` aggregates data from personnel absences and incidents for scoring.
+- Specialized Services: Includes dedicated services for complex domain logic such as `CalculPaieService` for payroll simulation, `OrganigrammePdfService` for HTML-based chart generation, and `ClonageService` for batch-duplicating organizational structures.

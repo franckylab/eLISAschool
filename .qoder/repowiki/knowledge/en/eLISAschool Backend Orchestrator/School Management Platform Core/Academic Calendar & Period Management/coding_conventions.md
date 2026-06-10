@@ -1,6 +1,0 @@
-- All mutating routes (POST, PATCH, DELETE) enforce role-based access control using `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` after authentication middleware.
-- Controllers uniformly wrap async handler logic in try-catch blocks that delegate errors to Express via `next(error)`.
-- Request body validation uses `validateDto(schema, req.body)` with Zod schemas defined in module-level dto files before passing to services.
-- Services instantiate TypeORM repositories in constructors via `AppDataSource.getRepository(Entity)` rather than injecting them.
-- Closure operations conditionally trigger validation workflows when `require_validation` config flag is enabled, setting status to EN_ATTENTE_CLOTURE instead of immediate closure.
-- Date fields from DTOs are explicitly converted to Date objects (`new Date(dto.dateDebut)`) before entity persistence.

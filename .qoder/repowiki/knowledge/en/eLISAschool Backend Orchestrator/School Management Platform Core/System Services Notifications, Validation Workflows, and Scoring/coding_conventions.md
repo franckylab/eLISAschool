@@ -1,4 +1,0 @@
-- Services are implemented as classes with a corresponding exported singleton instance (e.g., `new NotificationsService()`) for global access.
-- Module entry points (`index.ts`) use barrel exports (`export * from './...'`) to expose entities, DTOs, services, and controllers.
-- Configuration values are retrieved dynamically using helper functions like `getParamBoolean` and `getParamNumber` rather than static environment variables.
-- Providers and services implement standardized initialization and configuration testing methods (e.g., `initialiser`, `testerConfiguration`, `estConfiguré`) to ensure runtime readiness.

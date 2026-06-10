@@ -1,0 +1,1 @@
+Manages personnel lifecycle, payroll, performance scoring, and organizational hierarchy within a multi-tenant school system.

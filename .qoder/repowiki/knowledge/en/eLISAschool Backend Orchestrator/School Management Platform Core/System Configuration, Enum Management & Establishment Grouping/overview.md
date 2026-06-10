@@ -1,1 +1,0 @@
-Manages application-wide settings, dynamic enumerations, and multi-establishment grouping for consolidated reporting.

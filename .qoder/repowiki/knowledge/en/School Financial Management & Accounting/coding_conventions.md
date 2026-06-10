@@ -1,0 +1,4 @@
+- Services are exported as singletons (e.g., `export const scolariteService = new ScolariteService()`).
+- Controllers use a local `validate` helper to wrap Zod `safeParse` and throw `AppError` on failure.
+- Multi-tenancy is enforced by filtering all database queries with `etablissementId` extracted from the JWT.
+- Financial transactions involving state changes (e.g., payments) use TypeORM `QueryRunner` for atomic database transactions.

@@ -13,3 +13,4 @@ export {
     checkPermission,
     requirePermissionWithContext,
 } from './permission.middleware';
+export { requirePermissions } from '../guards/permission.guard';

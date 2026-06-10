@@ -17,6 +17,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { notificationsService } from '@modules/notifications/services/notifications.service';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
+import { parentsService } from '@modules/responsables-eleves/services';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -304,35 +305,136 @@ export class ElevesService {
         const count = await this.repo.count({ where: { estPreinscription: true } });
         const matricule = `PRE-${annee}-${String(count + 1).padStart(5, '0')}`;
 
+        // Construire les informations complètes des parents/responsables
+        const informationsParents = {
+            pere: {
+                nom: dto.nomPere,
+                profession: dto.professionPere,
+                telephone: dto.telephonePere,
+                email: dto.emailPere,
+                adresse: dto.adressePere,
+            },
+            mere: {
+                nom: dto.nomMere,
+                profession: dto.professionMere,
+                telephone: dto.telephoneMere,
+                email: dto.emailMere,
+                adresse: dto.adresseMere,
+            },
+            tuteur: {
+                nom: dto.nomTuteur,
+                lienParente: dto.lienParenteTuteur,
+                profession: dto.professionTuteur,
+                telephone: dto.telephoneTuteur,
+                email: dto.emailTuteur,
+                adresse: dto.adresseTuteur,
+            },
+            situationFamiliale: dto.situationFamiliale,
+            personneAutorisee: dto.personneAutorisee,
+            contactPrincipal: dto.email,
+        };
+
+        // Construire les informations complémentaires
+        const informationsComplementaires = {
+            transportScolaire: dto.transportScolaire,
+            cantine: dto.cantine,
+            commentaire: dto.commentaire,
+            contactUrgence: {
+                nom: dto.nomContactUrgence,
+                telephone: dto.telephoneContactUrgence,
+            },
+        };
+
         const eleve = this.repo.create({
             utilisateurId: '', // Sera mis à jour lors de la conversion
             matricule,
+            
+            // IDENTITÉ DE L'ÉLÈVE
+            nom: dto.nom,
+            prenom: dto.prenom,
             dateNaissance: new Date(dto.dateNaissance),
             lieuNaissance: dto.lieuNaissance,
             sexe: dto.sexe,
             nationalite: dto.nationalite,
             sousSysteme: dto.sousSysteme,
-            nomPere: dto.nomPere,
-            nomMere: dto.nomMere,
-            nomTuteur: dto.nomTuteur,
-            telephoneTuteur: dto.telephoneTuteur,
-            dateInscription: new Date(),
+            
+            // INFORMATIONS MÉDICALES ET URGENCE
+            photo: dto.photo,
+            groupeSanguin: dto.groupeSanguin,
+            allergies: dto.allergies,
+            nomContactUrgence: dto.nomContactUrgence,
+            telephoneContactUrgence: dto.telephoneContactUrgence,
+            
+            // ADRESSE
             adresseDomicile: dto.adresseDomicile,
             ville: dto.ville,
             quartier: dto.quartier,
+            
+            // HISTORIQUE SCOLAIRE
             ecoleProvenance: dto.ecoleProvenance,
             classeAnterieure: dto.classeAnterieure,
+            redoublement: dto.redoublement || false,
+            
+            // SITUATION PARTICULIÈRE
+            boursier: dto.boursier || false,
+            regimeInterne: dto.regimeInterne || false,
+            
+            // INFORMATIONS PÈRE
+            nomPere: dto.nomPere,
+            professionPere: dto.professionPere,
+            telephonePere: dto.telephonePere,
+            emailPere: dto.emailPere,
+            adressePere: dto.adressePere,
+            
+            // INFORMATIONS MÈRE
+            nomMere: dto.nomMere,
+            professionMere: dto.professionMere,
+            telephoneMere: dto.telephoneMere,
+            emailMere: dto.emailMere,
+            adresseMere: dto.adresseMere,
+            
+            // INFORMATIONS TUTEUR
+            nomTuteur: dto.nomTuteur,
+            lienParenteTuteur: dto.lienParenteTuteur,
+            professionTuteur: dto.professionTuteur,
+            telephoneTuteur: dto.telephoneTuteur,
+            emailTuteur: dto.emailTuteur,
+            adresseTuteur: dto.adresseTuteur,
+            
+            // CONTACT PRINCIPAL ET SERVICES
+            emailPrincipal: dto.email,
+            transportScolaire: dto.transportScolaire || false,
+            cantine: dto.cantine || false,
+            situationFamiliale: dto.situationFamiliale,
+            personneAutorisee: dto.personneAutorisee,
+            
+            // INSCRIPTION
+            dateInscription: new Date(),
             etablissementId,
             typeInscription: dto.email ? 'PORTAIL' : 'MANUELLE',
             etatInscription: 'EN_ATTENTE_VALIDATION',
             statut: StatutEleve.EN_ATTENTE_VALIDATION,
             estPreinscription: true,
             classeSouhaiteeId: dto.classeSouhaiteeId,
+            
+            // DOCUMENTS
+            documentsJustificatifs: dto.documentsJustificatifs?.map(doc => ({
+                ...doc,
+                dateUpload: new Date().toISOString(),
+            })),
+            
+            // COMMENTAIRE
+            commentaireRefus: dto.commentaire, // Utilisé pour remarques générales
         });
+
+        // Si l'entity Eleve a un champ JSON pour les informations parents, le peupler
+        // Pour l'instant, on utilise les champs existants et on log les infos supplémentaires
+        logger.info(`Préinscription - Informations parents: ${JSON.stringify(informationsParents)}`);
+        logger.info(`Préinscription - Informations complémentaires: ${JSON.stringify(informationsComplementaires)}`);
 
         await this.repo.save(eleve);
 
-        // Audit
+        // Audit enrichi
         await auditService.logCRUD(
             'CREATE',
             'Preinscription',
@@ -341,13 +443,19 @@ export class ElevesService {
             undefined,
             {
                 matricule,
-                nomTuteur: dto.nomTuteur,
-                telephoneTuteur: dto.telephoneTuteur,
+                nom: dto.nom,
+                prenom: dto.prenom,
+                informationsParents,
+                informationsComplementaires,
                 classeSouhaiteeId: dto.classeSouhaiteeId,
+                documentsCount: dto.documentsJustificatifs?.length || 0,
             }
         );
 
-        logger.info(`Préinscription créée: ${matricule} pour établissement ${etablissementId}`);
+        logger.info(`Préinscription créée: ${matricule} - Élève: ${dto.nom} ${dto.prenom}`);
+
+        // TODO: Envoyer notification au personnel de l'établissement
+        // await notificationsService.create({...})
 
         return eleve;
     }
@@ -385,7 +493,27 @@ export class ElevesService {
 
         await this.repo.save(preinscription);
 
-        // Audit
+        // ==================================
+        // MIGRATION DES PARENTS VERS ResponsableEleve
+        // ==================================
+        let migrationResult = null;
+        try {
+            logger.info(`[Conversion] Migration des parents vers ResponsableEleve pour ${preinscription.matricule}`);
+            
+            migrationResult = await parentsService.migrerDepuisChampsDirects(preinscription);
+            
+            logger.info(`[Conversion] Migration terminée: ${migrationResult.parentsCrees} parent(s) créé(s)`);
+            
+            if (migrationResult.erreurs.length > 0) {
+                logger.warn(`[Conversion] Erreurs de migration:`, migrationResult.erreurs);
+            }
+        } catch (error) {
+            logger.error(`[Conversion] Erreur lors de la migration des parents:`, error);
+            // Ne pas bloquer la conversion si la migration échoue
+            // La migration pourra être relancée manuellement
+        }
+
+        // Audit enrichi
         if (req?.utilisateur?.id) {
             await auditService.log({
                 utilisateurId: req.utilisateur.id,
@@ -398,12 +526,16 @@ export class ElevesService {
                     estPreinscription: false,
                     etatInscription: 'VALIDE',
                     statut: StatutEleve.ACTIF,
+                    migrationParents: migrationResult ? {
+                        parentsCrees: migrationResult.parentsCrees,
+                        erreurs: migrationResult.erreurs.length,
+                    } : null,
                 },
                 module: 'eleves',
             }, req);
         }
 
-        logger.info(`Préinscription convertie en inscription: ${preinscription.matricule}`);
+        logger.info(`Préinscription convertie en inscription: ${preinscription.matricule} (${migrationResult?.parentsCrees || 0} parents migrés)`);
 
         return preinscription;
     }

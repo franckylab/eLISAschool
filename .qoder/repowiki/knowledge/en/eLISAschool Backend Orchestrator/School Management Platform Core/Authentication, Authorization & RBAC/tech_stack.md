@@ -1,1 +1,0 @@
-JWT access tokens via `jsonwebtoken` with issuer/audience claims; bcrypt for password hashing; TypeORM repositories backed by PostgreSQL; in-memory Map-based caching for permission resolution (5-min TTL) and security params (1-min TTL).

@@ -1,1 +1,0 @@
-Manages student clubs, gamification (points/badges/leaderboards), and school ID card lifecycle including batch generation and QR code support.

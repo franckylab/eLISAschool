@@ -1,1 +1,0 @@
-Manages student medical records, health incidents, consultations, and behavioral tracking including incidents, observations, sanctions, and commendations.

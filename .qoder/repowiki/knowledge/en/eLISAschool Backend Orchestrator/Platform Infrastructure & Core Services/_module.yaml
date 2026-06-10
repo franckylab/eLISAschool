@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_platform_infra
+module_path: 5e12f74ff678421edd77690c2d791a78
 title: Platform Infrastructure & Core Services
 scope:
     - backend/src/modules/dashboard/
@@ -11,4 +11,11 @@ scope:
     - backend/docs/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_operations_support
+    - path: backend/backend_core_auth
+    - path: backend/backend_finance
+    - path: docker
+    - path: backend/backend_academic_structure
+    - path: backend/backend_hr_payroll
+    - path: backend/backend_student_lifecycle

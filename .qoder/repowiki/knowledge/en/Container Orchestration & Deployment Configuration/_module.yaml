@@ -5,4 +5,8 @@ scope:
     - docker/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend
+    - path: backend/backend_platform_infra
+    - path: backend/backend_core_auth
+    - path: shared

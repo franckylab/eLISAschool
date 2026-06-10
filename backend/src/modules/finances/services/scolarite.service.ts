@@ -8,7 +8,7 @@
  * Gestion complète des frais de scolarité, échéanciers, paiements et relances
  */
 
-import { Repository, In, IsNull } from 'typeorm';
+import { Repository, In, IsNull, Between } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { FraisScolarite, Echeancier, Paiement, RecuPaiement, RelancePaiement, Remise, TypeRemise } from '../entities';
 import { CreateFraisScolariteDto, CreatePaiementDto, GenerateEcheancierDto, CreateRemiseDto } from '../dto';
@@ -830,27 +830,51 @@ export class ScolariteService {
         const impayes = await this.detecterImpayes(etablissementId);
         let count = 0;
 
+        // Récupérer la configuration du nombre max de relances
+        const maxRelances = await this.getParametreNumber('relance.max_nombre', 5);
+        const seuilInsolvable = await this.getParametreNumber('relance.insolvable_seuil', 5);
+
         for (const echeancier of impayes) {
             try {
-                // Vérifier si une relance récente existe déjà
+                // CORRECTION BUG: Utiliser Between pour matcher toute la journée
+                const debutJour = new Date();
+                debutJour.setHours(0, 0, 0, 0);
+                const finJour = new Date();
+                finJour.setHours(23, 59, 59, 999);
+
                 const relancesRecentes = await this.relanceRepo.count({
                     where: {
                         echeancierId: echeancier.id,
-                        dateRelance: In([new Date()]),
+                        dateRelance: Between(debutJour, finJour),
                     },
                 });
 
                 if (relancesRecentes > 0) continue; // Déjà relancé aujourd'hui
 
-                // Créer la relance
+                // CORRECTION BUG: Compter le nombre total de relances pour cet échéancier
+                const nbRelancesPrecedentes = await this.relanceRepo.count({
+                    where: { echeancierId: echeancier.id },
+                });
+                const numeroRelance = nbRelancesPrecedentes + 1;
+
+                // VÉRIFIER QUOTA: Si nombre max de relances atteint, marquer comme insolvable
+                if (nbRelancesPrecedentes >= maxRelances) {
+                    await this.marquerInsolvable(echeancier.eleveId, 
+                        `Quota de ${maxRelances} relances atteint pour l'échéancier ${echeancier.numeroTranche}`,
+                        'SYSTEM'
+                    );
+                    continue;
+                }
+
+                // Créer la relance avec numéro incrémenté
                 const relance = this.relanceRepo.create({
                     eleveId: echeancier.eleveId,
                     echeancierId: echeancier.id,
-                    numeroRelance: 1, // À améliorer : compter relances précédentes
+                    numeroRelance,
                     dateRelance: new Date(),
                     typeRelance: 'EMAIL' as any,
                     statut: 'ENVOYEE' as any,
-                    message: `Rappel : Votre échéance de paiement n°${echeancier.numeroTranche} d'un montant de ${echeancier.montantAttendu} FCFA est en retard depuis le ${echeancier.dateEcheance}.`,
+                    message: `Rappel n°${numeroRelance} : Votre échéance de paiement n°${echeancier.numeroTranche} d'un montant de ${echeancier.montantAttendu} FCFA est en retard depuis le ${echeancier.dateEcheance}.`,
                     effectuePar: 'SYSTEM',
                     etablissementId,
                 });
@@ -858,11 +882,26 @@ export class ScolariteService {
                 await this.relanceRepo.save(relance);
                 count++;
 
+                // Incrémenter le compteur de relances sur l'élève
+                await this.eleveRepo.increment(
+                    { id: echeancier.eleveId },
+                    'nombreRelancesEnvoyees',
+                    1
+                );
+
+                // Vérifier si seuil insolvable atteint
+                if (numeroRelance >= seuilInsolvable) {
+                    await this.marquerInsolvable(echeancier.eleveId,
+                        `Seuil de ${seuilInsolvable} relances atteint automatiquement`,
+                        'SYSTEM'
+                    );
+                }
+
                 // Envoyer notification de relance
                 try {
                     await notificationsService.create({
                         destinataireId: echeancier.eleveId,
-                        titre: '⚠️ Rappel paiement en retard',
+                        titre: `⚠️ Rappel paiement en retard (n°${numeroRelance})`,
                         contenu: relance.message,
                         type: TypeNotification.IN_APP,
                         priorite: PrioriteNotification.URGENTE,
@@ -870,6 +909,7 @@ export class ScolariteService {
                         metadata: {
                             echeancierId: echeancier.id,
                             relanceId: relance.id,
+                            numeroRelance,
                             montantAttendu: echeancier.montantAttendu,
                             dateEcheance: echeancier.dateEcheance,
                         },
@@ -901,6 +941,61 @@ export class ScolariteService {
         }
 
         return count;
+    }
+
+    /**
+     * Marquer un élève comme insolvable
+     */
+    async marquerInsolvable(eleveId: string, motif: string, userId: string): Promise<void> {
+        const eleve = await this.eleveRepo.findOne({ where: { id: eleveId } });
+        if (!eleve) {
+            throw new AppError('Élève non trouvé', 404, 'NOT_FOUND');
+        }
+
+        // Ne marquer que si pas déjà insolvable
+        if (eleve.statutPaiement === 'INSOLVABLE' || eleve.statutPaiement === 'CONTENTIEUX') {
+            logger.info(`[Insolvable] Élève ${eleveId} déjà marqué comme ${eleve.statutPaiement}`);
+            return;
+        }
+
+        await this.eleveRepo.update(eleveId, {
+            statutPaiement: 'INSOLVABLE',
+            dateMarquageInsolvable: new Date(),
+        });
+
+        logger.warn(`[Insolvable] Élève ${eleveId} marqué comme INSOLVABLE - Motif: ${motif}`);
+
+        // Notification au chef d'établissement
+        try {
+            await notificationsService.create({
+                destinataireId: userId,
+                titre: '🚨 Élève marqué comme insolvable',
+                contenu: `L'élève ${eleve.matricule} a été marqué comme insolvable. Motif: ${motif}. Un document de rappel doit être remis au responsable.`,
+                type: TypeNotification.IN_APP,
+                priorite: PrioriteNotification.URGENTE,
+                categorie: 'FINANCES',
+                metadata: {
+                    eleveId,
+                    eleveMatricule: eleve.matricule,
+                    motif,
+                },
+            }, 'SYSTEM');
+        } catch (error) {
+            logger.error('[Insolvable] Erreur notification:', error);
+        }
+    }
+
+    /**
+     * Obtenir un paramètre numérique depuis la configuration
+     */
+    private async getParametreNumber(cle: string, defaut: number): Promise<number> {
+        try {
+            const { getParametre } = await import('@modules/configuration/services/configuration.service');
+            const valeur = await getParametre(cle);
+            return valeur ? parseInt(valeur, 10) : defaut;
+        } catch {
+            return defaut;
+        }
     }
 
     // ==================================

@@ -124,9 +124,11 @@ export class Conversation {
     @Column({ type: 'uuid', nullable: true })
     dernierMessageId?: string;
 
-    @ManyToOne(() => Message, { nullable: true })
-    @JoinColumn({ name: 'dernierMessageId' })
-    dernierMessage?: Message;
+    // Relation différée pour éviter la référence circulaire
+    // @ManyToOne(() => Message, { nullable: true })
+    // @JoinColumn({ name: 'dernierMessageId' })
+    // dernierMessage?: Message;
+    dernierMessage?: any; // Temporaire - éviter référence circulaire
 
     @Column({ type: 'int', default: 0 })
     countMessages!: number;
@@ -151,8 +153,8 @@ export class Conversation {
  * Entité Participant (membre d'une conversation)
  */
 @Entity('participants_conversation')
-@Index(['conversationId', 'utilisateurId'], { unique: true }) // Empêcher doublons
-@Index(['utilisateurId', 'archivePerso']) // Pour requêtes de filtrage
+@Index(['conversationId', 'utilisateurId'], { unique: true })
+@Index(['utilisateurId', 'archivePerso'])
 export class ParticipantConversation {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -189,9 +191,11 @@ export class ParticipantConversation {
     @Column({ type: 'uuid', nullable: true })
     dernierMessageLuId?: string;
 
-    @ManyToOne(() => Message, { nullable: true })
-    @JoinColumn({ name: 'dernierMessageLuId' })
-    dernierMessageLu?: Message;
+    // Relation différée pour éviter la référence circulaire
+    // @ManyToOne(() => Message, { nullable: true })
+    // @JoinColumn({ name: 'dernierMessageLuId' })
+    // dernierMessageLu?: Message;
+    dernierMessageLu?: any; // Temporaire - éviter référence circulaire
 
     @CreateDateColumn({ type: 'timestamp' })
     joinedAt!: Date;
@@ -309,8 +313,8 @@ export class MessageReaction {
  * Entité MessageReadStatus
  */
 @Entity('message_read_status')
-@Index(['messageId', 'utilisateurId'], { unique: true }) // Un seul read status par user/message
-@Index(['utilisateurId', 'luA']) // Pour statistiques de lecture
+@Index(['messageId', 'utilisateurId'], { unique: true })
+@Index(['utilisateurId', 'luA'])
 export class MessageReadStatus {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -337,8 +341,8 @@ export class MessageReadStatus {
  * Entité MessageMention
  */
 @Entity('message_mentions')
-@Index(['mentionneId', 'lu']) // Pour requêtes de mentions non lues
-@Index(['messageId']) // Pour cascade delete
+@Index(['mentionneId', 'lu'])
+@Index(['messageId'])
 export class MessageMention {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

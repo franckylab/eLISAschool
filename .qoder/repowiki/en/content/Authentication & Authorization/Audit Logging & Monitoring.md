@@ -10,6 +10,9 @@
 - [audit.service.ts](file://backend/src/modules/auth/services/audit.service.ts)
 - [auth.service.ts](file://backend/src/modules/auth/services/auth.service.ts)
 - [auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
+- [audit-rotation.cron.ts](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts)
+- [audit-rotation.service.ts](file://backend/src/modules/auth/services/audit-rotation.service.ts)
+- [audit-helpers.ts](file://backend/src/modules/auth/utils/audit-helpers.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
 - [logger.util.ts](file://backend/src/common/utils/logger.util.ts)
 - [monitoring.controller.ts](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts)
@@ -23,13 +26,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive audit interceptor system for automatic CRUD operation logging
-- Integrated REST API endpoints for audit log management and monitoring
-- Implemented advanced archiving service with database storage capabilities
-- Enhanced audit service with logCRUD method and improved filtering
-- Added sophisticated DTO validation with Zod schemas for audit operations
-- Extended audit action coverage to 80+ operations across all modules
-- Implemented database migration for audit logs archive functionality
+- Added comprehensive audit rotation service with automated cron job scheduling for log archiving and cleanup
+- Integrated manual audit controller endpoints for rotation, archiving, and cleaning operations
+- Enhanced audit helpers utility for standardized audit logging patterns
+- Expanded audit logging system with dual storage strategy (database + file system) for improved scalability
+- Added sophisticated retention management with configurable policies for different log aging stages
+- Implemented comprehensive audit statistics and monitoring capabilities
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,26 +46,29 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive audit logging and monitoring documentation for eLISAschool's security tracking system. The system has been comprehensively enhanced with automatic audit interception, RESTful API management, advanced archiving capabilities, and extensive documentation. It explains the audit log entity structure, event categorization, and logging triggers; documents security event capture including login attempts, failed authentications, privilege changes, and sensitive operations; details log retention policies, storage mechanisms, and access controls for audit data; and outlines monitoring dashboards, alerting thresholds, anomaly detection patterns, compliance reporting, forensic analysis capabilities, audit trail integrity verification, and automated security monitoring workflows.
+This document provides comprehensive audit logging and monitoring documentation for eLISAschool's enhanced security tracking system. The system has been comprehensively enhanced with automatic audit interception, RESTful API management, advanced archiving capabilities, automated rotation services, and extensive documentation. It explains the audit log entity structure, event categorization, and logging triggers; documents security event capture including login attempts, failed authentications, privilege changes, and sensitive operations; details log retention policies, dual storage mechanisms (database and file system), and access controls for audit data; and outlines monitoring dashboards, alerting thresholds, anomaly detection patterns, compliance reporting, forensic analysis capabilities, audit trail integrity verification, and automated security monitoring workflows.
 
 ## Project Structure
-The audit and monitoring capabilities are implemented across several modules with significant enhancements:
-- Authentication module: Entities, services, and controllers for authentication and audit logging
+The enhanced audit and monitoring capabilities are implemented across several modules with significant improvements:
+- Authentication module: Entities, services, controllers, cron jobs, and utilities for comprehensive audit logging and rotation
 - Common interceptors: Automatic audit interception for CRUD operations
 - Audit module: REST API endpoints for log management, archiving, and statistics
 - Database migrations: Enhanced audit logs with archive functionality
-- Common utilities: Request logging interceptor and Winston logger utility
+- Common utilities: Request logging interceptor, Winston logger utility, and audit helpers
 - Monitoring module: Health checks, metrics, statistics, and maintenance mode
 - Guards and middlewares: Role and permission enforcement with audit logging on access denials
 - Configuration: Security-related parameters and runtime configuration
 
 ```mermaid
 graph TB
-subgraph "Authentication"
+subgraph "Authentication Enhanced"
 AC["auth.controller.ts"]
 AS["auth.service.ts"]
 AU["audit.service.ts"]
 AE["audit-log.entity.ts"]
+ARS["audit-rotation.service.ts"]
+ARC["audit-rotation.cron.ts"]
+AH["audit-helpers.ts"]
 end
 subgraph "Audit Module"
 AIC["audit.interceptor.ts"]
@@ -100,6 +105,9 @@ RMW --> AU
 PG --> AU
 CG --> AU
 AIC --> AU
+ACtrl --> ARS
+ARS --> ARC
+ARS --> AH
 ACtrl --> AU
 AAS --> MIG
 AFD --> ACtrl
@@ -108,13 +116,16 @@ AS --> CS
 
 **Diagram sources**
 - [audit.interceptor.ts:1-175](file://backend/src/common/interceptors/audit.interceptor.ts#L1-L175)
-- [audit.controller.ts:1-300](file://backend/src/modules/audit/controllers/audit.controller.ts#L1-L300)
+- [audit.controller.ts:1-126](file://backend/src/modules/audit/controllers/audit.controller.ts#L1-L126)
 - [archivage.service.ts:1-149](file://backend/src/modules/audit/services/archivage.service.ts#L1-L149)
 - [audit-filters.dto.ts:1-47](file://backend/src/modules/audit/dto/audit-filters.dto.ts#L1-L47)
 - [audit-log.entity.ts:1-248](file://backend/src/modules/auth/entities/audit-log.entity.ts#L1-L248)
 - [audit.service.ts:1-230](file://backend/src/modules/auth/services/audit.service.ts#L1-L230)
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
 - [auth.service.ts:1-485](file://backend/src/modules/auth/services/auth.service.ts#L1-L485)
+- [audit-rotation.cron.ts:1-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L1-L44)
+- [audit-rotation.service.ts:1-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L1-L273)
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 - [request-logger.interceptor.ts:1-40](file://backend/src/common/interceptors/request-logger.interceptor.ts#L1-L40)
 - [logger.util.ts:1-91](file://backend/src/common/utils/logger.util.ts#L1-L91)
 - [monitoring.controller.ts:1-69](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L1-L69)
@@ -127,13 +138,16 @@ AS --> CS
 
 **Section sources**
 - [audit.interceptor.ts:1-175](file://backend/src/common/interceptors/audit.interceptor.ts#L1-L175)
-- [audit.controller.ts:1-300](file://backend/src/modules/audit/controllers/audit.controller.ts#L1-L300)
+- [audit.controller.ts:1-126](file://backend/src/modules/audit/controllers/audit.controller.ts#L1-L126)
 - [archivage.service.ts:1-149](file://backend/src/modules/audit/services/archivage.service.ts#L1-L149)
 - [audit-filters.dto.ts:1-47](file://backend/src/modules/audit/dto/audit-filters.dto.ts#L1-L47)
 - [audit-log.entity.ts:1-248](file://backend/src/modules/auth/entities/audit-log.entity.ts#L1-L248)
 - [audit.service.ts:1-230](file://backend/src/modules/auth/services/audit.service.ts#L1-L230)
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
 - [auth.service.ts:1-485](file://backend/src/modules/auth/services/auth.service.ts#L1-L485)
+- [audit-rotation.cron.ts:1-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L1-L44)
+- [audit-rotation.service.ts:1-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L1-L273)
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 - [request-logger.interceptor.ts:1-40](file://backend/src/common/interceptors/request-logger.interceptor.ts#L1-L40)
 - [logger.util.ts:1-91](file://backend/src/common/utils/logger.util.ts#L1-L91)
 - [monitoring.controller.ts:1-69](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L1-L69)
@@ -145,11 +159,14 @@ AS --> CS
 - [003-audit-logs-archive.sql:1-129](file://backend/src/database/migrations/003-audit-logs-archive.sql#L1-L129)
 
 ## Core Components
-- **AuditLog entity**: Defines the audit record schema with 80+ action categories, including authentication, users, academic operations, services, communication, administration, and security events.
+- **Enhanced AuditLog entity**: Defines the audit record schema with 80+ action categories, including authentication, users, academic operations, services, communication, administration, and security events.
 - **AuditService**: Enhanced with logCRUD method for simplified instrumentation, comprehensive filtering, and IP extraction from requests.
 - **AuditInterceptor**: Automatic CRUD operation logging with flexible configuration, custom action mapping, and non-blocking error handling.
 - **AuditController**: REST API endpoints for log management including listing, filtering, exporting, statistics, and personal log access.
 - **AuditArchivageService**: Handles old log archival to database storage, statistics calculation, and retention policy enforcement.
+- **AuditRotationService**: **NEW** Comprehensive log rotation service with automated archiving, cleanup, and retention management across both database and file system storage.
+- **AuditRotationCron**: **NEW** Automated cron job scheduling for weekly rotation, daily storage statistics, and maintenance operations.
+- **AuditHelpers**: **NEW** Standardized utility functions for consistent audit logging patterns and data transformation.
 - **Audit Filters DTO**: Advanced filtering with Zod validation for user, action, target, severity, date ranges, and search functionality.
 - **AuthService**: Integrates audit logging into authentication flows with comprehensive event capture.
 - **Request Logger Interceptor**: Logs incoming HTTP requests and response outcomes with timing and status-based log levels.
@@ -160,7 +177,7 @@ AS --> CS
 
 **Section sources**
 - [audit.interceptor.ts:20-175](file://backend/src/common/interceptors/audit.interceptor.ts#L20-L175)
-- [audit.controller.ts:22-300](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L300)
+- [audit.controller.ts:22-126](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L126)
 - [archivage.service.ts:19-149](file://backend/src/modules/audit/services/archivage.service.ts#L19-L149)
 - [audit-filters.dto.ts:14-47](file://backend/src/modules/audit/dto/audit-filters.dto.ts#L14-L47)
 - [audit-log.entity.ts:22-178](file://backend/src/modules/auth/entities/audit-log.entity.ts#L22-L178)
@@ -172,10 +189,14 @@ AS --> CS
 - [monitoring.service.ts:79-220](file://backend/src/modules/monitoring/services/monitoring.service.ts#L79-L220)
 - [role.middleware.ts:20-37](file://backend/src/modules/auth/middlewares/role.middleware.ts#L20-L37)
 - [permission.guard.ts:44-74](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L74)
+- [config.guard.ts:19-55](file://backend/src/modules/configuration/guards/config.guard.ts#L19-L55)
 - [configuration-seed.service.ts:172-246](file://backend/src/modules/configuration/services/configuration-seed.service.ts#L172-L246)
+- [audit-rotation.service.ts:18-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L18-L273)
+- [audit-rotation.cron.ts:16-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L16-L44)
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 
 ## Architecture Overview
-The enhanced audit and monitoring architecture integrates tightly with authentication, request handling, access control, and automatic CRUD operation logging. Audit events are generated automatically through interceptors during CRUD operations, manually through service instrumentation, and during authentication and access control decisions. Logs are persisted to the database with automatic archiving to separate archive tables, mirrored to the Winston logger, and exposed through comprehensive REST APIs.
+The enhanced audit and monitoring architecture integrates tightly with authentication, request handling, access control, and automatic CRUD operation logging. The system now features a comprehensive dual-storage approach with automatic rotation services that manage both database and file system storage. Audit events are generated automatically through interceptors during CRUD operations, manually through service instrumentation, and during authentication and access control decisions. Logs are persisted to the database with automatic archiving to separate archive tables, mirrored to the Winston logger, rotated to file system archives, and exposed through comprehensive REST APIs.
 
 ```mermaid
 sequenceDiagram
@@ -185,8 +206,10 @@ participant AuthService as "auth.service.ts"
 participant AuditSvc as "audit.service.ts"
 participant AuditInt as "audit.interceptor.ts"
 participant AuditCtrl as "audit.controller.ts"
+participant AuditRot as "audit-rotation.service.ts"
 participant DB as "AuditLog (DB)"
 participant ArchiveDB as "audit_logs_archive"
+participant FileSystem as "File System Archive"
 participant Logger as "Winston Logger"
 Client->>AuthCtrl : POST /api/auth/login
 AuthCtrl->>AuthService : login(loginDto, ip, userAgent)
@@ -210,6 +233,11 @@ Client->>AuditCtrl : GET /api/audit/logs?module=eleves
 AuditCtrl->>AuditSvc : getLogs(filters)
 AuditSvc->>DB : query audit_logs + audit_logs_archive
 AuditCtrl-->>Client : 200 OK with filtered logs
+Note over AuditRot,FileSystem : Automated Rotation & Cleanup
+AuditRot->>DB : archiveOldLogs()
+AuditRot->>FileSystem : writeArchiveFiles()
+AuditRot->>DB : cleanupOldLogs()
+AuditRot->>Logger : info "Rotation completed"
 ```
 
 **Diagram sources**
@@ -219,6 +247,7 @@ AuditCtrl-->>Client : 200 OK with filtered logs
 - [audit.interceptor.ts:64-175](file://backend/src/common/interceptors/audit.interceptor.ts#L64-L175)
 - [audit.controller.ts:27-79](file://backend/src/modules/audit/controllers/audit.controller.ts#L27-L79)
 - [audit-log.entity.ts:83-139](file://backend/src/modules/auth/entities/audit-log.entity.ts#L83-L139)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
 - [logger.util.ts:58-91](file://backend/src/common/utils/logger.util.ts#L58-L91)
 
 **Section sources**
@@ -228,6 +257,7 @@ AuditCtrl-->>Client : 200 OK with filtered logs
 - [audit.interceptor.ts:64-175](file://backend/src/common/interceptors/audit.interceptor.ts#L64-L175)
 - [audit.controller.ts:27-79](file://backend/src/modules/audit/controllers/audit.controller.ts#L27-L79)
 - [audit-log.entity.ts:83-139](file://backend/src/modules/auth/entities/audit-log.entity.ts#L83-L139)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
 - [logger.util.ts:58-91](file://backend/src/common/utils/logger.util.ts#L58-L91)
 
 ## Detailed Component Analysis
@@ -425,6 +455,8 @@ The AuditController provides REST endpoints for complete audit log management:
 - **Personal Logs**: User-specific log access for self-monitoring
 - **Export Functionality**: CSV and JSON export with filtering
 - **Statistics Dashboard**: Comprehensive audit statistics and analytics
+- **Rotation Management**: **NEW** Manual rotation, archiving, and cleaning operations
+- **Storage Statistics**: **NEW** Real-time storage usage and archive management
 - **Role-Based Access**: Admin-only access for sensitive operations
 
 ```mermaid
@@ -432,6 +464,7 @@ sequenceDiagram
 participant Client as "Client"
 participant AuditCtrl as "audit.controller.ts"
 participant AuditSvc as "audit.service.ts"
+participant AuditRot as "audit-rotation.service.ts"
 participant DB as "audit_logs + audit_logs_archive"
 Client->>AuditCtrl : GET /api/audit/logs?module=eleves&limit=50
 AuditCtrl->>AuditCtrl : validateDto(auditFiltersSchema)
@@ -440,15 +473,21 @@ AuditSvc->>DB : query with pagination and filters
 AuditSvc-->>AuditCtrl : {items, total}
 AuditCtrl->>AuditCtrl : apply client-side filters
 AuditCtrl-->>Client : 200 OK with filtered results
+Note over AuditCtrl,AuditRot : NEW Rotation Management
+Client->>AuditCtrl : POST /api/audit/rotation
+AuditCtrl->>AuditRot : executerRotation()
+AuditRot-->>AuditCtrl : {archives, tailleKo}
+AuditCtrl-->>Client : 200 OK with rotation results
 ```
 
 **Diagram sources**
 - [audit.controller.ts:27-79](file://backend/src/modules/audit/controllers/audit.controller.ts#L27-L79)
 - [audit.controller.ts:145-178](file://backend/src/modules/audit/controllers/audit.controller.ts#L145-L178)
 - [audit.controller.ts:185-257](file://backend/src/modules/audit/controllers/audit.controller.ts#L185-L257)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
 
 **Section sources**
-- [audit.controller.ts:22-300](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L300)
+- [audit.controller.ts:22-126](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L126)
 
 ### AuditArchivageService: Advanced Log Archiving
 The AuditArchivageService handles old log archival and statistics:
@@ -473,6 +512,70 @@ RemoveLogs --> ReturnResult["Return archived count"]
 
 **Section sources**
 - [archivage.service.ts:19-149](file://backend/src/modules/audit/services/archivage.service.ts#L19-L149)
+
+### AuditRotationService: **NEW** Comprehensive Log Rotation Management
+The AuditRotationService provides automated log rotation with dual storage management:
+- **Automated Archiving**: Rotates logs from database to file system archives on schedule
+- **Manual Operations**: Supports manual rotation, archiving, and cleanup operations
+- **Storage Statistics**: Real-time monitoring of storage usage and archive sizes
+- **Retention Management**: Configurable retention policies for different log aging stages
+- **File System Integration**: Writes compressed archive files with timestamped naming
+- **Database Cleanup**: Removes rotated logs from active database tables
+- **Redis Cache Management**: Invalidates audit-related cache entries after rotation
+
+```mermaid
+flowchart TD
+Start(["executerRotation()"]) --> CheckSchedule["Check rotation schedule"]
+CheckSchedule --> ArchiveDB["Archive old logs from DB"]
+ArchiveDB --> WriteFiles["Write archive files to FS"]
+WriteFiles --> CleanupDB["Cleanup archived DB logs"]
+CleanupDB --> InvalidateCache["Invalidate Redis cache"]
+InvalidateCache --> Stats["Generate storage statistics"]
+Stats --> End(["Rotation Complete"])
+```
+
+**Diagram sources**
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
+- [audit-rotation.service.ts:89-114](file://backend/src/modules/auth/services/audit-rotation.service.ts#L89-L114)
+
+**Section sources**
+- [audit-rotation.service.ts:18-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L18-L273)
+
+### AuditRotationCron: **NEW** Automated Scheduling System
+The AuditRotationCron provides automated scheduling for audit log management:
+- **Weekly Rotation**: Full rotation process runs every Sunday at 2 AM
+- **Daily Statistics**: Storage statistics collection runs every day at 6 AM
+- **Timezone Configuration**: Africa/Douala timezone for West African deployment
+- **Error Handling**: Comprehensive error logging and recovery mechanisms
+- **Service Integration**: Direct integration with AuditRotationService methods
+
+```mermaid
+sequenceDiagram
+participant Scheduler as "node-cron"
+participant CronJob as "audit-rotation.cron.ts"
+participant RotationSvc as "audit-rotation.service.ts"
+Scheduler->>CronJob : Weekly rotation trigger
+CronJob->>RotationSvc : executerRotation()
+Scheduler->>CronJob : Daily stats trigger
+CronJob->>RotationSvc : getStatistiquesStockage()
+```
+
+**Diagram sources**
+- [audit-rotation.cron.ts:16-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L16-L44)
+
+**Section sources**
+- [audit-rotation.cron.ts:1-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L1-L44)
+
+### AuditHelpers: **NEW** Standardized Audit Utilities
+The AuditHelpers provides standardized utility functions for consistent audit logging:
+- **Data Transformation**: Standardized formatting for audit log entries
+- **Validation Helpers**: Zod schema validation for audit operations
+- **Error Handling**: Consistent error handling patterns across audit operations
+- **Logging Patterns**: Standardized logging formats and metadata structures
+- **Security Utilities**: Helper functions for sensitive data masking and security considerations
+
+**Section sources**
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 
 ### Enhanced AuditService: Improved Instrumentation
 The enhanced AuditService provides comprehensive logging capabilities:
@@ -594,67 +697,79 @@ MonCtrl-->>Client : 200/503
 - [monitoring.service.ts:79-220](file://backend/src/modules/monitoring/services/monitoring.service.ts#L79-L220)
 
 ### Enhanced Log Retention Policies, Storage, and Access Controls
-- **Dual Storage Strategy**: Active logs (<30 days) in main table, archived logs (30-365 days) in archive table
-- **Automatic Archival**: Database-level archiving with PostgreSQL functions
+- **Dual Storage Strategy**: Active logs (<30 days) in main table, archived logs (30-365 days) in archive table, **NEW** long-term archives (>365 days) in file system
+- **Automated Rotation**: Database-level archiving with PostgreSQL functions and file system archiving with compression
 - **Migration Support**: Complete database migration with archive table creation and indexes
 - **Access Controls**: Comprehensive role-based access control for audit API endpoints
-- **Retention Management**: Configurable retention policies with automatic cleanup
+- **Retention Management**: Configurable retention policies with automatic cleanup across all storage tiers
+- **Storage Statistics**: Real-time monitoring of database and file system storage usage
 
 ```mermaid
 flowchart TD
 Start(["Audit Log Lifecycle"]) --> Create["New Audit Log"]
 Create --> StoreMain["Store in audit_logs (active)"]
 StoreMain --> CheckAge{"Age > 30 days?"}
-CheckAge --> |Yes| ArchiveFunc["archive_old_audit_logs()"]
+CheckAge --> |Yes| ArchiveDB["Archive to audit_logs_archive"]
 CheckAge --> |No| Active["Remain Active"]
-ArchiveFunc --> MoveArchive["Move to audit_logs_archive"]
-MoveArchive --> CheckAge2{"Age > 365 days?"}
-CheckAge2 --> |Yes| Purge["Purge from archive"]
+ArchiveDB --> CheckAge2{"Age > 365 days?"}
+CheckAge2 --> |Yes| ArchiveFS["Archive to file system"]
 CheckAge2 --> |No| Archive["Remain Archived"]
+ArchiveFS --> CheckAge3{"Age > retention days?"}
+CheckAge3 --> |Yes| Purge["Purge from archive"]
+CheckAge3 --> |No| LongTerm["Long-term Archive"]
 Active --> End(["Complete"])
 Archive --> End
 Purge --> End
+LongTerm --> End
 ```
 
 **Diagram sources**
 - [003-audit-logs-archive.sql:44-87](file://backend/src/database/migrations/003-audit-logs-archive.sql#L44-L87)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
 
 **Section sources**
 - [003-audit-logs-archive.sql:1-129](file://backend/src/database/migrations/003-audit-logs-archive.sql#L1-L129)
 - [audit-log.entity.ts:83-139](file://backend/src/modules/auth/entities/audit-log.entity.ts#L83-L139)
 - [logger.util.ts:67-81](file://backend/src/common/utils/logger.util.ts#L67-L81)
 - [monitoring.controller.ts:27-65](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L27-L65)
+- [audit-rotation.service.ts:18-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L18-L273)
 
 ### Enhanced Monitoring Dashboards, Alerting, and Anomaly Detection
 - **Health Checks**: Use the health endpoint to detect system downtime or degraded performance
 - **Metrics**: Expose CPU, memory, uptime, database connectivity, and application metadata
 - **Audit Statistics**: Comprehensive statistics endpoint with failure rates, top users, and activity trends
+- **Storage Monitoring**: **NEW** Real-time storage usage monitoring for both database and file system
 - **Alerting Thresholds**:
   - Health: Down if database unreachable; Degraded if free memory below threshold
   - Authentication: High LOGIN_FAILED rate over short windows indicates brute force attempts
   - Access Denied: Sudden spikes in ACCESS_DENIED suggest reconnaissance or misconfiguration
   - Audit Failures: High failure rates indicate system issues or security incidents
+  - **NEW** Storage Alerts: Database and file system storage thresholds trigger maintenance alerts
 - **Anomaly Detection Patterns**:
   - Unusually high PASSWORD_RESET or PASSWORD_CHANGE rates for a user
   - Multiple ENTITY_DELETE operations in short timeframes
   - Requests from blocked IPs or user agents
   - Sudden spikes in critical severity logs
+  - **NEW** Storage anomaly detection for unexpected growth patterns
 
 **Section sources**
 - [monitoring.service.ts:169-199](file://backend/src/modules/monitoring/services/monitoring.service.ts#L169-L199)
 - [audit-log.entity.ts:25-69](file://backend/src/modules/auth/entities/audit-log.entity.ts#L25-L69)
 - [audit.controller.ts:185-257](file://backend/src/modules/audit/controllers/audit.controller.ts#L185-L257)
+- [audit-rotation.service.ts:18-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L18-L273)
 
 ### Compliance Reporting and Forensic Analysis
 - **Compliance Reporting**: Use filtered audit queries to generate reports by user, action, date range, and severity; exportable formats can be added to the monitoring controller
 - **Forensic Analysis**: Leverage IP, user agent, module, and change data to reconstruct events; sensitive fields are masked in audit trails
 - **Audit Trail Integrity**: Maintain immutable audit logs; consider write-once storage and cryptographic hashing for tamper evidence
 - **Export Capabilities**: CSV and JSON export for external analysis and compliance requirements
+- **Archive Management**: **NEW** Long-term archive management ensures compliance with data retention requirements
 
 **Section sources**
 - [audit.service.ts:142-181](file://backend/src/modules/auth/services/audit.service.ts#L142-L181)
 - [audit-log.entity.ts:104-132](file://backend/src/modules/auth/entities/audit-log.entity.ts#L104-L132)
 - [audit.controller.ts:145-178](file://backend/src/modules/audit/controllers/audit.controller.ts#L145-L178)
+- [audit-rotation.service.ts:250-270](file://backend/src/modules/auth/services/audit-rotation.service.ts#L250-L270)
 
 ### Enhanced Automated Security Monitoring Workflows
 - **Login Attempt Monitoring**: Track LOGIN_FAILED events and correlate with IP addresses to trigger alerts
@@ -663,12 +778,15 @@ Purge --> End
 - **Maintenance Mode**: Use the maintenance endpoint to temporarily restrict access during investigations
 - **Automatic Archival**: Regular archival of old logs to maintain system performance
 - **Statistics Monitoring**: Continuous monitoring of audit statistics for security trends
+- **Storage Management**: **NEW** Automated storage management with rotation and cleanup processes
+- **Archive Monitoring**: **NEW** Long-term archive management and retention policy enforcement
 
 **Section sources**
 - [auth.service.ts:61-161](file://backend/src/modules/auth/services/auth.service.ts#L61-L161)
 - [audit-log.entity.ts:25-69](file://backend/src/modules/auth/entities/audit-log.entity.ts#L25-L69)
 - [monitoring.controller.ts:42-56](file://backend/src/modules/monitoring/controllers/monitoring.controller.ts#L42-L56)
 - [archivage.service.ts:30-63](file://backend/src/modules/audit/services/archivage.service.ts#L30-L63)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
 
 ## Dependency Analysis
 The enhanced audit and monitoring components have comprehensive dependencies:
@@ -691,7 +809,12 @@ AuditInt --> AuditAction["audit-log.entity.ts"]
 AuditCtrl["audit.controller.ts"] --> AuditSvc
 AuditCtrl --> AuditFilters["audit-filters.dto.ts"]
 AuditCtrl --> RoleGuard["role.middleware.ts"]
-AuditSvc --> AuditLog
+AuditCtrl --> AuditRot["audit-rotation.service.ts"]
+AuditRot --> AuditLog
+AuditRot --> CronJob["audit-rotation.cron.ts"]
+AuditRot --> Helpers["audit-helpers.ts"]
+AuditRot --> Redis["redis.service.ts"]
+AuditRot --> FS["File System"]
 AuditSvc --> Winston
 ArchivageSvc["archivage.service.ts"] --> AuditLog
 ArchivageSvc --> AuditRepo["TypeORM Repository"]
@@ -716,6 +839,9 @@ MIG["003-audit-logs-archive.sql"] --> AuditRepo
 - [config.guard.ts:1-55](file://backend/src/modules/configuration/guards/config.guard.ts#L1-L55)
 - [configuration-seed.service.ts:172-251](file://backend/src/modules/configuration/services/configuration-seed.service.ts#L172-L251)
 - [003-audit-logs-archive.sql:1-129](file://backend/src/database/migrations/003-audit-logs-archive.sql#L1-L129)
+- [audit-rotation.service.ts:10-17](file://backend/src/modules/auth/services/audit-rotation.service.ts#L10-L17)
+- [audit-rotation.cron.ts:9-11](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L9-L11)
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 
 **Section sources**
 - [audit.interceptor.ts:12-15](file://backend/src/common/interceptors/audit.interceptor.ts#L12-L15)
@@ -734,6 +860,9 @@ MIG["003-audit-logs-archive.sql"] --> AuditRepo
 - [config.guard.ts:1-55](file://backend/src/modules/configuration/guards/config.guard.ts#L1-L55)
 - [configuration-seed.service.ts:172-251](file://backend/src/modules/configuration/services/configuration-seed.service.ts#L172-L251)
 - [003-audit-logs-archive.sql:1-129](file://backend/src/database/migrations/003-audit-logs-archive.sql#L1-L129)
+- [audit-rotation.service.ts:10-17](file://backend/src/modules/auth/services/audit-rotation.service.ts#L10-L17)
+- [audit-rotation.cron.ts:9-11](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L9-L11)
+- [audit-helpers.ts:1-200](file://backend/src/modules/auth/utils/audit-helpers.ts#L1-L200)
 
 ## Performance Considerations
 - **Audit logging overhead**: Minimize serialization of large change sets; mask sensitive fields to reduce payload size
@@ -742,6 +871,9 @@ MIG["003-audit-logs-archive.sql"] --> AuditRepo
 - **Transport costs**: Use asynchronous Winston transports and batching where applicable
 - **Interceptor performance**: Non-blocking error handling with setImmediate to prevent request blocking
 - **Database optimization**: Use separate tables for active vs archived logs; optimize queries for large datasets
+- **Storage optimization**: **NEW** Dual storage strategy reduces database load while maintaining query performance
+- **Rotation performance**: **NEW** Asynchronous rotation processes prevent blocking of main application threads
+- **File system management**: **NEW** Compressed archive files reduce storage footprint and improve backup efficiency
 
 ## Troubleshooting Guide
 - **Audit logs not appearing**:
@@ -763,6 +895,15 @@ MIG["003-audit-logs-archive.sql"] --> AuditRepo
   - Verify database migration executed successfully
   - Check PostgreSQL functions for archive operations
   - Monitor archive table growth and cleanup processes
+- **Rotation service failures**:
+  - **NEW** Verify cron job scheduling is active and timezone settings are correct
+  - Check file system permissions for archive directory
+  - Monitor Redis connectivity for cache invalidation
+  - Validate storage space availability for archive operations
+- **Storage monitoring issues**:
+  - **NEW** Verify storage statistics collection is running
+  - Check file system disk space and inode limits
+  - Monitor database storage growth patterns
 
 **Section sources**
 - [audit.service.ts:186-192](file://backend/src/modules/auth/services/audit.service.ts#L186-L192)
@@ -770,9 +911,11 @@ MIG["003-audit-logs-archive.sql"] --> AuditRepo
 - [monitoring.service.ts:169-199](file://backend/src/modules/monitoring/services/monitoring.service.ts#L169-L199)
 - [audit.interceptor.ts:154-157](file://backend/src/common/interceptors/audit.interceptor.ts#L154-L157)
 - [003-audit-logs-archive.sql:44-87](file://backend/src/database/migrations/003-audit-logs-archive.sql#L44-L87)
+- [audit-rotation.service.ts:24-87](file://backend/src/modules/auth/services/audit-rotation.service.ts#L24-L87)
+- [audit-rotation.cron.ts:16-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L16-L44)
 
 ## Conclusion
-eLISAschool's enhanced audit and monitoring system provides comprehensive security tracking through automatic audit interception, RESTful API management, advanced archiving capabilities, and extensive documentation. The system now supports automatic CRUD operation logging, comprehensive log management through REST APIs, database-level archiving with retention policies, and sophisticated statistics and analytics. By leveraging configuration-driven security parameters, structured audit records, and monitoring endpoints, the platform supports compliance reporting, forensic analysis, and automated anomaly detection. The addition of automatic interception, REST API management, and advanced archiving significantly strengthens the security posture and operational capabilities.
+eLISAschool's enhanced audit and monitoring system provides comprehensive security tracking through automatic audit interception, RESTful API management, advanced archiving capabilities, automated rotation services, and extensive documentation. The system now supports automatic CRUD operation logging, comprehensive log management through REST APIs, database-level archiving with retention policies, **NEW** file system archive management with compression, and sophisticated statistics and analytics. The addition of the AuditRotationService, AuditRotationCron, and AuditHelpers significantly enhances the system's scalability, storage management, and operational efficiency. By leveraging configuration-driven security parameters, structured audit records, automated rotation processes, and monitoring endpoints, the platform supports compliance reporting, forensic analysis, and automated anomaly detection across multiple storage tiers. The dual storage strategy and comprehensive rotation capabilities strengthen the security posture while ensuring optimal system performance and regulatory compliance.
 
 ## Appendices
 
@@ -810,6 +953,8 @@ eLISAschool's enhanced audit and monitoring system provides comprehensive securi
 - **system.maintenance_mode**: System maintenance toggle
 - **audit.retention_days**: Audit log retention period (30/365 days)
 - **audit.archive_enabled**: Enable/disable automatic archiving
+- **audit.rotation.enabled**: **NEW** Enable/disable automated log rotation
+- **audit.storage.compression**: **NEW** Enable/disable archive file compression
 
 **Section sources**
 - [configuration-seed.service.ts:172-246](file://backend/src/modules/configuration/services/configuration-seed.service.ts#L172-L246)
@@ -820,14 +965,30 @@ eLISAschool's enhanced audit and monitoring system provides comprehensive securi
 - **GET /api/audit/logs/me**: Get current user's audit logs
 - **GET /api/audit/logs/export**: Export audit logs in CSV or JSON format
 - **GET /api/audit/logs/statistics**: Get comprehensive audit statistics and analytics
+- **GET /api/audit/statistiques-stockage**: **NEW** Get real-time storage usage statistics
+- **GET /api/audit/archives**: **NEW** List available archive files
+- **POST /api/audit/rotation**: **NEW** Manually execute log rotation process
+- **POST /api/audit/archiver**: **NEW** Manually archive old logs
+- **POST /api/audit/nettoyer**: **NEW** Manually clean obsolete logs
 
 **Section sources**
-- [audit.controller.ts:22-300](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L300)
+- [audit.controller.ts:22-126](file://backend/src/modules/audit/controllers/audit.controller.ts#L22-L126)
 
-### Audit Interceptor Configuration Examples
+### Enhanced Audit Interceptor Configuration Examples
 - **Basic Configuration**: `createAuditInterceptor({ module: 'eleves', entityType: 'Eleve' })`
 - **Custom Actions**: `createAuditInterceptor({ module: 'eleves', entityType: 'Eleve', customActions: [{ route: '/inscription', method: 'POST', action: AuditAction.ELEVE_INSCRIPTION }] })`
 - **Excluded Routes**: `createAuditInterceptor({ module: 'eleves', entityType: 'Eleve', excludeRoutes: ['/health'] })`
 
 **Section sources**
 - [audit.interceptor.ts:51-63](file://backend/src/common/interceptors/audit.interceptor.ts#L51-L63)
+
+### Audit Rotation Service Configuration
+- **Default Retention**: 90 days for archive files, 365 days for long-term storage
+- **Archive Trigger**: Logs older than 30 days are eligible for rotation
+- **Compression**: **NEW** Archive files are automatically compressed for storage efficiency
+- **Storage Limits**: **NEW** Configurable storage thresholds trigger automatic cleanup
+- **Cache Management**: **NEW** Redis cache invalidation ensures audit data consistency
+
+**Section sources**
+- [audit-rotation.service.ts:18-273](file://backend/src/modules/auth/services/audit-rotation.service.ts#L18-L273)
+- [audit-rotation.cron.ts:16-44](file://backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts#L16-L44)

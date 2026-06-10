@@ -101,4 +101,7 @@ export class UtilisateurEtablissement {
     majAt!: Date;
 }
 
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { UtilisateurEtablissement };
+
 export default UtilisateurEtablissement;

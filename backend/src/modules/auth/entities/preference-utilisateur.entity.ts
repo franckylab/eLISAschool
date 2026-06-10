@@ -90,4 +90,7 @@ export class PreferenceUtilisateur {
     updatedAt!: Date;
 }
 
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { PreferenceUtilisateur, CategoriePreference };
+
 export default PreferenceUtilisateur;

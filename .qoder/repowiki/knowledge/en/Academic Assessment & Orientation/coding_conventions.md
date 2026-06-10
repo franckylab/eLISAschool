@@ -1,0 +1,3 @@
+- Controllers instantiate services as module-level constants and wrap every route handler in a try-catch block that delegates errors to Express middleware.
+- Services follow a singleton export pattern (e.g., `export const notesService = new NotesService()`) alongside the class definition.
+- Entities consistently include a `etablissementId` column with a ManyToOne relationship to the `Etablissement` entity for data isolation.

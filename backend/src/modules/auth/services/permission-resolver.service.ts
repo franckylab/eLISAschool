@@ -53,14 +53,15 @@ export class PermissionResolverService {
         this.utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
         this.utilisateurPermissionRepo = AppDataSource.getRepository(UtilisateurPermission);
 
-        // Précharger le cache global des permissions au démarrage
-        this.preloadGlobalPermissions();
+        // NOTE: preloadGlobalPermissions() est appelé séparément après la connexion DB
+        // pour éviter l'erreur "No metadata for Permission was found"
     }
 
     /**
      * Précharge toutes les permissions actives en mémoire
+     * Doit être appelée APRÈS la connexion à la base de données
      */
-    private async preloadGlobalPermissions(): Promise<void> {
+    async preloadGlobalPermissions(): Promise<void> {
         try {
             const permissions = await this.permissionRepo.find({ where: { actif: true } });
             for (const perm of permissions) {

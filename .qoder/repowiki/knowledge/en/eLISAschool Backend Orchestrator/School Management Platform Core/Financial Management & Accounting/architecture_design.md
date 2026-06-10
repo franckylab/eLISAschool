@@ -1,5 +1,0 @@
-- **Layered Structure**: Follows a standard Controller-Service-Entity pattern. `finances.controller.ts` acts as the single entry point, delegating to specialized services like `scolarite.service.ts` (fees/payments) and `depenses.service.ts` (expenses).
-- **Workflow Engine**: Implements a dedicated `finance-workflow.service.ts` that enforces role-based, amount-threshold validation levels for payments, expenses, and budgets, decoupling business rules from core CRUD logic.
-- **Configuration Management**: Uses a centralized `finances.config.ts` to define default thresholds, accounting plans (OHADA/SYSCOHADA), and workflow rules, allowing runtime customization.
-- **Automated Tasks**: Includes `cron-jobs.ts` for scheduled financial operations such as automatic payment reminders, budget alerts, and report generation.
-- **Data Modeling**: Defines a comprehensive set of TypeORM entities in `entities/` covering the full financial lifecycle, from `FraisScolarite` and `Echeancier` to `Depense` and `Budget`.

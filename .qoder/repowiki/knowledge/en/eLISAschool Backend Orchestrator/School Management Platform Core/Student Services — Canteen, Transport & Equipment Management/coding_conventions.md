@@ -1,5 +1,0 @@
-- Controllers instantiate a single service instance at module scope (e.g., new CantineService()) and reuse it across all route handlers.
-- Every POST/PUT route validates request bodies with validateDto(schema, req.body) before invoking service methods.
-- Service methods accept an optional etablissementId parameter and apply it as a WHERE filter in every repository query for multi-tenant isolation.
-- DTOs are defined as Zod object schemas with z.infer type aliases exported alongside (e.g., CreateMenuDto = z.infer<typeof createMenuSchema>).
-- Each module's index.ts barrel-exports entities, dto, services, and controllers via export * from './subdir'.

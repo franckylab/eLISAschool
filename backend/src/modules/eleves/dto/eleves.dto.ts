@@ -47,10 +47,13 @@ export const queryElevesSchema = paginationWithSortSchema
 export type QueryElevesDto = z.infer<typeof queryElevesSchema>;
 
 // ==================================
-// PRÉINSCRIPTION (Formulaire public)
+// PRÉINSCRIPTION (Formulaire public enrichi)
 // ==================================
 
 export const preinscriptionSchema = z.object({
+    // ==================================
+    // INFORMATIONS ÉLÈVE (complètes)
+    // ==================================
     nom: z.string().min(2).max(100),
     prenom: z.string().min(2).max(100),
     dateNaissance: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -58,18 +61,82 @@ export const preinscriptionSchema = z.object({
     sexe: z.enum(['M', 'F']),
     nationalite: z.string().optional(),
     sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
-    nomTuteur: z.string().min(2).max(150),
-    telephoneTuteur: z.string().min(6).max(20),
-    email: z.string().email().optional(),
+    
+    // Identification additionnelle
+    photo: z.string().url().optional(),
+    groupeSanguin: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).optional(),
+    allergies: z.array(z.string()).optional(),
+    
+    // Contact d'urgence
+    nomContactUrgence: z.string().optional(),
+    telephoneContactUrgence: z.string().optional(),
+    
+    // Adresse complète
     adresseDomicile: z.string().optional(),
     ville: z.string().optional(),
     quartier: z.string().optional(),
-    classeSouhaiteeId: z.string().uuid(),
-    codeEtablissement: z.string().min(2), // Pour résoudre l'établissement
-    nomPere: z.string().optional(),
-    nomMere: z.string().optional(),
+    
+    // Historique scolaire
     ecoleProvenance: z.string().optional(),
     classeAnterieure: z.string().optional(),
+    redoublement: z.boolean().default(false).optional(),
+    
+    // Situation particulière
+    boursier: z.boolean().default(false).optional(),
+    regimeInterne: z.boolean().default(false).optional(),
+    
+    // ==================================
+    // INFORMATIONS PARENTS/RESPONSABLES (complètes)
+    // ==================================
+    
+    // Père
+    nomPere: z.string().optional(),
+    professionPere: z.string().optional(),
+    telephonePere: z.string().optional(),
+    emailPere: z.string().email().optional(),
+    adressePere: z.string().optional(),
+    
+    // Mère
+    nomMere: z.string().optional(),
+    professionMere: z.string().optional(),
+    telephoneMere: z.string().optional(),
+    emailMere: z.string().email().optional(),
+    adresseMere: z.string().optional(),
+    
+    // Tuteur légal (si différent des parents)
+    nomTuteur: z.string().optional(),
+    lienParenteTuteur: z.string().optional(), // 'ONCLE', 'TANTE', 'GRAND_PERE', etc.
+    professionTuteur: z.string().optional(),
+    telephoneTuteur: z.string().optional(),
+    emailTuteur: z.string().email().optional(),
+    adresseTuteur: z.string().optional(),
+    
+    // Contact principal pour notifications
+    email: z.string().email().optional(), // Email principal du responsable
+    
+    // ==================================
+    // INFORMATIONS ÉTABLISSEMENT
+    // ==================================
+    classeSouhaiteeId: z.string().uuid(),
+    codeEtablissement: z.string().min(2), // Pour résoudre l'établissement
+    
+    // ==================================
+    // DOCUMENTS JUSTIFICATIFS (optionnel)
+    // ==================================
+    documentsJustificatifs: z.array(z.object({
+        url: z.string().url(),
+        type: z.string(), // 'ACTE_NAISSANCE', 'PHOTO', 'CERTIFICAT_SCOLAIRE', etc.
+        nom: z.string().optional(),
+    })).optional(),
+    
+    // ==================================
+    // INFORMATIONS COMPLÉMENTAIRES
+    // ==================================
+    commentaire: z.string().optional(), // Remarques particulières
+    situationFamiliale: z.string().optional(), // 'MARIES', 'DIVORCES', 'VEUF', etc.
+    personneAutorisee: z.string().optional(), // Personne autorisée à récupérer l'élève
+    transportScolaire: z.boolean().default(false).optional(),
+    cantine: z.boolean().default(false).optional(),
 });
 
 export type PreinscriptionDto = z.infer<typeof preinscriptionSchema>;

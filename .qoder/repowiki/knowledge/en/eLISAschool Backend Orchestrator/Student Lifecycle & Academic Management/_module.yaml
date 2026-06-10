@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_student_lifecycle
+module_path: 3323c19c72eb2f9fb60d2e706e2782b7
 title: Student Lifecycle & Academic Management
 scope:
     - backend/src/modules/eleves/
@@ -10,4 +10,11 @@ scope:
     - backend/src/modules/clubs/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_academic_structure
+    - path: backend/backend_hr_payroll
+    - path: backend/backend_operations_support
+    - path: shared
+    - path: backend/backend_core_auth
+    - path: backend/backend_platform_infra
+    - path: backend/backend_finance

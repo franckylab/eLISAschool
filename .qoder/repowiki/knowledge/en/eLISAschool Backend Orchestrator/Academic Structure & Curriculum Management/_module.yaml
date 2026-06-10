@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_academic_structure
+module_path: c58424b5580c43c9f3ab0cc33c6968ba
 title: Academic Structure & Curriculum Management
 scope:
     - backend/src/modules/annees-scolaires/
@@ -12,4 +12,9 @@ scope:
     - backend/src/modules/types-enum/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_student_lifecycle
+    - path: backend/backend_operations_support
+    - path: backend/backend_platform_infra
+    - path: backend/backend_core_auth
+    - path: backend/backend_finance

@@ -1,4 +1,0 @@
-- **Schema Management**: Sequential SQL migrations (009-036) in `backend/database/migrations/` handle modular feature rollouts (Finances, RH, African Context) and structural changes (enum tables, period tracking).
-- **Operational Tooling**: TypeScript and Shell scripts in `backend/scripts/` provide CLI utilities for index analysis, load testing, and migration execution (e.g., `analyze-indexes.ts`, `run-config-migration.sh`).
-- **Technical Knowledge Base**: Markdown guides in `backend/docs/` define architectural patterns for subsystems like Dynamic Dashboards, Audit Trails, and Pagination v2.0.
-- **Quality Assurance**: Unit tests in `backend/test/unit/` validate core utilities such as pagination logic and Redis services.

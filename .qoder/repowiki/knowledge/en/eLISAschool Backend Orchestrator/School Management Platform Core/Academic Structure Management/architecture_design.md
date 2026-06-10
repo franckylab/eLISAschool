@@ -1,6 +1,0 @@
-- Three independent sub-modules (etablissement, cycles, niveaux) each following a consistent layered architecture: controllers → services → entities, with DTOs for input validation.
-- Each sub-module exports via barrel index.ts files that re-export from entities, dto, services, and controllers in a fixed order.
-- Controllers use Express Router instances with authMiddleware and role-based guards; services inject TypeORM repositories via AppDataSource.
-- Shared enums (SousSysteme, CycleScolaire, TypeEtablissement) are defined in etablissement.entity.ts and imported by cycles and niveaux modules, establishing etablissement as the canonical source for academic domain vocabulary.
-- The etablissement service uses transactional query runners for atomic creation of an establishment plus its default configuration, and integrates with a validation-workflow module when require_validation is enabled.
-- Soft deletion is enforced at the etablissement level via actif/statut fields instead of physical removal, while cycles and niveaux use hard delete.

@@ -1,0 +1,5 @@
+- **Layered Structure**: Organized into `controllers` (Express router with Zod validation), `services` (business logic), `entities` (TypeORM models), `dto` (Zod schemas), and `config`.
+- **Core Domains**: Split into distinct service areas: `scolarite` (fees/schedules), `depenses` (expenses/requests), `comptabilite` (OHADA ledger), `tresorerie` (cash/bank), and `budget`.
+- **Workflow Engine**: A dedicated `finance-workflow.service.ts` implements a multi-level approval system for payments and expenses based on configurable monetary thresholds and user roles.
+- **Data Model**: Uses TypeORM entities like `FraisScolarite`, `Echeancier`, `Depense`, and `EcritureComptable` with UUID primary keys and multi-tenancy via `etablissementId`.
+- **Automation**: Includes `cron-jobs.ts` for automated payment reminders, budget alerts, and financial report generation using `node-cron`.

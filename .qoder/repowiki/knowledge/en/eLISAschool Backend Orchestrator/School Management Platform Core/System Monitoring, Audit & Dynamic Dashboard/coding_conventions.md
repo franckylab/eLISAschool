@@ -1,4 +1,0 @@
-- Controllers use a standardized response format with `success`, `data`, and `timestamp` fields for all successful API responses.
-- Services are exported as singleton instances (e.g., `export const dashboardDataService = new DashboardDataService()`) to facilitate dependency injection and reuse.
-- DTO validation is performed using `validateDto` with Zod schemas at the controller entry point before passing data to services.
-- Role-based access control is enforced in controllers using `authMiddleware` combined with `requireRoles` for specific administrative endpoints.

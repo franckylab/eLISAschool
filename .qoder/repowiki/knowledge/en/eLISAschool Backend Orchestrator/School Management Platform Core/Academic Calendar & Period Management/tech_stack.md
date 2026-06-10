@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; TypeORM with PostgreSQL-style UUID primary keys and date columns; Express Router for HTTP endpoint definitions.

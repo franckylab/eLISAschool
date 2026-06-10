@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/backend_core_auth
+module_path: 8c1a6fd5d62d014f08d283743694c2bc
 title: Authentication, Authorization & Multi-Tenancy
 scope:
     - backend/src/common/
@@ -8,4 +8,11 @@ scope:
     - backend/src/modules/rbac/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/backend_operations_support
+    - path: backend/backend_platform_infra
+    - path: shared
+    - path: backend/backend_student_lifecycle
+    - path: backend/backend_hr_payroll
+    - path: docker
+    - path: backend/backend_academic_structure

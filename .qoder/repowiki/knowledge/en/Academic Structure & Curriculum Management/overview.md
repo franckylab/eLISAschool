@@ -1,0 +1,1 @@
+Manages the hierarchical academic framework including school years, cycles, levels, subjects, periods, and detailed pedagogical program chapters.

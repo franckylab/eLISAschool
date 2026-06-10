@@ -7,7 +7,10 @@
  */
 
 import 'reflect-metadata';
+// IMPORTANT: dotenv.config() DOIT être appelé avant tout autre import
 import dotenv from 'dotenv';
+dotenv.config();
+
 import { AppDataSource } from '@database/data-source';
 import { createApp } from './app';
 import { logger } from '@common/utils/logger.util';
@@ -20,9 +23,10 @@ import { initFinanceCronJobs } from '@modules/finances/services/cron-jobs';
 import { initGamificationCronJobs } from '@modules/gamification/cron-jobs';
 import { initScoringPersonnelCronJobs } from '@modules/suivi-personnel/cron-jobs';
 import { initSondageCronJobs } from '@modules/sondages/cron-jobs';
+import { permissionResolverService } from '@modules/auth/services';
 
-// Chargement des variables d'environnement
-dotenv.config();
+// Chargement des variables d'environnement (déjà fait en haut du fichier)
+// dotenv.config(); // ← DÉPLACÉ EN HAUT
 
 /**
  * Fonction principale de démarrage du serveur
@@ -33,6 +37,13 @@ async function bootstrap(): Promise<void> {
         logger.info('🔌 Connexion à la base de données PostgreSQL...');
         await AppDataSource.initialize();
         logger.info('✅ Connexion à la base de données établie avec succès');
+
+        // Précharger le cache des permissions APRÈS la connexion DB
+        try {
+            await permissionResolverService.preloadGlobalPermissions();
+        } catch (error) {
+            logger.warn('⚠️  Erreur lors du préchargement des permissions (non bloquant)', error);
+        }
 
         // Chargement des providers de notifications
         // NOTE: synchronize:true crée automatiquement la table notification_providers

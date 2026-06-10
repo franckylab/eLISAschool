@@ -1,1 +1,0 @@
-Provides domain services for student canteen subscriptions and meal tracking, school transport route enrollment and attendance, and equipment inventory with loan lifecycle management.

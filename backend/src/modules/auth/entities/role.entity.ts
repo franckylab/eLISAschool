@@ -21,7 +21,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import Permission from './permission.entity';
+import { Permission } from './permission.entity';
 
 /**
  * Entité Role
@@ -83,5 +83,8 @@ export class Role {
     })
     permissions!: Permission[];
 }
+
+// Export nommé pour TypeORM (détection automatique via glob pattern)
+export { Role };
 
 export default Role;

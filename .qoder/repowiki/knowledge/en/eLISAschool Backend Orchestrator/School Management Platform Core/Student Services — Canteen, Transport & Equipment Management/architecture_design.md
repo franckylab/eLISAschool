@@ -1,5 +1,0 @@
-- Each sub-module (cantine, transport, materiel) follows a strict four-layer structure: entities (TypeORM models), dto (Zod schemas + inferred types), services (business logic with TypeORM repositories via AppDataSource), controllers (Express Router instances). Entry points are index.ts files that re-export all layers.
-- Controllers delegate to singleton service instances; routes use authMiddleware with role guards (staffOnly/adminOnly) and validateDto before calling service methods.
-- Services interact with cross-cutting modules: configuration (getParam helpers), validation-workflow (createWorkflow for approval flows), notifications (notificationTemplates for parent alerts), and responsables-eleves (parentsService).
-- All entities carry etablissementId for multi-tenancy, enforced at query time in service methods.
-- Evidence: cantine/index.ts, transport/index.ts, materiel/index.ts export * from sub-layers; cantine.controller.ts imports validateDto and authMiddleware; cantine.service.ts uses AppDataSource.getRepository and getParam helpers; entities define @Index on etablissementId.

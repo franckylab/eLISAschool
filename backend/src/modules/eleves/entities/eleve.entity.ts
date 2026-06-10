@@ -34,6 +34,7 @@ export enum StatutEleve {
 @Index(['utilisateurId'])
 @Index(['matricule'])
 @Index(['etablissementId'])
+@Index(['nom', 'prenom'])
 export class Eleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -44,6 +45,16 @@ export class Eleve {
     @OneToOne(() => Utilisateur)
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur?: Utilisateur;
+
+    // ==================================
+    // IDENTITÉ DE L'ÉLÈVE (CRITIQUE)
+    // ==================================
+    
+    @Column({ type: 'varchar', length: 100 })
+    nom!: string;
+
+    @Column({ type: 'varchar', length: 100 })
+    prenom!: string;
 
     @Column({ type: 'varchar', length: 50, unique: true })
     matricule!: string;
@@ -63,18 +74,77 @@ export class Eleve {
     @Column({ type: 'enum', enum: SousSysteme, default: SousSysteme.FRANCOPHONE })
     sousSysteme!: SousSysteme;
 
-    // Parents / Tuteurs (Simplifié pour l'instant)
+    // ==================================
+    // PARENTS / TUTEURS - INFORMATIONS DIRECTES
+    // ==================================
+    /**
+     * @deprecated Utiliser ResponsableEleve à la place
+     * Ces champs sont utilisés UNIQUEMENT pour les préinscriptions.
+     * Lors de la conversion en inscription, les parents doivent être
+     * migrés vers la table ResponsableEleve avec des comptes Utilisateur.
+     * 
+     * @see ParentsService.migrerDepuisChampsDirects()
+     * @see ParentsService.getParentsInfo()
+     * 
+     * Sera supprimé dans la version 3.0
+     */
+    
+    // ==================================
+    // PÈRE
+    // ==================================
     @Column({ type: 'varchar', length: 150, nullable: true })
     nomPere?: string;
 
     @Column({ type: 'varchar', length: 150, nullable: true })
+    professionPere?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    telephonePere?: string;
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    emailPere?: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    adressePere?: string;
+
+    // ==================================
+    // MÈRE
+    // ==================================
+    @Column({ type: 'varchar', length: 150, nullable: true })
     nomMere?: string;
 
     @Column({ type: 'varchar', length: 150, nullable: true })
+    professionMere?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    telephoneMere?: string;
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    emailMere?: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    adresseMere?: string;
+
+    // ==================================
+    // TUTEUR LÉGAL
+    // ==================================
+    @Column({ type: 'varchar', length: 150, nullable: true })
     nomTuteur?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    lienParenteTuteur?: string; // 'ONCLE', 'TANTE', 'GRAND_PERE', etc.
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    professionTuteur?: string;
 
     @Column({ type: 'varchar', length: 20, nullable: true })
     telephoneTuteur?: string;
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    emailTuteur?: string;
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    adresseTuteur?: string;
 
     @Column({ type: 'date' })
     dateInscription!: Date;
@@ -121,6 +191,25 @@ export class Eleve {
 
     @Column({ type: 'boolean', default: false })
     regimeInterne!: boolean;
+
+    // ==================================
+    // CONTACT PRINCIPAL ET SERVICES
+    // ==================================
+    
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    emailPrincipal?: string; // Email principal pour notifications
+
+    @Column({ type: 'boolean', default: false })
+    transportScolaire!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    cantine!: boolean;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    situationFamiliale?: string; // 'MARIES', 'DIVORCES', 'VEUF', etc.
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    personneAutorisee?: string; // Personne autorisée à récupérer l'élève
 
     @Column({ type: 'varchar', length: 30, default: StatutEleve.ACTIF })
     statut!: StatutEleve;

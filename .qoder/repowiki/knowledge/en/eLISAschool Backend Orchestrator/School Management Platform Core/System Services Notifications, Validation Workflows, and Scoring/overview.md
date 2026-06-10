@@ -1,1 +1,0 @@
-Provides multi-channel notifications with provider fallback, a generic multi-level validation workflow engine, and a configurable student scoring system.

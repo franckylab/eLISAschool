@@ -1,0 +1,4 @@
+- Controllers delegate all business logic to singleton or instantiated service classes and use a local `validateDto` helper to enforce Zod schema validation before processing requests.
+- Services enforce multi-tenancy by consistently filtering database queries with `etablissementId` derived from the authenticated user's context.
+- Entities utilize TypeORM decorators with UUID primary keys and maintain explicit relationships (ManyToOne, OneToOne) to link personnel, contracts, and organizational units.
+- Complex write operations in services trigger asynchronous audit logs via `auditService` and optionally initiate validation workflows based on dynamic configuration flags.

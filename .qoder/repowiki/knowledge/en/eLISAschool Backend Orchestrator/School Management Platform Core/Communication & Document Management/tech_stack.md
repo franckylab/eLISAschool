@@ -1,3 +1,0 @@
-- Uses Zod for schema validation via a centralized `validateDto` utility.
-- Leverages TypeORM for data persistence with UUID primary keys and enum support.
-- Integrates with a centralized configuration system (`@modules/configuration`) for dynamic parameter retrieval (e.g., message limits, approval levels).
