@@ -80,7 +80,8 @@ ETABLISSEMENT (racine — enums partagés : SousSysteme, TypeEtablissement, Cycl
 ├── COMMUNICATION
 │   ├── MESSAGERIE (conversations + messages + soft delete)
 │   ├── NOTIFICATIONS (4 canaux + scheduling + bulk)
-│   └── REQUÊTES (workflow multi-niveaux d'approbation)
+│   ├── REQUÊTES (workflow multi-niveaux d'approbation)
+│   └── **SONDAGES** (templates + votes + analyses + récurrents + export PDF/CSV)
 │
 ├── DOCUMENTS
 │   ├── CARTES (5 types + QR code + expiration + renouvellement)
@@ -970,6 +971,141 @@ ModeleDocument : 7 types (BULLETIN, CERTIFICAT, CARTE_SCOLAIRE, ATTESTATION, RAP
 - Invalidation automatique à chaque modification
 - EventEmitter pour propagation des changements (ConfigurationListener)
 - Paramètres non modifiables au runtime : flag `modifiableRuntime = false`
+
+---
+
+## Domaine 9 : Sondages — Système de Sondage Complet
+
+### Architecture
+
+Le module Sondages permet la création et la gestion de sondages avec :
+- **Templates réutilisables** : Sondages prédéfinis par catégorie (satisfaction, évaluation, consultation)
+- **Multi-destinataires** : Envoi individuel ou en masse (max 500 destinataires)
+- **Vote sécurisé** : Unique ou multiple, anonyme ou nominatif
+- **Sondages programmés** : Différation avec `dateProgrammation`
+- **Sondages récurrents** : Création automatique d'occurrences (quotidien, hebdomadaire, mensuel)
+- **Analyses en temps réel** : Statistiques, taux de participation, répartition des votes
+- **Export multi-format** : CSV (données brutes), PDF/HTML (graphiques visuels)
+- **Notifications temps réel** : WebSocket pour alertes instantanées
+- **Cron jobs** : Automatisation (fermeture expirés, activation programmés, création récurrents, rappel)
+
+### Flux de données
+
+```
+TemplateSondage (modèle prédéfini)
+  → Créer sondage (copier depuis template ou créer from scratch)
+  → Statut initial : BROUILLON | PROGRAMME | ACTIF
+  → Destinataires : individu ou groupe (max 500)
+  
+Sondage actif
+  → Voter (option unique ou multiple selon choixMultiple)
+  → Vote enregistré (anonyme ou nominatif selon estAnonyme)
+  → Analyses en temps réel (taux participation, répartition)
+  
+Sondage expiré ou terminé
+  → Statut = TERMINE
+  → Export CSV/PDF des résultats
+  
+Sondage récurrent
+  → Cron job quotidien crée nouvelle occurrence
+  → sondageParentId lie occurrence au parent
+```
+
+### Règles métier critiques
+
+**Templates** :
+- Templates système (`estTemplateSysteme = true`) : non supprimables, visibilità `systeme`
+- Templates personnalisés : créés par ADMIN/SUPER_ADMIN, visibilità `etablissement`
+- 5 templates par défaut : Satisfaction générale, Évaluation cours, Choix activité, Feedback événement, Suggestions amélioration
+
+**Votes** :
+- Unicité : 1 utilisateur = 1 vote par sondage (sauf `choixMultiple = true`)
+- Anonymat : Si `estAnonyme = true`, `voterId` stocké mais non visible dans analyses
+- Modification : Vote modifiable tant que sondage ACTIF
+- Suppression : Impossible une fois sondage TERMINE
+
+**Sondages récurrents** :
+- `frequenceRecurrent` : 'quotidien', 'hebdomadaire', 'mensuel'
+- `jourRecurrent` : Jour de la semaine (1-7) ou du mois (1-31)
+- `heureRecurrent` : Heure de création automatique
+- `dateFinRecurrent` : Date limite de récurrence (NULL = indéfini)
+- Occurrences créées avec statut PROGRAMME
+
+**Analyses** :
+- Taux participation = (votants uniques / destinataires) × 100
+- Répartition : Nombre de votes par option avec pourcentage
+- Statistiques : total_votes, total_destinataires, taux_participation
+- Export CSV : données brutes pour analyse externe
+- Export PDF : graphique visuel avec HTML/CSS moderne
+
+### Cron Jobs (4)
+
+| Job | Schedule | Action |
+|-----|----------|--------|
+| **Fermer sondages expirés** | `*/10 * * * *` | Passer à `termine` si `dateLimite` passée |
+| **Activer sondages programmés** | `*/10 * * * *` | Passer à `actif` si `dateProgrammation` <= maintenant |
+| **Créer occurrences récurrentes** | `0 1 * * *` | Générer nouvelles occurrences pour sondages récurrents |
+| **Rappel sondages actifs** | `0 9 * * 1-5` | Rappeler les sondages avec faible participation |
+
+### Permissions RBAC (7)
+
+```typescript
+SONDAGES_CREATE = 'sondages:create',      // Créer sondage/template
+SONDAGES_VOTE = 'sondages:vote',          // Voter à un sondage
+SONDAGES_ANALYZE = 'sondages:analyze',    // Voir analyses/export
+SONDAGES_VIEW = 'sondages:view',          // Voir sondages
+SONDAGES_EDIT = 'sondages:edit',          // Modifier sondage
+SONDAGES_DELETE = 'sondages:delete',      // Supprimer sondage
+SONDAGES_TEMPLATES_MANAGE = 'sondages:templates:manage',  // Gérer templates
+```
+
+### Intégration avec Notifications
+
+**Pattern d'envoi de notifications lors de la création** :
+```typescript
+// Dans sondage.service.ts - createSondage()
+try {
+    // 1. Transaction : créer sondage + options
+    await queryRunner.commitTransaction();
+
+    // 2. Notifications NON-BLOQUANTES
+    if (!isScheduled) {
+        try {
+            await this.envoyerNotificationsSondage(sondage, destinataireIds);
+            sondageWebSocketService.broadcastSondageActive(sondage.id, destinataireIds);
+        } catch (error) {
+            logger.warn(`[Sondage] Échec envoi notifications (non bloquant)`, error);
+        }
+    }
+} catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+}
+```
+
+### Points Clés
+
+1. **Multi-tenancy strict** : Toutes les opérations filtrées par `etablissementId`
+2. **Templates système** : Visibilité `systeme` avec `estTemplateSysteme = true` (non supprimables)
+3. **Vote unique** : Un utilisateur ne peut voter qu'une fois par sondage (sauf `choixMultiple`)
+4. **Anonymat** : Si `estAnonyme = true`, le vote ne stocke pas l'ID utilisateur visible
+5. **Récurrence** : `sondageParentId` lie les occurrences au sondage parent
+6. **Export** : CSV pour données brutes, PDF/HTML pour visualisation avec graphiques CSS
+7. **WebSocket** : Service prêt pour Socket.IO (interface TypeScript sans dépendance externe)
+8. **Cron jobs** : Activation requise via `ENABLE_CRON_JOBS=true` dans `.env`
+
+### Fichiers de Référence
+
+- **Entités** : `backend/src/modules/sondages/entities/sondage.entity.ts` (299 lignes)
+- **DTOs** : `backend/src/modules/sondages/dto/sondage.dto.ts` (107 lignes, 9 schémas Zod)
+- **Service** : `backend/src/modules/sondages/services/sondage.service.ts` (566 lignes)
+- **Controller** : `backend/src/modules/sondages/controllers/sondages.controller.ts` (368 lignes, 18 routes)
+- **Cron Jobs** : `backend/src/modules/sondages/cron-jobs.ts` (230 lignes, 4 tâches)
+- **Export PDF** : `backend/src/modules/sondages/services/sondage.pdf.ts`
+- **WebSocket** : `backend/src/modules/sondages/services/sondage.websocket.ts` (115 lignes)
+- **Migration** : `backend/database/migrations/041-module-sondages.sql` (tables + seeds)
+- **Migration récurrents** : `backend/database/migrations/042-sondages-recurrents.sql`
+- **Déploiement** : `scripts/deploy-sondages.sh` (script automatisé)
 
 ---
 

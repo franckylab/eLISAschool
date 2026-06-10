@@ -1,0 +1,1 @@
+Provides shared types, enums, constants, and Zod validation schemas for cross-application consistency between backend and frontend.

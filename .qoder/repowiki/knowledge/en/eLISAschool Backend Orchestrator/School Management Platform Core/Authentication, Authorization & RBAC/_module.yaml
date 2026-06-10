@@ -1,9 +1,20 @@
 schema_version: 1
-module_path: backend/business_modules/auth_security
+module_path: c3de473ca229a4e26e2ee907f529860c
 title: Authentication, Authorization & RBAC
 scope:
     - backend/src/modules/auth/
     - backend/src/modules/rbac/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/business_modules/system_monitoring
+    - path: backend/business_modules/hr
+    - path: backend/business_modules/academic_structure
+    - path: backend/business_modules/student_health
+    - path: backend/business_modules/finance
+    - path: backend/business_modules/academic_content
+    - path: backend/business_modules/students
+    - path: backend/business_modules/system_config
+    - path: backend/business_modules/student_services
+    - path: backend/business_modules/student_activities
+    - path: backend/business_modules/communication

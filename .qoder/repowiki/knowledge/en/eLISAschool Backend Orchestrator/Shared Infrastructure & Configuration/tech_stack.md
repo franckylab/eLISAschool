@@ -1,1 +1,0 @@
-TypeORM with PostgreSQL, Zod for runtime schema validation, Redis service integration, and Express.js middleware pipeline.

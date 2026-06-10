@@ -45,3 +45,57 @@ export const queryElevesSchema = paginationWithSortSchema
     });
 
 export type QueryElevesDto = z.infer<typeof queryElevesSchema>;
+
+// ==================================
+// PRÉINSCRIPTION (Formulaire public)
+// ==================================
+
+export const preinscriptionSchema = z.object({
+    nom: z.string().min(2).max(100),
+    prenom: z.string().min(2).max(100),
+    dateNaissance: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    lieuNaissance: z.string().min(2).max(100),
+    sexe: z.enum(['M', 'F']),
+    nationalite: z.string().optional(),
+    sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
+    nomTuteur: z.string().min(2).max(150),
+    telephoneTuteur: z.string().min(6).max(20),
+    email: z.string().email().optional(),
+    adresseDomicile: z.string().optional(),
+    ville: z.string().optional(),
+    quartier: z.string().optional(),
+    classeSouhaiteeId: z.string().uuid(),
+    codeEtablissement: z.string().min(2), // Pour résoudre l'établissement
+    nomPere: z.string().optional(),
+    nomMere: z.string().optional(),
+    ecoleProvenance: z.string().optional(),
+    classeAnterieure: z.string().optional(),
+});
+
+export type PreinscriptionDto = z.infer<typeof preinscriptionSchema>;
+
+// ==================================
+// CONVERSION PRÉINSCRIPTION → INSCRIPTION
+// ==================================
+
+export const convertirPreinscriptionSchema = z.object({
+    classeId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(),
+});
+
+export type ConvertirPreinscriptionDto = z.infer<typeof convertirPreinscriptionSchema>;
+
+// ==================================
+// FILTRES INSCRIPTIONS
+// ==================================
+
+export const queryInscriptionsSchema = paginationWithSortSchema
+    .extend({
+        etatInscription: z.enum(['BROUILLON', 'COMPLET', 'EN_ATTENTE_VALIDATION', 'VALIDE', 'REFUSE']).optional(),
+        typeInscription: z.enum(['AUTO', 'MANUELLE', 'PORTAIL']).optional(),
+        estPreinscription: z.boolean().optional(),
+        dateDebut: z.string().date().optional(),
+        dateFin: z.string().date().optional(),
+    });
+
+export type QueryInscriptionsDto = z.infer<typeof queryInscriptionsSchema>;

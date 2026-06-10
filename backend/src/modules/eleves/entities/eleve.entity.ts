@@ -17,6 +17,7 @@ import {
 } from 'typeorm';
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 import { SousSysteme, Etablissement } from '@modules/etablissement/entities';
+import { Classe } from '@modules/classes/entities';
 
 /**
  * Statut workflow d'un dossier élève
@@ -126,6 +127,42 @@ export class Eleve {
 
     @Column({ type: 'enum', enum: ['COMPLET', 'INCOMPLET'], default: 'INCOMPLET' })
     etatDossier!: 'COMPLET' | 'INCOMPLET';
+
+    // ==================================
+    // Champs d'inscription et préinscription (v2.0)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    typeInscription?: 'AUTO' | 'MANUELLE' | 'PORTAIL';
+
+    @Column({ type: 'varchar', length: 30, default: 'COMPLET' })
+    etatInscription!: 'BROUILLON' | 'COMPLET' | 'EN_ATTENTE_VALIDATION' | 'VALIDE' | 'REFUSE';
+
+    @Column({ type: 'boolean', default: false })
+    estPreinscription!: boolean;
+
+    @Column({ type: 'simple-json', nullable: true })
+    documentsJustificatifs?: Array<{ url: string; type: string; dateUpload: string }>;
+
+    @Column({ type: 'uuid', nullable: true })
+    classeSouhaiteeId?: string;
+
+    @ManyToOne(() => Classe, { nullable: true })
+    @JoinColumn({ name: 'classeSouhaiteeId' })
+    classeSouhaitee?: Classe;
+
+    @Column({ type: 'text', nullable: true })
+    commentaireRefus?: string;
+
+    @Column({ type: 'timestamp', nullable: true })
+    dateTraitementInscription?: Date;
+
+    @Column({ type: 'uuid', nullable: true })
+    traitePar?: string;
+
+    @ManyToOne(() => Utilisateur, { nullable: true })
+    @JoinColumn({ name: 'traitePar' })
+    traiteParUser?: Utilisateur;
 
     /**
      * Établissement de l'élève (multi-tenancy)

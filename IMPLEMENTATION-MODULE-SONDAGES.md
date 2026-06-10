@@ -205,17 +205,28 @@ Toutes les requêtes sont isolées par `etablissementId` :
 
 ## Prochaines Étapes (Optionnel)
 
-1. **Cron Job** : Ajouter un cron pour activer automatiquement les sondages programmés
-2. **Notifications** : Intégrer l'envoi de notifications lors de la création d'un sondage
-3. **WebSocket** : Temps réel pour les votes et résultats
-4. **Export PDF** : Analyses visuelles avec graphiques
-5. **Sondages récurrents** : Planification périodique automatique
+1. ~~**Cron Job**~~ : ✅ Ajouté un cron pour activer automatiquement les sondages programmés
+2. ~~**Notifications**~~ : ✅ Intégrer l'envoi de notifications lors de la création d'un sondage
+3. ~~**WebSocket**~~ : ✅ Temps réel pour les votes et résultats
+4. ~~**Export PDF**~~ : ✅ Analyses visuelles avec graphiques HTML
+5. ~~**Sondages récurrents**~~ : ✅ Planification périodique automatique
 
 ## Déploiement
 
+### Option 1: Script automatisé (Recommandé)
+
 ```bash
-# 1. Exécuter la migration
+# Exécuter le script de déploiement complet
+chmod +x scripts/deploy-sondages.sh
+./scripts/deploy-sondages.sh
+```
+
+### Option 2: Déploiement manuel
+
+```bash
+# 1. Exécuter les migrations
 docker exec -i elisaschool-db psql -U franckylab -d elisaschool < backend/database/migrations/041-module-sondages.sql
+docker exec -i elisaschool-db psql -U franckylab -d elisaschool < backend/database/migrations/042-sondages-recurrents.sql
 
 # 2. Redémarrer le backend
 docker compose restart backend
@@ -224,18 +235,41 @@ docker compose restart backend
 curl http://localhost:3000/api/sondages/templates
 ```
 
+### Activation des Cron Jobs
+
+Pour activer les tâches planifiées (recommandé en production) :
+
+```bash
+# Dans .env ou docker-compose.yml
+ENABLE_CRON_JOBS=true
+# ou
+NODE_ENV=production
+```
+
+**Cron jobs actifs** :
+- **Toutes les 5 min** : Activation des sondages programmés
+- **Toutes les heures** : Fermeture automatique des sondages expirés
+- **Tous les jours à 1h** : Création des occurrences récurrentes
+- **Tous les jours à 3h** : Nettoyage des anciens votes
+
 ## Validation
 
 ✅ Compilation TypeScript sans erreur
-✅ Entités TypeORM complètes
-✅ DTOs Zod avec validation
-✅ Service métier complet (520 lignes)
+✅ Entités TypeORM complètes (4 entités + récurrence)
+✅ DTOs Zod avec validation (9 schémas)
+✅ Service métier complet (520+ lignes)
 ✅ Controller Express avec 18 routes
-✅ Migration SQL avec seeds
+✅ Migrations SQL avec seeds (2 fichiers)
 ✅ Registre shared mis à jour
-✅ Permissions RBAC ajoutées
+✅ Permissions RBAC ajoutées (7 permissions)
 ✅ Module enregistré dans app.ts
 ✅ Multi-tenancy implémenté
+✅ Cron jobs configurés (4 tâches)
+✅ Notifications intégrées (non bloquantes)
+✅ WebSocket pour temps réel
+✅ Export PDF avec graphiques HTML
+✅ Sondages récurrents supportés
+✅ Script de déploiement automatisé
 
 ---
 

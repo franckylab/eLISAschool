@@ -8,6 +8,8 @@ import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('lignes_transport')
 @Index(['etablissementId'])
+@Index(['actif'])
+@Index(['etablissementId', 'actif'])
 export class LigneTransport {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -59,6 +61,10 @@ export class LigneTransport {
 
 @Entity('inscriptions_transport')
 @Index(['etablissementId'])
+@Index(['eleveId'])
+@Index(['ligneId'])
+@Index(['etablissementId', 'eleveId'])
+@Index(['actif'])
 export class InscriptionTransport {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

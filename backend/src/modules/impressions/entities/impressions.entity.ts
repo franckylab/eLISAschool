@@ -25,6 +25,7 @@ export enum TypeDocument {
     ATTESTATION = 'ATTESTATION',
     RAPPORT = 'RAPPORT',
     FORMULAIRE = 'FORMULAIRE',
+    RECUPAIEMENT = 'RECUPAIEMENT',
     AUTRE = 'AUTRE',
 }
 

@@ -1,1 +1,0 @@
-Manages school cafeteria, transport, clubs, and ID card operations with centralized configuration, multi-tenancy, and optional validation workflows.

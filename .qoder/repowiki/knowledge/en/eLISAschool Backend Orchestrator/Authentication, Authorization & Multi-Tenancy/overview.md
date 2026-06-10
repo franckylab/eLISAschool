@@ -1,0 +1,1 @@
+Provides JWT-based authentication, dynamic RBAC with hierarchical roles and granular permissions, and multi-tenant establishment isolation for the eLISAschool platform.

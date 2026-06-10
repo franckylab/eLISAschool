@@ -8,13 +8,15 @@ import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { Eleve, StatutEleve } from '../entities';
-import { CreateEleveDto, UpdateEleveDto, QueryElevesDto } from '../dto';
+import { CreateEleveDto, UpdateEleveDto, QueryElevesDto, PreinscriptionDto, ConvertirPreinscriptionDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { notificationsService } from '@modules/notifications/services/notifications.service';
+import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -287,6 +289,229 @@ export class ElevesService {
                 classe: (e as any).classe?.libelle,
             }))
         };
+    }
+
+    // ==================================
+    // PRÉINSCRIPTION ET INSCRIPTION
+    // ==================================
+
+    /**
+     * Créer une préinscription (auto ou par personnel)
+     */
+    async createPreinscription(dto: PreinscriptionDto, etablissementId?: string): Promise<Eleve> {
+        // Générer matricule provisoire
+        const annee = new Date().getFullYear();
+        const count = await this.repo.count({ where: { estPreinscription: true } });
+        const matricule = `PRE-${annee}-${String(count + 1).padStart(5, '0')}`;
+
+        const eleve = this.repo.create({
+            utilisateurId: '', // Sera mis à jour lors de la conversion
+            matricule,
+            dateNaissance: new Date(dto.dateNaissance),
+            lieuNaissance: dto.lieuNaissance,
+            sexe: dto.sexe,
+            nationalite: dto.nationalite,
+            sousSysteme: dto.sousSysteme,
+            nomPere: dto.nomPere,
+            nomMere: dto.nomMere,
+            nomTuteur: dto.nomTuteur,
+            telephoneTuteur: dto.telephoneTuteur,
+            dateInscription: new Date(),
+            adresseDomicile: dto.adresseDomicile,
+            ville: dto.ville,
+            quartier: dto.quartier,
+            ecoleProvenance: dto.ecoleProvenance,
+            classeAnterieure: dto.classeAnterieure,
+            etablissementId,
+            typeInscription: dto.email ? 'PORTAIL' : 'MANUELLE',
+            etatInscription: 'EN_ATTENTE_VALIDATION',
+            statut: StatutEleve.EN_ATTENTE_VALIDATION,
+            estPreinscription: true,
+            classeSouhaiteeId: dto.classeSouhaiteeId,
+        });
+
+        await this.repo.save(eleve);
+
+        // Audit
+        await auditService.logCRUD(
+            'CREATE',
+            'Preinscription',
+            'SYSTEM',
+            eleve.id,
+            undefined,
+            {
+                matricule,
+                nomTuteur: dto.nomTuteur,
+                telephoneTuteur: dto.telephoneTuteur,
+                classeSouhaiteeId: dto.classeSouhaiteeId,
+            }
+        );
+
+        logger.info(`Préinscription créée: ${matricule} pour établissement ${etablissementId}`);
+
+        return eleve;
+    }
+
+    /**
+     * Convertir une préinscription en inscription complète
+     */
+    async convertirPreinscriptionEnInscription(
+        preinscriptionId: string,
+        dto: ConvertirPreinscriptionDto,
+        personnelId: string,
+        req?: Request
+    ): Promise<Eleve> {
+        const preinscription = await this.findOne(preinscriptionId);
+
+        if (!preinscription.estPreinscription) {
+            throw new AppError('Cet élève n\'est pas une préinscription', 400, 'NOT_PREINSCRIPTION');
+        }
+
+        if (preinscription.etatInscription !== 'EN_ATTENTE_VALIDATION') {
+            throw new AppError('Cette préinscription ne peut pas être convertie', 400, 'INVALID_STATUS');
+        }
+
+        const anciennesValeurs = {
+            estPreinscription: preinscription.estPreinscription,
+            etatInscription: preinscription.etatInscription,
+            statut: preinscription.statut,
+        };
+
+        preinscription.estPreinscription = false;
+        preinscription.etatInscription = 'VALIDE';
+        preinscription.statut = StatutEleve.ACTIF;
+        preinscription.dateTraitementInscription = new Date();
+        preinscription.traitePar = personnelId;
+
+        await this.repo.save(preinscription);
+
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_UPDATE,
+                cible: 'Eleve',
+                cibleId: preinscription.id,
+                description: `Conversion préinscription → inscription: ${preinscription.matricule}`,
+                anciennesValeurs,
+                nouvellesValeurs: {
+                    estPreinscription: false,
+                    etatInscription: 'VALIDE',
+                    statut: StatutEleve.ACTIF,
+                },
+                module: 'eleves',
+            }, req);
+        }
+
+        logger.info(`Préinscription convertie en inscription: ${preinscription.matricule}`);
+
+        return preinscription;
+    }
+
+    /**
+     * Refuser une préinscription
+     */
+    async refuserPreinscription(
+        preinscriptionId: string,
+        motif: string,
+        personnelId: string,
+        req?: Request
+    ): Promise<Eleve> {
+        const preinscription = await this.findOne(preinscriptionId);
+
+        if (!preinscription.estPreinscription) {
+            throw new AppError('Cet élève n\'est pas une préinscription', 400, 'NOT_PREINSCRIPTION');
+        }
+
+        if (preinscription.etatInscription !== 'EN_ATTENTE_VALIDATION') {
+            throw new AppError('Cette préinscription ne peut pas être refusée', 400, 'INVALID_STATUS');
+        }
+
+        preinscription.etatInscription = 'REFUSE';
+        preinscription.statut = StatutEleve.EXCLU;
+        preinscription.commentaireRefus = motif;
+        preinscription.dateTraitementInscription = new Date();
+        preinscription.traitePar = personnelId;
+
+        await this.repo.save(preinscription);
+
+        // Audit
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_UPDATE,
+                cible: 'Eleve',
+                cibleId: preinscription.id,
+                description: `Refus préinscription: ${preinscription.matricule}`,
+                nouvellesValeurs: {
+                    etatInscription: 'REFUSE',
+                    commentaireRefus: motif,
+                },
+                module: 'eleves',
+                severity: 'WARNING' as any,
+            }, req);
+        }
+
+        logger.info(`Préinscription refusée: ${preinscription.matricule} - Motif: ${motif}`);
+
+        return preinscription;
+    }
+
+    /**
+     * Lister les préinscriptions en attente
+     */
+    async findPreinscriptionsEnAttente(
+        query: QueryElevesDto,
+        etablissementId?: string
+    ): Promise<PaginatedResult<Eleve>> {
+        const { page, limit, search } = query;
+
+        const qb = this.repo
+            .createQueryBuilder('e')
+            .leftJoinAndSelect('e.utilisateur', 'u')
+            .where('e.estPreinscription = :estPreinscription', { estPreinscription: true })
+            .andWhere('e.etatInscription = :etatInscription', { etatInscription: 'EN_ATTENTE_VALIDATION' });
+
+        if (etablissementId) {
+            qb.andWhere('e.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        if (search) {
+            qb.andWhere(
+                '(e.matricule ILIKE :search OR e.nomTuteur ILIKE :search)',
+                { search: `%${search}%` }
+            );
+        }
+
+        qb.orderBy('e.createdAt', 'DESC' as const);
+
+        return paginateWithQueryBuilder(qb, page, limit, false);
+    }
+
+    /**
+     * Upload un document justificatif
+     */
+    async uploadDocumentJustificatif(
+        eleveId: string,
+        documentUrl: string,
+        type: string,
+        req?: Request
+    ): Promise<Eleve> {
+        const eleve = await this.findOne(eleveId);
+
+        const documents = eleve.documentsJustificatifs || [];
+        documents.push({
+            url: documentUrl,
+            type,
+            dateUpload: new Date().toISOString(),
+        });
+
+        eleve.documentsJustificatifs = documents;
+        await this.repo.save(eleve);
+
+        logger.info(`Document justificatif ajouté pour élève ${eleveId}: ${type}`);
+
+        return eleve;
     }
 }
 

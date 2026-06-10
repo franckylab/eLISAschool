@@ -1,5 +1,0 @@
-- Three-layer structure: controllers handle HTTP routing with Express Router, services encapsulate business logic using TypeORM repositories, and DTOs define Zod validation schemas.
-- Entry point `index.ts` mounts three controller routers (`roles`, `permissions`, `user-roles`) under a shared Express router and re-exports service singletons.
-- Controllers apply `authMiddleware` globally then enforce `requireRoles('ADMIN')` per route; all routes delegate to corresponding services.
-- Services use singleton instantiation pattern (`export const xxxService = new XxxService()`) and interact with auth module entities via TypeORM's `AppDataSource`.
-- Dependency direction flows from controllers → services → auth module entities, with cross-module calls to `permissionResolverService` for cache invalidation on role/permission mutations.

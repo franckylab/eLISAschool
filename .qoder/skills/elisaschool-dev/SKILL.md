@@ -575,6 +575,7 @@ ALTER TABLE table DROP CONSTRAINT IF EXISTS "UQ_xxx";
 | `periodes` | `/api/periodes` | Académiques | Périodes et trimestres |
 | `eleves` | `/api/eleves` | Académiques | Dossiers élèves |
 | `bulletins` | `/api/bulletins` | Académiques | Génération des bulletins |
+| `sondages` | `/api/sondages` | Communication | **Sondages et votes** (templates, analyses, récurrents, export) |
 
 ---
 
@@ -615,6 +616,361 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 | **Audit trail (service)** | `backend/src/modules/auth/services/audit.service.ts` |
 | **Audit trail (controller)** | `backend/src/modules/audit/controllers/audit.controller.ts` |
 | **Audit interceptor** | `backend/src/common/interceptors/audit.interceptor.ts` |
+
+---
+
+## Workflow : Développer un Module de Sondages
+
+### Contexte
+
+Le module Sondages a été implémenté avec des fonctionnalités avancées :
+- Templates réutilisables avec catégories
+- Votes anonymes ou nominatifs
+- Sondages programmés et récurrents
+- Analyses en temps réel avec export CSV/PDF
+- Notifications et WebSocket temps réel
+- Cron jobs pour automatisation
+
+### Étape 1 : Créer les entités
+
+**Fichier :** `entities/sondage.entity.ts`
+
+```typescript
+// 4 entités requises
+@Entity('templates_sondage')
+export class TemplateSondage { ... }  // Templates prédéfinis
+
+@Entity('sondages')
+@Index(['etablissementId'])
+@Index(['auteurId'])
+@Index(['statut'])
+export class Sondage {
+    @Column({ type: 'varchar', length: 20, default: StatutSondage.ACTIF })
+    statut!: StatutSondage;
+
+    @Column({ type: 'boolean', default: false })
+    estAnonyme!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    choixMultiple!: boolean;
+
+    // Récurrence
+    @Column({ type: 'boolean', default: false })
+    estRecurrent!: boolean;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    frequenceRecurrent?: string;  // 'quotidien', 'hebdomadaire', 'mensuel'
+}
+
+@Entity('sondages_options')
+export class SondageOption { ... }  // Options de vote
+
+@Entity('sondages_votes')
+@Index(['sondageId', 'voterId'], { unique: true })  // Unicité vote
+export class Vote { ... }  // Votes des utilisateurs
+```
+
+### Étape 2 : Créer les DTOs Zod
+
+**Fichier :** `dto/sondage.dto.ts`
+
+```typescript
+// 9 schémas requis
+export const creerSondageSchema = z.object({
+    question: z.string().min(5).max(2000),
+    options: z.array(z.object({
+        texte: z.string().min(1),
+        ordre: z.number().optional(),
+    })).min(2).max(20),
+    parametres: z.object({
+        estAnonyme: z.boolean().optional(),
+        choixMultiple: z.boolean().optional(),
+        dureeLimite: z.string().optional(),
+    }).optional(),
+    destinataires: z.object({
+        mode: z.enum(['individuel', 'conversation_groupe']),
+        utilisateur_ids: z.array(z.string().uuid()).min(1).max(500),
+    }),
+    date_envoi: z.string().datetime().optional(),
+    creer_conversation: z.boolean().default(false),
+    template_id: z.string().uuid().optional(),
+});
+
+export const voterSchema = z.object({
+    option_ids: z.array(z.string().uuid()).min(1),
+});
+
+// ... 7 autres schémas pour templates, analyses, export, etc.
+```
+
+### Étape 3 : Implémenter le service avec transactions
+
+**Fichier :** `services/sondage.service.ts`
+
+```typescript
+async createSondage(dto: CreerSondageDto, auteurId: string, etablissementId: string): Promise<Sondage> {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        // 1. Créer sondage
+        const sondage = this.sondageRepo.create({
+            ...dto,
+            auteurId,
+            etablissementId,
+            statut: dto.date_envoi ? StatutSondage.PROGRAMME : StatutSondage.ACTIF,
+        });
+        await queryRunner.manager.save(sondage);
+
+        // 2. Créer options
+        const options = dto.options.map((opt, index) =>
+            this.optionRepo.create({
+                ...opt,
+                ordre: opt.ordre || index,
+                sondageId: sondage.id,
+            })
+        );
+        await queryRunner.manager.save(options);
+
+        await queryRunner.commitTransaction();
+
+        // 3. Notifications NON-BLOQUANTES
+        if (!isScheduled) {
+            try {
+                await this.envoyerNotificationsSondage(sondage, dto.destinataires.utilisateur_ids);
+                sondageWebSocketService.broadcastSondageActive(sondage.id, dto.destinataires.utilisateur_ids);
+            } catch (error) {
+                logger.warn(`[Sondage] Échec notifications (non bloquant)`, error);
+            }
+        }
+
+        return sondage;
+    } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+    } finally {
+        await queryRunner.release();
+    }
+}
+
+// Méthode de vote avec vérification unicité
+async voter(sondageId: string, optionIds: string[], voterId: string): Promise<Vote[]> {
+    const sondage = await this.findOne(sondageId, voterId, etablissementId);
+    
+    // Vérifier si déjà voté
+    const existingVote = await this.voteRepo.findOne({
+        where: { sondageId, voterId },
+    });
+    if (existingVote && !sondage.choixMultiple) {
+        throw new AppError('Vous avez déjà voté à ce sondage', 409, 'DEJA_VOTE');
+    }
+
+    // Créer votes
+    const votes = optionIds.map(optionId =>
+        this.voteRepo.create({ sondageId, optionId, voterId })
+    );
+    return this.voteRepo.save(votes);
+}
+```
+
+### Étape 4 : Implémenter le controller avec 18 routes
+
+**Fichier :** `controllers/sondages.controller.ts`
+
+```typescript
+// Routes principales
+router.get('/', authMiddleware, async (req, res) => { ... });
+router.post('/', authMiddleware, async (req, res) => { ... });
+router.get('/:id', authMiddleware, async (req, res) => { ... });
+router.patch('/:id', authMiddleware, async (req, res) => { ... });
+router.delete('/:id', authMiddleware, async (req, res) => { ... });
+
+// Activation/Terminaison
+router.post('/:id/activer', authMiddleware, async (req, res) => { ... });
+router.post('/:id/terminer', authMiddleware, async (req, res) => { ... });
+
+// Votes
+router.post('/:id/voter', authMiddleware, async (req, res) => { ... });
+router.get('/:id/votes', authMiddleware, async (req, res) => { ... });
+
+// Analyses
+router.get('/:id/analyses', authMiddleware, async (req, res) => { ... });
+router.get('/:id/analyses/export', authMiddleware, async (req, res) => {
+    const format = req.query.format as string;
+    
+    if (format === 'csv') {
+        // Générer CSV
+        let csv = 'Option,Nombre de votes,Pourcentage\n';
+        repartition.forEach((item: any) => {
+            csv += `${item.option_texte},${item.nombre_votes},${item.pourcentage.toFixed(2)}%\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(csv);
+    } else if (format === 'pdf') {
+        // Générer PDF/HTML
+        const pdfHtml = sondagePdfService.genererPdf(analyses);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(pdfHtml);
+    }
+});
+
+// Templates
+router.get('/templates', authMiddleware, async (req, res) => { ... });
+router.post('/templates', authMiddleware, requireRoles(Role.ADMIN), async (req, res) => { ... });
+```
+
+### Étape 5 : Créer les cron jobs
+
+**Fichier :** `cron-jobs.ts`
+
+```typescript
+// 4 tâches planifiées
+const jobs = [
+    // Fermer sondages expirés (toutes les 10min)
+    cron.schedule('*/10 * * * *', async () => {
+        const sondagesActifs = await sondageRepo.find({
+            where: { statut: StatutSondage.ACTIF },
+        });
+        
+        for (const sondage of sondagesActifs) {
+            if (sondage.dateLimite && sondage.dateLimite <= new Date()) {
+                sondage.statut = StatutSondage.TERMINE;
+                await sondageRepo.save(sondage);
+            }
+        }
+    }),
+
+    // Activer sondages programmés (toutes les 10min)
+    cron.schedule('*/10 * * * *', async () => { ... }),
+
+    // Créer occurrences récurrentes (1h/jour)
+    cron.schedule('0 1 * * *', async () => { ... }),
+
+    // Rappel sondages actifs (9h/semaine)
+    cron.schedule('0 9 * * 1-5', async () => { ... }),
+];
+```
+
+### Étape 6 : Créer les migrations SQL
+
+**Fichier :** `database/migrations/041-module-sondages.sql`
+
+```sql
+-- Tables principales
+CREATE TABLE IF NOT EXISTS templates_sondage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom VARCHAR(200) NOT NULL,
+    question TEXT NOT NULL,
+    options JSONB NOT NULL,
+    parametres JSONB,
+    categorie VARCHAR(50),
+    visibilite VARCHAR(20) DEFAULT 'etablissement',
+    est_template_systeme BOOLEAN DEFAULT false,
+    etablissement_id UUID REFERENCES etablissements(id)
+);
+
+CREATE TABLE IF NOT EXISTS sondages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question TEXT NOT NULL,
+    statut VARCHAR(20) DEFAULT 'actif',
+    est_anonyme BOOLEAN DEFAULT false,
+    choix_multiple BOOLEAN DEFAULT false,
+    date_limite TIMESTAMP,
+    date_programmation TIMESTAMP,
+    auteur_id UUID NOT NULL REFERENCES utilisateurs(id),
+    etablissement_id UUID NOT NULL REFERENCES etablissements(id)
+);
+
+CREATE TABLE IF NOT EXISTS sondages_options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    texte TEXT NOT NULL,
+    ordre INTEGER DEFAULT 0,
+    sondage_id UUID NOT NULL REFERENCES sondages(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS sondages_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sondage_id UUID NOT NULL REFERENCES sondages(id) ON DELETE CASCADE,
+    option_id UUID NOT NULL REFERENCES sondages_options(id) ON DELETE CASCADE,
+    voter_id UUID REFERENCES utilisateurs(id),  -- NULL si anonyme
+    UNIQUE(sondage_id, voter_id)  -- Unicité vote
+);
+
+-- Index
+CREATE INDEX IF NOT EXISTS idx_sondages_etablissement ON sondages(etablissement_id);
+CREATE INDEX IF NOT EXISTS idx_sondages_statut ON sondages(statut);
+CREATE INDEX IF NOT EXISTS idx_sondages_votes_sondage ON sondages_votes(sondage_id);
+
+-- Seeds : Templates par défaut
+INSERT INTO templates_sondage (nom, question, options, categorie, visibilite, est_template_systeme)
+VALUES 
+    ('Satisfaction générale', 'Quel est votre niveau de satisfaction global ?',
+     '[{"texte": "Très satisfait"}, {"texte": "Satisfait"}, {"texte": "Moyen"}, {"texte": "Pas satisfait"}]'::jsonb,
+     'satisfaction', 'systeme', true);
+```
+
+### Étape 7 : Ajouter les permissions RBAC
+
+**Fichier :** `shared/src/enums/roles.enum.ts`
+
+```typescript
+export enum Permission {
+    // ... existantes ...
+    SONDAGES_CREATE = 'sondages:create',
+    SONDAGES_VOTE = 'sondages:vote',
+    SONDAGES_ANALYZE = 'sondages:analyze',
+    SONDAGES_VIEW = 'sondages:view',
+    SONDAGES_EDIT = 'sondages:edit',
+    SONDAGES_DELETE = 'sondages:delete',
+    SONDAGES_TEMPLATES_MANAGE = 'sondages:templates:manage',
+}
+```
+
+### Étape 8 : Enregistrer le module
+
+**Fichier :** `shared/src/config/config.registry.ts`
+
+```typescript
+[ModuleName.SONDAGES]: {
+    name: ModuleName.SONDAGES,
+    label: 'Sondages',
+    description: 'Création et gestion de sondages',
+    icon: 'CircleHelp',
+    basePath: '/sondages',
+    defaultActive: true,
+    premium: false,
+    defaultRoles: Object.values(Role),
+    permissions: [
+        Permission.SONDAGES_CREATE,
+        Permission.SONDAGES_VOTE,
+        Permission.SONDAGES_ANALYZE,
+    ],
+    dependencies: [ModuleName.AUTH, ModuleName.NOTIFICATIONS],
+    defaultSettings: {
+        maxDestinataires: 500,
+        maxOptions: 20,
+        dureeParDefaut: '7j',
+        allowAnonymous: true,
+        allowMultipleChoice: true,
+    },
+},
+```
+
+### Bonnes pratiques Sondages
+
+1. **TOUJOURS** utiliser des transactions pour créer sondage + options
+2. **TOUJOURS** rendre les notifications non-bloquantes (try/catch)
+3. **TOUJOURS** filtrer par `etablissementId` pour le multi-tenancy
+4. **VÉRIFIER** l'unicité des votes avant d'enregistrer
+5. **LOGGER** les échecs de notification avec `logger.warn()`
+6. **UTILISER** WebSocket pour notifications temps réel (prêt pour Socket.IO)
+7. **CONFIGURER** les cron jobs avec fuseau horaire Africa/Douala
+8. **EXPORTER** en CSV pour données brutes, PDF pour visualisation
+
+### Fichiers de Référence
+
+Voir la section complète dans `.qoder/rules/elisaschool-conventions.md` → "19. Module Sondages"
 
 ---
 

@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/business_modules/academic_content
+module_path: d47d0ae24d4ff48e0ce3a5f3f1ac27fa
 title: Academic Content & Assessment Management
 scope:
     - backend/src/modules/matieres/
@@ -7,4 +7,15 @@ scope:
     - backend/src/modules/notes/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/business_modules/student_health
+    - path: backend/business_modules/academic_calendar
+    - path: backend/business_modules/academic_structure
+    - path: backend/business_modules/system_monitoring
+    - path: backend/business_modules/communication
+    - path: backend/business_modules/system_services
+    - path: backend/business_modules/students
+    - path: backend/business_modules/student_activities
+    - path: backend/business_modules/auth_security
+    - path: backend/business_modules/hr
+    - path: backend/business_modules/system_config

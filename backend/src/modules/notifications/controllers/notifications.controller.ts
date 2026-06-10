@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { NotificationsService } from '../services/notifications.service';
 import { createNotificationSchema, createBulkNotificationSchema, queryNotificationsSchema } from '../dto';
-import { authMiddleware, adminOnly } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermissions } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -57,9 +57,9 @@ router.get('/count', async (req: Request, res: Response, next: NextFunction) => 
 
 /**
  * POST /api/notifications
- * Créer une notification (admin only)
+ * Créer une notification (permission: notifications:create)
  */
-router.post('/', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requirePermissions('notifications:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const createDto = validateDto(createNotificationSchema, req.body);
         const notification = await notificationsService.create(createDto, req.utilisateur!.id);
@@ -77,9 +77,9 @@ router.post('/', adminOnly, async (req: Request, res: Response, next: NextFuncti
 
 /**
  * POST /api/notifications/bulk
- * Créer des notifications en masse (admin only)
+ * Créer des notifications en masse (permission: notifications:send:bulk)
  */
-router.post('/bulk', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/bulk', requirePermissions('notifications:send:bulk'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const createDto = validateDto(createBulkNotificationSchema, req.body);
         const count = await notificationsService.createBulk(createDto, req.utilisateur!.id);

@@ -1,4 +1,0 @@
-- Layered architecture: Controllers (Express Routers) delegate to Services (AuthService, TokenService, PermissionResolverService), which interact with TypeORM Entities.
-- Security boundary: `authMiddleware` validates JWTs and attaches `UtilisateurAuth` to requests; `permission.guard.ts` enforces granular RBAC checks using resolved permissions from the JWT or fallback static roles.
-- Dynamic RBAC: `PermissionResolverService` computes effective permissions by aggregating primary/secondary roles, inherited parent roles, and custom GRANTED/DENIED overrides, utilizing an in-memory cache (5min TTL).
-- Multi-tenancy: Supports switching active establishments (`switch-etablissement`) which regenerates JWTs with updated context, validated against `UtilisateurEtablissement` associations.

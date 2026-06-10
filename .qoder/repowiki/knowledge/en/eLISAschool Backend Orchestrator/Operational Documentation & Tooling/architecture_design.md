@@ -1,3 +1,0 @@
-- **Documentation Layer**: Centralizes system architecture, API contracts, and integration guides in `backend/docs/` (e.g., `DASHBOARD-SYSTEM.md`, `pagination-guide.md`).
-- **Tooling Layer**: Contains executable shell and TypeScript scripts in `backend/scripts/` for database maintenance, index analysis, and migration verification (e.g., `run-indexes.sh`, `verify-pagination.sh`).
-- **Testing Layer**: Hosts unit tests in `backend/test/unit/` for core utilities like pagination logic and Redis service interactions, ensuring reliability of shared components.

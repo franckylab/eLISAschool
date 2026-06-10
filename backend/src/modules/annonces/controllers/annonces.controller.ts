@@ -162,6 +162,132 @@ router.get(
 );
 
 /**
+ * POST /api/annonces/reset-configuration
+ * Réinitialise la configuration aux valeurs par défaut
+ */
+router.post(
+  '/reset-configuration',
+  authMiddleware,
+  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const utilisateurId = req.utilisateur?.id;
+      const etablissementId = req.utilisateur?.etablissementId;
+      const { scope, cible } = req.body;
+
+      if (!utilisateurId || !etablissementId) {
+        throw new AppError('Utilisateur non authentifié', 401, 'UNAUTHORIZED');
+      }
+
+      const resultat = await annoncesService.resetConfiguration(
+        utilisateurId,
+        etablissementId,
+        scope || 'all',
+        cible
+      );
+
+      res.json({
+        success: true,
+        data: resultat,
+        message: `Configuration réinitialisée (${resultat.resetCount} paramètres)`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/annonces/export-configuration
+ * Exporte la configuration actuelle
+ */
+router.get(
+  '/export-configuration',
+  authMiddleware,
+  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const etablissementId = req.utilisateur?.etablissementId;
+
+      if (!etablissementId) {
+        throw new AppError('Établissement requis', 400, 'BAD_REQUEST');
+      }
+
+      const configuration = await annoncesService.exportConfiguration(etablissementId);
+
+      res.json({
+        success: true,
+        data: configuration,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/annonces/import-configuration
+ * Importe une configuration
+ */
+router.post(
+  '/import-configuration',
+  authMiddleware,
+  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const utilisateurId = req.utilisateur?.id;
+      const etablissementId = req.utilisateur?.etablissementId;
+
+      if (!utilisateurId || !etablissementId) {
+        throw new AppError('Utilisateur non authentifié', 401, 'UNAUTHORIZED');
+      }
+
+      const nouvelleConfig = await annoncesService.importConfiguration(
+        req.body,
+        utilisateurId,
+        etablissementId
+      );
+
+      res.json({
+        success: true,
+        data: nouvelleConfig,
+        message: 'Configuration importée avec succès',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/annonces/statistiques
+ * Récupère les statistiques détaillées des annonces
+ */
+router.get(
+  '/statistiques',
+  authMiddleware,
+  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const etablissementId = req.utilisateur?.etablissementId;
+
+      if (!etablissementId) {
+        throw new AppError('Établissement requis', 400, 'BAD_REQUEST');
+      }
+
+      const statistiques = await annoncesService.getStatistiques(etablissementId);
+
+      res.json({
+        success: true,
+        data: statistiques,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * POST /api/annonces/mettre-a-jour-statuts
  * Met à jour automatiquement les statuts selon les dates
  */

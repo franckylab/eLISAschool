@@ -1,6 +1,0 @@
-- Controllers export both a named constant (e.g., `personnelController`) and a default export of the Express Router instance.
-- Every route handler wraps its logic in a try/catch block that forwards errors to Express via `next(error)`.
-- All successful responses follow a uniform envelope: `{ success: true, data: <payload> }` with optional `message` or `timestamp` fields.
-- Services export both a class definition and a singleton instance (e.g., `export const personnelService = new PersonnelService()`).
-- DTO files define Zod schemas with PascalCase names ending in `Schema` and derive TypeScript types via `z.infer`.
-- Entity index files and DTO index files use barrel exports (`export * from './...'`) to aggregate all exports from their subdirectories.

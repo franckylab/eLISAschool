@@ -6,10 +6,13 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { ElevesService } from '../services';
-import { createEleveSchema, updateEleveSchema } from '../dto';
+import { createEleveSchema, updateEleveSchema, preinscriptionSchema, convertirPreinscriptionSchema, queryInscriptionsSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
+import { Etablissement } from '@modules/etablissement/entities';
+import { AppDataSource } from '@database/data-source';
+import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 const service = new ElevesService();
@@ -51,6 +54,135 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
     try {
         await service.delete(req.params.id);
         res.json({ success: true, message: 'Dossier élève supprimé' });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// PRÉINSCRIPTION (Route publique)
+// ==================================
+
+router.post('/preinscription', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(preinscriptionSchema, req.body);
+        
+        // Résoudre l'établissement depuis le code
+        const etablissementRepo = AppDataSource.getRepository(Etablissement);
+        const etablissement = await etablissementRepo.createQueryBuilder('e')
+            .where('e.code = :code OR e.nom LIKE :code', { code: dto.codeEtablissement })
+            .getOne();
+        
+        if (!etablissement) {
+            throw new AppError('Code établissement invalide', 400, 'INVALID_CODE_ETABLISSEMENT');
+        }
+        
+        const preinscription = await service.createPreinscription(dto, etablissement.id);
+        res.status(201).json({ 
+            success: true, 
+            data: preinscription,
+            message: 'Préinscription soumise avec succès. Elle sera traitée par l\'établissement.'
+        });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// GESTION DES PRÉINSCRIPTIONS (Auth requis)
+// ==================================
+
+router.get('/preinscriptions/en-attente', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const query = {
+            page: parseInt(req.query.page as string) || 1,
+            limit: parseInt(req.query.limit as string) || 20,
+            sortBy: 'createdAt',
+            sortOrder: 'DESC' as const,
+            search: req.query.search as string,
+        };
+        const preinscriptions = await service.findPreinscriptionsEnAttente(query, req.etablissementId);
+        res.json({ success: true, data: preinscriptions });
+    } catch (error) { next(error); }
+});
+
+router.post('/preinscription/:id/convertir', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(convertirPreinscriptionSchema, req.body);
+        const personnelId = req.utilisateur?.id;
+        const preinscription = await service.convertirPreinscriptionEnInscription(
+            req.params.id,
+            dto,
+            personnelId || '',
+            req
+        );
+        res.json({ 
+            success: true, 
+            data: preinscription,
+            message: 'Préinscription convertie en inscription avec succès'
+        });
+    } catch (error) { next(error); }
+});
+
+router.post('/preinscription/:id/refuser', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { motif } = req.body;
+        if (!motif || motif.trim().length === 0) {
+            throw new AppError('Le motif de refus est obligatoire', 400, 'MISSING_MOTIF');
+        }
+        const personnelId = req.utilisateur?.id;
+        const preinscription = await service.refuserPreinscription(
+            req.params.id,
+            motif,
+            personnelId || '',
+            req
+        );
+        res.json({ 
+            success: true, 
+            data: preinscription,
+            message: 'Préinscription refusée'
+        });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// DOCUMENTS JUSTIFICATIFS
+// ==================================
+
+router.post('/:id/documents', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { documentUrl, type } = req.body;
+        if (!documentUrl || !type) {
+            throw new AppError('documentUrl et type sont obligatoires', 400, 'MISSING_FIELDS');
+        }
+        const eleve = await service.uploadDocumentJustificatif(
+            req.params.id,
+            documentUrl,
+            type,
+            req
+        );
+        res.json({ success: true, data: eleve });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// LISTE DES INSCRIPTIONS (avec filtres)
+// ==================================
+
+router.get('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const query = {
+            page: parseInt(req.query.page as string) || 1,
+            limit: parseInt(req.query.limit as string) || 20,
+            sortBy: req.query.sortBy as string || 'createdAt',
+            sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC',
+            search: req.query.search as string,
+            etatInscription: req.query.etatInscription as any,
+            typeInscription: req.query.typeInscription as any,
+            estPreinscription: req.query.estPreinscription === 'true' ? true : req.query.estPreinscription === 'false' ? false : undefined,
+            dateDebut: req.query.dateDebut as string,
+            dateFin: req.query.dateFin as string,
+        };
+        
+        // Utiliser findAll avec filtres étendus
+        const result = await service.findAll(query, req.etablissementId);
+        res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });
 

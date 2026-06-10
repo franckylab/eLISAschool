@@ -12,7 +12,8 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';
 import { Request } from 'express';
-import { notificationService } from '@modules/notifications/services';
+import { notificationsService } from '@modules/notifications/services';
+import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 
 export class SanteService {
     private dossierRepo: Repository<DossierMedical>;
@@ -211,19 +212,18 @@ export class SanteService {
                 }) as unknown as Array<{ utilisateurId: string }>;
 
                 for (const resp of responsabilites) {
-                    await notificationService.create({
+                    await notificationsService.create({
                         destinataireId: resp.utilisateurId,
-                        type: 'ALERTE',
+                        type: TypeNotification.IN_APP,
                         titre: `Incident santé ${dto.gravite.toLowerCase()}`,
-                        message: `Un incident de santé ${dto.gravite.toLowerCase()} a été signalé: ${dto.nature}`,
-                        module: 'sante',
+                        contenu: `Un incident de santé ${dto.gravite.toLowerCase()} a été signalé: ${dto.nature}`,
                         metadata: {
                             incidentId: incident.id,
                             gravite: dto.gravite,
                             nature: dto.nature,
                             typeIncident: dto.type,
                         },
-                        etablissementId,
+                        priorite: PrioriteNotification.URGENTE,
                     });
                 }
                 

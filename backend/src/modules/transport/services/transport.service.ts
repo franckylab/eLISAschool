@@ -19,14 +19,19 @@ import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/co
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
- * Service Transport avec configuration centralisée
+ * Service Transport avec configuration centralisée et cache
  */
 export class TransportService {
     private ligneRepo: Repository<LigneTransport>;
     private inscriptionRepo: Repository<InscriptionTransport>;
     private presenceRepo: Repository<PresenceTransport>;
+
+    // Cache pour les paramètres (TTL 5 min)
+    private paramsCache: Map<string, { value: any; timestamp: number }> = new Map();
+    private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
     constructor() {
         this.ligneRepo = AppDataSource.getRepository(LigneTransport);
@@ -35,27 +40,70 @@ export class TransportService {
     }
 
     /**
-     * Récupère les paramètres transport depuis la configuration
+     * Récupère les paramètres transport depuis la configuration (avec cache)
      */
     private async getTransportParams() {
-        return {
+        const cacheKey = 'transport:params';
+        const cached = this.paramsCache.get(cacheKey);
+        
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+            return cached.value;
+        }
+
+        const params = {
             enableGPS: await getParamBoolean('transport.enable_gps', false),
             enableQRCheckin: await getParamBoolean('transport.enable_qr_checkin', true),
             alertDelayMinutes: await getParamNumber('transport.alert_delay_minutes', 10),
         };
+
+        this.paramsCache.set(cacheKey, { value: params, timestamp: Date.now() });
+        return params;
     }
 
-    async createLigne(dto: CreateLigneDto, etablissementId?: string): Promise<LigneTransport> {
+    /**
+     * Invalider le cache des paramètres
+     */
+    private invalidateParamsCache(): void {
+        this.paramsCache.delete('transport:params');
+    }
+
+    async createLigne(dto: CreateLigneDto, createurId?: string, etablissementId?: string): Promise<LigneTransport> {
         const ligne = this.ligneRepo.create({ ...dto, etablissementId });
         await this.ligneRepo.save(ligne);
         logger.info(`[${etablissementId}] Ligne de transport créée: ${dto.nom}`);
+
+        // Audit trail
+        try {
+            await auditService.log({
+                utilisateurId: createurId || 'system',
+                action: AuditAction.LIGNE_CREATE,
+                cible: 'LigneTransport',
+                cibleId: ligne.id,
+                description: `Ligne de transport créée: ${dto.nom}`,
+                module: 'transport',
+                etablissementId,
+            });
+        } catch (error) {
+            logger.warn('[Transport] Erreur audit createLigne', error);
+        }
+
         return ligne;
     }
 
-    async getLignes(etablissementId?: string): Promise<LigneTransport[]> {
-        const where: any = { actif: true };
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.ligneRepo.find({ where, relations: ['chauffeur'] });
+    async getLignes(etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: LigneTransport[]; total: number; page: number; limit: number }> {
+        const qb = this.ligneRepo.createQueryBuilder('l')
+            .where('l.actif = true');
+        if (etablissementId) qb.andWhere('l.etablissementId = :etablissementId', { etablissementId });
+        
+        const total = await qb.getCount();
+        const data = await qb
+            .leftJoinAndSelect('l.chauffeur', 'chauffeur')
+            .orderBy('l.nom', 'ASC')
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getMany();
+        
+        return { data, total, page, limit };
     }
 
     async getLigne(id: string, etablissementId?: string): Promise<LigneTransport> {
@@ -81,21 +129,51 @@ export class TransportService {
             etablissementId,
             actif: !requireValidation, // Inactif si en attente de validation
         });
-        await this.inscriptionRepo.save(inscription);
 
-        // Créer un workflow de validation si requis
-        if (requireValidation) {
-            await validationWorkflowService.createWorkflow({
-                module: 'transport',
-                entiteId: inscription.id,
-                entiteType: 'InscriptionTransport',
-                niveauxRequis: 2,
+        // Transaction pour inscription + workflow + audit
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            await queryRunner.manager.save(inscription);
+
+            // Créer un workflow de validation si requis
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'transport',
+                    entiteId: inscription.id,
+                    entiteType: 'InscriptionTransport',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, createurId);
+
+                logger.info(`[${etablissementId}] Inscription transport créée en attente de validation pour élève ${dto.eleveId}`);
+            } else {
+                logger.info(`[${etablissementId}] Inscription transport créée pour élève ${dto.eleveId}`);
+            }
+
+            // Audit trail
+            await queryRunner.manager.query(`
+                INSERT INTO audit_logs (id, "utilisateurId", action, cible, "cibleId", description, module, "etablissementId", "createdAt")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            `, [
+                require('crypto').randomUUID(),
+                createurId,
+                'INSCRIPTION_TRANSPORT_CREATE',
+                'InscriptionTransport',
+                inscription.id,
+                `Inscription transport créée pour élève ${dto.eleveId}`,
+                'transport',
                 etablissementId,
-            }, createurId);
+            ]);
 
-            logger.info(`[${etablissementId}] Inscription transport créée en attente de validation pour élève ${dto.eleveId}`);
-        } else {
-            logger.info(`[${etablissementId}] Inscription transport créée pour élève ${dto.eleveId}`);
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
 
         return inscription;
@@ -110,15 +188,31 @@ export class TransportService {
     /**
      * Enregistrer une présence (vérifie si QR checkin est activé)
      */
-    async enregistrerPresence(dto: EnregistrerPresenceDto): Promise<PresenceTransport> {
+    async enregistrerPresence(dto: EnregistrerPresenceDto, createurId?: string, etablissementId?: string): Promise<PresenceTransport> {
         const params = await this.getTransportParams();
 
         if (!params.enableQRCheckin) {
             throw new AppError('Le pointage QR n\'est pas activé', 400, 'QR_CHECKIN_DISABLED');
         }
 
-        const presence = this.presenceRepo.create({ ...dto, date: new Date(dto.date) });
+        const presence = this.presenceRepo.create({ ...dto, date: new Date(dto.date), etablissementId });
         await this.presenceRepo.save(presence);
+
+        // Audit trail
+        try {
+            await auditService.log({
+                utilisateurId: createurId || 'system',
+                action: AuditAction.PRESENCE_TRANSPORT,
+                cible: 'PresenceTransport',
+                cibleId: presence.id,
+                description: `Présence enregistrée pour inscription ${dto.inscriptionId}`,
+                module: 'transport',
+                etablissementId,
+            });
+        } catch (error) {
+            logger.warn('[Transport] Erreur audit enregistrerPresence', error);
+        }
+
         return presence;
     }
 

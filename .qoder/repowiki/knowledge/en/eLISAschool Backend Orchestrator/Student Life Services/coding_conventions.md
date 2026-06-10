@@ -1,6 +1,0 @@
-- Each sub-module uses a barrel export pattern in index.ts that re-exports from ./entities, ./dto, ./services, and ./controllers in that fixed order.
-- Controllers instantiate their service class at module scope (e.g., `const cantineService = new CantineService()`) and export the router as a named constant suffixed with 'Controller'.
-- All route handlers wrap async logic in try/catch blocks that forward errors to Express's next(error) middleware.
-- Every successful response returns a JSON envelope with `success: true`, a `data` field containing the result, and a `timestamp` set to `new Date().toISOString()`.
-- DTO validation uses Zod schemas defined in a dto/ directory, with types inferred via `z.infer` and validated at controller entry points via a shared `validateDto` function.
-- Entities consistently include multi-tenancy via an `etablissementId` UUID column with a ManyToOne relation to Etablissement and a TypeORM @Index decorator on that column.

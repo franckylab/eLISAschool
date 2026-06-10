@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/backend_student_lifecycle
+title: Student Lifecycle & Academic Management
+scope:
+    - backend/src/modules/eleves/
+    - backend/src/modules/responsables-eleves/
+    - backend/src/modules/bulletins/
+    - backend/src/modules/notes/
+    - backend/src/modules/suivi-eleves/
+    - backend/src/modules/clubs/
+source_files: []
+depends_on: []
+related_to: []

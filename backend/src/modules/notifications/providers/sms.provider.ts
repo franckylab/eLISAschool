@@ -9,6 +9,7 @@
  * Support aussi Vonage, Africa's Talking
  */
 
+import twilio from 'twilio';
 import { TypeNotification, Notification } from '../entities';
 import { INotificationProvider, EnvoiResult, QuotaInfo } from './interfaces';
 import { logger } from '@common/utils/logger.util';
@@ -33,6 +34,7 @@ export class SmsProvider implements INotificationProvider {
     
     private twilioConfig: TwilioConfig | null = null;
     private _configuré = false;
+    private client: any | null = null;
 
     constructor(nom: string = 'twilio-default') {
         this.nom = nom;
@@ -56,6 +58,9 @@ export class SmsProvider implements INotificationProvider {
                 return;
             }
 
+            // Initialiser le client Twilio
+            this.client = twilio(this.twilioConfig.accountSid, this.twilioConfig.authToken);
+
             this._configuré = true;
             logger.info(`[SmsProvider] ${this.nom} initialisé avec succès`);
         } catch (error) {
@@ -72,11 +77,10 @@ export class SmsProvider implements INotificationProvider {
     }
 
     /**
-     * Envoyer un SMS
-     * TODO: Implémenter avec le package twilio quand installé
+     * Envoyer un SMS via Twilio
      */
     async envoyer(notification: Notification): Promise<EnvoiResult> {
-        if (!this.estConfiguré() || !this.twilioConfig) {
+        if (!this.estConfiguré() || !this.twilioConfig || !this.client) {
             return {
                 succes: false,
                 erreur: 'Provider SMS non configuré',
@@ -102,26 +106,27 @@ export class SmsProvider implements INotificationProvider {
 
             const message = `${notification.titre}\n${contenuSMS}`;
 
-            // TODO: Implémenter avec twilio quand le package sera installé
-            // const client = require('twilio')(this.twilioConfig.accountSid, this.twilioConfig.authToken);
-            // const result = await client.messages.create({
-            //     body: message,
-            //     from: this.twilioConfig.fromNumber,
-            //     to: telephoneDestinataire,
-            // });
+            // Envoyer via Twilio
+            const result = await this.client.messages.create({
+                body: message,
+                from: this.twilioConfig.fromNumber,
+                to: telephoneDestinataire,
+            });
 
             logger.info(
-                `[SmsProvider] SMS envoyé à ${telephoneDestinataire} (simulation)`
+                `[SmsProvider] SMS envoyé à ${telephoneDestinataire} (SID: ${result.sid})`
             );
 
             return {
                 succes: true,
-                idExterne: `sms-${Date.now()}`, // Placeholder
+                idExterne: result.sid,
                 cout: 0.05, // Coût estimatif en USD
                 details: {
                     to: telephoneDestinataire,
                     from: this.twilioConfig.fromNumber,
                     length: message.length,
+                    sid: result.sid,
+                    status: result.status,
                 },
             };
         } catch (error) {
@@ -147,11 +152,11 @@ export class SmsProvider implements INotificationProvider {
                 return false;
             }
 
-            // TODO: Tester avec twilio quand le package sera installé
-            // const client = require('twilio')(accountSid, authToken);
-            // await client.api.accounts(accountSid).fetch();
+            // Tester avec twilio
+            const testClient = twilio(accountSid, authToken);
+            await testClient.api.accounts(accountSid).fetch();
 
-            logger.info('[SmsProvider] Test de configuration réussi (simulation)');
+            logger.info('[SmsProvider] Test de configuration réussi');
             return true;
         } catch (error) {
             logger.error('[SmsProvider] Test de configuration échoué', error);

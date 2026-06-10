@@ -8,7 +8,7 @@
  * CRUD pour la gestion des providers de notifications
  */
 
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { NotificationProvider, ServiceNotification, TypeNotification } from '../entities';
 import {
@@ -20,12 +20,18 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { providerRegistry } from '../providers/provider-registry';
 import { EmailProvider, SmsProvider, PushProvider, InAppProvider } from '../providers';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
- * Service de gestion des providers de notifications
+ * Service de gestion des providers de notifications avec cache optimisé
  */
 export class NotificationProviderService {
     private repo: Repository<NotificationProvider>;
+    
+    // Cache optimisé pour les providers
+    private cache = new Map<string, NotificationProvider>();
+    private readonly CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+    private cacheTimestamp = new Map<string, number>();
 
     constructor() {
         this.repo = AppDataSource.getRepository(NotificationProvider);
@@ -66,26 +72,47 @@ export class NotificationProviderService {
 
         // Enregistrer dans le registry
         this.registerInRegistry(provider);
+        
+        // Invalider le cache
+        this.invalidateCache(provider.type);
+        
+        // Audit trail
+        try {
+            await auditService.log({
+                action: AuditAction.NOTIFICATION_PROVIDER_CREATE,
+                cible: 'NotificationProvider',
+                cibleId: provider.id,
+                description: `Création provider ${provider.nom} (${provider.type})`,
+                nouvellesValeurs: { nom: provider.nom, type: provider.type, service: provider.service },
+                module: 'notifications',
+            });
+        } catch (error) {
+            logger.warn(`[ProviderService] Échec audit create (non bloquant)`, error);
+        }
 
         logger.info(`[ProviderService] Provider créé: ${provider.nom} (${provider.type})`);
         return provider;
     }
 
     /**
-     * Récupérer tous les providers
+     * Récupérer tous les providers avec filtrage multi-tenant
      */
-    async findAll(query: QueryNotificationProvidersDto): Promise<{
+    async findAll(query: QueryNotificationProvidersDto, etablissementId?: string): Promise<{
         items: NotificationProvider[];
         total: number;
     }> {
-        const { page, limit, type, service, actif, etablissementId } = query;
+        const { page, limit, type, service, actif } = query;
 
         const where: FindOptionsWhere<NotificationProvider> = {};
+
+        // ✅ Filtrage multi-tenant : établissement OU global
+        if (etablissementId) {
+            where.etablissementId = In([etablissementId, null]);
+        }
 
         if (type) where.type = type as TypeNotification;
         if (service) where.service = service as ServiceNotification;
         if (actif !== undefined) where.actif = actif;
-        if (etablissementId) where.etablissementId = etablissementId;
 
         const [items, total] = await this.repo.findAndCount({
             where,
@@ -98,13 +125,18 @@ export class NotificationProviderService {
     }
 
     /**
-     * Récupérer un provider par ID
+     * Récupérer un provider par ID avec validation multi-tenant
      */
-    async findOne(id: string): Promise<NotificationProvider> {
+    async findOne(id: string, etablissementId?: string): Promise<NotificationProvider> {
         const provider = await this.repo.findOne({ where: { id } });
 
         if (!provider) {
             throw new AppError('Provider non trouvé', 404, 'PROVIDER_NOT_FOUND');
+        }
+        
+        // ✅ Validation multi-tenant
+        if (etablissementId && provider.etablissementId && provider.etablissementId !== etablissementId) {
+            throw new AppError('Accès non autorisé à ce provider', 403, 'FORBIDDEN');
         }
 
         return provider;
@@ -133,6 +165,23 @@ export class NotificationProviderService {
         }
 
         await this.repo.save(provider);
+        
+        // Invalider le cache
+        this.invalidateCache(provider.type);
+        
+        // Audit trail
+        try {
+            await auditService.log({
+                action: AuditAction.NOTIFICATION_PROVIDER_UPDATE,
+                cible: 'NotificationProvider',
+                cibleId: provider.id,
+                description: `Modification provider ${provider.nom}`,
+                nouvellesValeurs: dto,
+                module: 'notifications',
+            });
+        } catch (error) {
+            logger.warn(`[ProviderService] Échec audit update (non bloquant)`, error);
+        }
 
         logger.info(`[ProviderService] Provider modifié: ${provider.nom}`);
         return provider;
@@ -159,6 +208,22 @@ export class NotificationProviderService {
 
         // Retirer du registry
         providerRegistry.unregister(provider.type, provider.nom);
+        
+        // Invalider le cache
+        this.invalidateCache(provider.type);
+        
+        // Audit trail
+        try {
+            await auditService.log({
+                action: AuditAction.NOTIFICATION_PROVIDER_DELETE,
+                cible: 'NotificationProvider',
+                cibleId: provider.id,
+                description: `Suppression provider ${provider.nom}`,
+                module: 'notifications',
+            });
+        } catch (error) {
+            logger.warn(`[ProviderService] Échec audit delete (non bloquant)`, error);
+        }
 
         await this.repo.remove(provider);
 
@@ -173,6 +238,22 @@ export class NotificationProviderService {
         provider.actif = !provider.actif;
 
         await this.repo.save(provider);
+        
+        // Invalider le cache
+        this.invalidateCache(provider.type);
+        
+        // Audit trail
+        try {
+            await auditService.log({
+                action: AuditAction.NOTIFICATION_PROVIDER_TOGGLE,
+                cible: 'NotificationProvider',
+                cibleId: provider.id,
+                description: `Provider ${provider.nom} ${provider.actif ? 'activé' : 'désactivé'}`,
+                module: 'notifications',
+            });
+        } catch (error) {
+            logger.warn(`[ProviderService] Échec audit toggle (non bloquant)`, error);
+        }
 
         if (provider.actif) {
             this.registerInRegistry(provider);
@@ -200,6 +281,22 @@ export class NotificationProviderService {
 
         provider.estDefaut = true;
         await this.repo.save(provider);
+        
+        // Invalider le cache
+        this.invalidateCache(provider.type);
+        
+        // Audit trail
+        try {
+            await auditService.log({
+                action: AuditAction.NOTIFICATION_PROVIDER_UPDATE,
+                cible: 'NotificationProvider',
+                cibleId: provider.id,
+                description: `Provider ${provider.nom} défini par défaut`,
+                module: 'notifications',
+            });
+        } catch (error) {
+            logger.warn(`[ProviderService] Échec audit setDefault (non bloquant)`, error);
+        }
 
         logger.info(`[ProviderService] Provider défini par défaut: ${provider.nom}`);
         return provider;
@@ -249,6 +346,71 @@ export class NotificationProviderService {
                 succes: false,
                 message,
             };
+        }
+    }
+
+    /**
+     * Récupérer le provider par défaut avec cache optimisé
+     */
+    async getDefaultProvider(type: TypeNotification, etablissementId?: string): Promise<NotificationProvider | null> {
+        const cacheKey = `default:${type}:${etablissementId || 'global'}`;
+        const cached = this.cache.get(cacheKey);
+        const timestamp = this.cacheTimestamp.get(cacheKey);
+
+        // Vérifier le cache
+        if (cached && timestamp && Date.now() - timestamp < this.CACHE_TTL) {
+            logger.debug(`[ProviderService] Cache hit pour ${cacheKey}`);
+            return cached;
+        }
+
+        // Cache miss → DB
+        logger.debug(`[ProviderService] Cache miss pour ${cacheKey}`);
+        const where: FindOptionsWhere<NotificationProvider> = {
+            type,
+            estDefaut: true,
+            actif: true,
+        };
+        
+        // Multi-tenant : établissement OU global
+        if (etablissementId) {
+            where.etablissementId = In([etablissementId, null]);
+        }
+
+        const provider = await this.repo.findOne({
+            where,
+            order: { priorite: 'ASC' },
+        });
+
+        if (provider) {
+            this.cache.set(cacheKey, provider);
+            this.cacheTimestamp.set(cacheKey, Date.now());
+        }
+
+        return provider;
+    }
+
+    /**
+     * Invalider le cache après modification
+     */
+    private invalidateCache(type?: TypeNotification): void {
+        if (!type) {
+            // Invalider tout le cache
+            this.cache.clear();
+            this.cacheTimestamp.clear();
+            logger.debug('[ProviderService] Cache entièrement invalidé');
+        } else {
+            // Invalider uniquement le type concerné
+            const keysToDelete: string[] = [];
+            this.cache.forEach((_, key) => {
+                if (key.includes(type)) {
+                    keysToDelete.push(key);
+                }
+            });
+            keysToDelete.forEach(key => {
+                this.cache.delete(key);
+                this.cacheTimestamp.delete(key);
+            });
+            logger.debug(`[ProviderService] Cache invalidé pour ${type}`);
         }
     }
 
@@ -338,6 +500,93 @@ export class NotificationProviderService {
 
         logger.info(`[ProviderService] ${count} providers chargés en mémoire`);
         return count;
+    }
+
+    /**
+     * Obtenir les données de monitoring pour le dashboard
+     */
+    async getMonitoring(etablissementId?: string): Promise<{
+        providers: Array<{
+            id: string;
+            nom: string;
+            type: string;
+            service: string;
+            actif: boolean;
+            estDefaut: boolean;
+            quotaUtilise: number;
+            quotaTotal: number;
+            quotaPourcentage: number;
+            erreursConsecutives: number;
+            priorite: number;
+            statut: 'OK' | 'ATTENTION' | 'CRITIQUE';
+            derniereActivite?: Date;
+        }>;
+        statistiquesGlobales: {
+            totalProviders: number;
+            providersActifs: number;
+            providersEnErreur: number;
+            totalQuotaUtilise: number;
+            totalQuotaDisponible: number;
+        };
+    }> {
+        const where: FindOptionsWhere<NotificationProvider> = {};
+        
+        // Multi-tenant
+        if (etablissementId) {
+            where.etablissementId = In([etablissementId, null]);
+        }
+
+        const providers = await this.repo.find({
+            where,
+            order: { priorite: 'ASC', createdAt: 'DESC' },
+        });
+
+        const providersMonitoring = providers.map(p => {
+            const quotaPourcentage = p.quotaJournalier > 0 
+                ? Math.round((p.quotaUtilise / p.quotaJournalier) * 100)
+                : 0;
+
+            let statut: 'OK' | 'ATTENTION' | 'CRITIQUE' = 'OK';
+            if (p.erreursConsecutives >= 5) {
+                statut = 'CRITIQUE';
+            } else if (p.erreursConsecutives >= 3) {
+                statut = 'ATTENTION';
+            }
+
+            return {
+                id: p.id,
+                nom: p.nom,
+                type: p.type,
+                service: p.service,
+                actif: p.actif,
+                estDefaut: p.estDefaut,
+                quotaUtilise: p.quotaUtilise,
+                quotaTotal: p.quotaJournalier,
+                quotaPourcentage,
+                erreursConsecutives: p.erreursConsecutives,
+                priorite: p.priorite,
+                statut,
+                derniereActivite: p.derniereErreurAt || p.updatedAt,
+            };
+        });
+
+        // Statistiques globales
+        const totalProviders = providers.length;
+        const providersActifs = providers.filter(p => p.actif).length;
+        const providersEnErreur = providers.filter(p => p.erreursConsecutives >= 3).length;
+        const totalQuotaUtilise = providers.reduce((sum, p) => sum + p.quotaUtilise, 0);
+        const totalQuotaDisponible = providers.reduce((sum, p) => sum + (p.quotaJournalier > 0 ? p.quotaJournalier : 0), 0);
+
+        return {
+            providers: providersMonitoring,
+            statistiquesGlobales: {
+                totalProviders,
+                providersActifs,
+                providersEnErreur,
+                totalQuotaUtilise,
+                totalQuotaDisponible,
+            },
+        };
     }
 }
 

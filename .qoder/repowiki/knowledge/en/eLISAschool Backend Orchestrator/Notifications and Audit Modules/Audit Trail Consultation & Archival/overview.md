@@ -1,1 +1,0 @@
-Provides REST APIs for querying, exporting, and archiving audit logs with role-based access control.

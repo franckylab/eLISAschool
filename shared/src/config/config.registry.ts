@@ -171,6 +171,28 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.ANNONCES]: {
+        name: ModuleName.ANNONCES,
+        label: 'Annonces',
+        description: 'Gestion des annonces avec bande défilante et ciblage',
+        icon: 'Megaphone',
+        basePath: '/annonces',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: Object.values(Role),
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.NOTIFICATIONS],
+        defaultSettings: {
+            vitesseDefilement: 50,
+            hauteurBande: 40,
+            intervalleActualisation: 30,
+            pauseSurVol: true,
+            delaiApparition: 600,
+            delaiReapparition: 600,
+            requireValidation: false,
+        },
+    },
+
     // ============ MODULES ACADÉMIQUES ============
     [ModuleName.NOTES]: {
         name: ModuleName.NOTES,
@@ -515,6 +537,28 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         permissions: [],
         dependencies: [ModuleName.AUTH],
         defaultSettings: {},
+    },
+
+    [ModuleName.ORGANISATION]: {
+        name: ModuleName.ORGANISATION,
+        label: 'Organisation',
+        description: 'Structure organisationnelle et hierarchique de l\'etablissement',
+        icon: 'Building2',
+        basePath: '/organisation',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR, Role.PROVISEUR, Role.PRINCIPAL],
+        permissions: [
+            Permission.ORGANISATION_VIEW,
+            Permission.UNITES_VIEW,
+            Permission.POSTES_VIEW,
+            Permission.HIERARCHIE_VIEW,
+            Permission.ORGANIGRAMME_VIEW,
+        ],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {
+            typesUnitesActifs: ['DIRECTION', 'DEPARTEMENT', 'SERVICE', 'POLE'],
+        },
     },
 
     [ModuleName.DASHBOARD]: {

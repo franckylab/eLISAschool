@@ -19,14 +19,19 @@ import { getParamNumber, getParamBoolean, getParam } from '@modules/configuratio
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
- * Service Cantine avec configuration centralisée
+ * Service Cantine avec configuration centralisée et cache
  */
 export class CantineService {
     private menuRepo: Repository<MenuCantine>;
     private inscriptionRepo: Repository<InscriptionCantine>;
     private consommationRepo: Repository<ConsommationCantine>;
+
+    // Cache pour les paramètres (TTL 5 min)
+    private paramsCache: Map<string, { value: any; timestamp: number }> = new Map();
+    private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
     constructor() {
         this.menuRepo = AppDataSource.getRepository(MenuCantine);
@@ -35,20 +40,37 @@ export class CantineService {
     }
 
     /**
-     * Récupère les paramètres cantine depuis la configuration
+     * Récupère les paramètres cantine depuis la configuration (avec cache)
      */
     private async getCantineParams() {
-        return {
+        const cacheKey = 'cantine:params';
+        const cached = this.paramsCache.get(cacheKey);
+        
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+            return cached.value;
+        }
+
+        const params = {
             menuPlanningDays: await getParamNumber('cantine.menu_planning_days', 7),
             allowPreorder: await getParamBoolean('cantine.allow_preorder', true),
             maxDebt: await getParamNumber('cantine.max_debt', 10000),
             currency: await getParam<string>('regional.currency', 'XOF'),
         };
+
+        this.paramsCache.set(cacheKey, { value: params, timestamp: Date.now() });
+        return params;
+    }
+
+    /**
+     * Invalider le cache des paramètres
+     */
+    private invalidateParamsCache(): void {
+        this.paramsCache.delete('cantine:params');
     }
 
     // ============ MENUS ============
 
-    async createMenu(dto: CreateMenuDto, etablissementId?: string): Promise<MenuCantine> {
+    async createMenu(dto: CreateMenuDto, createurId?: string, etablissementId?: string): Promise<MenuCantine> {
         const menu = this.menuRepo.create({
             ...dto,
             etablissementId,
@@ -56,15 +78,39 @@ export class CantineService {
         });
         await this.menuRepo.save(menu);
         logger.info(`[${etablissementId}] Menu créé pour le ${dto.date}`);
+
+        // Audit trail
+        try {
+            await auditService.log({
+                utilisateurId: createurId || 'system',
+                action: AuditAction.MENU_CREATE,
+                cible: 'MenuCantine',
+                cibleId: menu.id,
+                description: `Menu créé pour le ${dto.date}`,
+                module: 'cantine',
+                etablissementId,
+            });
+        } catch (error) {
+            logger.warn('[Cantine] Erreur audit createMenu', error);
+        }
+
         return menu;
     }
 
-    async getMenus(dateDebut?: string, dateFin?: string, etablissementId?: string): Promise<MenuCantine[]> {
+    async getMenus(dateDebut?: string, dateFin?: string, etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: MenuCantine[]; total: number; page: number; limit: number }> {
         const qb = this.menuRepo.createQueryBuilder('m').where('m.actif = true');
         if (etablissementId) qb.andWhere('m.etablissementId = :etablissementId', { etablissementId });
         if (dateDebut) qb.andWhere('m.date >= :dateDebut', { dateDebut });
         if (dateFin) qb.andWhere('m.date <= :dateFin', { dateFin });
-        return qb.orderBy('m.date', 'ASC').getMany();
+        
+        const total = await qb.getCount();
+        const data = await qb
+            .orderBy('m.date', 'ASC')
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getMany();
+        
+        return { data, total, page, limit };
     }
 
     /**
@@ -120,21 +166,51 @@ export class CantineService {
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             solde: 0,
         });
-        await this.inscriptionRepo.save(inscription);
 
-        // Créer un workflow de validation si requis
-        if (requireValidation) {
-            await validationWorkflowService.createWorkflow({
-                module: 'cantine',
-                entiteId: inscription.id,
-                entiteType: 'InscriptionCantine',
-                niveauxRequis: 2,
+        // Transaction pour inscription + workflow
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            await queryRunner.manager.save(inscription);
+
+            // Créer un workflow de validation si requis
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'cantine',
+                    entiteId: inscription.id,
+                    entiteType: 'InscriptionCantine',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, createurId);
+
+                logger.info(`[${etablissementId}] Inscription cantine créée en attente de validation pour élève ${dto.eleveId}`);
+            } else {
+                logger.info(`[${etablissementId}] Inscription cantine créée pour élève ${dto.eleveId}`);
+            }
+
+            // Audit trail
+            await queryRunner.manager.query(`
+                INSERT INTO audit_logs (id, "utilisateurId", action, cible, "cibleId", description, module, "etablissementId", "createdAt")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            `, [
+                require('crypto').randomUUID(),
+                createurId,
+                'INSCRIPTION_CANTINE_CREATE',
+                'InscriptionCantine',
+                inscription.id,
+                `Inscription cantine créée pour élève ${dto.eleveId}`,
+                'cantine',
                 etablissementId,
-            }, createurId);
+            ]);
 
-            logger.info(`[${etablissementId}] Inscription cantine créée en attente de validation pour élève ${dto.eleveId}`);
-        } else {
-            logger.info(`[${etablissementId}] Inscription cantine créée pour élève ${dto.eleveId}`);
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
 
         return inscription;
@@ -160,14 +236,31 @@ export class CantineService {
     /**
      * Recharger le solde (avec devise depuis config)
      */
-    async rechargerSolde(inscriptionId: string, dto: RechargerSoldeDto, etablissementId?: string): Promise<InscriptionCantine> {
+    async rechargerSolde(inscriptionId: string, dto: RechargerSoldeDto, createurId?: string, etablissementId?: string): Promise<InscriptionCantine> {
         const params = await this.getCantineParams();
         const inscription = await this.getInscription(inscriptionId, etablissementId);
 
+        const ancienSolde = inscription.solde;
         inscription.solde += dto.montant;
         await this.inscriptionRepo.save(inscription);
 
         logger.info(`[${etablissementId}] Solde rechargé: +${dto.montant} ${params.currency} pour inscription ${inscriptionId}`);
+
+        // Audit trail
+        try {
+            await auditService.log({
+                utilisateurId: createurId || 'system',
+                action: AuditAction.SOLDE_RECHARGE,
+                cible: 'InscriptionCantine',
+                cibleId: inscription.id,
+                description: `Solde rechargé de ${dto.montant} ${params.currency}`,
+                module: 'cantine',
+                etablissementId,
+                nouvellesValeurs: { ancienSolde, nouveauSolde: inscription.solde, montant: dto.montant },
+            });
+        } catch (error) {
+            logger.warn('[Cantine] Erreur audit rechargerSolde', error);
+        }
         
         // NOTIFICATION : Confirmer le rechargement aux parents
         try {
@@ -198,7 +291,7 @@ export class CantineService {
 
     // ============ CONSOMMATIONS ============
 
-    async enregistrerConsommation(dto: EnregistrerConsommationDto, etablissementId?: string): Promise<ConsommationCantine> {
+    async enregistrerConsommation(dto: EnregistrerConsommationDto, createurId?: string, etablissementId?: string): Promise<ConsommationCantine> {
         const params = await this.getCantineParams();
         const inscription = await this.getInscriptionByEleve(dto.eleveId || dto.inscriptionId, etablissementId);
         if (!inscription) {
@@ -230,6 +323,21 @@ export class CantineService {
             statut: StatutRepas.CONSOMME,
         });
         await this.consommationRepo.save(consommation);
+
+        // Audit trail
+        try {
+            await auditService.log({
+                utilisateurId: createurId || 'system',
+                action: AuditAction.CONSOMMATION_ENREGISTRER,
+                cible: 'ConsommationCantine',
+                cibleId: consommation.id,
+                description: `Consommation enregistrée pour élève ${dto.eleveId}`,
+                module: 'cantine',
+                etablissementId,
+            });
+        } catch (error) {
+            logger.warn('[Cantine] Erreur audit enregistrerConsommation', error);
+        }
 
         logger.info(`[${etablissementId}] Consommation enregistrée pour élève ${dto.eleveId}`);
         return consommation;

@@ -1,5 +1,0 @@
-- Each module exports a named singleton service instance (e.g., `export const elevesService = new ElevesService()`) alongside the class for external consumption.
-- Controllers instantiate services locally as constants (e.g., `const service = new ElevesService()`) rather than injecting them via constructor or DI container.
-- All route handlers wrap async logic in try-catch blocks that delegate errors to Express next(error) for centralized error handling.
-- Entities include composite unique indexes scoped by etablissementId (e.g., `@Index(['etablissementId', 'matricule'], { unique: true })`) to enforce per-tenant uniqueness.
-- DTOs use Zod schemas with z.infer-derived TypeScript types, separating create/update/query concerns into distinct schema objects per module.

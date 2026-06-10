@@ -1,6 +1,0 @@
-- **Layered Structure**: Organized into `controllers` (Express routers), `services` (business logic), `entities` (TypeORM models), `dto` (validation schemas), `guards` (permission middleware), and `utils`.
-- **Core Service**: `ConfigurationService` implements a hybrid storage strategy using `ConfigurationApp` (legacy global config), `ConfigurationModule` (module-specific settings), and `ParametreSysteme` (key-value parameters with multi-tenant scoping via `etablissementId`).
-- **Caching Strategy**: In-memory cache with TTL (5 minutes for general config, 30 seconds for module active states) to reduce database load, with granular invalidation methods.
-- **Event System**: Uses a singleton `ConfigurationListener` (Node.js EventEmitter) to broadcast configuration changes (`config:change`, `config:param:*`) to other modules.
-- **Audit & History**: `ConfigurationHistoryService` records all mutations in `HistoriqueConfiguration` entities, supporting full state restoration and backup creation.
-- **Dependency Management**: Module activation (`toggleModule`) enforces dependency graphs defined in `MODULE_REGISTRY`, auto-activating required dependencies and preventing deactivation of dependent modules.

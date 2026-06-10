@@ -1,1 +1,0 @@
-Orchestrates dynamic role-based data visualization and system health monitoring to provide a unified operational view of the eLISAschool backend.

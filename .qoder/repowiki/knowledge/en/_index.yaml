@@ -2,7 +2,7 @@
 schema_version: 1
 locale: en-US
 branch: main
-exported_at: "2026-06-09T04:09:23Z"
+exported_at: "2026-06-09T15:41:59Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -15,9 +15,12 @@ modules:
             - .gitignore
             - AMELIORATIONS-GROUPES-V1.1.md
             - AMÉLIORATIONS-FINANCES-FINAL.md
+            - ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md
             - ANALYSE-FRAIS-REMISES-COHERENCE.md
             - ANALYSE-GESTION-FINANCIERE.md
             - ANALYSE-OPTIMISATIONS-ACTIVATION-MODULES.md
+            - ANALYSE-PROGRAMME-PEDAGOGIQUE-COMPLET.md
+            - ANALYSE-SCORING-PERSONNEL-COMPLET.md
             - ANALYSE-SUIVI-RECOMMANDATIONS.md
             - ANALYSE_ROLES_EDUCATION_AFRICAINE.md
             - BACKUP-SYSTEM-IMPLEMENTATION-COMPLETE.md
@@ -27,6 +30,8 @@ modules:
             - CONFIGURATION_100_PERCENT.md
             - CORRECTIONS-GROUPES-V1.2.md
             - CORRECTIONS-IMPLÉMENTÉES-RÉSUMÉ.md
+            - DEPLOYMENT-ANNONCES-RAPPORT.md
+            - DEPLOYMENT-GUIDE-TYPES-ENUM.md
             - DEPLOYMENT-SUCCESS.md
             - ETAPES-ACCOMPLIES.txt
             - ETAPES-COMPLETES-RESUME.md
@@ -35,22 +40,30 @@ modules:
             - FIX-ERREURS-NOTIFICATIONS.md
             - FIX-ERREURS-TYPESCRIPT-COMPLETE.md
             - FIX-TYPESCRIPT-ERRORS.md
+            - GAMIFICATION-AUTOMATIQUE-RESUME.md
+            - GAMIFICATION-SUIVI-ELEVES-CORRECTIONS.md
             - GUIDE-CONTROLLERS-ANNEE-SCOLAIRE.md
             - GUIDE-CORRECTIONS-RESTANTES.md
+            - GUIDE-DEPLOIEMENT-PHASE1.md
             - GUIDE-GROUPES-CONSOLIDATION.md
             - GUIDE-TEST-ACTIVATION-MODULES.md
+            - GUIDE-TEST-RESET-GLOBAL.md
             - IMPLEMENTATION-100-COMPLETE-TOUTES-ETAPES.md
             - IMPLEMENTATION-ACTIVATION-MODULES.md
+            - IMPLEMENTATION-ANNONCES-RESUME.md
             - IMPLEMENTATION-AUDIT-TRAIL.md
             - IMPLEMENTATION-COMPLETE-FINANCES-PHASE1-2.md
             - IMPLEMENTATION-COMPLETE-FINANCES.md
             - IMPLEMENTATION-COMPLETE-RESUME-FINAL.md
             - IMPLEMENTATION-FINANCES-COMPLETE.md
             - IMPLEMENTATION-FINANCES-FINAL.md
+            - IMPLEMENTATION-GAMIFICATION-RESUME.md
+            - IMPLEMENTATION-MODULE-SONDAGES.md
             - IMPLEMENTATION-NOUVELLES-FONCTIONNALITES-RESUME.md
             - IMPLEMENTATION-PHASE1-FRAIS-REMISES.md
             - IMPLEMENTATION-RESPONSABLES-ELEVES.md
             - IMPLEMENTATION-SESSION-RESUME-FINAL.md
+            - IMPLEMENTATION-TYPES-ENUM.md
             - IMPLEMENTATION_EXTENSION_ROLES.md
             - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
             - IMPLÉMENTATION_MULTI-ETABLISSEMENTS-TERMINEE.md
@@ -66,18 +79,34 @@ modules:
             - OPTIMISATIONS-IMPLÉMENTATION-COMPLETE.md
             - OPTIMISATIONS-RESUME-FINAL.md
             - PAGINATION-QUICK-REF.md
+            - PHASE1-CERTIFICAT-VALIDATION.md
+            - PHASE1-COMMANDES-DEPLOIEMENT.md
+            - PHASE1-COMPLETEE-100%.md
+            - PHASE1-ENTITES-COMPLETEES.md
+            - PHASE1-IMPLEMENTATION-COMPLETE.md
             - PHASE1-P0-COMPLET-100%.md
             - PHASE1-P0-RESUME.md
+            - PHASE1-PROGRESSION.md
+            - PHASE1-RAPPORT-ANALYSE-COMPLET.md
+            - PHASE1-README.md
+            - PHASE1-RESUME-RAPIDE.md
+            - PHASE1-SUIVI-PROGRESSION.md
             - PORTAL-PARENT-IMPLEMENTATION.md
+            - QUICKSTART-SONDAGES.md
             - RAPPORT-AUDIT-COHÉRENCE-NOUVELLES-FONCTIONNALITES.md
             - RAPPORT-ETAPES-COMPLETES.md
+            - RAPPORT-FINAL-DEPLOIEMENT-ANNONCES.md
             - RAPPORT-FINAL-PAGINATION.md
             - RAPPORT-PAGINATION-IMPROVEMENTS.md
             - README.md
             - REDIS-CONFIGURATION.md
             - RESUME-EXECUTIF.md
             - RESUME-FINAL-FINANCES.md
+            - RESUME-FINAL-SONDAGES.md
+            - RESUME-IMPLEMENTATION-RESET-GLOBAL.md
             - RH-PHASES-2-5-COMPLETE.md
+            - SCORING-PERSONNEL-RESUME.md
+            - TEST-ANNONCES-COMMANDES.md
             - UPDATE-REGLES-SKILLS-NOTIFICATIONS.md
             - VALIDATION-WORKFLOW-SYSTEM.md
             - VERIFICATION-AUDIT-FINANCES.md
@@ -90,203 +119,7 @@ modules:
         children: []
         depends_on: []
         related_to: []
-    0c031c0c852e56012f4291e6e21f11bf:
-        dir_name: Operational Documentation & Tooling
-        title: Operational Documentation & Tooling
-        scope:
-            - backend/docs/
-            - backend/scripts/
-            - backend/test/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    0cb17a00bcdc8e9541aac1b15244f9d6:
-        dir_name: Dynamic Role-Based Dashboard
-        title: Dynamic Role-Based Dashboard
-        scope:
-            - backend/src/modules/dashboard/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_dashboard_monitoring/monitoring
-            - path: backend/backend_operations
-            - path: backend/backend_auth_rbac
-            - path: backend/backend_gamification_scoring
-    4c8dcec1e310d1c6d55706d0b4a5d4e2:
-        dir_name: Backend Operations Modules
-        title: Backend Operations Modules
-        scope:
-            - backend/src/modules/personnel/
-            - backend/src/modules/materiel/
-            - backend/src/modules/impressions/
-            - backend/src/modules/requetes/
-            - backend/src/modules/messagerie/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_notifications_audit/notifications
-            - path: backend/backend_dashboard_monitoring/dashboard
-    4fab878c8649ff5a1963e9afe93e7fca:
-        dir_name: Gamification & Student Scoring
-        title: Gamification & Student Scoring
-        scope:
-            - backend/src/modules/gamification/
-            - backend/src/modules/scoring/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_student_academics
-            - path: backend/backend_student_life
-            - path: backend/backend_dashboard_monitoring/dashboard
-    6b30042bae5b1654044f7819380ba9f1:
-        dir_name: Student Academic Records & Assessment Management
-        title: Student Academic Records & Assessment Management
-        scope:
-            - backend/src/modules/eleves/
-            - backend/src/modules/notes/
-            - backend/src/modules/bulletins/
-            - backend/src/modules/orientation/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_academic_core
-            - path: backend/backend_gamification_scoring
-    6bae6745cf1d317b183c1621f2fc0236:
-        dir_name: Operational Intelligence & Observability
-        title: Operational Intelligence & Observability
-        scope:
-            - backend/src/modules/dashboard/
-            - backend/src/modules/monitoring/
-        source_files: []
-        children:
-            - c7960ddc6ba44a2c7561a0fd0129b72b
-            - 0cb17a00bcdc8e9541aac1b15244f9d6
-        depends_on: []
-        related_to: []
-    08c22ff96dac2901169c53ad33400070:
-        dir_name: Academic Structure & Calendar Management
-        title: Academic Structure & Calendar Management
-        scope:
-            - backend/src/modules/annees-scolaires/
-            - backend/src/modules/cycles/
-            - backend/src/modules/niveaux/
-            - backend/src/modules/periodes/
-            - backend/src/modules/matieres/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_student_academics
-            - path: backend/backend_student_life
-    7664de88a5eea4fe1d5af9d817d2974d:
-        dir_name: System Configuration & Parameter Management
-        title: System Configuration & Parameter Management
-        scope:
-            - backend/src/modules/configuration/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_establishment_config/etablissement_management
-            - path: backend/backend_infrastructure
-    35099e3d2384ad2dd5bc1b893468bce9:
-        dir_name: Multi-Tenant Establishment & System Configuration Orchestrator
-        title: Multi-Tenant Establishment & System Configuration Orchestrator
-        scope:
-            - backend/src/modules/etablissement/
-            - backend/src/modules/configuration/
-        source_files: []
-        children:
-            - 7664de88a5eea4fe1d5af9d817d2974d
-            - c6f655cddf69bdc920e063afcf4a7065
-        depends_on: []
-        related_to: []
-    b689ad91b437342aa5664ad0d7256882:
-        dir_name: Authentication & RBAC Authorization
-        title: Authentication & RBAC Authorization
-        scope:
-            - backend/src/modules/auth/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_establishment_config/etablissement_management
-            - path: backend/backend_auth_rbac/rbac
-    backend:
-        dir_name: eLISAschool Backend Orchestrator
-        title: eLISAschool Backend Orchestrator
-        scope:
-            - backend/
-        source_files: []
-        children:
-            - 4fab878c8649ff5a1963e9afe93e7fca
-            - f7e41264d3ffd17170c5f8e5ab358e75
-            - f85486a2da4a858020d48af4079c5d1f
-            - 35099e3d2384ad2dd5bc1b893468bce9
-            - 6b30042bae5b1654044f7819380ba9f1
-            - c2dc2cdf3d377d865817b3884d8aa2e5
-            - backend/business_modules
-            - 08c22ff96dac2901169c53ad33400070
-            - backend/support_artifacts
-            - 0c031c0c852e56012f4291e6e21f11bf
-            - backend/infrastructure
-            - cbb3bc0f137f6a5ed36d359f0de8df59
-            - 4c8dcec1e310d1c6d55706d0b4a5d4e2
-            - 6bae6745cf1d317b183c1621f2fc0236
-        depends_on: []
-        related_to:
-            - path: shared
-            - path: docker
-    backend/business_modules:
-        dir_name: School Management Platform Core
-        title: School Management Platform Core
-        scope:
-            - backend/src/modules/
-        source_files: []
-        children:
-            - backend/business_modules/student_health
-            - backend/business_modules/hr
-            - backend/business_modules/student_services
-            - backend/business_modules/academic_calendar
-            - backend/business_modules/system_monitoring
-            - backend/business_modules/students
-            - backend/business_modules/academic_structure
-            - backend/business_modules/student_activities
-            - backend/business_modules/communication
-            - backend/business_modules/auth_security
-            - backend/business_modules/academic_content
-            - backend/business_modules/system_config
-            - backend/business_modules/finance
-            - backend/business_modules/system_services
-        depends_on: []
-        related_to: []
-    backend/business_modules/academic_calendar:
-        dir_name: Academic Calendar & Period Management
-        title: Academic Calendar & Period Management
-        scope:
-            - backend/src/modules/annees-scolaires/
-            - backend/src/modules/periodes/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/academic_content:
-        dir_name: Academic Content & Assessment Management
-        title: Academic Content & Assessment Management
-        scope:
-            - backend/src/modules/matieres/
-            - backend/src/modules/bulletins/
-            - backend/src/modules/notes/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/academic_structure:
+    3e3d37cf330f51594a8e26930276e8cf:
         dir_name: Academic Structure Management
         title: Academic Structure Management
         scope:
@@ -296,49 +129,19 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
-    backend/business_modules/auth_security:
-        dir_name: Authentication, Authorization & RBAC
-        title: Authentication, Authorization & RBAC
-        scope:
-            - backend/src/modules/auth/
-            - backend/src/modules/rbac/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/communication:
-        dir_name: Communication & Document Management
-        title: Communication & Document Management
-        scope:
-            - backend/src/modules/messagerie/
-            - backend/src/modules/requetes/
-            - backend/src/modules/impressions/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/finance:
-        dir_name: Financial Management & Accounting
-        title: Financial Management & Accounting
-        scope:
-            - backend/src/modules/finances/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/hr:
-        dir_name: Human Resources & Payroll Management
-        title: Human Resources & Payroll Management
-        scope:
-            - backend/src/modules/personnel/
-            - backend/src/modules/suivi-personnel/
-            - backend/src/modules/utilisateurs/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/student_activities:
+        related_to:
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/students
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/system_monitoring
+    09d4660cb440a220fb8ed4431f405e33:
         dir_name: Student Activities & Gamification
         title: Student Activities & Gamification
         scope:
@@ -348,62 +151,17 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
-    backend/business_modules/student_health:
-        dir_name: Student Health & Behavioral Tracking
-        title: Student Health & Behavioral Tracking
-        scope:
-            - backend/src/modules/sante/
-            - backend/src/modules/suivi-eleves/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/student_services:
-        dir_name: Student Services — Canteen, Transport & Equipment Management
-        title: Student Services — Canteen, Transport & Equipment Management
-        scope:
-            - backend/src/modules/cantine/
-            - backend/src/modules/transport/
-            - backend/src/modules/materiel/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/students:
-        dir_name: Student Lifecycle & Parental Access Management
-        title: Student Lifecycle & Parental Access Management
-        scope:
-            - backend/src/modules/eleves/
-            - backend/src/modules/responsables-eleves/
-            - backend/src/modules/orientation/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/system_config:
-        dir_name: System Configuration, Enum Management & Establishment Grouping
-        title: System Configuration, Enum Management & Establishment Grouping
-        scope:
-            - backend/src/modules/configuration/
-            - backend/src/modules/types-enum/
-            - backend/src/modules/groupes-etablissements/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/system_monitoring:
-        dir_name: System Monitoring, Audit & Dynamic Dashboard
-        title: System Monitoring, Audit & Dynamic Dashboard
-        scope:
-            - backend/src/modules/audit/
-            - backend/src/modules/monitoring/
-            - backend/src/modules/dashboard/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/business_modules/system_services:
+        related_to:
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/students
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/system_config
+    020ee8876516d664b21c01300c653c47:
         dir_name: System Services Notifications, Validation Workflows, and Scoring
         title: 'System Services: Notifications, Validation Workflows, and Scoring'
         scope:
@@ -413,8 +171,276 @@ modules:
         source_files: []
         children: []
         depends_on: []
+        related_to:
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/student_services
+    37b545da729a6c1208ce40e891fce3c2:
+        dir_name: Communication & Document Management
+        title: Communication & Document Management
+        scope:
+            - backend/src/modules/messagerie/
+            - backend/src/modules/requetes/
+            - backend/src/modules/impressions/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/students
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/hr
+    77f684a94d9ba56b7cd000f5df562866:
+        dir_name: System Configuration, Enum Management & Establishment Grouping
+        title: System Configuration, Enum Management & Establishment Grouping
+        scope:
+            - backend/src/modules/configuration/
+            - backend/src/modules/types-enum/
+            - backend/src/modules/groupes-etablissements/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/student_activities
+    97a0e6f4cf3c2fdf1d96c61981fdffbc:
+        dir_name: Financial Management & Accounting
+        title: Financial Management & Accounting
+        scope:
+            - backend/src/modules/finances/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/students
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/system_services
+    3120f56ef2468ec3962c0d98e496d12b:
+        dir_name: System Monitoring, Audit & Dynamic Dashboard
+        title: System Monitoring, Audit & Dynamic Dashboard
+        scope:
+            - backend/src/modules/audit/
+            - backend/src/modules/monitoring/
+            - backend/src/modules/dashboard/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/students
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/academic_structure
+    59779d748f39fb3a75c596250ebcd729:
+        dir_name: School Management Platform Core
+        title: School Management Platform Core
+        scope:
+            - backend/src/modules/
+        source_files: []
+        children:
+            - c3de473ca229a4e26e2ee907f529860c
+            - c3183bec133746f535e008c21e8299e1
+            - cb1d7d0367c7b364fef212c309c3c28d
+            - f5f0d514f400424aa0b10d02b16a6076
+            - 3120f56ef2468ec3962c0d98e496d12b
+            - 09d4660cb440a220fb8ed4431f405e33
+            - 77f684a94d9ba56b7cd000f5df562866
+            - 020ee8876516d664b21c01300c653c47
+            - e8a84e6af1138b5440bbbb8d37cb1760
+            - 37b545da729a6c1208ce40e891fce3c2
+            - d956b72b7e83392c5a760c7628251370
+            - d47d0ae24d4ff48e0ce3a5f3f1ac27fa
+            - 97a0e6f4cf3c2fdf1d96c61981fdffbc
+            - 3e3d37cf330f51594a8e26930276e8cf
+        depends_on: []
         related_to: []
-    backend/infrastructure:
+    backend:
+        dir_name: eLISAschool Backend Orchestrator
+        title: eLISAschool Backend Orchestrator
+        scope:
+            - backend/
+        source_files: []
+        children:
+            - backend/backend_student_lifecycle
+            - c7e641dfc4e4e6e80392f0b3dac34ca5
+            - backend/backend_finance
+            - 59779d748f39fb3a75c596250ebcd729
+            - backend/backend_platform_infra
+            - backend/backend_academic_structure
+            - backend/backend_operations_support
+            - backend/backend_hr_payroll
+            - bb7587bbab79219705027a6b3f7c3a76
+            - backend/backend_core_auth
+        depends_on: []
+        related_to: []
+    backend/backend_academic_structure:
+        dir_name: Academic Structure & Curriculum Management
+        title: Academic Structure & Curriculum Management
+        scope:
+            - backend/src/modules/annees-scolaires/
+            - backend/src/modules/cycles/
+            - backend/src/modules/niveaux/
+            - backend/src/modules/matieres/
+            - backend/src/modules/periodes/
+            - backend/src/modules/programmes/
+            - backend/src/modules/orientation/
+            - backend/src/modules/types-enum/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_core_auth:
+        dir_name: Authentication, Authorization & Multi-Tenancy
+        title: Authentication, Authorization & Multi-Tenancy
+        scope:
+            - backend/src/common/
+            - backend/src/config/
+            - backend/src/modules/auth/
+            - backend/src/modules/rbac/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_finance:
+        dir_name: Financial Management & Accounting
+        title: Financial Management & Accounting
+        scope:
+            - backend/src/modules/finances/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_hr_payroll:
+        dir_name: HR Payroll & Personnel Management
+        title: HR Payroll & Personnel Management
+        scope:
+            - backend/src/modules/personnel/
+            - backend/src/modules/suivi-personnel/
+            - backend/src/modules/scoring/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_operations_support:
+        dir_name: School Operations & Multi-Tenant Management
+        title: School Operations & Multi-Tenant Management
+        scope:
+            - backend/src/modules/etablissement/
+            - backend/src/modules/groupes-etablissements/
+            - backend/src/modules/cartes/
+            - backend/src/modules/impressions/
+            - backend/src/modules/materiel/
+            - backend/src/modules/cantine/
+            - backend/src/modules/transport/
+            - backend/src/modules/sante/
+            - backend/src/modules/messagerie/
+            - backend/src/modules/notifications/
+            - backend/src/modules/annonces/
+            - backend/src/modules/sondages/
+            - backend/src/modules/requetes/
+            - backend/src/modules/validation-workflow/
+            - backend/src/modules/gamification/
+            - backend/src/modules/utilisateurs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_platform_infra:
+        dir_name: Platform Infrastructure & Core Services
+        title: Platform Infrastructure & Core Services
+        scope:
+            - backend/src/modules/dashboard/
+            - backend/src/modules/audit/
+            - backend/src/modules/configuration/
+            - backend/src/modules/monitoring/
+            - backend/src/database/
+            - backend/scripts/
+            - backend/docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/backend_student_lifecycle:
+        dir_name: Student Lifecycle & Academic Management
+        title: Student Lifecycle & Academic Management
+        scope:
+            - backend/src/modules/eleves/
+            - backend/src/modules/responsables-eleves/
+            - backend/src/modules/bulletins/
+            - backend/src/modules/notes/
+            - backend/src/modules/suivi-eleves/
+            - backend/src/modules/clubs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    bb7587bbab79219705027a6b3f7c3a76:
+        dir_name: Database Evolution & System Documentation
+        title: Database Evolution & System Documentation
+        scope:
+            - backend/database/migrations/
+            - backend/docs/
+            - backend/scripts/
+            - backend/test/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    c3de473ca229a4e26e2ee907f529860c:
+        dir_name: Authentication, Authorization & RBAC
+        title: Authentication, Authorization & RBAC
+        scope:
+            - backend/src/modules/auth/
+            - backend/src/modules/rbac/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/students
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/communication
+    c7e641dfc4e4e6e80392f0b3dac34ca5:
         dir_name: Application Infrastructure & Shared Services
         title: Application Infrastructure & Shared Services
         scope:
@@ -427,99 +453,89 @@ modules:
         children: []
         depends_on: []
         related_to: []
-    backend/support_artifacts:
-        dir_name: Database Evolution & System Documentation
-        title: Database Evolution & System Documentation
-        scope:
-            - backend/database/migrations/
-            - backend/docs/
-            - backend/scripts/
-            - backend/test/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    c2dc2cdf3d377d865817b3884d8aa2e5:
-        dir_name: Student Life Services
-        title: Student Life Services
+    c3183bec133746f535e008c21e8299e1:
+        dir_name: Student Services — Canteen, Transport & Equipment Management
+        title: Student Services — Canteen, Transport & Equipment Management
         scope:
             - backend/src/modules/cantine/
             - backend/src/modules/transport/
-            - backend/src/modules/clubs/
-            - backend/src/modules/cartes/
+            - backend/src/modules/materiel/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_notifications_audit/notifications
-            - path: backend/backend_gamification_scoring
-            - path: backend/backend_academic_core
-    c6f655cddf69bdc920e063afcf4a7065:
-        dir_name: School Establishment Management
-        title: School Establishment Management
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/students
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/system_services
+    cb1d7d0367c7b364fef212c309c3c28d:
+        dir_name: Student Lifecycle & Parental Access Management
+        title: Student Lifecycle & Parental Access Management
         scope:
-            - backend/src/modules/etablissement/
+            - backend/src/modules/eleves/
+            - backend/src/modules/responsables-eleves/
+            - backend/src/modules/orientation/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_auth_rbac/auth
-            - path: backend/backend_establishment_config/system_configuration
-    c7960ddc6ba44a2c7561a0fd0129b72b:
-        dir_name: System Health & Application Monitoring
-        title: System Health & Application Monitoring
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/academic_calendar
+    d47d0ae24d4ff48e0ce3a5f3f1ac27fa:
+        dir_name: Academic Content & Assessment Management
+        title: Academic Content & Assessment Management
         scope:
-            - backend/src/modules/monitoring/
+            - backend/src/modules/matieres/
+            - backend/src/modules/bulletins/
+            - backend/src/modules/notes/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_dashboard_monitoring/dashboard
-    c8316a3905a16137b3b71f8016d36a03:
-        dir_name: Audit Trail Consultation & Archival
-        title: Audit Trail Consultation & Archival
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/students
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/system_config
+    d956b72b7e83392c5a760c7628251370:
+        dir_name: Human Resources & Payroll Management
+        title: Human Resources & Payroll Management
         scope:
-            - backend/src/modules/audit/
+            - backend/src/modules/personnel/
+            - backend/src/modules/suivi-personnel/
+            - backend/src/modules/utilisateurs/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_notifications_audit/notifications
-    cbb3bc0f137f6a5ed36d359f0de8df59:
-        dir_name: Unified Identity and Access Control
-        title: Unified Identity and Access Control
-        scope:
-            - backend/src/modules/auth/
-            - backend/src/modules/rbac/
-        source_files: []
-        children:
-            - b689ad91b437342aa5664ad0d7256882
-            - cffd9e74d59573ec5f367710c272b157
-        depends_on: []
-        related_to:
-            - path: backend/backend_dashboard_monitoring/dashboard
-    cffd9e74d59573ec5f367710c272b157:
-        dir_name: Role-Based Access Control (RBAC) Management
-        title: Role-Based Access Control (RBAC) Management
-        scope:
-            - backend/src/modules/rbac/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_auth_rbac/auth
-    dbe5b578eb44b8d92b6380c0ddbd3f18:
-        dir_name: Multi-Channel Notification Delivery System
-        title: Multi-Channel Notification Delivery System
-        scope:
-            - backend/src/modules/notifications/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_operations
-            - path: backend/backend_student_life
-            - path: backend/backend_notifications_audit/audit
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/communication
     docker:
         dir_name: Container Orchestration & Deployment Configuration
         title: Container Orchestration & Deployment Configuration
@@ -528,39 +544,55 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend
-    f7e41264d3ffd17170c5f8e5ab358e75:
-        dir_name: Notifications and Audit Modules
-        title: Notifications and Audit Modules
-        scope:
-            - backend/src/modules/notifications/
-            - backend/src/modules/audit/
-        source_files: []
-        children:
-            - dbe5b578eb44b8d92b6380c0ddbd3f18
-            - c8316a3905a16137b3b71f8016d36a03
-        depends_on: []
         related_to: []
-    f85486a2da4a858020d48af4079c5d1f:
-        dir_name: Shared Infrastructure & Configuration
-        title: Shared Infrastructure & Configuration
+    e8a84e6af1138b5440bbbb8d37cb1760:
+        dir_name: Student Health & Behavioral Tracking
+        title: Student Health & Behavioral Tracking
         scope:
-            - backend/src/common/
-            - backend/src/config/
-            - backend/src/database/
+            - backend/src/modules/sante/
+            - backend/src/modules/suivi-eleves/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: backend/backend_establishment_config/system_configuration
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/student_activities
+            - path: backend/business_modules/students
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/academic_calendar
+            - path: backend/business_modules/auth_security
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/hr
+    f5f0d514f400424aa0b10d02b16a6076:
+        dir_name: Academic Calendar & Period Management
+        title: Academic Calendar & Period Management
+        scope:
+            - backend/src/modules/annees-scolaires/
+            - backend/src/modules/periodes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/business_modules/academic_structure
+            - path: backend/business_modules/academic_content
+            - path: backend/business_modules/finance
+            - path: backend/business_modules/system_services
+            - path: backend/business_modules/student_health
+            - path: backend/business_modules/student_services
+            - path: backend/business_modules/system_monitoring
+            - path: backend/business_modules/communication
+            - path: backend/business_modules/hr
+            - path: backend/business_modules/system_config
+            - path: backend/business_modules/students
     shared:
-        dir_name: Shared Types, Constants, and Validators
-        title: Shared Types, Constants, and Validators
+        dir_name: Shared Domain Primitives & Validators
+        title: Shared Domain Primitives & Validators
         scope:
             - shared/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend
+        related_to: []

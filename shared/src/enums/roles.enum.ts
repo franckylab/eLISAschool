@@ -738,6 +738,32 @@ export enum Permission {
     GROUPES_RAPPORTS_SCOLARITE = 'groupes:rapports:scolarite',
     GROUPES_RAPPORTS_FINANCES = 'groupes:rapports:finances',
     GROUPES_ETABLISSEMENTS_MANAGE = 'groupes:etablissements:manage',
+
+    // ==================================
+    // ORGANISATION (16 permissions)
+    // ==================================
+    ORGANISATION_VIEW = 'organisation:view',
+    ORGANISATION_CREATE = 'organisation:create',
+    ORGANISATION_EDIT = 'organisation:edit',
+    ORGANISATION_DELETE = 'organisation:delete',
+    
+    UNITES_VIEW = 'unites:view',
+    UNITES_CREATE = 'unites:create',
+    UNITES_EDIT = 'unites:edit',
+    UNITES_DELETE = 'unites:delete',
+    UNITES_ARBRESCENCE_VIEW = 'unites:arborescence:view',
+    
+    POSTES_VIEW = 'postes:view',
+    POSTES_CREATE = 'postes:create',
+    POSTES_EDIT = 'postes:edit',
+    POSTES_DELETE = 'postes:delete',
+    POSTES_ASSIGNER = 'postes:assigner',
+    
+    HIERARCHIE_VIEW = 'hierarchie:view',
+    HIERARCHIE_CREATE = 'hierarchie:create',
+    HIERARCHIE_EDIT = 'hierarchie:edit',
+    HIERARCHIE_DELETE = 'hierarchie:delete',
+    ORGANIGRAMME_VIEW = 'organigramme:view',
 }
 
 /**

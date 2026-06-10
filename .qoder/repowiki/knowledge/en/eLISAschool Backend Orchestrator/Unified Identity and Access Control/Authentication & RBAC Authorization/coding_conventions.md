@@ -1,3 +1,0 @@
-- Services are implemented as classes with singleton instances exported at the bottom of the file (e.g., `export const authService = new AuthService()`).
-- DTOs and validation schemas are centralized in shared validators and re-exported via module-specific DTO files to maintain a single source of truth.
-- Audit logging is consistently integrated into critical auth flows (login, logout, password change, permission denial) via `auditService.log`.

@@ -1,4 +1,0 @@
-- All admin-only routes are protected with `authMiddleware` followed by `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` middleware chain.
-- Request query parameters are validated using Zod schemas passed to a shared `validateDto` utility before processing.
-- Services export both a named class and a pre-instantiated singleton instance (e.g., `export const auditArchivageService = new AuditArchivageService()`).
-- Controller route handlers use async functions with try-catch blocks that forward errors to Express via `next(error)`.

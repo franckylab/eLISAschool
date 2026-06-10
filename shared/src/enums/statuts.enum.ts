@@ -71,6 +71,7 @@ export enum StatutNotification {
  */
 export enum TypePaiement {
     SCOLARITE = 'SCOLARITE',
+    INSCRIPTION = 'INSCRIPTION',
     CANTINE = 'CANTINE',
     TRANSPORT = 'TRANSPORT',
     CLUB = 'CLUB',

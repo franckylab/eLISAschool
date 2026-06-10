@@ -1,1 +1,0 @@
-Provides a dynamic, role-based dashboard system with configurable widgets, real-time updates via SSE, and intelligent caching.

@@ -99,28 +99,125 @@ export class AuditService {
         cibleId: string,
         anciennesValeurs?: Record<string, any>,
         nouvellesValeurs?: Record<string, any>,
+        module?: string,
         req?: Request
     ): Promise<void> {
-        // Masquer les données sensibles
-        const sanitize = (obj?: Record<string, any>) => {
-            if (!obj) return obj;
-            const sensitive = ['motDePasse', 'password', 'token', 'secret'];
-            const sanitized = { ...obj };
-            for (const key of sensitive) {
-                if (key in sanitized) sanitized[key] = '[MASQUÉ]';
-            }
-            return sanitized;
-        };
-
         await this.log({
             utilisateurId,
             action,
+            severity: AuditSeverity.WARNING,
             cible,
             cibleId,
-            anciennesValeurs: sanitize(anciennesValeurs),
-            nouvellesValeurs: sanitize(nouvellesValeurs),
-            severity: action.includes('DELETE') ? AuditSeverity.WARNING : AuditSeverity.INFO,
+            description: `Modification de ${cible}`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: module || cible,
         }, req);
+    }
+
+    /**
+     * Raccourci pour audit de configuration
+     */
+    async logConfigChange(
+        utilisateurId: string,
+        cle: string,
+        ancienneValeur?: any,
+        nouvelleValeur?: any,
+        etablissementId?: string,
+        req?: Request
+    ): Promise<void> {
+        await this.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            severity: AuditSeverity.WARNING,
+            cible: 'configuration',
+            cibleId: cle,
+            description: `Modification config: ${cle}`,
+            anciennesValeurs: { [cle]: ancienneValeur },
+            nouvellesValeurs: { [cle]: nouvelleValeur },
+            module: 'configuration',
+        }, req);
+    }
+
+    /**
+     * Raccourci pour audit de préférences utilisateur
+     */
+    async logPreferenceChange(
+        utilisateurId: string,
+        cle: string,
+        action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESET',
+        ancienneValeur?: any,
+        nouvelleValeur?: any,
+        req?: Request
+    ): Promise<void> {
+        await this.log({
+            utilisateurId,
+            action: action === 'RESET' ? AuditAction.PREFERENCE_RESET :
+                    action === 'DELETE' ? AuditAction.PREFERENCE_DELETE :
+                    action === 'CREATE' ? AuditAction.PREFERENCE_CREATE :
+                    AuditAction.PREFERENCE_UPDATE,
+            severity: AuditSeverity.INFO,
+            cible: 'preferences',
+            cibleId: cle,
+            description: `Préférence ${action.toLowerCase()}: ${cle}`,
+            anciennesValeurs: ancienneValeur ? { [cle]: ancienneValeur } : undefined,
+            nouvellesValeurs: nouvelleValeur ? { [cle]: nouvelleValeur } : undefined,
+            module: 'preferences',
+        }, req);
+    }
+
+    /**
+     * Récupérer l'historique d'audit pour une entité
+     */
+    async getAuditHistory(
+        cibleId: string,
+        options?: {
+            limit?: number;
+            page?: number;
+            actions?: AuditAction[];
+            dateDebut?: Date;
+            dateFin?: Date;
+        }
+    ): Promise<{ items: AuditLog[]; total: number; page: number; totalPages: number }> {
+        const { limit = 50, page = 1, actions, dateDebut, dateFin } = options || {};
+        const offset = (page - 1) * limit;
+
+        const where: any = { cibleId };
+
+        if (actions && actions.length > 0) {
+            where.action = actions;
+        }
+
+        if (dateDebut || dateFin) {
+            where.createdAt = {};
+            if (dateDebut) where.createdAt['>='] = dateDebut;
+            if (dateFin) where.createdAt['<='] = dateFin;
+        }
+
+        const [items, total] = await this.auditRepo.findAndCount({
+            where,
+            order: { createdAt: 'DESC' },
+            take: limit,
+            skip: offset,
+        });
+
+        return {
+            items,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
+    /**
+     * Extraire l'adresse IP du client
+     */
+    private getClientIP(req: Request): string {
+        const forwarded = req.headers['x-forwarded-for'];
+        if (typeof forwarded === 'string') {
+            return forwarded.split(',')[0].trim();
+        }
+        return req.ip || req.socket?.remoteAddress || 'unknown';
     }
 
     /**
@@ -165,6 +262,7 @@ export class AuditService {
             entityId,
             anciennesValeurs,
             nouvellesValeurs,
+            undefined,
             req
         );
     }
@@ -211,17 +309,6 @@ export class AuditService {
             .getManyAndCount();
 
         return { items, total };
-    }
-
-    /**
-     * Extrait l'IP du client depuis la requête
-     */
-    private getClientIP(req: Request): string {
-        const forwarded = req.headers['x-forwarded-for'];
-        if (typeof forwarded === 'string') {
-            return forwarded.split(',')[0].trim();
-        }
-        return req.ip || req.socket?.remoteAddress || 'unknown';
     }
 }
 

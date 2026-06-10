@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: f7e41264d3ffd17170c5f8e5ab358e75
-title: Notifications and Audit Modules
-scope:
-    - backend/src/modules/notifications/
-    - backend/src/modules/audit/
-source_files: []
-depends_on: []
-related_to: []

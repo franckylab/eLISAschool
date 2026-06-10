@@ -1,1 +1,1 @@
-Orchestrates a full-stack school management monorepo by unifying backend, frontend, and shared type contracts through npm workspaces and Docker Compose service composition.
+Orchestrates a modular school management PWA by unifying backend, frontend, and shared domain logic through a centralized npm workspace and Docker Compose infrastructure.

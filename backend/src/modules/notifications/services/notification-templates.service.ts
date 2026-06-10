@@ -735,12 +735,14 @@ export class NotificationTemplatesService {
         pourcentage: number;
     }): Promise<void> {
         try {
+            const statutBudget = variables.pourcentage > 100 ? 'dépassé' : 'presque épuisé';
+            
             await notificationsService.create({
                 type: TypeNotification.IN_APP,
                 titre: '🚨 Alerte budget',
                 contenu: this.renderTemplate(
-                    'Catégorie "{{categorie}}": {{montantConsomme}} FCFA consommés sur {{budgetPrevu}} FCFA ({{pourcentage}}%). Budget {{pourcentage > 100 ? "dépassé" : "presque épuisé"}}.',
-                    variables
+                    'Catégorie "{{categorie}}": {{montantConsomme}} FCFA consommés sur {{budgetPrevu}} FCFA ({{pourcentage}}%). Budget {{statutBudget}}.',
+                    { ...variables, statutBudget }
                 ),
                 destinataireId: context.destinataireId,
                 metadata: {

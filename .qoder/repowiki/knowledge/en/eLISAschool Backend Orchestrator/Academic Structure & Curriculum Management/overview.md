@@ -1,0 +1,1 @@
+Manages the hierarchical academic framework including school years, cycles, levels, subjects, periods, and pedagogical programs with workflow validation.

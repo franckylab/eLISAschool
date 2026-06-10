@@ -1,6 +1,0 @@
-- Each module follows a strict four-layer structure: controllers (Express Router), services (business logic with TypeORM repositories), entities (TypeORM models), and DTOs (Zod validation schemas).
-- Module entry points (`index.ts`) re-export all layers via barrel exports, enabling clean imports like `from '../services'`.
-- Controllers instantiate service classes directly (e.g., `new PersonnelService()`) and delegate all business logic; they handle HTTP concerns including auth middleware (`authMiddleware`, `requireRoles`, `staffOnly`, `managerOnly`), Zod validation via `validateDto`, and uniform `{ success, data }` JSON responses.
-- Services use `AppDataSource.getRepository()` to obtain TypeORM repositories in constructors, implement CRUD and domain-specific operations, and integrate with shared utilities (`logger`, `AppError`, pagination helpers, centralized config via `getParamNumber`/`getParamBoolean`).
-- Two modules (`personnel`, `materiel`) integrate an optional validation workflow by calling `validationWorkflowService.createWorkflow()` when configuration flags require multi-level approval.
-- Dependency direction flows inward: controllers → services → entities/DTOs, with cross-module imports only from shared common utilities (`@common/*`) and the auth module (`@modules/auth/*`).

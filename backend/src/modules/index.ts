@@ -48,6 +48,7 @@ export * from './dashboard';
 export * from './validation-workflow';
 export * from './groupes-etablissements';
 export * from './types-enum';
+export * from './organisation';
 
 // Modules complémentaires
 export * from './orientation';

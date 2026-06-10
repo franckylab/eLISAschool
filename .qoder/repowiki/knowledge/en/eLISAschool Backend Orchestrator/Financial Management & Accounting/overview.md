@@ -1,0 +1,1 @@
+Manages school fee billing, expense tracking, budgeting, and multi-level financial approval workflows for educational institutions.

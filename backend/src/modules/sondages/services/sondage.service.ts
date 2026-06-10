@@ -21,6 +21,8 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { Utilisateur } from '@modules/utilisateurs/entities';
+import { notificationsService } from '@modules/notifications/services';
+import { sondageWebSocketService } from './sondage.websocket';
 
 export class SondageService {
     private sondageRepo: Repository<Sondage>;
@@ -183,6 +185,17 @@ export class SondageService {
                 statut: sondage.statut,
             });
 
+            // Envoyer des notifications aux destinataires (non bloquant)
+            if (!isScheduled) {
+                try {
+                    await this.envoyerNotificationsSondage(sondage, dto.destinataires.utilisateur_ids);
+                    // WebSocket: notifier l'activation
+                    sondageWebSocketService.broadcastSondageActive(sondage.id, dto.destinataires.utilisateur_ids);
+                } catch (error) {
+                    logger.warn(`[Sondage] Échec envoi notifications (non bloquant)`, error);
+                }
+            }
+
             return sondage;
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -260,6 +273,14 @@ export class SondageService {
             await queryRunner.manager.increment(Sondage, { id: sondageId }, 'nombreVotes', voteDto.option_ids.length);
 
             await queryRunner.commitTransaction();
+
+            // WebSocket: broadcaster le nouveau vote
+            sondageWebSocketService.broadcastNouveauVote({
+                sondageId,
+                utilisateurId: sondage.estAnonyme ? undefined : utilisateurId,
+                nombreVotes: sondage.nombreVotes + voteDto.option_ids.length,
+                timestamp: new Date(),
+            });
 
             return votes;
         } catch (error) {
@@ -513,6 +534,27 @@ export class SondageService {
             default:
                 throw new AppError('Unité de durée non supportée', 400, 'INVALID_DURATION');
         }
+    }
+
+    /**
+     * Envoyer des notifications aux destinataires d'un sondage
+     */
+    private async envoyerNotificationsSondage(sondage: Sondage, destinataireIds: string[]): Promise<void> {
+        // Limiter à 50 notifications pour éviter la surcharge
+        const destinataires = destinataireIds.slice(0, 50);
+        
+        await notificationsService.createBulk({
+            destinatairesIds: destinataires,
+            titre: '📊 Nouveau sondage',
+            contenu: `Un nouveau sondage a été créé : "${sondage.question.substring(0, 100)}${sondage.question.length > 100 ? '...' : ''}"`,
+            type: 'IN_APP' as any,
+            priorite: 'NORMALE' as any,
+            categorie: 'sondage',
+        }, sondage.auteurId);
+
+        logger.info(`[Sondage] ${destinataires.length} notification(s) envoyée(s)`, {
+            sondageId: sondage.id,
+        });
     }
 }
 

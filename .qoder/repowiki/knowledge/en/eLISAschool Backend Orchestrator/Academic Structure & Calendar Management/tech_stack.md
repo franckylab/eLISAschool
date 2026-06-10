@@ -1,1 +1,0 @@
-Zod for runtime DTO validation (schemas like `createAnneeScolaireSchema`), TypeORM with UUID primary keys and enum columns, Express Router for HTTP layer, shared validation workflow integration via `validationWorkflowService` triggered by configuration flags from `@modules/configuration/utils/config.helper`.

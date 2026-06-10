@@ -8,7 +8,7 @@
  * Support multi-établissements + réponses API standardisées
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response, NextFunction, Router } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -24,10 +24,11 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@config/swagger.config';
 
 // Import des routes des modules
-import { authController } from '@modules/auth';
+import { authController, preferencesController } from '@modules/auth';
 import utilisateurEtablissementController from '@modules/auth/controllers/utilisateur-etablissement.controller';
 import { utilisateursController } from '@modules/utilisateurs';
 import { configurationController, backupController } from '@modules/configuration';
+import { ElevesService } from '@modules/eleves/services';
 import { notificationsController, notificationProviderController } from '@modules/notifications';
 import { notesController } from '@modules/notes';
 import { messagerieController } from '@modules/messagerie';
@@ -51,7 +52,7 @@ import { etablissementController } from '@modules/etablissement';
 import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
 import { anneesScolairesController } from '@modules/annees-scolaires';
-import { personnelController, contratController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
+import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
 import { classesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
 import { periodesController } from '@modules/periodes';
@@ -67,6 +68,7 @@ import { validationWorkflowController } from '@modules/validation-workflow';
 import { groupesController } from '@modules/groupes-etablissements';
 import { requireModuleActive } from '@modules/configuration/middlewares/module-active.middleware';
 import { typesEnumController } from '@modules/types-enum';
+import { organisationController } from '@modules/organisation';
 
 /**
  * Crée et configure l'application Express
@@ -152,6 +154,43 @@ export function createApp(): Application {
         });
     });
 
+    // ==================================
+    // Routes publiques de préinscription (AVANT tenantMiddleware)
+    // ==================================
+    const preinscriptionRouter = Router();
+    const elevesServicePublic = new ElevesService();
+
+    preinscriptionRouter.post('/api/eleves/preinscription', async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { validateDto } = await import('@common/utils');
+            const { preinscriptionSchema } = await import('@modules/eleves/dto');
+            const { Etablissement } = await import('@modules/etablissement/entities');
+            const { AppDataSource } = await import('@database/data-source');
+            const { AppError } = await import('@common/filters/error.filter');
+
+            const dto = validateDto(preinscriptionSchema, req.body);
+
+            // Résoudre l'établissement depuis le code
+            const etablissementRepo = AppDataSource.getRepository(Etablissement);
+            const etablissement = await etablissementRepo.createQueryBuilder('e')
+                .where('e.code = :code OR e.nom LIKE :code', { code: dto.codeEtablissement })
+                .getOne();
+
+            if (!etablissement) {
+                throw new AppError('Code établissement invalide', 400, 'INVALID_CODE_ETABLISSEMENT');
+            }
+
+            const preinscription = await elevesServicePublic.createPreinscription(dto, etablissement.id);
+            res.status(201).json({
+                success: true,
+                data: preinscription,
+                message: 'Préinscription soumise avec succès. Elle sera traitée par l\'établissement.'
+            });
+        } catch (error) { next(error); }
+    });
+
+    app.use(preinscriptionRouter);
+
     // Route d'information
     app.get('/api', (_req: Request, res: Response) => {
         res.status(200).json({
@@ -193,6 +232,7 @@ export function createApp(): Application {
 
     // Modules critiques
     app.use('/api/auth', authController);
+    app.use('/api/preferences', preferencesController);
     app.use('/api/utilisateurs', utilisateurEtablissementController); // Multi-établissements (v2.0)
     app.use('/api/utilisateurs', utilisateursController);
     app.use('/api/configuration', configurationController);
@@ -236,15 +276,21 @@ export function createApp(): Application {
     app.use('/api/validation-workflows', validationWorkflowController);
     app.use('/api/groupes', groupesController);
     app.use('/api/types-enum', typesEnumController);
+    
+    // Module organisation (critique - toujours actif)
+    app.use('/api/organisation', organisationController);
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);
     app.use('/api/cycles', cyclesController);
     app.use('/api/niveaux', niveauxController);
     app.use('/api/annees-scolaires', anneesScolairesController);
-    app.use('/api/personnel', personnelController);
-    app.use('/api/personnel/contrats', contratController);
-    app.use('/api/personnel/heures-cours', heureCoursController);
+    app.use('/api/personnel', requireModuleActive('personnel'), personnelController);
+    app.use('/api/personnel/contrats', requireModuleActive('personnel'), contratController);
+    app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), typeContratController);
+    app.use('/api/personnel/affectations', requireModuleActive('personnel'), affectationController);
+    app.use('/api/personnel/parcours', requireModuleActive('personnel'), parcoursPersonnelController);
+    app.use('/api/personnel/heures-cours', requireModuleActive('personnel'), heureCoursController);
     app.use('/api/personnel/absences', requireModuleActive('personnel'), absencePersonnelController);
     app.use('/api/personnel/evaluations', requireModuleActive('personnel'), evaluationController);
     app.use('/api/personnel/progressions', requireModuleActive('personnel'), progressionProgrammeController);

@@ -1,1 +1,0 @@
-Nodemailer for SMTP-based email delivery via `email.provider.ts`; node-cron for scheduled task execution in `cron-jobs.ts`.

@@ -9,6 +9,7 @@
  * Support aussi OneSignal
  */
 
+import admin from 'firebase-admin';
 import { TypeNotification, Notification } from '../entities';
 import { INotificationProvider, EnvoiResult, QuotaInfo } from './interfaces';
 import { logger } from '@common/utils/logger.util';
@@ -34,6 +35,7 @@ export class PushProvider implements INotificationProvider {
     
     private firebaseConfig: FirebaseConfig | null = null;
     private _configuré = false;
+    private initialized = false;
 
     constructor(nom: string = 'firebase-default') {
         this.nom = nom;
@@ -58,6 +60,20 @@ export class PushProvider implements INotificationProvider {
                 return;
             }
 
+            // Initialiser Firebase Admin si pas déjà fait
+            if (!this.initialized) {
+                if (!admin.apps.length) {
+                    admin.initializeApp({
+                        credential: admin.credential.cert({
+                            projectId: this.firebaseConfig.projectId,
+                            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                        }),
+                    });
+                }
+                this.initialized = true;
+            }
+
             this._configuré = true;
             logger.info(`[PushProvider] ${this.nom} initialisé avec succès`);
         } catch (error) {
@@ -74,8 +90,7 @@ export class PushProvider implements INotificationProvider {
     }
 
     /**
-     * Envoyer une notification push
-     * TODO: Implémenter avec firebase-admin quand installé
+     * Envoyer une notification push via Firebase FCM
      */
     async envoyer(notification: Notification): Promise<EnvoiResult> {
         if (!this.estConfiguré() || !this.firebaseConfig) {
@@ -129,25 +144,20 @@ export class PushProvider implements INotificationProvider {
                 },
             };
 
-            // TODO: Implémenter avec firebase-admin quand le package sera installé
-            // const admin = require('firebase-admin');
-            // if (!admin.apps.length) {
-            //     admin.initializeApp({
-            //         credential: admin.credential.cert(this.firebaseConfig.credentials),
-            //     });
-            // }
-            // const result = await admin.messaging().send(message);
+            // Envoyer via Firebase Admin
+            const result = await admin.messaging().send(message as any);
 
             logger.info(
-                `[PushProvider] Push envoyé (token: ${fcmToken.substring(0, 20)}...)`
+                `[PushProvider] Push envoyé (token: ${fcmToken.substring(0, 20)}..., ID: ${result})`
             );
 
             return {
                 succes: true,
-                idExterne: `push-${Date.now()}`, // Placeholder
+                idExterne: result,
                 details: {
                     token: fcmToken.substring(0, 20) + '...',
                     projectId: this.firebaseConfig.projectId,
+                    messageId: result,
                 },
             };
         } catch (error) {
@@ -173,11 +183,18 @@ export class PushProvider implements INotificationProvider {
                 return false;
             }
 
-            // TODO: Tester avec firebase-admin quand le package sera installé
-            // const admin = require('firebase-admin');
-            // admin.initializeApp({ ... });
+            // Tester avec firebase-admin
+            if (!admin.apps.length) {
+                admin.initializeApp({
+                    credential: admin.credential.cert({
+                        projectId,
+                        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                    }),
+                });
+            }
 
-            logger.info('[PushProvider] Test de configuration réussi (simulation)');
+            logger.info('[PushProvider] Test de configuration réussi');
             return true;
         } catch (error) {
             logger.error('[PushProvider] Test de configuration échoué', error);

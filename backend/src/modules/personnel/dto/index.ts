@@ -1,5 +1,7 @@
 export * from './personnel.dto';
 export * from './contrat.dto';
+export * from './type-contrat.dto';
+export * from './affectation.dto';
 export * from './heure-cours.dto';
 export * from './absence-personnel.dto';
 export * from './evaluation.dto';

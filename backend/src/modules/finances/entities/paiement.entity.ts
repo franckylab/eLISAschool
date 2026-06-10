@@ -70,6 +70,19 @@ export class Paiement {
     @Column({ type: 'text', nullable: true })
     observations?: string;
 
+    // ==================================
+    // Champs workflow de validation financière (v2.0)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 20, default: 'NON_REQUIS' })
+    statutValidation!: 'NON_REQUIS' | 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
+
+    @Column({ type: 'int', default: 0 })
+    niveauValidationActuel!: number;
+
+    @Column({ type: 'text', nullable: true })
+    motifRefus?: string;
+
     @Column({ type: 'uuid' })
     etablissementId!: string;
 

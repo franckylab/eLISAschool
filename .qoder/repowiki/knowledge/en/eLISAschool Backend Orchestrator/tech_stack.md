@@ -1,1 +1,1 @@
-Node.js/Express with TypeScript, utilizing a shared Redis service for caching and session management across modules.
+Node.js/Express with TypeScript, utilizing a shared PostgreSQL database with TypeORM for multi-tenant data persistence and Redis for caching.

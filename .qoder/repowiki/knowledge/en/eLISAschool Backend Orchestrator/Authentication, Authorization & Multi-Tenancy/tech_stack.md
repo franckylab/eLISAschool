@@ -1,0 +1,1 @@
+JWT with HS256 signing via jsonwebtoken; Zod schema validation for environment variables in env.config.ts; TypeORM repositories backed by PostgreSQL; in-memory Map-based caching for permission resolution (5-min TTL) and security params (1-min TTL); Redis service available in common/services/redis.service.ts for session/token storage.

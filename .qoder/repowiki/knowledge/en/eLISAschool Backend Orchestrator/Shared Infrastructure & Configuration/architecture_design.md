@@ -1,3 +1,0 @@
-- **Common Layer**: Centralizes shared utilities including Zod-based DTOs (`pagination.dto.ts`), Express middleware (`tenant.middleware.ts`), global error handling (`error.filter.ts`), and audit interceptors.
-- **Configuration Layer**: Manages environment variables via Zod schema validation (`env.config.ts`) and constructs TypeORM DataSource options (`database.config.ts`).
-- **Database Layer**: Exposes a singleton TypeORM `AppDataSource` (`data-source.ts`) and organizes schema evolution through SQL/TS migrations and seed scripts.

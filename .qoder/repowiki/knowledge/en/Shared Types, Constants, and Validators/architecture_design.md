@@ -1,4 +1,0 @@
-- Organized into five sub-packages: `config` (module registry), `constants` (app limits and metadata), `enums` (roles and permissions), `types` (API interfaces), and `validators` (Zod schemas).
-- Uses barrel exports (`index.ts`) in each sub-package and at the root to expose a flat public API via `@elisaschool/shared`.
-- Depends on `zod` for runtime validation, with schemas referencing shared constants for consistency.
-- Compiled as a CommonJS library with declaration files for consumption by both backend and frontend consumers.

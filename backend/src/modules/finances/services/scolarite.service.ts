@@ -21,6 +21,7 @@ import { financeWorkflowService } from './finance-workflow.service';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Request } from 'express';
 
 export class ScolariteService {
     private fraisRepo: Repository<FraisScolarite>;
@@ -900,6 +901,178 @@ export class ScolariteService {
         }
 
         return count;
+    }
+
+    // ==================================
+    // FRAIS D'INSCRIPTION (NOUVEAU - v2.0)
+    // ==================================
+
+    /**
+     * Générer les frais d'inscription pour un élève nouvellement inscrit
+     * Appelé lors de la conversion d'une préinscription en inscription
+     */
+    async genererFraisInscription(
+        eleveId: string,
+        anneeScolaireId: string,
+        userId: string,
+        etablissementId?: string,
+        req?: Request
+    ): Promise<FraisScolarite> {
+        // Vérifier si les frais existent déjà
+        const fraisExistants = await this.fraisRepo.findOne({
+            where: {
+                etablissementId,
+                anneeScolaireId,
+                // Frais d'inscription sont génériques à l'établissement
+                niveauId: IsNull(),
+                classeId: IsNull(),
+            },
+        });
+
+        if (fraisExistants) {
+            logger.info(`[${etablissementId}] Frais d'inscription déjà configurés pour année ${anneeScolaireId}`);
+            return fraisExistants;
+        }
+
+        // Créer les frais d'inscription par défaut
+        // Note: Ces valeurs devraient venir de la configuration
+        const frais = this.fraisRepo.create({
+            anneeScolaireId,
+            etablissementId,
+            fraisInscription: 50000, // 50 000 FCFA par défaut
+            fraisScolariteAnnuel: 0, // Sera configuré par niveau/classe
+            autresFrais: 0,
+            nombreTranches: 1, // Frais d'inscription en une seule fois
+            frequenceEcheance: 'annuel',
+            datePremiereEcheance: new Date(),
+            joursGrace: 0,
+            penaliteRetard: 0,
+        });
+
+        await this.fraisRepo.save(frais);
+        logger.info(`[${etablissementId}] Frais d'inscription créés: ${frais.fraisInscription} FCFA`);
+
+        // Audit
+        await auditService.logCRUD(
+            'CREATE',
+            'FraisInscription',
+            userId,
+            frais.id,
+            undefined,
+            {
+                eleveId,
+                anneeScolaireId,
+                fraisInscription: frais.fraisInscription,
+            }
+        );
+
+        return frais;
+    }
+
+    /**
+     * Enregistrer le paiement des frais d'inscription avec workflow de validation
+     */
+    async payerFraisInscription(
+        eleveId: string,
+        montant: number,
+        methodePaiement: string,
+        userId: string,
+        etablissementId?: string,
+        req?: Request
+    ): Promise<Paiement> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // Générer numéro de reçu
+            const annee = new Date().getFullYear();
+            const count = await queryRunner.manager.count(Paiement, {
+                where: { 
+                    etablissementId, 
+                    typePaiement: TypePaiement.INSCRIPTION,
+                    datePaiement: In([new Date()]) 
+                },
+            });
+            const numeroRecu = `REC-INSCR-${annee}-${String(count + 1).padStart(5, '0')}`;
+
+            // Créer le paiement
+            const paiement = queryRunner.manager.create(Paiement, {
+                eleveId,
+                montant,
+                montantTotal: montant,
+                montantPenalite: 0,
+                numeroRecu,
+                typePaiement: TypePaiement.INSCRIPTION,
+                methodePaiement,
+                datePaiement: new Date(),
+                effectuePar: userId,
+                statut: StatutPaiement.PAYE,
+                etablissementId,
+                statutValidation: 'NON_REQUIS', // Par défaut pour inscription
+                niveauValidationActuel: 0,
+            });
+
+            await queryRunner.manager.save(Paiement, paiement);
+
+            // Générer le reçu
+            const eleve = await queryRunner.manager.findOne(Eleve, {
+                where: { id: eleveId },
+            });
+
+            if (eleve) {
+                const recu = queryRunner.manager.create(RecuPaiement, {
+                    paiementId: paiement.id,
+                    numeroRecu,
+                    dateEmission: new Date(),
+                    eleveNom: `Élève ${eleve.matricule}`,
+                    eleveMatricule: eleve.matricule,
+                    classeNom: 'Inscription',
+                    montant,
+                    methodePaiement,
+                    objet: 'Frais d\'inscription',
+                    genererPar: userId,
+                    etablissementId,
+                });
+
+                await queryRunner.manager.save(RecuPaiement, recu);
+            }
+
+            await queryRunner.commitTransaction();
+
+            logger.info(`[${etablissementId}] Frais d'inscription payés: ${montant} FCFA - Reçu ${numeroRecu}`);
+
+            // Notification de confirmation
+            try {
+                await notificationsService.create({
+                    destinataireId: eleveId,
+                    titre: '✅ Frais d\'inscription payés',
+                    contenu: `Votre paiement de ${montant.toLocaleString()} FCFA a été enregistré. Reçu: ${numeroRecu}`,
+                    type: TypeNotification.IN_APP,
+                    priorite: PrioriteNotification.HAUTE,
+                    categorie: 'FINANCES',
+                    metadata: {
+                        paiementId: paiement.id,
+                        montant,
+                        numeroRecu,
+                        typePaiement: 'INSCRIPTION',
+                    },
+                }, userId);
+            } catch (notifError) {
+                logger.warn('[Scolarité] Échec notification frais d\'inscription (non bloquant)', notifError);
+            }
+
+            return await this.paiementRepo.findOne({
+                where: { id: paiement.id },
+                relations: ['eleve'],
+            }) as Paiement;
+
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 }
 

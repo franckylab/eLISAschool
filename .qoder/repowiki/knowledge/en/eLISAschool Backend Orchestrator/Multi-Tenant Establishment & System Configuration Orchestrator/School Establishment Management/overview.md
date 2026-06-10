@@ -1,1 +1,0 @@
-Manages multi-tenant school establishments with CRUD operations, activation workflows, and per-establishment configuration including themes, quotas, and active modules.

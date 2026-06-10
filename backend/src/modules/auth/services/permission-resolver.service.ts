@@ -21,6 +21,7 @@ import Permission from '@modules/auth/entities/permission.entity';
 import UtilisateurRole from '@modules/auth/entities/utilisateur-role.entity';
 import UtilisateurPermission, { TypePermission } from '@modules/auth/entities/utilisateur-permission.entity';
 import { logger } from '@common/utils/logger.util';
+import { redisService } from '@common/services/redis.service';
 
 /**
  * Interface pour le cache de permissions
@@ -77,7 +78,20 @@ export class PermissionResolverService {
      * @returns Set de codes de permissions
      */
     async resolvePermissions(utilisateurId: string): Promise<Set<string>> {
-        // Vérifier le cache
+        // 1. Vérifier le cache Redis (distribué)
+        const redisCacheKey = `permissions:${utilisateurId}`;
+        const cachedRedis = await redisService.get<string>(redisCacheKey);
+        
+        if (cachedRedis) {
+            try {
+                const permissionsArray = JSON.parse(cachedRedis) as string[];
+                return new Set(permissionsArray);
+            } catch {
+                // Cache corrompu, on continue
+            }
+        }
+
+        // 2. Vérifier le cache in-memory (local)
         const cached = this.getFromCache(utilisateurId);
         if (cached) {
             return cached;
@@ -229,6 +243,12 @@ export class PermissionResolverService {
      */
     invalidateCache(utilisateurId: string): void {
         this.userPermissionCache.delete(utilisateurId);
+        
+        // Invalider aussi le cache Redis
+        redisService.delete(`permissions:${utilisateurId}`).catch(err => {
+            logger.error('[PermissionResolver] Erreur invalidation Redis', err);
+        });
+        
         logger.debug(`🔐 Cache invalidé pour utilisateur ${utilisateurId}`);
     }
 
@@ -252,6 +272,11 @@ export class PermissionResolverService {
 
         for (const ur of utilisateurRoles) {
             this.userPermissionCache.delete(ur.utilisateurId);
+            
+            // Invalider aussi le cache Redis
+            await redisService.delete(`permissions:${ur.utilisateurId}`).catch(err => {
+                logger.error('[PermissionResolver] Erreur invalidation Redis', err);
+            });
         }
 
         logger.debug(`🔐 Cache invalidé pour ${utilisateurRoles.length} utilisateurs ayant le rôle ${roleId}`);
@@ -262,7 +287,13 @@ export class PermissionResolverService {
      */
     invalidateAllCache(): void {
         this.userPermissionCache.clear();
-        logger.info('🔐 Cache des permissions complètement invalidé');
+        
+        // Invalider aussi tout le cache Redis des permissions
+        redisService.deleteByPattern('permissions:*').catch(err => {
+            logger.error('[PermissionResolver] Erreur invalidation Redis globale', err);
+        });
+        
+        logger.info('🔐 Cache des permissions complètement invalidé (in-memory + Redis)');
     }
 
     /**

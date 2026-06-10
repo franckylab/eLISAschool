@@ -22,6 +22,7 @@ import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { StatutSondage } from '../entities';
+import { sondagePdfService } from '../services/sondage.pdf';
 
 const router = Router();
 
@@ -321,6 +322,24 @@ router.get('/:sondageId/analyses/export', authMiddleware, async (req: Request, r
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', `attachment; filename=sondage-${req.params.sondageId}.csv`);
             res.send(csv);
+        } else if (format === 'pdf') {
+            const pdfHtml = sondagePdfService.genererPdf({
+                question: analyses.sondage.question,
+                statut: analyses.sondage.statut,
+                dateFermeture: analyses.sondage.date_fermeture,
+                totalVotes: stats.total_votes,
+                totalDestinataires: stats.total_destinataires,
+                tauxParticipation: stats.taux_participation,
+                repartition: repartition.map((item: any) => ({
+                    option_texte: item.option_texte,
+                    nombre_votes: item.nombre_votes,
+                    pourcentage: item.pourcentage,
+                })),
+            });
+
+            res.setHeader('Content-Type', 'text/html');
+            res.setHeader('Content-Disposition', `attachment; filename=sondage-${req.params.sondageId}.html`);
+            res.send(pdfHtml);
         } else {
             res.json({ success: true, data: analyses });
         }

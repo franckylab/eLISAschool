@@ -1,6 +1,0 @@
-- All controllers wrap route handlers in try-catch blocks that delegate errors to Express error middleware via `next(error)`.
-- Every controller responds with a uniform JSON envelope `{ success: true, data: ... }` for successful requests.
-- Services use a private repository field initialized in the constructor (`private repo: Repository<Entity>`) and access it via `this.repo` for all database operations.
-- DTO validation in controllers uses the shared `validateDto(schema, req.body)` utility before passing data to service methods.
-- Write operations (POST, PATCH, DELETE) in controllers are protected by `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` middleware; GET endpoints use only `authMiddleware`.
-- Entities use `@CreateDateColumn()` and `@UpdateDateColumn()` decorators for automatic timestamp management on all records.

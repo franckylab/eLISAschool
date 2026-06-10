@@ -1,0 +1,5 @@
+- **Modular Structure**: The module is composed of six distinct sub-modules (`eleves`, `responsables-eleves`, `notes`, `bulletins`, `suivi-eleves`, `clubs`), each following a strict Controller-Service-Entity-DTO layered architecture.
+- **Entry Points**: Each sub-module exposes an Express Router via its controller (e.g., `eleves.controller.ts`) and aggregates exports in a root `index.ts` for clean module boundary definition.
+- **Dependency Direction**: Services depend on TypeORM repositories and shared infrastructure modules (`@modules/auth`, `@modules/configuration`, `@modules/validation-workflow`). Cross-module communication occurs via service injection (e.g., `BulletinsService` calls `NotesService` and `ParentsService`).
+- **Access Control**: Implements role-based middleware (`requireRoles`, `staffOnly`) and custom guards (`parent-access.guard.ts`) to enforce data isolation between parents, staff, and administrators.
+- **Workflow Integration**: Critical operations (student creation, grade entry, club enrollment) optionally trigger external validation workflows via `validationWorkflowService`, decoupling business logic from approval processes.

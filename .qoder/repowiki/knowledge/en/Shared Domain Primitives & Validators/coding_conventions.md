@@ -1,0 +1,4 @@
+- French naming convention for domain-specific fields and enum values (e.g., `motDePasse`, `CHEF_ETABLISSEMENT`) to align with local educational context.
+- Barrel export pattern (`index.ts`) used in every sub-directory to simplify imports and encapsulate module structure.
+- Dual export strategy providing both named exports for tree-shaking and a default object export for backward compatibility or grouped access.
+- Centralized constraint management where validation schemas import limits (e.g., `PASSWORD_MIN_LENGTH`) from `constants` rather than hardcoding values.

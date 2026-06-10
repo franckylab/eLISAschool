@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/business_modules/system_services
+module_path: 020ee8876516d664b21c01300c653c47
 title: 'System Services: Notifications, Validation Workflows, and Scoring'
 scope:
     - backend/src/modules/notifications/
@@ -7,4 +7,13 @@ scope:
     - backend/src/modules/scoring/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/business_modules/communication
+    - path: backend/business_modules/student_health
+    - path: backend/business_modules/hr
+    - path: backend/business_modules/academic_calendar
+    - path: backend/business_modules/academic_content
+    - path: backend/business_modules/system_config
+    - path: backend/business_modules/student_activities
+    - path: backend/business_modules/finance
+    - path: backend/business_modules/student_services

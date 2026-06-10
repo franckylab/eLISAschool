@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; Express Router for HTTP endpoint definitions; Node.js `os` module for system metrics; TypeORM `AppDataSource` for database health checks.

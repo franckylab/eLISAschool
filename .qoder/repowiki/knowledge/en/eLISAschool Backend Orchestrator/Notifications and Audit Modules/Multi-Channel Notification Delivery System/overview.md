@@ -1,1 +1,0 @@
-Manages creation, delivery, and lifecycle of notifications across email, SMS, push, and in-app channels with provider registry fallback.

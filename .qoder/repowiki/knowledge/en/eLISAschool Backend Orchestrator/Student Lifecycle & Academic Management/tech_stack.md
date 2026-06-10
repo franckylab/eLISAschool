@@ -1,0 +1,3 @@
+- **Validation**: Uses `Zod` schemas (e.g., `createEleveSchema`) for runtime DTO validation via a shared `validateDto` utility.
+- **ORM**: Relies on `TypeORM` with `AppDataSource` for database interactions, utilizing QueryBuilder for complex filtered searches.
+- **Multi-tenancy**: Enforces data isolation via `etablissementId` filtering in service layers and request context injection.

@@ -19,6 +19,7 @@ import { initNotificationCronJobs } from '@modules/notifications/cron-jobs';
 import { initFinanceCronJobs } from '@modules/finances/services/cron-jobs';
 import { initGamificationCronJobs } from '@modules/gamification/cron-jobs';
 import { initScoringPersonnelCronJobs } from '@modules/suivi-personnel/cron-jobs';
+import { initSondageCronJobs } from '@modules/sondages/cron-jobs';
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -75,7 +76,8 @@ async function bootstrap(): Promise<void> {
             initFinanceCronJobs();
             initGamificationCronJobs();
             initScoringPersonnelCronJobs();
-            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel)');
+            initSondageCronJobs();
+            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel + sondages)');
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');

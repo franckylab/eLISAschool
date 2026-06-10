@@ -1,4 +1,4 @@
-- **Centralized Routing & Middleware Pipeline**: The `app.ts` entry point mounts all domain module controllers under a unified `/api` prefix, applying global security (Helmet, CORS, Rate Limiting) and cross-cutting concerns (Logging, Compression) before routing.
-- **Multi-Tenancy Enforcement**: A global `tenantMiddleware` intercepts all authenticated requests to resolve and inject the `etablissementId` into the request context, ensuring data isolation across schools while supporting multi-establishment user roles.
-- **Dynamic Module Activation**: The `requireModuleActive` middleware acts as a gatekeeper for non-critical domain modules, querying the central configuration service to block access to disabled features per establishment, enabling a modular SaaS-like experience.
-- **Shared Cross-Cutting Services**: Domain modules rely on shared infrastructure for audit logging (via `audit.interceptor` or `audit.service`), error handling (`error.filter`), and standardized API responses, ensuring consistent behavior and observability across the entire backend.
+- Centralized Express application (`app.ts`) mounts all domain modules under `/api/`, applying global security (Helmet, CORS) and rate limiting.
+- Cross-cutting `tenantMiddleware` injects the active `etablissementId` into every request context, enforcing data isolation for all downstream services.
+- Dynamic feature toggling via `requireModuleActive` middleware gates access to non-critical modules based on per-tenant configuration.
+- Shared `common/` layer provides standardized error handling, audit interception, and pagination utilities used uniformly across all child modules.

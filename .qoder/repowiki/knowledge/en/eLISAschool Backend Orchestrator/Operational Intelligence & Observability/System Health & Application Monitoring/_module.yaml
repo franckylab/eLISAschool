@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: c7960ddc6ba44a2c7561a0fd0129b72b
-title: System Health & Application Monitoring
-scope:
-    - backend/src/modules/monitoring/
-source_files: []
-depends_on: []
-related_to:
-    - path: backend/backend_dashboard_monitoring/dashboard

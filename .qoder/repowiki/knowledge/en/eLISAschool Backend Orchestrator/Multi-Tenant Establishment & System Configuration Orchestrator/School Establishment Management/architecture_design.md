@@ -1,7 +1,0 @@
-- Layered architecture following controller-service-entity pattern: Express router in `controllers/etablissement.controller.ts` delegates to `EtablissementService` in `services/etablissement.service.ts`, which operates on TypeORM repositories for `Etablissement` and `EtablissementConfig` entities.
-- Two core entities with a 1:1 relationship: `Etablissement` (school identity, contact info, status) and `EtablissementConfig` (theme, regional settings, SaaS quotas, active modules), defined in `entities/`.
-- Zod-based DTOs in `dto/` provide request validation schemas (`createEtablissementSchema`, `updateEtablissementSchema`, `updateEtablissementConfigSchema`) consumed via `validateDto` utility.
-- Role-based access control via `authMiddleware` and `requireRoles(Role.SUPER_ADMIN)` restricts write operations; read endpoints allow broader authenticated access.
-- Optional validation workflow integration: when `etablissement.require_validation` config is enabled, create/activate/deactivate actions trigger `validationWorkflowService` instead of immediate state changes, using statuses like `EN_ATTENTE_VALIDATION`.
-- Transactional writes in `create()` use TypeORM `QueryRunner` to atomically persist both the establishment and its default configuration.
-- Module entry point `index.ts` re-exports all sub-modules (entities, dto, services, controllers) for consolidated imports.

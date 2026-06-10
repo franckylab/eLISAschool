@@ -1,1 +1,0 @@
-Orchestrates authentication flows and RBAC policy enforcement by coupling token validation with dynamic permission resolution across tenant boundaries.

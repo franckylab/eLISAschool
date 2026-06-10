@@ -1,1 +1,0 @@
-Zod for schema-based DTO validation; TypeORM with `AppDataSource` for repository access; Express Router for modular route composition.

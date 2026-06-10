@@ -16,7 +16,7 @@ import {
     testNotificationProviderSchema,
     queryNotificationProvidersSchema,
 } from '../dto';
-import { authMiddleware, adminOnly } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermissions } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -27,12 +27,12 @@ router.use(authMiddleware);
 
 /**
  * GET /api/notification-providers
- * Liste des providers (admin only)
+ * Liste des providers (permission: notification_providers:view)
  */
-router.get('/', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requirePermissions('notification_providers:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryNotificationProvidersSchema, req.query);
-        const result = await providerService.findAll(query);
+        const result = await providerService.findAll(query, req.utilisateur?.etablissementId);
 
         res.status(200).json({
             success: true,
@@ -46,11 +46,11 @@ router.get('/', adminOnly, async (req: Request, res: Response, next: NextFunctio
 
 /**
  * GET /api/notification-providers/:id
- * Détails d'un provider (admin only)
+ * Détails d'un provider (permission: notification_providers:view)
  */
-router.get('/:id', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', requirePermissions('notification_providers:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const provider = await providerService.findOne(req.params.id);
+        const provider = await providerService.findOne(req.params.id, req.utilisateur?.etablissementId);
 
         res.status(200).json({
             success: true,
@@ -64,9 +64,9 @@ router.get('/:id', adminOnly, async (req: Request, res: Response, next: NextFunc
 
 /**
  * POST /api/notification-providers
- * Créer un nouveau provider (admin only)
+ * Créer un nouveau provider (permission: notification_providers:manage)
  */
-router.post('/', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requirePermissions('notification_providers:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createNotificationProviderSchema, req.body);
         const provider = await providerService.create(dto);
@@ -84,9 +84,9 @@ router.post('/', adminOnly, async (req: Request, res: Response, next: NextFuncti
 
 /**
  * PATCH /api/notification-providers/:id
- * Mettre à jour un provider (admin only)
+ * Mettre à jour un provider (permission: notification_providers:manage)
  */
-router.patch('/:id', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', requirePermissions('notification_providers:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateNotificationProviderSchema, req.body);
         const provider = await providerService.update(req.params.id, dto);
@@ -104,9 +104,9 @@ router.patch('/:id', adminOnly, async (req: Request, res: Response, next: NextFu
 
 /**
  * DELETE /api/notification-providers/:id
- * Supprimer un provider (admin only)
+ * Supprimer un provider (permission: notification_providers:manage)
  */
-router.delete('/:id', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requirePermissions('notification_providers:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await providerService.remove(req.params.id);
 
@@ -122,9 +122,9 @@ router.delete('/:id', adminOnly, async (req: Request, res: Response, next: NextF
 
 /**
  * POST /api/notification-providers/:id/toggle
- * Activer/désactiver un provider (admin only)
+ * Activer/désactiver un provider (permission: notification_providers:toggle)
  */
-router.post('/:id/toggle', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/toggle', requirePermissions('notification_providers:toggle'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const provider = await providerService.toggle(req.params.id);
 
@@ -141,9 +141,9 @@ router.post('/:id/toggle', adminOnly, async (req: Request, res: Response, next: 
 
 /**
  * POST /api/notification-providers/:id/set-default
- * Définir un provider comme défaut (admin only)
+ * Définir un provider comme défaut (permission: notification_providers:manage)
  */
-router.post('/:id/set-default', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/set-default', requirePermissions('notification_providers:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const provider = await providerService.setDefault(req.params.id);
 
@@ -160,9 +160,9 @@ router.post('/:id/set-default', adminOnly, async (req: Request, res: Response, n
 
 /**
  * POST /api/notification-providers/:id/test
- * Tester la configuration d'un provider (admin only)
+ * Tester la configuration d'un provider (permission: notification_providers:test)
  */
-router.post('/:id/test', adminOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/test', requirePermissions('notification_providers:test'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const testConfig = req.body.configuration 
             ? validateDto(testNotificationProviderSchema, req.body).configuration 
@@ -173,6 +173,24 @@ router.post('/:id/test', adminOnly, async (req: Request, res: Response, next: Ne
         res.status(200).json({
             success: true,
             data: result,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/notification-providers/monitoring
+ * Dashboard de monitoring des providers (permission: notification_providers:view)
+ */
+router.get('/monitoring', requirePermissions('notification_providers:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const monitoring = await providerService.getMonitoring(req.utilisateur?.etablissementId);
+
+        res.status(200).json({
+            success: true,
+            data: monitoring,
             timestamp: new Date().toISOString(),
         });
     } catch (error) {

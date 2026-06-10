@@ -1,5 +1,5 @@
 schema_version: 1
-module_path: backend/support_artifacts
+module_path: bb7587bbab79219705027a6b3f7c3a76
 title: Database Evolution & System Documentation
 scope:
     - backend/database/migrations/

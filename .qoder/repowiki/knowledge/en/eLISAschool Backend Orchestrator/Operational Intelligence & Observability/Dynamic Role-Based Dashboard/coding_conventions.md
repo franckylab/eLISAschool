@@ -1,3 +1,0 @@
-- Services are instantiated as singletons and exported as constants (e.g., `widgetResolverService`, `dataAggregatorService`) for direct import and usage.
-- Widget data resolvers are defined as string paths (e.g., 'service.method') in the registry and dynamically invoked by the `DataAggregatorService` using lazy-loaded service instances.
-- Cache keys are constructed with contextual prefixes (e.g., `widget:data:${widgetId}:${context}`) to enable granular invalidation by user, establishment, or widget pattern.

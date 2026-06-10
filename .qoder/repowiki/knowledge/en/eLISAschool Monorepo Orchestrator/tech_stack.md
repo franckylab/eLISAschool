@@ -1,1 +1,1 @@
-Node.js >=20 with npm workspaces for monorepo management; Docker Compose for multi-service orchestration (PostgreSQL 16, Redis 7, Express backend).
+Node.js >=20 with npm workspaces for monorepo management; Docker Compose for multi-service orchestration (PostgreSQL 16, Redis 7, Express API).

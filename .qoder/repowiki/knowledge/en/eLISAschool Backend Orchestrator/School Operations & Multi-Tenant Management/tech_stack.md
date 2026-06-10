@@ -1,0 +1,2 @@
+- **Notification Providers**: Uses `nodemailer` for SMTP email delivery, `twilio` for SMS, and a placeholder integration for Firebase Cloud Messaging (FCM) for push notifications.
+- **Real-time & Scheduling**: Implements `socket.io` for real-time survey updates in `sondages` and `node-cron` for scheduled tasks like attendance points and notification reminders.

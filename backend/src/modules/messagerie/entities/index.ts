@@ -4,4 +4,18 @@
  * ==================================
  */
 
-export { Conversation, ParticipantConversation, Message, TypeConversation } from './messagerie.entity';
+export {
+    Conversation,
+    ParticipantConversation,
+    Message,
+    MessageReaction,
+    MessageReadStatus,
+    MessageMention,
+    TemplateMessage,
+    MessageFichier,
+    TypeConversation,
+    PrioriteMessage,
+    TypeContenuMessage,
+    EmojiReaction,
+    CategorieTemplate,
+} from './messagerie.entity';

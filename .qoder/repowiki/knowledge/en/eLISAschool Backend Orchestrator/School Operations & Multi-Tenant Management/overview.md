@@ -1,0 +1,1 @@
+Manages school entities, multi-establishment grouping, operational modules (canteen, transport, health), and cross-cutting services like notifications and validation workflows.

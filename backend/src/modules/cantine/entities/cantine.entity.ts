@@ -16,6 +16,8 @@ export enum StatutRepas {
 
 @Entity('menus_cantine')
 @Index(['etablissementId'])
+@Index(['date'])
+@Index(['etablissementId', 'date'])
 export class MenuCantine {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -76,6 +78,9 @@ export enum StatutInscriptionCantine {
 
 @Entity('inscriptions_cantine')
 @Index(['etablissementId'])
+@Index(['eleveId'])
+@Index(['etablissementId', 'eleveId'])
+@Index(['statut'])
 export class InscriptionCantine {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

@@ -1,7 +1,0 @@
-- Five sub-modules (annees-scolaires, cycles, niveaux, periodes, matieres) each follow a consistent four-layer structure: controllers (Express Router), services (TypeORM Repository-based business logic), DTOs (Zod schemas), and entities (TypeORM decorators).
-- Each module exports via index.ts using barrel exports (`export * from './entities'`, etc.) for clean public API.
-- Controllers use Express Router with `authMiddleware` and `requireRoles(Role.ADMIN, Role.SUPER_ADMIN)` for write operations; read endpoints require only authentication.
-- Services instantiate TypeORM repositories in constructors via `AppDataSource.getRepository()` and expose both class instances and singleton exports (e.g., `export const anneesScolairesService = new AnneesScolairesService()`).
-- Two modules (annees-scolaires, periodes, matieres) integrate with a validation workflow service when configuration flags (`require_validation`) are enabled, deferring state transitions (closure, activation) until approval.
-- Multi-tenancy is enforced via `etablissementId` foreign keys on entities like AnneeScolaire, with cascade deletes.
-- Dependency direction flows inward: controllers → services → repositories/entities, with cross-module service calls (e.g., matieres → annees-scolaires, classes) for referential integrity checks.

@@ -59,6 +59,9 @@ export enum ModuleName {
   MONITORING = 'monitoring',
   DASHBOARD = 'dashboard',
   PERIPHERIQUES = 'peripheriques',
+  
+  // Module organisation
+  ORGANISATION = 'organisation',
 }
 
 /**
@@ -114,6 +117,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.MONITORING]: ModuleCategory.SYSTEME,
   [ModuleName.DASHBOARD]: ModuleCategory.SYSTEME,
   [ModuleName.PERIPHERIQUES]: ModuleCategory.SYSTEME,
+  [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
 };
 
 /**

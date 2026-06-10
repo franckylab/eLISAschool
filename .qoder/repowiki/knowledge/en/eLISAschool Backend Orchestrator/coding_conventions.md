@@ -1,3 +1,3 @@
-- All domain modules follow a strict Controller-Service-Entity-DTO directory structure for consistent separation of concerns.
-- Global error handling is centralized via `error.filter.ts`, ensuring all modules return standardized error responses.
-- Audit logging is implemented either through automatic interceptors or manual service calls, maintaining a unified trail across all modules.
+- All domain modules follow a strict Controller-Service-Entity directory structure with centralized index exports.
+- Global `tenantMiddleware` is applied to all authenticated routes to enforce multi-tenancy at the request level.
+- Non-critical modules are protected by `requireModuleActive` middleware to support dynamic per-tenant feature enabling.

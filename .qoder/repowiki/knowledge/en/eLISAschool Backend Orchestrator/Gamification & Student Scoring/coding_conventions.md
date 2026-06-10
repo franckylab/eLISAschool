@@ -1,5 +1,0 @@
-- Services instantiate repositories in the constructor via `AppDataSource.getRepository(Entity)` rather than injecting them.
-- Both modules retrieve tunable parameters through async helpers `getParamNumber` and `getParamBoolean` with hardcoded fallback defaults.
-- Point/score mutations always create a corresponding history record in a dedicated history entity table.
-- Controller route handlers wrap service calls in try/catch blocks and delegate errors to Express `next(error)`.
-- Module index files use barrel exports (`export * from './subpath'`) to expose public API surfaces.

@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: backend/backend_platform_infra
+title: Platform Infrastructure & Core Services
+scope:
+    - backend/src/modules/dashboard/
+    - backend/src/modules/audit/
+    - backend/src/modules/configuration/
+    - backend/src/modules/monitoring/
+    - backend/src/database/
+    - backend/scripts/
+    - backend/docs/
+source_files: []
+depends_on: []
+related_to: []

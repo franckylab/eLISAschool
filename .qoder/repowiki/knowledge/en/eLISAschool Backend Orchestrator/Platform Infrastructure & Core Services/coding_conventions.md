@@ -1,0 +1,4 @@
+- Controllers use Zod schemas via a `validateDto` utility for strict request input validation before processing.
+- Services implement in-memory caching with Time-To-Live (TTL) and invalidation strategies to reduce database load.
+- Modules expose public APIs through barrel exports (`index.ts`) that re-export controllers, services, and types.
+- Database entities are defined using TypeORM decorators and managed via a centralized `AppDataSource`.

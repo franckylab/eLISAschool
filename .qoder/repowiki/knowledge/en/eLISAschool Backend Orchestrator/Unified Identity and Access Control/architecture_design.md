@@ -1,3 +1,0 @@
-- The auth module consumes RBAC entities (roles, permissions) directly via shared TypeORM repositories, creating a tight data coupling rather than a service boundary.
-- Security enforcement is split: auth middleware validates JWT identity, while auth guards/middlewares query the RBAC data layer to authorize specific actions.
-- Both modules share the same database schema context, with auth defining the core user/role/permission entities that the rbac management services manipulate.

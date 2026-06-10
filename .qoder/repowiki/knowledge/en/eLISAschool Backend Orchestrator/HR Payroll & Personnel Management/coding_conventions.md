@@ -1,0 +1,4 @@
+- Controllers use Express Routers with middleware chains for authentication (`authMiddleware`) and role-based access control (`requireRoles`).
+- Services are implemented as singleton instances exported at the bottom of their respective files (e.g., `export const calculPaieService = new CalculPaieService()`).
+- DTOs are validated using a `validateDto` utility with Zod-like schemas before being passed to service methods.
+- Entities are defined using TypeORM decorators and exported via barrel files (`index.ts`) in each sub-directory.

@@ -650,7 +650,161 @@ logger.info('Requête exécutée', {
 
 ---
 
-## 19. Intégration de Notifications dans les Services Métier
+## 19. Module Sondages — Système de Sondage Complet
+
+### Architecture
+
+Le module Sondages permet la création et la gestion de sondages avec :
+- **Templates réutilisables** : Sondages prédéfinis par catégorie (satisfaction, évaluation, consultation)
+- **Multi-destinataires** : Envoi individuel ou en masse (max 500 destinataires)
+- **Vote sécurisé** : Unique ou multiple, anonyme ou nominatif
+- **Sondages programmés** : Différation avec `dateProgrammation`
+- **Sondages récurrents** : Création automatique d'occurrences (quotidien, hebdomadaire, mensuel)
+- **Analyses en temps réel** : Statistiques, taux de participation, répartition des votes
+- **Export multi-format** : CSV (données brutes), PDF/HTML (graphiques visuels)
+- **Notifications temps réel** : WebSocket pour alertes instantanées
+- **Cron jobs** : Automatisation (fermeture expirés, activation programmés, création récurrents, rappel)
+
+### Entités TypeORM (4)
+
+- **TemplateSondage** : Modèles prédéfinis avec question, options, paramètres, catégorie
+- **Sondage** : Sondage actif avec question, statut, options, destinataires, votes, récurrence
+- **SondageOption** : Options de réponse pour un sondage (texte, ordre, nombre de votes)
+- **Vote** : Vote d'un utilisateur sur une option (unicité utilisateur+sondage, anonymat supporté)
+
+### Enums
+
+```typescript
+export enum StatutSondage {
+    ACTIF = 'actif',
+    TERMINE = 'termine',
+    BROUILLON = 'brouillon',
+    PROGRAMME = 'programme',
+}
+```
+
+### Services
+
+| Service | Fichier | Rôle |
+|---------|---------|------|
+| **SondageService** | `sondages/services/sondage.service.ts` | CRUD sondages, votes, analyses, notifications |
+| **SondagePdfService** | `sondages/services/sondage.pdf.ts` | Export PDF/HTML avec graphiques |
+| **SondageWebSocketService** | `sondages/services/sondage.websocket.ts` | Broadcast temps réel via WebSocket |
+
+### Cron Jobs (4)
+
+| Job | Schedule | Action |
+|-----|----------|--------|
+| **Fermer sondages expirés** | `*/10 * * * *` (toutes les 10min) | Passer à `termine` si `dateLimite` passée |
+| **Activer sondages programmés** | `*/10 * * * *` (toutes les 10min) | Passer à `actif` si `dateProgrammation` <= maintenant |
+| **Créer occurrences récurrentes** | `0 1 * * *` (1h/jour) | Générer nouvelles occurrences pour sondages récurrents |
+| **Rappel sondages actifs** | `0 9 * * 1-5` (9h/semaine) | Rappeler les sondages avec faible participation |
+
+### Permissions RBAC (7)
+
+```typescript
+SONDAGES_CREATE = 'sondages:create',
+SONDAGES_VOTE = 'sondages:vote',
+SONDAGES_ANALYZE = 'sondages:analyze',
+SONDAGES_VIEW = 'sondages:view',
+SONDAGES_EDIT = 'sondages:edit',
+SONDAGES_DELETE = 'sondages:delete',
+SONDAGES_TEMPLATES_MANAGE = 'sondages:templates:manage',
+```
+
+### API REST (18 routes)
+
+```bash
+# Templates
+GET    /api/sondages/templates                 # Lister templates
+POST   /api/sondages/templates                 # Créer template (ADMIN)
+
+# Sondages
+GET    /api/sondages                           # Lister mes sondages
+POST   /api/sondages                           # Créer sondage
+GET    /api/sondages/:id                       # Détail sondage
+PATCH  /api/sondages/:id                       # Modifier sondage
+DELETE /api/sondages/:id                       # Supprimer sondage
+POST   /api/sondages/:id/activer               # Activer sondage
+POST   /api/sondages/:id/terminer              # Terminer sondage
+
+# Votes
+POST   /api/sondages/:id/voter                 # Voter (destinataire)
+GET    /api/sondages/:id/votes                 # Lister votes (auteur)
+
+# Analyses
+GET    /api/sondages/:id/analyses              # Statistiques complètes
+GET    /api/sondages/:id/analyses/export       # Export CSV/PDF
+GET    /api/sondages/:id/analyses/repartition  # Répartition des votes
+```
+
+### Pattern d'Intégration
+
+**Création de sondage avec notifications et WebSocket** :
+```typescript
+async createSondage(dto: CreerSondageDto, auteurId: string, etablissementId: string): Promise<Sondage> {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        // 1. Créer sondage + options (transaction)
+        const sondage = this.sondageRepo.create({ ...dto, auteurId, etablissementId });
+        await queryRunner.manager.save(sondage);
+        
+        const options = dto.options.map((opt, index) =>
+            this.optionRepo.create({ ...opt, sondageId: sondage.id })
+        );
+        await queryRunner.manager.save(options);
+        
+        await queryRunner.commitTransaction();
+
+        // 2. Notifications NON-BLOQUANTES
+        if (!isScheduled) {
+            try {
+                await this.envoyerNotificationsSondage(sondage, dto.destinataires.utilisateur_ids);
+                sondageWebSocketService.broadcastSondageActive(sondage.id, dto.destinataires.utilisateur_ids);
+            } catch (error) {
+                logger.warn(`[Sondage] Échec envoi notifications (non bloquant)`, error);
+            }
+        }
+
+        return sondage;
+    } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+    } finally {
+        await queryRunner.release();
+    }
+}
+```
+
+### Points Clés
+
+1. **Multi-tenancy strict** : Toutes les opérations sont filtrées par `etablissementId`
+2. **Templates système** : Visibilité `systeme` avec `estTemplateSysteme = true` (non supprimables)
+3. **Vote unique** : Un utilisateur ne peut voter qu'une fois par sondage (sauf `choixMultiple`)
+4. **Anonymat** : Si `estAnonyme = true`, le vote ne stocke pas l'ID utilisateur visible
+5. **Récurrence** : `sondageParentId` lie les occurrences au sondage parent
+6. **Export** : CSV pour données brutes, PDF/HTML pour visualisation avec graphiques CSS
+7. **WebSocket** : Service prêt pour Socket.IO (interface TypeScript sans dépendance externe)
+
+### Fichiers de Référence
+
+- **Entités** : `backend/src/modules/sondages/entities/sondage.entity.ts`
+- **DTOs** : `backend/src/modules/sondages/dto/sondage.dto.ts` (9 schémas Zod)
+- **Service** : `backend/src/modules/sondages/services/sondage.service.ts` (566 lignes)
+- **Controller** : `backend/src/modules/sondages/controllers/sondages.controller.ts` (368 lignes, 18 routes)
+- **Cron Jobs** : `backend/src/modules/sondages/cron-jobs.ts` (230 lignes, 4 tâches)
+- **Export PDF** : `backend/src/modules/sondages/services/sondage.pdf.ts`
+- **WebSocket** : `backend/src/modules/sondages/services/sondage.websocket.ts`
+- **Migration** : `backend/database/migrations/041-module-sondages.sql` (tables + seeds)
+- **Migration récurrents** : `backend/database/migrations/042-sondages-recurrents.sql`
+- **Déploiement** : `scripts/deploy-sondages.sh` (script automatisé)
+
+---
+
+## 20. Intégration de Notifications dans les Services Métier
 
 ### Pattern d'Intégration Non-Bloquante
 
@@ -713,7 +867,7 @@ await notificationTemplates.retardBus(context, {
 
 ---
 
-## 20. Bonnes Pratiques TypeScript Strictes
+## 21. Bonnes Pratiques TypeScript Strictes
 
 ### Types Littéraux avec `as const`
 

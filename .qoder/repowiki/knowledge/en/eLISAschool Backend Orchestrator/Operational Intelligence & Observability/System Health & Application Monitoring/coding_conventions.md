@@ -1,3 +1,0 @@
-- All controller route handlers wrap logic in try-catch blocks, delegating errors to Express's next(error) middleware.
-- Service methods return structured response objects with typed interfaces (e.g., SystemMetrics, AppStats) rather than raw data.
-- DTOs are defined as Zod schemas with corresponding TypeScript types inferred via z.infer, exported alongside the schema.

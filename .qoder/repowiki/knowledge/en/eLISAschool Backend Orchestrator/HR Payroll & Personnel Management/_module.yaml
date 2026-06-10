@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/backend_hr_payroll
+title: HR Payroll & Personnel Management
+scope:
+    - backend/src/modules/personnel/
+    - backend/src/modules/suivi-personnel/
+    - backend/src/modules/scoring/
+source_files: []
+depends_on: []
+related_to: []

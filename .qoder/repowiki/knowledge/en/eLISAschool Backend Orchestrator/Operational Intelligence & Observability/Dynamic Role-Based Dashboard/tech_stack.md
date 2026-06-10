@@ -1,1 +1,0 @@
-Uses Express.js for REST API and SSE endpoints. Implements a hybrid caching strategy with Redis (via `redisService`) and in-memory LRU fallback. Leverages TypeORM for layout persistence.

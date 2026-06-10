@@ -1,8 +1,17 @@
 schema_version: 1
-module_path: backend/business_modules/finance
+module_path: 97a0e6f4cf3c2fdf1d96c61981fdffbc
 title: Financial Management & Accounting
 scope:
     - backend/src/modules/finances/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend/business_modules/students
+    - path: backend/business_modules/hr
+    - path: backend/business_modules/student_services
+    - path: backend/business_modules/system_config
+    - path: backend/business_modules/academic_calendar
+    - path: backend/business_modules/system_monitoring
+    - path: backend/business_modules/auth_security
+    - path: backend/business_modules/academic_structure
+    - path: backend/business_modules/system_services

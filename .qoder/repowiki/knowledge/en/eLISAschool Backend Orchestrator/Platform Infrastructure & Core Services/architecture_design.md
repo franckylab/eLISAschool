@@ -1,0 +1,5 @@
+- **Modular Structure**: Organized into distinct sub-modules (`dashboard`, `audit`, `configuration`, `monitoring`) and a shared `database` layer, each exposing a barrel export (`index.ts`).
+- **Layered Design**: Each module follows a Controller-Service-Entity/DTO pattern. Controllers handle HTTP routing and validation (using Zod), while services encapsulate business logic.
+- **Dependency Management**: Modules depend on a central `AppDataSource` (TypeORM) for persistence and shared utilities (logging, error handling). The `configuration` module acts as a central registry for feature flags and system parameters, influencing other modules.
+- **Caching Strategy**: The `dashboard` module implements a hybrid caching strategy (Redis with in-memory fallback) to optimize data aggregation performance.
+- **Audit & History**: The `audit` and `configuration` modules maintain detailed history logs, with the configuration module supporting backup/restore mechanisms via a storage provider interface.

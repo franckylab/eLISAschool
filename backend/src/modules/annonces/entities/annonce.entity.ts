@@ -21,8 +21,8 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Etablissement } from '@modules/etablissements/entities';
-import { Utilisateur } from '@modules/utilisateurs/entities';
+import { Etablissement } from '@modules/etablissement/entities/etablissement.entity';
+import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 
 // ==================== TYPES ET ENUMS ====================
 
@@ -134,6 +134,10 @@ export class Annonce {
   @ManyToOne(() => Utilisateur)
   @JoinColumn({ name: 'validePar' })
   validateur?: Utilisateur;
+
+  @ManyToOne(() => Utilisateur)
+  @JoinColumn({ name: 'updatedBy' })
+  updateur?: Utilisateur;
 
   @OneToMany(() => AnnonceCiblage, (ciblage) => ciblage.annonce)
   ciblages?: AnnonceCiblage[];

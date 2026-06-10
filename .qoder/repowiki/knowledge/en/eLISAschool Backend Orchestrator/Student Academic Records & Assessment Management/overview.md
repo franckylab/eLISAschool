@@ -1,1 +1,0 @@
-Manages student enrollment, grade recording, report card generation, and academic orientation counseling within a multi-tenant school system.

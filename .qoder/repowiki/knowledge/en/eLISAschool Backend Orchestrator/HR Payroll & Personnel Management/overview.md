@@ -1,0 +1,1 @@
+Manages personnel lifecycle, payroll calculation, contract administration, and staff performance scoring with automated tracking.

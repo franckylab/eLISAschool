@@ -1,0 +1,4 @@
+- Services are implemented as singletons exported as constants (e.g., `export const scolariteService = new ScolariteService()`) rather than using dependency injection containers.
+- Financial mutations involving multiple entities (e.g., recording payments, creating expenses) strictly use TypeORM `QueryRunner` transactions to ensure atomicity and rollback on error.
+- Controllers employ a local `validate` helper function wrapping Zod's `safeParse` to standardize input validation and throw `AppError` with 'VALIDATION_ERROR' code on failure.
+- Multi-level approval logic is centralized in a dedicated workflow service that determines required validation levels based on monetary thresholds and user roles, rather than being hardcoded in individual services.

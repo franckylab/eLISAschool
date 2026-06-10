@@ -1,1 +1,0 @@
-Orchestrates per-establishment settings and global system parameters through a hierarchical resolution strategy, shared caching, and event-driven synchronization.

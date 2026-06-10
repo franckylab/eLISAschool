@@ -1,5 +1,0 @@
-- All controllers apply `authMiddleware` at the router level before defining individual routes.
-- Every route handler is protected with `requireRoles('ADMIN')` middleware to restrict access to administrators only.
-- Services export named singleton instances using the pattern `export const xxxService = new XxxService()` alongside default class exports.
-- Business errors are thrown as `AppError` instances with a descriptive message, HTTP status code, and uppercase error code constant.
-- Controllers wrap async handler logic in try-catch blocks and forward errors to Express via `next(error)`.

@@ -18,16 +18,10 @@ import {
 } from 'typeorm';
 import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
+import { TypeContratPersonnalise } from './type-contrat.entity';
+import { Poste, UniteOrganisationnelle } from '@modules/organisation/entities';
 
-/**
- * Type de contrat de travail
- */
-export enum TypeContrat {
-    CDD = 'CDD',
-    CDI = 'CDI',
-    VACATAIRE = 'VACATAIRE',
-    STAGIAIRE = 'STAGIAIRE',
-}
+
 
 /**
  * Statut du contrat
@@ -55,8 +49,29 @@ export class ContratPersonnel {
     @JoinColumn({ name: 'membrePersonnelId' })
     membrePersonnel?: MembrePersonnel;
 
-    @Column({ type: 'varchar', length: 30 })
-    typeContrat!: TypeContrat;
+    @Column({ type: 'varchar', length: 50 })
+    typeContrat!: string; // Code du type de contrat (CDD, CDI, etc.)
+
+    @ManyToOne(() => TypeContratPersonnalise, { nullable: true })
+    @JoinColumn({ name: 'typeContratId' })
+    typeContratEntity?: TypeContratPersonnalise;
+
+    @Column({ type: 'uuid', nullable: true })
+    typeContratId?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    posteId?: string;
+
+    @ManyToOne(() => Poste, { nullable: true })
+    @JoinColumn({ name: 'posteId' })
+    poste?: Poste;
+
+    @Column({ type: 'uuid', nullable: true })
+    uniteOrganisationnelleId?: string;
+
+    @ManyToOne(() => UniteOrganisationnelle, { nullable: true })
+    @JoinColumn({ name: 'uniteOrganisationnelleId' })
+    uniteOrganisationnelle?: UniteOrganisationnelle;
 
     @Column({ type: 'date' })
     dateDebut!: Date;

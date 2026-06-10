@@ -182,6 +182,25 @@ export class Sondage {
     @Column({ type: 'text', nullable: true })
     modeDestinataires?: string; // 'individuel' ou 'conversation_groupe'
 
+    // Récurrence
+    @Column({ type: 'boolean', default: false })
+    estRecurrent!: boolean;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    frequenceRecurrent?: string; // 'quotidien', 'hebdomadaire', 'mensuel'
+
+    @Column({ type: 'int', nullable: true })
+    jourRecurrent?: number;
+
+    @Column({ type: 'time', nullable: true })
+    heureRecurrent?: string;
+
+    @Column({ type: 'timestamp', nullable: true })
+    dateFinRecurrent?: Date;
+
+    @Column({ type: 'uuid', nullable: true })
+    sondageParentId?: string;
+
     // Relations
     @ManyToOne(() => Utilisateur)
     @JoinColumn({ name: 'auteurId' })

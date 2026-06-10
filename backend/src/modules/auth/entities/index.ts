@@ -16,3 +16,6 @@ export { default as UtilisateurRole } from './utilisateur-role.entity';
 export { default as UtilisateurPermission, TypePermission } from './utilisateur-permission.entity';
 export { default as UtilisateurEtablissement } from './utilisateur-etablissement.entity';
 export { default as RoleLimitationEtablissement } from './role-limitation-etablissement.entity';
+
+// Préférences utilisateur
+export { PreferenceUtilisateur, CategoriePreference } from './preference-utilisateur.entity';

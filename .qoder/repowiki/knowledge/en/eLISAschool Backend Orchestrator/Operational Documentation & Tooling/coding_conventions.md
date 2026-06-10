@@ -1,3 +1,0 @@
-- Documentation files use structured Markdown with clear sections for Overview, Architecture, API Endpoints, and Usage Examples.
-- Shell scripts include environment variable loading from `.env`, connection verification, and colored output for status reporting.
-- Unit tests follow a Describe/It structure with explicit beforeAll/afterAll hooks for resource setup and teardown.
