@@ -4,7 +4,7 @@ description: >
   Guide de développement frontend eLISAschool. Utiliser ce skill pour créer un nouveau composant,
   une nouvelle page, une nouvelle feature, ou intégrer l'API backend depuis le frontend
   React/Vite/TypeScript. Déclencheurs : nouveau composant, nouvelle page, intégration API,
-  formulaire, tableau, PWA, animation, thème.
+  formulaire, tableau, PWA, animation, thème, i18n, traduction, internationalisation, multilingue.
 ---
 
 # Développement Frontend eLISAschool
@@ -18,6 +18,7 @@ description: >
 - Créer des **tableaux** avec tri, filtre, pagination
 - Implémenter des **animations** et transitions
 - Configurer le **thème** et les couleurs dynamiques
+- Configurer le **système de traduction** (i18next, fichiers de langue, language switcher)
 - Ajouter des fonctionnalités **PWA**, **PDF**, **QR code**, **drag & drop**
 
 > **Note** : Pour la logique métier et les règles backend, utiliser `/elisaschool-business-logic` et `/elisaschool-dev`.
@@ -81,6 +82,9 @@ npm install browser-image-compression
 
 # PWA
 npm install -D vite-plugin-pwa
+
+# i18n (Internationalisation)
+npm install i18next react-i18next i18next-browser-languagedetector
 
 # Éditeur de texte
 npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-placeholder
@@ -218,6 +222,221 @@ export default defineConfig({
             "@shared/*": ["../shared/src/*"]
         }
     }
+}
+```
+
+### Étape 6 : Configurer l'i18n (Internationalisation)
+
+**6a. Fichier `src/lib/i18n.ts`** — Configuration i18next :
+
+```typescript
+/**
+ * ==================================
+ * eLISAschool - Configuration i18n
+ * ==================================
+ */
+
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+import commonFr from '@/locales/fr/common.json';
+import commonEn from '@/locales/en/common.json';
+import elevesFr from '@/locales/fr/eleves.json';
+import elevesEn from '@/locales/en/eleves.json';
+
+i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+        resources: {
+            fr: { common: commonFr, eleves: elevesFr },
+            en: { common: commonEn, eleves: elevesEn },
+        },
+        fallbackLng: 'fr',
+        defaultNS: 'common',
+        ns: ['common', 'eleves'],
+        interpolation: { escapeValue: false },
+        detection: {
+            order: ['localStorage', 'navigator'],
+            caches: ['localStorage'],
+        },
+    });
+
+export default i18n;
+```
+
+**6b. Fichier `src/stores/language.store.ts`** — Store Zustand :
+
+```typescript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import i18n from '@/lib/i18n';
+
+type Langue = 'fr' | 'en';
+
+interface LanguageState {
+    langue: Langue;
+    setLangue: (langue: Langue) => void;
+}
+
+export const useLanguageStore = create<LanguageState>()(
+    persist(
+        (set) => ({
+            langue: 'fr',
+            setLangue: (langue: Langue) => {
+                i18n.changeLanguage(langue);
+                document.documentElement.lang = langue;
+                set({ langue });
+            },
+        }),
+        { name: 'elisaschool-language' }
+    )
+);
+```
+
+**6c. Fichier `src/hooks/use-language.ts`** — Hook avec sync backend :
+
+```typescript
+import { useEffect } from 'react';
+import { useLanguageStore } from '@/stores/language.store';
+import { apiClient } from '@/lib/api-client';
+
+export function useLanguage() {
+    const { langue, setLangue } = useLanguageStore();
+
+    useEffect(() => {
+        // Charger la préférence utilisateur depuis le backend
+        apiClient.get<{ data: { valeur: string } }>('/api/preferences/my/langue')
+            .then((res) => {
+                if (res.data?.valeur && res.data.valeur !== langue) {
+                    setLangue(res.data.valeur as 'fr' | 'en');
+                }
+            })
+            .catch(() => { /* Garder la langue locale */ });
+    }, []);
+
+    const changerLangue = async (nouvelleLangue: 'fr' | 'en') => {
+        setLangue(nouvelleLangue);
+        try {
+            await apiClient.post('/api/preferences/set', { cle: 'langue', valeur: nouvelleLangue });
+        } catch { /* Échec non-bloquant */ }
+    };
+
+    return { langue, changerLangue };
+}
+```
+
+**6d. Fichier `src/components/layout/language-switcher.tsx`** — Composant :
+
+```tsx
+import { useLanguage } from '@/hooks/use-language';
+import { motion } from 'framer-motion';
+
+const LANGUES = [
+    { code: 'fr', label: 'FR' },
+    { code: 'en', label: 'EN' },
+] as const;
+
+export function LanguageSwitcher() {
+    const { langue, changerLangue } = useLanguage();
+
+    return (
+        <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+            {LANGUES.map((l) => (
+                <motion.button
+                    key={l.code}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        langue === l.code
+                            ? 'bg-[var(--color-dominant-600)] text-white'
+                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                    onClick={() => changerLangue(l.code)}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    {l.label}
+                </motion.button>
+            ))}
+        </div>
+    );
+}
+```
+
+**6e. Fichiers de traduction initiaux** :
+
+`src/locales/fr/common.json` :
+```json
+{
+    "boutons": {
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler",
+        "supprimer": "Supprimer",
+        "modifier": "Modifier",
+        "rechercher": "Rechercher",
+        "filtrer": "Filtrer",
+        "fermer": "Fermer",
+        "confirmer": "Confirmer",
+        "reessayer": "Réessayer"
+    },
+    "messages": {
+        "succesEnregistrement": "Enregistré avec succès",
+        "erreurServeur": "Erreur serveur, veuillez réessayer",
+        "chargement": "Chargement en cours...",
+        "aucuneDonnee": "Aucune donnée à afficher",
+        "sessionExpiree": "Session expirée, veuillez vous reconnecter"
+    },
+    "pagination": {
+        "pageSur": "Page {{page}} sur {{total}}",
+        "resultats": "{{total}} résultats"
+    }
+}
+```
+
+`src/locales/en/common.json` :
+```json
+{
+    "boutons": {
+        "enregistrer": "Save",
+        "annuler": "Cancel",
+        "supprimer": "Delete",
+        "modifier": "Edit",
+        "rechercher": "Search",
+        "filtrer": "Filter",
+        "fermer": "Close",
+        "confirmer": "Confirm",
+        "reessayer": "Retry"
+    },
+    "messages": {
+        "succesEnregistrement": "Saved successfully",
+        "erreurServeur": "Server error, please retry",
+        "chargement": "Loading...",
+        "aucuneDonnee": "No data to display",
+        "sessionExpiree": "Session expired, please log in again"
+    },
+    "pagination": {
+        "pageSur": "Page {{page}} of {{total}}",
+        "resultats": "{{total}} results"
+    }
+}
+```
+
+**6f. Intégration dans `src/app/providers.tsx`** :
+
+```tsx
+import '@/lib/i18n';  // Side-effect : initialiser i18n avant tout
+import { I18nextProvider } from 'react-i18next';
+import i18n from '@/lib/i18n';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/query-client';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+    return (
+        <I18nextProvider i18n={i18n}>
+            <QueryClientProvider client={queryClient}>
+                {children}
+            </QueryClientProvider>
+        </I18nextProvider>
+    );
 }
 ```
 
@@ -489,6 +708,7 @@ export function useSupprimerEleve() {
  */
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEleves, useCreerEleve, useSupprimerEleve } from '../hooks/use-eleves';
 import { ElisaButton } from '@/components/ui/elisa-button';
@@ -501,6 +721,7 @@ import { Plus, Search } from 'lucide-react';
 import type { EleveFiltres } from '../types/eleve.types';
 
 export function ElevesPage() {
+    const { t } = useTranslation('eleves');
     const [filtres, setFiltres] = useState<EleveFiltres>({});
     const [modalOuvert, setModalOuvert] = useState(false);
 
@@ -522,10 +743,10 @@ export function ElevesPage() {
             >
                 <div>
                     <h1 className="text-[var(--text-3xl)] font-bold text-[var(--color-text-primary)]">
-                        Élèves
+                        {t('titre')}
                     </h1>
                     <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-                        {data?.pagination?.total || 0} élèves inscrits
+                        {t('sousTitre', { total: data?.pagination?.total || 0 })}
                     </p>
                 </div>
                 <ElisaButton
@@ -533,7 +754,7 @@ export function ElevesPage() {
                     onClick={() => setModalOuvert(true)}
                     raccourci="Ctrl+N"
                 >
-                    Nouvel élève
+                    {t('boutons.nouveau')}
                 </ElisaButton>
             </motion.div>
 
@@ -550,7 +771,7 @@ export function ElevesPage() {
             <CustomModal
                 ouvert={modalOuvert}
                 onClose={() => setModalOuvert(false)}
-                titre="Nouvel élève"
+                titre={t('modal.titreNouveau')}
                 taille="lg"
             >
                 <EleveForm
@@ -593,6 +814,7 @@ export const Route = createFileRoute('/eleves')({
  */
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     useReactTable,
     getCoreRowModel,
@@ -618,26 +840,27 @@ interface EleveTableProps {
 }
 
 export function EleveTable({ eleves }: EleveTableProps) {
+    const { t } = useTranslation('eleves');
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
 
     const columns = useMemo(() => [
         columnHelper.accessor('matricule', {
-            header: 'Matricule',
+            header: t('colonnes.matricule'),
             cell: (info) => <span className="font-mono text-sm">{info.getValue()}</span>,
         }),
         columnHelper.accessor(row => `${row.prenom} ${row.nom}`, {
             id: 'nomComplet',
-            header: 'Nom complet',
+            header: t('colonnes.nomComplet'),
             cell: (info) => <span className="font-medium">{info.getValue()}</span>,
         }),
         columnHelper.accessor('classe.nom', {
-            header: 'Classe',
+            header: t('colonnes.classe'),
             cell: (info) => <span className="rounded bg-[var(--color-dominant-100)] px-2 py-0.5 text-xs">{info.getValue()}</span>,
         }),
         columnHelper.accessor('sexe', {
-            header: 'Sexe',
+            header: t('colonnes.sexe'),
             cell: (info) => info.getValue(),
         }),
         columnHelper.display({
@@ -649,7 +872,7 @@ export function EleveTable({ eleves }: EleveTableProps) {
                 </div>
             ),
         }),
-    ], []);
+    ], [t]);
 
     const table = useReactTable({
         data: eleves,
@@ -717,8 +940,8 @@ export function EleveTable({ eleves }: EleveTableProps) {
             {/* Pagination */}
             <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                    Page {pagination.pageIndex + 1} sur {table.getPageCount()}
-                    <span className="ml-2">({eleves.length} résultats)</span>
+                    {t('common:pagination.pageSur', { page: pagination.pageIndex + 1, total: table.getPageCount() })}
+                    <span className="ml-2">({t('common:pagination.resultats', { total: eleves.length })})</span>
                 </p>
                 <div className="flex gap-1">
                     <button
@@ -753,25 +976,27 @@ export function EleveTable({ eleves }: EleveTableProps) {
  * ==================================
  */
 
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ElisaButton } from '@/components/ui/elisa-button';
 import { cn } from '@/lib/utils';
 
-const eleveSchema = z.object({
-    nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(100),
-    prenom: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères').max(100),
+const creerEleveSchema = (t: (key: string) => string) => z.object({
+    nom: z.string().min(2, t('validation.nomMin')).max(100, t('validation.nomMax')),
+    prenom: z.string().min(2, t('validation.prenomMin')).max(100, t('validation.prenomMax')),
     dateNaissance: z.string().refine((val) => {
         const date = new Date(val);
         const age = (Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
         return age >= 3 && age <= 25;
-    }, 'L\'âge doit être entre 3 et 25 ans'),
-    sexe: z.enum(['M', 'F'], { required_error: 'Le sexe est requis' }),
-    classeId: z.string().uuid('Classe invalide'),
+    }, t('validation.age')),
+    sexe: z.enum(['M', 'F'], { required_error: t('validation.sexeRequis') }),
+    classeId: z.string().uuid(t('validation.classeInvalide')),
 });
 
-type EleveFormData = z.infer<typeof eleveSchema>;
+type EleveFormData = z.infer<ReturnType<typeof creerEleveSchema>>;
 
 interface EleveFormProps {
     onSubmit: (data: EleveFormData) => void | Promise<void>;
@@ -780,8 +1005,11 @@ interface EleveFormProps {
 }
 
 export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormProps) {
+    const { t } = useTranslation('eleves');
+    const schema = useMemo(() => creerEleveSchema(t), [t]);
+
     const form = useForm<EleveFormData>({
-        resolver: zodResolver(eleveSchema),
+        resolver: zodResolver(schema),
         defaultValues: {
             nom: valeursInitiales?.nom || '',
             prenom: valeursInitiales?.prenom || '',
@@ -799,7 +1027,7 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                 {/* Prénom */}
                 <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        Prénom <span className="text-red-500">*</span>
+                        {t('champs.prenom')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register('prenom')}
@@ -809,7 +1037,7 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                             'focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-200)]',
                             errors.prenom && 'border-red-500 focus:ring-red-200'
                         )}
-                        placeholder="Prénom de l'élève"
+                        placeholder={t('placeholders.prenom')}
                         autoFocus
                     />
                     {errors.prenom && (
@@ -820,7 +1048,7 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                 {/* Nom */}
                 <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        Nom <span className="text-red-500">*</span>
+                        {t('champs.nom')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         {...register('nom')}
@@ -830,7 +1058,7 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                             'focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-200)]',
                             errors.nom && 'border-red-500 focus:ring-red-200'
                         )}
-                        placeholder="Nom de famille"
+                        placeholder={t('placeholders.nom')}
                     />
                     {errors.nom && (
                         <span className="text-xs text-red-500">{errors.nom.message}</span>
@@ -840,7 +1068,7 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                 {/* Date de naissance */}
                 <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        Date de naissance <span className="text-red-500">*</span>
+                        {t('champs.dateNaissance')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="date"
@@ -860,15 +1088,15 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
                 {/* Sexe */}
                 <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        Sexe <span className="text-red-500">*</span>
+                        {t('champs.sexe')} <span className="text-red-500">*</span>
                     </label>
                     <select
                         {...register('sexe')}
                         className="h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-200)]"
                     >
-                        <option value="">Sélectionner</option>
-                        <option value="M">Masculin</option>
-                        <option value="F">Féminin</option>
+                        <option value="">{t('placeholders.selectionner')}</option>
+                        <option value="M">{t('champs.masculin')}</option>
+                        <option value="F">{t('champs.feminin')}</option>
                     </select>
                     {errors.sexe && (
                         <span className="text-xs text-red-500">{errors.sexe.message}</span>
@@ -878,9 +1106,9 @@ export function EleveForm({ onSubmit, chargement, valeursInitiales }: EleveFormP
 
             {/* Bouton */}
             <div className="flex justify-end gap-2 pt-4">
-                <ElisaButton variante="ghost" type="button">Annuler</ElisaButton>
+                <ElisaButton variante="ghost" type="button">{t('common:boutons.annuler')}</ElisaButton>
                 <ElisaButton type="submit" chargement={chargement} raccourci="Ctrl+Enter">
-                    Enregistrer
+                    {t('common:boutons.enregistrer')}
                 </ElisaButton>
             </div>
         </form>
@@ -1316,6 +1544,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 - [ ] **Build sans erreur** : `npm run build`
 - [ ] **Bundle size** vérifié (pas de dépendance inutile)
 - [ ] **Accessibilité** : aria-labels, focus visible, contraste WCAG AA
+- [ ] **i18n** : Toutes les chaînes utilisent `t()` (pas de texte en dur)
+- [ ] **i18n** : Messages toast, erreurs Zod, labels traduits via fichiers de langue
+- [ ] **i18n** : Dates formatées avec `date-fns/locale` (fr/en)
+- [ ] **i18n** : Montants/devises formatés avec `Intl.NumberFormat`
 
 ---
 
@@ -1328,6 +1560,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 | `notes` | `/api/notes` | Saisie notes, tableau rapide |
 | `bulletins` | `/api/bulletins` | Génération, visualisation PDF |
 | `configuration` | `/api/configuration` | Thème, paramètres, modules |
+| `preferences` | `/api/preferences` | Langue utilisateur, préférences UI |
 | `notifications` | `/api/notifications` | Centre de notifications |
 | `messagerie` | `/api/messagerie` | Chat, conversations |
 | `sondages` | `/api/sondages` | Sondages, votes, analyses |

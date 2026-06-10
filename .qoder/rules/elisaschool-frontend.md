@@ -36,6 +36,8 @@
 | date-fns | 4+ | Manipulation dates |
 | jsPDF + html2canvas | latest | Génération PDF |
 | qrcode.react | 4+ | QR codes |
+| i18next | 24+ | Framework de traduction (noyau) |
+| react-i18next | 15+ | Hook `useTranslation()` pour React |
 | Lucide React | latest | Icônes |
 | PWA (vite-plugin-pwa) | latest | Progressive Web App |
 
@@ -56,6 +58,9 @@
 | Fichiers de types | `camelCase.types.ts` | `eleve.types.ts` |
 | Dossiers de features | `kebab-case` | `gestion-notes`, `bulletins` |
 | CSS modules / Tailwind | Utiliser Tailwind uniquement | Pas de CSS custom sauf animation |
+| Dossiers de locales | `locales/{lang}/` | `locales/fr/`, `locales/en/` |
+| Fichiers de traduction | `{feature}.json` (kebab-case) | `eleves.json`, `common.json` |
+| Clés de traduction | `camelCase.pointé` | `eleves.titres.liste`, `common.boutons.enregistrer` |
 
 ---
 
@@ -75,7 +80,7 @@ frontend/
 │   ├── app/                      # Configuration application
 │   │   ├── App.tsx               # Composant racine
 │   │   ├── router.tsx            # Configuration TanStack Router
-│   │   ├── providers.tsx         # Providers (Query, Theme, Auth)
+│   │   ├── providers.tsx         # Providers (Query, Theme, Auth, i18n)
 │   │   └── routes/               # Routes par feature
 │   │       ├── __root.tsx        # Layout racine
 │   │       ├── index.tsx         # Page d'accueil
@@ -85,6 +90,7 @@ frontend/
 │   ├── components/               # Composants réutilisables
 │   │   ├── ui/                   # Composants shadcn/ui étendus
 │   │   ├── layout/               # Layouts (Sidebar, Header, Footer)
+│   │   │   └── language-switcher.tsx  # Sélecteur de langue FR/EN
 │   │   ├── forms/                # Composants formulaires avancés
 │   │   ├── tables/               # Composants tableaux avancés
 │   │   ├── feedback/             # Toast, Loading, Empty states
@@ -107,11 +113,13 @@ frontend/
 │   ├── hooks/                    # Hooks partagés
 │   │   ├── use-auth.ts
 │   │   ├── use-theme.ts
+│   │   ├── use-language.ts       # Hook changement de langue + sync backend
 │   │   ├── use-keyboard-nav.ts
 │   │   ├── use-debounce.ts
 │   │   ├── use-media-query.ts
 │   │   └── use-realtime.ts
 │   ├── lib/                      # Utilitaires et configurations
+│   │   ├── i18n.ts               # Configuration i18next (init, détection langue)
 │   │   ├── api-client.ts         # Client API (fetch/axios)
 │   │   ├── query-client.ts       # TanStack Query config
 │   │   ├── validators.ts         # Schémas Zod partagés
@@ -121,8 +129,19 @@ frontend/
 │   ├── stores/                   # Stores Zustand globaux
 │   │   ├── auth.store.ts
 │   │   ├── theme.store.ts
+│   │   ├── language.store.ts     # Store Zustand langue courante
 │   │   ├── notification.store.ts
 │   │   └── sidebar.store.ts
+│   ├── locales/                  # Fichiers de traduction i18n
+│   │   ├── fr/                   # Français (défaut)
+│   │   │   ├── common.json       # Traductions partagées (boutons, messages, labels)
+│   │   │   ├── eleves.json       # Module élèves
+│   │   │   ├── notes.json        # Module notes
+│   │   │   └── ...               # Un fichier par feature
+│   │   └── en/                   # Anglais
+│   │       ├── common.json
+│   │       ├── eleves.json
+│   │       └── ...
 │   ├── styles/                   # Styles globaux
 │   │   ├── globals.css           # Tailwind + variables CSS
 │   │   └── animations.css        # Animations personnalisées
@@ -1098,6 +1117,33 @@ const form = useForm({
 });
 ```
 
+### 25.4 Synchronisation de la Langue
+
+Le backend expose la langue par défaut et les préférences utilisateur via 3 endpoints :
+
+```typescript
+// 1. Configuration publique (non-authentifié) — langue par défaut de l'établissement
+GET /api/configuration → { langueDefaut: 'fr' }
+
+// 2. Préférence utilisateur (authentifié) — langue personnelle
+GET /api/preferences/my/langue → { valeur: 'fr' }
+
+// 3. Mise à jour de la préférence (authentifié)
+POST /api/preferences/set → { cle: 'langue', valeur: 'en' }
+```
+
+**Séquence de résolution de la langue au démarrage** :
+1. Appeler `GET /api/configuration` → obtenir `langueDefaut`
+2. Si utilisateur connecté → appeler `GET /api/preferences/my/langue` → override
+3. Sinon → vérifier `localStorage` → override
+4. Fallback → `'fr'`
+
+**À chaque changement de langue** :
+1. `i18n.changeLanguage(lang)` → met à jour les traductions React
+2. `document.documentElement.lang = lang` → accessibilité HTML
+3. `POST /api/preferences/set` → persister côté backend (non-bloquant)
+4. Zustand `persist` → sauvegarder dans localStorage
+
 ---
 
 ## 26. Page d'Accueil (Landing)
@@ -1185,7 +1231,359 @@ const handleSauvegarder = useCallback(async () => {
 
 ---
 
-## 29. Anti-patterns à Éviter
+## 29. Internationalisation (i18n)
+
+### 29.1 Configuration i18next
+
+**Fichier :** `src/lib/i18n.ts`
+
+```typescript
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+// Importer les traductions
+import commonFr from '@/locales/fr/common.json';
+import commonEn from '@/locales/en/common.json';
+import elevesFr from '@/locales/fr/eleves.json';
+import elevesEn from '@/locales/en/eleves.json';
+
+i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+        resources: {
+            fr: { common: commonFr, eleves: elevesFr },
+            en: { common: commonEn, eleves: elevesEn },
+        },
+        fallbackLng: 'fr',
+        defaultNS: 'common',
+        ns: ['common', 'eleves'],  // Ajouter chaque namespace de feature
+        interpolation: {
+            escapeValue: false,  // React gère déjà le XSS
+        },
+        detection: {
+            order: ['localStorage', 'navigator'],
+            caches: ['localStorage'],
+        },
+    });
+
+export default i18n;
+```
+
+### 29.2 Hook useTranslation — Usage Standardisé
+
+```tsx
+// Composant d'un module spécifique
+import { useTranslation } from 'react-i18next';
+
+function EleveList() {
+    const { t } = useTranslation('eleves');
+    return <h1>{t('titres.liste')}</h1>;
+}
+
+// Composant utilisant les traductions communes
+function BoutonSauvegarder() {
+    const { t } = useTranslation();  // defaultNS = 'common'
+    return <button>{t('boutons.enregistrer')}</button>;
+}
+
+// Multi-namespace
+function EleveForm() {
+    const { t } = useTranslation(['eleves', 'common']);
+    return (
+        <>
+            <label>{t('eleves:champs.nom')}</label>
+            <button>{t('common:boutons.annuler')}</button>
+        </>
+    );
+}
+```
+
+### 29.3 Structure des Clés de Traduction
+
+```json
+// locales/fr/eleves.json
+{
+    "titres": {
+        "liste": "Liste des élèves",
+        "detail": "Fiche élève",
+        "nouveau": "Nouvel élève",
+        "modifier": "Modifier l'élève"
+    },
+    "sousTitres": {
+        "total": "{{count}} élève inscrit",
+        "total_plural": "{{count}} élèves inscrits"
+    },
+    "boutons": {
+        "ajouter": "Ajouter un élève",
+        "supprimer": "Supprimer",
+        "modifier": "Modifier",
+        "exporter": "Exporter"
+    },
+    "champs": {
+        "nom": "Nom",
+        "prenom": "Prénom",
+        "dateNaissance": "Date de naissance",
+        "sexe": "Sexe",
+        "classe": "Classe"
+    },
+    "messages": {
+        "succesCreation": "Élève {{nom}} créé avec succès",
+        "succesSuppression": "Élève supprimé",
+        "erreurSuppression": "Erreur lors de la suppression",
+        "confirmationSuppression": "Supprimer cet élève ? Cette action est irréversible."
+    },
+    "validation": {
+        "nomRequis": "Le nom est requis",
+        "ageMin": "L'âge minimum est {{age}} ans"
+    },
+    "colonnes": {
+        "matricule": "Matricule",
+        "nomComplet": "Nom complet",
+        "classe": "Classe",
+        "sexe": "Sexe",
+        "actions": "Actions"
+    }
+}
+```
+
+```json
+// locales/fr/common.json
+{
+    "boutons": {
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler",
+        "supprimer": "Supprimer",
+        "modifier": "Modifier",
+        "rechercher": "Rechercher",
+        "filtrer": "Filtrer",
+        "exporter": "Exporter",
+        "importer": "Importer",
+        "fermer": "Fermer",
+        "confirmer": "Confirmer",
+        "reessayer": "Réessayer"
+    },
+    "messages": {
+        "succesEnregistrement": "Enregistré avec succès",
+        "erreurServeur": "Erreur serveur, veuillez réessayer",
+        "chargement": "Chargement en cours...",
+        "aucuneDonnee": "Aucune donnée à afficher",
+        "sessionExpiree": "Session expirée, veuillez vous reconnecter"
+    },
+    "labels": {
+        "page": "Page",
+        "sur": "sur",
+        "resultats": "résultats",
+        "actions": "Actions",
+        "statut": "Statut",
+        "dateCreation": "Date de création"
+    },
+    "pagination": {
+        "pageSur": "Page {{page}} sur {{total}}",
+        "resultats": "{{total}} résultats",
+        "precedent": "Précédent",
+        "suivant": "Suivant"
+    }
+}
+```
+
+### 29.4 Language Switcher
+
+**Fichier :** `src/components/layout/language-switcher.tsx`
+
+```tsx
+import { useLanguage } from '@/hooks/use-language';
+import { motion } from 'framer-motion';
+
+const LANGUES = [
+    { code: 'fr', label: 'FR', drapeau: '🇫🇷' },
+    { code: 'en', label: 'EN', drapeau: '🇬🇧' },
+] as const;
+
+export function LanguageSwitcher() {
+    const { langue, changerLangue } = useLanguage();
+
+    return (
+        <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+            {LANGUES.map((l) => (
+                <motion.button
+                    key={l.code}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        langue === l.code
+                            ? 'bg-[var(--color-dominant-600)] text-white'
+                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                    onClick={() => changerLangue(l.code)}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    {l.label}
+                </motion.button>
+            ))}
+        </div>
+    );
+}
+```
+
+### 29.5 Store Zustand Langue
+
+**Fichier :** `src/stores/language.store.ts`
+
+```typescript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import i18n from '@/lib/i18n';
+
+type Langue = 'fr' | 'en';
+
+interface LanguageState {
+    langue: Langue;
+    setLangue: (langue: Langue) => void;
+}
+
+export const useLanguageStore = create<LanguageState>()(
+    persist(
+        (set) => ({
+            langue: 'fr',
+            setLangue: (langue: Langue) => {
+                i18n.changeLanguage(langue);
+                document.documentElement.lang = langue;
+                set({ langue });
+            },
+        }),
+        { name: 'elisaschool-language' }
+    )
+);
+```
+
+### 29.6 Détection de la Langue
+
+**Ordre de priorité** (du plus spécifique au plus général) :
+
+1. **Préférence utilisateur** sauvegardée : `GET /api/preferences/my/langue`
+2. **localStorage** : valeur persistée par le store Zustand
+3. **langueDefaut** de la configuration publique : `GET /api/configuration`
+4. **Fallback** : `'fr'`
+
+**Fichier :** `src/hooks/use-language.ts`
+
+```typescript
+import { useEffect } from 'react';
+import { useLanguageStore } from '@/stores/language.store';
+import { apiClient } from '@/lib/api-client';
+
+export function useLanguage() {
+    const { langue, setLangue } = useLanguageStore();
+
+    // Charger la préférence utilisateur au montage
+    useEffect(() => {
+        apiClient.get<{ data: { valeur: string } }>('/api/preferences/my/langue')
+            .then((res) => {
+                if (res.data?.valeur && res.data.valeur !== langue) {
+                    setLangue(res.data.valeur as 'fr' | 'en');
+                }
+            })
+            .catch(() => { /* Utiliser la langue locale */ });
+    }, []);
+
+    const changerLangue = async (nouvelleLangue: 'fr' | 'en') => {
+        setLangue(nouvelleLangue);
+        // Synchroniser avec le backend (non-bloquant)
+        try {
+            await apiClient.post('/api/preferences/set', { cle: 'langue', valeur: nouvelleLangue });
+        } catch { /* Échec silencieux */ }
+    };
+
+    return { langue, changerLangue };
+}
+```
+
+### 29.7 Formatage des Dates (date-fns + locale)
+
+```typescript
+// lib/date-utils.ts
+import { format, formatDistanceToNow } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
+import i18n from '@/lib/i18n';
+
+const LOCALES = { fr, en: enUS } as const;
+
+export function formatDate(date: Date | string, formatStr: string = 'dd MMMM yyyy'): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const locale = LOCALES[i18n.language as 'fr' | 'en'] || fr;
+    return format(d, formatStr, { locale });
+}
+
+export function formatDistance(date: Date | string): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const locale = LOCALES[i18n.language as 'fr' | 'en'] || fr;
+    return formatDistanceToNow(d, { addSuffix: true, locale });
+}
+```
+
+### 29.8 Formatage des Nombres et Devises
+
+```typescript
+// lib/format-utils.ts
+import i18n from '@/lib/i18n';
+
+export function formatNombre(nombre: number, decimales: number = 0): string {
+    return new Intl.NumberFormat(i18n.language, {
+        minimumFractionDigits: decimales,
+        maximumFractionDigits: decimales,
+    }).format(nombre);
+}
+
+export function formatMontant(montant: number, devise: string = 'XAF'): string {
+    return new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: devise,
+        minimumFractionDigits: 0,
+    }).format(montant);
+}
+```
+
+### 29.9 Intégration Provider
+
+**Fichier :** `src/app/providers.tsx`
+
+```tsx
+import '@/lib/i18n';  // Import side-effect (doit être en premier)
+import { I18nextProvider } from 'react-i18next';
+import i18n from '@/lib/i18n';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+    return (
+        <I18nextProvider i18n={i18n}>
+            <QueryClientProvider client={queryClient}>
+                <ThemeProvider>
+                    {children}
+                </ThemeProvider>
+            </QueryClientProvider>
+        </I18nextProvider>
+    );
+}
+```
+
+### 29.10 Toast et Messages Système Traduits
+
+```tsx
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+
+function useMessages() {
+    const { t } = useTranslation();
+    return {
+        succesCreation: (nom: string) => toast.success(t('messages.succesCreation', { nom })),
+        erreurServeur: () => toast.error(t('messages.erreurServeur')),
+        chargement: () => toast.loading(t('messages.chargement')),
+    };
+}
+```
+
+---
+
+## 30. Anti-patterns à Éviter
 
 - **NE PAS** utiliser `alert()`, `confirm()`, `prompt()` → Composants personnalisés
 - **NE PAS** utiliser de CSS inline (sauf pour les valeurs dynamiques)
@@ -1199,10 +1597,14 @@ const handleSauvegarder = useCallback(async () => {
 - **NE PAS** créer de state global pour des données locales au composant
 - **NE PAS** oublier `AbortController` pour les fetch annulables
 - **NE PAS** bypasser le routeur avec `window.location` → `router.navigate()`
+- **NE PAS** écrire de chaînes en français directement dans le JSX → utiliser `t('cle')`
+- **NE PAS** concaténer des fragments de traduction (`t('debut') + variable + t('fin')`) → utiliser l'interpolation `t('message', { variable })`
+- **NE PAS** appeler `i18n.changeLanguage()` directement dans un composant → utiliser le hook `useLanguage()` ou le store
+- **NE PAS** stocker des traductions dans le state React → toujours les obtenir via `t()` pour réagir au changement de langue
 
 ---
 
-## 30. Checklist Nouveau Composant
+## 31. Checklist Nouveau Composant
 
 - [ ] Bannière eLISAschool en en-tête
 - [ ] Props typées avec interface nommée
@@ -1215,12 +1617,16 @@ const handleSauvegarder = useCallback(async () => {
 - [ ] Loading state (skeleton ou spinner)
 - [ ] Empty state illustré
 - [ ] Error state avec message clair
+- [ ] **i18n** : Toutes les chaînes visibles utilisent `t()` (aucun texte en dur)
+- [ ] **i18n** : Les messages toast, labels, placeholders et erreurs sont traduits
+- [ ] **i18n** : Les dates formatées utilisent le locale courant (`date-fns`)
+- [ ] **i18n** : Les montants utilisent `Intl.NumberFormat` avec la langue courante
 - [ ] Export barrel (`index.ts`)
 - [ ] Nommage conventionnel respecté
 
 ---
 
-## 31. Maintenance et Skills Disponibles
+## 32. Maintenance et Skills Disponibles
 
 - **`elisaschool-frontend-dev`** — Guide de développement frontend (créer composant, page, feature, intégration API)
 - **`elisaschool-frontend-refactor`** — Guide de refactorisation frontend (optimisation, modernisation, migration)

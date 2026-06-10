@@ -3,7 +3,8 @@ name: elisaschool-frontend-refactor
 description: >
   Guide de refactorisation frontend eLISAschool. Utiliser ce skill pour moderniser, optimiser,
   et restructurer le code frontend React/TypeScript. Déclencheurs : refactorisation, optimisation
-  performance, modernisation composants, migration, nettoyage code, amélioration UX, design system.
+  performance, modernisation composants, migration, nettoyage code, amélioration UX, design system,
+  extraction chaînes, i18n, internationalisation, traduction.
 ---
 
 # Refactorisation Frontend eLISAschool
@@ -17,6 +18,7 @@ description: >
 - **Nettoyer** le code (types, conventions, anti-patterns)
 - **Améliorer** l'expérience utilisateur (navigation clavier, fluidité)
 - **Harmoniser** le design system (couleurs, espacements, typographie)
+- **Internationaliser** le frontend (extraire les chaînes en dur vers i18next)
 
 > **Prérequis** : Lire d'abord la règle `elisaschool-frontend.md` et le skill `elisaschool-frontend-dev`.
 
@@ -58,6 +60,7 @@ npx depcheck
 | Lazy loading des routes | ✅/❌ | Ajouter React.lazy() |
 | TanStack Query pour le fetch | ✅/❌ | Migrer depuis useEffect |
 | Conventions de nommage | ✅/❌ | Renommer selon les standards |
+| Pas de chaînes en dur (i18n) | ✅/❌ | Extraire vers fichiers de traduction |
 
 ---
 
@@ -157,6 +160,47 @@ if (isError) {
         />
     );
 }
+```
+
+#### Anti-pattern : Chaînes en dur (pas d'i18n)
+
+```tsx
+// ❌ AVANT : Textes codés en dur
+function ElevesPage() {
+    return (
+        <div>
+            <h1>Élèves</h1>
+            <p>{total} élèves inscrits</p>
+            <button>Nouvel élève</button>
+        </div>
+    );
+}
+
+// ✅ APRÈS : Traductions via i18next
+import { useTranslation } from 'react-i18next';
+
+function ElevesPage() {
+    const { t } = useTranslation('eleves');
+    return (
+        <div>
+            <h1>{t('titre')}</h1>
+            <p>{t('sousTitre', { total })}</p>
+            <button>{t('boutons.nouveau')}</button>
+        </div>
+    );
+}
+
+// ❌ AVANT : Toast en dur
+toast.success('Élève créé avec succès');
+
+// ✅ APRÈS : Toast traduit
+toast.success(t('common:messages.succesEnregistrement'));
+
+// ❌ AVANT : Messages d'erreur Zod en dur
+z.string().min(2, 'Le nom doit contenir au moins 2 caractères')
+
+// ✅ APRÈS : Messages Zod traduits
+z.string().min(2, t('validation.nomMin'))
 ```
 
 ### Étape 3 : Ajouter les animations Framer Motion
@@ -763,6 +807,177 @@ function EleveDetail({ id }: { id: string }) {
 
 ---
 
+## Workflow : Migrer vers i18n (Internationalisation)
+
+### Étape 1 : Auditer les chaînes en dur
+
+```bash
+# Rechercher les chaînes en dur dans le JSX
+grep -rn ">[A-ZÀ-Ÿa-z]" src/ --include="*.tsx" | grep -v "className\|import\|//\|console"
+
+# Rechercher les chaînes dans les attributs
+grep -rn 'placeholder="[^"]*"' src/ --include="*.tsx"
+grep -rn 'title="[^"]*"' src/ --include="*.tsx"
+grep -rn "label=\"[^\"]*\"" src/ --include="*.tsx"
+
+# Rechercher les messages toast en dur
+grep -rn "toast\.\(success\|error\|info\|warning\)('[^']*'" src/ --include="*.tsx" --include="*.ts"
+
+# Rechercher les messages Zod en dur
+grep -rn "\.min\|\.max\|\.refine\|\.required" src/ --include="*.ts" --include="*.tsx" | grep "'"
+```
+
+### Étape 2 : Créer les fichiers de traduction
+
+```bash
+# Créer les dossiers de langue
+mkdir -p src/locales/{fr,en}
+
+# Pour chaque module, créer un fichier JSON
+# src/locales/fr/eleves.json
+# src/locales/en/eleves.json
+```
+
+**Structure des clés :**
+
+```json
+{
+    "titre": "Élèves",
+    "sousTitre": "{{total}} élèves inscrits",
+    "boutons": {
+        "nouveau": "Nouvel élève",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    },
+    "colonnes": {
+        "matricule": "Matricule",
+        "nomComplet": "Nom complet",
+        "classe": "Classe",
+        "sexe": "Sexe"
+    },
+    "champs": {
+        "prenom": "Prénom",
+        "nom": "Nom",
+        "dateNaissance": "Date de naissance",
+        "sexe": "Sexe",
+        "masculin": "Masculin",
+        "feminin": "Féminin"
+    },
+    "placeholders": {
+        "prenom": "Prénom de l'élève",
+        "nom": "Nom de famille",
+        "selectionner": "Sélectionner"
+    },
+    "validation": {
+        "nomMin": "Le nom doit contenir au moins 2 caractères",
+        "prenomMin": "Le prénom doit contenir au moins 2 caractères",
+        "age": "L'âge doit être entre 3 et 25 ans",
+        "sexeRequis": "Le sexe est requis",
+        "classeInvalide": "Classe invalide"
+    },
+    "modal": {
+        "titreNouveau": "Nouvel élève",
+        "titreModifier": "Modifier l'élève"
+    },
+    "messages": {
+        "creeSucces": "Élève {{prenom}} {{nom}} créé avec succès",
+        "supprime": "Élève supprimé"
+    }
+}
+```
+
+### Étape 3 : Remplacer les chaînes par `t()`
+
+```tsx
+// ❌ AVANT
+<h1>Élèves</h1>
+<p>{total} élèves inscrits</p>
+<button>Nouvel élève</button>
+
+// ✅ APRÈS
+const { t } = useTranslation('eleves');
+<h1>{t('titre')}</h1>
+<p>{t('sousTitre', { total })}</p>
+<button>{t('boutons.nouveau')}</button>
+```
+
+### Étape 4 : Migrer les toasts
+
+```tsx
+// ❌ AVANT
+toast.success('Élève créé avec succès');
+toast.error('Erreur lors de la suppression');
+
+// ✅ APRÈS
+toast.success(t('messages.creeSucces', { prenom: data.prenom, nom: data.nom }));
+toast.error(t('common:messages.erreurServeur'));
+```
+
+### Étape 5 : Migrer la validation Zod
+
+```tsx
+// ❌ AVANT
+const schema = z.object({
+    nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
+});
+
+// ✅ APRÈS : Schema en fonction de t()
+const creerSchema = (t: (key: string) => string) => z.object({
+    nom: z.string().min(2, t('validation.nomMin')),
+});
+
+// Dans le composant
+const { t } = useTranslation('eleves');
+const schema = useMemo(() => creerSchema(t), [t]);
+```
+
+### Étape 6 : Migrer les formats date/nombre
+
+```tsx
+// ❌ AVANT
+const date = format(new Date(eleve.dateNaissance), 'dd/MM/yyyy');
+const montant = `${prix} FCFA`;
+
+// ✅ APRÈS
+import { format as formatDate } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
+
+const DATE_LOCALES: Record<string, Locale> = { fr, en: enUS };
+
+const date = formatDate(new Date(eleve.dateNaissance), 'dd MMMM yyyy', {
+    locale: DATE_LOCALES[i18n.language] || fr,
+});
+
+const montant = new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'fr-FR', {
+    style: 'currency',
+    currency: 'XAF',
+}).format(prix);
+```
+
+### Étape 7 : Valider la migration
+
+```bash
+# Vérifier la parité des clés FR/EN
+node -e "
+const fr = require('./src/locales/fr/eleves.json');
+const en = require('./src/locales/en/eleves.json');
+const getKeys = (obj, prefix='') => Object.entries(obj).flatMap(([k,v]) =>
+    typeof v === 'object' ? getKeys(v, prefix+k+'.') : prefix+k);
+const frKeys = getKeys(fr).sort();
+const enKeys = getKeys(en).sort();
+const missing = frKeys.filter(k => !enKeys.includes(k));
+const extra = enKeys.filter(k => !frKeys.includes(k));
+if (missing.length) console.log('Clés manquantes en EN:', missing);
+if (extra.length) console.log('Clés en trop en EN:', extra);
+if (!missing.length && !extra.length) console.log('✅ Parité FR/EN OK');
+"
+
+# Vérifier qu'il ne reste plus de chaînes en dur
+grep -rn ">[A-ZÀ-Ÿ]" src/features/ --include="*.tsx" | grep -v "className\|import\|//\|console\|{t("
+```
+
+---
+
 ## Checklist Post-Refactorisation
 
 ### Validation
@@ -791,6 +1006,9 @@ function EleveDetail({ id }: { id: string }) {
 - [ ] Bannière eLISAschool sur les nouveaux fichiers
 - [ ] Barrel exports (`index.ts`) mis à jour
 - [ ] Imports utilisant les alias (`@/`, `@shared/`)
+- [ ] Pas de chaînes en dur — toutes les chaînes passent par `t()`
+- [ ] Fichiers de traduction FR et EN synchronisés (même clés)
+- [ ] Toasts, erreurs Zod, labels tous traduits via i18next
 
 ---
 
