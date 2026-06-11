@@ -25,6 +25,7 @@ export * from './annonces';
 // Modules logistiques
 export * from './cantine';
 export * from './transport';
+export * from './parking';
 export * from './materiel';
 export * from './finances';
 
@@ -53,6 +54,9 @@ export * from './organisation';
 // Modules complémentaires
 export * from './orientation';
 export * from './impressions';
+
+// Module RH & Recrutement
+export * from './recrutement';
 
 // Modules académiques (multi-établissements)
 export * from './etablissement';

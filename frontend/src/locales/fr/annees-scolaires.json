@@ -1,0 +1,14 @@
+{
+    "titre": "Années Scolaires",
+    "nouvelleAnnee": "Nouvelle année scolaire",
+    "code": "Code",
+    "libelle": "Libellé",
+    "dateDebut": "Date de début",
+    "dateFin": "Date de fin",
+    "active": "Active",
+    "inactive": "Inactive",
+    "future": "Future",
+    "archivee": "Archivée",
+    "activer": "Activer",
+    "anneeActuelle": "Année en cours"
+}

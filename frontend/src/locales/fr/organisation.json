@@ -1,0 +1,20 @@
+{
+    "titre": "Organisation",
+    "description": "Gérer les groupes et la structure organisationnelle",
+    "creer": "Nouveau groupe",
+    "rechercher": "Rechercher un groupe...",
+    "type": "Type",
+    "responsable": "Responsable",
+    "membres": "Membres",
+    "statut": "Statut",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "types": {
+        "pedagogique": "Pédagogique",
+        "administratif": "Administratif",
+        "activite": "Activité",
+        "autre": "Autre"
+    },
+    "ajouterMembre": "Ajouter membre",
+    "modifier": "Modifier"
+}

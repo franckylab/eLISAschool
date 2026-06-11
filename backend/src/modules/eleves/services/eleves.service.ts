@@ -645,6 +645,140 @@ export class ElevesService {
 
         return eleve;
     }
+
+    /**
+     * Exporte les élèves en CSV
+     */
+    async exportElevesCSV(
+        filtres: { search?: string; classeId?: string; anneeScolaireId?: string; statut?: string },
+        etablissementId: string
+    ): Promise<string> {
+        const eleves = await this.repo.find({
+            where: {
+                etablissementId,
+                ...(filtres.search && {
+                    nom: Like(`%${filtres.search}%`),
+                }),
+                ...(filtres.classeId && { classeId: filtres.classeId }),
+                ...(filtres.anneeScolaireId && { anneeScolaireId: filtres.anneeScolaireId }),
+                ...(filtres.statut && { statut: filtres.statut as any }),
+            },
+            relations: ['classe'],
+            order: { createdAt: 'DESC' },
+            take: 10000,
+        });
+
+        // En-têtes CSV
+        const headers = [
+            'Matricule',
+            'Nom',
+            'Prénom',
+            'Date de naissance',
+            'Lieu de naissance',
+            'Sexe',
+            'Nationalité',
+            'Classe',
+            'Statut',
+            'Téléphone',
+            'Email',
+            'Adresse',
+        ];
+
+        // Données
+        const rows = eleves.map((e) => [
+            e.matricule,
+            e.nom,
+            e.prenom,
+            e.dateNaissance?.toISOString().split('T')[0] || '',
+            e.lieuNaissance || '',
+            e.sexe === 'M' ? 'Masculin' : 'Féminin',
+            e.nationalite || 'Camerounaise',
+            e.classe?.nom || '',
+            e.statut || 'ACTIF',
+            e.utilisateur?.telephone || '',
+            e.utilisateur?.email || '',
+            e.utilisateur?.adresse || '',
+        ]);
+
+        // Construction CSV
+        const csvContent = [
+            headers.join(';'),
+            ...rows.map((row) => row.map((cell) => `"${cell}"`).join(';')),
+        ].join('\n');
+
+        logger.info(`Export CSV: ${eleves.length} élèves exportés`);
+        return csvContent;
+    }
+
+    /**
+     * Importe des élèves depuis CSV
+     */
+    async importElevesCSV(
+        csvContent: string,
+        etablissementId: string,
+        anneeScolaireId: string,
+        classeId: string
+    ): Promise<{ importe: number; erreurs: number; details: string[] }> {
+        const lines = csvContent.split('\n').filter((line) => line.trim());
+        if (lines.length < 2) {
+            throw new AppError('Le fichier CSV est vide ou invalide', 400, 'CSV_INVALID');
+        }
+
+        // Ignorer l'en-tête
+        const dataLines = lines.slice(1);
+        let importe = 0;
+        let erreurs = 0;
+        const details: string[] = [];
+
+        for (const line of dataLines) {
+            try {
+                const columns = line.split(';').map((col) => col.replace(/"/g, '').trim());
+
+                if (columns.length < 3) {
+                    erreurs++;
+                    details.push(`Ligne ignorée (colonnes insuffisantes): ${line}`);
+                    continue;
+                }
+
+                const [matricule, nom, prenom, dateNaissance, lieuNaissance, sexe] = columns;
+
+                // Vérifier si l'élève existe déjà
+                const exists = await this.repo.findOne({
+                    where: { matricule, etablissementId },
+                });
+
+                if (exists) {
+                    erreurs++;
+                    details.push(`Matricule ${matricule} déjà existant`);
+                    continue;
+                }
+
+                // Créer l'élève
+                const eleve = this.repo.create({
+                    matricule,
+                    nom,
+                    prenom,
+                    dateNaissance: new Date(dateNaissance),
+                    lieuNaissance: lieuNaissance || '',
+                    sexe: sexe.toLowerCase().startsWith('m') ? 'M' : 'F',
+                    nationalite: 'Camerounaise',
+                    classeId,
+                    anneeScolaireId,
+                    etablissementId,
+                    statut: 'ACTIF',
+                });
+
+                await this.repo.save(eleve);
+                importe++;
+            } catch (error: any) {
+                erreurs++;
+                details.push(`Erreur ligne: ${error.message}`);
+            }
+        }
+
+        logger.info(`Import CSV: ${importe} importés, ${erreurs} erreurs`);
+        return { importe, erreurs, details };
+    }
 }
 
 export const elevesService = new ElevesService();

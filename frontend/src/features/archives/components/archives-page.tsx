@@ -1,0 +1,83 @@
+/**
+ * ==================================
+ * eLISAschool - Page Archives
+ * ==================================
+ */
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { Archive, Plus, Search, Download, Trash2, FileText, Image, Video, Music } from 'lucide-react';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { ElisaButton } from '@/components/ui/ElisaButton';
+import { useArchives, useTelechargerArchive, useSupprimerArchive, useStatistiquesArchives } from '../hooks/use-archives';
+import type { Archive as ArchiveType } from '../types/archives.types';
+
+export function ArchivesPage() {
+    const { t } = useTranslation('archives');
+    const [page, setPage] = useState(1);
+    const [recherche, setRecherche] = useState('');
+    const [filtreCategorie, setFiltreCategorie] = useState('');
+
+    const { data, isLoading, meta } = useArchives({ recherche: recherche || undefined, categorie: filtreCategorie || undefined });
+    const { data: stats } = useStatistiquesArchives();
+    const telecharger = useTelechargerArchive();
+    const supprimer = useSupprimerArchive();
+
+    const categories: any = {
+        document: { label: 'Document', color: 'blue', icone: FileText },
+        photo: { label: 'Photo', color: 'purple', icone: Image },
+        video: { label: 'Vidéo', color: 'red', icone: Video },
+        audio: { label: 'Audio', color: 'green', icone: Music },
+        autre: { label: 'Autre', color: 'gray', icone: FileText },
+    };
+
+    const formatTaille = (octets?: number): string => {
+        if (!octets) return '-';
+        const ko = octets / 1024;
+        if (ko < 1024) return `${ko.toFixed(1)} Ko`;
+        const mo = ko / 1024;
+        return `${mo.toFixed(1)} Mo`;
+    };
+
+    const colonnes: Column<ArchiveType>[] = [
+        { key: 'categorie', header: 'Type', className: 'text-center w-28', render: (a) => { const cat = categories[a.categorie]; const Icone = cat?.icone || FileText; return (<span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-${cat?.color}-100 text-${cat?.color}-800`}><Icone className="h-3 w-3" />{cat?.label}</span>); }},
+        { key: 'titre', header: 'Titre', render: (a) => (<div><p className="font-medium text-gray-900">{a.titre}</p>{a.anneeScolaire && <p className="text-xs text-gray-500">{a.anneeScolaire}</p>}</div>)},
+        { key: 'taille', header: 'Taille', className: 'w-24', render: (a) => <span className="text-sm text-gray-700">{formatTaille(a.tailleFichier)}</span>},
+        { key: 'archivePar', header: 'Archivé par', className: 'w-40', render: (a) => (a.archivePar ? <p className="text-sm text-gray-700">{a.archivePar.prenom} {a.archivePar.nom}</p> : <span className="text-gray-400">-</span>)},
+        { key: 'date', header: 'Date', className: 'w-28', render: (a) => <span className="text-sm text-gray-700">{new Date(a.createdAt).toLocaleDateString('fr-FR')}</span>},
+        { key: 'actions', header: 'Actions', className: 'text-right w-24', render: (a) => (<div className="flex justify-end gap-1"><ElisaButton variant="outline" size="sm" icon={<Download className="h-3 w-3" />} isLoading={telecharger.isPending} onClick={() => telecharger.mutateAsync(a.id)} /><ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-3 w-3" />} isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(a.id)} /></div>)},
+    ];
+
+    return (
+        <div className="space-y-6">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+                <div><h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1><p className="text-sm text-gray-500 mt-1">{t('description')}</p></div>
+                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => window.alert('Nouvelle archive')}>{t('archiver')}</ElisaButton>
+            </motion.div>
+
+            {stats && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-blue-100 rounded-lg"><Archive className="h-5 w-5 text-blue-600" /></div><div><p className="text-xs text-gray-500">Total archives</p><p className="text-lg font-bold text-blue-600">{stats.totalArchives}</p></div></div></div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-green-100 rounded-lg"><FileText className="h-5 w-5 text-green-600" /></div><div><p className="text-xs text-gray-500">Taille totale</p><p className="text-lg font-bold text-green-600">{formatTaille(stats.tailleTotale)}</p></div></div></div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-purple-100 rounded-lg"><Image className="h-5 w-5 text-purple-600" /></div><div><p className="text-xs text-gray-500">Catégories</p><p className="text-lg font-bold text-purple-600">{stats.parCategorie?.length || 0}</p></div></div></div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-orange-100 rounded-lg"><FileText className="h-5 w-5 text-orange-600" /></div><div><p className="text-xs text-gray-500">Documents</p><p className="text-lg font-bold text-orange-600">{stats.parCategorie?.find(c => c.categorie === 'document')?.nombre || 0}</p></div></div></div>
+                </motion.div>
+            )}
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3">
+                <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder={t('rechercher')} value={recherche} onChange={(e) => setRecherche(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                <select value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Toutes catégories</option>
+                    <option value="document">Document</option>
+                    <option value="photo">Photo</option>
+                    <option value="video">Vidéo</option>
+                    <option value="audio">Audio</option>
+                    <option value="autre">Autre</option>
+                </select>
+            </motion.div>
+
+            <DataTable colonnes={colonnes} donnees={data || []} isLoading={isLoading} pagination={{ page, limit: 20, total: meta?.total || 0, onPageChange: setPage }} />
+        </div>
+    );
+}

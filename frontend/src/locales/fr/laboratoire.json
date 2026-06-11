@@ -1,0 +1,29 @@
+{
+    "laboratoire": {
+        "title": "Gestion des Laboratoires",
+        "newReservation": "Nouvelle réservation",
+        "laboratoires": "Laboratoires",
+        "reservations": "Réservations",
+        "actives": "Actives",
+        "tauxOccupation": "Taux occupation",
+        "search": "Rechercher une réservation..."
+    },
+    "atelier": {
+        "title": "Gestion des Ateliers",
+        "newAtelier": "Nouvel atelier",
+        "ateliers": "Ateliers",
+        "inscriptions": "Inscriptions",
+        "participation": "Participation",
+        "types": "Types",
+        "search": "Rechercher un atelier..."
+    },
+    "stage": {
+        "title": "Gestion des Stages",
+        "newStage": "Nouveau stage",
+        "totalStages": "Total stages",
+        "enCours": "En cours",
+        "termines": "Terminés",
+        "entreprises": "Entreprises",
+        "search": "Rechercher un stage..."
+    }
+}

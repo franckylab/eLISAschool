@@ -1,0 +1,19 @@
+{
+    "titre": "Health",
+    "description": "Manage infirmary visits and medical records",
+    "enregistrer": "Record visit",
+    "rechercher": "Search visit...",
+    "eleve": "Student",
+    "date": "Date",
+    "motif": "Reason",
+    "soins": "Care provided",
+    "orientation": "Referral",
+    "infirmier": "Nurse",
+    "dossierMedical": "Medical record",
+    "orientations": {
+        "retour_classe": "Return to class",
+        "renvoi_domicile": "Send home",
+        "hopital": "Hospital",
+        "autre": "Other"
+    }
+}

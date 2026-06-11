@@ -1,0 +1,28 @@
+{
+    "titre": "Announcements",
+    "description": "Manage institution publications and communications",
+    "creer": "New announcement",
+    "rechercher": "Search announcement...",
+    "categorie": "Category",
+    "priorite": "Priority",
+    "auteur": "Author",
+    "datePublication": "Publication date",
+    "dateExpiration": "Expiration date",
+    "statut": "Status",
+    "vues": "Views",
+    "actif": "Active",
+    "inactif": "Inactive",
+    "categories": {
+        "information": "Information",
+        "evenement": "Event",
+        "urgent": "Urgent",
+        "rappel": "Reminder",
+        "autre": "Other"
+    },
+    "priorites": {
+        "basse": "Low",
+        "normale": "Normal",
+        "haute": "High",
+        "critique": "Critical"
+    }
+}

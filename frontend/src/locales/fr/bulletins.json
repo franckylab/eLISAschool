@@ -1,0 +1,12 @@
+{
+    "titre": "Bulletins",
+    "generer": "Générer bulletins",
+    "eleve": "Élève",
+    "classe": "Classe",
+    "periode": "Période",
+    "moyenne": "Moyenne",
+    "rang": "Rang",
+    "effectif": "Effectif",
+    "appreciation": "Appréciation",
+    "exporter": "Exporter PDF"
+}

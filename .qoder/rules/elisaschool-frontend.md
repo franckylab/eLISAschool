@@ -1583,7 +1583,377 @@ function useMessages() {
 
 ---
 
-## 30. Anti-patterns à Éviter
+## 30. Routing, Navigation et Liens
+
+### 30.1 Principe Fondamental
+
+**TOUJOURS exposer correctement les routes et les liens** pour que chaque élément soit **accessible et navigable**. Un bouton ou une carte qui ne mène nulle part est une erreur UX.
+
+### 30.2 Structure des Routes TanStack Router
+
+```typescript
+// app/routes/
+// Utiliser le file-based routing de TanStack Router
+// Chaque fichier .tsx dans routes/ devient une route accessible
+
+__root.tsx              // Layout racine (Sidebar + Header + Outlet)
+index.tsx               // → / (redirect vers dashboard ou landing)
+dashboard.tsx           // → /dashboard
+_auth/                  // Layout auth (sans sidebar)
+    login.tsx           // → /login
+    forgot-password.tsx // → /forgot-password
+_eleves/
+    index.tsx           // → /eleves (liste)
+    $id.tsx             // → /eleves/:id (détail)
+    new.tsx             // → /eleves/new (création)
+_notes/
+    index.tsx           // → /notes
+    $eleveId.tsx        // → /notes/:eleveId
+```
+
+### 30.3 Navigation avec `useRouter` et `Link`
+
+```typescript
+import { Link, useRouter, useNavigate } from '@tanstack/react-router';
+
+// ✅ LIEN STATIQUE — Utiliser <Link>
+<Link to="/eleves" className="...">
+    Voir les élèves
+</Link>
+
+// ✅ LIEN DYNAMIQUE — Utiliser <Link> avec params
+<Link to="/eleves/$id" params={{ id: eleve.id }} className="...">
+    {eleve.nom}
+</Link>
+
+// ✅ NAVIGATION PROGRAMMATIQUE — Utiliser navigate()
+const navigate = useNavigate();
+await navigate({ to: '/eleves/$id', params: { id: eleve.id } });
+
+// ✅ REDIRECTION APRÈS ACTION
+const router = useRouter();
+await router.navigate({ to: '/dashboard', replace: true });
+```
+
+### 30.4 Règles pour les Boutons et Actions
+
+**TOUJOURS connecter les boutons à des routes ou actions** :
+
+```typescript
+// ❌ INCORRECT — Bouton sans action
+<button>Ajouter un élève</button>
+
+// ✅ CORRECT — Bouton avec navigation
+<Link to="/eleves/new">
+    <button>Ajouter un élève</button>
+</Link>
+
+// ✅ CORRECT — Bouton avec onClick programmé
+<button onClick={() => navigate({ to: '/eleves/new' })}>
+    Ajouter un élève
+</button>
+```
+
+### 30.5 Navigation dans les Tableaux et Listes
+
+**Chaque ligne d'un tableau doit être cliquable ou avoir des actions** :
+
+```typescript
+// ✅ Ligne cliquable avec Link
+function EleveRow({ eleve }: { eleve: Eleve }) {
+    return (
+        <tr>
+            <td>
+                <Link to="/eleves/$id" params={{ id: eleve.id }}
+                    className="text-[var(--color-dominante)] hover:underline">
+                    {eleve.nomComplet}
+                </Link>
+            </td>
+            <td>{eleve.classe}</td>
+            <td>
+                <Link to="/notes/$eleveId" params={{ eleveId: eleve.id }}>
+                    Voir les notes
+                </Link>
+            </td>
+        </tr>
+    );
+}
+```
+
+### 30.6 Menu Latéral (Sidebar) — Liens Vers Modules
+
+**Chaque élément du sidebar DOIT pointer vers une route valide** :
+
+```typescript
+const MENU_ITEMS = [
+    { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
+    { label: 'Élèves', icon: Users, to: '/eleves' },
+    { label: 'Enseignants', icon: GraduationCap, to: '/enseignants' },
+    { label: 'Notes', icon: ClipboardList, to: '/notes' },
+    { label: 'Bulletins', icon: FileText, to: '/bulletins' },
+    { label: 'Finances', icon: CreditCard, to: '/finances' },
+    // ... chaque module a sa route
+];
+
+// Dans le rendu
+{MENU_ITEMS.map(item => (
+    <Link
+        key={item.to}
+        to={item.to}
+        activeProps={{ className: 'bg-[var(--color-dominante)]/10' }}
+        className="flex items-center gap-3 px-4 py-2 rounded-lg"
+    >
+        <item.icon className="h-5 w-5" />
+        <span>{item.label}</span>
+    </Link>
+))}
+```
+
+### 30.7 Breadcrumbs (Fil d'Ariane)
+
+**TOUJOURS afficher le breadcrumb pour la navigation contextuelle** :
+
+#### 30.7.1 Composant Breadcrumb Réutilisable
+
+**Fichier :** `src/components/navigation/Breadcrumbs.tsx`
+
+```typescript
+import { useRouterState, Link } from '@tanstack/react-router';
+import { ChevronRight, Home } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+interface BreadcrumbItem {
+    label: string;
+    href?: string;
+    actif?: boolean;
+}
+
+interface BreadcrumbsProps {
+    items?: BreadcrumbItem[];  // Optionnel : items personnalisés
+    afficherAccueil?: boolean;  // Afficher le lien "Accueil"
+}
+
+export function Breadcrumbs({ items, afficherAccueil = true }: BreadcrumbsProps) {
+    const { t } = useTranslation('common');
+    const matches = useRouterState({ select: s => s.matches });
+
+    // Si items personnalisés fournis, les utiliser
+    if (items && items.length > 0) {
+        return (
+            <nav aria-label="Breadcrumb" className="mb-4">
+                <ol className="flex items-center gap-1.5 text-sm flex-wrap">
+                    {afficherAccueil && (
+                        <li className="flex items-center gap-1.5">
+                            <Link to="/" className="text-[var(--color-dominante)] hover:underline">
+                                <Home className="h-4 w-4" />
+                            </Link>
+                            <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />
+                        </li>
+                    )}
+                    {items.map((item, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                            {i > 0 && <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />}
+                            {item.actif || !item.href ? (
+                                <span className="text-[var(--color-texte)] font-medium">{item.label}</span>
+                            ) : (
+                                <Link to={item.href as any}
+                                    className="text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)] transition-colors">
+                                    {item.label}
+                                </Link>
+                            )}
+                        </li>
+                    ))}
+                </ol>
+            </nav>
+        );
+    }
+
+    // Sinon, générer automatiquement depuis les routes TanStack Router
+    return (
+        <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-1.5 text-sm flex-wrap">
+                {afficherAccueil && (
+                    <li className="flex items-center gap-1.5">
+                        <Link to="/" className="text-[var(--color-dominante)] hover:underline">
+                            <Home className="h-4 w-4" />
+                        </Link>
+                        {matches.length > 0 && <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />}
+                    </li>
+                )}
+                {matches
+                    .filter(m => m.routeId !== '__root__')  // Exclure le root
+                    .map((match, i, arr) => (
+                        <li key={match.id} className="flex items-center gap-1.5">
+                            {i > 0 && <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />}
+                            {i === arr.length - 1 ? (
+                                // Dernier élément = page active
+                                <span className="text-[var(--color-texte)] font-medium">
+                                    {match.routeMeta?.titre || match.routeId}
+                                </span>
+                            ) : (
+                                <Link to={match.pathname}
+                                    className="text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)] transition-colors">
+                                    {match.routeMeta?.titre || match.routeId}
+                                </Link>
+                            )}
+                        </li>
+                    ))}
+            </ol>
+        </nav>
+    );
+}
+```
+
+#### 30.7.2 Hook useBreadcrumbs pour Breadcrumbs Personnalisés
+
+**Fichier :** `src/hooks/use-breadcrumbs.ts`
+
+```typescript
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+interface BreadcrumbItem {
+    label: string;
+    href?: string;
+}
+
+export function useBreadcrumbs(...items: Array<BreadcrumbItem | string>): BreadcrumbItem[] {
+    const { t } = useTranslation();
+
+    return useMemo(() => {
+        return items.map(item => {
+            if (typeof item === 'string') {
+                return { label: t(item) };
+            }
+            return {
+                ...item,
+                label: t(item.label),
+            };
+        });
+    }, [items, t]);
+}
+```
+
+#### 30.7.3 Usage dans les Pages
+
+```typescript
+// ✅ USAGE 1 : Breadcrumb automatique (depuis les routes)
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+
+function ElevesPage() {
+    return (
+        <div>
+            <Breadcrumbs />
+            <h1>Liste des élèves</h1>
+            {/* ... */}
+        </div>
+    );
+}
+
+// ✅ USAGE 2 : Breadcrumb personnalisé avec useBreadcrumbs
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
+
+function EleveDetailPage() {
+    const { eleve } = useEleve(id);
+    const breadcrumbs = useBreadcrumbs(
+        { label: 'eleves.titres.liste', href: '/eleves' },
+        { label: eleve?.nomComplet || '...', actif: true },
+    );
+
+    return (
+        <div>
+            <Breadcrumbs items={breadcrumbs} />
+            <h1>{eleve?.nomComplet}</h1>
+            {/* ... */}
+        </div>
+    );
+}
+
+// ✅ USAGE 3 : Breadcrumb statique avec items manuels
+function EleveNotesPage() {
+    return (
+        <div>
+            <Breadcrumbs
+                items={[
+                    { label: 'Élèves', href: '/eleves' },
+                    { label: eleve?.nomComplet, href: `/eleves/${id}` },
+                    { label: 'Notes', actif: true },
+                ]}
+            />
+            <h1>Notes de {eleve?.nomComplet}</h1>
+            {/* ... */}
+        </div>
+    );
+}
+```
+
+#### 30.7.4 Intégration dans le Layout
+
+**Fichier :** `src/app/routes/__root.tsx` ou layout principal
+
+```typescript
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+
+function RootLayout() {
+    return (
+        <div className="flex min-h-screen">
+            <Sidebar />
+            <main className="flex-1 p-6">
+                {/* Breadcrumb affiché automatiquement sur toutes les pages */}
+                <Breadcrumbs afficherAccueil />
+                <Outlet />
+            </main>
+        </div>
+    );
+}
+```
+
+#### 30.7.5 Règles d'Utilisation
+
+- **TOUJOURS** afficher le breadcrumb en haut de la page, avant le titre
+- **TOUJOURS** inclure un lien vers la page d'accueil (icône Home)
+- **TOUJOURS** marquer la page courante comme texte non-cliquable (actif)
+- **TOUJOURS** utiliser `aria-label="Breadcrumb"` pour l'accessibilité
+- **ÉVITER** les breadcrumbs trop profonds (> 5 niveaux) — reconsidérer l'architecture
+- **PERSONNALISER** les labels avec `useBreadcrumbs()` pour les pages dynamiques (détail élève, etc.)
+
+### 30.8 Gestion des Routes Inexistantes (404)
+
+```typescript
+// app/routes/__root.tsx ou fichier 404.tsx
+import { NotFoundPage } from '@/features/error/NotFoundPage';
+
+// TanStack Router gère automatiquement les routes non trouvées
+// Créer un composant 404友好
+function NotFoundPage() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <h1 className="text-6xl font-bold text-[var(--color-texte)]">404</h1>
+            <p className="mt-4 text-lg text-[var(--color-texte-secondaire)]">
+                Page non trouvée
+            </p>
+            <Link to="/dashboard" className="mt-6">
+                Retour au tableau de bord
+            </Link>
+        </div>
+    );
+}
+```
+
+### 30.9 Anti-patterns de Navigation
+
+- **NE PAS** créer de boutons sans action ni navigation
+- **NE PAS** utiliser `<a href="/...">` → Utiliser `<Link to="...">` de TanStack Router
+- **NE PAS** utiliser `window.location.href` → Utiliser `navigate()` ou `router.navigate()`
+- **NE PAS** hardcoder les chemins dans les composants → Utiliser `to="/eleves/$id"` avec params
+- **NE PAS** oublier les routes de détail (`$id.tsx`) pour les entités
+- **NE PAS** créer de menus avec des liens morts ou `#`
+- **NE PAS** oublier la route 404 pour les chemins invalides
+
+---
+
+## 31. Anti-patterns à Éviter
 
 - **NE PAS** utiliser `alert()`, `confirm()`, `prompt()` → Composants personnalisés
 - **NE PAS** utiliser de CSS inline (sauf pour les valeurs dynamiques)

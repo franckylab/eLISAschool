@@ -1,0 +1,23 @@
+{
+    "titre": "Personnel",
+    "nouveauMembre": "Nouveau membre",
+    "matricule": "Matricule",
+    "poste": "Poste",
+    "departement": "Département",
+    "typeContrat": "Type de contrat",
+    "dateEntree": "Date d'entrée",
+    "specialite": "Spécialité",
+    "qualification": "Qualification",
+    "typesContrats": {
+        "cdi": "CDI",
+        "cdd": "CDD",
+        "vacataire": "Vacataire",
+        "stage": "Stage"
+    },
+    "statuts": {
+        "actif": "Actif",
+        "inactif": "Inactif",
+        "en_conge": "En congé",
+        "demission": "Démission"
+    }
+}

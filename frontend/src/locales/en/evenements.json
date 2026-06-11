@@ -1,0 +1,25 @@
+{
+    "titre": "Events",
+    "description": "Manage institution calendar and events",
+    "creer": "New event",
+    "rechercher": "Search event...",
+    "type": "Type",
+    "dateDebut": "Start date",
+    "dateFin": "End date",
+    "lieu": "Location",
+    "participants": "Participants",
+    "statut": "Status",
+    "programme": "Scheduled",
+    "enCours": "In progress",
+    "termine": "Completed",
+    "annule": "Cancelled",
+    "types": {
+        "reunion": "Meeting",
+        "formation": "Training",
+        "activite": "Activity",
+        "ceremonie": "Ceremony",
+        "examen": "Exam",
+        "vacances": "Vacation",
+        "autre": "Other"
+    }
+}

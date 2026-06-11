@@ -1,0 +1,29 @@
+{
+    "laboratoire": {
+        "title": "Laboratory Management",
+        "newReservation": "New reservation",
+        "laboratoires": "Laboratories",
+        "reservations": "Reservations",
+        "actives": "Active",
+        "tauxOccupation": "Occupancy rate",
+        "search": "Search reservation..."
+    },
+    "atelier": {
+        "title": "Workshop Management",
+        "newAtelier": "New workshop",
+        "ateliers": "Workshops",
+        "inscriptions": "Registrations",
+        "participation": "Participation",
+        "types": "Types",
+        "search": "Search workshop..."
+    },
+    "stage": {
+        "title": "Internship Management",
+        "newStage": "New internship",
+        "totalStages": "Total internships",
+        "enCours": "In progress",
+        "termines": "Completed",
+        "entreprises": "Companies",
+        "search": "Search internship..."
+    }
+}

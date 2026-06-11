@@ -1,0 +1,181 @@
+{
+    "sections": {
+        "securite": {
+            "titre": "Sécurité",
+            "description": "Configurez les paramètres de sécurité de l'application pour protéger les données et les accès",
+            "authentification": {
+                "titre": "Authentification & Sessions",
+                "description": "Gérez la durée des sessions et les politiques de connexion",
+                "session_duration": {
+                    "label": "Durée de session",
+                    "hint": "Durée après laquelle l'utilisateur doit se reconnecter",
+                    "options": {
+                        "15": "15 minutes",
+                        "30": "30 minutes",
+                        "60": "1 heure",
+                        "120": "2 heures",
+                        "240": "4 heures",
+                        "480": "8 heures",
+                        "1440": "24 heures"
+                    }
+                },
+                "max_login_attempts": {
+                    "label": "Tentatives de connexion maximum",
+                    "hint": "Nombre d'échecs autorisés avant blocage du compte",
+                    "erreurMinMax": "Entre {min} et {max} tentatives"
+                },
+                "lockout_duration": {
+                    "label": "Durée de blocage",
+                    "hint": "Temps pendant lequel le compte est bloqué après échecs",
+                    "options": {
+                        "5": "5 minutes",
+                        "15": "15 minutes",
+                        "30": "30 minutes",
+                        "60": "1 heure",
+                        "1440": "24 heures"
+                    }
+                },
+                "require_2fa": {
+                    "label": "Exiger l'authentification 2FA",
+                    "hint": "Demander un code de vérification en plus du mot de passe"
+                }
+            },
+            "motsDePasse": {
+                "titre": "Politique de Mots de Passe",
+                "description": "Définissez les exigences de complexité et de validité des mots de passe",
+                "password_min_length": {
+                    "label": "Longueur minimale",
+                    "hint": "Nombre minimum de caractères requis",
+                    "erreurMinMax": "Entre {min} et {max} caractères"
+                },
+                "password_require_uppercase": {
+                    "label": "Exiger une majuscule",
+                    "hint": "Au moins une lettre majuscule (A-Z)"
+                },
+                "password_require_lowercase": {
+                    "label": "Exiger une minuscule",
+                    "hint": "Au moins une lettre minuscule (a-z)"
+                },
+                "password_require_number": {
+                    "label": "Exiger un chiffre",
+                    "hint": "Au moins un chiffre (0-9)"
+                },
+                "password_require_special": {
+                    "label": "Exiger un caractère spécial",
+                    "hint": "Au moins un caractère spécial (!@#$%^&*)"
+                },
+                "password_history_count": {
+                    "label": "Historique des mots de passe",
+                    "hint": "Nombre d'anciens mots de passe conservés (0 = désactivé)",
+                    "erreurMinMax": "Entre {min} et {max}"
+                },
+                "password_expiry_days": {
+                    "label": "Expiration du mot de passe",
+                    "hint": "Durée avant que le mot de passe n'expire",
+                    "options": {
+                        "0": "Jamais",
+                        "30": "30 jours",
+                        "60": "60 jours",
+                        "90": "90 jours",
+                        "180": "6 mois",
+                        "365": "1 an"
+                    }
+                }
+            },
+            "avancee": {
+                "titre": "Sécurité Avancée",
+                "description": "Paramètres de sécurité supplémentaires pour renforcer la protection",
+                "require_email_verification": {
+                    "label": "Vérification email requise",
+                    "hint": "Les utilisateurs doivent vérifier leur email avant de se connecter"
+                },
+                "allow_self_registration": {
+                    "label": "Auto-inscription autorisée",
+                    "hint": "Permettre aux utilisateurs de créer leur propre compte"
+                },
+                "inactivity_timeout": {
+                    "label": "Délai d'inactivité",
+                    "hint": "Déconnexion automatique après cette période d'inactivité (minutes)",
+                    "erreurMinMax": "Entre {min} et {max} minutes"
+                },
+                "ip_whitelist": {
+                    "label": "Liste blanche d'IP",
+                    "hint": "Adresses IP autorisées (séparées par des virgules, vide = toutes autorisées)",
+                    "placeholder": "192.168.1.1, 10.0.0.1, ..."
+                },
+                "log_sensitive_actions": {
+                    "label": "Journalisation actions sensibles",
+                    "hint": "Enregistrer toutes les actions sensibles dans l'audit trail"
+                }
+            },
+            "protection": {
+                "titre": "Protection & Monitoring",
+                "description": "Protection contre les attaques et surveillance de la sécurité",
+                "brute_force_protection": {
+                    "label": "Protection contre la force brute",
+                    "hint": "Bloquer les tentatives de connexion massives"
+                },
+                "rate_limiting": {
+                    "label": "Limitation du débit",
+                    "hint": "Contrôler le nombre de requêtes par minute",
+                    "options": {
+                        "low": "Faible (100 req/min)",
+                        "medium": "Moyen (50 req/min)",
+                        "high": "Élevé (20 req/min)"
+                    }
+                },
+                "security_email_alerts": {
+                    "label": "Alertes email de sécurité",
+                    "hint": "Envoyer des alertes pour les événements de sécurité critiques"
+                },
+                "suspicious_activity_notifications": {
+                    "label": "Notifications d'activité suspecte",
+                    "hint": "Notifier les utilisateurs en cas d'activité suspecte sur leur compte"
+                }
+            },
+            "actions": {
+                "titre": "Actions de Sécurité",
+                "description": "Actions immédiates pour renforcer la sécurité de l'application",
+                "deconnecterSessions": {
+                    "titre": "Déconnecter toutes les sessions",
+                    "description": "Forcer la déconnexion de tous les utilisateurs actuellement connectés",
+                    "confirmation": "Êtes-vous sûr de vouloir déconnecter tous les utilisateurs ? Cette action est irréversible.",
+                    "succes": "Toutes les sessions ont été invalidées avec succès"
+                },
+                "resetEchecs": {
+                    "titre": "Réinitialiser les compteurs d'échec",
+                    "description": "Remettre à zéro tous les compteurs de tentatives de connexion échouées",
+                    "confirmation": "Êtes-vous sûr de vouloir réinitialiser tous les compteurs d'échec ?",
+                    "succes": "Les compteurs d'échec ont été réinitialisés"
+                },
+                "forcePasswordReset": {
+                    "titre": "Forcer le changement de mot de passe",
+                    "description": "Exiger que tous les utilisateurs changent leur mot de passe lors de leur prochaine connexion",
+                    "confirmation": "Êtes-vous sûr de vouloir forcer le changement de mot de passe pour tous les utilisateurs ? Cette action est irréversible.",
+                    "succes": "Le changement de mot de passe a été forcé pour tous les utilisateurs"
+                }
+            }
+        }
+    },
+    "boutons": {
+        "enregistrer": "Enregistrer les modifications",
+        "reinitialiser": "Réinitialiser",
+        "annuler": "Annuler",
+        "confirmer": "Confirmer",
+        "executer": "Exécuter"
+    },
+    "messages": {
+        "modificationsNonEnregistrees": "{count} modification(s) non enregistrée(s)",
+        "sauvegardeSucces": "Paramètre(s) enregistré(s) avec succès",
+        "sauvegardeErreur": "Erreur lors de l'enregistrement",
+        "chargementErreur": "Impossible de charger les paramètres de sécurité",
+        "aucuneModification": "Aucune modification à enregistrer"
+    },
+    "score": {
+        "titre": "Score de sécurité",
+        "faible": "Faible",
+        "moyen": "Moyen",
+        "fort": "Fort",
+        "excellent": "Excellent"
+    }
+}

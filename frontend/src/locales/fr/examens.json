@@ -1,0 +1,15 @@
+{
+    "titre": "Examens",
+    "description": "Planifier et gérer les examens et évaluations",
+    "planifier": "Planifier examen",
+    "rechercher": "Rechercher un examen...",
+    "type": "Type",
+    "titre": "Titre",
+    "date": "Date",
+    "classe": "Classe",
+    "coefficient": "Coefficient",
+    "statut": "Statut",
+    "resultats": "Résultats",
+    "moyenneGenerale": "Moyenne générale",
+    "tauxReussite": "Taux de réussite"
+}

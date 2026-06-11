@@ -1,107 +1,23 @@
 {
     "titre": "Configuration",
-    "sections": {
-        "general": {
-            "titre": "Général",
-            "description": "Informations générales de l'établissement",
-            "nomEtablissement": "Nom de l'établissement",
-            "codeEtablissement": "Code de l'établissement",
-            "adresse": "Adresse",
-            "telephone": "Téléphone",
-            "email": "Email de contact",
-            "siteWeb": "Site web",
-            "devise": "Devise",
-            "pays": "Pays",
-            "fuseauHoraire": "Fuseau horaire",
-            "logoEtablissement": "Logo de l'établissement",
-            "telechargerLogo": "Télécharger un logo",
-            "logoActuel": "Logo actuel"
-        },
-        "theme": {
-            "titre": "Apparence",
-            "description": "Personnalisez l'apparence de l'application",
-            "couleurDominante": "Couleur principale",
-            "couleurSecondaire": "Couleur secondaire",
-            "couleurAccent": "Couleur d'accent",
-            "mode": "Mode d'affichage",
-            "modeClair": "Clair",
-            "modeSombre": "Sombre",
-            "modeAuto": "Automatique (système)",
-            "apercu": "Aperçu",
-            "couleursPreddefinies": "Couleurs prédéfinies",
-            "couleurPersonnalisee": "Couleur personnalisée",
-            "reinitialiser": "Réinitialiser le thème",
-            "confirmerReinitialiser": "Voulez-vous réinitialiser le thème par défaut ?"
-        },
-        "langue": {
-            "titre": "Langue et région",
-            "description": "Paramètres de langue et de format",
-            "langueInterface": "Langue de l'interface",
-            "formatDate": "Format de date",
-            "formatNombre": "Format de nombre",
-            "formatMonnaie": "Format de monnaie",
-            "premierJour": "Premier jour de la semaine"
-        },
-        "modules": {
-            "titre": "Modules",
-            "description": "Activez ou désactivez les modules de l'application",
-            "activerTout": "Tout activer",
-            "desactiverTout": "Tout désactiver",
-            "confirmerToggle": "Voulez-vous {{action}} le module \"{{module}}\" ?",
-            "activer": "activer",
-            "desactiver": "désactiver",
-            "categories": {
-                "academique": "Académique",
-                "administratif": "Administratif",
-                "financier": "Financier",
-                "communication": "Communication",
-                "logistique": "Logistique",
-                "systeme": "Système"
-            }
-        },
-        "securite": {
-            "titre": "Sécurité",
-            "description": "Paramètres de sécurité du compte",
-            "deuxFacteurs": "Authentification à deux facteurs",
-            "deuxFacteursDescription": "Ajoutez une couche de sécurité supplémentaire",
-            "activer2FA": "Activer la 2FA",
-            "desactiver2FA": "Désactiver la 2FA",
-            "sessions": "Sessions actives",
-            "deconnecterTout": "Déconnecter toutes les sessions",
-            "journalActivite": "Journal d'activité"
-        },
-        "notifications": {
-            "titre": "Notifications",
-            "description": "Gérez vos préférences de notification",
-            "email": "Notifications par email",
-            "push": "Notifications push",
-            "sms": "Notifications SMS",
-            "types": {
-                "nouvellesNotes": "Nouvelles notes",
-                "absences": "Absences",
-                "paiements": "Paiements",
-                "messages": "Messages",
-                "evenements": "Événements",
-                "rappels": "Rappels"
-            }
-        },
-        "sauvegarde": {
-            "titre": "Sauvegarde et données",
-            "description": "Gérez les sauvegardes et l'export de données",
-            "derniereSauvegarde": "Dernière sauvegarde",
-            "creerSauvegarde": "Créer une sauvegarde",
-            "restaurer": "Restaurer",
-            "exporterDonnees": "Exporter les données",
-            "importerDonnees": "Importer des données"
-        }
+    "sousTitre": "Paramètres et configuration de l'application",
+    "modules": {
+        "titre": "Modules",
+        "description": "Activer ou désactiver les modules de l'application",
+        "actif": "Actif",
+        "inactif": "Inactif"
     },
-    "messages": {
-        "sauvegardeSucces": "Configuration sauvegardée avec succès",
-        "sauvegardeErreur": "Erreur lors de la sauvegarde",
-        "chargementErreur": "Erreur lors du chargement de la configuration",
-        "moduleActiveSucces": "Module \"{{module}}\" activé",
-        "moduleDesactiveSucces": "Module \"{{module}}\" désactivé",
-        "themeSucces": "Thème appliqué avec succès",
-        "langueSucces": "Langue mise à jour"
+    "preferences": {
+        "titre": "Préférences",
+        "langue": "Langue",
+        "theme": "Thème",
+        "notifications": "Notifications"
+    },
+    "etablissement": {
+        "titre": "Établissement",
+        "nom": "Nom de l'établissement",
+        "adresse": "Adresse",
+        "telephone": "Téléphone",
+        "email": "Email"
     }
 }

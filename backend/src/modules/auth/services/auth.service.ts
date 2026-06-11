@@ -556,14 +556,20 @@ export class AuthService {
             where: { utilisateurId },
         });
 
+        // Résoudre les permissions de l'utilisateur
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
+
         return {
             id: utilisateur.id,
             email: utilisateur.email,
             matricule: utilisateur.matricule,
             role: utilisateur.role,
+            roles: userRoles.map(r => ({ code: r.code, libelle: r.libelle, estPrincipal: r.estPrincipal })),
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
             langue: utilisateur.langue,
+            permissions: Array.from(resolvedPermissions),
             profil: profil ? {
                 nom: profil.nom,
                 prenom: profil.prenom,

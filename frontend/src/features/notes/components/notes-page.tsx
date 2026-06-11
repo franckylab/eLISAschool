@@ -1,0 +1,156 @@
+/**
+ * ==================================
+ * eLISAschool - Page Notes
+ * ==================================
+ */
+
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { Plus, Search, TrendingUp } from 'lucide-react';
+import { useNotes, useSupprimerNote } from '../hooks/use-notes';
+import { DataTable } from '@/components/ui/DataTable';
+import { ElisaButton } from '@/components/ui/ElisaButton';
+import { usePermissions } from '@/hooks';
+import type { Note, NoteFiltres } from '../types/note.types';
+import type { Column } from '@/components/ui/DataTable';
+
+export function NotesPage() {
+    const { t } = useTranslation();
+    const { hasPermission } = usePermissions();
+    const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
+
+    const { data, isLoading } = useNotes(filtres);
+    const supprimer = useSupprimerNote();
+
+    const typesNote: any = {
+        composition: { label: 'Composition', color: 'red' },
+        interrogation: { label: 'Interrogation', color: 'blue' },
+        exercice: { label: 'Exercice', color: 'green' },
+        projet: { label: 'Projet', color: 'purple' },
+        autre: { label: 'Autre', color: 'gray' },
+    };
+
+    const colonnes: Column<Note>[] = [
+        {
+            key: 'eleve',
+            header: 'Élève',
+            sortable: true,
+            render: (n) => (
+                <div>
+                    <p className="font-medium">{n.eleve?.prenom} {n.eleve?.nom}</p>
+                    <p className="text-xs font-mono text-[var(--color-text-muted)]">{n.eleve?.matricule}</p>
+                </div>
+            ),
+        },
+        {
+            key: 'matiere',
+            header: 'Matière',
+            sortable: true,
+            render: (n) => (
+                <div>
+                    <p className="font-medium">{n.matiere?.nom}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">Coef. {n.matiere?.coefficient || 1}</p>
+                </div>
+            ),
+        },
+        {
+            key: 'valeur',
+            header: 'Note',
+            sortable: true,
+            className: 'text-center',
+            render: (n) => (
+                <div className="flex flex-col items-center gap-1">
+                    <span className={`inline-flex items-center justify-center rounded-lg px-3 py-1 text-lg font-bold ${
+                        n.valeur >= 16 ? 'bg-green-100 text-green-800' :
+                        n.valeur >= 14 ? 'bg-blue-100 text-blue-800' :
+                        n.valeur >= 12 ? 'bg-indigo-100 text-indigo-800' :
+                        n.valeur >= 10 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                    }`}>
+                        {n.valeur}/20
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium bg-${typesNote[n.type]?.color}-100 text-${typesNote[n.type]?.color}-800`}>
+                        {typesNote[n.type]?.label}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'coefficient',
+            header: 'Coef.',
+            className: 'text-center',
+            render: (n) => <span className="font-medium">{n.coefficient || 1}</span>,
+        },
+        {
+            key: 'enseignant',
+            header: 'Enseignant',
+            render: (n) => (
+                <span className="text-sm">{n.enseignant?.nom} {n.enseignant?.prenom}</span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            className: 'text-right',
+            render: (n) => (
+                <div className="flex justify-end gap-2">
+                    {hasPermission('notes:edit') && (
+                        <ElisaButton variant="ghost" size="sm">Modifier</ElisaButton>
+                    )}
+                    {hasPermission('notes:delete') && (
+                        <ElisaButton
+                            variant="danger"
+                            size="sm"
+                            isLoading={supprimer.isPending}
+                            onClick={() => {
+                                if (confirm('Supprimer cette note ?')) {
+                                    supprimer.mutateAsync(n.id);
+                                }
+                            }}
+                        >
+                            Supprimer
+                        </ElisaButton>
+                    )}
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <div className="flex flex-col gap-6 p-6">
+            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                <div>
+                    <h1 className="text-3xl font-bold">Notes</h1>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.pagination?.total || 0} note(s)</p>
+                </div>
+                <div className="flex gap-2">
+                    {hasPermission('notes:create') && (
+                        <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>
+                            Nouvelle note
+                        </ElisaButton>
+                    )}
+                    {hasPermission('notes:create') && (
+                        <ElisaButton variant="outline" size="sm" icon={<TrendingUp className="h-4 w-4" />}>
+                            Saisie en masse
+                        </ElisaButton>
+                    )}
+                </div>
+            </motion.div>
+
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                <input type="text" placeholder="Rechercher..." className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20" value={filtres.recherche || ''} onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} />
+            </div>
+
+            <DataTable
+                data={data?.data || []}
+                columns={colonnes}
+                isLoading={isLoading}
+                pagination={data?.pagination}
+                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+            />
+        </div>
+    );
+}

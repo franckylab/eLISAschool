@@ -1,0 +1,13 @@
+{
+    "titre": "Cafeteria",
+    "nouvelleInscription": "New enrollment",
+    "eleve": "Student",
+    "type": "Enrollment type",
+    "quotidien": "Daily",
+    "hebdomadaire": "Weekly",
+    "mensuel": "Monthly",
+    "trimestriel": "Quarterly",
+    "annuel": "Annual",
+    "actif": "Active",
+    "inactif": "Inactive"
+}

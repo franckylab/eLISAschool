@@ -1,0 +1,31 @@
+{
+    "titre": "Discipline",
+    "description": "Gérer les sanctions et le suivi disciplinaire des élèves",
+    "enregistrer": "Enregistrer sanction",
+    "rechercher": "Rechercher une sanction...",
+    "type": "Type",
+    "gravite": "Gravité",
+    "motif": "Motif",
+    "date": "Date",
+    "statut": "Statut",
+    "amnistier": "Amnistier",
+    "types": {
+        "avertissement": "Avertissement",
+        "remontrance": "Réprimande",
+        "exclusion_temporaire": "Exclusion temp.",
+        "exclusion_definitive": "Exclusion déf.",
+        "conseil_discipline": "Conseil discipline",
+        "autre": "Autre"
+    },
+    "gravites": {
+        "legere": "Légère",
+        "moyenne": "Moyenne",
+        "grave": "Grave",
+        "tres_grave": "Très grave"
+    },
+    "statuts": {
+        "active": "Active",
+        "amnistiee": "Amnistiée",
+        "archivee": "Archivée"
+    }
+}

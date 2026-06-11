@@ -1,0 +1,15 @@
+{
+    "titre": "Exams",
+    "description": "Schedule and manage exams and assessments",
+    "planifier": "Schedule exam",
+    "rechercher": "Search exam...",
+    "type": "Type",
+    "titre": "Title",
+    "date": "Date",
+    "classe": "Class",
+    "coefficient": "Coefficient",
+    "statut": "Status",
+    "resultats": "Results",
+    "moyenneGenerale": "General average",
+    "tauxReussite": "Success rate"
+}

@@ -7,7 +7,6 @@
 
 import { Link, useMatches } from '@tanstack/react-router';
 import { ChevronRight, Home } from 'lucide-react';
-import { cn } from '@/lib/cn';
 
 export function Breadcrumbs() {
     const matches = useMatches();

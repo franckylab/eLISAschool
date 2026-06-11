@@ -1,0 +1,15 @@
+{
+    "titre": "Grades",
+    "nouvelleNote": "New grade",
+    "saisieMasse": "Bulk entry",
+    "eleve": "Student",
+    "matiere": "Subject",
+    "valeur": "Grade",
+    "coefficient": "Coefficient",
+    "type": "Type",
+    "composition": "Exam",
+    "interrogation": "Quiz",
+    "exercice": "Exercise",
+    "projet": "Project",
+    "enseignant": "Teacher"
+}

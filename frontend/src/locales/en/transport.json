@@ -1,0 +1,11 @@
+{
+    "titre": "Transport",
+    "nouvelleInscription": "New enrollment",
+    "eleve": "Student",
+    "ligne": "Route",
+    "trajet": "Journey",
+    "pointMontee": "Pickup point",
+    "pointDescente": "Drop-off point",
+    "actif": "Active",
+    "inactif": "Inactive"
+}

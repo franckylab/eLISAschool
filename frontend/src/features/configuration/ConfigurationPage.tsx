@@ -8,16 +8,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
-import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useThemeStore } from '@/stores/theme.store';
 import { COULEURS_DOMINANTES } from '@/lib/theme-utils';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
+import { SecuriteTab } from './components/SecuriteTab';
 
 type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications';
 
@@ -159,8 +158,11 @@ export function ConfigurationPage() {
                         </div>
                     )}
 
+                    {/* Sécurité */}
+                    {activeTab === 'securite' && <SecuriteTab />}
+
                     {/* Autres onglets : placeholder */}
-                    {activeTab !== 'general' && activeTab !== 'theme' && (
+                    {activeTab !== 'general' && activeTab !== 'theme' && activeTab !== 'securite' && (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <Settings className="h-12 w-12 text-[var(--color-texte-secondaire)]/30" />
                             <p className="mt-4 text-sm text-[var(--color-texte-secondaire)]">

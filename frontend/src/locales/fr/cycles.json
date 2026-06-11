@@ -1,0 +1,10 @@
+{
+    "titre": "Cycles",
+    "nouveauCycle": "Nouveau cycle",
+    "code": "Code",
+    "nom": "Nom",
+    "ordre": "Ordre",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "description": "Description"
+}

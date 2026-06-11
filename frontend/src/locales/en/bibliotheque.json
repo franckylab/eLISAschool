@@ -1,0 +1,18 @@
+{
+    "titre": "Library",
+    "description": "Manage books, loans, and returns",
+    "ajouter": "Add book",
+    "rechercher": "Search book...",
+    "categorie": "Category",
+    "titre": "Title",
+    "auteur": "Author",
+    "exemplaires": "Copies",
+    "disponibilite": "Availability",
+    "localisation": "Location",
+    "preter": "Lend",
+    "retourner": "Return",
+    "totalOuvrages": "Total books",
+    "disponibles": "Available",
+    "pretsEnCours": "Active loans",
+    "retards": "Overdue"
+}

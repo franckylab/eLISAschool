@@ -1,0 +1,19 @@
+{
+    "titre": "Santé",
+    "description": "Gérer les visites infirmerie et dossiers médicaux",
+    "enregistrer": "Enregistrer visite",
+    "rechercher": "Rechercher une visite...",
+    "eleve": "Élève",
+    "date": "Date",
+    "motif": "Motif",
+    "soins": "Soins prodigués",
+    "orientation": "Orientation",
+    "infirmier": "Infirmier(e)",
+    "dossierMedical": "Dossier médical",
+    "orientations": {
+        "retour_classe": "Retour classe",
+        "renvoi_domicile": "Renvoi domicile",
+        "hopital": "Hôpital",
+        "autre": "Autre"
+    }
+}

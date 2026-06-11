@@ -20,7 +20,6 @@ import {
     ClipboardList,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ListLoading } from '@/components/feedback/ListLoading';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import { formatMontant, nombreFormate, formatPourcentage } from '@/lib/format-utils';

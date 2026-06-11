@@ -1,73 +1,38 @@
 {
     "titre": "Tableau de bord",
-    "bienvenue": "Bienvenue, {{nom}} !",
-    "resume": "Résumé de votre établissement",
+    "bienvenue": "Bienvenue, {{nom}}",
+    "sousTitre": "Vue d'ensemble de votre établissement",
+    "statistiques": {
+        "eleves": "Élèves",
+        "personnel": "Personnel",
+        "classes": "Classes",
+        "enseignants": "Enseignants"
+    },
+    "activitesRecentes": "Activités récentes",
+    "aucuneActivite": "Aucune activité récente",
     "widgets": {
         "effectifs": {
-            "titre": "Effectifs",
-            "eleves": "Élèves inscrits",
+            "eleves": "Élèves",
             "enseignants": "Enseignants",
-            "personnel": "Personnel administratif",
-            "classes": "Classes actives"
+            "classes": "Classes"
         },
         "finances": {
-            "titre": "Finances",
-            "recettes": "Recettes du mois",
-            "depenses": "Dépenses du mois",
-            "solde": "Solde",
-            "impayes": "Impayés",
-            "tauxRecouvrement": "Taux de recouvrement"
+            "recettes": "Recettes"
         },
         "academique": {
-            "titre": "Académique",
-            "moyenneGenerale": "Moyenne générale",
-            "tauxReussite": "Taux de réussite",
-            "absences": "Absences aujourd'hui",
-            "devoirs": "Devoirs en attente"
+            "moyenneGenerale": "Moyenne générale"
         },
         "communication": {
-            "titre": "Communication",
             "messagesNonLus": "Messages non lus",
-            "notifications": "Notifications",
-            "evenements": "Événements à venir",
-            "annonces": "Annonces récentes"
-        },
-        "bibliotheque": {
-            "titre": "Bibliothèque",
-            "livresDisponibles": "Livres disponibles",
-            "empruntsEnCours": "Emprunts en cours",
-            "retards": "Retours en retard"
-        },
-        "transport": {
-            "titre": "Transport",
-            "vehiculesActifs": "Véhicules actifs",
-            "trajetsAujourdhui": "Trajets aujourd'hui",
-            "incidents": "Incidents signalés"
+            "evenements": "Événements",
+            "notifications": "Notifications"
         }
-    },
-    "layout": {
-        "personnaliser": "Personnaliser le tableau de bord",
-        "ajouterWidget": "Ajouter un widget",
-        "supprimerWidget": "Supprimer le widget",
-        "deplacerWidget": "Déplacer le widget",
-        "redimensionner": "Redimensionner",
-        "reinitialiser": "Réinitialiser la disposition",
-        "confirmerReinitialiser": "Voulez-vous réinitialiser la disposition du tableau de bord ?",
-        "sauvegarde": "Disposition sauvegardée",
-        "colonnes": "Colonnes"
     },
     "raccourcis": {
         "titre": "Actions rapides",
         "nouvelEleve": "Nouvel élève",
         "nouvelleNote": "Nouvelle note",
         "nouveauPaiement": "Nouveau paiement",
-        "envoiMessage": "Envoyer un message",
-        "creerDevoir": "Créer un devoir",
-        "genererBulletin": "Générer un bulletin"
-    },
-    "activiteRecente": {
-        "titre": "Activité récente",
-        "aucune": "Aucune activité récente",
-        "voirTout": "Voir tout l'historique"
+        "envoiMessage": "Envoyer un message"
     }
 }

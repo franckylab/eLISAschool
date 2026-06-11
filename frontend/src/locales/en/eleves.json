@@ -1,0 +1,193 @@
+{
+  "titre": "Students",
+  "sousTitre": "Student management and academic records",
+  "aucunEleve": "No students found",
+  "chargement": "Loading students...",
+  
+  "formulaire": {
+    "titreCreation": "New student",
+    "titreModification": "Edit student",
+    "etape1": "Identity",
+    "etape2": "Contact details",
+    "etape3": "Parents",
+    "etape4": "Additional info",
+    "etape1Description": "Student's personal information",
+    "etape2Description": "Address and contact",
+    "etape3Description": "Parents or legal guardians",
+    "etape4Description": "Class, services and medical information",
+    
+    "nom": "Last name",
+    "prenom": "First name",
+    "dateNaissance": "Date of birth",
+    "lieuNaissance": "Place of birth",
+    "sexe": "Gender",
+    "masculin": "Male",
+    "feminin": "Female",
+    "nationalite": "Nationality",
+    "sousSysteme": "Educational subsystem",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    
+    "telephone": "Phone",
+    "email": "Email",
+    "adresse": "Address",
+    "ville": "City",
+    "quartier": "Neighborhood",
+    "photo": "Photo",
+    "photoPlaceholder": "Click to add a photo",
+    
+    "nomPere": "Father's name",
+    "professionPere": "Father's occupation",
+    "telephonePere": "Father's phone",
+    "emailPere": "Father's email",
+    "nomMere": "Mother's name",
+    "professionMere": "Mother's occupation",
+    "telephoneMere": "Mother's phone",
+    "emailMere": "Mother's email",
+    "nomTuteur": "Guardian's name",
+    "lienParente": "Relationship",
+    "telephoneTuteur": "Guardian's phone",
+    
+    "classe": "Class",
+    "anneeScolaire": "Academic year",
+    "transportScolaire": "School transport",
+    "cantine": "Canteen",
+    "boursier": "Scholarship student",
+    "redoublement": "Repeating year",
+    "groupeSanguin": "Blood type",
+    "allergies": "Allergies",
+    "allergiesPlaceholder": "Separate allergies with commas"
+  },
+
+  "statut": {
+    "actif": "Active",
+    "exclu": "Expelled",
+    "abandon": "Dropped out",
+    "diplome": "Graduated"
+  },
+
+  "onglets": {
+    "informations": "Information",
+    "scolarite": "Academic record",
+    "finances": "Finances",
+    "documents": "Documents",
+    "historique": "History"
+  },
+
+  "filtres": {
+    "recherche": "Search by name, first name or ID...",
+    "toutesClasses": "All classes",
+    "toutesAnnees": "All years",
+    "tousStatuts": "All statuses",
+    "tousSexes": "All",
+    "resetFiltres": "Reset filters"
+  },
+
+  "import": {
+    "titre": "Import students",
+    "description": "Import a CSV or Excel file to add multiple students in one operation",
+    "template": "Download CSV template",
+    "glisserFichier": "Drop a CSV or Excel file here",
+    "ouParcourir": "or browse your files",
+    "formatsAcceptes": "Accepted formats: CSV, XLS, XLSX",
+    "rapport": "Import report",
+    "importeAvecSucces": "{{count}} student(s) imported successfully",
+    "erreurs": "{{count}} error(s)",
+    "voirDetails": "View details"
+  },
+
+  "validation": {
+    "nomRequis": "Last name is required",
+    "nomLongueur": "Last name must be between 2 and 100 characters",
+    "prenomRequis": "First name is required",
+    "prenomLongueur": "First name must be between 2 and 100 characters",
+    "dateNaissanceRequise": "Date of birth is required",
+    "dateNaissanceFuture": "Date of birth cannot be in the future",
+    "lieuNaissanceRequis": "Place of birth is required",
+    "sexeRequis": "Gender is required",
+    "classeRequise": "Class is required",
+    "anneeScolaireRequise": "Academic year is required",
+    "emailInvalide": "Invalid email format",
+    "telephoneInvalide": "Invalid phone format"
+  },
+
+  "messages": {
+    "confirmationSuppression": "Are you sure you want to delete this student? This action cannot be undone.",
+    "eleveCree": "Student created successfully",
+    "eleveModifie": "Student updated successfully",
+    "eleveSupprime": "Student deleted successfully",
+    "exportReussi": "Export successful",
+    "importReussi": "Import successful",
+    "modificationNonSauvegardee": "There are unsaved changes. Do you really want to leave?",
+    "selectionnezEleves": "Please select at least one student"
+  },
+
+  "actions": {
+    "nouveau": "New student",
+    "modifier": "Edit",
+    "voir": "View",
+    "supprimer": "Delete",
+    "exporter": "Export",
+    "importer": "Import",
+    "selectionner": "Select",
+    "selectionnerTous": "Select all",
+    "deselectionner": "Deselect",
+    "actionMasse": "Bulk action",
+    "changerClasse": "Change class",
+    "exporterSelection": "Export selection"
+  },
+
+  "detail": {
+    "titre": "Student profile",
+    "retourListe": "Back to list",
+    "matricule": "Student ID",
+    "neLe": "Born on",
+    "a": "in",
+    "age": "years old",
+    
+    "sectionIdentite": "Identity",
+    "sectionContact": "Contact details",
+    "sectionPere": "Father",
+    "sectionMere": "Mother",
+    "sectionTuteur": "Legal guardian",
+    "sectionServices": "Services",
+    "sectionMedical": "Medical information",
+    
+    "profession": "Occupation",
+    "nonDefini": "Not defined",
+    "non": "No",
+    "oui": "Yes",
+    
+    "scolariteResume": "Academic summary",
+    "moyenneGenerale": "General average",
+    "nombreNotes": "Grades",
+    "nombreAbsences": "Absences",
+    "nombreRetards": "Late arrivals",
+    
+    "financesResume": "Financial summary",
+    "totalFactures": "Total invoices",
+    "totalPaye": "Total paid",
+    "restePayer": "Remaining balance",
+    "statutPaiement": "Status",
+    "aJour": "Up to date",
+    "enRetard": "Overdue",
+    
+    "aucunDocument": "No supporting documents",
+    "ajouterDocument": "Add a document",
+    "typeDocument": "Document type",
+    "dateUpload": "Upload date",
+    "telecharger": "Download",
+    
+    "aucunEvenement": "No events in history",
+    "eleveCreeLe": "Student created on"
+  },
+
+  "permissions": {
+    "voirEleves": "View students",
+    "creerEleve": "Create a student",
+    "modifierEleve": "Edit a student",
+    "supprimerEleve": "Delete a student",
+    "exporterEleves": "Export students",
+    "importerEleves": "Import students"
+  }
+}

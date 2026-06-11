@@ -1,0 +1,22 @@
+{
+    "titre": "Absences",
+    "description": "Gérer les absences, retards et départs anticipés",
+    "signaler": "Signaler absence",
+    "rechercher": "Rechercher une absence...",
+    "type": "Type",
+    "date": "Date",
+    "motif": "Motif",
+    "statut": "Statut",
+    "justifier": "Justifier",
+    "signalePar": "Signalé par",
+    "types": {
+        "absence": "Absence",
+        "retard": "Retard",
+        "departure_anticipe": "Départ anticipé"
+    },
+    "statuts": {
+        "non_justifiee": "Non justifiée",
+        "justifiee": "Justifiée",
+        "en_attente": "En attente"
+    }
+}

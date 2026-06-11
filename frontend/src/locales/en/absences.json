@@ -1,0 +1,22 @@
+{
+    "titre": "Absences",
+    "description": "Manage absences, late arrivals, and early departures",
+    "signaler": "Report absence",
+    "rechercher": "Search absence...",
+    "type": "Type",
+    "date": "Date",
+    "motif": "Reason",
+    "statut": "Status",
+    "justifier": "Justify",
+    "signalePar": "Reported by",
+    "types": {
+        "absence": "Absence",
+        "retard": "Late arrival",
+        "departure_anticipe": "Early departure"
+    },
+    "statuts": {
+        "non_justifiee": "Unjustified",
+        "justifiee": "Justified",
+        "en_attente": "Pending"
+    }
+}

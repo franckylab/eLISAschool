@@ -1,0 +1,13 @@
+{
+    "titre": "Timetables",
+    "description": "Manage time slots, rooms, and teachers",
+    "ajouter": "Add time slot",
+    "jour": "Day",
+    "horaire": "Schedule",
+    "matiere": "Subject",
+    "enseignant": "Teacher",
+    "salle": "Room",
+    "conflits": "Conflicts detected",
+    "heuresSemaine": "Hours/week",
+    "tauxOccupation": "Occupancy rate"
+}

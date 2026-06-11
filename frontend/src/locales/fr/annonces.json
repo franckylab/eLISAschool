@@ -1,0 +1,28 @@
+{
+    "titre": "Annonces",
+    "description": "Gérer les publications et communications de l'établissement",
+    "creer": "Nouvelle annonce",
+    "rechercher": "Rechercher une annonce...",
+    "categorie": "Catégorie",
+    "priorite": "Priorité",
+    "auteur": "Auteur",
+    "datePublication": "Date publication",
+    "dateExpiration": "Date expiration",
+    "statut": "Statut",
+    "vues": "Vues",
+    "actif": "Active",
+    "inactif": "Inactive",
+    "categories": {
+        "information": "Information",
+        "evenement": "Événement",
+        "urgent": "Urgent",
+        "rappel": "Rappel",
+        "autre": "Autre"
+    },
+    "priorites": {
+        "basse": "Basse",
+        "normale": "Normale",
+        "haute": "Haute",
+        "critique": "Critique"
+    }
+}

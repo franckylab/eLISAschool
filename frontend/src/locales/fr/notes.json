@@ -1,0 +1,15 @@
+{
+    "titre": "Notes",
+    "nouvelleNote": "Nouvelle note",
+    "saisieMasse": "Saisie en masse",
+    "eleve": "Élève",
+    "matiere": "Matière",
+    "valeur": "Note",
+    "coefficient": "Coefficient",
+    "type": "Type",
+    "composition": "Composition",
+    "interrogation": "Interrogation",
+    "exercice": "Exercice",
+    "projet": "Projet",
+    "enseignant": "Enseignant"
+}

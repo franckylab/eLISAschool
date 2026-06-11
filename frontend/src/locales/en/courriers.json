@@ -1,0 +1,16 @@
+{
+    "titre": "Mail",
+    "description": "Manage incoming, outgoing, and internal mail",
+    "creer": "New mail",
+    "rechercher": "Search mail...",
+    "type": "Type",
+    "objet": "Subject",
+    "priorite": "Priority",
+    "date": "Date",
+    "destinataire": "Recipient",
+    "statut": "Status",
+    "totalCourriers": "Total mail",
+    "nonLus": "Unread",
+    "traites": "Processed",
+    "urgents": "Urgent"
+}

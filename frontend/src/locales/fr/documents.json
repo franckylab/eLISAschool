@@ -1,0 +1,20 @@
+{
+    "titre": "Documents",
+    "description": "Gérer les documents et fichiers de l'établissement",
+    "uploader": "Uploader document",
+    "rechercher": "Rechercher un document...",
+    "categorie": "Catégorie",
+    "taille": "Taille",
+    "telechargements": "Téléchargements",
+    "version": "Version",
+    "totalDocuments": "Total documents",
+    "tailleTotale": "Taille totale",
+    "categories": {
+        "pedagogique": "Pédagogique",
+        "administratif": "Administratif",
+        "financier": "Financier",
+        "medical": "Médical",
+        "personnel": "Personnel",
+        "autre": "Autre"
+    }
+}

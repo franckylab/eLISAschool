@@ -1,0 +1,181 @@
+{
+    "sections": {
+        "securite": {
+            "titre": "Security",
+            "description": "Configure application security settings to protect data and access",
+            "authentification": {
+                "titre": "Authentication & Sessions",
+                "description": "Manage session duration and login policies",
+                "session_duration": {
+                    "label": "Session Duration",
+                    "hint": "Time after which the user must log in again",
+                    "options": {
+                        "15": "15 minutes",
+                        "30": "30 minutes",
+                        "60": "1 hour",
+                        "120": "2 hours",
+                        "240": "4 hours",
+                        "480": "8 hours",
+                        "1440": "24 hours"
+                    }
+                },
+                "max_login_attempts": {
+                    "label": "Maximum Login Attempts",
+                    "hint": "Number of failures allowed before account lockout",
+                    "erreurMinMax": "Between {min} and {max} attempts"
+                },
+                "lockout_duration": {
+                    "label": "Lockout Duration",
+                    "hint": "Time the account is locked after failures",
+                    "options": {
+                        "5": "5 minutes",
+                        "15": "15 minutes",
+                        "30": "30 minutes",
+                        "60": "1 hour",
+                        "1440": "24 hours"
+                    }
+                },
+                "require_2fa": {
+                    "label": "Require 2FA Authentication",
+                    "hint": "Require a verification code in addition to password"
+                }
+            },
+            "motsDePasse": {
+                "titre": "Password Policy",
+                "description": "Define password complexity and validity requirements",
+                "password_min_length": {
+                    "label": "Minimum Length",
+                    "hint": "Minimum number of characters required",
+                    "erreurMinMax": "Between {min} and {max} characters"
+                },
+                "password_require_uppercase": {
+                    "label": "Require Uppercase",
+                    "hint": "At least one uppercase letter (A-Z)"
+                },
+                "password_require_lowercase": {
+                    "label": "Require Lowercase",
+                    "hint": "At least one lowercase letter (a-z)"
+                },
+                "password_require_number": {
+                    "label": "Require Number",
+                    "hint": "At least one digit (0-9)"
+                },
+                "password_require_special": {
+                    "label": "Require Special Character",
+                    "hint": "At least one special character (!@#$%^&*)"
+                },
+                "password_history_count": {
+                    "label": "Password History",
+                    "hint": "Number of old passwords retained (0 = disabled)",
+                    "erreurMinMax": "Between {min} and {max}"
+                },
+                "password_expiry_days": {
+                    "label": "Password Expiration",
+                    "hint": "Time before password expires",
+                    "options": {
+                        "0": "Never",
+                        "30": "30 days",
+                        "60": "60 days",
+                        "90": "90 days",
+                        "180": "6 months",
+                        "365": "1 year"
+                    }
+                }
+            },
+            "avancee": {
+                "titre": "Advanced Security",
+                "description": "Additional security settings to enhance protection",
+                "require_email_verification": {
+                    "label": "Require Email Verification",
+                    "hint": "Users must verify their email before logging in"
+                },
+                "allow_self_registration": {
+                    "label": "Allow Self-Registration",
+                    "hint": "Allow users to create their own account"
+                },
+                "inactivity_timeout": {
+                    "label": "Inactivity Timeout",
+                    "hint": "Automatic logout after this period of inactivity (minutes)",
+                    "erreurMinMax": "Between {min} and {max} minutes"
+                },
+                "ip_whitelist": {
+                    "label": "IP Whitelist",
+                    "hint": "Allowed IP addresses (comma-separated, empty = all allowed)",
+                    "placeholder": "192.168.1.1, 10.0.0.1, ..."
+                },
+                "log_sensitive_actions": {
+                    "label": "Log Sensitive Actions",
+                    "hint": "Record all sensitive actions in the audit trail"
+                }
+            },
+            "protection": {
+                "titre": "Protection & Monitoring",
+                "description": "Protection against attacks and security monitoring",
+                "brute_force_protection": {
+                    "label": "Brute Force Protection",
+                    "hint": "Block mass login attempts"
+                },
+                "rate_limiting": {
+                    "label": "Rate Limiting",
+                    "hint": "Control the number of requests per minute",
+                    "options": {
+                        "low": "Low (100 req/min)",
+                        "medium": "Medium (50 req/min)",
+                        "high": "High (20 req/min)"
+                    }
+                },
+                "security_email_alerts": {
+                    "label": "Security Email Alerts",
+                    "hint": "Send alerts for critical security events"
+                },
+                "suspicious_activity_notifications": {
+                    "label": "Suspicious Activity Notifications",
+                    "hint": "Notify users of suspicious activity on their account"
+                }
+            },
+            "actions": {
+                "titre": "Security Actions",
+                "description": "Immediate actions to enhance application security",
+                "deconnecterSessions": {
+                    "titre": "Disconnect All Sessions",
+                    "description": "Force logout of all currently logged in users",
+                    "confirmation": "Are you sure you want to disconnect all users? This action is irreversible.",
+                    "succes": "All sessions have been invalidated successfully"
+                },
+                "resetEchecs": {
+                    "titre": "Reset Failure Counters",
+                    "description": "Reset all failed login attempt counters to zero",
+                    "confirmation": "Are you sure you want to reset all failure counters?",
+                    "succes": "Failure counters have been reset"
+                },
+                "forcePasswordReset": {
+                    "titre": "Force Password Change",
+                    "description": "Require all users to change their password on next login",
+                    "confirmation": "Are you sure you want to force password change for all users? This action is irreversible.",
+                    "succes": "Password change has been forced for all users"
+                }
+            }
+        }
+    },
+    "boutons": {
+        "enregistrer": "Save Changes",
+        "reinitialiser": "Reset",
+        "annuler": "Cancel",
+        "confirmer": "Confirm",
+        "executer": "Execute"
+    },
+    "messages": {
+        "modificationsNonEnregistrees": "{count} unsaved modification(s)",
+        "sauvegardeSucces": "Parameter(s) saved successfully",
+        "sauvegardeErreur": "Error saving parameters",
+        "chargementErreur": "Unable to load security settings",
+        "aucuneModification": "No changes to save"
+    },
+    "score": {
+        "titre": "Security Score",
+        "faible": "Low",
+        "moyen": "Medium",
+        "fort": "Strong",
+        "excellent": "Excellent"
+    }
+}

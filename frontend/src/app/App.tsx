@@ -10,6 +10,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { useThemeStore } from '@/stores/theme.store';
 import { routeTree } from '@/app/route-tree.gen';
+import { DebugPermissions } from '@/components/debug/DebugPermissions';
 
 // Créer le router
 const router = createRouter({
@@ -35,6 +36,8 @@ export function App() {
     return (
         <ErrorBoundary>
             <RouterProvider router={router} />
+            {/* Debug Panel - uniquement en développement */}
+            {import.meta.env.DEV && <DebugPermissions />}
         </ErrorBoundary>
     );
 }

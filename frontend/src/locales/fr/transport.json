@@ -1,0 +1,11 @@
+{
+    "titre": "Transport",
+    "nouvelleInscription": "Nouvelle inscription",
+    "eleve": "Élève",
+    "ligne": "Ligne",
+    "trajet": "Trajet",
+    "pointMontee": "Point de montée",
+    "pointDescente": "Point de descente",
+    "actif": "Actif",
+    "inactif": "Inactif"
+}

@@ -1,0 +1,30 @@
+{
+    "titre": "Finances",
+    "description": "Manage school fees and payments",
+    "enregistrer": "Record payment",
+    "rechercher": "Search payment...",
+    "eleve": "Student",
+    "frais": "Fee",
+    "montant": "Amount",
+    "statut": "Status",
+    "moyenPaiement": "Payment method",
+    "date": "Date",
+    "reference": "Reference",
+    "totalEncaisse": "Total collected",
+    "enAttente": "Pending",
+    "totalPaiements": "Payments",
+    "tauxCollecte": "Collection rate",
+    "statuts": {
+        "effectue": "Completed",
+        "partiel": "Partial",
+        "en_attente": "Pending",
+        "annule": "Cancelled"
+    },
+    "moyens": {
+        "especes": "Cash",
+        "cheque": "Check",
+        "virement": "Transfer",
+        "mobile": "Mobile",
+        "autre": "Other"
+    }
+}

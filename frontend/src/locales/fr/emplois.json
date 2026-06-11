@@ -1,0 +1,13 @@
+{
+    "titre": "Emplois du Temps",
+    "description": "Gérer les créneaux horaires, salles et enseignants",
+    "ajouter": "Ajouter créneau",
+    "jour": "Jour",
+    "horaire": "Horaire",
+    "matiere": "Matière",
+    "enseignant": "Enseignant",
+    "salle": "Salle",
+    "conflits": "Conflits détectés",
+    "heuresSemaine": "Heures/semaine",
+    "tauxOccupation": "Taux occupation"
+}

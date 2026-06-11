@@ -37,6 +37,9 @@ export enum Role {
     /** Responsable transport */
     RESPONSABLE_TRANSPORT = 'RESPONSABLE_TRANSPORT',
 
+    /** Responsable infrastructure (parking, maintenance, sécurité) */
+    RESPONSABLE_INFRASTRUCTURE = 'RESPONSABLE_INFRASTRUCTURE',
+
     /** Parent d'élève */
     PARENT = 'PARENT',
 
@@ -415,6 +418,24 @@ export enum Permission {
     TRANSPORT_INSCRIPTIONS_VIEW = 'transport:inscriptions:view',
     TRANSPORT_PRESENCES_ENREGISTRER = 'transport:presences:enregistrer',
     TRANSPORT_PRESENCES_VIEW = 'transport:presences:view',
+
+    // ==================================
+    // PARKING
+    // ==================================
+    PARKING_VIEW = 'parking:view',
+    PARKING_MANAGE = 'parking:manage',
+    PARKING_PLACES_VIEW = 'parking:places:view',
+    PARKING_PLACES_CREATE = 'parking:places:create',
+    PARKING_PLACES_EDIT = 'parking:places:edit',
+    PARKING_PLACES_DELETE = 'parking:places:delete',
+    PARKING_VEHICULES_VIEW = 'parking:vehicules:view',
+    PARKING_VEHICULES_CREATE = 'parking:vehicules:create',
+    PARKING_VEHICULES_EDIT = 'parking:vehicules:edit',
+    PARKING_VEHICULES_DELETE = 'parking:vehicules:delete',
+    PARKING_ABONNEMENTS_VIEW = 'parking:abonnements:view',
+    PARKING_ABONNEMENTS_CREATE = 'parking:abonnements:create',
+    PARKING_ABONNEMENTS_EDIT = 'parking:abonnements:edit',
+    PARKING_STATISTIQUES_VIEW = 'parking:statistiques:view',
 
     // ==================================
     // MATÉRIEL & CARTES
@@ -988,6 +1009,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Validation permissions
         Permission.VALIDATION_TRANSPORT_LEVEL2, Permission.VALIDATION_TRANSPORT_LEVEL3,
         Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    [Role.RESPONSABLE_INFRASTRUCTURE]: [
+        Permission.PARKING_VIEW, Permission.PARKING_MANAGE,
+        Permission.PARKING_PLACES_VIEW, Permission.PARKING_PLACES_CREATE,
+        Permission.PARKING_PLACES_EDIT, Permission.PARKING_PLACES_DELETE,
+        Permission.PARKING_VEHICULES_VIEW, Permission.PARKING_VEHICULES_CREATE,
+        Permission.PARKING_VEHICULES_EDIT, Permission.PARKING_VEHICULES_DELETE,
+        Permission.PARKING_ABONNEMENTS_VIEW, Permission.PARKING_ABONNEMENTS_CREATE,
+        Permission.PARKING_ABONNEMENTS_EDIT,
+        Permission.PARKING_STATISTIQUES_VIEW,
+        Permission.MESSAGES_SEND,
     ],
 
     [Role.PARENT]: [

@@ -1,0 +1,12 @@
+{
+    "titre": "Messagerie",
+    "nouveauMessage": "Nouveau message",
+    "expediteur": "Expéditeur",
+    "destinataire": "Destinataire",
+    "sujet": "Sujet",
+    "contenu": "Contenu",
+    "lu": "Lu",
+    "nonLu": "Non lu",
+    "envoyer": "Envoyer",
+    "repondre": "Répondre"
+}

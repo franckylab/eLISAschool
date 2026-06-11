@@ -1,0 +1,1 @@
+export * from './recrutement.entity';

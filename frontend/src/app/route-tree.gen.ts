@@ -15,9 +15,33 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthVieScolaireAvanceeRouteImport } from './routes/_auth.vie-scolaire-avancee'
+import { Route as AuthUtilisateursRouteImport } from './routes/_auth.utilisateurs'
+import { Route as AuthPersonnelRouteImport } from './routes/_auth.personnel'
+import { Route as AuthPeriodesRouteImport } from './routes/_auth.periodes'
+import { Route as AuthNiveauxRouteImport } from './routes/_auth.niveaux'
+import { Route as AuthModulesRhRouteImport } from './routes/_auth.modules-rh'
+import { Route as AuthModulesReportingRouteImport } from './routes/_auth.modules-reporting'
+import { Route as AuthModulesPedagogiquesRouteImport } from './routes/_auth.modules-pedagogiques'
+import { Route as AuthModulesOrganisationnelsRouteImport } from './routes/_auth.modules-organisationnels'
+import { Route as AuthModulesComplementairesRouteImport } from './routes/_auth.modules-complementaires'
+import { Route as AuthModulesAdministratifsRouteImport } from './routes/_auth.modules-administratifs'
+import { Route as AuthMatieresRouteImport } from './routes/_auth.matieres'
+import { Route as AuthElevesRouteImport } from './routes/_auth.eleves'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
+import { Route as AuthCyclesRouteImport } from './routes/_auth.cycles'
 import { Route as AuthConfigurationRouteImport } from './routes/_auth/configuration'
+import { Route as AuthClassesRouteImport } from './routes/_auth.classes'
 import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
+import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
+import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
+import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
+import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
+import { Route as AuthElevesIdRouteImport } from './routes/_auth.eleves.$id'
+import { Route as AuthClassesIdRouteImport } from './routes/_auth.classes.$id'
+import { Route as AuthAnneesScolairesIdRouteImport } from './routes/_auth.annees-scolaires.$id'
+import { Route as AuthAdminRolesRouteImport } from './routes/_auth.admin.roles'
+import { Route as AuthAdminPermissionsRouteImport } from './routes/_auth.admin.permissions'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -48,9 +72,82 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthVieScolaireAvanceeRoute = AuthVieScolaireAvanceeRouteImport.update({
+  id: '/vie-scolaire-avancee',
+  path: '/vie-scolaire-avancee',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthUtilisateursRoute = AuthUtilisateursRouteImport.update({
+  id: '/utilisateurs',
+  path: '/utilisateurs',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPersonnelRoute = AuthPersonnelRouteImport.update({
+  id: '/personnel',
+  path: '/personnel',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPeriodesRoute = AuthPeriodesRouteImport.update({
+  id: '/periodes',
+  path: '/periodes',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthNiveauxRoute = AuthNiveauxRouteImport.update({
+  id: '/niveaux',
+  path: '/niveaux',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthModulesRhRoute = AuthModulesRhRouteImport.update({
+  id: '/modules-rh',
+  path: '/modules-rh',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthModulesReportingRoute = AuthModulesReportingRouteImport.update({
+  id: '/modules-reporting',
+  path: '/modules-reporting',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthModulesPedagogiquesRoute = AuthModulesPedagogiquesRouteImport.update({
+  id: '/modules-pedagogiques',
+  path: '/modules-pedagogiques',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthModulesOrganisationnelsRoute =
+  AuthModulesOrganisationnelsRouteImport.update({
+    id: '/modules-organisationnels',
+    path: '/modules-organisationnels',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthModulesComplementairesRoute =
+  AuthModulesComplementairesRouteImport.update({
+    id: '/modules-complementaires',
+    path: '/modules-complementaires',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthModulesAdministratifsRoute =
+  AuthModulesAdministratifsRouteImport.update({
+    id: '/modules-administratifs',
+    path: '/modules-administratifs',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthMatieresRoute = AuthMatieresRouteImport.update({
+  id: '/matieres',
+  path: '/matieres',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthElevesRoute = AuthElevesRouteImport.update({
+  id: '/eleves',
+  path: '/eleves',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthDashboardRoute = AuthDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCyclesRoute = AuthCyclesRouteImport.update({
+  id: '/cycles',
+  path: '/cycles',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthConfigurationRoute = AuthConfigurationRouteImport.update({
@@ -58,9 +155,59 @@ const AuthConfigurationRoute = AuthConfigurationRouteImport.update({
   path: '/configuration',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthClassesRoute = AuthClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
   id: '/change-password',
   path: '/change-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAnneesScolairesRoute = AuthAnneesScolairesRouteImport.update({
+  id: '/annees-scolaires',
+  path: '/annees-scolaires',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthUtilisateursIdRoute = AuthUtilisateursIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthUtilisateursRoute,
+} as any)
+const AuthPersonnelIdRoute = AuthPersonnelIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthPersonnelRoute,
+} as any)
+const AuthMatieresIdRoute = AuthMatieresIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthMatieresRoute,
+} as any)
+const AuthElevesIdRoute = AuthElevesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthElevesRoute,
+} as any)
+const AuthClassesIdRoute = AuthClassesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthClassesRoute,
+} as any)
+const AuthAnneesScolairesIdRoute = AuthAnneesScolairesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthAnneesScolairesRoute,
+} as any)
+const AuthAdminRolesRoute = AuthAdminRolesRouteImport.update({
+  id: '/admin/roles',
+  path: '/admin/roles',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAdminPermissionsRoute = AuthAdminPermissionsRouteImport.update({
+  id: '/admin/permissions',
+  path: '/admin/permissions',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -70,9 +217,33 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/change-password': typeof AuthChangePasswordRoute
+  '/classes': typeof AuthClassesRouteWithChildren
   '/configuration': typeof AuthConfigurationRoute
+  '/cycles': typeof AuthCyclesRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/eleves': typeof AuthElevesRouteWithChildren
+  '/matieres': typeof AuthMatieresRouteWithChildren
+  '/modules-administratifs': typeof AuthModulesAdministratifsRoute
+  '/modules-complementaires': typeof AuthModulesComplementairesRoute
+  '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
+  '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
+  '/modules-reporting': typeof AuthModulesReportingRoute
+  '/modules-rh': typeof AuthModulesRhRoute
+  '/niveaux': typeof AuthNiveauxRoute
+  '/periodes': typeof AuthPeriodesRoute
+  '/personnel': typeof AuthPersonnelRouteWithChildren
+  '/utilisateurs': typeof AuthUtilisateursRouteWithChildren
+  '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
+  '/admin/permissions': typeof AuthAdminPermissionsRoute
+  '/admin/roles': typeof AuthAdminRolesRoute
+  '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/classes/$id': typeof AuthClassesIdRoute
+  '/eleves/$id': typeof AuthElevesIdRoute
+  '/matieres/$id': typeof AuthMatieresIdRoute
+  '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -80,9 +251,33 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/change-password': typeof AuthChangePasswordRoute
+  '/classes': typeof AuthClassesRouteWithChildren
   '/configuration': typeof AuthConfigurationRoute
+  '/cycles': typeof AuthCyclesRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/eleves': typeof AuthElevesRouteWithChildren
+  '/matieres': typeof AuthMatieresRouteWithChildren
+  '/modules-administratifs': typeof AuthModulesAdministratifsRoute
+  '/modules-complementaires': typeof AuthModulesComplementairesRoute
+  '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
+  '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
+  '/modules-reporting': typeof AuthModulesReportingRoute
+  '/modules-rh': typeof AuthModulesRhRoute
+  '/niveaux': typeof AuthNiveauxRoute
+  '/periodes': typeof AuthPeriodesRoute
+  '/personnel': typeof AuthPersonnelRouteWithChildren
+  '/utilisateurs': typeof AuthUtilisateursRouteWithChildren
+  '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
+  '/admin/permissions': typeof AuthAdminPermissionsRoute
+  '/admin/roles': typeof AuthAdminRolesRoute
+  '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/classes/$id': typeof AuthClassesIdRoute
+  '/eleves/$id': typeof AuthElevesIdRoute
+  '/matieres/$id': typeof AuthMatieresIdRoute
+  '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,9 +287,33 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/_auth/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/_auth/change-password': typeof AuthChangePasswordRoute
+  '/_auth/classes': typeof AuthClassesRouteWithChildren
   '/_auth/configuration': typeof AuthConfigurationRoute
+  '/_auth/cycles': typeof AuthCyclesRoute
   '/_auth/dashboard': typeof AuthDashboardRoute
+  '/_auth/eleves': typeof AuthElevesRouteWithChildren
+  '/_auth/matieres': typeof AuthMatieresRouteWithChildren
+  '/_auth/modules-administratifs': typeof AuthModulesAdministratifsRoute
+  '/_auth/modules-complementaires': typeof AuthModulesComplementairesRoute
+  '/_auth/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
+  '/_auth/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
+  '/_auth/modules-reporting': typeof AuthModulesReportingRoute
+  '/_auth/modules-rh': typeof AuthModulesRhRoute
+  '/_auth/niveaux': typeof AuthNiveauxRoute
+  '/_auth/periodes': typeof AuthPeriodesRoute
+  '/_auth/personnel': typeof AuthPersonnelRouteWithChildren
+  '/_auth/utilisateurs': typeof AuthUtilisateursRouteWithChildren
+  '/_auth/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
+  '/_auth/admin/permissions': typeof AuthAdminPermissionsRoute
+  '/_auth/admin/roles': typeof AuthAdminRolesRoute
+  '/_auth/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/_auth/classes/$id': typeof AuthClassesIdRoute
+  '/_auth/eleves/$id': typeof AuthElevesIdRoute
+  '/_auth/matieres/$id': typeof AuthMatieresIdRoute
+  '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
+  '/_auth/utilisateurs/$id': typeof AuthUtilisateursIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,9 +323,33 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/annees-scolaires'
     | '/change-password'
+    | '/classes'
     | '/configuration'
+    | '/cycles'
     | '/dashboard'
+    | '/eleves'
+    | '/matieres'
+    | '/modules-administratifs'
+    | '/modules-complementaires'
+    | '/modules-organisationnels'
+    | '/modules-pedagogiques'
+    | '/modules-reporting'
+    | '/modules-rh'
+    | '/niveaux'
+    | '/periodes'
+    | '/personnel'
+    | '/utilisateurs'
+    | '/vie-scolaire-avancee'
+    | '/admin/permissions'
+    | '/admin/roles'
+    | '/annees-scolaires/$id'
+    | '/classes/$id'
+    | '/eleves/$id'
+    | '/matieres/$id'
+    | '/personnel/$id'
+    | '/utilisateurs/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -114,9 +357,33 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/annees-scolaires'
     | '/change-password'
+    | '/classes'
     | '/configuration'
+    | '/cycles'
     | '/dashboard'
+    | '/eleves'
+    | '/matieres'
+    | '/modules-administratifs'
+    | '/modules-complementaires'
+    | '/modules-organisationnels'
+    | '/modules-pedagogiques'
+    | '/modules-reporting'
+    | '/modules-rh'
+    | '/niveaux'
+    | '/periodes'
+    | '/personnel'
+    | '/utilisateurs'
+    | '/vie-scolaire-avancee'
+    | '/admin/permissions'
+    | '/admin/roles'
+    | '/annees-scolaires/$id'
+    | '/classes/$id'
+    | '/eleves/$id'
+    | '/matieres/$id'
+    | '/personnel/$id'
+    | '/utilisateurs/$id'
   id:
     | '__root__'
     | '/'
@@ -125,9 +392,33 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/_auth/annees-scolaires'
     | '/_auth/change-password'
+    | '/_auth/classes'
     | '/_auth/configuration'
+    | '/_auth/cycles'
     | '/_auth/dashboard'
+    | '/_auth/eleves'
+    | '/_auth/matieres'
+    | '/_auth/modules-administratifs'
+    | '/_auth/modules-complementaires'
+    | '/_auth/modules-organisationnels'
+    | '/_auth/modules-pedagogiques'
+    | '/_auth/modules-reporting'
+    | '/_auth/modules-rh'
+    | '/_auth/niveaux'
+    | '/_auth/periodes'
+    | '/_auth/personnel'
+    | '/_auth/utilisateurs'
+    | '/_auth/vie-scolaire-avancee'
+    | '/_auth/admin/permissions'
+    | '/_auth/admin/roles'
+    | '/_auth/annees-scolaires/$id'
+    | '/_auth/classes/$id'
+    | '/_auth/eleves/$id'
+    | '/_auth/matieres/$id'
+    | '/_auth/personnel/$id'
+    | '/_auth/utilisateurs/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,11 +474,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/vie-scolaire-avancee': {
+      id: '/_auth/vie-scolaire-avancee'
+      path: '/vie-scolaire-avancee'
+      fullPath: '/vie-scolaire-avancee'
+      preLoaderRoute: typeof AuthVieScolaireAvanceeRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/utilisateurs': {
+      id: '/_auth/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/utilisateurs'
+      preLoaderRoute: typeof AuthUtilisateursRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/personnel': {
+      id: '/_auth/personnel'
+      path: '/personnel'
+      fullPath: '/personnel'
+      preLoaderRoute: typeof AuthPersonnelRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/periodes': {
+      id: '/_auth/periodes'
+      path: '/periodes'
+      fullPath: '/periodes'
+      preLoaderRoute: typeof AuthPeriodesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/niveaux': {
+      id: '/_auth/niveaux'
+      path: '/niveaux'
+      fullPath: '/niveaux'
+      preLoaderRoute: typeof AuthNiveauxRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-rh': {
+      id: '/_auth/modules-rh'
+      path: '/modules-rh'
+      fullPath: '/modules-rh'
+      preLoaderRoute: typeof AuthModulesRhRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-reporting': {
+      id: '/_auth/modules-reporting'
+      path: '/modules-reporting'
+      fullPath: '/modules-reporting'
+      preLoaderRoute: typeof AuthModulesReportingRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-pedagogiques': {
+      id: '/_auth/modules-pedagogiques'
+      path: '/modules-pedagogiques'
+      fullPath: '/modules-pedagogiques'
+      preLoaderRoute: typeof AuthModulesPedagogiquesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-organisationnels': {
+      id: '/_auth/modules-organisationnels'
+      path: '/modules-organisationnels'
+      fullPath: '/modules-organisationnels'
+      preLoaderRoute: typeof AuthModulesOrganisationnelsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-complementaires': {
+      id: '/_auth/modules-complementaires'
+      path: '/modules-complementaires'
+      fullPath: '/modules-complementaires'
+      preLoaderRoute: typeof AuthModulesComplementairesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/modules-administratifs': {
+      id: '/_auth/modules-administratifs'
+      path: '/modules-administratifs'
+      fullPath: '/modules-administratifs'
+      preLoaderRoute: typeof AuthModulesAdministratifsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/matieres': {
+      id: '/_auth/matieres'
+      path: '/matieres'
+      fullPath: '/matieres'
+      preLoaderRoute: typeof AuthMatieresRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/eleves': {
+      id: '/_auth/eleves'
+      path: '/eleves'
+      fullPath: '/eleves'
+      preLoaderRoute: typeof AuthElevesRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/dashboard': {
       id: '/_auth/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthDashboardRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/cycles': {
+      id: '/_auth/cycles'
+      path: '/cycles'
+      fullPath: '/cycles'
+      preLoaderRoute: typeof AuthCyclesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/configuration': {
@@ -197,6 +586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfigurationRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/classes': {
+      id: '/_auth/classes'
+      path: '/classes'
+      fullPath: '/classes'
+      preLoaderRoute: typeof AuthClassesRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/change-password': {
       id: '/_auth/change-password'
       path: '/change-password'
@@ -204,19 +600,188 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthChangePasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/annees-scolaires': {
+      id: '/_auth/annees-scolaires'
+      path: '/annees-scolaires'
+      fullPath: '/annees-scolaires'
+      preLoaderRoute: typeof AuthAnneesScolairesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/utilisateurs/$id': {
+      id: '/_auth/utilisateurs/$id'
+      path: '/$id'
+      fullPath: '/utilisateurs/$id'
+      preLoaderRoute: typeof AuthUtilisateursIdRouteImport
+      parentRoute: typeof AuthUtilisateursRoute
+    }
+    '/_auth/personnel/$id': {
+      id: '/_auth/personnel/$id'
+      path: '/$id'
+      fullPath: '/personnel/$id'
+      preLoaderRoute: typeof AuthPersonnelIdRouteImport
+      parentRoute: typeof AuthPersonnelRoute
+    }
+    '/_auth/matieres/$id': {
+      id: '/_auth/matieres/$id'
+      path: '/$id'
+      fullPath: '/matieres/$id'
+      preLoaderRoute: typeof AuthMatieresIdRouteImport
+      parentRoute: typeof AuthMatieresRoute
+    }
+    '/_auth/eleves/$id': {
+      id: '/_auth/eleves/$id'
+      path: '/$id'
+      fullPath: '/eleves/$id'
+      preLoaderRoute: typeof AuthElevesIdRouteImport
+      parentRoute: typeof AuthElevesRoute
+    }
+    '/_auth/classes/$id': {
+      id: '/_auth/classes/$id'
+      path: '/$id'
+      fullPath: '/classes/$id'
+      preLoaderRoute: typeof AuthClassesIdRouteImport
+      parentRoute: typeof AuthClassesRoute
+    }
+    '/_auth/annees-scolaires/$id': {
+      id: '/_auth/annees-scolaires/$id'
+      path: '/$id'
+      fullPath: '/annees-scolaires/$id'
+      preLoaderRoute: typeof AuthAnneesScolairesIdRouteImport
+      parentRoute: typeof AuthAnneesScolairesRoute
+    }
+    '/_auth/admin/roles': {
+      id: '/_auth/admin/roles'
+      path: '/admin/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AuthAdminRolesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/admin/permissions': {
+      id: '/_auth/admin/permissions'
+      path: '/admin/permissions'
+      fullPath: '/admin/permissions'
+      preLoaderRoute: typeof AuthAdminPermissionsRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
+interface AuthAnneesScolairesRouteChildren {
+  AuthAnneesScolairesIdRoute: typeof AuthAnneesScolairesIdRoute
+}
+
+const AuthAnneesScolairesRouteChildren: AuthAnneesScolairesRouteChildren = {
+  AuthAnneesScolairesIdRoute: AuthAnneesScolairesIdRoute,
+}
+
+const AuthAnneesScolairesRouteWithChildren =
+  AuthAnneesScolairesRoute._addFileChildren(AuthAnneesScolairesRouteChildren)
+
+interface AuthClassesRouteChildren {
+  AuthClassesIdRoute: typeof AuthClassesIdRoute
+}
+
+const AuthClassesRouteChildren: AuthClassesRouteChildren = {
+  AuthClassesIdRoute: AuthClassesIdRoute,
+}
+
+const AuthClassesRouteWithChildren = AuthClassesRoute._addFileChildren(
+  AuthClassesRouteChildren,
+)
+
+interface AuthElevesRouteChildren {
+  AuthElevesIdRoute: typeof AuthElevesIdRoute
+}
+
+const AuthElevesRouteChildren: AuthElevesRouteChildren = {
+  AuthElevesIdRoute: AuthElevesIdRoute,
+}
+
+const AuthElevesRouteWithChildren = AuthElevesRoute._addFileChildren(
+  AuthElevesRouteChildren,
+)
+
+interface AuthMatieresRouteChildren {
+  AuthMatieresIdRoute: typeof AuthMatieresIdRoute
+}
+
+const AuthMatieresRouteChildren: AuthMatieresRouteChildren = {
+  AuthMatieresIdRoute: AuthMatieresIdRoute,
+}
+
+const AuthMatieresRouteWithChildren = AuthMatieresRoute._addFileChildren(
+  AuthMatieresRouteChildren,
+)
+
+interface AuthPersonnelRouteChildren {
+  AuthPersonnelIdRoute: typeof AuthPersonnelIdRoute
+}
+
+const AuthPersonnelRouteChildren: AuthPersonnelRouteChildren = {
+  AuthPersonnelIdRoute: AuthPersonnelIdRoute,
+}
+
+const AuthPersonnelRouteWithChildren = AuthPersonnelRoute._addFileChildren(
+  AuthPersonnelRouteChildren,
+)
+
+interface AuthUtilisateursRouteChildren {
+  AuthUtilisateursIdRoute: typeof AuthUtilisateursIdRoute
+}
+
+const AuthUtilisateursRouteChildren: AuthUtilisateursRouteChildren = {
+  AuthUtilisateursIdRoute: AuthUtilisateursIdRoute,
+}
+
+const AuthUtilisateursRouteWithChildren =
+  AuthUtilisateursRoute._addFileChildren(AuthUtilisateursRouteChildren)
+
 interface AuthRouteChildren {
+  AuthAnneesScolairesRoute: typeof AuthAnneesScolairesRouteWithChildren
   AuthChangePasswordRoute: typeof AuthChangePasswordRoute
+  AuthClassesRoute: typeof AuthClassesRouteWithChildren
   AuthConfigurationRoute: typeof AuthConfigurationRoute
+  AuthCyclesRoute: typeof AuthCyclesRoute
   AuthDashboardRoute: typeof AuthDashboardRoute
+  AuthElevesRoute: typeof AuthElevesRouteWithChildren
+  AuthMatieresRoute: typeof AuthMatieresRouteWithChildren
+  AuthModulesAdministratifsRoute: typeof AuthModulesAdministratifsRoute
+  AuthModulesComplementairesRoute: typeof AuthModulesComplementairesRoute
+  AuthModulesOrganisationnelsRoute: typeof AuthModulesOrganisationnelsRoute
+  AuthModulesPedagogiquesRoute: typeof AuthModulesPedagogiquesRoute
+  AuthModulesReportingRoute: typeof AuthModulesReportingRoute
+  AuthModulesRhRoute: typeof AuthModulesRhRoute
+  AuthNiveauxRoute: typeof AuthNiveauxRoute
+  AuthPeriodesRoute: typeof AuthPeriodesRoute
+  AuthPersonnelRoute: typeof AuthPersonnelRouteWithChildren
+  AuthUtilisateursRoute: typeof AuthUtilisateursRouteWithChildren
+  AuthVieScolaireAvanceeRoute: typeof AuthVieScolaireAvanceeRoute
+  AuthAdminPermissionsRoute: typeof AuthAdminPermissionsRoute
+  AuthAdminRolesRoute: typeof AuthAdminRolesRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthAnneesScolairesRoute: AuthAnneesScolairesRouteWithChildren,
   AuthChangePasswordRoute: AuthChangePasswordRoute,
+  AuthClassesRoute: AuthClassesRouteWithChildren,
   AuthConfigurationRoute: AuthConfigurationRoute,
+  AuthCyclesRoute: AuthCyclesRoute,
   AuthDashboardRoute: AuthDashboardRoute,
+  AuthElevesRoute: AuthElevesRouteWithChildren,
+  AuthMatieresRoute: AuthMatieresRouteWithChildren,
+  AuthModulesAdministratifsRoute: AuthModulesAdministratifsRoute,
+  AuthModulesComplementairesRoute: AuthModulesComplementairesRoute,
+  AuthModulesOrganisationnelsRoute: AuthModulesOrganisationnelsRoute,
+  AuthModulesPedagogiquesRoute: AuthModulesPedagogiquesRoute,
+  AuthModulesReportingRoute: AuthModulesReportingRoute,
+  AuthModulesRhRoute: AuthModulesRhRoute,
+  AuthNiveauxRoute: AuthNiveauxRoute,
+  AuthPeriodesRoute: AuthPeriodesRoute,
+  AuthPersonnelRoute: AuthPersonnelRouteWithChildren,
+  AuthUtilisateursRoute: AuthUtilisateursRouteWithChildren,
+  AuthVieScolaireAvanceeRoute: AuthVieScolaireAvanceeRoute,
+  AuthAdminPermissionsRoute: AuthAdminPermissionsRoute,
+  AuthAdminRolesRoute: AuthAdminRolesRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

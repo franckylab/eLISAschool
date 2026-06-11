@@ -1,0 +1,20 @@
+{
+    "titre": "Documents",
+    "description": "Manage institution documents and files",
+    "uploader": "Upload document",
+    "rechercher": "Search document...",
+    "categorie": "Category",
+    "taille": "Size",
+    "telechargements": "Downloads",
+    "version": "Version",
+    "totalDocuments": "Total documents",
+    "tailleTotale": "Total size",
+    "categories": {
+        "pedagogique": "Pedagogical",
+        "administratif": "Administrative",
+        "financier": "Financial",
+        "medical": "Medical",
+        "personnel": "Personnel",
+        "autre": "Other"
+    }
+}

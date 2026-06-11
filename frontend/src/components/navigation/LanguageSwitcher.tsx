@@ -9,7 +9,7 @@ import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/cn';
 
 export function LanguageSwitcher() {
-    const { langue, changerLangue, isFR } = useLanguage();
+    const { changerLangue, isFR } = useLanguage();
 
     return (
         <button

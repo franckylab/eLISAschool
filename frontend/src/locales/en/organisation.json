@@ -1,0 +1,20 @@
+{
+    "titre": "Organization",
+    "description": "Manage groups and organizational structure",
+    "creer": "New group",
+    "rechercher": "Search group...",
+    "type": "Type",
+    "responsable": "Manager",
+    "membres": "Members",
+    "statut": "Status",
+    "actif": "Active",
+    "inactif": "Inactive",
+    "types": {
+        "pedagogique": "Pedagogical",
+        "administratif": "Administrative",
+        "activite": "Activity",
+        "autre": "Other"
+    },
+    "ajouterMembre": "Add member",
+    "modifier": "Edit"
+}

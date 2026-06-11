@@ -1,0 +1,23 @@
+{
+    "titre": "Staff",
+    "nouveauMembre": "New staff member",
+    "matricule": "ID Number",
+    "poste": "Position",
+    "departement": "Department",
+    "typeContrat": "Contract type",
+    "dateEntree": "Start date",
+    "specialite": "Specialty",
+    "qualification": "Qualification",
+    "typesContrats": {
+        "cdi": "Permanent",
+        "cdd": "Fixed-term",
+        "vacataire": "Temporary",
+        "stage": "Internship"
+    },
+    "statuts": {
+        "actif": "Active",
+        "inactif": "Inactive",
+        "en_conge": "On leave",
+        "demission": "Resigned"
+    }
+}

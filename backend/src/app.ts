@@ -69,6 +69,8 @@ import { groupesController } from '@modules/groupes-etablissements';
 import { requireModuleActive } from '@modules/configuration/middlewares/module-active.middleware';
 import { typesEnumController } from '@modules/types-enum';
 import { organisationController } from '@modules/organisation';
+import { recrutementController } from '@modules/recrutement';
+import { parkingController } from '@modules/parking';
 
 /**
  * Crée et configure l'application Express
@@ -252,6 +254,7 @@ export function createApp(): Application {
     app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
     app.use('/api/cantine', requireModuleActive('cantine'), cantineController);
     app.use('/api/transport', requireModuleActive('transport'), transportController);
+    app.use('/api/parking', requireModuleActive('parking'), parkingController);
     app.use('/api/materiel', requireModuleActive('materiel'), materielController);
     app.use('/api/finances', requireModuleActive('finances'), financesController);
 
@@ -259,6 +262,9 @@ export function createApp(): Application {
     app.use('/api/clubs', requireModuleActive('clubs'), clubsController);
     app.use('/api/gamification', requireModuleActive('gamification'), gamificationController);
     app.use('/api/cartes', requireModuleActive('cartes'), cartesController);
+
+    // Module RH & Recrutement
+    app.use('/api/recrutement', requireModuleActive('recrutement'), recrutementController);
 
     // Modules suivi (nouveau v2.0)
     app.use('/api/suivi-eleves', requireModuleActive('suivi-eleves'), suiviElevesController);

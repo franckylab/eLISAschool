@@ -1525,6 +1525,257 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
 ---
 
+## Workflow : Routing et Navigation (TanStack Router)
+
+### Principe Fondamental
+
+**TOUJOURS exposer correctement les routes et les liens** pour que chaque élément soit **accessible et navigable**. Un bouton ou une carte qui ne mène nulle part est une erreur UX.
+
+### Structure des Routes
+
+```typescript
+// app/routes/
+// File-based routing : chaque fichier .tsx devient une route
+
+__root.tsx              // Layout racine (Sidebar + Header + Outlet)
+index.tsx               // → / (redirect vers dashboard ou landing)
+dashboard.tsx           // → /dashboard
+_auth/                  // Layout auth (sans sidebar)
+    login.tsx           // → /login
+    forgot-password.tsx // → /forgot-password
+_eleves/
+    index.tsx           // → /eleves (liste)
+    $id.tsx             // → /eleves/:id (détail)
+    new.tsx             // → /eleves/new (création)
+```
+
+### Navigation avec `<Link>` et `useNavigate`
+
+```typescript
+import { Link, useNavigate } from '@tanstack/react-router';
+
+// ✅ LIEN STATIQUE
+<Link to="/eleves" className="...">Voir les élèves</Link>
+
+// ✅ LIEN DYNAMIQUE AVEC PARAMÈTRES
+<Link to="/eleves/$id" params={{ id: eleve.id }} className="...">
+    {eleve.nomComplet}
+</Link>
+
+// ✅ NAVIGATION PROGRAMMATIQUE
+const navigate = useNavigate();
+await navigate({ to: '/eleves/$id', params: { id: eleve.id } });
+
+// ✅ REDIRECTION APRÈS ACTION
+await navigate({ to: '/dashboard', replace: true });
+```
+
+### Règles pour les Boutons et Actions
+
+**TOUJOURS connecter les boutons à des routes ou actions** :
+
+```typescript
+// ❌ INCORRECT — Bouton sans action
+<button>Ajouter un élève</button>
+
+// ✅ CORRECT — Bouton avec Link
+<Link to="/eleves/new">
+    <button>Ajouter un élève</button>
+</Link>
+
+// ✅ CORRECT — Bouton avec navigate()
+<button onClick={() => navigate({ to: '/eleves/new' })}>
+    Ajouter un élève
+</button>
+```
+
+### Navigation dans les Tableaux
+
+**Chaque ligne d'un tableau doit être cliquable ou avoir des actions** :
+
+```typescript
+function EleveRow({ eleve }: { eleve: Eleve }) {
+    return (
+        <tr>
+            <td>
+                <Link to="/eleves/$id" params={{ id: eleve.id }}
+                    className="text-[var(--color-dominante)] hover:underline">
+                    {eleve.nomComplet}
+                </Link>
+            </td>
+            <td>{eleve.classe}</td>
+            <td>
+                <Link to="/notes/$eleveId" params={{ eleveId: eleve.id }}>
+                    Voir les notes
+                </Link>
+            </td>
+        </tr>
+    );
+}
+```
+
+### Menu Latéral (Sidebar)
+
+**Chaque élément du sidebar DOIT pointer vers une route valide** :
+
+```typescript
+const MENU_ITEMS = [
+    { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
+    { label: 'Élèves', icon: Users, to: '/eleves' },
+    { label: 'Notes', icon: ClipboardList, to: '/notes' },
+    // ... chaque module a sa route
+];
+
+{MENU_ITEMS.map(item => (
+    <Link key={item.to} to={item.to}
+        activeProps={{ className: 'bg-[var(--color-dominante)]/10' }}
+        className="flex items-center gap-3 px-4 py-2 rounded-lg">
+        <item.icon className="h-5 w-5" />
+        <span>{item.label}</span>
+    </Link>
+))}
+```
+
+### Fil d'Ariane (Breadcrumbs)
+
+**TOUJOURS afficher le breadcrumb pour la navigation contextuelle** :
+
+#### Composant Breadcrumb Réutilisable
+
+```typescript
+// src/components/navigation/Breadcrumbs.tsx
+import { useRouterState, Link } from '@tanstack/react-router';
+import { ChevronRight, Home } from 'lucide-react';
+
+interface BreadcrumbsProps {
+    items?: Array<{ label: string; href?: string; actif?: boolean }>;
+    afficherAccueil?: boolean;
+}
+
+export function Breadcrumbs({ items, afficherAccueil = true }: BreadcrumbsProps) {
+    const matches = useRouterState({ select: s => s.matches });
+
+    // Items personnalisés OU génération automatique
+    if (items && items.length > 0) {
+        return (
+            <nav aria-label="Breadcrumb" className="mb-4">
+                <ol className="flex items-center gap-1.5 text-sm flex-wrap">
+                    {afficherAccueil && (
+                        <li>
+                            <Link to="/" className="text-[var(--color-dominante)]">
+                                <Home className="h-4 w-4" />
+                            </Link>
+                        </li>
+                    )}
+                    {items.map((item, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                            {i > 0 && <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />}
+                            {item.actif || !item.href ? (
+                                <span className="font-medium">{item.label}</span>
+                            ) : (
+                                <Link to={item.href as any}
+                                    className="text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)]">
+                                    {item.label}
+                                </Link>
+                            )}
+                        </li>
+                    ))}
+                </ol>
+            </nav>
+        );
+    }
+
+    // Auto-généré depuis les routes
+    return (
+        <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-1.5 text-sm">
+                {matches.filter(m => m.routeId !== '__root__').map((match, i, arr) => (
+                    <li key={match.id} className="flex items-center gap-1.5">
+                        {i > 0 && <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />}
+                        {i === arr.length - 1 ? (
+                            <span className="font-medium">{match.routeMeta?.titre}</span>
+                        ) : (
+                            <Link to={match.pathname}
+                                className="text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)]">
+                                {match.routeMeta?.titre}
+                            </Link>
+                        )}
+                    </li>
+                ))}
+            </ol>
+        </nav>
+    );
+}
+```
+
+#### Hook useBreadcrumbs pour Breadcrumbs Personnalisés
+
+```typescript
+// src/hooks/use-breadcrumbs.ts
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+export function useBreadcrumbs(...items: Array<{ label: string; href?: string }>) {
+    const { t } = useTranslation();
+    return useMemo(() => items.map(item => ({ ...item, label: t(item.label) })), [items, t]);
+}
+```
+
+#### Usage dans les Pages
+
+```typescript
+// ✅ Breadcrumb automatique
+function ElevesPage() {
+    return (
+        <div>
+            <Breadcrumbs />
+            <h1>Liste des élèves</h1>
+        </div>
+    );
+}
+
+// ✅ Breadcrumb personnalisé pour page dynamique
+function EleveDetailPage() {
+    const { eleve } = useEleve(id);
+    const breadcrumbs = useBreadcrumbs(
+        { label: 'eleves.titres.liste', href: '/eleves' },
+        { label: eleve?.nomComplet, actif: true },
+    );
+
+    return (
+        <div>
+            <Breadcrumbs items={breadcrumbs} />
+            <h1>{eleve?.nomComplet}</h1>
+        </div>
+    );
+}
+```
+
+#### Intégration dans le Layout
+
+```typescript
+// __root.tsx ou layout principal
+function RootLayout() {
+    return (
+        <main className="flex-1 p-6">
+            <Breadcrumbs afficherAccueil />
+            <Outlet />
+        </main>
+    );
+}
+```
+
+### Anti-patterns de Navigation
+
+- **NE PAS** créer de boutons sans action ni navigation
+- **NE PAS** utiliser `<a href="/...">` → Utiliser `<Link to="...">`
+- **NE PAS** utiliser `window.location.href` → Utiliser `navigate()`
+- **NE PAS** hardcoder les chemins → Utiliser `to="/eleves/$id"` avec params
+- **NE PAS** oublier les routes de détail (`$id.tsx`)
+- **NE PAS** créer de menus avec des liens morts ou `#`
+
+---
+
 ## Checklist Finale avant Déploiement
 
 - [ ] Tous les fichiers ont la **bannière eLISAschool**
@@ -1548,6 +1799,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 - [ ] **i18n** : Messages toast, erreurs Zod, labels traduits via fichiers de langue
 - [ ] **i18n** : Dates formatées avec `date-fns/locale` (fr/en)
 - [ ] **i18n** : Montants/devises formatés avec `Intl.NumberFormat`
+- [ ] **Routing** : Tous les boutons/liens mènent à une route valide (pas de liens morts)
+- [ ] **Routing** : Navigation avec `<Link>` ou `navigate()` (pas de `<a href>` ni `window.location`)
+- [ ] **Routing** : Chaque module du sidebar pointe vers une route existante
+- [ ] **Routing** : Fil d'Ariane (breadcrumbs) affiché en haut de chaque page
 
 ---
 
@@ -1566,6 +1821,87 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 | `sondages` | `/api/sondages` | Sondages, votes, analyses |
 | `cantine` | `/api/cantine` | Menus, inscriptions, solde |
 | `transport` | `/api/transport` | Lignes, présences |
+
+---
+
+## Système de Permissions Frontend
+
+### Architecture
+
+Le système de permissions frontend fournit un contrôle d'accès en **4 niveaux** :
+
+1. **Route Guards** : `RequirePermission` protège les routes
+2. **UI Controls** : `PermissionGate` contrôle l'affichage
+3. **Hooks Avancés** : 7 hooks spécialisés
+4. **Sidebar Filtré** : Masquage automatique des modules inaccessibles
+
+### Hooks Disponibles (7)
+
+```typescript
+import { 
+    useModulePermissions,    // Accès complet module
+    useCanAccess,            // Vérification route
+    useCanViewWidget,        // Contrôle widgets
+    useCanViewTab,           // Contrôle onglets
+    useCanAccessField,       // Contrôle champs
+    useCanBulkAction,        // Actions en masse
+    useCanGenerateReport,    // Rapports
+} from '@/hooks';
+
+// Exemple usage
+const { canAccess, canCreate, canEdit, canDelete } = useModulePermissions('eleves');
+const canViewMedical = useCanViewTab('eleves', 'medical');
+```
+
+### Composants Disponibles (6)
+
+```tsx
+import { 
+    PermissionGate,          // Contrôle conditionnel
+    PermissionButton,        // Bouton avec tooltip
+    PermissionMessage,       // Message informatif
+    RequirePermission,       // Protection route
+    RequireRole,             // Protection par rôle
+} from '@/components/permissions';
+
+// Protection de route
+<RequirePermission module="eleves" redirectTo="/unauthorized">
+    <ElevesPage />
+</RequirePermission>
+
+// Contrôle UI
+<PermissionGate permission="eleves:create">
+    <Button>Nouvel élève</Button>
+</PermissionGate>
+
+// Bouton avec tooltip
+<PermissionButton permission="eleves:delete" disabledMessage="Suppression non autorisée">
+    <Button variant="danger">Supprimer</Button>
+</PermissionButton>
+```
+
+### Page Unauthorized
+
+La page `/unauthorized` affiche un message d'erreur personnalisé avec :
+- Page demandée et rôle de l'utilisateur
+- Actions : Retour, Dashboard, Contacter admin
+- Notes de diagnostic pour administrateurs
+
+### Conventions d'Utilisation
+
+1. **TOUJOURS** protéger les routes avec `RequirePermission`
+2. **TOUJOURS** utiliser `PermissionGate` pour les boutons conditionnels
+3. **PRIVILÉGIER** `useModulePermissions()` à `hasPermission()`
+4. **VÉRIFIER** les permissions dans le store : `useAuthStore().utilisateur?.permissions`
+
+### Fichiers de Référence
+
+- **Hooks** : `frontend/src/hooks/use-permissions-advanced.ts` (7 hooks)
+- **Composants** : `frontend/src/components/permissions/` (6 composants)
+- **Store** : `frontend/src/stores/auth.store.ts` (permissions incluses)
+- **Sidebar** : `frontend/src/components/layout/Sidebar.tsx` (filtré)
+- **Page** : `frontend/src/features/system/components/unauthorized-page.tsx`
+- **Docs** : `docs/CONVENTIONS-PERMISSIONS.md`, `docs/GUIDE-PERMISSIONS-FRONTEND.md`
 
 ---
 

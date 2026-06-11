@@ -1,0 +1,14 @@
+{
+    "titre": "School Years",
+    "nouvelleAnnee": "New school year",
+    "code": "Code",
+    "libelle": "Label",
+    "dateDebut": "Start date",
+    "dateFin": "End date",
+    "active": "Active",
+    "inactive": "Inactive",
+    "future": "Future",
+    "archivee": "Archived",
+    "activer": "Activate",
+    "anneeActuelle": "Current year"
+}

@@ -1,0 +1,25 @@
+{
+    "titre": "Événements",
+    "description": "Gérer le calendrier et les événements de l'établissement",
+    "creer": "Nouvel événement",
+    "rechercher": "Rechercher un événement...",
+    "type": "Type",
+    "dateDebut": "Date début",
+    "dateFin": "Date fin",
+    "lieu": "Lieu",
+    "participants": "Participants",
+    "statut": "Statut",
+    "programme": "Programmé",
+    "enCours": "En cours",
+    "termine": "Terminé",
+    "annule": "Annulé",
+    "types": {
+        "reunion": "Réunion",
+        "formation": "Formation",
+        "activite": "Activité",
+        "ceremonie": "Cérémonie",
+        "examen": "Examen",
+        "vacances": "Vacances",
+        "autre": "Autre"
+    }
+}

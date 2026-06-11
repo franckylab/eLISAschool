@@ -1,0 +1,13 @@
+{
+    "titre": "Cantine",
+    "nouvelleInscription": "Nouvelle inscription",
+    "eleve": "Élève",
+    "type": "Type d'inscription",
+    "quotidien": "Quotidien",
+    "hebdomadaire": "Hebdomadaire",
+    "mensuel": "Mensuel",
+    "trimestriel": "Trimestriel",
+    "annuel": "Annuel",
+    "actif": "Actif",
+    "inactif": "Inactif"
+}

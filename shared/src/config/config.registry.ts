@@ -335,6 +335,40 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.PARKING]: {
+        name: ModuleName.PARKING,
+        label: 'Parking',
+        description: 'Gestion des places de stationnement et abonnements',
+        icon: 'Car',
+        basePath: '/parking',
+        defaultActive: false,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.RESPONSABLE_INFRASTRUCTURE],
+        permissions: [
+            Permission.PARKING_VIEW,
+            Permission.PARKING_MANAGE,
+            Permission.PARKING_PLACES_VIEW,
+            Permission.PARKING_PLACES_CREATE,
+            Permission.PARKING_PLACES_EDIT,
+            Permission.PARKING_PLACES_DELETE,
+            Permission.PARKING_VEHICULES_VIEW,
+            Permission.PARKING_VEHICULES_CREATE,
+            Permission.PARKING_VEHICULES_EDIT,
+            Permission.PARKING_VEHICULES_DELETE,
+            Permission.PARKING_ABONNEMENTS_VIEW,
+            Permission.PARKING_ABONNEMENTS_CREATE,
+            Permission.PARKING_ABONNEMENTS_EDIT,
+            Permission.PARKING_STATISTIQUES_VIEW,
+        ],
+        dependencies: [],
+        defaultSettings: {
+            tarifStandardHoraire: 500, // FCFA
+            tarifPMRHoraire: 0, // Gratuit
+            tarifAbonnementMensuel: 25000, // FCFA
+            placesTotales: 100,
+        },
+    },
+
     [ModuleName.MATERIEL]: {
         name: ModuleName.MATERIEL,
         label: 'Matériel',
@@ -558,6 +592,26 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         dependencies: [ModuleName.AUTH],
         defaultSettings: {
             typesUnitesActifs: ['DIRECTION', 'DEPARTEMENT', 'SERVICE', 'POLE'],
+        },
+    },
+
+    [ModuleName.RECRUTEMENT]: {
+        name: ModuleName.RECRUTEMENT,
+        label: 'Recrutement',
+        description: 'Gestion du recrutement, candidatures, entretiens et onboarding',
+        icon: 'UserPlus',
+        basePath: '/recrutement',
+        defaultActive: false,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.SUIVI_PERSONNEL],
+        defaultSettings: {
+            autoPublishOffres: false,
+            delaiRelanceCandidatureJours: 7,
+            dureeOnboardingDefautJours: 30,
+            exigerLettreMotivation: true,
+            nombreEntretiensMinimum: 2,
         },
     },
 

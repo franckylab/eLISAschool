@@ -1,0 +1,10 @@
+{
+    "titre": "Levels",
+    "nouveauNiveau": "New level",
+    "code": "Code",
+    "nom": "Name",
+    "ordre": "Order",
+    "cycle": "Cycle",
+    "actif": "Active",
+    "inactif": "Inactive"
+}

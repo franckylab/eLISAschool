@@ -1923,6 +1923,89 @@ app.use('/api/mon-module', requireModuleActive('mon-module'), monModuleControlle
 
 ---
 
+## Système de Permissions RBAC
+
+### Architecture Permissions
+
+**Backend** : ~230 permissions définies dans `shared/src/enums/roles.enum.ts`
+- Format : `module:entite:action` (ex: `eleves:create`, `notes:bulk:import`)
+- Résolution : `PermissionResolverService` avec cache triple niveau (Redis + In-memory + Global)
+- Injection : Permissions incluses dans JWT et retournées par `GET /api/auth/me`
+
+**Frontend** : Contrôle d'accès en 4 niveaux
+1. **Route Guards** : `RequirePermission` protège les routes
+2. **UI Controls** : `PermissionGate` contrôle l'affichage des éléments
+3. **Backend Guards** : `requirePermission()` middleware protège les API
+4. **Service Logic** : Vérifications métier dans les services
+
+### Hooks Frontend Disponibles
+
+```typescript
+import { useModulePermissions, useCanAccess, useCanViewTab } from '@/hooks';
+
+// Accès complet à un module
+const { canAccess, canCreate, canEdit, canDelete, canExport } = useModulePermissions('eleves');
+
+// Vérifier accès route
+const canAccess = useCanAccess('finances');
+
+// Vérifier accès onglet
+const canViewMedical = useCanViewTab('eleves', 'medical');
+```
+
+### Composants Frontend Disponibles
+
+```tsx
+import { PermissionGate, RequirePermission, PermissionButton } from '@/components/permissions';
+
+// Protection de route
+<RequirePermission module="eleves">
+    <ElevesPage />
+</RequirePermission>
+
+// Contrôle conditionnel UI
+<PermissionGate permission="eleves:create">
+    <Button>Nouvel élève</Button>
+</PermissionGate>
+
+// Bouton avec permission + tooltip
+<PermissionButton permission="eleves:delete" disabledMessage="Suppression non autorisée">
+    <Button variant="danger">Supprimer</Button>
+</PermissionButton>
+```
+
+### Backend : Protéger une Route
+
+```typescript
+import { requirePermission } from '@modules/auth/guards/permission.guard';
+import { Permission } from '@shared/enums/roles.enum';
+
+router.post('/', 
+    authMiddleware, 
+    requirePermission(Permission.ELEVES_CREATE),
+    async (req, res, next) => { /* ... */ }
+);
+```
+
+### Conventions de Nommage
+
+- **Module** : lowercase singulier (`eleves`, `notes`, `finances`)
+- **Entité** : lowercase pluriel (`paiements`, `bulletins`)
+- **Action** : lowercase infinitif (`view`, `create`, `edit`, `delete`, `manage`, `export`, `import`)
+- **Séparateur** : deux-points `:` uniquement
+- ✅ `eleves:create`, `notes:bulk:import`, `finances:paiements:validate`
+
+### Fichiers de Référence
+
+- **Enum** : `shared/src/enums/roles.enum.ts` (~230 permissions)
+- **Resolver** : `backend/src/modules/auth/services/permission-resolver.service.ts`
+- **Guards** : `backend/src/modules/auth/guards/permission.guard.ts`
+- **Frontend Hooks** : `frontend/src/hooks/use-permissions-advanced.ts` (7 hooks)
+- **Frontend Components** : `frontend/src/components/permissions/` (6 composants)
+- **Documentation** : `docs/CONVENTIONS-PERMISSIONS.md`, `docs/GUIDE-PERMISSIONS-FRONTEND.md`
+
+---
+
 ## Maintenance et évolution
 
 Ce skill, la règle associée (`elisaschool-conventions`) et le skill métier (`elisaschool-business-logic`) sont des documents **vivants** qui évoluent avec le projet.

@@ -1,0 +1,29 @@
+{
+    "conges": {
+        "title": "Gestion des Congés",
+        "newDemande": "Nouvelle demande",
+        "enAttente": "En attente",
+        "acceptes": "Acceptés",
+        "totalDemandes": "Total demandes",
+        "joursTotal": "Jours total",
+        "search": "Rechercher un congé..."
+    },
+    "pointages": {
+        "title": "Gestion des Pointages",
+        "newPointage": "Nouveau pointage",
+        "presents": "Présents",
+        "retards": "Retards",
+        "tauxPresence": "Taux présence",
+        "moyenneHeures": "Moy. heures",
+        "search": "Rechercher un pointage..."
+    },
+    "evaluations": {
+        "title": "Évaluations du Personnel",
+        "newEvaluation": "Nouvelle évaluation",
+        "moyenneGenerale": "Moyenne générale",
+        "excellent": "Excellent (≥16)",
+        "totalEvaluations": "Total évaluations",
+        "insuffisant": "Insuffisant (<8)",
+        "search": "Rechercher une évaluation..."
+    }
+}

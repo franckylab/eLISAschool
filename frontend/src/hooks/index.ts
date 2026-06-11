@@ -1,3 +1,29 @@
 // Barrel exports - Hooks
 export { useLanguage } from './use-language';
 export { useConfirm } from './use-confirm';
+export { usePaginatedQuery } from './use-pagination';
+export { useConfirm as useConfirmDialog } from './use-confirm-dialog';
+export { usePermissions } from './use-permissions';
+export { 
+    useModulePermissions,
+    useCanAccess,
+    useCanViewWidget,
+    useCanViewTab,
+    useCanAccessField,
+    useCanBulkAction,
+    useCanGenerateReport,
+} from './use-permissions-advanced';
+export {
+    useCanViewSensitiveTab,
+    useCanEditSensitiveTab,
+    useCanExportSensitiveTab,
+    useVisibleTabs,
+} from './use-sensitive-tabs';
+export {
+    useCanViewDashboardWidget,
+    useVisibleDashboardWidgets,
+    useDashboardWidgetCategories,
+    useCanPinDashboardWidget,
+    useDashboardWidgetConfig,
+} from './use-dashboard-widgets';
+export { useKeyboardShortcuts } from './use-keyboard-shortcuts';

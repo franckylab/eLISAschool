@@ -199,6 +199,10 @@ class ApiClient {
                     response = await fetch(config.url, config);
                 } catch (refreshError) {
                     await this.processQueue(refreshError as Error, null);
+                    // Refresh échoué → déconnexion
+                    this.clearTokens();
+                    window.dispatchEvent(new CustomEvent('auth:logout'));
+                    window.location.href = '/auth/login';
                     throw refreshError;
                 } finally {
                     this.isRefreshing = false;
@@ -220,6 +224,19 @@ class ApiClient {
                 message: errorBody?.error?.message || `Erreur ${response.status}`,
                 details: errorBody?.error?.details,
             };
+            
+            // 401 après refresh ou sans refresh token → déconnexion
+            if (response.status === 401 && !this.refreshToken) {
+                this.clearTokens();
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+                window.location.href = '/auth/login';
+            }
+            
+            // 403 → Interdit
+            if (response.status === 403) {
+                console.error('[API] Accès interdit (403):', apiError.message);
+            }
+            
             throw apiError;
         }
 

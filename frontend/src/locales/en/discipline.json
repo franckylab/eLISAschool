@@ -1,0 +1,31 @@
+{
+    "titre": "Discipline",
+    "description": "Manage student sanctions and disciplinary tracking",
+    "enregistrer": "Record sanction",
+    "rechercher": "Search sanction...",
+    "type": "Type",
+    "gravite": "Severity",
+    "motif": "Reason",
+    "date": "Date",
+    "statut": "Status",
+    "amnistier": "Amnesty",
+    "types": {
+        "avertissement": "Warning",
+        "remontrance": "Reprimand",
+        "exclusion_temporaire": "Temp. suspension",
+        "exclusion_definitive": "Def. expulsion",
+        "conseil_discipline": "Disciplinary board",
+        "autre": "Other"
+    },
+    "gravites": {
+        "legere": "Minor",
+        "moyenne": "Moderate",
+        "grave": "Serious",
+        "tres_grave": "Very serious"
+    },
+    "statuts": {
+        "active": "Active",
+        "amnistiee": "Amnestied",
+        "archivee": "Archived"
+    }
+}

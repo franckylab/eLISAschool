@@ -1,0 +1,15 @@
+{
+    "titre": "Archives",
+    "description": "Stocker et rechercher les documents archivés",
+    "archiver": "Archiver document",
+    "rechercher": "Rechercher une archive...",
+    "categorie": "Catégorie",
+    "titre": "Titre",
+    "taille": "Taille",
+    "archivePar": "Archivé par",
+    "date": "Date",
+    "totalArchives": "Total archives",
+    "tailleTotale": "Taille totale",
+    "categories": "Catégories",
+    "documents": "Documents"
+}

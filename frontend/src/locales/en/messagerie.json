@@ -1,0 +1,12 @@
+{
+    "titre": "Messaging",
+    "nouveauMessage": "New message",
+    "expediteur": "Sender",
+    "destinataire": "Recipient",
+    "sujet": "Subject",
+    "contenu": "Content",
+    "lu": "Read",
+    "nonLu": "Unread",
+    "envoyer": "Send",
+    "repondre": "Reply"
+}

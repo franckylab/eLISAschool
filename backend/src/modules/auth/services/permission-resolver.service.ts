@@ -112,6 +112,35 @@ export class PermissionResolverService {
                 return emptySet;
             }
 
+            // 2. VÉRIFIER SI SUPER_ADMIN → Toutes les permissions automatiquement
+            const hasSuperAdmin = utilisateurRoles.some(
+                ur => ur.role.code === 'SUPER_ADMIN'
+            );
+
+            if (hasSuperAdmin) {
+                // SUPER_ADMIN a TOUTES les permissions
+                const allPermissions = new Set<string>(
+                    Array.from(this.globalPermissionCache.keys())
+                );
+                
+                // Si le cache global est vide, charger depuis la DB
+                if (allPermissions.size === 0) {
+                    const permissions = await this.permissionRepo.find({
+                        where: { actif: true },
+                        select: ['code'],
+                    });
+                    for (const perm of permissions) {
+                        allPermissions.add(perm.code);
+                        this.globalPermissionCache.set(perm.code, perm as Permission);
+                    }
+                }
+
+                // Cacher et retourner
+                this.setToCache(utilisateurId, allPermissions);
+                logger.debug(`🔐 SUPER_ADMIN détecté: ${allPermissions.size} permissions attribuées`);
+                return allPermissions;
+            }
+
             // 2. Collecter toutes les permissions des rôles
             const allPermissions = new Set<string>();
 

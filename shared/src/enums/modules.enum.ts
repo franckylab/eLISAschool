@@ -35,6 +35,7 @@ export enum ModuleName {
   // Modules logistiques
   CANTINE = 'cantine',
   TRANSPORT = 'transport',
+  PARKING = 'parking',
   MATERIEL = 'materiel',
   FINANCES = 'finances',
   
@@ -62,6 +63,9 @@ export enum ModuleName {
   
   // Module organisation
   ORGANISATION = 'organisation',
+  
+  // Module RH & Recrutement
+  RECRUTEMENT = 'recrutement',
 }
 
 /**
@@ -100,6 +104,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   
   [ModuleName.CANTINE]: ModuleCategory.LOGISTIQUES,
   [ModuleName.TRANSPORT]: ModuleCategory.LOGISTIQUES,
+  [ModuleName.PARKING]: ModuleCategory.LOGISTIQUES,
   [ModuleName.MATERIEL]: ModuleCategory.LOGISTIQUES,
   [ModuleName.FINANCES]: ModuleCategory.LOGISTIQUES,
   
@@ -118,6 +123,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.DASHBOARD]: ModuleCategory.SYSTEME,
   [ModuleName.PERIPHERIQUES]: ModuleCategory.SYSTEME,
   [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
+  [ModuleName.RECRUTEMENT]: ModuleCategory.CRITIQUES,
 };
 
 /**

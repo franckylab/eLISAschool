@@ -1,0 +1,193 @@
+{
+  "titre": "Élèves",
+  "sousTitre": "Gestion des élèves et de leur scolarité",
+  "aucunEleve": "Aucun élève trouvé",
+  "chargement": "Chargement des élèves...",
+  
+  "formulaire": {
+    "titreCreation": "Nouvel élève",
+    "titreModification": "Modifier l'élève",
+    "etape1": "Identité",
+    "etape2": "Coordonnées",
+    "etape3": "Parents",
+    "etape4": "Complément",
+    "etape1Description": "Informations personnelles de l'élève",
+    "etape2Description": "Adresse et contact",
+    "etape3Description": "Parents ou tuteurs légaux",
+    "etape4Description": "Classe, services et informations médicales",
+    
+    "nom": "Nom de famille",
+    "prenom": "Prénom",
+    "dateNaissance": "Date de naissance",
+    "lieuNaissance": "Lieu de naissance",
+    "sexe": "Sexe",
+    "masculin": "Masculin",
+    "feminin": "Féminin",
+    "nationalite": "Nationalité",
+    "sousSysteme": "Sous-système éducatif",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    
+    "telephone": "Téléphone",
+    "email": "Email",
+    "adresse": "Adresse",
+    "ville": "Ville",
+    "quartier": "Quartier",
+    "photo": "Photo",
+    "photoPlaceholder": "Cliquez pour ajouter une photo",
+    
+    "nomPere": "Nom du père",
+    "professionPere": "Profession du père",
+    "telephonePere": "Téléphone du père",
+    "emailPere": "Email du père",
+    "nomMere": "Nom de la mère",
+    "professionMere": "Profession de la mère",
+    "telephoneMere": "Téléphone de la mère",
+    "emailMere": "Email de la mère",
+    "nomTuteur": "Nom du tuteur",
+    "lienParente": "Lien de parenté",
+    "telephoneTuteur": "Téléphone du tuteur",
+    
+    "classe": "Classe",
+    "anneeScolaire": "Année scolaire",
+    "transportScolaire": "Transport scolaire",
+    "cantine": "Cantine",
+    "boursier": "Boursier",
+    "redoublement": "Redoublement",
+    "groupeSanguin": "Groupe sanguin",
+    "allergies": "Allergies",
+    "allergiesPlaceholder": "Séparez les allergies par des virgules"
+  },
+
+  "statut": {
+    "actif": "Actif",
+    "exclu": "Exclu",
+    "abandon": "Abandon",
+    "diplome": "Diplômé"
+  },
+
+  "onglets": {
+    "informations": "Informations",
+    "scolarite": "Scolarité",
+    "finances": "Finances",
+    "documents": "Documents",
+    "historique": "Historique"
+  },
+
+  "filtres": {
+    "recherche": "Rechercher par nom, prénom ou matricule...",
+    "toutesClasses": "Toutes les classes",
+    "toutesAnnees": "Toutes les années",
+    "tousStatuts": "Tous les statuts",
+    "tousSexes": "Tous",
+    "resetFiltres": "Réinitialiser"
+  },
+
+  "import": {
+    "titre": "Importer des élèves",
+    "description": "Importez un fichier CSV ou Excel pour ajouter plusieurs élèves en une seule opération",
+    "template": "Télécharger le modèle CSV",
+    "glisserFichier": "Glisser un fichier CSV ou Excel ici",
+    "ouParcourir": "ou parcourir vos fichiers",
+    "formatsAcceptes": "Formats acceptés: CSV, XLS, XLSX",
+    "rapport": "Rapport d'import",
+    "importeAvecSucces": "{{count}} élève(s) importé(s) avec succès",
+    "erreurs": "{{count}} erreur(s)",
+    "voirDetails": "Voir les détails"
+  },
+
+  "validation": {
+    "nomRequis": "Le nom est obligatoire",
+    "nomLongueur": "Le nom doit contenir entre 2 et 100 caractères",
+    "prenomRequis": "Le prénom est obligatoire",
+    "prenomLongueur": "Le prénom doit contenir entre 2 et 100 caractères",
+    "dateNaissanceRequise": "La date de naissance est obligatoire",
+    "dateNaissanceFuture": "La date de naissance ne peut pas être dans le futur",
+    "lieuNaissanceRequis": "Le lieu de naissance est obligatoire",
+    "sexeRequis": "Le sexe est obligatoire",
+    "classeRequise": "La classe est obligatoire",
+    "anneeScolaireRequise": "L'année scolaire est obligatoire",
+    "emailInvalide": "Format d'email invalide",
+    "telephoneInvalide": "Format de téléphone invalide"
+  },
+
+  "messages": {
+    "confirmationSuppression": "Êtes-vous sûr de vouloir supprimer cet élève? Cette action est irréversible.",
+    "eleveCree": "Élève créé avec succès",
+    "eleveModifie": "Élève modifié avec succès",
+    "eleveSupprime": "Élève supprimé avec succès",
+    "exportReussi": "Export réussi",
+    "importReussi": "Import réussi",
+    "modificationNonSauvegardee": "Des modifications n'ont pas été sauvegardées. Voulez-vous vraiment quitter?",
+    "selectionnezEleves": "Veuillez sélectionner au moins un élève"
+  },
+
+  "actions": {
+    "nouveau": "Nouvel élève",
+    "modifier": "Modifier",
+    "voir": "Voir",
+    "supprimer": "Supprimer",
+    "exporter": "Exporter",
+    "importer": "Importer",
+    "selectionner": "Sélectionner",
+    "selectionnerTous": "Sélectionner tous",
+    "deselectionner": "Désélectionner",
+    "actionMasse": "Action en masse",
+    "changerClasse": "Changer de classe",
+    "exporterSelection": "Exporter la sélection"
+  },
+
+  "detail": {
+    "titre": "Fiche élève",
+    "retourListe": "Retour à la liste",
+    "matricule": "Matricule",
+    "neLe": "Né(e) le",
+    "a": "à",
+    "age": "ans",
+    
+    "sectionIdentite": "Identité",
+    "sectionContact": "Coordonnées",
+    "sectionPere": "Père",
+    "sectionMere": "Mère",
+    "sectionTuteur": "Tuteur légal",
+    "sectionServices": "Services",
+    "sectionMedical": "Informations médicales",
+    
+    "profession": "Profession",
+    "nonDefini": "Non défini",
+    "non": "Non",
+    "oui": "Oui",
+    
+    "scolariteResume": "Résumé de la scolarité",
+    "moyenneGenerale": "Moyenne générale",
+    "nombreNotes": "Notes",
+    "nombreAbsences": "Absences",
+    "nombreRetards": "Retards",
+    
+    "financesResume": "Résumé financier",
+    "totalFactures": "Total factures",
+    "totalPaye": "Total payé",
+    "restePayer": "Reste à payer",
+    "statutPaiement": "Statut",
+    "aJour": "À jour",
+    "enRetard": "En retard",
+    
+    "aucunDocument": "Aucun document justificatif",
+    "ajouterDocument": "Ajouter un document",
+    "typeDocument": "Type de document",
+    "dateUpload": "Date d'upload",
+    "telecharger": "Télécharger",
+    
+    "aucunEvenement": "Aucun événement dans l'historique",
+    "eleveCreeLe": "Élève créé le"
+  },
+
+  "permissions": {
+    "voirEleves": "Voir les élèves",
+    "creerEleve": "Créer un élève",
+    "modifierEleve": "Modifier un élève",
+    "supprimerEleve": "Supprimer un élève",
+    "exporterEleves": "Exporter les élèves",
+    "importerEleves": "Importer des élèves"
+  }
+}

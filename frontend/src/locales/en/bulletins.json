@@ -1,0 +1,12 @@
+{
+    "titre": "Report Cards",
+    "generer": "Generate report cards",
+    "eleve": "Student",
+    "classe": "Class",
+    "periode": "Period",
+    "moyenne": "Average",
+    "rang": "Rank",
+    "effectif": "Total students",
+    "appreciation": "Comments",
+    "exporter": "Export PDF"
+}

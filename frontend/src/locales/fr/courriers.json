@@ -1,0 +1,16 @@
+{
+    "titre": "Courriers",
+    "description": "Gérer les courriers entrants, sortants et internes",
+    "creer": "Nouveau courrier",
+    "rechercher": "Rechercher un courrier...",
+    "type": "Type",
+    "objet": "Objet",
+    "priorite": "Priorité",
+    "date": "Date",
+    "destinataire": "Destinataire",
+    "statut": "Statut",
+    "totalCourriers": "Total courriers",
+    "nonLus": "Non lus",
+    "traites": "Traité s",
+    "urgents": "Urgents"
+}

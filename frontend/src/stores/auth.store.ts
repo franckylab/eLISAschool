@@ -80,11 +80,17 @@ export const useAuthStore = create<AuthState>()(
                         isLoading: false,
                     });
 
-                    // Récupérer le profil complet en arrière-plan
+                    // Récupérer le profil complet en arrière-plan (avec permissions)
                     try {
                         const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
                         if (meResponse.data) {
-                            set({ utilisateur: meResponse.data });
+                            set({ 
+                                utilisateur: {
+                                    ...state.utilisateur,
+                                    ...meResponse.data,
+                                    permissions: meResponse.data.permissions || [],
+                                } 
+                            });
                         }
                     } catch {
                         // Non-bloquant
@@ -150,7 +156,14 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     const response = await apiClient.get('/api/auth/me');
                     if (response.success && response.data) {
-                        set({ utilisateur: response.data as UtilisateurConnecte, isAuthenticated: true });
+                        const userData = response.data as UtilisateurConnecte;
+                        set({ 
+                            utilisateur: {
+                                ...userData,
+                                permissions: userData.permissions || [],
+                            },
+                            isAuthenticated: true 
+                        });
                         return true;
                     }
                     return false;

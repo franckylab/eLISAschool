@@ -1,0 +1,10 @@
+{
+    "titre": "Subjects",
+    "nouvelleMatiere": "New subject",
+    "code": "Code",
+    "nom": "Name",
+    "coefficient": "Coefficient",
+    "nombreHeures": "Hours",
+    "programme": "Curriculum",
+    "description": "Description"
+}

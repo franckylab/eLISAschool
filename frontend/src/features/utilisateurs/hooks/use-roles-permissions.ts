@@ -1,0 +1,227 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Rôles et Permissions
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Hooks TanStack Query pour la gestion des rôles et permissions
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth.store';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+import type { 
+    Role, 
+    CreerRoleDto, 
+    ModifierRoleDto, 
+    RoleFiltres,
+    Permission,
+    PermissionGroupe,
+    AttribuerPermissionDto 
+} from '../types/utilisateur.types';
+
+const ROLES_KEYS = {
+    all: ['roles'] as const,
+    listes: () => [...ROLES_KEYS.all, 'liste'] as const,
+    liste: (filtres: RoleFiltres) => [...ROLES_KEYS.listes(), filtres] as const,
+    details: () => [...ROLES_KEYS.all, 'detail'] as const,
+    detail: (id: string) => [...ROLES_KEYS.details(), id] as const,
+    permissions: () => [...ROLES_KEYS.all, 'permissions'] as const,
+    permissionsByModule: (module: string) => [...ROLES_KEYS.permissions(), module] as const,
+};
+
+// ==================== HOOKS RÔLES ====================
+
+export function useRoles(filtres: RoleFiltres = {}) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ROLES_KEYS.liste(filtres),
+        queryFn: async () => {
+            const response = await apiClient.getPaginated<Role>('/api/roles', {
+                page: filtres.page || 1,
+                limit: filtres.limit || 50,
+                ...filtres,
+            });
+            return response.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+    });
+}
+
+export function useRole(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ROLES_KEYS.detail(id),
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: Role }>(`/api/roles/${id}`);
+            return response.data.data;
+        },
+        enabled: !!id && isAuthenticated,
+        staleTime: 10 * 60 * 1000,
+    });
+}
+
+export function useTousRoles() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.all, 'tous'],
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: Role[] }>('/api/roles/tous');
+            return response.data.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 15 * 60 * 1000, // 15 minutes
+    });
+}
+
+export function useCreerRole() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (dto: CreerRoleDto) => {
+            const response = await apiClient.post<{ success: boolean; data: Role }>('/api/roles', dto);
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
+            toast.success('Rôle créé avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la création du rôle');
+        },
+    });
+}
+
+export function useModifierRole() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: ModifierRoleDto) => {
+            const response = await apiClient.patch<{ success: boolean; data: Role }>(`/api/roles/${id}`, dto);
+            return response.data.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(variables.id) });
+            toast.success('Rôle modifié avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+        },
+    });
+}
+
+export function useSupprimerRole() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/roles/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
+            toast.success('Rôle supprimé avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+        },
+    });
+}
+
+// ==================== HOOKS PERMISSIONS ====================
+
+export function usePermissions() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ROLES_KEYS.permissions(),
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: Permission[] }>('/api/permissions');
+            return response.data.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 30 * 60 * 1000, // 30 minutes - permissions changent rarement
+    });
+}
+
+export function usePermissionsByModule(module: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ROLES_KEYS.permissionsByModule(module),
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: PermissionGroupe }>(
+                `/api/permissions/module/${module}`
+            );
+            return response.data.data;
+        },
+        enabled: !!module && isAuthenticated,
+        staleTime: 30 * 60 * 1000,
+    });
+}
+
+export function useToutesPermissions() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.permissions(), 'groupes'],
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: PermissionGroupe[] }>(
+                '/api/permissions/groupes'
+            );
+            return response.data.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 30 * 60 * 1000,
+    });
+}
+
+export function useAttribuerPermissions() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ roleId, permissions }: AttribuerPermissionDto) => {
+            const response = await apiClient.post<{ success: boolean; data: Role }>(
+                `/api/roles/${roleId}/permissions`,
+                { permissions }
+            );
+            return response.data.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(variables.roleId) });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
+            toast.success('Permissions attribuées avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'attribution des permissions');
+        },
+    });
+}
+
+// ==================== HOOKS STATISTIQUES ====================
+
+export function useStatsRoles() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.all, 'stats'],
+        queryFn: async () => {
+            const response = await apiClient.get<{ 
+                success: boolean; 
+                data: {
+                    totalRoles: number;
+                    rolesSysteme: number;
+                    rolesPersonnalises: number;
+                    rolesParModule: Array<{ module: string; count: number }>;
+                }
+            }>('/api/roles/stats');
+            return response.data.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}

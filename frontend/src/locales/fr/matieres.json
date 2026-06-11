@@ -1,0 +1,10 @@
+{
+    "titre": "Matières",
+    "nouvelleMatiere": "Nouvelle matière",
+    "code": "Code",
+    "nom": "Nom",
+    "coefficient": "Coefficient",
+    "nombreHeures": "Nombre d'heures",
+    "programme": "Programme",
+    "description": "Description"
+}

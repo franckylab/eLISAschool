@@ -1,0 +1,32 @@
+{
+    "titre": "Sondages",
+    "description": "Créer et gérer des sondages pour la communauté éducative",
+    "creer": "Nouveau sondage",
+    "rechercher": "Rechercher un sondage...",
+    "question": "Question",
+    "categorie": "Catégorie",
+    "type": "Type",
+    "votes": "Votes",
+    "statut": "Statut",
+    "anonyme": "Anonyme",
+    "exporter": "Exporter",
+    "categories": {
+        "satisfaction": "Satisfaction",
+        "evaluation": "Évaluation",
+        "consultation": "Consultation",
+        "feedback": "Feedback",
+        "autre": "Autre"
+    },
+    "types": {
+        "unique": "Choix unique",
+        "multiple": "Choix multiple",
+        "note": "Note",
+        "texte": "Texte libre"
+    },
+    "statuts": {
+        "brouillon": "Brouillon",
+        "actif": "Actif",
+        "termine": "Terminé",
+        "archive": "Archivé"
+    }
+}

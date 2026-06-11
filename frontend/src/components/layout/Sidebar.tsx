@@ -21,12 +21,12 @@ import {
     Bus,
     Library,
     Settings,
-    ChevronDown,
     ChevronLeft,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useModulePermissions } from '@/hooks';
 import { cn } from '@/lib/cn';
 
 interface NavItem {
@@ -77,9 +77,41 @@ const NAV_SECTIONS: NavSection[] = [
 
 export function Sidebar() {
     const { t } = useTranslation('common');
-    const { isCollapsed, toggle, setActiveSection } = useSidebarStore();
+    const { isCollapsed, toggle } = useSidebarStore();
     const utilisateur = useAuthStore((s) => s.utilisateur);
     const matchRoute = useMatchRoute();
+
+    // Vérifier les permissions pour chaque module
+    const elevesPerms = useModulePermissions('eleves');
+    const enseignantsPerms = useModulePermissions('enseignants');
+    const classesPerms = useModulePermissions('classes');
+    const notesPerms = useModulePermissions('notes');
+    const financesPerms = useModulePermissions('finances');
+    const transportPerms = useModulePermissions('transport');
+    const communicationPerms = useModulePermissions('messagerie');
+
+    // Filtrer les sections du sidebar selon les permissions de l'utilisateur
+    const filteredSections = NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+            // Si pas de module spécifié, toujours afficher (Dashboard, etc.)
+            if (!item.module) return true;
+
+            // Vérifier les permissions pour le module
+            const permsMap: Record<string, { canAccess: boolean }> = {
+                eleves: elevesPerms,
+                enseignants: enseignantsPerms,
+                classes: classesPerms,
+                notes: notesPerms,
+                finances: financesPerms,
+                transport: transportPerms,
+                communication: communicationPerms,
+            };
+
+            const perms = permsMap[item.module];
+            return perms?.canAccess ?? true;
+        }),
+    })).filter((section) => section.items.length > 0); // Masquer les sections vides
 
     return (
         <div className="flex h-full flex-col">
@@ -119,7 +151,7 @@ export function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto p-2">
-                {NAV_SECTIONS.map((section) => (
+                {filteredSections.map((section) => (
                     <div key={section.title} className="mb-4">
                         {!isCollapsed && (
                             <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-texte-secondaire)]">

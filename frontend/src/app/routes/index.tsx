@@ -7,7 +7,6 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { LandingPage } from '@/features/landing/LandingPage';
-import { publicOnlyGuard } from '@/app/route-guards';
 
 export const Route = createFileRoute('/')({
     component: LandingPage,

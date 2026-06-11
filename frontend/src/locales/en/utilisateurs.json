@@ -1,0 +1,12 @@
+{
+    "titre": "Users",
+    "nouvelUtilisateur": "New user",
+    "email": "Email",
+    "nom": "Last name",
+    "prenom": "First name",
+    "role": "Role",
+    "actif": "Active",
+    "inactif": "Inactive",
+    "suspendu": "Suspended",
+    "derniereConnexion": "Last login"
+}

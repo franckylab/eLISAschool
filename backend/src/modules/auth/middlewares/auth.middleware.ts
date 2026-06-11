@@ -61,8 +61,17 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
             id: payload.sub,
             email: payload.email,
             role: payload.role,
+            roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
+            permissions: payload.permissions, // NOUVEAU : permissions résolues
             etablissementId: payload.etablissementId,
+            etablissements: payload.etablissements, // NOUVEAU : multi-établissements
         };
+
+        // DEBUG: Logger les rôles pour diagnostiquer les problèmes 403
+        if (process.env.NODE_ENV === 'development') {
+            const { role, roles, email } = req.utilisateur;
+            console.log(`[Auth Middleware] Utilisateur: ${email}, Role: ${role}, Roles: ${JSON.stringify(roles)}`);
+        }
 
         next();
     } catch (error) {
@@ -87,7 +96,10 @@ export function optionalAuthMiddleware(req: Request, res: Response, next: NextFu
                     id: payload.sub,
                     email: payload.email,
                     role: payload.role,
+                    roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
+                    permissions: payload.permissions, // NOUVEAU : permissions résolues
                     etablissementId: payload.etablissementId,
+                    etablissements: payload.etablissements, // NOUVEAU : multi-établissements
                 };
             }
         }

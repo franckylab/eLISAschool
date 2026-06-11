@@ -1,0 +1,32 @@
+{
+    "statistiques": {
+        "title": "Global Statistics",
+        "exporter": "Export",
+        "totalEleves": "Total students",
+        "personnel": "Staff",
+        "benefice": "Profit",
+        "moyenneGenerale": "General avg.",
+        "absences": "Absences",
+        "retards": "Late",
+        "sanctions": "Sanctions",
+        "repartitionClasse": "Class distribution"
+    },
+    "rapports": {
+        "title": "Report Management",
+        "newRapport": "New report",
+        "totalRapports": "Total reports",
+        "generes": "Generated",
+        "formats": "Formats",
+        "tailleTotale": "Total size",
+        "search": "Search report..."
+    },
+    "analytics": {
+        "title": "Analytics & KPIs",
+        "newKPI": "New KPI",
+        "alertesActives": "Active alerts",
+        "totalKPIs": "Total KPIs",
+        "kpisBons": "Good KPIs",
+        "alertes": "Alerts",
+        "critiques": "Critical"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "titre": "Inventaire",
+    "description": "Gérer le matériel et les stocks",
+    "ajouter": "Ajouter matériel",
+    "rechercher": "Rechercher un matériel...",
+    "reference": "Référence",
+    "designation": "Désignation",
+    "categorie": "Catégorie",
+    "quantite": "Quantité",
+    "etat": "État",
+    "prixUnitaire": "Prix unitaire",
+    "totalMateriel": "Total matériel",
+    "valeurTotale": "Valeur totale",
+    "horsService": "Hors service",
+    "categories": "Catégories"
+}

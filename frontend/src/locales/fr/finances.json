@@ -1,0 +1,30 @@
+{
+    "titre": "Finances",
+    "description": "Gérer les frais scolaires et les paiements",
+    "enregistrer": "Enregistrer paiement",
+    "rechercher": "Rechercher un paiement...",
+    "eleve": "Élève",
+    "frais": "Frais",
+    "montant": "Montant",
+    "statut": "Statut",
+    "moyenPaiement": "Moyen de paiement",
+    "date": "Date",
+    "reference": "Référence",
+    "totalEncaisse": "Total encaissé",
+    "enAttente": "En attente",
+    "totalPaiements": "Paiements",
+    "tauxCollecte": "Taux de collecte",
+    "statuts": {
+        "effectue": "Effectué",
+        "partiel": "Partiel",
+        "en_attente": "En attente",
+        "annule": "Annulé"
+    },
+    "moyens": {
+        "especes": "Espèces",
+        "cheque": "Chèque",
+        "virement": "Virement",
+        "mobile": "Mobile",
+        "autre": "Autre"
+    }
+}

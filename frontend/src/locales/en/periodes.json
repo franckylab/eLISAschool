@@ -1,0 +1,14 @@
+{
+    "titre": "Periods",
+    "nouvellePeriode": "New period",
+    "code": "Code",
+    "nom": "Name",
+    "type": "Type",
+    "trimestre": "Quarter",
+    "semestre": "Semester",
+    "module": "Module",
+    "autre": "Other",
+    "dateDebut": "Start date",
+    "dateFin": "End date",
+    "anneeScolaire": "School year"
+}

@@ -1,0 +1,29 @@
+{
+    "conges": {
+        "title": "Leave Management",
+        "newDemande": "New Request",
+        "enAttente": "Pending",
+        "acceptes": "Accepted",
+        "totalDemandes": "Total requests",
+        "joursTotal": "Total days",
+        "search": "Search leave..."
+    },
+    "pointages": {
+        "title": "Time Tracking",
+        "newPointage": "New time entry",
+        "presents": "Present",
+        "retards": "Late",
+        "tauxPresence": "Attendance rate",
+        "moyenneHeures": "Avg. hours",
+        "search": "Search time entry..."
+    },
+    "evaluations": {
+        "title": "Staff Evaluations",
+        "newEvaluation": "New evaluation",
+        "moyenneGenerale": "General average",
+        "excellent": "Excellent (≥16)",
+        "totalEvaluations": "Total evaluations",
+        "insuffisant": "Insufficient (<8)",
+        "search": "Search evaluation..."
+    }
+}

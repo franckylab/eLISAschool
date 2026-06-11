@@ -1,0 +1,18 @@
+{
+    "titre": "Bibliothèque",
+    "description": "Gérer les ouvrages, prêts et retours",
+    "ajouter": "Ajouter ouvrage",
+    "rechercher": "Rechercher un ouvrage...",
+    "categorie": "Catégorie",
+    "titre": "Titre",
+    "auteur": "Auteur",
+    "exemplaires": "Exemplaires",
+    "disponibilite": "Disponibilité",
+    "localisation": "Localisation",
+    "preter": "Prêter",
+    "retourner": "Retourner",
+    "totalOuvrages": "Total ouvrages",
+    "disponibles": "Disponibles",
+    "pretsEnCours": "Prêts en cours",
+    "retards": "Retards"
+}

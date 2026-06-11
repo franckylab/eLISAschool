@@ -1,0 +1,16 @@
+{
+    "titre": "Inventory",
+    "description": "Manage equipment and stock",
+    "ajouter": "Add equipment",
+    "rechercher": "Search equipment...",
+    "reference": "Reference",
+    "designation": "Description",
+    "categorie": "Category",
+    "quantite": "Quantity",
+    "etat": "Condition",
+    "prixUnitaire": "Unit price",
+    "totalMateriel": "Total equipment",
+    "valeurTotale": "Total value",
+    "horsService": "Out of order",
+    "categories": "Categories"
+}

@@ -1,0 +1,32 @@
+{
+    "statistiques": {
+        "title": "Statistiques Globales",
+        "exporter": "Exporter",
+        "totalEleves": "Total élèves",
+        "personnel": "Personnel",
+        "benefice": "Bénéfice",
+        "moyenneGenerale": "Moy. générale",
+        "absences": "Absences",
+        "retards": "Retards",
+        "sanctions": "Sanctions",
+        "repartitionClasse": "Répartition par classe"
+    },
+    "rapports": {
+        "title": "Gestion des Rapports",
+        "newRapport": "Nouveau rapport",
+        "totalRapports": "Total rapports",
+        "generes": "Générés",
+        "formats": "Formats",
+        "tailleTotale": "Taille totale",
+        "search": "Rechercher un rapport..."
+    },
+    "analytics": {
+        "title": "Analytics & KPIs",
+        "newKPI": "Nouveau KPI",
+        "alertesActives": "Alertes actives",
+        "totalKPIs": "Total KPIs",
+        "kpisBons": "KPIs bons",
+        "alertes": "Alertes",
+        "critiques": "Critiques"
+    }
+}

@@ -1,0 +1,267 @@
+/**
+ * ==================================
+ * eLISAschool - Page Bibliothèque
+ * ==================================
+ */
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { Book, Plus, Search, Eye, Edit, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { ElisaButton } from '@/components/ui/ElisaButton';
+import { useOuvrages, usePrets, useSupprimerOuvrage, useStatistiquesBibliotheque } from '../hooks/use-bibliotheque';
+import type { Ouvrage } from '../types/bibliotheque.types';
+
+export function BibliothequePage() {
+    const { t } = useTranslation('bibliotheque');
+    const [page, setPage] = useState(1);
+    const limit = 20;
+    const [recherche, setRecherche] = useState('');
+    const [filtreCategorie, setFiltreCategorie] = useState('');
+    const [filtreDispo, setFiltreDispo] = useState('tous');
+
+    const { data, isLoading, meta } = useOuvrages({
+        recherche: recherche || undefined,
+        categorie: filtreCategorie || undefined,
+        disponibilite: filtreDispo as any,
+    });
+
+    const { data: prets } = usePrets();
+    const { data: stats } = useStatistiquesBibliotheque();
+    const supprimer = useSupprimerOuvrage();
+
+    const categories: any = {
+        manuel: { label: 'Manuel', color: 'blue' },
+        roman: { label: 'Roman', color: 'purple' },
+        documentaire: { label: 'Documentaire', color: 'green' },
+        dictionnaire: { label: 'Dictionnaire', color: 'orange' },
+        encyclopedie: { label: 'Encyclopédie', color: 'red' },
+        revue: { label: 'Revue', color: 'pink' },
+        autre: { label: 'Autre', color: 'gray' },
+    };
+
+    const colonnes: Column<Ouvrage>[] = [
+        {
+            key: 'categorie',
+            header: 'Catégorie',
+            className: 'text-center w-32',
+            render: (o) => {
+                const cat = categories[o.categorie];
+                return (
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-${cat?.color}-100 text-${cat?.color}-800`}>
+                        {cat?.label}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'titre',
+            header: 'Ouvrage',
+            render: (o) => (
+                <div>
+                    <p className="font-medium text-gray-900">{o.titre}</p>
+                    <p className="text-xs text-gray-500">{o.auteur}</p>
+                    {o.isbn && <p className="text-xs text-gray-400">ISBN: {o.isbn}</p>}
+                </div>
+            ),
+        },
+        {
+            key: 'exemplaires',
+            header: 'Exemplaires',
+            className: 'text-center w-32',
+            render: (o) => (
+                <div className="text-sm">
+                    <span className="font-medium text-gray-900">{o.exemplairesDisponibles}</span>
+                    <span className="text-gray-500">/{o.nombreExemplaires}</span>
+                    {o.exemplairesDisponibles === 0 && (
+                        <p className="text-xs text-red-600 font-medium">Indisponible</p>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'localisation',
+            header: 'Localisation',
+            className: 'w-24',
+            render: (o) => (
+                <span className="text-sm text-gray-700">{o.localisation || '-'}</span>
+            ),
+        },
+        {
+            key: 'editeur',
+            header: 'Éditeur',
+            className: 'w-32',
+            render: (o) => (
+                <div>
+                    <p className="text-sm text-gray-700">{o.editeur || '-'}</p>
+                    {o.anneePublication && (
+                        <p className="text-xs text-gray-500">{o.anneePublication}</p>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            className: 'text-right w-32',
+            render: (o) => (
+                <div className="flex justify-end gap-1">
+                    <ElisaButton
+                        variant="outline"
+                        size="sm"
+                        icon={<Eye className="h-3 w-3" />}
+                        onClick={() => window.alert(`Détail: ${o.titre}`)}
+                    />
+                    {o.exemplairesDisponibles > 0 && (
+                        <ElisaButton
+                            variant="outline"
+                            size="sm"
+                            icon={<BookOpen className="h-3 w-3" />}
+                            onClick={() => window.alert(`Prêt: ${o.titre}`)}
+                        >
+                            Prêter
+                        </ElisaButton>
+                    )}
+                    <ElisaButton
+                        variant="danger"
+                        size="sm"
+                        icon={<Trash2 className="h-3 w-3" />}
+                        isLoading={supprimer.isPending}
+                        onClick={() => supprimer.mutateAsync(o.id)}
+                    />
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between"
+            >
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
+                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
+                </div>
+                <ElisaButton
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus className="h-4 w-4" />}
+                    onClick={() => window.alert('Ajouter ouvrage')}
+                >
+                    {t('ajouter')}
+                </ElisaButton>
+            </motion.div>
+
+            {stats && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
+                >
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                                <Book className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Total ouvrages</p>
+                                <p className="text-lg font-bold text-blue-600">{stats.totalOuvrages}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                <BookOpen className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Disponibles</p>
+                                <p className="text-lg font-bold text-green-600">{stats.exemplairesDisponibles}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                                <Clock className="h-5 w-5 text-orange-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Prêts en cours</p>
+                                <p className="text-lg font-bold text-orange-600">{stats.pretsEnCours}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-red-100 rounded-lg">
+                                <AlertCircle className="h-5 w-5 text-red-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Retards</p>
+                                <p className="text-lg font-bold text-red-600">{stats.pretsEnRetard}</p>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex gap-3"
+            >
+                <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder={t('rechercher')}
+                        value={recherche}
+                        onChange={(e) => setRecherche(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <select
+                    value={filtreCategorie}
+                    onChange={(e) => setFiltreCategorie(e.target.value)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="">Toutes catégories</option>
+                    <option value="manuel">Manuel</option>
+                    <option value="roman">Roman</option>
+                    <option value="documentaire">Documentaire</option>
+                    <option value="dictionnaire">Dictionnaire</option>
+                    <option value="encyclopedie">Encyclopédie</option>
+                    <option value="revue">Revue</option>
+                    <option value="autre">Autre</option>
+                </select>
+                <select
+                    value={filtreDispo}
+                    onChange={(e) => setFiltreDispo(e.target.value)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="tous">Tous</option>
+                    <option value="disponible">Disponibles</option>
+                    <option value="indisponible">Indisponibles</option>
+                </select>
+            </motion.div>
+
+            <DataTable
+                colonnes={colonnes}
+                donnees={data || []}
+                isLoading={isLoading}
+                pagination={{
+                    page,
+                    limit,
+                    total: meta?.total || 0,
+                    onPageChange: setPage,
+                }}
+            />
+        </div>
+    );
+}

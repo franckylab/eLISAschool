@@ -1,0 +1,12 @@
+{
+    "titre": "Classes",
+    "nouvelleClasse": "Nouvelle classe",
+    "code": "Code",
+    "nom": "Nom",
+    "niveau": "Niveau",
+    "cycle": "Cycle",
+    "salle": "Salle",
+    "capacite": "Capacité",
+    "effectif": "Effectif",
+    "principal": "Enseignant principal"
+}

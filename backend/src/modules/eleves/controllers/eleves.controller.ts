@@ -42,6 +42,13 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role
     } catch (error) { next(error); }
 });
 
+router.get('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eleve = await service.findOne(req.params.id);
+        res.json({ success: true, data: eleve });
+    } catch (error) { next(error); }
+});
+
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateEleveSchema, req.body);
@@ -182,6 +189,44 @@ router.get('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
         
         // Utiliser findAll avec filtres étendus
         const result = await service.findAll(query, req.etablissementId);
+        res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// EXPORT CSV
+// ==================================
+
+router.get('/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const filtres = {
+            search: req.query.search as string,
+            classeId: req.query.classeId as string,
+            anneeScolaireId: req.query.anneeScolaireId as string,
+            statut: req.query.statut as string,
+        };
+        
+        const csvContent = await service.exportElevesCSV(filtres, req.etablissementId!);
+        
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="eleves_${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send('\ufeff' + csvContent); // BOM UTF-8 pour Excel
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// IMPORT CSV
+// ==================================
+
+router.post('/import', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { csvContent, anneeScolaireId, classeId } = req.body;
+        
+        if (!csvContent || !anneeScolaireId || !classeId) {
+            throw new AppError('csvContent, anneeScolaireId et classeId sont obligatoires', 400, 'MISSING_FIELDS');
+        }
+        
+        const result = await service.importElevesCSV(csvContent, req.etablissementId!, anneeScolaireId, classeId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });

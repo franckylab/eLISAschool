@@ -1,0 +1,12 @@
+{
+    "titre": "Utilisateurs",
+    "nouvelUtilisateur": "Nouvel utilisateur",
+    "email": "Email",
+    "nom": "Nom",
+    "prenom": "Prénom",
+    "role": "Rôle",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "suspendu": "Suspendu",
+    "derniereConnexion": "Dernière connexion"
+}

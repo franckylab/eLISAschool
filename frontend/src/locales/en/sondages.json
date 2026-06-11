@@ -1,0 +1,32 @@
+{
+    "titre": "Surveys",
+    "description": "Create and manage surveys for the educational community",
+    "creer": "New survey",
+    "rechercher": "Search survey...",
+    "question": "Question",
+    "categorie": "Category",
+    "type": "Type",
+    "votes": "Votes",
+    "statut": "Status",
+    "anonyme": "Anonymous",
+    "exporter": "Export",
+    "categories": {
+        "satisfaction": "Satisfaction",
+        "evaluation": "Evaluation",
+        "consultation": "Consultation",
+        "feedback": "Feedback",
+        "autre": "Other"
+    },
+    "types": {
+        "unique": "Single choice",
+        "multiple": "Multiple choice",
+        "note": "Rating",
+        "texte": "Free text"
+    },
+    "statuts": {
+        "brouillon": "Draft",
+        "actif": "Active",
+        "termine": "Completed",
+        "archive": "Archived"
+    }
+}
