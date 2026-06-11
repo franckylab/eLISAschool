@@ -102,6 +102,3 @@ export class ProfilUtilisateur {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { ProfilUtilisateur, Genre };
-
-export default ProfilUtilisateur;

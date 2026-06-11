@@ -38,9 +38,11 @@ router.post('/dossiers', staffOnly, requirePermission('sante:dossier:write'), as
 
 router.get('/dossiers/:patientId', staffOnly, requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const typePatient = req.query.typePatient as 'ELEVE' | 'PERSONNEL' | undefined;
         const dossier = await santeService.getDossierByPatient(
             req.params.patientId,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            typePatient
         );
         res.json({ success: true, data: dossier });
     } catch (error) {

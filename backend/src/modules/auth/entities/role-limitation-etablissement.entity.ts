@@ -61,6 +61,3 @@ export class RoleLimitationEtablissement {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { RoleLimitationEtablissement };
-
-export default RoleLimitationEtablissement;

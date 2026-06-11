@@ -85,6 +85,3 @@ export class Role {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { Role };
-
-export default Role;

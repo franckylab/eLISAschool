@@ -10,7 +10,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import Permission from '@modules/auth/entities/permission.entity';
+import { Permission } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 

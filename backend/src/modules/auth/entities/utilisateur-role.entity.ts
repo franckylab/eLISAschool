@@ -71,8 +71,3 @@ export class UtilisateurRole {
     @JoinColumn({ name: 'roleId' })
     role!: Role;
 }
-
-// Export nommé pour TypeORM (détection automatique via glob pattern)
-export { UtilisateurRole };
-
-export default UtilisateurRole;

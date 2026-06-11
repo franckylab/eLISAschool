@@ -9,7 +9,25 @@
 import 'reflect-metadata';
 // IMPORTANT: dotenv.config() DOIT être appelé avant tout autre import
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import fs from 'fs';
+
+// Charger .env depuis la racine du projet
+// Chercher dans l'ordre : processus.cwd()/../../.env, processus.cwd()/.env, __dirname/../../.env
+const searchPaths = [
+    path.resolve(process.cwd(), '../../.env'),  // backend/src -> racine
+    path.resolve(process.cwd(), '.env'),         // racine directe
+    path.resolve(__dirname, '../../.env'),       // fallback
+];
+
+const envFile = searchPaths.find(p => fs.existsSync(p));
+if (envFile) {
+    dotenv.config({ path: envFile });
+    console.log(`✅ .env chargé depuis: ${envFile}`);
+} else {
+    console.warn('⚠️  Fichier .env non trouvé, utilisation des valeurs par défaut');
+    dotenv.config();  // Fallback
+}
 
 import { AppDataSource } from '@database/data-source';
 import { createApp } from './app';
@@ -92,6 +110,19 @@ async function bootstrap(): Promise<void> {
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');
+        }
+
+        // Initialiser Redis (non-bloquant)
+        try {
+            const { redisService } = await import('@common/services/redis.service');
+            const redisAvailable = await redisService.isAvailable();
+            if (redisAvailable) {
+                logger.info('✅ Redis connecté et opérationnel');
+            } else {
+                logger.warn('⚠️  Redis non disponible - Utilisation du cache in-memory (fallback)');
+            }
+        } catch (error) {
+            logger.warn('⚠️  Redis non disponible - Utilisation du cache in-memory (fallback)');
         }
 
         // Démarrage du serveur HTTP

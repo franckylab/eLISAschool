@@ -1,0 +1,73 @@
+{
+    "titre": "Dashboard",
+    "bienvenue": "Welcome, {{nom}}!",
+    "resume": "School overview",
+    "widgets": {
+        "effectifs": {
+            "titre": "Enrollment",
+            "eleves": "Enrolled students",
+            "enseignants": "Teachers",
+            "personnel": "Administrative staff",
+            "classes": "Active classes"
+        },
+        "finances": {
+            "titre": "Finances",
+            "recettes": "Monthly revenue",
+            "depenses": "Monthly expenses",
+            "solde": "Balance",
+            "impayes": "Unpaid",
+            "tauxRecouvrement": "Collection rate"
+        },
+        "academique": {
+            "titre": "Academic",
+            "moyenneGenerale": "Overall average",
+            "tauxReussite": "Success rate",
+            "absences": "Absences today",
+            "devoirs": "Pending assignments"
+        },
+        "communication": {
+            "titre": "Communication",
+            "messagesNonLus": "Unread messages",
+            "notifications": "Notifications",
+            "evenements": "Upcoming events",
+            "annonces": "Recent announcements"
+        },
+        "bibliotheque": {
+            "titre": "Library",
+            "livresDisponibles": "Available books",
+            "empruntsEnCours": "Current loans",
+            "retards": "Overdue returns"
+        },
+        "transport": {
+            "titre": "Transport",
+            "vehiculesActifs": "Active vehicles",
+            "trajetsAujourdhui": "Trips today",
+            "incidents": "Reported incidents"
+        }
+    },
+    "layout": {
+        "personnaliser": "Customize dashboard",
+        "ajouterWidget": "Add widget",
+        "supprimerWidget": "Remove widget",
+        "deplacerWidget": "Move widget",
+        "redimensionner": "Resize",
+        "reinitialiser": "Reset layout",
+        "confirmerReinitialiser": "Do you want to reset the dashboard layout?",
+        "sauvegarde": "Layout saved",
+        "colonnes": "Columns"
+    },
+    "raccourcis": {
+        "titre": "Quick actions",
+        "nouvelEleve": "New student",
+        "nouvelleNote": "New grade",
+        "nouveauPaiement": "New payment",
+        "envoiMessage": "Send message",
+        "creerDevoir": "Create assignment",
+        "genererBulletin": "Generate report card"
+    },
+    "activiteRecente": {
+        "titre": "Recent activity",
+        "aucune": "No recent activity",
+        "voirTout": "View full history"
+    }
+}

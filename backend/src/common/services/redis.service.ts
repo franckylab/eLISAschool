@@ -31,20 +31,29 @@ const redisConfig = {
     enableReadyCheck: true,
     
     // Timeouts
-    connectTimeout: 10000,
-    commandTimeout: 5000,
+    connectTimeout: 5000,  // Réduit de 10s à 5s pour échouer plus rapidement
+    commandTimeout: 3000,  // Réduit de 5s à 3s
     
     // Reconnexion automatique
-    lazyConnect: true,
+    lazyConnect: false,  // ✅ Connecter immédiatement (était true)
     keepAlive: 30000,
+    
+    // Gestion des erreurs de connexion
+    reconnectOnError: (err: Error) => {
+        const targetErrors = ['READONLY', 'ECONNRESET'];
+        return targetErrors.some(targetErr => err.message.includes(targetErr));
+    },
 };
 
 /**
- * Client Redis singleton
+ * Client Redis singleton avec DEUX clients séparés :
+ * - cacheClient : Pour les opérations de cache (GET/SET/DEL)
+ * - subscriberClient : Pour le mode subscriber (SSE, events)
  */
 class RedisService {
     private static instance: RedisService;
-    private client: Redis | null = null;
+    private cacheClient: Redis | null = null;  // Client pour cache
+    private subscriberClient: Redis | null = null;  // Client pour subscriber
     private isConnecting = false;
 
     private constructor() {}
@@ -57,27 +66,27 @@ class RedisService {
     }
 
     /**
-     * Obtenir ou créer la connexion Redis
+     * Obtenir ou créer la connexion Redis (client cache)
      */
     async getClient(): Promise<Redis> {
-        if (this.client && this.client.status === 'ready') {
-            return this.client;
+        if (this.cacheClient && this.cacheClient.status === 'ready') {
+            return this.cacheClient;
         }
 
         if (this.isConnecting) {
             // Attendre que la connexion en cours se termine
             return new Promise((resolve, reject) => {
                 const checkInterval = setInterval(() => {
-                    if (this.client?.status === 'ready') {
+                    if (this.cacheClient?.status === 'ready') {
                         clearInterval(checkInterval);
-                        resolve(this.client!);
+                        resolve(this.cacheClient!);
                     }
                 }, 100);
 
                 setTimeout(() => {
                     clearInterval(checkInterval);
                     reject(new Error('Timeout connexion Redis'));
-                }, 15000);
+                }, 8000);  // Réduit de 15s à 8s
             });
         }
 
@@ -85,44 +94,62 @@ class RedisService {
     }
 
     /**
-     * Établir la connexion Redis
+     * Obtenir le client subscriber (pour SSE, events)
+     */
+    getSubscriberClient(): Redis | null {
+        return this.subscriberClient;
+    }
+
+    /**
+     * Établir la connexion Redis (DEUX clients séparés)
      */
     private async connect(): Promise<Redis> {
         this.isConnecting = true;
 
         try {
-            this.client = new Redis(redisConfig);
+            // 1. Client pour CACHE (GET/SET/DEL)
+            this.cacheClient = new Redis(redisConfig);
 
-            // Event listeners
-            this.client.on('ready', () => {
-                logger.info('[Redis] Connecté et prêt');
+            this.cacheClient.on('ready', () => {
+                logger.info('[Redis] Cache client connecté et prêt');
                 this.isConnecting = false;
             });
 
-            this.client.on('error', (error) => {
-                logger.error('[Redis] Erreur:', error.message);
+            this.cacheClient.on('error', (error) => {
+                logger.error('[Redis] Cache client error:', error.message);
                 this.isConnecting = false;
             });
 
-            this.client.on('close', () => {
-                logger.warn('[Redis] Connexion fermée');
+            this.cacheClient.on('close', () => {
+                logger.warn('[Redis] Cache client connexion fermée');
             });
 
-            this.client.on('reconnecting', () => {
-                logger.info('[Redis] Tentative de reconnexion...');
+            this.cacheClient.on('reconnecting', () => {
+                logger.info('[Redis] Cache client tentative de reconnexion...');
             });
 
-            // Attendre que le client soit prêt
+            // 2. Client pour SUBSCRIBER (SSE, events)
+            this.subscriberClient = new Redis(redisConfig);
+
+            this.subscriberClient.on('ready', () => {
+                logger.info('[Redis] Subscriber client connecté et prêt');
+            });
+
+            this.subscriberClient.on('error', (error) => {
+                logger.error('[Redis] Subscriber client error:', error.message);
+            });
+
+            // Attendre que le cache client soit prêt
             await new Promise<void>((resolve, reject) => {
-                if (this.client!.status === 'ready') {
+                if (this.cacheClient!.status === 'ready') {
                     resolve();
                 } else {
-                    this.client!.once('ready', () => resolve());
-                    this.client!.once('error', (error) => reject(error));
+                    this.cacheClient!.once('ready', () => resolve());
+                    this.cacheClient!.once('error', (error) => reject(error));
                 }
             });
 
-            return this.client;
+            return this.cacheClient;
         } catch (error) {
             this.isConnecting = false;
             logger.error('[Redis] Échec de connexion:', error);
@@ -135,10 +162,30 @@ class RedisService {
      */
     async isAvailable(): Promise<boolean> {
         try {
+            // Vérifier si le client cache existe et est prêt
+            if (this.cacheClient && this.cacheClient.status === 'ready') {
+                const result = await this.cacheClient.ping();
+                return result === 'PONG';
+            }
+            
+            // Sinon, essayer de se connecter
             const client = await this.getClient();
-            const result = await client.ping();
-            return result === 'PONG';
-        } catch {
+            
+            // Retry 3 fois avec délai
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const result = await client.ping();
+                    if (result === 'PONG') {
+                        return true;
+                    }
+                } catch (error) {
+                    if (i === 2) throw error;  // Dernier essai
+                    await new Promise(resolve => setTimeout(resolve, 500));  // Attendre 500ms
+                }
+            }
+            return false;
+        } catch (error) {
+            logger.debug('[Redis] isAvailable check failed:', error.message);
             return false;
         }
     }
@@ -346,13 +393,18 @@ class RedisService {
     }
 
     /**
-     * Fermer la connexion
+     * Fermer les connexions
      */
     async disconnect(): Promise<void> {
-        if (this.client) {
-            await this.client.quit();
-            this.client = null;
-            logger.info('[Redis] Déconnecté');
+        if (this.cacheClient) {
+            await this.cacheClient.quit();
+            this.cacheClient = null;
+            logger.info('[Redis] Cache client déconnecté');
+        }
+        if (this.subscriberClient) {
+            await this.subscriberClient.quit();
+            this.subscriberClient = null;
+            logger.info('[Redis] Subscriber client déconnecté');
         }
     }
 }

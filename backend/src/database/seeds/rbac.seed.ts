@@ -11,25 +11,21 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../data-source';
-import RoleEntity from '@modules/auth/entities/role.entity';
-import Permission from '@modules/auth/entities/permission.entity';
-import UtilisateurRole from '@modules/auth/entities/utilisateur-role.entity';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
-import { Role, StatutUtilisateur } from '@modules/auth/entities';
-import { DEFAULT_ROLE_PERMISSIONS, Permission as PermissionEnum } from '@shared/enums/roles.enum';
+import { Role, Permission, UtilisateurRole, Utilisateur, StatutUtilisateur } from '@modules/auth/entities';
+import { Role as RoleEnum, DEFAULT_ROLE_PERMISSIONS, Permission as PermissionEnum } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 
 /**
  * Service de seed pour le système RBAC
  */
 export class RBACSeedService {
-    private roleRepo: Repository<RoleEntity>;
+    private roleRepo: Repository<Role>;
     private permissionRepo: Repository<Permission>;
     private utilisateurRoleRepo: Repository<UtilisateurRole>;
     private utilisateurRepo: Repository<Utilisateur>;
 
     constructor() {
-        this.roleRepo = AppDataSource.getRepository(RoleEntity);
+        this.roleRepo = AppDataSource.getRepository(Role);
         this.permissionRepo = AppDataSource.getRepository(Permission);
         this.utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
@@ -61,15 +57,15 @@ export class RBACSeedService {
      */
     private async seedRoles(): Promise<number> {
         const rolesDefinition = [
-            { code: Role.SUPER_ADMIN, libelle: 'Super Administrateur', description: 'Accès total à toutes les fonctionnalités' },
-            { code: Role.ADMIN, libelle: 'Administrateur', description: 'Administrateur de l\'établissement' },
-            { code: Role.CHEF_ETABLISSEMENT, libelle: 'Chef d\'Établissement', description: 'Direction de l\'établissement' },
-            { code: Role.ENSEIGNANT, libelle: 'Enseignant', description: 'Enseignant' },
-            { code: Role.PERSONNEL, libelle: 'Personnel', description: 'Personnel non-enseignant (secrétaire, etc.)' },
-            { code: Role.RESPONSABLE_CANTINE, libelle: 'Responsable Cantine', description: 'Gestion de la cantine' },
-            { code: Role.RESPONSABLE_TRANSPORT, libelle: 'Responsable Transport', description: 'Gestion du transport' },
-            { code: Role.PARENT, libelle: 'Parent', description: 'Parent d\'élève' },
-            { code: Role.ELEVE, libelle: 'Élève', description: 'Élève' },
+            { code: RoleEnum.SUPER_ADMIN, libelle: 'Super Administrateur', description: 'Accès total à toutes les fonctionnalités' },
+            { code: RoleEnum.ADMIN, libelle: 'Administrateur', description: 'Administrateur de l\'établissement' },
+            { code: RoleEnum.CHEF_ETABLISSEMENT, libelle: 'Chef d\'Établissement', description: 'Direction de l\'établissement' },
+            { code: RoleEnum.ENSEIGNANT, libelle: 'Enseignant', description: 'Enseignant' },
+            { code: RoleEnum.PERSONNEL, libelle: 'Personnel', description: 'Personnel non-enseignant (secrétaire, etc.)' },
+            { code: RoleEnum.RESPONSABLE_CANTINE, libelle: 'Responsable Cantine', description: 'Gestion de la cantine' },
+            { code: RoleEnum.RESPONSABLE_TRANSPORT, libelle: 'Responsable Transport', description: 'Gestion du transport' },
+            { code: RoleEnum.PARENT, libelle: 'Parent', description: 'Parent d\'élève' },
+            { code: RoleEnum.ELEVE, libelle: 'Élève', description: 'Élève' },
         ];
 
         let count = 0;

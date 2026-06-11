@@ -85,6 +85,3 @@ export class UtilisateurPermission {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { UtilisateurPermission, TypePermission };
-
-export default UtilisateurPermission;

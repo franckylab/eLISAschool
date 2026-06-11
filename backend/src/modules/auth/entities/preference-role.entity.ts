@@ -11,8 +11,8 @@ import {
     Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
     Index, Unique, ManyToOne, JoinColumn,
 } from 'typeorm';
-import Role from '@modules/auth/entities/role.entity';
-import { CategoriePreference } from '@modules/auth/entities/preference-utilisateur.entity';
+import { Role as RoleEntity } from './role.entity';
+import { CategoriePreference } from './preference-utilisateur.entity';
 
 /**
  * Préférences configurables au niveau du rôle
@@ -32,9 +32,9 @@ export class PreferenceRole {
     roleId!: string;
 
     /** Rôle associé */
-    @ManyToOne(() => Role)
+    @ManyToOne(() => RoleEntity)
     @JoinColumn({ name: 'roleId' })
-    role!: Role;
+    role!: RoleEntity;
 
     /** Clé de préférence (ex: theme, langue) */
     @Column({ type: 'varchar', length: 100 })

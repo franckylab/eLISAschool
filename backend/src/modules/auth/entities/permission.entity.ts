@@ -63,6 +63,3 @@ export class Permission {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { Permission };
-
-export default Permission;

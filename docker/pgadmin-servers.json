@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "eLISAschool DB",
+      "Group": "Development",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "elisaschool",
+      "Username": "elisaschool_user",
+      "Password": "elisaschool_password",
+      "SSLMode": "prefer"
+    }
+  }
+}

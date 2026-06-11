@@ -9,7 +9,8 @@
  */
 
 import { AppDataSource } from '../data-source';
-import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { RBACSeedService } from './rbac.seed';
 import { logger } from '@common/utils/logger.util';
@@ -60,7 +61,7 @@ async function seedSuperAdmin(): Promise<void> {
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
 
     const existant = await userRepo.findOne({
-        where: { role: Role.SUPER_ADMIN },
+        where: { email: 'admin@elisaschool.cm' },
     });
 
     if (existant) {

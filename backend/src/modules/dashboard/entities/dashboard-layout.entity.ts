@@ -18,7 +18,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
 
 export interface WidgetLayoutConfig {
     id: string;

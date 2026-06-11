@@ -1,0 +1,594 @@
+/**
+ * ==================================
+ * eLISAschool - Page de Connexion
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Design moderne avec multi-identifiant, toggle password, QR scanner,
+ * animations Framer Motion, et illustration scolaire
+ */
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useRouter, useSearch, Link } from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Mail, Lock, LogIn, Eye, EyeOff, QrCode,
+    GraduationCap, BookOpen, Users, Award, X, Camera,
+    AlertCircle, CheckCircle2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/auth.store';
+import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
+import { cn } from '@/lib/cn';
+
+interface LoginForm {
+    identifiant: string;
+    motDePasse: string;
+    seSouvenir: boolean;
+}
+
+/* ─── Illustration SVG scolaire animée ────────────── */
+function IllustrationScolaire() {
+    return (
+        <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+            {/* Éléments flottants en arrière-plan */}
+            <motion.div
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+            >
+                {/* Cercles décoratifs */}
+                <motion.div
+                    className="absolute top-[10%] left-[15%] h-24 w-24 rounded-full bg-white/10"
+                    animate={{ y: [0, -15, 0], scale: [1, 1.05, 1] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                    className="absolute bottom-[20%] right-[10%] h-32 w-32 rounded-full bg-white/8"
+                    animate={{ y: [0, 20, 0], scale: [1, 0.95, 1] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                    className="absolute top-[60%] left-[10%] h-16 w-16 rounded-full bg-white/6"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+            </motion.div>
+
+            {/* Illustration centrale */}
+            <motion.div
+                className="relative z-10 flex flex-col items-center gap-8 px-8"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+            >
+                {/* Icônes scolaires animées en cercle */}
+                <div className="relative h-56 w-56">
+                    {/* Centre - Diplôme */}
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center"
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/20 shadow-xl backdrop-blur-sm">
+                            <GraduationCap className="h-14 w-14 text-white" strokeWidth={1.5} />
+                        </div>
+                    </motion.div>
+
+                    {/* Orbiting icons */}
+                    <motion.div
+                        className="absolute top-2 left-1/2 -translate-x-1/2"
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
+                            <BookOpen className="h-6 w-6 text-white" strokeWidth={1.5} />
+                        </div>
+                    </motion.div>
+                    <motion.div
+                        className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                        animate={{ y: [0, 6, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
+                            <Users className="h-6 w-6 text-white" strokeWidth={1.5} />
+                        </div>
+                    </motion.div>
+                    <motion.div
+                        className="absolute top-1/2 left-2 -translate-y-1/2"
+                        animate={{ x: [0, -6, 0] }}
+                        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
+                            <Award className="h-6 w-6 text-white" strokeWidth={1.5} />
+                        </div>
+                    </motion.div>
+                    <motion.div
+                        className="absolute top-1/2 right-2 -translate-y-1/2"
+                        animate={{ x: [0, 6, 0] }}
+                        transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
+                            <Mail className="h-6 w-6 text-white" strokeWidth={1.5} />
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Texte descriptif */}
+                <div className="text-center">
+                    <motion.p
+                        className="text-lg font-semibold text-white/90"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                    >
+                        École Intelligente
+                    </motion.p>
+                    <motion.p
+                        className="mt-2 max-w-xs text-sm leading-relaxed text-white/60"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                    >
+                        Gérez élèves, enseignants, finances et bien plus,
+                        le tout dans une plateforme unifiée et sécurisée.
+                    </motion.p>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+/* ─── Scanner QR Code ─────────────────────────────── */
+function QRScannerModal({
+    ouvert,
+    onClose,
+    onScan,
+}: {
+    ouvert: boolean;
+    onClose: () => void;
+    onScan: (value: string) => void;
+}) {
+    const { t } = useTranslation('auth');
+    const scannerRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [erreur, setErreur] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!ouvert) return;
+
+        let scanner: any = null;
+
+        const initScanner = async () => {
+            try {
+                const { Html5Qrcode } = await import('html5-qrcode');
+                scanner = new Html5Qrcode('qr-reader');
+                scannerRef.current = scanner;
+
+                await scanner.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText: string) => {
+                        onScan(decodedText);
+                        toast.success(t('login.scanReussi'));
+                        onClose();
+                    },
+                    () => { /* Ignore les échecs de scan continus */ },
+                );
+            } catch {
+                setErreur(t('login.scanEchec'));
+            }
+        };
+
+        initScanner();
+
+        return () => {
+            if (scannerRef.current) {
+                scannerRef.current.stop().catch(() => {});
+                scannerRef.current = null;
+            }
+        };
+    }, [ouvert]);
+
+    if (!ouvert) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+            >
+                <motion.div
+                    className="relative mx-4 w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--color-surface)] p-6 shadow-2xl"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        onClick={onClose}
+                        className="absolute right-4 top-4 rounded-full p-1 text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] transition-colors"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-dominante)]/10">
+                            <Camera className="h-5 w-5 text-[var(--color-dominante)]" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-[var(--color-texte)]">{t('login.scannerQRTitre')}</h3>
+                            <p className="text-xs text-[var(--color-texte-secondaire)]">{t('login.scannerQRDescription')}</p>
+                        </div>
+                    </div>
+
+                    {erreur ? (
+                        <div className="flex flex-col items-center gap-3 py-8">
+                            <AlertCircle className="h-12 w-12 text-[var(--color-error)]" />
+                            <p className="text-sm text-[var(--color-texte-secondaire)]">{erreur}</p>
+                            <button
+                                onClick={onClose}
+                                className="rounded-lg bg-[var(--color-dominante)] px-4 py-2 text-sm font-medium text-white"
+                            >
+                                {t('login.arretScan')}
+                            </button>
+                        </div>
+                    ) : (
+                        <div ref={containerRef} className="overflow-hidden rounded-xl border-2 border-dashed border-[var(--color-dominante)]/30">
+                            <div id="qr-reader" className="w-full" />
+                        </div>
+                    )}
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+}
+
+/* ─── Composant principal ─────────────────────────── */
+export function LoginPage() {
+    const { t } = useTranslation('auth');
+    const router = useRouter();
+    const search = useSearch({ from: '/login' }) as { redirect?: string };
+    const { login, isLoading } = useAuthStore();
+
+    const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [qrOpen, setQrOpen] = useState(false);
+    const [successPulse, setSuccessPulse] = useState(false);
+
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = useForm<LoginForm>({
+        defaultValues: { identifiant: '', motDePasse: '', seSouvenir: true },
+    });
+
+    const identifiantValue = watch('identifiant');
+
+    /* Détection du type d'identifiant pour l'icône dynamique */
+    const typeIdentifiant = useCallback((val: string): 'email' | 'matricule' | 'user' => {
+        if (!val) return 'user';
+        if (val.includes('@')) return 'email';
+        if (/^[A-Z]{2,4}-?\d{3,}/i.test(val)) return 'matricule';
+        return 'user';
+    }, []);
+
+    const iconeIdentifiant = () => {
+        switch (typeIdentifiant(identifiantValue)) {
+            case 'email': return <Mail className="h-4 w-4" />;
+            case 'matricule': return <Award className="h-4 w-4" />;
+            default: return <Users className="h-4 w-4" />;
+        }
+    };
+
+    const onSubmit = async (data: LoginForm) => {
+        setError(null);
+        setSuccessPulse(false);
+        try {
+            await login(data.identifiant, data.motDePasse);
+            setSuccessPulse(true);
+            toast.success(t('login.bienvenue'));
+            setTimeout(() => {
+                router.navigate({ to: (search as any).redirect || '/dashboard' });
+            }, 300);
+        } catch (err: any) {
+            const code = err?.code || '';
+            const message = code === 'INVALID_CREDENTIALS'
+                ? t('erreurs.identifiantsInvalides')
+                : code === 'ACCOUNT_LOCKED'
+                ? t('erreurs.compteVerrouille')
+                : code === 'ACCOUNT_SUSPENDED' || code === 'ACCOUNT_INACTIVE'
+                ? t('erreurs.compteDesactive')
+                : err?.message || t('erreurs.sessionExpiree');
+            setError(message);
+        }
+    };
+
+    const handleQRScan = useCallback((value: string) => {
+        setValue('identifiant', value);
+        setQrOpen(false);
+    }, [setValue]);
+
+    return (
+        <div className="flex min-h-screen">
+            {/* ─── Panneau gauche : Illustration (desktop) ─── */}
+            <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
+                {/* Fond dégradé dynamique */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a] via-[#28a745] to-[#20c997]" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40" />
+                <IllustrationScolaire />
+
+                {/* Logo en haut à gauche */}
+                <div className="absolute left-8 top-8 z-20">
+                    <Link to="/" className="text-2xl font-bold text-white">
+                        elisa<span className="text-yellow-300">°</span>school
+                    </Link>
+                </div>
+            </div>
+
+            {/* ─── Panneau droit : Formulaire ──────────────── */}
+            <div className="flex w-full flex-col lg:w-1/2 xl:w-[45%]">
+                {/* Barre supérieure */}
+                <div className="flex items-center justify-between px-6 py-4 sm:px-8">
+                    {/* Logo mobile */}
+                    <Link to="/" className="text-xl font-bold text-[var(--color-dominante)] lg:hidden">
+                        elisa<span className="text-[var(--color-accent)]">°</span>school
+                    </Link>
+                    <div className="ml-auto">
+                        <LanguageSwitcher />
+                    </div>
+                </div>
+
+                {/* Contenu centré */}
+                <div className="flex flex-1 items-center justify-center px-6 pb-8 sm:px-8 lg:px-12">
+                    <motion.div
+                        className="w-full max-w-[420px]"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        {/* Titre */}
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
+                            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-texte)]">
+                                {t('login.titre')}
+                            </h1>
+                            <p className="mt-2 text-sm text-[var(--color-texte-secondaire)]">
+                                {t('login.sousTitre')}
+                            </p>
+                        </motion.div>
+
+                        {/* Formulaire */}
+                        <motion.form
+                            onSubmit={handleSubmit(onSubmit)}
+                            className="mt-8 space-y-5"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            {/* Champ identifiant */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                                    {t('login.identifiant')}
+                                </label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-texte-secondaire)] transition-colors">
+                                        {iconeIdentifiant()}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        autoComplete="username"
+                                        placeholder={t('login.identifiantPlaceholder')}
+                                        className={cn(
+                                            'h-12 w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-4 text-sm text-[var(--color-texte)] transition-all',
+                                            'placeholder:text-[var(--color-texte-secondaire)]/50',
+                                            'focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20',
+                                            errors.identifiant
+                                                ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]/20'
+                                                : 'border-[var(--color-bordure)]',
+                                        )}
+                                        {...register('identifiant', {
+                                            required: t('erreurs.identifiantRequis'),
+                                        })}
+                                    />
+                                </div>
+                                {errors.identifiant && (
+                                    <p className="flex items-center gap-1 text-xs text-[var(--color-error)]">
+                                        <AlertCircle className="h-3 w-3" />
+                                        {errors.identifiant.message}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Champ mot de passe avec toggle */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                                    {t('login.motDePasse')}
+                                </label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-texte-secondaire)]">
+                                        <Lock className="h-4 w-4" />
+                                    </div>
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        autoComplete="current-password"
+                                        placeholder={t('login.motDePassePlaceholder')}
+                                        className={cn(
+                                            'h-12 w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-12 text-sm text-[var(--color-texte)] transition-all',
+                                            'placeholder:text-[var(--color-texte-secondaire)]/50',
+                                            'focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20',
+                                            errors.motDePasse
+                                                ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]/20'
+                                                : 'border-[var(--color-bordure)]',
+                                        )}
+                                        {...register('motDePasse', {
+                                            required: t('erreurs.motDePasseRequis'),
+                                        })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)] transition-colors"
+                                        tabIndex={-1}
+                                        aria-label={showPassword ? t('login.masquerMotDePasse') : t('login.afficherMotDePasse')}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                                {errors.motDePasse && (
+                                    <p className="flex items-center gap-1 text-xs text-[var(--color-error)]">
+                                        <AlertCircle className="h-3 w-3" />
+                                        {errors.motDePasse.message}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Message d'erreur */}
+                            <AnimatePresence>
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -5, height: 0 }}
+                                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                                        exit={{ opacity: 0, y: -5, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="flex items-start gap-2.5 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 px-4 py-3">
+                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-error)]" />
+                                            <p className="text-sm text-[var(--color-error)]">{error}</p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Pulse succès */}
+                            <AnimatePresence>
+                                {successPulse && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="flex items-center gap-2.5 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3"
+                                    >
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        <p className="text-sm font-medium text-green-700">{t('login.bienvenue')}</p>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Options : se souvenir + mot de passe oublié */}
+                            <div className="flex items-center justify-between">
+                                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[var(--color-texte-secondaire)]">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-[var(--color-bordure)] accent-[var(--color-dominante)]"
+                                        {...register('seSouvenir')}
+                                    />
+                                    {t('login.seSouvenir')}
+                                </label>
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-sm font-medium text-[var(--color-dominante)] transition-colors hover:text-[var(--color-dominante-hover)] hover:underline underline-offset-2"
+                                >
+                                    {t('login.motDePasseOublie')}
+                                </Link>
+                            </div>
+
+                            {/* Bouton principal */}
+                            <motion.button
+                                type="submit"
+                                disabled={isLoading || successPulse}
+                                className={cn(
+                                    'relative flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all',
+                                    'bg-gradient-to-r from-[var(--color-dominante)] to-[var(--color-dominante)] shadow-lg shadow-[var(--color-dominante)]/25',
+                                    'hover:shadow-xl hover:shadow-[var(--color-dominante)]/30',
+                                    'disabled:cursor-not-allowed disabled:opacity-70',
+                                    'focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/40 focus:ring-offset-2',
+                                )}
+                                whileHover={!isLoading ? { scale: 1.01 } : {}}
+                                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <motion.div
+                                            className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                                        />
+                                        <span>{t('login.connexionEnCours')}</span>
+                                    </>
+                                ) : successPulse ? (
+                                    <>
+                                        <CheckCircle2 className="h-5 w-5" />
+                                        <span>{t('login.bienvenue')}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <LogIn className="h-4 w-4" />
+                                        <span>{t('login.boutonConnexion')}</span>
+                                    </>
+                                )}
+                            </motion.button>
+
+                            {/* Séparateur */}
+                            <div className="relative flex items-center gap-4 py-1">
+                                <div className="h-px flex-1 bg-[var(--color-bordure)]" />
+                                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-texte-secondaire)]">
+                                    {t('login.ou')}
+                                </span>
+                                <div className="h-px flex-1 bg-[var(--color-bordure)]" />
+                            </div>
+
+                            {/* Bouton QR Code */}
+                            <motion.button
+                                type="button"
+                                onClick={() => setQrOpen(true)}
+                                className={cn(
+                                    'flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border-2 border-dashed',
+                                    'border-[var(--color-bordure)] text-[var(--color-texte-secondaire)]',
+                                    'transition-all hover:border-[var(--color-dominante)]/40 hover:text-[var(--color-dominante)] hover:bg-[var(--color-dominante)]/5',
+                                )}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <QrCode className="h-5 w-5" />
+                                <span className="text-sm font-medium">{t('login.scannerQR')}</span>
+                            </motion.button>
+                        </motion.form>
+
+                        {/* Pied de page */}
+                        <motion.p
+                            className="mt-8 text-center text-sm text-[var(--color-texte-secondaire)]"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                            {t('login.pasDeCompte')}{' '}
+                            <span className="font-medium text-[var(--color-dominante)]">
+                                {t('login.contacterAdmin')}
+                            </span>
+                        </motion.p>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* ─── Modale QR Scanner ───────────────────────── */}
+            <QRScannerModal
+                ouvert={qrOpen}
+                onClose={() => setQrOpen(false)}
+                onScan={handleQRScan}
+            />
+        </div>
+    );
+}

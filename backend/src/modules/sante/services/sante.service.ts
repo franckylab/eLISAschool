@@ -38,9 +38,14 @@ export class SanteService {
 
     // ==================== DOSSIERS MÉDICAUX ====================
     async createOrUpdateDossier(dto: CreateDossierMedicalSchema, etablissementId: string, req?: Request): Promise<DossierMedical> {
+        // Déterminer quelle colonne utiliser selon le type de patient
+        const whereClause = dto.typePatient === TypePatient.ELEVE
+            ? { eleveId: dto.patientId, etablissementId }
+            : { personnelId: dto.patientId, etablissementId };
+
         // Vérifier si le dossier existe déjà
         let dossier = await this.dossierRepo.findOne({
-            where: { patientId: dto.patientId, etablissementId },
+            where: whereClause,
         });
 
         const isUpdate = !!dossier;
@@ -48,6 +53,16 @@ export class SanteService {
         if (dossier) {
             // Mise à jour
             Object.assign(dossier, dto);
+            
+            // Mettre à jour la colonne appropriée selon le type
+            if (dto.typePatient === TypePatient.ELEVE) {
+                dossier.eleveId = dto.patientId;
+                dossier.personnelId = null;
+            } else {
+                dossier.personnelId = dto.patientId;
+                dossier.eleveId = null;
+            }
+            
             await this.dossierRepo.save(dossier);
             
             // Invalider cache
@@ -72,6 +87,9 @@ export class SanteService {
             dossier = this.dossierRepo.create({
                 ...dto,
                 etablissementId,
+                // Définir la colonne appropriée selon le type
+                eleveId: dto.typePatient === TypePatient.ELEVE ? dto.patientId : null,
+                personnelId: dto.typePatient === TypePatient.PERSONNEL ? dto.patientId : null,
             });
             await this.dossierRepo.save(dossier);
             
@@ -94,7 +112,7 @@ export class SanteService {
         return dossier;
     }
 
-    async getDossierByPatient(patientId: string, etablissementId: string): Promise<DossierMedical | null> {
+    async getDossierByPatient(patientId: string, etablissementId: string, typePatient?: TypePatient): Promise<DossierMedical | null> {
         const cacheKey = `dossier:${patientId}:${etablissementId}`;
         
         // Vérifier cache
@@ -104,9 +122,26 @@ export class SanteService {
         }
         
         // Cache miss → DB
-        const dossier = await this.dossierRepo.findOne({
-            where: { patientId, etablissementId },
-        });
+        // Si typePatient est fourni, utiliser la colonne appropriée
+        let dossier: DossierMedical | null = null;
+        
+        if (typePatient === TypePatient.ELEVE) {
+            dossier = await this.dossierRepo.findOne({
+                where: { eleveId: patientId, etablissementId },
+            });
+        } else if (typePatient === TypePatient.PERSONNEL) {
+            dossier = await this.dossierRepo.findOne({
+                where: { personnelId: patientId, etablissementId },
+            });
+        } else {
+            // Fallback: chercher dans les deux colonnes
+            dossier = await this.dossierRepo.findOne({
+                where: [
+                    { eleveId: patientId, etablissementId },
+                    { personnelId: patientId, etablissementId },
+                ],
+            });
+        }
         
         // Mettre en cache
         if (dossier) {
@@ -205,29 +240,32 @@ export class SanteService {
         // Notification pour incidents graves
         if (dto.gravite === 'GRAVE' || dto.gravite === 'CRITIQUE') {
             try {
-                // Trouver les responsables du patient
-                const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-                const responsabilites = await responsableRepo.find({
-                    where: { enfantId: dossier.patientId },
-                }) as unknown as Array<{ utilisateurId: string }>;
+                // Trouver les responsables du patient (uniquement si c'est un élève)
+                if (dossier.typePatient === TypePatient.ELEVE) {
+                    const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+                    const patientId = dossier.eleveId || dossier.patientId;
+                    const responsabilites = await responsableRepo.find({
+                        where: { enfantId: patientId },
+                    }) as unknown as Array<{ utilisateurId: string }>;
 
-                for (const resp of responsabilites) {
-                    await notificationsService.create({
-                        destinataireId: resp.utilisateurId,
-                        type: TypeNotification.IN_APP,
-                        titre: `Incident santé ${dto.gravite.toLowerCase()}`,
-                        contenu: `Un incident de santé ${dto.gravite.toLowerCase()} a été signalé: ${dto.nature}`,
-                        metadata: {
-                            incidentId: incident.id,
-                            gravite: dto.gravite,
-                            nature: dto.nature,
-                            typeIncident: dto.type,
-                        },
-                        priorite: PrioriteNotification.URGENTE,
-                    });
+                    for (const resp of responsabilites) {
+                        await notificationsService.create({
+                            destinataireId: resp.utilisateurId,
+                            type: TypeNotification.IN_APP,
+                            titre: `Incident santé ${dto.gravite.toLowerCase()}`,
+                            contenu: `Un incident de santé ${dto.gravite.toLowerCase()} a été signalé: ${dto.nature}`,
+                            metadata: {
+                                incidentId: incident.id,
+                                gravite: dto.gravite,
+                                nature: dto.nature,
+                                typeIncident: dto.type,
+                            },
+                            priorite: PrioriteNotification.URGENTE,
+                        });
+                    }
+                    
+                    logger.info(`[Santé] Notifications envoyées pour incident grave: ${incident.id}`);
                 }
-                
-                logger.info(`[Santé] Notifications envoyées pour incident grave: ${incident.id}`);
             } catch (error) {
                 logger.warn(`[Santé] Échec notification incident grave (non bloquant)`, error);
             }

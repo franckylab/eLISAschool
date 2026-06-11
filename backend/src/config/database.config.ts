@@ -29,8 +29,8 @@ export const databaseConfig: DataSourceOptions = {
     password: envConfig.database.password,
     database: envConfig.database.name,
 
-    // Synchronisation automatique (désactivée en production)
-    // NOTE: synchronize désactivé temporairement - mismatch snake_case/camelCase dans entités finances
+    // Synchronisation automatique (désactivée - utiliser les migrations)
+    // NOTE: synchronize doit être FALSE pour éviter les conflits avec les migrations
     synchronize: false,
 
     // Journalisation des requêtes SQL

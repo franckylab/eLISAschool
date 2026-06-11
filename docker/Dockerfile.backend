@@ -23,7 +23,7 @@ COPY shared/package.json ./shared/
 # Création des répertoires workspace pour npm
 RUN mkdir -p backend shared
 # Installation de toutes les dépendances (dev + prod)
-RUN npm ci
+RUN npm install
 
 # ==================================
 # Étape 3: Build TypeScript (production uniquement)

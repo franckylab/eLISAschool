@@ -65,17 +65,18 @@ export class WidgetResolverService {
             const userPermissions = await this.permissionResolver.resolvePermissions(utilisateurId);
             const permissionArray = Array.from(userPermissions);
 
-            // 2. Récupérer les rôles de l'utilisateur
+            // 2. Récupérer le rôle de l'utilisateur (colonne enum, pas de relation)
             const utilisateur = await this.utilisateurRepo.findOne({
                 where: { id: utilisateurId },
-                relations: ['roles', 'roles.role'],
             });
 
             if (!utilisateur) {
                 throw new Error('Utilisateur non trouvé');
             }
 
-            const userRoles = [utilisateur.role];
+            // Récupérer les rôles via le permissionResolver (RBAC v2.0)
+            const userRolesData = await this.permissionResolver.getUserRoles(utilisateurId);
+            const userRoles = userRolesData.map(r => r.code);
 
             // 3. Filtrer les widgets par rôles et permissions
             const availableWidgets = WIDGET_REGISTRY.filter(widget => {

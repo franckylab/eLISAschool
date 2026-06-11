@@ -170,8 +170,3 @@ export class Utilisateur {
         return `${prefix}${annee}${random}`;
     }
 }
-
-// Export nommé pour TypeORM (détection automatique via glob pattern)
-export { Utilisateur, Role, StatutUtilisateur };
-
-export default Utilisateur;

@@ -1,0 +1,107 @@
+{
+    "titre": "Settings",
+    "sections": {
+        "general": {
+            "titre": "General",
+            "description": "General school information",
+            "nomEtablissement": "School name",
+            "codeEtablissement": "School code",
+            "adresse": "Address",
+            "telephone": "Phone",
+            "email": "Contact email",
+            "siteWeb": "Website",
+            "devise": "Currency",
+            "pays": "Country",
+            "fuseauHoraire": "Timezone",
+            "logoEtablissement": "School logo",
+            "telechargerLogo": "Upload logo",
+            "logoActuel": "Current logo"
+        },
+        "theme": {
+            "titre": "Appearance",
+            "description": "Customize the application appearance",
+            "couleurDominante": "Primary color",
+            "couleurSecondaire": "Secondary color",
+            "couleurAccent": "Accent color",
+            "mode": "Display mode",
+            "modeClair": "Light",
+            "modeSombre": "Dark",
+            "modeAuto": "Automatic (system)",
+            "apercu": "Preview",
+            "couleursPreddefinies": "Preset colors",
+            "couleurPersonnalisee": "Custom color",
+            "reinitialiser": "Reset theme",
+            "confirmerReinitialiser": "Do you want to reset to the default theme?"
+        },
+        "langue": {
+            "titre": "Language & Region",
+            "description": "Language and format settings",
+            "langueInterface": "Interface language",
+            "formatDate": "Date format",
+            "formatNombre": "Number format",
+            "formatMonnaie": "Currency format",
+            "premierJour": "First day of week"
+        },
+        "modules": {
+            "titre": "Modules",
+            "description": "Enable or disable application modules",
+            "activerTout": "Enable all",
+            "desactiverTout": "Disable all",
+            "confirmerToggle": "Do you want to {{action}} the \"{{module}}\" module?",
+            "activer": "enable",
+            "desactiver": "disable",
+            "categories": {
+                "academique": "Academic",
+                "administratif": "Administrative",
+                "financier": "Financial",
+                "communication": "Communication",
+                "logistique": "Logistics",
+                "systeme": "System"
+            }
+        },
+        "securite": {
+            "titre": "Security",
+            "description": "Account security settings",
+            "deuxFacteurs": "Two-factor authentication",
+            "deuxFacteursDescription": "Add an extra layer of security",
+            "activer2FA": "Enable 2FA",
+            "desactiver2FA": "Disable 2FA",
+            "sessions": "Active sessions",
+            "deconnecterTout": "Disconnect all sessions",
+            "journalActivite": "Activity log"
+        },
+        "notifications": {
+            "titre": "Notifications",
+            "description": "Manage your notification preferences",
+            "email": "Email notifications",
+            "push": "Push notifications",
+            "sms": "SMS notifications",
+            "types": {
+                "nouvellesNotes": "New grades",
+                "absences": "Absences",
+                "paiements": "Payments",
+                "messages": "Messages",
+                "evenements": "Events",
+                "rappels": "Reminders"
+            }
+        },
+        "sauvegarde": {
+            "titre": "Backup & Data",
+            "description": "Manage backups and data export",
+            "derniereSauvegarde": "Last backup",
+            "creerSauvegarde": "Create backup",
+            "restaurer": "Restore",
+            "exporterDonnees": "Export data",
+            "importerDonnees": "Import data"
+        }
+    },
+    "messages": {
+        "sauvegardeSucces": "Settings saved successfully",
+        "sauvegardeErreur": "Error saving settings",
+        "chargementErreur": "Error loading settings",
+        "moduleActiveSucces": "Module \"{{module}}\" enabled",
+        "moduleDesactiveSucces": "Module \"{{module}}\" disabled",
+        "themeSucces": "Theme applied successfully",
+        "langueSucces": "Language updated"
+    }
+}

@@ -34,11 +34,31 @@ export class DashboardCacheService {
     };
 
     constructor() {
-        // Vérifier si Redis est disponible
-        redisService.isAvailable().then(available => {
-            this.useRedis = available;
-            logger.info(`[DashboardCache] Mode: ${available ? 'Redis (distribué)' : 'In-memory (local)'}`);
-        });
+        // Vérifier si Redis est disponible (avec retry)
+        this.checkRedisAvailability();
+        
+        // Re-vérifier toutes les 30 secondes
+        setInterval(() => this.checkRedisAvailability(), 30000);
+    }
+
+    /**
+     * Vérifier la disponibilité de Redis
+     */
+    private async checkRedisAvailability(): Promise<void> {
+        try {
+            const available = await redisService.isAvailable();
+            if (available && !this.useRedis) {
+                this.useRedis = true;
+                logger.info('[DashboardCache] ✅ Mode: Redis (distribué)');
+            } else if (!available && this.useRedis) {
+                this.useRedis = false;
+                logger.warn('[DashboardCache] ⚠️  Mode: In-memory (fallback - Redis perdu)');
+            } else if (!available && !this.useRedis) {
+                logger.debug('[DashboardCache] Mode: In-memory (fallback)');
+            }
+        } catch (error) {
+            // Ignorer les erreurs de vérification
+        }
     }
 
     /**

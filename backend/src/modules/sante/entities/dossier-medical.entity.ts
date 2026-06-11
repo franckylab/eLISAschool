@@ -46,13 +46,21 @@ export class DossierMedical {
     typePatient!: TypePatient;
 
     // Relations conditionnelles (gérées applicativement)
+    // NOTE: Ces relations ne créent PAS de FK en base - la FK est gérée par la migration SQL
     @ManyToOne(() => Eleve, { nullable: true })
-    @JoinColumn({ name: 'patientId' })
+    @JoinColumn({ name: 'eleveId' })
     eleve?: Eleve;
 
     @ManyToOne(() => MembrePersonnel, { nullable: true })
-    @JoinColumn({ name: 'patientId' })
+    @JoinColumn({ name: 'personnelId' })
     membrePersonnel?: MembrePersonnel;
+
+    // Colonnes pour les relations explicites (optionnelles, gérées par l'application)
+    @Column({ type: 'uuid', nullable: true })
+    eleveId?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    personnelId?: string;
 
     @Column({ type: 'varchar', length: 5, nullable: true })
     groupeSanguin?: string;

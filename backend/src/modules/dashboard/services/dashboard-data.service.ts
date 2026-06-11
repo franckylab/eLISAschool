@@ -14,7 +14,7 @@ import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { Eleve } from '@modules/eleves/entities';
 import { Note } from '@modules/notes/entities';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
 import { ConfigurationModule } from '@modules/configuration/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 

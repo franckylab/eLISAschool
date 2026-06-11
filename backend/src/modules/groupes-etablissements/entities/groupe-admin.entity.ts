@@ -18,7 +18,7 @@ import {
     Index,
 } from 'typeorm';
 import { GroupeEtablissement } from './groupe-etablissement.entity';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
 
 @Entity('groupe_admins')
 @Index(['groupeId', 'utilisateurId'], { unique: true })

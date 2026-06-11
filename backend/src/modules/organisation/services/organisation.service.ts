@@ -61,14 +61,32 @@ export class OrganisationService {
         this.posteRepo = AppDataSource.getRepository(Poste);
         this.hierarchieRepo = AppDataSource.getRepository(HierarchiePersonnel);
 
-        // Vérifier si Redis est disponible
-        redisService.isAvailable().then(available => {
-            this.useRedis = available;
-            logger.info(`[OrganisationService] Cache: ${available ? 'Redis (distribué)' : 'In-memory (fallback)'}`);
-        });
+        // Vérifier si Redis est disponible (avec retry)
+        this.checkRedisAvailability();
+        
+        // Re-vérifier toutes les 30 secondes
+        setInterval(() => this.checkRedisAvailability(), 30000);
 
         // Charger les configurations dynamiques
         this.chargerConfigurations();
+    }
+
+    /**
+     * Vérifier la disponibilité de Redis
+     */
+    private async checkRedisAvailability(): Promise<void> {
+        try {
+            const available = await redisService.isAvailable();
+            if (available && !this.useRedis) {
+                this.useRedis = true;
+                logger.info('[OrganisationService] ✅ Cache: Redis (distribué)');
+            } else if (!available && this.useRedis) {
+                this.useRedis = false;
+                logger.warn('[OrganisationService] ⚠️  Cache: In-memory (fallback - Redis perdu)');
+            }
+        } catch (error) {
+            // Ignorer les erreurs
+        }
     }
 
     /**

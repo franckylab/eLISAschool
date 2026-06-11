@@ -20,7 +20,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
 import { GroupeEtablissementLien } from './groupe-etablissement-lien.entity';
 import { GroupeAdmin } from './groupe-admin.entity';
 

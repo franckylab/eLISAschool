@@ -334,6 +334,3 @@ export class AuditLog {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { AuditLog, AuditAction, AuditSeverity };
-
-export default AuditLog;

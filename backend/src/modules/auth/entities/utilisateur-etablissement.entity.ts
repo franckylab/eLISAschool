@@ -102,6 +102,3 @@ export class UtilisateurEtablissement {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { UtilisateurEtablissement };
-
-export default UtilisateurEtablissement;

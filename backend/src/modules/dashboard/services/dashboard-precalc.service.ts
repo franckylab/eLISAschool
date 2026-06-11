@@ -14,7 +14,7 @@ import { dashboardCacheService } from './dashboard-cache.service';
 import { logger } from '@common/utils/logger.util';
 import { Eleve } from '@modules/eleves/entities';
 import { Note } from '@modules/notes/entities';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 export class DashboardPrecalcService {

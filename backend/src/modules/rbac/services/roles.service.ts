@@ -10,10 +10,10 @@
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import Role from '@modules/auth/entities/role.entity';
-import Permission from '@modules/auth/entities/permission.entity';
-import UtilisateurRole from '@modules/auth/entities/utilisateur-role.entity';
-import Utilisateur from '@modules/auth/entities/utilisateur.entity';
+import { Role } from '@modules/auth/entities';
+import { Permission } from '@modules/auth/entities';
+import { UtilisateurRole } from '@modules/auth/entities';
+import { Utilisateur } from '@modules/auth/entities';
 import { CreateRoleDto, AssignPermissionsToRoleDto } from '../dto/create-role.dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';

@@ -69,6 +69,3 @@ export class RefreshToken {
 }
 
 // Export nommé pour TypeORM (détection automatique via glob pattern)
-export { RefreshToken };
-
-export default RefreshToken;

@@ -44,7 +44,14 @@ export class MessagerieSSEService {
      */
     private async subscribeToRedis(): Promise<void> {
         try {
-            const redis = await redisService.getClient();
+            // Utiliser le client subscriber dédié (pas le client cache)
+            const redis = redisService.getSubscriberClient();
+            
+            if (!redis || redis.status !== 'ready') {
+                logger.warn('[Messagerie SSE] Subscriber client non disponible');
+                return;
+            }
+            
             redis.subscribe('messagerie:events', (err) => {
                 if (err) {
                     logger.error('[Messagerie SSE] Erreur souscription Redis:', err);
