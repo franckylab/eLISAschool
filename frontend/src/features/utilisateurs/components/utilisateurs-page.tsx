@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search, User, Shield, Mail, Phone, Calendar, Eye } from 'lucide-react';
+import { Plus, User, Shield, Mail, Phone, Calendar, Eye } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useUtilisateurs, useSupprimerUtilisateur } from '../hooks/use-utilisateurs';
 import { UtilisateurFormModal } from './utilisateur-form-modal';
@@ -85,8 +85,10 @@ export function UtilisateursPage() {
                     actif: { couleur: 'bg-green-100 text-green-800', libelle: 'Actif' },
                     inactif: { couleur: 'bg-gray-100 text-gray-800', libelle: 'Inactif' },
                     suspendu: { couleur: 'bg-red-100 text-red-800', libelle: 'Suspendu' },
+                    EN_ATTENTE_VALIDATION: { couleur: 'bg-yellow-100 text-yellow-800', libelle: 'En attente' },
+                    SUPPRIME: { couleur: 'bg-gray-100 text-gray-500', libelle: 'Supprimé' },
                 };
-                const statut = statuts[u.statut || 'inactif'];
+                const statut = statuts[u.statut as keyof typeof statuts] || statuts.inactif;
                 return (
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statut.couleur}`}>
                         {statut.libelle}
@@ -115,6 +117,7 @@ export function UtilisateursPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (u) => (
@@ -210,22 +213,6 @@ export function UtilisateursPage() {
             </motion.div>
 
             {/* Barre de recherche */}
-            <motion.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="relative"
-            >
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input 
-                    type="text" 
-                    placeholder="Rechercher un utilisateur par nom, email ou rôle..." 
-                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                    value={filtres.recherche || ''} 
-                    onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} 
-                />
-            </motion.div>
-
             {/* Tableau */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -236,6 +223,14 @@ export function UtilisateursPage() {
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                    searchPlaceholder="Rechercher un utilisateur par nom, email ou rôle..."
+                    onSearchChange={(recherche) =>
+                        setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                    }
+                    disableClientSearch
                     pagination={data?.meta ? {
                         page: data.meta.currentPage,
                         limit: data.meta.itemsPerPage,

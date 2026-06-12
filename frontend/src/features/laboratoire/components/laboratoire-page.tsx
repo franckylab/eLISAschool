@@ -77,7 +77,14 @@ export function LaboratoirePage() {
                 </motion.div>
             </div>
 
-            <DataTable data={reservations} columns={colonnes} searchable searchPlaceholder="Rechercher une réservation..." />
+            {reservations}<DataTable
+                data={reservations}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher une réservation..." />
         </div>
     );
 }

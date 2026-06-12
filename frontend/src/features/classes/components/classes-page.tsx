@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Eye } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useClasses, useSupprimerClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
@@ -66,6 +66,7 @@ export function ClassesPage() {
         },
         {
             key: 'nom',
+            pinned: 'left' as const,
             header: 'Nom',
             sortable: true,
             render: (classe) => (
@@ -123,24 +124,35 @@ export function ClassesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: t('commun.actions'),
             className: 'text-right',
             render: (classe) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-1">
+                    <button
+                        onClick={() => navigate({ to: '/classes/$id', params: { id: classe.id } })}
+                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Voir détails"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </button>
                     {hasPermission('classes:edit') && (
-                        <ElisaButton variant="ghost" size="sm" onClick={() => handleEdition(classe)}>
-                            {t('boutons.modifier')}
-                        </ElisaButton>
+                        <button
+                            onClick={() => handleEdition(classe)}
+                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                            title="Modifier"
+                        >
+                            <Edit className="h-4 w-4" />
+                        </button>
                     )}
                     {hasPermission('classes:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
+                        <button
                             onClick={() => setClasseToDelete(classe)}
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                            title="Supprimer"
                         >
-                            {t('boutons.supprimer')}
-                        </ElisaButton>
+                            <Trash2 className="h-4 w-4" />
+                        </button>
                     )}
                 </div>
             ),
@@ -191,21 +203,18 @@ export function ClassesPage() {
                 )}
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input
-                    type="text"
-                    placeholder={t('filtres.recherche')}
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                    value={filtres.recherche || ''}
-                    onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))}
-                />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('filtres.recherche')}
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.meta ? {
                     page: data.meta.currentPage,
                     limit: data.meta.itemsPerPage,

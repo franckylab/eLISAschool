@@ -85,7 +85,14 @@ export function MaintenancePage() {
                 </motion.div>
             </div>
 
-            <DataTable data={interventions} columns={colonnes} searchable searchPlaceholder="Rechercher une intervention..." />
+            {interventions}<DataTable
+                data={interventions}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher une intervention..." />
         </div>
     );
 }

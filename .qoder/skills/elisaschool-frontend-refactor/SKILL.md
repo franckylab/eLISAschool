@@ -1039,6 +1039,78 @@ npx madge --circular src/
 
 ---
 
+## Workflow : Migrer un Modal vers CustomModal
+
+### Détection
+
+```bash
+# Trouver les overlays custom à migrer
+grep -rn "fixed inset-0.*bg-black\|fixed inset-0.*backdrop\|fixed inset-0.*z-50" src/ --include="*.tsx"
+```
+
+### Migration Avant/Après
+
+```tsx
+// ❌ AVANT — Overlay custom
+return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <motion.div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+                <h2>Titre</h2>
+                <button onClick={onClose}><X /></button>
+            </div>
+            <div className="p-6">...</div>
+            <div className="p-6 border-t flex justify-end">
+                <button>Fermer</button>
+            </div>
+        </motion.div>
+    </div>
+);
+
+// ✅ APRÈS — CustomModal
+return (
+    <CustomModal
+        open={true}
+        onOpenChange={(v) => { if (!v) onClose(); }}
+        title="Titre"
+        size="3xl"
+        footer={<ElisaButton variant="primary" onClick={onClose}>Fermer</ElisaButton>}
+    >
+        ...
+    </CustomModal>
+);
+```
+
+### Étapes de Migration
+
+1. Remplacer l'overlay custom par `<CustomModal open={...} onOpenChange={...} ...>`
+2. Déplacer le titre dans la prop `title`
+3. Déplacer les boutons dans la prop `footer`
+4. Supprimer les imports `motion`, `X`, overlay si devenus inutiles
+5. Nettoyer les imports inutilisés (`useTranslation`, `t`, etc.)
+6. Vérifier la compilation `npx tsc --noEmit`
+
+### Modal Spécialisé (caméra, scanner)
+
+Pour les modals comme QRScanner qui ont besoin d'un comportement spécial :
+
+```tsx
+<CustomModal
+    open={ouvert}
+    onOpenChange={(v) => { if (!v) onClose(); }}
+    title="Scanner QR Code"
+    size="sm"
+    draggable={false}
+    resizable={false}
+    minimizable={false}
+    maximizable={false}
+>
+    {/* Contenu spécialisé */}
+</CustomModal>
+```
+
+---
+
 ## Maintenance et Évolution
 
 Ce skill est un document **vivant**.

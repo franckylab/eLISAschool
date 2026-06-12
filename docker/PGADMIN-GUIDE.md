@@ -13,7 +13,7 @@ pgAdmin est configuré pour se connecter aux services **existants** du groupe de
 
 ## 🚀 Accès à l'interface
 
-- **URL** : http://localhost:5050
+- **URL** : http://localhost:7004
 - **Email** : admin@elisaschool.cm
 - **Mot de passe** : admin_elisaschool_2024
 
@@ -60,7 +60,7 @@ docker compose down pgadmin
 
 Si la configuration automatique ne fonctionne pas :
 
-1. Ouvrez http://localhost:5050
+1. Ouvrez http://localhost:7004
 2. Connectez-vous avec les identifiants ci-dessus
 3. Cliquez sur **"Add New Server"**
 4. Onglet **General** :
@@ -104,4 +104,4 @@ PGADMIN_PASSWORD=your-secure-password
 
 - Les données de pgAdmin sont persistées dans le volume `pgadmin_data`
 - La configuration des serveurs est dans `pgadmin-servers.json`
-- pgAdmin utilise le port **5050** pour éviter les conflits
+- pgAdmin utilise le port **7004** pour éviter les conflits

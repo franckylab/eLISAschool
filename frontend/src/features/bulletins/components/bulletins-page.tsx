@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Search, FileText, Download, Award } from 'lucide-react';
+import { FileText, Download, Award } from 'lucide-react';
 import { useBulletins, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -26,6 +26,7 @@ export function BulletinsPage() {
     const colonnes: Column<Bulletin>[] = [
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (b) => (
@@ -78,6 +79,7 @@ export function BulletinsPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (b) => (
@@ -124,15 +126,17 @@ export function BulletinsPage() {
                 </div>
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input type="text" placeholder="Rechercher..." className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20" value={filtres.recherche || ''} onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                searchPlaceholder="Rechercher..."
+                enableReordering
+                enablePinning
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.meta ? {
                     page: data.meta.currentPage,
                     limit: data.meta.itemsPerPage,

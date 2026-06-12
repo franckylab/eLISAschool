@@ -1035,9 +1035,9 @@ export class ConfigurationService {
 
         // Filtrer par établissement : paramètres globaux (NULL) + paramètres scopés
         if (etablissementId) {
-            qb.where('(p.etablissement_id IS NULL OR p.etablissement_id = :etablissementId)', { etablissementId });
+            qb.where('(p."etablissementId" IS NULL OR p."etablissementId" = :etablissementId)', { etablissementId });
         } else {
-            qb.where('p.etablissement_id IS NULL');
+            qb.where('p."etablissementId" IS NULL');
         }
 
         if (query.categorie) qb.andWhere('p.categorie = :categorie', { categorie: query.categorie });

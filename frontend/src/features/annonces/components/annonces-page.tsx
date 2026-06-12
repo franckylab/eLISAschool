@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Plus, Search, Eye, Edit, Trash2, Calendar, Clock } from 'lucide-react';
+import { Megaphone, Plus, Eye, Edit, Trash2, Calendar, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useAnnonces, useSupprimerAnnonce, useCreerAnnonce } from '../hooks/use-annonces';
@@ -95,6 +95,7 @@ export function AnnoncesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (a) => (
@@ -143,24 +144,20 @@ export function AnnoncesPage() {
                 </ElisaButton>
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input
-                    type="text"
-                    placeholder={t('filtres.recherche', { defaultValue: 'Rechercher...' })}
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                    value={recherche}
-                    onChange={(e) => {
-                        setRecherche(e.target.value);
-                        setPage(1);
-                    }}
-                />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('filtres.recherche', { defaultValue: 'Rechercher...' })}
+                enableRowHeight
+                onSearchChange={(recherche) => {
+                    setRecherche(recherche);
+                    setPage(1);
+                }}
+                disableClientSearch
                 pagination={data?.meta ? {
                     page: data.meta.currentPage,
                     limit: data.meta.itemsPerPage,

@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Plus, Search, Users, Edit, Trash2, MapPin, Clock } from 'lucide-react';
+import { Calendar, Plus, Users, Edit, Trash2, MapPin, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useEvenements, useSupprimerEvenement, useStatistiquesEvenements } from '../hooks/use-evenements';
@@ -134,6 +134,7 @@ export function EvenementsPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
             render: (e) => (
@@ -237,53 +238,50 @@ export function EvenementsPage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreType}
-                    onChange={(e) => setFiltreType(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les types</option>
-                    <option value="reunion">Réunion</option>
-                    <option value="formation">Formation</option>
-                    <option value="activite">Activité</option>
-                    <option value="ceremonie">Cérémonie</option>
-                    <option value="examen">Examen</option>
-                    <option value="vacances">Vacances</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select
-                    value={filtreStatut}
-                    onChange={(e) => setFiltreStatut(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les statuts</option>
-                    <option value="programme">Programmé</option>
-                    <option value="en_cours">En cours</option>
-                    <option value="termine">Terminé</option>
-                    <option value="annule">Annulé</option>
-                </select>
-            </motion.div>
+
 
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(valeur) => setRecherche(valeur)}
+                disableClientSearch
+                filtres={[
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        options: [
+                            { value: '', label: 'Tous les types' },
+                            { value: 'reunion', label: 'Réunion' },
+                            { value: 'formation', label: 'Formation' },
+                            { value: 'activite', label: 'Activité' },
+                            { value: 'ceremonie', label: 'Cérémonie' },
+                            { value: 'examen', label: 'Examen' },
+                            { value: 'vacances', label: 'Vacances' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                    },
+                    {
+                        key: 'statut',
+                        label: 'Statut',
+                        options: [
+                            { value: '', label: 'Tous les statuts' },
+                            { value: 'programme', label: 'Programmé' },
+                            { value: 'en_cours', label: 'En cours' },
+                            { value: 'termine', label: 'Terminé' },
+                            { value: 'annule', label: 'Annulé' },
+                        ],
+                    },
+                ]}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'type') setFiltreType(valeur);
+                    if (key === 'statut') setFiltreStatut(valeur);
+                }}
                 pagination={{
                     page,
                     limit,

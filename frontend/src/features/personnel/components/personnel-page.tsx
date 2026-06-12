@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search } from 'lucide-react';
+import { Plus, } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
 import { PersonnelFormModal } from './personnel-form-modal';
@@ -118,6 +118,7 @@ export function PersonnelPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: t('commun.actions'),
             className: 'text-right',
             render: (p) => (
@@ -171,21 +172,18 @@ export function PersonnelPage() {
                 )}
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input
-                    type="text"
-                    placeholder={t('filtres.recherche')}
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                    value={filtres.recherche || ''}
-                    onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))}
-                />
-            </div>
-
             <DataTable
                 data={data?.data || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('filtres.recherche')}
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.pagination}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}

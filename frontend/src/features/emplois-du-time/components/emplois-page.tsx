@@ -97,6 +97,7 @@ export function EmploisDuTempsPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-20',
             render: (c) => (
@@ -244,6 +245,9 @@ export function EmploisDuTempsPage() {
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
                 pagination={{
                     page,
                     limit,

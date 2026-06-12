@@ -20,7 +20,7 @@ if (!process.env.DB_PASSWORD) {
     process.env.DB_USER = 'elisaschool_user';
     process.env.DB_NAME = 'elisaschool';
     process.env.DB_HOST = 'localhost';
-    process.env.DB_PORT = '5433';
+    process.env.DB_PORT = '7002';
     process.env.JWT_SECRET = 'dev_jwt_secret_32_caracteres_minimum';
     process.env.ENCRYPTION_KEY = 'dev_encryption_key_32chars_ok_xx';
 }

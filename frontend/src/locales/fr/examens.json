@@ -4,7 +4,7 @@
     "planifier": "Planifier examen",
     "rechercher": "Rechercher un examen...",
     "type": "Type",
-    "titre": "Titre",
+    "titreExamen": "Titre de l'examen",
     "date": "Date",
     "classe": "Classe",
     "coefficient": "Coefficient",

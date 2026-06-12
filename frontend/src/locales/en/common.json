@@ -15,10 +15,38 @@
         "imprimer": "Print",
         "actualiser": "Refresh",
         "connexion": "Login",
+        "connecter": "Log in",
         "deconnexion": "Logout",
+        "deconnecter": "Log out",
+        "changerMotDePasse": "Change password",
         "creer": "Create",
         "voir": "View",
         "telecharger": "Download"
+    },
+    "actions": {
+        "back": "Back",
+        "contactAdmin": "Contact an administrator"
+    },
+    "validation": {
+        "requis": "This field is required",
+        "confirmationInvalide": "The values do not match",
+        "emailInvalide": "Invalid email format"
+    },
+    "errors": {
+        "unauthorized": {
+            "title": "Unauthorized Access",
+            "subtitle": "You do not have the required permissions",
+            "details": "Access details"
+        }
+    },
+    "classes": {
+        "titre": "Classes"
+    },
+    "matieres": {
+        "titre": "Subjects"
+    },
+    "personnel": {
+        "titre": "Staff"
     },
     "messages": {
         "succesEnregistrement": "Saved successfully",
@@ -44,6 +72,7 @@
     "navigation": {
         "accueil": "Home",
         "tableauBord": "Dashboard",
+        "dashboard": "Dashboard",
         "parametres": "Settings",
         "configuration": "Configuration",
         "retour": "Back",
@@ -78,6 +107,9 @@
         "octobre": "October",
         "novembre": "November",
         "decembre": "December"
+    },
+    "labels": {
+        "recherche": "Search..."
     },
     "commun": {
         "nom": "Name",

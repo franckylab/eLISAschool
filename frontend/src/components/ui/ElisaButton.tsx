@@ -55,6 +55,7 @@ type ButtonVariantProps = VariantProps<typeof buttonVariants>;
 interface ElisaButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'>, ButtonVariantProps {
     children?: ReactNode;
     icon?: ReactNode;
+    leftIcon?: ReactNode; // Alias pour icon (compatibilité)
     iconRight?: ReactNode;
     isLoading?: boolean;
     loadingText?: string;
@@ -71,6 +72,7 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
             fullWidth,
             children,
             icon,
+            leftIcon,
             iconRight,
             isLoading = false,
             loadingText,
@@ -81,6 +83,7 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
         },
         ref,
     ) => {
+        const resolvedIcon = icon || leftIcon;
         return (
             <motion.button
                 ref={ref}
@@ -99,7 +102,7 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
                     </>
                 ) : (
                     <>
-                        {icon}
+                        {resolvedIcon}
                         {children}
                         {iconRight}
                         {shortcut && (

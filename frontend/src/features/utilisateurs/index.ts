@@ -24,3 +24,4 @@ export { RolesPage } from './components/roles-page';
 
 // Formulaires
 export { UtilisateurFormModal } from './components/utilisateur-form-modal';
+export { RoleFormModal } from './components/role-form-modal';

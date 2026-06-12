@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Calendar, CheckCircle } from 'lucide-react';
+import { Plus, Calendar, CheckCircle, Edit, Trash2, Eye, Power } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAnneesScolaires, useActiverAnneeScolaire, useSupprimerAnneeScolaire } from '../hooks/use-annees-scolaires';
 import { AnneeScolaireFormModal } from './annee-scolaire-form-modal';
@@ -61,6 +61,7 @@ export function AnneesScolairesPage() {
         },
         {
             key: 'libelle',
+            pinned: 'left' as const,
             header: 'Libellé',
             sortable: true,
             render: (a) => (
@@ -127,32 +128,45 @@ export function AnneesScolairesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (a) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-1">
+                    <button
+                        onClick={() => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } })}
+                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Voir détails"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </button>
                     {!a.estActuelle && hasPermission('annees-scolaires:activer') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            isLoading={activer.isPending}
+                        <button
                             onClick={() => activer.mutateAsync(a.id)}
+                            disabled={activer.isPending}
+                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                            title="Activer cette année"
                         >
-                            Activer
-                        </ElisaButton>
+                            <Power className="h-4 w-4" />
+                        </button>
                     )}
                     {hasPermission('annees-scolaires:edit') && (
-                        <ElisaButton variant="ghost" size="sm" onClick={() => handleEdition(a)}>Modifier</ElisaButton>
+                        <button
+                            onClick={() => handleEdition(a)}
+                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                            title="Modifier"
+                        >
+                            <Edit className="h-4 w-4" />
+                        </button>
                     )}
                     {hasPermission('annees-scolaires:delete') && !a.estActuelle && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
+                        <button
                             onClick={() => setAnneeToDelete(a)}
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                            title="Supprimer"
                         >
-                            Supprimer
-                        </ElisaButton>
+                            <Trash2 className="h-4 w-4" />
+                        </button>
                     )}
                 </div>
             ),
@@ -203,21 +217,18 @@ export function AnneesScolairesPage() {
                 )}
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input
-                    type="text"
-                    placeholder="Rechercher..."
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                    value={filtres.recherche || ''}
-                    onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))}
-                />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder="Rechercher..."
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.meta ? {
                     page: data.meta.currentPage,
                     limit: data.meta.itemsPerPage,

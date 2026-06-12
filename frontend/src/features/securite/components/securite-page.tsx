@@ -84,7 +84,14 @@ export function SecuritePage() {
                 </motion.div>
             </div>
 
-            <DataTable data={incidents} columns={colonnes} searchable searchPlaceholder="Rechercher un incident..." />
+            {incidents}<DataTable
+                data={incidents}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un incident..." />
         </div>
     );
 }

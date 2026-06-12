@@ -321,6 +321,9 @@ export function ClasseDetailPage() {
                             <DataTable
                                 data={eleves}
                                 columns={colonnesEleves}
+                                enableReordering
+                                enablePinning
+                                enableColumnVisibility
                             />
                         )}
                     </div>

@@ -24,12 +24,12 @@ const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     APP_NAME: z.string().default('eLISAschool'),
     APP_VERSION: z.string().default('1.0.0'),
-    APP_PORT: z.string().transform(Number).default('3000'),
-    APP_URL: z.string().url().optional().default('http://localhost:3000'),
+    APP_PORT: z.string().transform(Number).default('7000'),
+    APP_URL: z.string().url().optional().default('http://localhost:7000'),
 
     // Base de données
     DB_HOST: z.string().default('localhost'),
-    DB_PORT: z.string().transform(Number).default('5432'),
+    DB_PORT: z.string().transform(Number).default('7002'),
     DB_NAME: z.string().default('elisaschool'),
     DB_USER: z.string().default('elisaschool_user'),
     DB_PASSWORD: z.string().default(''),
@@ -44,7 +44,7 @@ const envSchema = z.object({
 
     // Redis
     REDIS_HOST: z.string().default('localhost'),
-    REDIS_PORT: z.string().transform(Number).default('6379'),
+    REDIS_PORT: z.string().transform(Number).default('7003'),
     REDIS_PASSWORD: z.string().optional().default(''),
 
     // Email
@@ -55,7 +55,7 @@ const envSchema = z.object({
     SMTP_FROM: z.string().optional().default('noreply@elisaschool.cm'),
 
     // Frontend
-    FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+    FRONTEND_URL: z.string().url().default('http://localhost:7001'),
 
     // Licence
     LICENSE_KEY: z.string().optional().default(''),
@@ -106,7 +106,7 @@ function loadEnvConfig(): EnvConfig {
                 SMTP_USER: '',
                 SMTP_PASSWORD: '',
                 SMTP_FROM: 'noreply@elisaschool.cm',
-                FRONTEND_URL: 'http://localhost:5173',
+                FRONTEND_URL: 'http://localhost:7001',
                 LICENSE_KEY: '',
                 LOG_LEVEL: 'debug',
                 LOG_FILE: 'logs/app.log',

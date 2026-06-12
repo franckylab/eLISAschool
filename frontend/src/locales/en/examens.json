@@ -4,7 +4,7 @@
     "planifier": "Schedule exam",
     "rechercher": "Search exam...",
     "type": "Type",
-    "titre": "Title",
+    "titreExamen": "Exam Title",
     "date": "Date",
     "classe": "Class",
     "coefficient": "Coefficient",

@@ -2,13 +2,16 @@
  * ==================================
  * eLISAschool - Composant Modal de Confirmation
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ *
+ * Modal de confirmation professionnelle basée sur CustomModal.
+ * Hérite automatiquement du drag, resize, minimize, maximize.
  */
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from './ElisaButton';
 
 interface ConfirmationModalProps {
@@ -24,9 +27,33 @@ interface ConfirmationModalProps {
     details?: string;
 }
 
+const variants = {
+    danger: {
+        icon: AlertTriangle,
+        iconColor: 'text-red-600',
+        iconBg: 'bg-red-100',
+        confirmVariant: 'danger' as const,
+        borderColor: 'border-red-200',
+    },
+    warning: {
+        icon: AlertTriangle,
+        iconColor: 'text-yellow-600',
+        iconBg: 'bg-yellow-100',
+        confirmVariant: 'accent' as const,
+        borderColor: 'border-yellow-200',
+    },
+    info: {
+        icon: AlertTriangle,
+        iconColor: 'text-blue-600',
+        iconBg: 'bg-blue-100',
+        confirmVariant: 'primary' as const,
+        borderColor: 'border-blue-200',
+    },
+};
+
 /**
  * Modal de confirmation professionnelle pour remplacer confirm()
- * 
+ *
  * @example
  * <ConfirmationModal
  *   isOpen={showDeleteModal}
@@ -56,41 +83,17 @@ export function ConfirmationModal({
                 onCancel();
             }
         };
-        
+
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
             document.body.style.overflow = 'hidden';
         }
-        
+
         return () => {
             document.removeEventListener('keydown', handleEscape);
             document.body.style.overflow = '';
         };
     }, [isOpen, onCancel]);
-
-    const variants = {
-        danger: {
-            icon: AlertTriangle,
-            iconColor: 'text-red-600',
-            iconBg: 'bg-red-100',
-            confirmVariant: 'danger' as const,
-            borderColor: 'border-red-200',
-        },
-        warning: {
-            icon: AlertTriangle,
-            iconColor: 'text-yellow-600',
-            iconBg: 'bg-yellow-100',
-            confirmVariant: 'warning' as const,
-            borderColor: 'border-yellow-200',
-        },
-        info: {
-            icon: AlertTriangle,
-            iconColor: 'text-blue-600',
-            iconBg: 'bg-blue-100',
-            confirmVariant: 'primary' as const,
-            borderColor: 'border-blue-200',
-        },
-    };
 
     const variantConfig = variants[variant];
     const Icon = variantConfig.icon;
@@ -100,86 +103,49 @@ export function ConfirmationModal({
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
+        <CustomModal
+            open={isOpen}
+            onOpenChange={(open) => { if (!open) onCancel(); }}
+            title={title}
+            size="md"
+            showClose={true}
+            closeOnOverlayClick={!isLoading}
+            draggable={true}
+            resizable={true}
+            minimizable={false}
+            maximizable={false}
+            footer={
                 <>
-                    {/* Overlay */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                    <ElisaButton
+                        variant="outline"
                         onClick={onCancel}
-                    />
-
-                    {/* Modal */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        disabled={isLoading}
                     >
-                        <div
-                            className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Header avec icône */}
-                            <div className={`p-6 border-b ${variantConfig.borderColor}`}>
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-start gap-4">
-                                        <div className={`p-3 rounded-full ${variantConfig.iconBg}`}>
-                                            <Icon className={`h-6 w-6 ${variantConfig.iconColor}`} />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-gray-900">
-                                                {title}
-                                            </h3>
-                                            <p className="mt-2 text-sm text-gray-600">
-                                                {message}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={onCancel}
-                                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                                        aria-label="Fermer"
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Details optionnels */}
-                            {details && (
-                                <div className="px-6 py-4 bg-gray-50">
-                                    <p className="text-sm text-gray-700">{details}</p>
-                                </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-                                <ElisaButton
-                                    variant="outline"
-                                    onClick={onCancel}
-                                    disabled={isLoading}
-                                >
-                                    {cancelLabel}
-                                </ElisaButton>
-                                <ElisaButton
-                                    variant={variantConfig.confirmVariant}
-                                    onClick={handleConfirm}
-                                    isLoading={isLoading}
-                                    icon={isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
-                                >
-                                    {confirmLabel}
-                                </ElisaButton>
-                            </div>
-                        </div>
-                    </motion.div>
+                        {cancelLabel}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant={variantConfig.confirmVariant}
+                        onClick={handleConfirm}
+                        isLoading={isLoading}
+                        icon={isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
+                    >
+                        {confirmLabel}
+                    </ElisaButton>
                 </>
-            )}
-        </AnimatePresence>
+            }
+        >
+            <div className="flex gap-4">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${variantConfig.iconBg}`}>
+                    <Icon className={`h-5 w-5 ${variantConfig.iconColor}`} />
+                </div>
+                <div className="flex-1">
+                    <p className="text-sm text-[var(--color-texte)]">{message}</p>
+                    {details && (
+                        <p className="mt-3 text-sm text-[var(--color-texte-secondaire)] bg-gray-50 rounded-lg p-3">{details}</p>
+                    )}
+                </div>
+            </div>
+        </CustomModal>
     );
 }
 

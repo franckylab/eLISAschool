@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Fond arrondi -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="#1a3a5c"/>
+  <!-- Cercles décoratifs -->
+  <circle cx="256" cy="256" r="190" stroke="rgba(255,255,255,0.05)" stroke-width="1.5"/>
+  <circle cx="256" cy="256" r="160" stroke="rgba(255,255,255,0.035)" stroke-width="1"/>
+  <!-- Livre ouvert - page gauche -->
+  <path d="M100 170C100 170 140 150 256 150V400C140 400 100 380 100 380V170Z" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <!-- Livre ouvert - page droite -->
+  <path d="M412 170C412 170 372 150 256 150V400C372 400 412 380 412 380V170Z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  <!-- Reliure -->
+  <path d="M256 150V400" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+  <!-- Lettre e -->
+  <path d="M138 278C138 248 152 224 180 224C208 224 222 248 222 278H138C138 308 152 332 180 332C198 332 212 322 220 308" stroke="white" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <!-- Lettre S -->
+  <path d="M376 238C376 238 360 220 340 220C322 220 310 232 310 244C310 256 318 262 340 268C362 274 376 282 376 298C376 314 362 328 340 328C318 328 304 312 304 312" stroke="#a8d5a2" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <!-- Germination -->
+  <path d="M260 130C260 130 265 115 260 98M256 112C260 102 260 98 260 98M264 112C260 102 260 98 260 98" stroke="#a8d5a2" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <circle cx="260" cy="88" r="8" fill="#a8d5a2" opacity="0.9"/>
+</svg>

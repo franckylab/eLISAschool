@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search, Calendar } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { usePeriodes, useSupprimerPeriode } from '../hooks/use-periodes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -41,6 +41,7 @@ export function PeriodesPage() {
         },
         {
             key: 'nom',
+            pinned: 'left' as const,
             header: 'Nom',
             sortable: true,
             render: (p) => (
@@ -73,6 +74,7 @@ export function PeriodesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (p) => (
@@ -113,15 +115,18 @@ export function PeriodesPage() {
                 )}
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input type="text" placeholder="Rechercher..." className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20" value={filtres.recherche || ''} onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder="Rechercher..."
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.meta ? { page: data.meta.currentPage, limit: data.meta.itemsPerPage, total: data.meta.totalItems, totalPages: data.meta.totalPages, hasNext: data.meta.currentPage < data.meta.totalPages, hasPrev: data.meta.currentPage > 1 } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}

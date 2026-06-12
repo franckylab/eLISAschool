@@ -4,7 +4,7 @@
     "ajouter": "Add book",
     "rechercher": "Search book...",
     "categorie": "Category",
-    "titre": "Title",
+    "titreOuvrage": "Book Title",
     "auteur": "Author",
     "exemplaires": "Copies",
     "disponibilite": "Availability",

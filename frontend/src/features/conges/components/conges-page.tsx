@@ -41,7 +41,8 @@ export function CongesPage() {
         { key: 'dates', header: 'Période', render: (c: any) => <span className="text-sm">{new Date(c.dateDebut).toLocaleDateString('fr-FR')} - {new Date(c.dateFin).toLocaleDateString('fr-FR')} ({c.nombreJours}j)</span> },
         { key: 'motif', header: 'Motif', className: 'max-w-xs', render: (c: any) => <span className="text-sm text-gray-600 truncate">{c.motif}</span> },
         { key: 'statut', header: 'Statut', className: 'w-28', render: (c: any) => { const s = statuts[c.statut] || { label: c.statut, color: 'gray', icon: AlertCircle }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${s.color}-100 text-${s.color}-700 flex items-center gap-1 w-fit`}><s.icon className="w-3 h-3" />{s.label}</span>; } },
-        { key: 'actions', header: 'Actions', className: 'w-32', render: (c: any) => <button className="text-blue-600 hover:underline text-sm">Voir détails</button> },
+        { key: 'actions',
+            pinned: 'right' as const, header: 'Actions', className: 'w-32', render: (c: any) => <button className="text-blue-600 hover:underline text-sm">Voir détails</button> },
     ];
 
     if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
@@ -91,7 +92,14 @@ export function CongesPage() {
                 </motion.div>
             </div>
 
-            <DataTable data={conges} columns={colonnes} searchable filterable searchPlaceholder="Rechercher un congé..." />
+            {conges}<DataTable
+                data={conges}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un congé..." />
         </div>
     );
 }

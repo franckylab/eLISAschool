@@ -77,7 +77,14 @@ export function PointagesPage() {
                 </motion.div>
             </div>
 
-            <DataTable data={pointages} columns={colonnes} searchable searchPlaceholder="Rechercher un pointage..." />
+            {pointages}<DataTable
+                data={pointages}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un pointage..." />
         </div>
     );
 }

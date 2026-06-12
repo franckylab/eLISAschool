@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Package, Plus, Search, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useMateriels, useSupprimerMateriel, useStatistiquesInventaire } from '../hooks/use-inventaire';
@@ -47,7 +47,8 @@ export function InventairePage() {
         { key: 'quantite', header: 'Qté', className: 'text-center w-20', render: (m) => <span className="text-sm font-medium">{m.quantiteDisponible}/{m.quantite}</span>},
         { key: 'etat', header: 'État', className: 'text-center w-28', render: (m) => { const etat = etats[m.etat]; return (<span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-${etat?.color}-100 text-${etat?.color}-800`}>{etat?.label}</span>); }},
         { key: 'prix', header: 'Prix unit.', className: 'text-right w-24', render: (m) => <span className="text-sm text-gray-700">{m.prixUnitaire ? `${m.prixUnitaire.toLocaleString('fr-FR')} FCFA` : '-'}</span>},
-        { key: 'actions', header: 'Actions', className: 'text-right w-20', render: (m) => (<ElisaButton variant="danger" size="sm" isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(m.id)}>Suppr.</ElisaButton>)},
+        { key: 'actions',
+            pinned: 'right' as const, header: 'Actions', className: 'text-right w-20', render: (m) => (<ElisaButton variant="danger" size="sm" isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(m.id)}>Suppr.</ElisaButton>)},
     ];
 
     return (
@@ -66,27 +67,48 @@ export function InventairePage() {
                 </motion.div>
             )}
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3">
-                <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder={t('rechercher')} value={recherche} onChange={(e) => setRecherche(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-                <select value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Toutes catégories</option>
-                    <option value="mobilier">Mobilier</option>
-                    <option value="informatique">Informatique</option>
-                    <option value="pedagogique">Pédagogique</option>
-                    <option value="entretien">Entretien</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select value={filtreEtat} onChange={(e) => setFiltreEtat(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Tous les états</option>
-                    <option value="neuf">Neuf</option>
-                    <option value="bon">Bon</option>
-                    <option value="moyen">Moyen</option>
-                    <option value="use">Usé</option>
-                    <option value="hors_service">Hors service</option>
-                </select>
-            </motion.div>
-
-            <DataTable colonnes={colonnes} donnees={data || []} isLoading={isLoading} pagination={{ page, limit: 20, total: meta?.total || 0, onPageChange: setPage }} />
+            <DataTable
+                colonnes={colonnes}
+                donnees={data || []}
+                isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                filtres={[
+                    {
+                        key: 'categorie',
+                        label: 'Catégorie',
+                        options: [
+                            { value: 'mobilier', label: 'Mobilier' },
+                            { value: 'informatique', label: 'Informatique' },
+                            { value: 'pedagogique', label: 'Pédagogique' },
+                            { value: 'entretien', label: 'Entretien' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                        allOptionLabel: 'Toutes catégories',
+                    },
+                    {
+                        key: 'etat',
+                        label: 'État',
+                        options: [
+                            { value: 'neuf', label: 'Neuf' },
+                            { value: 'bon', label: 'Bon' },
+                            { value: 'moyen', label: 'Moyen' },
+                            { value: 'use', label: 'Usé' },
+                            { value: 'hors_service', label: 'Hors service' },
+                        ],
+                        allOptionLabel: 'Tous les états',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'categorie') setFiltreCategorie(valeur);
+                    if (key === 'etat') setFiltreEtat(valeur);
+                }}
+                disableClientSearch
+                pagination={{ page, limit: 20, total: meta?.total || 0, onPageChange: setPage }}
+            />
         </div>
     );
 }

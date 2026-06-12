@@ -74,7 +74,7 @@ export interface Role {
     nom: string;
     code: string;
     description?: string;
-    permissions: string[];
+    permissions: string[] | Permission[];  // Peut être codes (string[]) ou objets (Permission[])
     estSysteme: boolean;
     etablissementId?: string;
     couleur?: string;
@@ -88,7 +88,7 @@ export interface CreerRoleDto {
     nom: string;
     code: string;
     description?: string;
-    permissions: string[];
+    permissionIds?: string[];  // IDs des permissions à attribuer
     couleur?: string;
     icone?: string;
 }

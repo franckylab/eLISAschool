@@ -135,16 +135,15 @@ export class UtilisateursService {
             where.etablissementId = etablissementId;
         }
 
-        // Requête avec relations et pagination optimisée
+        // Requête avec pagination optimisée
         const queryBuilder = this.utilisateurRepository
             .createQueryBuilder('u')
-            .leftJoinAndSelect('profil', 'p', 'p.utilisateurId = u.id')
             .where(where);
 
-        // Recherche textuelle
+        // Recherche textuelle (uniquement sur email et matricule car profil est récupéré séparément)
         if (search) {
             queryBuilder.andWhere(
-                '(u.email ILIKE :search OR u.matricule ILIKE :search OR p.nom ILIKE :search OR p.prenom ILIKE :search)',
+                '(u.email ILIKE :search OR u.matricule ILIKE :search)',
                 { search: `%${search}%` }
             );
         }

@@ -3,6 +3,12 @@
   "sousTitre": "Gestion des élèves et de leur scolarité",
   "aucunEleve": "Aucun élève trouvé",
   "chargement": "Chargement des élèves...",
+
+  "commun": {
+    "nom": "Nom",
+    "statut": "Statut",
+    "actions": "Actions"
+  },
   
   "formulaire": {
     "titreCreation": "Nouvel élève",
@@ -56,7 +62,10 @@
     "redoublement": "Redoublement",
     "groupeSanguin": "Groupe sanguin",
     "allergies": "Allergies",
-    "allergiesPlaceholder": "Séparez les allergies par des virgules"
+    "allergiesPlaceholder": "Séparez les allergies par des virgules",
+    "pere": "Père",
+    "mere": "Mère",
+    "tuteur": "Tuteur légal"
   },
 
   "statut": {
@@ -119,7 +128,8 @@
     "exportReussi": "Export réussi",
     "importReussi": "Import réussi",
     "modificationNonSauvegardee": "Des modifications n'ont pas été sauvegardées. Voulez-vous vraiment quitter?",
-    "selectionnezEleves": "Veuillez sélectionner au moins un élève"
+    "selectionnezEleves": "Veuillez sélectionner au moins un élève",
+    "aucuneDonnee": "Aucun élève à afficher"
   },
 
   "actions": {
@@ -189,5 +199,13 @@
     "supprimerEleve": "Supprimer un élève",
     "exporterEleves": "Exporter les élèves",
     "importerEleves": "Importer des élèves"
+  },
+
+  "boutons": {
+    "precedent": "Précédent",
+    "suivant": "Suivant",
+    "annuler": "Annuler",
+    "creer": "Créer l'élève",
+    "enregistrer": "Enregistrer"
   }
 }

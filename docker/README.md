@@ -6,11 +6,11 @@ Tous les services eLISAschool tournent dans un seul groupe de conteneurs Docker 
 
 | Service | Conteneur | Port externe | Port interne | Status |
 |---------|-----------|--------------|--------------|--------|
-| **PostgreSQL** | `elisaschool_postgres` | 5433 | 5432 | ✅ Healthy |
-| **Redis** | `elisaschool_redis` | 6379 | 6379 | ✅ Healthy |
-| **pgAdmin** | `elisaschool_pgadmin` | 5050 | 80 | ✅ Running |
-| **Backend** | `elisaschool_backend` | 3000 | 3000 | ⏸️ Optionnel |
-| **Frontend** | `elisaschool_frontend` | 5173 | 5173 | ⏸️ Optionnel |
+| **PostgreSQL** | `elisaschool_postgres` | 7002 | 5432 | ✅ Healthy |
+| **Redis** | `elisaschool_redis` | 7003 | 6379 | ✅ Healthy |
+| **pgAdmin** | `elisaschool_pgadmin` | 7004 | 80 | ✅ Running |
+| **Backend** | `elisaschool_backend` | 7000 | 3000 | ⏸️ Optionnel |
+| **Frontend** | `elisaschool_frontend` | 7001 | 5173 | ⏸️ Optionnel |
 
 **Réseau Docker unique** : `docker_elisaschool_network`
 
@@ -38,16 +38,16 @@ docker compose up -d
 
 ### 3. Accéder aux services
 
-- **pgAdmin** : http://localhost:5050
+- **pgAdmin** : http://localhost:7004
   - Email : `admin@elisaschool.cm`
   - Password : `admin123`
   
-- **PostgreSQL** : localhost:5433
+- **PostgreSQL** : localhost:7002
   - Database : `elisaschool`
   - User : `elisaschool_user`
   - Password : `elisaschool_password`
 
-- **Redis** : localhost:6379
+- **Redis** : localhost:7003
   - Password : `elisaschool_password`
 
 ---
@@ -120,7 +120,7 @@ docker compose restart postgres
 DB_NAME=elisaschool
 DB_USER=elisaschool_user
 DB_PASSWORD=elisaschool_password
-DB_PORT=5433
+DB_PORT=7002
 
 # Redis
 REDIS_PASSWORD=elisaschool_password
@@ -128,7 +128,7 @@ REDIS_PASSWORD=elisaschool_password
 # pgAdmin
 PGADMIN_EMAIL=admin@elisaschool.cm
 PGADMIN_PASSWORD=admin123
-PGADMIN_PORT=5050
+PGADMIN_PORT=7004
 ```
 
 Pour modifier ces valeurs, éditez le fichier `.env`.
@@ -199,7 +199,7 @@ ENCRYPTION_KEY=<clé-32-caractères>
 docker logs elisaschool_postgres
 
 # Vérifier le port
-lsof -i :5433
+lsof -i :7002
 
 # Redémarrer
 docker compose restart postgres
@@ -222,12 +222,12 @@ docker network inspect docker_elisaschool_network
 
 ```bash
 # Trouver le processus
-lsof -i :5433
-lsof -i :6379
-lsof -i :5050
+lsof -i :7002
+lsof -i :7003
+lsof -i :7004
 
 # Changer le port dans .env
-DB_PORT=5434  # Au lieu de 5433
+DB_PORT=7003  # Au lieu de 7002
 ```
 
 ### Réinitialiser complètement
@@ -257,7 +257,7 @@ DB_PORT=5434  # Au lieu de 5433
 ### Accéder aux bases de données
 
 **Via pgAdmin (recommandé) :**
-1. Ouvrez http://localhost:5050
+1. Ouvrez http://localhost:7004
 2. Connectez-vous avec admin@elisaschool.cm / admin123
 3. Le serveur "eLISAschool DB" est pré-configuré
 

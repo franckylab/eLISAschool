@@ -1776,6 +1776,108 @@ function RootLayout() {
 
 ---
 
+## Workflow : Créer un Modal (CustomModal)
+
+### Règle Fondamentale
+
+**TOUJOURS** utiliser `<CustomModal>` pour tout nouveau modal. **JAMAIS** d'overlay custom (`fixed inset-0 bg-black/50`).
+
+### Architecture
+
+- **Hook `useModalWindow`** (`@/hooks/use-modal-window`) : fournit drag, resize (8 directions), minimize, maximize
+- **Composant `CustomModal`** (`@/components/modals/CustomModal`) : composant central basé sur Radix UI Dialog
+- **Composant `ConfirmationModal`** (`@/components/ui/ConfirmationModal`) : wrapper pour confirmations
+
+### Pattern Standard — Modal de Formulaire
+
+```tsx
+import { CustomModal } from '@/components/modals';
+import { ElisaButton } from '@/components/ui/elisa-button';
+import { Save } from 'lucide-react';
+
+function MonFormModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+    return (
+        <CustomModal
+            open={open}
+            onOpenChange={(v) => { if (!v) onClose(); }}
+            title="Créer un élément"
+            description="Remplissez les informations"
+            size="2xl"
+            footer={<>
+                <ElisaButton variant="outline" onClick={onClose}>Annuler</ElisaButton>
+                <ElisaButton variant="primary" onClick={handleSubmit} icon={<Save className="h-4 w-4" />}>
+                    Enregistrer
+                </ElisaButton>
+            </>}
+        >
+            <form>{/* contenu */}</form>
+        </CustomModal>
+    );
+}
+```
+
+### Tailles Disponibles
+
+| Size | Largeur | Usage |
+|------|---------|-------|
+| `sm` | 384px | Confirmations simples |
+| `md` | 448px | Formulaires courts |
+| `lg` | 512px | Formulaires moyens |
+| `xl` | 576px | Formulaires complexes |
+| `2xl` | 672px | Modals multi-sections |
+| `3xl` | 768px | Modals larges |
+| `full` | viewport-40 | Plein écran |
+
+### Props Optionnelles
+
+```tsx
+<CustomModal
+    open={open}
+    onOpenChange={onOpenChange}
+    draggable={true}       // Déplaçable (défaut: true)
+    resizable={true}       // Redimensionnable (défaut: true)
+    minimizable={true}     // Minimisable (défaut: true)
+    maximizable={true}     // Maximisable (défaut: true)
+    showClose={true}       // Bouton X (défaut: true)
+    closeOnOverlayClick={true} // Fermer clic overlay (défaut: true)
+    initialWidth={672}     // Largeur initiale px
+    initialHeight={600}    // Hauteur initiale px
+>
+```
+
+### Pattern Confirmation
+
+```tsx
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+
+<ConfirmationModal
+    isOpen={open}
+    title="Confirmer la suppression"
+    message="Êtes-vous sûr ?"
+    confirmLabel="Supprimer"
+    variant="danger"
+    onConfirm={handleDelete}
+    onCancel={onClose}
+/>
+```
+
+### Anti-patterns de Modals
+
+- **NE PAS** créer d'overlay custom (`fixed inset-0 bg-black/50`)
+- **NE PAS** utiliser `<dialog>` natif ou `window.confirm()`
+- **NE PAS** hardcoder la position (CustomModal centre automatiquement)
+- **NE PAS** gérer le drag/resize manuellement (useModalWindow le fait)
+- **NE PAS** oublier le `footer` pour les boutons d'action
+
+### Fichiers de Référence
+
+- **Hook** : `frontend/src/hooks/use-modal-window.ts`
+- **Composant** : `frontend/src/components/modals/CustomModal.tsx`
+- **Confirmation** : `frontend/src/components/ui/ConfirmationModal.tsx`
+- **Barrel** : `frontend/src/components/modals/index.ts`
+
+---
+
 ## Checklist Finale avant Déploiement
 
 - [ ] Tous les fichiers ont la **bannière eLISAschool**
@@ -1786,7 +1888,7 @@ function RootLayout() {
 - [ ] **Navigation clavier** fonctionnelle
 - [ ] **Animations** Framer Motion sur les interactions
 - [ ] **Toast** Sonner pour les notifications (pas d'alert natif)
-- [ ] **Modales personnalisées** (pas de confirm/alert natif)
+- [ ] **Modales personnalisées** : utiliser `<CustomModal>` (pas d'overlay custom, pas de confirm/alert natif)
 - [ ] **Loading states** : Skeleton pour listes, spinner pour actions
 - [ ] **Empty states** illustrés
 - [ ] **Error boundaries** en place

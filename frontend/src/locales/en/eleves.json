@@ -3,6 +3,12 @@
   "sousTitre": "Student management and academic records",
   "aucunEleve": "No students found",
   "chargement": "Loading students...",
+
+  "commun": {
+    "nom": "Name",
+    "statut": "Status",
+    "actions": "Actions"
+  },
   
   "formulaire": {
     "titreCreation": "New student",
@@ -56,7 +62,10 @@
     "redoublement": "Repeating year",
     "groupeSanguin": "Blood type",
     "allergies": "Allergies",
-    "allergiesPlaceholder": "Separate allergies with commas"
+    "allergiesPlaceholder": "Separate allergies with commas",
+    "pere": "Father",
+    "mere": "Mother",
+    "tuteur": "Legal guardian"
   },
 
   "statut": {
@@ -119,7 +128,8 @@
     "exportReussi": "Export successful",
     "importReussi": "Import successful",
     "modificationNonSauvegardee": "There are unsaved changes. Do you really want to leave?",
-    "selectionnezEleves": "Please select at least one student"
+    "selectionnezEleves": "Please select at least one student",
+    "aucuneDonnee": "No students to display"
   },
 
   "actions": {
@@ -189,5 +199,13 @@
     "supprimerEleve": "Delete a student",
     "exporterEleves": "Export students",
     "importerEleves": "Import students"
+  },
+
+  "boutons": {
+    "precedent": "Previous",
+    "suivant": "Next",
+    "annuler": "Cancel",
+    "creer": "Create student",
+    "enregistrer": "Save"
   }
 }

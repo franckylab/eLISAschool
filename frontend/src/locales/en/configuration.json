@@ -19,5 +19,44 @@
         "adresse": "Address",
         "telephone": "Phone",
         "email": "Email"
+    },
+
+    "sections": {
+        "general": {
+            "titre": "Institution",
+            "description": "General institution settings",
+            "nomEtablissement": "Institution name",
+            "codeEtablissement": "Institution code",
+            "email": "Email",
+            "telephone": "Phone",
+            "adresse": "Address"
+        },
+        "theme": {
+            "titre": "Theme",
+            "description": "Customize the application appearance",
+            "couleurDominante": "Dominant color",
+            "mode": "Display mode",
+            "modeClair": "Light",
+            "modeSombre": "Dark",
+            "reinitialiser": "Reset theme"
+        },
+        "langue": {
+            "titre": "Language",
+            "description": "Choose the interface language",
+            "francais": "Français",
+            "anglais": "English"
+        },
+        "modules": {
+            "titre": "Modules",
+            "description": "Enable or disable application modules"
+        },
+        "securite": {
+            "titre": "Security",
+            "description": "Configure application security settings"
+        },
+        "notifications": {
+            "titre": "Notifications",
+            "description": "Configure notification preferences"
+        }
     }
 }

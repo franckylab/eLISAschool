@@ -31,6 +31,12 @@ export function requireRoles(...roles: (Role | string)[]): (req: Request, res: R
             const userRole = req.utilisateur.role; // Rôle principal (backward compat)
             const userRoles = req.utilisateur.roles || [userRole]; // NOUVEAU : tous les rôles
 
+            // SUPER_ADMIN a TOUJOURS accès (bypass total)
+            if (userRoles.includes('SUPER_ADMIN') || userRole === 'SUPER_ADMIN') {
+                next();
+                return;
+            }
+
             // Vérifier si l'utilisateur a au moins un des rôles requis
             const hasRequiredRole = roles.some(r => userRoles.includes(r));
 

@@ -24,5 +24,11 @@
         "normale": "Normale",
         "haute": "Haute",
         "critique": "Critique"
+    },
+    "boutons": {
+        "nouvelle": "Nouvelle annonce"
+    },
+    "filtres": {
+        "recherche": "Rechercher une annonce..."
     }
 }

@@ -16,13 +16,15 @@ import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Mail, Lock, LogIn, Eye, EyeOff, QrCode,
-    GraduationCap, BookOpen, Users, Award, X, Camera,
+    GraduationCap, BookOpen, Users, Award,
     AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
 import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { cn } from '@/lib/cn';
+import { CustomModal } from '@/components/modals';
+import { ElisaLogo } from '@/components/branding';
 
 interface LoginForm {
     identifiant: string;
@@ -68,14 +70,14 @@ function IllustrationScolaire() {
             >
                 {/* Icônes scolaires animées en cercle */}
                 <div className="relative h-56 w-56">
-                    {/* Centre - Diplôme */}
+                    {/* Centre - Logo eLISAschool */}
                     <motion.div
                         className="absolute inset-0 flex items-center justify-center"
-                        animate={{ rotate: [0, 5, -5, 0] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                        animate={{ rotate: [0, 3, -3, 0] }}
+                        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
                     >
-                        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/20 shadow-xl backdrop-blur-sm">
-                            <GraduationCap className="h-14 w-14 text-white" strokeWidth={1.5} />
+                        <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur-sm ring-1 ring-white/20">
+                            <ElisaLogo variant="icon" size="lg" theme="white" />
                         </div>
                     </motion.div>
 
@@ -197,57 +199,34 @@ function QRScannerModal({
     if (!ouvert) return null;
 
     return (
-        <AnimatePresence>
-            <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-            >
-                <motion.div
-                    className="relative mx-4 w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--color-surface)] p-6 shadow-2xl"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    onClick={(e) => e.stopPropagation()}
-                >
+        <CustomModal
+            open={ouvert}
+            onOpenChange={(v) => { if (!v) onClose(); }}
+            title={t('login.scannerQRTitre')}
+            description={t('login.scannerQRDescription')}
+            size="sm"
+            draggable={false}
+            resizable={false}
+            minimizable={false}
+            maximizable={false}
+        >
+            {erreur ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                    <AlertCircle className="h-12 w-12 text-[var(--color-error)]" />
+                    <p className="text-sm text-[var(--color-texte-secondaire)]">{erreur}</p>
                     <button
                         onClick={onClose}
-                        className="absolute right-4 top-4 rounded-full p-1 text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] transition-colors"
+                        className="rounded-lg bg-[var(--color-dominante)] px-4 py-2 text-sm font-medium text-white"
                     >
-                        <X className="h-5 w-5" />
+                        {t('login.arretScan')}
                     </button>
-
-                    <div className="mb-4 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-dominante)]/10">
-                            <Camera className="h-5 w-5 text-[var(--color-dominante)]" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-[var(--color-texte)]">{t('login.scannerQRTitre')}</h3>
-                            <p className="text-xs text-[var(--color-texte-secondaire)]">{t('login.scannerQRDescription')}</p>
-                        </div>
-                    </div>
-
-                    {erreur ? (
-                        <div className="flex flex-col items-center gap-3 py-8">
-                            <AlertCircle className="h-12 w-12 text-[var(--color-error)]" />
-                            <p className="text-sm text-[var(--color-texte-secondaire)]">{erreur}</p>
-                            <button
-                                onClick={onClose}
-                                className="rounded-lg bg-[var(--color-dominante)] px-4 py-2 text-sm font-medium text-white"
-                            >
-                                {t('login.arretScan')}
-                            </button>
-                        </div>
-                    ) : (
-                        <div ref={containerRef} className="overflow-hidden rounded-xl border-2 border-dashed border-[var(--color-dominante)]/30">
-                            <div id="qr-reader" className="w-full" />
-                        </div>
-                    )}
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+                </div>
+            ) : (
+                <div ref={containerRef} className="overflow-hidden rounded-xl border-2 border-dashed border-[var(--color-dominante)]/30">
+                    <div id="qr-reader" className="w-full" />
+                </div>
+            )}
+        </CustomModal>
     );
 }
 
@@ -330,8 +309,8 @@ export function LoginPage() {
 
                 {/* Logo en haut à gauche */}
                 <div className="absolute left-8 top-8 z-20">
-                    <Link to="/" className="text-2xl font-bold text-white">
-                        elisa<span className="text-yellow-300">°</span>school
+                    <Link to="/" className="block transition-transform hover:scale-105">
+                        <ElisaLogo variant="horizontal" size="sm" theme="white" animated />
                     </Link>
                 </div>
             </div>
@@ -341,8 +320,8 @@ export function LoginPage() {
                 {/* Barre supérieure */}
                 <div className="flex items-center justify-between px-6 py-4 sm:px-8">
                     {/* Logo mobile */}
-                    <Link to="/" className="text-xl font-bold text-[var(--color-dominante)] lg:hidden">
-                        elisa<span className="text-[var(--color-accent)]">°</span>school
+                    <Link to="/" className="block lg:hidden">
+                        <ElisaLogo variant="horizontal" size="xs" />
                     </Link>
                     <div className="ml-auto">
                         <LanguageSwitcher />

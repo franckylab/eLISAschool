@@ -53,14 +53,15 @@ export function useNote(id: string) {
 }
 
 export function useStatistiquesNotes(periodeId: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: NOTES_KEYS.statsPeriode(periodeId),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesNotes }>(`/api/notes/statistiques/${periodeId}`);
             return response.data.data;
         },
-        enabled: !!periodeId,
-        enabled: isAuthenticated,
+        enabled: !!periodeId && isAuthenticated,
         staleTime: 10 * 60 * 1000,
     });
 }

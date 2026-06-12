@@ -82,7 +82,14 @@ export function ParkingPage() {
                 </motion.div>
             </div>
 
-            <DataTable data={placesList} columns={colonnes} searchable searchPlaceholder="Rechercher une place..." />
+            {placesList}<DataTable
+                data={placesList}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher une place..." />
         </div>
     );
 }

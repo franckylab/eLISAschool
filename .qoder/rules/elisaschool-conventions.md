@@ -1020,6 +1020,105 @@ app.use('/api/mon-module', requireModuleActive('mon-module'), monModuleControlle
 
 ---
 
+## 23. Modals Frontend — Système Unifié (CustomModal)
+
+### Architecture
+
+Tous les modals d'eLISAschool utilisent le système unifié basé sur :
+- **Hook `useModalWindow`** (`frontend/src/hooks/use-modal-window.ts`) : fournit drag, resize (8 directions), minimize, maximize
+- **Composant `CustomModal`** (`frontend/src/components/modals/CustomModal.tsx`) : composant central basé sur Radix UI Dialog + useModalWindow
+- **Composant `ConfirmationModal`** (`frontend/src/components/ui/ConfirmationModal.tsx`) : wrapper spécialisé pour confirmations
+- **Composant `ConfirmDialog`** (`frontend/src/components/modals/ConfirmDialog.tsx`) : wrapper léger
+
+### Règle Fondamentale
+
+**TOUJOURS** utiliser `<CustomModal>` pour créer ou refactoriser un modal. **JAMAIS** d'overlay custom (`fixed inset-0 bg-black/50`).
+
+### Props de CustomModal
+
+```typescript
+interface CustomModalProps {
+    open: boolean;                          // État ouvert/fermé
+    onOpenChange: (open: boolean) => void;  // Callback fermeture
+    title?: string;                         // Titre du header
+    description?: string;                   // Sous-titre
+    children: ReactNode;                    // Contenu
+    size?: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'|'full';  // Taille prédéfinie
+    showClose?: boolean;                    // Bouton X (défaut: true)
+    closeOnOverlayClick?: boolean;          // Fermer au clic overlay (défaut: true)
+    footer?: ReactNode;                     // Pied de page (boutons)
+    draggable?: boolean;                    // Déplaçable (défaut: true)
+    resizable?: boolean;                    // Redimensionnable (défaut: true)
+    minimizable?: boolean;                  // Minimisable (défaut: true)
+    maximizable?: boolean;                  // Maximisable (défaut: true)
+    initialWidth?: number;                  // Largeur initiale px
+    initialHeight?: number;                 // Hauteur initiale px
+}
+```
+
+### Mapping Taille → Largeur
+
+| Size | Largeur | Min-Width | Usage |
+|------|---------|-----------|-------|
+| `sm` | 384px | 280px | Confirmations simples |
+| `md` | 448px | 320px | Formulaires courts |
+| `lg` | 512px | 360px | Formulaires moyens |
+| `xl` | 576px | 400px | Formulaires complexes |
+| `2xl` | 672px | 400px | Modals multi-sections |
+| `3xl` | 768px | 400px | Modals larges (tableaux, détails) |
+| `full` | viewport-40 | 400px | Plein écran |
+
+### Pattern Standard d'Utilisation
+
+```tsx
+// ✅ CORRECT — Modal de formulaire
+<CustomModal
+    open={open}
+    onOpenChange={(v) => { if (!v) onClose(); }}
+    title="Créer un élément"
+    description="Remplissez les informations ci-dessous"
+    size="2xl"
+    footer={<>
+        <ElisaButton variant="outline" onClick={onClose}>Annuler</ElisaButton>
+        <ElisaButton variant="primary" onClick={handleSubmit} icon={<Save className="h-4 w-4" />}>
+            Enregistrer
+        </ElisaButton>
+    </>}
+>
+    <form>{/* contenu */}</form>
+</CustomModal>
+
+// ✅ CORRECT — Modal de confirmation (via ConfirmationModal)
+<ConfirmationModal
+    isOpen={open}
+    title="Confirmer la suppression"
+    message="Êtes-vous sûr de vouloir supprimer cet élément ?"
+    confirmLabel="Supprimer"
+    variant="danger"
+    onConfirm={handleDelete}
+    onCancel={onClose}
+/>
+
+// ❌ INTERDIT — Overlay custom
+<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl">...</div>
+</div>
+```
+
+### Exceptions
+
+Les modals **spécialisés** (caméra QR scanner, video player) peuvent utiliser `CustomModal` avec `draggable={false}` et `resizable={false}` si les capacités avancées ne sont pas pertinentes.
+
+### Fichiers de Référence
+
+- **Hook** : `frontend/src/hooks/use-modal-window.ts` (342 lignes)
+- **Composant** : `frontend/src/components/modals/CustomModal.tsx` (256 lignes)
+- **Confirmation** : `frontend/src/components/ui/ConfirmationModal.tsx`
+- **Barrel** : `frontend/src/components/modals/index.ts`
+- **Hooks barrel** : `frontend/src/hooks/index.ts`
+
+---
+
 ## 21. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :

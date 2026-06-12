@@ -43,8 +43,7 @@ export function useUtilisateur(id: string) {
             const response = await apiClient.get<{ success: boolean; data: Utilisateur }>(`/api/utilisateurs/${id}`);
             return response.data.data;
         },
-        enabled: !!id,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
     });
 }

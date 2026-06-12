@@ -19,5 +19,44 @@
         "adresse": "Adresse",
         "telephone": "Téléphone",
         "email": "Email"
+    },
+
+    "sections": {
+        "general": {
+            "titre": "Établissement",
+            "description": "Paramètres généraux de l'établissement",
+            "nomEtablissement": "Nom de l'établissement",
+            "codeEtablissement": "Code de l'établissement",
+            "email": "Email",
+            "telephone": "Téléphone",
+            "adresse": "Adresse"
+        },
+        "theme": {
+            "titre": "Thème",
+            "description": "Personnalisez l'apparence de l'application",
+            "couleurDominante": "Couleur dominante",
+            "mode": "Mode d'affichage",
+            "modeClair": "Clair",
+            "modeSombre": "Sombre",
+            "reinitialiser": "Réinitialiser le thème"
+        },
+        "langue": {
+            "titre": "Langue",
+            "description": "Choisissez la langue de l'interface",
+            "francais": "Français",
+            "anglais": "English"
+        },
+        "modules": {
+            "titre": "Modules",
+            "description": "Activer ou désactiver les modules de l'application"
+        },
+        "securite": {
+            "titre": "Sécurité",
+            "description": "Configurez les paramètres de sécurité de l'application"
+        },
+        "notifications": {
+            "titre": "Notifications",
+            "description": "Configurez les préférences de notifications"
+        }
     }
 }

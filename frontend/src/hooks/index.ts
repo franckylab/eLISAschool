@@ -27,3 +27,5 @@ export {
     useDashboardWidgetConfig,
 } from './use-dashboard-widgets';
 export { useKeyboardShortcuts } from './use-keyboard-shortcuts';
+export { useModalWindow } from './use-modal-window';
+export type { ModalWindowState, UseModalWindowOptions, UseModalWindowResult } from './use-modal-window';

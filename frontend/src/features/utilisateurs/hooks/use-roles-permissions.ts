@@ -39,11 +39,11 @@ export function useRoles(filtres: RoleFiltres = {}) {
     return useQuery({
         queryKey: ROLES_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Role>('/api/roles', {
-                page: filtres.page || 1,
-                limit: filtres.limit || 50,
-                ...filtres,
-            });
+            const params: Record<string, string | number | boolean | undefined> = {};
+            if (filtres.estSysteme !== undefined) params.estSysteme = filtres.estSysteme;
+            if (filtres.recherche) params.recherche = filtres.recherche;
+
+            const response = await apiClient.get<Role[]>('/api/rbac/roles', params);
             return response.data;
         },
         enabled: isAuthenticated,
@@ -56,8 +56,11 @@ export function useRole(id: string) {
     return useQuery({
         queryKey: ROLES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Role }>(`/api/roles/${id}`);
-            return response.data.data;
+            const response = await apiClient.get<Role>(`/api/rbac/roles/${id}`);
+            if (!response.data) {
+                throw new Error('Rôle non trouvé');
+            }
+            return response.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -69,8 +72,11 @@ export function useTousRoles() {
     return useQuery({
         queryKey: [...ROLES_KEYS.all, 'tous'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Role[] }>('/api/roles/tous');
-            return response.data.data;
+            const response = await apiClient.get<Role[]>('/api/rbac/roles/tous');
+            if (!response.data) {
+                throw new Error('Aucun rôle disponible');
+            }
+            return response.data;
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 minutes
@@ -82,16 +88,20 @@ export function useCreerRole() {
 
     return useMutation({
         mutationFn: async (dto: CreerRoleDto) => {
-            const response = await apiClient.post<{ success: boolean; data: Role }>('/api/roles', dto);
-            return response.data.data;
+            const response = await apiClient.post<Role>('/api/rbac/roles', dto);
+            if (!response.data) {
+                throw new Error('Erreur lors de la création');
+            }
+            return response.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'stats'] });
             toast.success('Rôle créé avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la création du rôle');
+            toast.error(error.message || 'Erreur lors de la création du rôle');
         },
     });
 }
@@ -101,17 +111,21 @@ export function useModifierRole() {
 
     return useMutation({
         mutationFn: async ({ id, ...dto }: ModifierRoleDto) => {
-            const response = await apiClient.patch<{ success: boolean; data: Role }>(`/api/roles/${id}`, dto);
-            return response.data.data;
+            const response = await apiClient.patch<Role>(`/api/rbac/roles/${id}`, dto);
+            if (!response.data) {
+                throw new Error('Erreur lors de la modification');
+            }
+            return response.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'tous'] });
             queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(variables.id) });
+            queryClient.invalidateQueries({ queryKey: [...ROLES_KEYS.all, 'stats'] });
             toast.success('Rôle modifié avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+            toast.error(error.message || 'Erreur lors de la modification');
         },
     });
 }
@@ -121,7 +135,7 @@ export function useSupprimerRole() {
 
     return useMutation({
         mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/roles/${id}`);
+            await apiClient.delete(`/api/rbac/roles/${id}`);
             return id;
         },
         onSuccess: () => {
@@ -142,8 +156,11 @@ export function usePermissions() {
     return useQuery({
         queryKey: ROLES_KEYS.permissions(),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Permission[] }>('/api/permissions');
-            return response.data.data;
+            const response = await apiClient.get<Permission[]>('/api/rbac/permissions');
+            if (!response.data) {
+                throw new Error('Permissions non disponibles');
+            }
+            return response.data;
         },
         enabled: isAuthenticated,
         staleTime: 30 * 60 * 1000, // 30 minutes - permissions changent rarement
@@ -155,10 +172,13 @@ export function usePermissionsByModule(module: string) {
     return useQuery({
         queryKey: ROLES_KEYS.permissionsByModule(module),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: PermissionGroupe }>(
-                `/api/permissions/module/${module}`
+            const response = await apiClient.get<PermissionGroupe>(
+                `/api/rbac/permissions/module/${module}`
             );
-            return response.data.data;
+            if (!response.data) {
+                throw new Error('Permissions du module non disponibles');
+            }
+            return response.data;
         },
         enabled: !!module && isAuthenticated,
         staleTime: 30 * 60 * 1000,
@@ -170,10 +190,28 @@ export function useToutesPermissions() {
     return useQuery({
         queryKey: [...ROLES_KEYS.permissions(), 'groupes'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: PermissionGroupe[] }>(
-                '/api/permissions/groupes'
+            const response = await apiClient.get<Record<string, Permission[]>>(
+                '/api/rbac/permissions/modules'  // ← Retourne Record<string, Permission[]>
             );
-            return response.data.data;
+            if (!response.data) {
+                throw new Error('Permissions non disponibles');
+            }
+            
+            // Transformer l'objet Record<string, Permission[]> en tableau PermissionGroupe[]
+            const permissionsGroupes: PermissionGroupe[] = Object.entries(response.data).map(([module, permissions]) => ({
+                module,
+                libelle: module.charAt(0).toUpperCase() + module.slice(1).replace(/[-_]/g, ' '),
+                permissions: permissions.map(p => ({
+                    id: p.id,
+                    code: p.code,
+                    libelle: p.libelle,
+                    module: p.module,
+                    description: p.description,
+                    action: p.action,
+                })),
+            }));
+            
+            return permissionsGroupes;
         },
         enabled: isAuthenticated,
         staleTime: 30 * 60 * 1000,
@@ -185,11 +223,14 @@ export function useAttribuerPermissions() {
 
     return useMutation({
         mutationFn: async ({ roleId, permissions }: AttribuerPermissionDto) => {
-            const response = await apiClient.post<{ success: boolean; data: Role }>(
-                `/api/roles/${roleId}/permissions`,
+            const response = await apiClient.post<Role>(
+                `/api/rbac/roles/${roleId}/permissions`,
                 { permissions }
             );
-            return response.data.data;
+            if (!response.data) {
+                throw new Error('Erreur lors de l\'attribution des permissions');
+            }
+            return response.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
@@ -198,7 +239,7 @@ export function useAttribuerPermissions() {
             toast.success('Permissions attribuées avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'attribution des permissions');
+            toast.error(error.message || 'Erreur lors de l\'attribution des permissions');
         },
     });
 }
@@ -210,18 +251,45 @@ export function useStatsRoles() {
     return useQuery({
         queryKey: [...ROLES_KEYS.all, 'stats'],
         queryFn: async () => {
-            const response = await apiClient.get<{ 
-                success: boolean; 
-                data: {
-                    totalRoles: number;
-                    rolesSysteme: number;
-                    rolesPersonnalises: number;
-                    rolesParModule: Array<{ module: string; count: number }>;
-                }
-            }>('/api/roles/stats');
-            return response.data.data;
+            const response = await apiClient.get<{
+                totalRoles: number;
+                rolesSysteme: number;
+                rolesPersonnalises: number;
+                rolesParModule: Array<{ module: string; count: number }>;
+            }>('/api/rbac/roles/stats');
+            
+            if (!response.data) {
+                throw new Error('Statistiques non disponibles');
+            }
+            
+            return response.data;
         },
         enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useUsersByRole(roleId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.detail(roleId), 'users'],
+        queryFn: async () => {
+            const response = await apiClient.get<Array<{
+                id: string;
+                email: string;
+                nom: string;
+                prenom: string;
+                telephone?: string;
+                statut?: string;
+            }>>(`/api/rbac/roles/${roleId}/users`);
+            
+            if (!response.data) {
+                throw new Error('Utilisateurs non disponibles');
+            }
+            
+            return response.data;
+        },
+        enabled: !!roleId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
     });
 }

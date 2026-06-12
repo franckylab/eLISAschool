@@ -88,7 +88,7 @@ export class RolesService {
     /**
      * Récupérer tous les rôles
      */
-    async findAllRoles(filters?: { estSysteme?: boolean; etablissementId?: string }): Promise<Role[]> {
+    async findAllRoles(filters?: { estSysteme?: boolean; etablissementId?: string }): Promise<Array<Role & { nbUtilisateurs: number }>> {
         const where: any = {};
 
         if (filters?.estSysteme !== undefined) {
@@ -99,11 +99,26 @@ export class RolesService {
             where.etablissementId = filters.etablissementId;
         }
 
-        return this.roleRepo.find({
+        const roles = await this.roleRepo.find({
             where,
             relations: ['permissions', 'parent'],
             order: { libelle: 'ASC' },
         });
+
+        // Compter le nombre d'utilisateurs pour chaque rôle
+        const rolesWithCount = await Promise.all(
+            roles.map(async (role) => {
+                const count = await this.utilisateurRoleRepo.count({
+                    where: { roleId: role.id },
+                });
+                return {
+                    ...role,
+                    nbUtilisateurs: count,
+                };
+            })
+        );
+
+        return rolesWithCount;
     }
 
     /**
@@ -249,13 +264,117 @@ export class RolesService {
     /**
      * Lister les utilisateurs ayant un rôle spécifique
      */
-    async getUsersWithRole(roleId: string): Promise<Utilisateur[]> {
+    async getUsersWithRole(roleId: string): Promise<Array<{
+        id: string;
+        email: string;
+        matricule: string;
+        nom?: string;
+        prenom?: string;
+        telephone?: string;
+        statut: string;
+        derniereConnexion?: Date;
+    }>> {
         const utilisateurRoles = await this.utilisateurRoleRepo.find({
             where: { roleId },
-            relations: ['utilisateur', 'utilisateur.profil'],
+            relations: ['utilisateur'],
         });
 
-        return utilisateurRoles.map(ur => ur.utilisateur);
+        // Si aucun utilisateur n'a ce rôle, retourner un tableau vide
+        if (utilisateurRoles.length === 0) {
+            return [];
+        }
+
+        // Récupérer les IDs des utilisateurs
+        const utilisateurIds = utilisateurRoles.map(ur => ur.utilisateurId);
+
+        // Charger les profils séparément
+        const profils = await AppDataSource
+            .getRepository('ProfilUtilisateur')
+            .createQueryBuilder('p')
+            .where('p.utilisateurId IN (:...ids)', { ids: utilisateurIds })
+            .getMany()
+            .catch(() => []); // En cas d'erreur, retourner un tableau vide
+
+        // Créer un map utilisateurId -> profil
+        const profilMap = new Map<string, any>();
+        profils.forEach(p => {
+            profilMap.set((p as any).utilisateurId, p);
+        });
+
+        // Mapper pour inclure les informations du profil
+        return utilisateurRoles.map(ur => {
+            const user = ur.utilisateur;
+            const profil = profilMap.get(user.id);
+            
+            return {
+                id: user.id,
+                email: user.email,
+                matricule: user.matricule,
+                nom: profil?.nom || '',
+                prenom: profil?.prenom || '',
+                telephone: profil?.telephone || '',
+                statut: user.statut,
+                derniereConnexion: user.derniereConnexion,
+            };
+        });
+    }
+
+    /**
+     * Obtenir les statistiques des rôles
+     */
+    async getRoleStats(etablissementId?: string): Promise<{
+        totalRoles: number;
+        rolesSysteme: number;
+        rolesPersonnalises: number;
+        rolesParModule: Array<{ module: string; count: number }>;
+    }> {
+        const where: any = {};
+        if (etablissementId) {
+            where.etablissementId = etablissementId;
+        }
+
+        // Compter tous les rôles
+        const totalRoles = await this.roleRepo.count({ where });
+
+        // Compter les rôles système
+        const rolesSysteme = await this.roleRepo.count({
+            where: { ...where, estSysteme: true },
+        });
+
+        // Compter les rôles personnalisés
+        const rolesPersonnalises = await this.roleRepo.count({
+            where: { ...where, estSysteme: false },
+        });
+
+        // Récupérer tous les rôles avec permissions pour l'analyse par module
+        const roles = await this.roleRepo.find({
+            where,
+            relations: ['permissions'],
+        });
+
+        // Analyser les rôles par module
+        const moduleMap = new Map<string, number>();
+        for (const role of roles) {
+            if (role.permissions && role.permissions.length > 0) {
+                const modules = new Set(
+                    role.permissions.map(p => p.module).filter(Boolean)
+                );
+                for (const module of modules) {
+                    moduleMap.set(module, (moduleMap.get(module) || 0) + 1);
+                }
+            }
+        }
+
+        const rolesParModule = Array.from(moduleMap.entries())
+            .map(([module, count]) => ({ module, count }))
+            .sort((a, b) => b.count - a.count);
+
+        return {
+            totalRoles,
+            rolesSysteme,
+            rolesPersonnalises,
+            rolesParModule,
+        };
     }
 }
 

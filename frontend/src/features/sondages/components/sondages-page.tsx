@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, Plus, Search, Eye, Trash2, Download, Users, CheckCircle } from 'lucide-react';
+import { BarChart3, Plus, Eye, Trash2, Download, Users, CheckCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useSondages, useSupprimerSondage, useExporterSondage } from '../hooks/use-sondages';
@@ -132,6 +132,7 @@ export function SondagesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-48',
             render: (s) => (
@@ -217,51 +218,46 @@ export function SondagesPage() {
                 </div>
             </motion.div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreCategorie}
-                    onChange={(e) => setFiltreCategorie(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Toutes les catégories</option>
-                    <option value="satisfaction">Satisfaction</option>
-                    <option value="evaluation">Évaluation</option>
-                    <option value="consultation">Consultation</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select
-                    value={filtreStatut}
-                    onChange={(e) => setFiltreStatut(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les statuts</option>
-                    <option value="brouillon">Brouillon</option>
-                    <option value="actif">Actif</option>
-                    <option value="termine">Terminé</option>
-                    <option value="archive">Archivé</option>
-                </select>
-            </motion.div>
+
 
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(valeur) => setRecherche(valeur)}
+                disableClientSearch
+                filtres={[
+                    {
+                        key: 'categorie',
+                        label: 'Catégorie',
+                        options: [
+                            { value: 'satisfaction', label: 'Satisfaction' },
+                            { value: 'evaluation', label: 'Évaluation' },
+                            { value: 'consultation', label: 'Consultation' },
+                            { value: 'feedback', label: 'Feedback' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                    },
+                    {
+                        key: 'statut',
+                        label: 'Statut',
+                        options: [
+                            { value: 'brouillon', label: 'Brouillon' },
+                            { value: 'actif', label: 'Actif' },
+                            { value: 'termine', label: 'Terminé' },
+                            { value: 'archive', label: 'Archivé' },
+                        ],
+                    },
+                ]}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'categorie') setFiltreCategorie(valeur);
+                    if (key === 'statut') setFiltreStatut(valeur);
+                }}
                 pagination={{
                     page,
                     limit,

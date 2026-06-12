@@ -5,10 +5,9 @@
  * Configuration établissement, thème, modules
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon } from 'lucide-react';
+import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
@@ -17,8 +16,13 @@ import { COULEURS_DOMINANTES } from '@/lib/theme-utils';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { SecuriteTab } from './components/SecuriteTab';
+import { LangueRegionTab } from './components/LangueRegionTab';
+import { ModulesTab } from './components/ModulesTab';
+import { NotificationsTab } from './components/NotificationsTab';
+import { HistoriqueTab } from './components/HistoriqueTab';
+import { useConfigurationApp, useUpdateConfigurationApp } from './hooks/use-configuration';
 
-type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications';
+type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications' | 'historique';
 
 const TABS: { id: TabId; icon: React.ElementType }[] = [
     { id: 'general', icon: Settings },
@@ -27,20 +31,45 @@ const TABS: { id: TabId; icon: React.ElementType }[] = [
     { id: 'modules', icon: Blocks },
     { id: 'securite', icon: Shield },
     { id: 'notifications', icon: BellIcon },
+    { id: 'historique', icon: History },
 ];
 
 export function ConfigurationPage() {
     const { t } = useTranslation('configuration');
-    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<TabId>('general');
     const themeStore = useThemeStore();
 
-    // Charger la configuration
-    const { data: configResponse, isLoading } = useQuery({
-        queryKey: ['configuration'],
-        queryFn: () => apiClient.get('/api/configuration/full'),
-        retry: 1,
+    // Hooks TanStack Query
+    const { data: configResponse, isLoading: isLoadingConfig } = useConfigurationApp();
+    const updateConfig = useUpdateConfigurationApp();
+
+    const config = configResponse?.data;
+
+    // État du formulaire général
+    const [formData, setFormData] = useState({
+        nomEtablissement: '',
+        codeEtablissement: '',
+        email: '',
+        telephone: '',
+        adresse: '',
     });
+
+    // Synchroniser avec la config chargée
+    useEffect(() => {
+        if (config) {
+            setFormData({
+                nomEtablissement: config.nomEtablissement || '',
+                codeEtablissement: config.codeEtablissement || '',
+                email: config.email || '',
+                telephone: config.telephone || '',
+                adresse: config.adresse || '',
+            });
+        }
+    }, [config]);
+
+    const handleSaveGeneral = async () => {
+        await updateConfig.mutateAsync(formData);
+    };
 
     return (
         <div>
@@ -85,14 +114,53 @@ export function ConfigurationPage() {
                                     {t('sections.general.description')}
                                 </p>
                             </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <ElisaInput label={t('sections.general.nomEtablissement')} placeholder="Lycée..." />
-                                <ElisaInput label={t('sections.general.codeEtablissement')} placeholder="LYC-001" />
-                                <ElisaInput label={t('sections.general.email')} type="email" placeholder="contact@ecole.com" />
-                                <ElisaInput label={t('sections.general.telephone')} placeholder="+237..." />
-                                <ElisaInput label={t('sections.general.adresse')} className="sm:col-span-2" placeholder="Yaoundé, Cameroun" />
-                            </div>
-                            <ElisaButton>{t('boutons.enregistrer', { ns: 'common' })}</ElisaButton>
+                            {isLoadingConfig ? (
+                                <div className="py-8 text-center">Chargement...</div>
+                            ) : (
+                                <>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <ElisaInput
+                                            label={t('sections.general.nomEtablissement')}
+                                            value={formData.nomEtablissement}
+                                            onChange={(e) => setFormData({ ...formData, nomEtablissement: e.target.value })}
+                                            placeholder="Lycée..."
+                                        />
+                                        <ElisaInput
+                                            label={t('sections.general.codeEtablissement')}
+                                            value={formData.codeEtablissement}
+                                            onChange={(e) => setFormData({ ...formData, codeEtablissement: e.target.value })}
+                                            placeholder="LYC-001"
+                                        />
+                                        <ElisaInput
+                                            label={t('sections.general.email')}
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            placeholder="contact@ecole.com"
+                                        />
+                                        <ElisaInput
+                                            label={t('sections.general.telephone')}
+                                            value={formData.telephone}
+                                            onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                                            placeholder="+237..."
+                                        />
+                                        <ElisaInput
+                                            label={t('sections.general.adresse')}
+                                            className="sm:col-span-2"
+                                            value={formData.adresse}
+                                            onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                                            placeholder="Yaoundé, Cameroun"
+                                        />
+                                    </div>
+                                    <ElisaButton
+                                        variant="primary"
+                                        onClick={handleSaveGeneral}
+                                        isLoading={updateConfig.isPending}
+                                    >
+                                        {t('boutons.enregistrer', { ns: 'common' })}
+                                    </ElisaButton>
+                                </>
+                            )}
                         </div>
                     )}
 
@@ -161,15 +229,17 @@ export function ConfigurationPage() {
                     {/* Sécurité */}
                     {activeTab === 'securite' && <SecuriteTab />}
 
-                    {/* Autres onglets : placeholder */}
-                    {activeTab !== 'general' && activeTab !== 'theme' && activeTab !== 'securite' && (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <Settings className="h-12 w-12 text-[var(--color-texte-secondaire)]/30" />
-                            <p className="mt-4 text-sm text-[var(--color-texte-secondaire)]">
-                                {t(`sections.${activeTab}.titre`)} — Bientôt disponible
-                            </p>
-                        </div>
-                    )}
+                    {/* Langue & Région */}
+                    {activeTab === 'langue' && <LangueRegionTab />}
+
+                    {/* Modules */}
+                    {activeTab === 'modules' && <ModulesTab />}
+
+                    {/* Notifications */}
+                    {activeTab === 'notifications' && <NotificationsTab />}
+
+                    {/* Historique */}
+                    {activeTab === 'historique' && <HistoriqueTab />}
                 </div>
             </div>
         </div>

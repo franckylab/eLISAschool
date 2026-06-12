@@ -7,7 +7,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
-import { EleveForm } from './eleve-form';
+import { EleveForm } from './eleve-form.v2'; // Version améliorée avec React Hook Form
 import type { Eleve } from '../types/eleve.types';
 
 interface EleveFormModalProps {
@@ -30,7 +30,7 @@ export function EleveFormModal({ open, onOpenChange, mode, eleve }: EleveFormMod
         <CustomModal
             open={open}
             onOpenChange={onOpenChange}
-            titre={titre}
+            title={titre}
             size="2xl"
         >
             <EleveForm

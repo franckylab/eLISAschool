@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Heart, Plus, Search, Eye, FileText, Activity, Thermometer } from 'lucide-react';
+import { Heart, Plus, Eye, FileText, Activity, Thermometer } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useVisitesInfirmerie, useStatistiquesSante } from '../hooks/use-sante';
@@ -39,6 +39,7 @@ export function SantePage() {
     const colonnes: Column<VisiteInfirmerie>[] = [
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (v) => (
@@ -104,6 +105,7 @@ export function SantePage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-20',
             render: (v) => (
@@ -198,39 +200,32 @@ export function SantePage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreOrientation}
-                    onChange={(e) => setFiltreOrientation(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Toutes orientations</option>
-                    <option value="retour_classe">Retour classe</option>
-                    <option value="renvoi_domicile">Renvoi domicile</option>
-                    <option value="hopital">Hôpital</option>
-                    <option value="autre">Autre</option>
-                </select>
-            </motion.div>
-
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                filtres={[
+                    {
+                        key: 'orientation',
+                        label: 'Orientation',
+                        options: [
+                            { value: 'retour_classe', label: 'Retour classe' },
+                            { value: 'renvoi_domicile', label: 'Renvoi domicile' },
+                            { value: 'hopital', label: 'Hôpital' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                        allOptionLabel: 'Toutes orientations',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'orientation') setFiltreOrientation(valeur);
+                }}
+                disableClientSearch
                 pagination={{
                     page,
                     limit,

@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Plus, Search, Eye, Edit, Trash2, Shield, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Plus, Eye, Edit, Trash2, Shield, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useSanctions, useSupprimerSanction, useAmnistierSanction, useStatistiquesDiscipline } from '../hooks/use-discipline';
@@ -73,6 +73,7 @@ export function DisciplinePage() {
         },
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (s) => (
@@ -133,6 +134,7 @@ export function DisciplinePage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-40',
             render: (s) => (
@@ -245,58 +247,53 @@ export function DisciplinePage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreType}
-                    onChange={(e) => setFiltreType(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les types</option>
-                    <option value="avertissement">Avertissement</option>
-                    <option value="remontrance">Réprimande</option>
-                    <option value="exclusion_temporaire">Exclusion temp.</option>
-                    <option value="exclusion_definitive">Exclusion déf.</option>
-                    <option value="conseil_discipline">Conseil discipline</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select
-                    value={filtreGravite}
-                    onChange={(e) => setFiltreGravite(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Toutes gravités</option>
-                    <option value="legere">Légère</option>
-                    <option value="moyenne">Moyenne</option>
-                    <option value="grave">Grave</option>
-                    <option value="tres_grave">Très grave</option>
-                </select>
-            </motion.div>
-
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                data={data?.items || []}
+                columns={colonnes}
                 isLoading={isLoading}
-                pagination={{
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                filtres={[
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        options: [
+                            { value: 'avertissement', label: 'Avertissement' },
+                            { value: 'remontrance', label: 'Réprimande' },
+                            { value: 'exclusion_temporaire', label: 'Exclusion temp.' },
+                            { value: 'exclusion_definitive', label: 'Exclusion déf.' },
+                            { value: 'conseil_discipline', label: 'Conseil discipline' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                        allOptionLabel: 'Tous les types',
+                    },
+                    {
+                        key: 'gravite',
+                        label: 'Gravité',
+                        options: [
+                            { value: 'leger', label: 'Léger' },
+                            { value: 'moyen', label: 'Moyen' },
+                            { value: 'grave', label: 'Grave' },
+                            { value: 'tres_grave', label: 'Très grave' },
+                        ],
+                        allOptionLabel: 'Toutes gravités',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'type') setFiltreType(valeur);
+                    if (key === 'gravite') setFiltreGravite(valeur);
+                }}
+                disableClientSearch
+                pagination={data?.meta ? {
                     page,
                     limit,
-                    total: meta?.total || 0,
-                    onPageChange: setPage,
-                }}
+                    total: data.meta.total,
+                    totalPages: data.meta.totalPages,
+                } : undefined}
             />
         </div>
     );

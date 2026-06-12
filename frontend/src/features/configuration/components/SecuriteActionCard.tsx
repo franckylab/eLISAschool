@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface SecuriteActionCardProps {
     action: 'invalidate-sessions' | 'reset-login-attempts' | 'force-password-reset';
@@ -105,7 +105,7 @@ export function SecuriteActionCard({ action, onExecute, isLoading }: SecuriteAct
                 </div>
             </motion.div>
 
-            <ConfirmationModal
+            <ConfirmDialog
                 open={showConfirmation}
                 onOpenChange={setShowConfirmation}
                 title={actionConfig.titre}

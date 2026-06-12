@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { FileText, Plus, Search, Eye, Edit, Trash2, Calendar, Award, TrendingUp } from 'lucide-react';
+import { FileText, Plus, Eye, Edit, Trash2, Calendar, Award, TrendingUp } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useExamens, useSupprimerExamen, useStatistiquesExamens } from '../hooks/use-examens';
@@ -116,6 +116,7 @@ export function ExamensPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
             render: (e) => (
@@ -215,51 +216,45 @@ export function ExamensPage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreType}
-                    onChange={(e) => setFiltreType(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les types</option>
-                    <option value="examen">Examen</option>
-                    <option value="interrogation">Interrogation</option>
-                    <option value="composition">Composition</option>
-                    <option value="concours">Concours</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select
-                    value={filtreStatut}
-                    onChange={(e) => setFiltreStatut(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les statuts</option>
-                    <option value="planifie">Planifié</option>
-                    <option value="en_cours">En cours</option>
-                    <option value="termine">Terminé</option>
-                    <option value="annule">Annulé</option>
-                </select>
-            </motion.div>
-
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                filtres={[
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        options: [
+                            { value: 'examen', label: 'Examen' },
+                            { value: 'interrogation', label: 'Interrogation' },
+                            { value: 'composition', label: 'Composition' },
+                            { value: 'concours', label: 'Concours' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                        allOptionLabel: 'Tous les types',
+                    },
+                    {
+                        key: 'statut',
+                        label: 'Statut',
+                        options: [
+                            { value: 'planifie', label: 'Planifié' },
+                            { value: 'en_cours', label: 'En cours' },
+                            { value: 'termine', label: 'Terminé' },
+                            { value: 'annule', label: 'Annulé' },
+                        ],
+                        allOptionLabel: 'Tous les statuts',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'type') setFiltreType(valeur);
+                    if (key === 'statut') setFiltreStatut(valeur);
+                }}
+                disableClientSearch
                 pagination={{
                     page,
                     limit,

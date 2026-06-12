@@ -15,10 +15,38 @@
         "imprimer": "Imprimer",
         "actualiser": "Actualiser",
         "connexion": "Se connecter",
+        "connecter": "Se connecter",
         "deconnexion": "Se déconnecter",
+        "deconnecter": "Se déconnecter",
+        "changerMotDePasse": "Changer le mot de passe",
         "creer": "Créer",
         "voir": "Voir",
         "telecharger": "Télécharger"
+    },
+    "actions": {
+        "back": "Retour",
+        "contactAdmin": "Contacter un administrateur"
+    },
+    "validation": {
+        "requis": "Ce champ est requis",
+        "confirmationInvalide": "Les valeurs ne correspondent pas",
+        "emailInvalide": "Format d'email invalide"
+    },
+    "errors": {
+        "unauthorized": {
+            "title": "Accès Non Autorisé",
+            "subtitle": "Vous n'avez pas les permissions nécessaires",
+            "details": "Détails de l'accès"
+        }
+    },
+    "classes": {
+        "titre": "Classes"
+    },
+    "matieres": {
+        "titre": "Matières"
+    },
+    "personnel": {
+        "titre": "Personnel"
     },
     "messages": {
         "succesEnregistrement": "Enregistré avec succès",
@@ -44,6 +72,7 @@
     "navigation": {
         "accueil": "Accueil",
         "tableauBord": "Tableau de bord",
+        "dashboard": "Tableau de bord",
         "parametres": "Paramètres",
         "configuration": "Configuration",
         "retour": "Retour",
@@ -78,6 +107,9 @@
         "octobre": "Octobre",
         "novembre": "Novembre",
         "decembre": "Décembre"
+    },
+    "labels": {
+        "recherche": "Rechercher..."
     },
     "commun": {
         "nom": "Nom",

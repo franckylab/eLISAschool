@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { DollarSign, Plus, Search, Download, Eye, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { DollarSign, Plus, Download, Eye, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePaiements, useStatistiquesFinancieres } from '../hooks/use-finances';
@@ -45,6 +45,7 @@ export function FinancesPage() {
     const colonnes: Column<Paiement>[] = [
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (p) => (
@@ -124,6 +125,7 @@ export function FinancesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-24',
             render: (p) => (
@@ -220,28 +222,15 @@ export function FinancesPage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-            </motion.div>
-
             <DataTable
                 colonnes={colonnes}
                 donnees={paiements || []}
                 isLoading={isLoading}
+                searchPlaceholder={t('rechercher')}
+                enableReordering
+                enablePinning
+                onSearchChange={setRecherche}
+                disableClientSearch
                 pagination={{
                     page,
                     limit,

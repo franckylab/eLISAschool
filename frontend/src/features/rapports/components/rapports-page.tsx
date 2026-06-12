@@ -36,7 +36,8 @@ export function RapportsPage() {
         { key: 'statut', header: 'Statut', className: 'w-28', render: (r: any) => { const s = statuts[r.statut] || { label: r.statut, color: 'gray' }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${s.color}-100 text-${s.color}-700`}>{s.label}</span>; } },
         { key: 'date', header: 'Date', className: 'w-28', render: (r: any) => <span className="text-sm">{new Date(r.dateGeneration).toLocaleDateString('fr-FR')}</span> },
         { key: 'taille', header: 'Taille', className: 'w-20', render: (r: any) => <span className="text-sm text-gray-600">{r.taille ? `${(r.taille / 1024).toFixed(1)} Ko` : '-'}</span> },
-        { key: 'actions', header: 'Actions', className: 'w-32', render: (r: any) => <button className="text-blue-600 hover:underline text-sm">Télécharger</button> },
+        { key: 'actions',
+            pinned: 'right' as const, header: 'Actions', className: 'w-32', render: (r: any) => <button className="text-blue-600 hover:underline text-sm">Télécharger</button> },
     ];
 
     if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
@@ -85,7 +86,15 @@ export function RapportsPage() {
                 </motion.div>
             </div>
 
-            <DataTable data={rapports} columns={colonnes} searchable searchPlaceholder="Rechercher un rapport..." />
+            {rapports}<DataTable
+                data={rapports}
+                columns={colonnes}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un rapport..." />
         </div>
     );
 }

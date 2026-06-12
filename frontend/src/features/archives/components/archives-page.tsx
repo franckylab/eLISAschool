@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Archive, Plus, Search, Download, Trash2, FileText, Image, Video, Music } from 'lucide-react';
+import { Archive, Plus, Download, Trash2, FileText, Image, Video, Music } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useArchives, useTelechargerArchive, useSupprimerArchive, useStatistiquesArchives } from '../hooks/use-archives';
@@ -46,7 +46,8 @@ export function ArchivesPage() {
         { key: 'taille', header: 'Taille', className: 'w-24', render: (a) => <span className="text-sm text-gray-700">{formatTaille(a.tailleFichier)}</span>},
         { key: 'archivePar', header: 'Archivé par', className: 'w-40', render: (a) => (a.archivePar ? <p className="text-sm text-gray-700">{a.archivePar.prenom} {a.archivePar.nom}</p> : <span className="text-gray-400">-</span>)},
         { key: 'date', header: 'Date', className: 'w-28', render: (a) => <span className="text-sm text-gray-700">{new Date(a.createdAt).toLocaleDateString('fr-FR')}</span>},
-        { key: 'actions', header: 'Actions', className: 'text-right w-24', render: (a) => (<div className="flex justify-end gap-1"><ElisaButton variant="outline" size="sm" icon={<Download className="h-3 w-3" />} isLoading={telecharger.isPending} onClick={() => telecharger.mutateAsync(a.id)} /><ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-3 w-3" />} isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(a.id)} /></div>)},
+        { key: 'actions',
+            pinned: 'right' as const, header: 'Actions', className: 'text-right w-24', render: (a) => (<div className="flex justify-end gap-1"><ElisaButton variant="outline" size="sm" icon={<Download className="h-3 w-3" />} isLoading={telecharger.isPending} onClick={() => telecharger.mutateAsync(a.id)} /><ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-3 w-3" />} isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(a.id)} /></div>)},
     ];
 
     return (
@@ -65,19 +66,36 @@ export function ArchivesPage() {
                 </motion.div>
             )}
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3">
-                <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder={t('rechercher')} value={recherche} onChange={(e) => setRecherche(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-                <select value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Toutes catégories</option>
-                    <option value="document">Document</option>
-                    <option value="photo">Photo</option>
-                    <option value="video">Vidéo</option>
-                    <option value="audio">Audio</option>
-                    <option value="autre">Autre</option>
-                </select>
-            </motion.div>
-
-            <DataTable colonnes={colonnes} donnees={data || []} isLoading={isLoading} pagination={{ page, limit: 20, total: meta?.total || 0, onPageChange: setPage }} />
+            <DataTable
+                colonnes={colonnes}
+                donnees={data || []}
+                isLoading={isLoading}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                filtres={[
+                    {
+                        key: 'categorie',
+                        label: 'Catégorie',
+                        options: [
+                            { value: 'document', label: 'Document' },
+                            { value: 'photo', label: 'Photo' },
+                            { value: 'video', label: 'Vidéo' },
+                            { value: 'audio', label: 'Audio' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                        allOptionLabel: 'Toutes catégories',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'categorie') setFiltreCategorie(valeur);
+                }}
+                disableClientSearch
+                pagination={{ page, limit: 20, total: meta?.total || 0, onPageChange: setPage }}
+            />
         </div>
     );
 }

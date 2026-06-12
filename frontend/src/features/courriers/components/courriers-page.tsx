@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Mail, Plus, Search, Eye, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
+import { Mail, Plus, Eye, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCourriers, useMarquerCommeLu, useSupprimerCourrier, useStatistiquesCourriers } from '../hooks/use-courriers';
@@ -121,6 +121,7 @@ export function CourriersPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
             render: (c) => (
@@ -199,27 +200,46 @@ export function CourriersPage() {
                 </motion.div>
             )}
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3">
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input type="text" placeholder={t('rechercher')} value={recherche} onChange={(e) => setRecherche(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <select value={filtreType} onChange={(e) => setFiltreType(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Tous les types</option>
-                    <option value="entrant">Entrant</option>
-                    <option value="sortant">Sortant</option>
-                    <option value="interne">Interne</option>
-                </select>
-                <select value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Tous les statuts</option>
-                    <option value="nouveau">Nouveau</option>
-                    <option value="lu">Lu</option>
-                    <option value="traite">Traité</option>
-                    <option value="archive">Archivé</option>
-                </select>
-            </motion.div>
 
-            <DataTable colonnes={colonnes} donnees={data || []} isLoading={isLoading} pagination={{ page, limit, total: meta?.total || 0, onPageChange: setPage }} />
+
+            <DataTable
+                colonnes={colonnes}
+                donnees={data || []}
+                isLoading={isLoading}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                pagination={{ page, limit, total: meta?.total || 0, onPageChange: setPage }}
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(valeur) => setRecherche(valeur)}
+                disableClientSearch
+                filtres={[
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        options: [
+                            { value: 'entrant', label: 'Entrant' },
+                            { value: 'sortant', label: 'Sortant' },
+                            { value: 'interne', label: 'Interne' },
+                        ],
+                    },
+                    {
+                        key: 'statut',
+                        label: 'Statut',
+                        options: [
+                            { value: 'nouveau', label: 'Nouveau' },
+                            { value: 'lu', label: 'Lu' },
+                            { value: 'traite', label: 'Traité' },
+                            { value: 'archive', label: 'Archivé' },
+                        ],
+                    },
+                ]}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'type') setFiltreType(valeur);
+                    if (key === 'statut') setFiltreStatut(valeur);
+                }}
+            />
         </div>
     );
 }

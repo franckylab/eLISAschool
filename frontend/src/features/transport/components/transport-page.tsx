@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Bus } from 'lucide-react';
+import { Plus, Bus } from 'lucide-react';
 import { useInscriptionsTransport, useSupprimerLigneTransport } from '../hooks/use-transport';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -24,6 +24,7 @@ export function TransportPage() {
     const colonnes: Column<InscriptionTransport>[] = [
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             render: (i) => (
                 <div>
@@ -66,6 +67,7 @@ export function TransportPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (i) => (
@@ -109,15 +111,18 @@ export function TransportPage() {
                 )}
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Rechercher..." className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" value={filtres.recherche || ''} onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} />
-            </div>
-
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder="Rechercher..."
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.meta ? { page: data.meta.currentPage, limit: data.meta.itemsPerPage, total: data.meta.totalItems, totalPages: data.meta.totalPages, hasNext: data.meta.currentPage < data.meta.totalPages, hasPrev: data.meta.currentPage > 1 } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}

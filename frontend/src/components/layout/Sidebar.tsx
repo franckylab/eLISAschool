@@ -21,13 +21,25 @@ import {
     Bus,
     Library,
     Settings,
-    ChevronLeft,
+    Shield,
+    UserCog,
+    Building2,
+    Layers,
+    GraduationCap as LevelIcon,
+    School,
+    CalendarDays,
+    Atom,
+    UserRound,
+    FolderTree,
+    FileText,
+    TrendingUp,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModulePermissions } from '@/hooks';
 import { cn } from '@/lib/cn';
+import { ElisaLogo } from '@/components/branding';
 
 interface NavItem {
     label: string;
@@ -49,18 +61,42 @@ const NAV_SECTIONS: NavSection[] = [
         ],
     },
     {
+        title: 'Structure Académique',
+        items: [
+            { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
+            { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
+            { label: 'Types Cycles', path: '/types-cycles', icon: Layers, module: 'types-cycles' },
+            { label: 'Cycles', path: '/cycles', icon: Layers, module: 'cycles' },
+            { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
+            { label: 'Classes', path: '/classes', icon: School, module: 'classes' },
+            { label: 'Années Scolaires', path: '/annees-scolaires', icon: CalendarDays, module: 'anneesScolaires' },
+            { label: 'Matières', path: '/matieres', icon: Atom, module: 'matieres' },
+            { label: 'Programmes', path: '/programmes', icon: FileText, module: 'programmes' },
+        ],
+    },
+    {
+        title: 'Relations',
+        items: [
+            { label: 'Responsables', path: '/responsables-eleves', icon: Users, module: 'responsables-eleves' },
+        ],
+    },
+    {
         title: 'Académique',
         items: [
             { label: 'Élèves', path: '/eleves', icon: Users, module: 'eleves' },
+            { label: 'Personnel', path: '/personnel', icon: UserRound, module: 'personnel' },
             { label: 'Enseignants', path: '/enseignants', icon: GraduationCap, module: 'enseignants' },
-            { label: 'Classes', path: '/classes', icon: BookOpen, module: 'classes' },
-            { label: 'Notes', path: '/notes', icon: ClipboardList, module: 'notes' },
+            { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
+            { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
+            { label: 'Bulletins', path: '/bulletins', icon: FileText, module: 'bulletins' },
             { label: 'Emploi du temps', path: '/emploi-du-temps', icon: Calendar, module: 'emploiDuTemps' },
         ],
     },
     {
         title: 'Administration',
         items: [
+            { label: 'Utilisateurs', path: '/utilisateurs', icon: UserCog, module: 'utilisateurs' },
+            { label: 'Rôles & Permissions', path: '/admin/roles', icon: Shield, module: 'roles' },
             { label: 'Finances', path: '/finances', icon: CreditCard, module: 'finances' },
             { label: 'Communication', path: '/communication', icon: MessageSquare, module: 'communication' },
             { label: 'Transport', path: '/transport', icon: Bus, module: 'transport' },
@@ -77,18 +113,26 @@ const NAV_SECTIONS: NavSection[] = [
 
 export function Sidebar() {
     const { t } = useTranslation('common');
-    const { isCollapsed, toggle } = useSidebarStore();
+    const { isCollapsed } = useSidebarStore();
     const utilisateur = useAuthStore((s) => s.utilisateur);
     const matchRoute = useMatchRoute();
 
     // Vérifier les permissions pour chaque module
-    const elevesPerms = useModulePermissions('eleves');
-    const enseignantsPerms = useModulePermissions('enseignants');
+    const etablissementsPerms = useModulePermissions('etablissements');
+    const cyclesPerms = useModulePermissions('cycles');
+    const niveauxPerms = useModulePermissions('niveaux');
     const classesPerms = useModulePermissions('classes');
+    const anneesScolairesPerms = useModulePermissions('anneesScolaires');
+    const matieresPerms = useModulePermissions('matieres');
+    const elevesPerms = useModulePermissions('eleves');
+    const personnelPerms = useModulePermissions('personnel');
+    const enseignantsPerms = useModulePermissions('enseignants');
     const notesPerms = useModulePermissions('notes');
     const financesPerms = useModulePermissions('finances');
     const transportPerms = useModulePermissions('transport');
     const communicationPerms = useModulePermissions('messagerie');
+    const utilisateursPerms = useModulePermissions('utilisateurs');
+    const rolesPerms = useModulePermissions('roles');
 
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
@@ -99,13 +143,21 @@ export function Sidebar() {
 
             // Vérifier les permissions pour le module
             const permsMap: Record<string, { canAccess: boolean }> = {
-                eleves: elevesPerms,
-                enseignants: enseignantsPerms,
+                etablissements: etablissementsPerms,
+                cycles: cyclesPerms,
+                niveaux: niveauxPerms,
                 classes: classesPerms,
+                anneesScolaires: anneesScolairesPerms,
+                matieres: matieresPerms,
+                eleves: elevesPerms,
+                personnel: personnelPerms,
+                enseignants: enseignantsPerms,
                 notes: notesPerms,
                 finances: financesPerms,
                 transport: transportPerms,
                 communication: communicationPerms,
+                utilisateurs: utilisateursPerms,
+                roles: rolesPerms,
             };
 
             const perms = permsMap[item.module];
@@ -116,37 +168,34 @@ export function Sidebar() {
     return (
         <div className="flex h-full flex-col">
             {/* Logo / Titre */}
-            <div className="flex h-16 items-center justify-between border-b border-[var(--color-bordure)] px-4">
+            <div className="flex h-16 items-center justify-center border-b border-[var(--color-bordure)] px-4">
                 <AnimatePresence mode="wait">
                     {!isCollapsed ? (
                         <motion.div
                             key="logo-full"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="text-lg font-bold text-[var(--color-dominante)]"
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -8 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
                         >
-                            elisa<span className="text-[var(--color-accent)]">°</span>school
+                            <Link to="/dashboard" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                                <ElisaLogo variant="horizontal" size="sm" />
+                            </Link>
                         </motion.div>
                     ) : (
                         <motion.div
                             key="logo-mini"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="text-lg font-bold text-[var(--color-dominante)]"
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
                         >
-                            e<span className="text-[var(--color-accent)]">°</span>
+                            <Link to="/dashboard" className="block transition-transform hover:scale-110 active:scale-95">
+                                <ElisaLogo variant="mini" size="sm" />
+                            </Link>
                         </motion.div>
                     )}
                 </AnimatePresence>
-                <button
-                    onClick={toggle}
-                    className="hidden rounded-md p-1 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] lg:block"
-                    aria-label="Toggle sidebar"
-                >
-                    <ChevronLeft className={cn('h-5 w-5 transition-transform', isCollapsed && 'rotate-180')} />
-                </button>
             </div>
 
             {/* Navigation */}

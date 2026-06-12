@@ -144,7 +144,7 @@ export function Header() {
                                     onSelect={() => router.navigate({ to: '/change-password' })}
                                 >
                                     <KeyRound className="h-4 w-4" />
-                                    {t('boutons.modifier')} mot de passe
+                                    {t('boutons.changerMotDePasse')}
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
                                     className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)]"

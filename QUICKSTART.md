@@ -33,10 +33,10 @@ bash scripts/verify-setup.sh
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **Frontend** | http://localhost:5173 | Interface utilisateur React |
-| **Backend API** | http://localhost:3001 | API REST Express |
-| **Documentation** | http://localhost:3001/api/docs | Swagger UI |
-| **Health Check** | http://localhost:3001/api/health | Statut API |
+| **Frontend** | http://localhost:7001 | Interface utilisateur React |
+| **Backend API** | http://localhost:7000 | API REST Express |
+| **Documentation** | http://localhost:7000/api/docs | Swagger UI |
+| **Health Check** | http://localhost:7000/api/health | Statut API |
 
 ---
 
@@ -44,7 +44,7 @@ bash scripts/verify-setup.sh
 
 #### 1. Se Connecter
 ```
-URL: http://localhost:5173
+URL: http://localhost:7001
 Email: admin@elisaschool.com
 Mot de passe: admin123
 ```

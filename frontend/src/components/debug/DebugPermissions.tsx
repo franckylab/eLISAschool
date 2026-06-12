@@ -70,34 +70,51 @@ export function DebugPermissions({ devOnly = true }: DebugPermissionsProps) {
     ];
 
     return (
-        <div className={`fixed bottom-4 right-4 ${isCollapsed ? 'w-auto' : 'w-96'} max-h-[80vh] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden flex flex-col transition-all duration-300`}>
+        <div 
+            className={`fixed ${isCollapsed ? 'bottom-4 right-4' : 'bottom-4 right-4'} ${
+                isCollapsed 
+                    ? 'w-12 h-12 rounded-full' 
+                    : 'w-96 max-h-[80vh] rounded-lg'
+            } bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden flex flex-col transition-all duration-300`}
+        >
             {/* Header - Toujours visible */}
             <div 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white cursor-pointer hover:opacity-90 transition-opacity"
+                className={`${
+                    isCollapsed 
+                        ? 'w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity p-0'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white cursor-pointer hover:opacity-90 transition-opacity'
+                }`}
                 onClick={() => setIsCollapsed(!isCollapsed)}
+                title={isCollapsed ? 'Debug Permissions' : 'Réduire'}
             >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Shield className="w-5 h-5" />
-                        <h3 className="font-bold">Debug Permissions</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs bg-white/20 px-2 py-1 rounded">
-                            DEV MODE
-                        </span>
-                        {isCollapsed ? (
-                            <ChevronDown className="w-4 h-4" />
-                        ) : (
-                            <ChevronUp className="w-4 h-4" />
-                        )}
-                    </div>
-                </div>
-                <div className="mt-2 text-sm space-y-1">
-                    <p><strong>Rôle :</strong> {role}</p>
-                    <p><strong>Admin :</strong> {isAdmin ? '✅' : '❌'}</p>
-                    <p><strong>Super Admin :</strong> {isSuperAdmin ? '✅' : '❌'}</p>
-                    <p><strong>Total permissions :</strong> {permissions?.length || 0}</p>
-                </div>
+                {isCollapsed ? (
+                    <Shield className="w-6 h-6 text-white" />
+                ) : (
+                    <>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Shield className="w-5 h-5" />
+                                <h3 className="font-bold">Debug Permissions</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs bg-white/20 px-2 py-1 rounded">
+                                    DEV MODE
+                                </span>
+                                {isCollapsed ? (
+                                    <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                    <ChevronUp className="w-4 h-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="mt-2 text-sm space-y-1">
+                            <p><strong>Rôle :</strong> {role}</p>
+                            <p><strong>Admin :</strong> {isAdmin ? '✅' : '❌'}</p>
+                            <p><strong>Super Admin :</strong> {isSuperAdmin ? '✅' : '❌'}</p>
+                            <p><strong>Total permissions :</strong> {permissions?.length || 0}</p>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Contenu - Visible uniquement si non réduit */}

@@ -24,5 +24,11 @@
         "normale": "Normal",
         "haute": "High",
         "critique": "Critical"
+    },
+    "boutons": {
+        "nouvelle": "New announcement"
+    },
+    "filtres": {
+        "recherche": "Search announcements..."
     }
 }

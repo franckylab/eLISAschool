@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp } from 'lucide-react';
 import { useNotes, useSupprimerNote } from '../hooks/use-notes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -34,6 +34,7 @@ export function NotesPage() {
     const colonnes: Column<Note>[] = [
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (n) => (
@@ -91,6 +92,7 @@ export function NotesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
             render: (n) => (
@@ -138,15 +140,17 @@ export function NotesPage() {
                 </div>
             </motion.div>
 
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input type="text" placeholder="Rechercher..." className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20" value={filtres.recherche || ''} onChange={(e) => setFiltres((prev) => ({ ...prev, recherche: e.target.value, page: 1 }))} />
-            </div>
-
             <DataTable
                 data={data?.data || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                searchPlaceholder="Rechercher..."
+                enableReordering
+                enablePinning
+                onSearchChange={(recherche) =>
+                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                }
+                disableClientSearch
                 pagination={data?.pagination}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}

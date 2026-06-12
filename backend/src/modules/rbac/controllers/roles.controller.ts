@@ -44,6 +44,22 @@ router.get('/roles', requireRoles('ADMIN'), async (req: Request, res: Response, 
 });
 
 /**
+ * @route   GET /api/rbac/roles/stats
+ * @desc    Obtenir les statistiques des rôles
+ * @access  ADMIN
+ */
+router.get('/roles/stats', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur?.etablissementId;
+        const stats = await rolesService.getRoleStats(etablissementId);
+
+        successResponse(res, stats, 'Statistiques des rôles récupérées avec succès');
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * @route   GET /api/rbac/roles/:id
  * @desc    Récupérer un rôle par ID
  * @access  ADMIN

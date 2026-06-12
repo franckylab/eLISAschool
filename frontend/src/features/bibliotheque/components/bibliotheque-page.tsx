@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Book, Plus, Search, Eye, Edit, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { Book, Plus, Eye, Edit, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useOuvrages, usePrets, useSupprimerOuvrage, useStatistiquesBibliotheque } from '../hooks/use-bibliotheque';
@@ -103,6 +103,7 @@ export function BibliothequePage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
             render: (o) => (
@@ -210,51 +211,48 @@ export function BibliothequePage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreCategorie}
-                    onChange={(e) => setFiltreCategorie(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Toutes catégories</option>
-                    <option value="manuel">Manuel</option>
-                    <option value="roman">Roman</option>
-                    <option value="documentaire">Documentaire</option>
-                    <option value="dictionnaire">Dictionnaire</option>
-                    <option value="encyclopedie">Encyclopédie</option>
-                    <option value="revue">Revue</option>
-                    <option value="autre">Autre</option>
-                </select>
-                <select
-                    value={filtreDispo}
-                    onChange={(e) => setFiltreDispo(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="tous">Tous</option>
-                    <option value="disponible">Disponibles</option>
-                    <option value="indisponible">Indisponibles</option>
-                </select>
-            </motion.div>
+
 
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                enableReordering
+                enableRowHeight
+                enablePinning
+                enableColumnVisibility
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(valeur) => setRecherche(valeur)}
+                disableClientSearch
+                filtres={[
+                    {
+                        key: 'categorie',
+                        label: 'Catégorie',
+                        options: [
+                            { value: '', label: 'Toutes catégories' },
+                            { value: 'manuel', label: 'Manuel' },
+                            { value: 'roman', label: 'Roman' },
+                            { value: 'documentaire', label: 'Documentaire' },
+                            { value: 'dictionnaire', label: 'Dictionnaire' },
+                            { value: 'encyclopedie', label: 'Encyclopédie' },
+                            { value: 'revue', label: 'Revue' },
+                            { value: 'autre', label: 'Autre' },
+                        ],
+                    },
+                    {
+                        key: 'disponibilite',
+                        label: 'Disponibilité',
+                        options: [
+                            { value: 'tous', label: 'Tous' },
+                            { value: 'disponible', label: 'Disponibles' },
+                            { value: 'indisponible', label: 'Indisponibles' },
+                        ],
+                    },
+                ]}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'categorie') setFiltreCategorie(valeur);
+                    if (key === 'disponibilite') setFiltreDispo(valeur);
+                }}
                 pagination={{
                     page,
                     limit,

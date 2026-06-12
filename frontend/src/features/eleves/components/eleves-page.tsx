@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Search, Filter, X } from 'lucide-react';
+import { Plus, Download, Upload } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useEleves, useSupprimerEleve, useExporterEleves } from '../hooks/use-eleves';
 import { EleveFormModal } from './eleve-form-modal';
@@ -37,8 +37,7 @@ export function ElevesPage() {
     const [eleveEdition, setEleveEdition] = useState<Eleve | null>(null);
     const [eleveToDelete, setEleveToDelete] = useState<Eleve | null>(null);
     
-    // States pour filtres avancés
-    const [showFiltres, setShowFiltres] = useState(false);
+    // States pour filtres
     const [filtres, setFiltres] = useState<EleveFiltres>({
         page: 1,
         limit: 20,
@@ -87,9 +86,7 @@ export function ElevesPage() {
         exporterEleves.mutate(filtres);
     };
     
-    const resetFiltres = () => {
-        setFiltres({ page: 1, limit: 20 });
-    };
+
 
     const colonnes: Column<Eleve>[] = [
         {
@@ -181,6 +178,7 @@ export function ElevesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: t('commun.actions', { defaultValue: 'Actions' }),
             className: 'text-right',
             render: (eleve) => (
@@ -286,109 +284,6 @@ export function ElevesPage() {
                 </div>
             </motion.div>
 
-            {/* Filtres */}
-            <motion.div
-                className="flex flex-col gap-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.1 }}
-            >
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                        <input
-                            type="text"
-                            placeholder={t('filtres.recherche')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                            value={filtres.recherche || ''}
-                            onChange={(e) =>
-                                setFiltres((prev) => ({
-                                    ...prev,
-                                    recherche: e.target.value,
-                                    page: 1,
-                                }))
-                            }
-                        />
-                    </div>
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Filter className="h-4 w-4" />}
-                        onClick={() => setShowFiltres(!showFiltres)}
-                    >
-                        Filtres
-                    </ElisaButton>
-                </div>
-
-                {/* Filtres avancés */}
-                {showFiltres && (
-                    <motion.div
-                        className="grid grid-cols-1 gap-3 md:grid-cols-4"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                    >
-                        <select
-                            value={filtres.classeId || ''}
-                            onChange={(e) => setFiltres({ ...filtres, classeId: e.target.value || undefined, page: 1 })}
-                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                        >
-                            <option value="">{t('filtres.toutesClasses')}</option>
-                            {classes?.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.nom}
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={filtres.anneeScolaireId || ''}
-                            onChange={(e) => setFiltres({ ...filtres, anneeScolaireId: e.target.value || undefined, page: 1 })}
-                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                        >
-                            <option value="">{t('filtres.toutesAnnees')}</option>
-                            {anneesScolaires?.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                    {a.libelle}
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={filtres.sexe || ''}
-                            onChange={(e) => setFiltres({ ...filtres, sexe: (e.target.value as Sexe) || undefined, page: 1 })}
-                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                        >
-                            <option value="">{t('filtres.tousSexes')}</option>
-                            <option value="M">Masculin</option>
-                            <option value="F">Féminin</option>
-                        </select>
-
-                        <div className="flex gap-2">
-                            <select
-                                value={filtres.statut || ''}
-                                onChange={(e) => setFiltres({ ...filtres, statut: (e.target.value as StatutEleve) || undefined, page: 1 })}
-                                className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                            >
-                                <option value="">{t('filtres.tousStatuts')}</option>
-                                <option value="ACTIF">Actif</option>
-                                <option value="EXCLU">Exclu</option>
-                                <option value="ABANDON">Abandon</option>
-                                <option value="DIPLOME">Diplômé</option>
-                            </select>
-                            <ElisaButton
-                                variant="ghost"
-                                size="sm"
-                                icon={<X className="h-4 w-4" />}
-                                onClick={resetFiltres}
-                            >
-                                {t('filtres.resetFiltres')}
-                            </ElisaButton>
-                        </div>
-                    </motion.div>
-                )}
-            </motion.div>
-
             {/* Tableau */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -399,6 +294,50 @@ export function ElevesPage() {
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
+                    searchPlaceholder={t('filtres.recherche')}
+                    enableReordering
+                enablePinning
+                    filtres={[
+                        {
+                            key: 'classeId',
+                            label: t('filtres.classe', { defaultValue: 'Classe' }),
+                            options: (classes || []).map((c) => ({ value: c.id, label: c.nom })),
+                            allOptionLabel: t('filtres.toutesClasses'),
+                        },
+                        {
+                            key: 'anneeScolaireId',
+                            label: t('filtres.annee', { defaultValue: 'Année' }),
+                            options: (anneesScolaires || []).map((a) => ({ value: a.id, label: a.libelle })),
+                            allOptionLabel: t('filtres.toutesAnnees'),
+                        },
+                        {
+                            key: 'sexe',
+                            label: t('filtres.sexe', { defaultValue: 'Sexe' }),
+                            options: [
+                                { value: 'M', label: 'Masculin' },
+                                { value: 'F', label: 'Féminin' },
+                            ],
+                            allOptionLabel: t('filtres.tousSexes'),
+                        },
+                        {
+                            key: 'statut',
+                            label: t('filtres.statut', { defaultValue: 'Statut' }),
+                            options: [
+                                { value: 'ACTIF', label: 'Actif' },
+                                { value: 'EXCLU', label: 'Exclu' },
+                                { value: 'ABANDON', label: 'Abandon' },
+                                { value: 'DIPLOME', label: 'Diplômé' },
+                            ],
+                            allOptionLabel: t('filtres.tousStatuts'),
+                        },
+                    ]}
+                    onSearchChange={(recherche) =>
+                        setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                    }
+                    onFilterChange={(key, valeur) =>
+                        setFiltres((prev) => ({ ...prev, [key]: valeur || undefined, page: 1 }))
+                    }
+                    disableClientSearch
                     pagination={data?.meta ? {
                         page: data.meta.currentPage,
                         limit: data.meta.itemsPerPage,

@@ -25,7 +25,8 @@ export function StagePage() {
 
     const colonnes = [
         { key: 'titre', header: 'Titre', render: (s: any) => <span className="font-medium">{s.titre}</span> },
-        { key: 'eleve', header: 'Élève', render: (s: any) => <span className="text-sm">{s.eleve ? `${s.eleve.nom} ${s.eleve.prenom}` : '-'}</span> },
+        { key: 'eleve',
+            pinned: 'left' as const, header: 'Élève', render: (s: any) => <span className="text-sm">{s.eleve ? `${s.eleve.nom} ${s.eleve.prenom}` : '-'}</span> },
         { key: 'entreprise', header: 'Entreprise', render: (s: any) => <span className="text-sm">{s.entreprise?.nom || '-'}</span> },
         { key: 'dates', header: 'Période', render: (s: any) => <span className="text-sm">{new Date(s.dateDebut).toLocaleDateString('fr-FR')} - {new Date(s.dateFin).toLocaleDateString('fr-FR')}</span> },
         { key: 'statut', header: 'Statut', className: 'w-28', render: (s: any) => { const st = statuts[s.statut] || { label: s.statut, color: 'gray' }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${st.color}-100 text-${st.color}-700`}>{st.label}</span>; } },
@@ -78,7 +79,14 @@ export function StagePage() {
                 </motion.div>
             </div>
 
-            <DataTable data={stages} columns={colonnes} searchable searchPlaceholder="Rechercher un stage..." />
+            {stages}<DataTable
+                data={stages}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un stage..." />
         </div>
     );
 }

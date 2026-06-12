@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Clock, Plus, Search, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Clock, Plus, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useAbsences, useJustifierAbsence, useStatistiquesAbsences } from '../hooks/use-absences';
@@ -62,6 +62,7 @@ export function AbsencesPage() {
         },
         {
             key: 'eleve',
+            pinned: 'left' as const,
             header: 'Élève',
             sortable: true,
             render: (a) => (
@@ -126,6 +127,7 @@ export function AbsencesPage() {
         },
         {
             key: 'actions',
+            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
             render: (a) => (
@@ -234,48 +236,41 @@ export function AbsencesPage() {
                 </motion.div>
             )}
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex gap-3"
-            >
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder={t('rechercher')}
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <select
-                    value={filtreType}
-                    onChange={(e) => setFiltreType(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les types</option>
-                    <option value="absence">Absence</option>
-                    <option value="retard">Retard</option>
-                    <option value="departure_anticipe">Départ anticipé</option>
-                </select>
-                <select
-                    value={filtreStatut}
-                    onChange={(e) => setFiltreStatut(e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Tous les statuts</option>
-                    <option value="non_justifiee">Non justifiée</option>
-                    <option value="justifiee">Justifiée</option>
-                    <option value="en_attente">En attente</option>
-                </select>
-            </motion.div>
-
             <DataTable
                 colonnes={colonnes}
                 donnees={data || []}
                 isLoading={isLoading}
+                searchPlaceholder={t('rechercher')}
+                enableReordering
+                enablePinning
+                filtres={[
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        options: [
+                            { value: 'absence', label: 'Absence' },
+                            { value: 'retard', label: 'Retard' },
+                            { value: 'departure_anticipe', label: 'Départ anticipé' },
+                        ],
+                        allOptionLabel: 'Tous les types',
+                    },
+                    {
+                        key: 'statut',
+                        label: 'Statut',
+                        options: [
+                            { value: 'non_justifiee', label: 'Non justifiée' },
+                            { value: 'justifiee', label: 'Justifiée' },
+                            { value: 'en_attente', label: 'En attente' },
+                        ],
+                        allOptionLabel: 'Tous les statuts',
+                    },
+                ]}
+                onSearchChange={setRecherche}
+                onFilterChange={(key, valeur) => {
+                    if (key === 'type') setFiltreType(valeur);
+                    if (key === 'statut') setFiltreStatut(valeur);
+                }}
+                disableClientSearch
                 pagination={{
                     page,
                     limit,

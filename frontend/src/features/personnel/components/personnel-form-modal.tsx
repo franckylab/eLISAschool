@@ -2,15 +2,14 @@
  * ==================================
  * eLISAschool - Formulaire Personnel
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  */
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { X, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useCreerPersonnel, useModifierPersonnel } from '../hooks/use-personnel';
+import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
@@ -24,7 +23,6 @@ interface PersonnelFormModalProps {
 }
 
 export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: PersonnelFormModalProps) {
-    const { t } = useTranslation('personnel');
     const creerPersonnel = useCreerPersonnel();
     const modifierPersonnel = useModifierPersonnel();
     const isLoading = creerPersonnel.isPending || modifierPersonnel.isPending;
@@ -131,195 +129,172 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
         }
     };
 
+    const titre = mode === 'creation' ? 'Ajouter un membre du personnel' : 'Modifier le membre du personnel';
+
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={onCancel}
-        >
-            <motion.div
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        {mode === 'creation' ? 'Ajouter un membre du personnel' : 'Modifier le membre du personnel'}
-                    </h2>
-                    <button
-                        onClick={onCancel}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        <CustomModal
+            open={true}
+            onOpenChange={(open) => { if (!open) onCancel(); }}
+            title={titre}
+            description="Renseignez les informations du membre du personnel"
+            size="3xl"
+            footer={
+                <>
+                    <ElisaButton variant="outline" onClick={onCancel} type="button">
+                        Annuler
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        type="submit"
+                        isLoading={isLoading}
+                        icon={<Save className="h-4 w-4" />}
+                        onClick={handleSubmit}
                     >
-                        <X className="w-5 h-5 text-gray-500" />
-                    </button>
-                </div>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    {/* Identité */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput
-                            label="Nom"
-                            value={formData.nom || ''}
-                            onChange={(value) => handleChange('nom', value)}
-                            erreur={erreurs.nom}
-                            placeholder="Nom de famille"
-                            required
-                        />
-                        <ElisaInput
-                            label="Prénom"
-                            value={formData.prenom || ''}
-                            onChange={(value) => handleChange('prenom', value)}
-                            erreur={erreurs.prenom}
-                            placeholder="Prénom"
-                            required
-                        />
-                    </div>
-
-                    {/* Date de naissance et Sexe */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput
-                            label="Date de naissance"
-                            type="date"
-                            value={formData.dateNaissance || ''}
-                            onChange={(value) => handleChange('dateNaissance', value)}
-                            erreur={erreurs.dateNaissance}
-                            required
-                        />
-                        <ElisaSelect
-                            label="Sexe"
-                            value={formData.sexe || 'M'}
-                            onChange={(value) => handleChange('sexe', value)}
-                            options={[
-                                { value: 'M', label: 'Masculin' },
-                                { value: 'F', label: 'Féminin' },
-                            ]}
-                        />
-                    </div>
-
-                    {/* Contact */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput
-                            label="Email"
-                            type="email"
-                            value={formData.email || ''}
-                            onChange={(value) => handleChange('email', value)}
-                            erreur={erreurs.email}
-                            placeholder="email@exemple.com"
-                        />
-                        <ElisaInput
-                            label="Téléphone"
-                            value={formData.telephone || ''}
-                            onChange={(value) => handleChange('telephone', value)}
-                            placeholder="+237 6XX XXX XXX"
-                        />
-                    </div>
-
-                    {/* Poste et Département */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput
-                            label="Poste"
-                            value={formData.poste || ''}
-                            onChange={(value) => handleChange('poste', value)}
-                            erreur={erreurs.poste}
-                            placeholder="Ex: Enseignant, Secrétaire..."
-                            required
-                        />
-                        <ElisaInput
-                            label="Département"
-                            value={formData.departement || ''}
-                            onChange={(value) => handleChange('departement', value)}
-                            placeholder="Ex: Sciences, Administration..."
-                        />
-                    </div>
-
-                    {/* Type de contrat et Statut */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect
-                            label="Type de contrat"
-                            value={formData.typeContrat || 'cdi'}
-                            onChange={(value) => handleChange('typeContrat', value)}
-                            options={[
-                                { value: 'cdi', label: 'CDI' },
-                                { value: 'cdd', label: 'CDD' },
-                                { value: 'vacataire', label: 'Vacataire' },
-                                { value: 'stage', label: 'Stage' },
-                            ]}
-                        />
-                        <ElisaSelect
-                            label="Statut"
-                            value={formData.statut || 'actif'}
-                            onChange={(value) => handleChange('statut', value)}
-                            options={[
-                                { value: 'actif', label: 'Actif' },
-                                { value: 'inactif', label: 'Inactif' },
-                                { value: 'en_conge', label: 'En congé' },
-                                { value: 'demission', label: 'Démission' },
-                            ]}
-                        />
-                    </div>
-
-                    {/* Date d'entrée */}
+                        {mode === 'creation' ? 'Ajouter' : 'Enregistrer'}
+                    </ElisaButton>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Identité */}
+                <div className="grid grid-cols-2 gap-4">
                     <ElisaInput
-                        label="Date d'entrée"
-                        type="date"
-                        value={formData.dateEntree || ''}
-                        onChange={(value) => handleChange('dateEntree', value)}
-                        erreur={erreurs.dateEntree}
+                        label="Nom"
+                        value={formData.nom || ''}
+                        onChange={(value) => handleChange('nom', value)}
+                        erreur={erreurs.nom}
+                        placeholder="Nom de famille"
                         required
                     />
-
-                    {/* Qualification et Spécialité */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput
-                            label="Qualification"
-                            value={formData.qualification || ''}
-                            onChange={(value) => handleChange('qualification', value)}
-                            placeholder="Ex: Master, Licence..."
-                        />
-                        <ElisaInput
-                            label="Spécialité"
-                            value={formData.specialite || ''}
-                            onChange={(value) => handleChange('specialite', value)}
-                            placeholder="Ex: Mathématiques, Français..."
-                        />
-                    </div>
-
-                    {/* Adresse */}
                     <ElisaInput
-                        label="Adresse"
-                        type="textarea"
-                        value={formData.adresse || ''}
-                        onChange={(value) => handleChange('adresse', value)}
-                        placeholder="Adresse complète..."
-                        rows={2}
+                        label="Prénom"
+                        value={formData.prenom || ''}
+                        onChange={(value) => handleChange('prenom', value)}
+                        erreur={erreurs.prenom}
+                        placeholder="Prénom"
+                        required
                     />
+                </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-                        <ElisaButton
-                            variant="outline"
-                            onClick={onCancel}
-                            type="button"
-                        >
-                            Annuler
-                        </ElisaButton>
-                        <ElisaButton
-                            variant="primary"
-                            type="submit"
-                            isLoading={isLoading}
-                            icon={Save}
-                        >
-                            {mode === 'creation' ? 'Ajouter' : 'Enregistrer'}
-                        </ElisaButton>
-                    </div>
-                </form>
-            </motion.div>
-        </motion.div>
+                {/* Date de naissance et Sexe */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label="Date de naissance"
+                        type="date"
+                        value={formData.dateNaissance || ''}
+                        onChange={(value) => handleChange('dateNaissance', value)}
+                        erreur={erreurs.dateNaissance}
+                        required
+                    />
+                    <ElisaSelect
+                        label="Sexe"
+                        value={formData.sexe || 'M'}
+                        onChange={(value) => handleChange('sexe', value)}
+                        options={[
+                            { value: 'M', label: 'Masculin' },
+                            { value: 'F', label: 'Féminin' },
+                        ]}
+                    />
+                </div>
+
+                {/* Contact */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label="Email"
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(value) => handleChange('email', value)}
+                        erreur={erreurs.email}
+                        placeholder="email@exemple.com"
+                    />
+                    <ElisaInput
+                        label="Téléphone"
+                        value={formData.telephone || ''}
+                        onChange={(value) => handleChange('telephone', value)}
+                        placeholder="+237 6XX XXX XXX"
+                    />
+                </div>
+
+                {/* Poste et Département */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label="Poste"
+                        value={formData.poste || ''}
+                        onChange={(value) => handleChange('poste', value)}
+                        erreur={erreurs.poste}
+                        placeholder="Ex: Enseignant, Secrétaire..."
+                        required
+                    />
+                    <ElisaInput
+                        label="Département"
+                        value={formData.departement || ''}
+                        onChange={(value) => handleChange('departement', value)}
+                        placeholder="Ex: Sciences, Administration..."
+                    />
+                </div>
+
+                {/* Type de contrat et Statut */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaSelect
+                        label="Type de contrat"
+                        value={formData.typeContrat || 'cdi'}
+                        onChange={(value) => handleChange('typeContrat', value)}
+                        options={[
+                            { value: 'cdi', label: 'CDI' },
+                            { value: 'cdd', label: 'CDD' },
+                            { value: 'vacataire', label: 'Vacataire' },
+                            { value: 'stage', label: 'Stage' },
+                        ]}
+                    />
+                    <ElisaSelect
+                        label="Statut"
+                        value={formData.statut || 'actif'}
+                        onChange={(value) => handleChange('statut', value)}
+                        options={[
+                            { value: 'actif', label: 'Actif' },
+                            { value: 'inactif', label: 'Inactif' },
+                            { value: 'en_conge', label: 'En congé' },
+                            { value: 'demission', label: 'Démission' },
+                        ]}
+                    />
+                </div>
+
+                {/* Date d'entrée */}
+                <ElisaInput
+                    label="Date d'entrée"
+                    type="date"
+                    value={formData.dateEntree || ''}
+                    onChange={(value) => handleChange('dateEntree', value)}
+                    erreur={erreurs.dateEntree}
+                    required
+                />
+
+                {/* Qualification et Spécialité */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label="Qualification"
+                        value={formData.qualification || ''}
+                        onChange={(value) => handleChange('qualification', value)}
+                        placeholder="Ex: Master, Licence..."
+                    />
+                    <ElisaInput
+                        label="Spécialité"
+                        value={formData.specialite || ''}
+                        onChange={(value) => handleChange('specialite', value)}
+                        placeholder="Ex: Mathématiques, Français..."
+                    />
+                </div>
+
+                {/* Adresse */}
+                <ElisaInput
+                    label="Adresse"
+                    type="textarea"
+                    value={formData.adresse || ''}
+                    onChange={(value) => handleChange('adresse', value)}
+                    placeholder="Adresse complète..."
+                    rows={2}
+                />
+            </form>
+        </CustomModal>
     );
 }

@@ -27,7 +27,8 @@ export function AtelierPage() {
     const ateliersList = ateliers || [];
 
     const colonnes = [
-        { key: 'nom', header: 'Nom', render: (a: any) => <span className="font-medium">{a.nom}</span> },
+        { key: 'nom',
+            pinned: 'left' as const, header: 'Nom', render: (a: any) => <span className="font-medium">{a.nom}</span> },
         { key: 'type', header: 'Type', className: 'w-28', render: (a: any) => { const t = typesAtelier[a.type] || { label: a.type, color: 'gray' }; return <span className={`px-2 py-1 rounded text-xs font-medium bg-${t.color}-100 text-${t.color}-700`}>{t.label}</span>; } },
         { key: 'responsable', header: 'Responsable', render: (a: any) => <span className="text-sm">{a.responsable ? `${a.responsable.nom} ${a.responsable.prenom}` : '-'}</span> },
         { key: 'capacite', header: 'Capacité', className: 'w-20', render: (a: any) => <span className="text-sm font-medium">{a.capacite}</span> },
@@ -79,7 +80,14 @@ export function AtelierPage() {
                 </motion.div>
             </div>
 
-            <DataTable data={ateliersList} columns={colonnes} searchable searchPlaceholder="Rechercher un atelier..." />
+            {ateliersList}<DataTable
+                data={ateliersList}
+                columns={colonnes}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                searchable
+                searchPlaceholder="Rechercher un atelier..." />
         </div>
     );
 }
