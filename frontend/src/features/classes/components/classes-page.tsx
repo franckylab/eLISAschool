@@ -75,7 +75,10 @@ export function ClassesPage() {
                     className="hover:underline cursor-pointer text-left"
                 >
                     <p className="font-medium">{classe.nom}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{classe.niveau}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                        {classe.niveau?.nom}
+                        {classe.filiere && ` - ${classe.filiere.code}`}
+                    </p>
                 </button>
             ),
         },
@@ -88,7 +91,7 @@ export function ClassesPage() {
                 <div className="flex items-center justify-center gap-1">
                     <Users className="h-4 w-4 text-[var(--color-text-muted)]" />
                     <span className="font-medium">
-                        {classe.effectif || 0} / {classe.capaciteMax || '∞'}
+                        {classe.effectifActuel || 0} / {classe.effectifMax || '∞'}
                     </span>
                 </div>
             ),
@@ -96,14 +99,49 @@ export function ClassesPage() {
         {
             key: 'salle',
             header: 'Salle',
-            render: (classe) => classe.salle || '-',
+            render: (classe) => classe.sallePrincipale || '-',
         },
         {
             key: 'principal',
             header: 'Principal',
             render: (classe) => (
-                classe.principal ? `${classe.principal.prenom} ${classe.principal.nom}` : '-'
+                classe.professeurPrincipal ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}` : '-'
             ),
+        },
+        {
+            key: 'typeClasse',
+            header: 'Type',
+            className: 'text-center',
+            render: (classe) => {
+                const typeColors: Record<string, string> = {
+                    NORMALE: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                    BILINGUE: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                    RENFORCEE: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+                    INTERNATIONALE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+                };
+                return (
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-gray-100 text-gray-800'}`}>
+                        {classe.typeClasse}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'creneauHoraire',
+            header: 'Créneau',
+            className: 'text-center',
+            render: (classe) => {
+                const creneauLabels: Record<string, string> = {
+                    MATIN: 'Matin',
+                    APRES_MIDI: 'Après-midi',
+                    JOURNEE_COMPLETE: 'Journée',
+                };
+                return (
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {creneauLabels[classe.creneauHoraire] || classe.creneauHoraire}
+                    </span>
+                );
+            },
         },
         {
             key: 'statut',
@@ -113,12 +151,12 @@ export function ClassesPage() {
             render: (classe) => (
                 <span
                     className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        classe.statut === 'actif'
+                        classe.actif
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                     }`}
                 >
-                    {classe.statut === 'actif' ? 'Actif' : 'Inactif'}
+                    {classe.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
         },

@@ -6,36 +6,55 @@
  */
 
 import { z } from 'zod';
-import { SousSysteme, TypeEtablissement, CycleScolaire } from '../entities/etablissement.entity';
+import { SousSysteme, TypeEtablissement } from '../entities/etablissement.entity';
 
 /**
  * Schéma de création d'un établissement
  */
 export const createEtablissementSchema = z.object({
+    // Informations de base
     nom: z.string().min(3).max(255),
-    slogan: z.string().optional(),
+    codeEtablissement: z.string().max(50).optional(),
+    slogan: z.string().max(500).optional(),
     logoUrl: z.string().url().optional().or(z.literal('')),
+    
+    // Classification
     sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
     type: z.nativeEnum(TypeEtablissement).default(TypeEtablissement.LAIC),
-    numeroArrete: z.string().optional(),
+    
+    // Identification légale
+    numeroArrete: z.string().max(255).optional(),
+    numeroContribuable: z.string().max(50).optional(),
+    numeroCompteBancaire: z.string().max(50).optional(),
+    
+    // Contact
     contactEmail: z.string().email().optional().or(z.literal('')),
-    contactTelephone: z.string().optional(),
+    contactTelephone: z.string().max(255).optional(),
     adresse: z.string().optional(),
+    siteWeb: z.string().url().max(255).optional().or(z.literal('')),
+    
+    // Réseaux sociaux
+    facebook: z.string().max(255).optional(),
+    twitter: z.string().max(255).optional(),
+    
+    // Horaires
+    heuresOuverture: z.string().max(10).optional(), // Format: "07:30"
+    heuresFermeture: z.string().max(10).optional(), // Format: "17:00"
+    
+    // Capacité
+    effectifMax: z.number().int().min(1).optional(),
+    
+    // Direction
+    directeurNom: z.string().max(200).optional(),
+    directeurAdjointNom: z.string().max(200).optional(),
+    censeurNom: z.string().max(200).optional(),
+    surveillantGeneralNom: z.string().max(200).optional(),
 });
 
 /**
  * Schéma de mise à jour d'un établissement
  */
-export const updateEtablissementSchema = z.object({
-    nom: z.string().min(3).max(255).optional(),
-    slogan: z.string().optional(),
-    logoUrl: z.string().url().optional().or(z.literal('')),
-    sousSysteme: z.nativeEnum(SousSysteme).optional(),
-    type: z.nativeEnum(TypeEtablissement).optional(),
-    numeroArrete: z.string().optional(),
-    contactEmail: z.string().email().optional().or(z.literal('')),
-    contactTelephone: z.string().optional(),
-    adresse: z.string().optional(),
+export const updateEtablissementSchema = createEtablissementSchema.partial().extend({
     actif: z.boolean().optional(),
 });
 
@@ -43,9 +62,12 @@ export const updateEtablissementSchema = z.object({
  * Schéma de mise à jour de la configuration d'un établissement
  */
 export const updateEtablissementConfigSchema = z.object({
-    cyclesActifs: z.array(z.nativeEnum(CycleScolaire)).optional(),
+    // Cycles actifs
+    cyclesActifs: z.array(z.string().uuid()).optional(),
+    
+    // Configuration du bulletin
     configurationBulletin: z.object({
-        style: z.string().optional(),
+        style: z.enum(['moderne', 'classique']).optional(),
         couleurPrimaire: z.string().optional(),
         afficherRang: z.boolean().optional(),
         afficherMoyenneGenerale: z.boolean().optional(),
@@ -53,6 +75,29 @@ export const updateEtablissementConfigSchema = z.object({
         afficherPhoto: z.boolean().optional(),
         afficherCourbeProgression: z.boolean().optional(),
     }).optional(),
+    
+    // Thème et personnalisation
+    couleurPrimaire: z.string().max(10).optional(),
+    couleurSecondaire: z.string().max(10).optional(),
+    couleurAccent: z.string().max(10).optional(),
+    theme: z.enum(['default', 'dark', 'cameroon']).optional(),
+    
+    // Paramètres régionaux
+    langueDefaut: z.string().max(10).optional(),
+    devise: z.string().max(10).optional(),
+    fuseauHoraire: z.string().max(50).optional(),
+    messageAccueil: z.string().optional(),
+    
+    // Modules actifs
+    modulesActifs: z.record(z.string(), z.boolean()).optional(),
+    
+    // Quotas et limites
+    maxEleves: z.number().int().min(1).optional(),
+    maxUtilisateurs: z.number().int().min(1).optional(),
+    maxClasses: z.number().int().min(1).optional(),
+    stockageMaxMB: z.number().int().min(1).optional(),
+    planAbonnement: z.enum(['gratuit', 'standard', 'premium', 'entreprise']).optional(),
+    dateExpirationAbonnement: z.string().datetime().optional(),
 });
 
 export type CreateEtablissementDto = z.infer<typeof createEtablissementSchema>;

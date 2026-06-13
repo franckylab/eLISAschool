@@ -22,7 +22,16 @@ export function useMateriels(filtres?: InventaireFiltres) {
     return useQuery({
         queryKey: INVENTAIRE_KEYS.materiels(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Materiel[]; meta: any }>('/api/inventaire/materiels', { params: filtres });
+            const params: Record<string, any> = {
+                page: filtres?.page || 1,
+                limit: filtres?.limit || 20,
+            };
+
+            if (filtres?.recherche) params.search = filtres.recherche;
+            if (filtres?.categorie) params.categorie = filtres.categorie;
+            if (filtres?.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.get<{ success: boolean; data: Materiel[]; meta: any }>('/api/inventaire/materiels', params);
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

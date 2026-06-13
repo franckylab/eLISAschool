@@ -7,16 +7,20 @@
 
 import { z } from 'zod';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
+import { TypeClasse, CreneauHoraire } from '../entities/classe.entity';
 
 export const createClasseSchema = z.object({
     nom: z.string().min(2).max(100),
     code: z.string().max(50).optional(),
     niveauId: z.string().uuid(),
     anneeScolaireId: z.string().uuid().optional(), // Si non fourni, utilise l'année active
-    professeurPrincipalId: z.string().uuid().optional(),
+    filiereId: z.string().uuid().nullable().optional(),
+    professeurPrincipalId: z.string().uuid().nullable().optional(),
     sallePrincipale: z.string().max(100).optional(),
     effectifMax: z.number().int().min(1).default(50),
-    options: z.array(z.string()).optional(),
+    typeClasse: z.nativeEnum(TypeClasse).default(TypeClasse.NORMALE),
+    creneauHoraire: z.nativeEnum(CreneauHoraire).default(CreneauHoraire.MATIN),
+    description: z.string().optional(),
     actif: z.boolean().default(true),
 });
 

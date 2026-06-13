@@ -11,12 +11,13 @@ import { Save } from 'lucide-react';
 import { useCreerClasse, useModifierClasse } from '../hooks/use-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
-import { useTousCycles } from '@/features/cycles/hooks/use-tous-cycles';
+import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import type { Classe, CreerClasseDto } from '../types/classe.types';
+import type { Classe, CreerClasseDto, TypeClasse, CreneauHoraire } from '../types/classe.types';
+import { TypeClasse as TypeClasseEnum, CreneauHoraire as CreneauHoraireEnum } from '../types/classe.types';
 
 interface ClasseFormModalProps {
     mode: 'creation' | 'edition';
@@ -32,34 +33,42 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
 
     const { data: anneesScolaires } = useToutesAnneesScolaires();
     const { data: niveaux } = useTousNiveaux();
-    const { data: cycles } = useTousCycles();
+    const { data: filieres } = useToutesFilieres();
 
     const [formData, setFormData] = useState<Partial<CreerClasseDto>>({
         nom: classe?.nom || '',
         code: classe?.code || '',
-        niveau: classe?.niveau || '',
-        cycle: classe?.cycle || '',
-        capaciteMax: classe?.capaciteMax || 40,
+        niveauId: classe?.niveauId || '',
+        filiereId: classe?.filiereId || null,
         anneeScolaireId: classe?.anneeScolaireId || '',
-        salle: classe?.salle || '',
-        statut: classe?.statut || 'actif',
-        principalId: classe?.principalId || '',
+        professeurPrincipalId: classe?.professeurPrincipalId || null,
+        sallePrincipale: classe?.sallePrincipale || '',
+        effectifMax: classe?.effectifMax || 50,
+        typeClasse: classe?.typeClasse || TypeClasseEnum.NORMALE,
+        creneauHoraire: classe?.creneauHoraire || CreneauHoraireEnum.MATIN,
+        description: classe?.description || '',
     });
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
+
+    // Déterminer si le niveau sélectionné est du 2nd cycle (Lycée uniquement pour les filières)
+    const niveauSelectionne = niveaux?.find(n => n.id === formData.niveauId);
+    const estSecondCycle = niveauSelectionne?.cycle?.code === 'LYCEE';
 
     useEffect(() => {
         if (classe && mode === 'edition') {
             setFormData({
                 nom: classe.nom,
                 code: classe.code,
-                niveau: classe.niveau,
-                cycle: classe.cycle,
-                capaciteMax: classe.capaciteMax,
+                niveauId: classe.niveauId,
+                filiereId: classe.filiereId || null,
                 anneeScolaireId: classe.anneeScolaireId,
-                salle: classe.salle,
-                statut: classe.statut,
-                principalId: classe.principalId,
+                professeurPrincipalId: classe.professeurPrincipalId || null,
+                sallePrincipale: classe.sallePrincipale || '',
+                effectifMax: classe.effectifMax,
+                typeClasse: classe.typeClasse,
+                creneauHoraire: classe.creneauHoraire,
+                description: classe.description || '',
             });
         }
     }, [classe, mode]);
@@ -75,8 +84,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
             nouvellesErreurs.code = 'Le code de la classe est requis';
         }
 
-        if (!formData.niveau) {
-            nouvellesErreurs.niveau = 'Le niveau est requis';
+        if (!formData.niveauId) {
+            nouvellesErreurs.niveauId = 'Le niveau est requis';
         }
 
         if (!formData.anneeScolaireId) {
@@ -160,28 +169,54 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                         value={formData.code || ''}
                         onChange={(value: any) => handleChange('code', value)}
                         error={erreurs.code}
-                        placeholder="Ex: 6A"
-                        required
+                        placeholder="Ex: 6E_A"
                     />
                 </div>
 
-                {/* Cycle et Niveau */}
+                {/* Niveau et Filière */}
                 <div className="grid grid-cols-2 gap-4">
                     <ElisaSelect
-                        label="Cycle"
-                        value={formData.cycle || ''}
-                        onChange={(value: any) => handleChange('cycle', value)}
-                        options={cycles?.map(c => ({ value: c.nom, label: c.nom })) || []}
-                        placeholder="Sélectionner un cycle"
-                    />
-                    <ElisaSelect
                         label="Niveau"
-                        value={formData.niveau || ''}
-                        onChange={(value: any) => handleChange('niveau', value)}
-                        error={erreurs.niveau}
-                        options={niveaux?.map(n => ({ value: n.nom, label: n.nom })) || []}
+                        value={formData.niveauId || ''}
+                        onChange={(value: any) => handleChange('niveauId', value)}
+                        error={erreurs.niveauId}
+                        options={niveaux?.map(n => ({ value: n.id, label: n.nom })) || []}
                         placeholder="Sélectionner un niveau"
                         required
+                    />
+                    {estSecondCycle && (
+                        <ElisaSelect
+                            label="Filière (optionnel)"
+                            value={formData.filiereId || ''}
+                            onChange={(value: any) => handleChange('filiereId', value || null)}
+                            options={filieres?.map(f => ({ value: f.id, label: `${f.nom} (${f.code})` })) || []}
+                            placeholder="Sélectionner une filière"
+                        />
+                    )}
+                </div>
+
+                {/* Type de classe et Créneau horaire */}
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaSelect
+                        label="Type de classe"
+                        value={formData.typeClasse || TypeClasseEnum.NORMALE}
+                        onChange={(value: any) => handleChange('typeClasse', value as TypeClasse)}
+                        options={[
+                            { value: TypeClasseEnum.NORMALE, label: 'Normale' },
+                            { value: TypeClasseEnum.BILINGUE, label: 'Bilingue' },
+                            { value: TypeClasseEnum.RENFORCEE, label: 'Renforcée' },
+                            { value: TypeClasseEnum.INTERNATIONALE, label: 'Internationale' },
+                        ]}
+                    />
+                    <ElisaSelect
+                        label="Créneau horaire"
+                        value={formData.creneauHoraire || CreneauHoraireEnum.MATIN}
+                        onChange={(value: any) => handleChange('creneauHoraire', value as CreneauHoraire)}
+                        options={[
+                            { value: CreneauHoraireEnum.MATIN, label: 'Matin' },
+                            { value: CreneauHoraireEnum.APRES_MIDI, label: 'Après-midi' },
+                            { value: CreneauHoraireEnum.JOURNEE_COMPLETE, label: 'Journée complète' },
+                        ]}
                     />
                 </div>
 
@@ -194,37 +229,42 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                         error={erreurs.anneeScolaireId}
                         options={anneesScolaires?.map(a => ({
                             value: a.id,
-                            label: `${a.nom} (${a.statut})`
+                            label: `${a.libelle} (${a.enCours ? 'En cours' : 'Cloturée'})`
                         })) || []}
                         placeholder="Sélectionner une année"
                         required
                     />
                     <ElisaInput
-                        label="Salle"
-                        value={formData.salle || ''}
-                        onChange={(value: any) => handleChange('salle', value)}
+                        label="Salle principale"
+                        value={formData.sallePrincipale || ''}
+                        onChange={(value: any) => handleChange('sallePrincipale', value)}
                         placeholder="Ex: Salle 101"
                     />
                 </div>
 
-                {/* Capacité et Statut */}
+                {/* Effectif max */}
                 <div className="grid grid-cols-2 gap-4">
                     <ElisaInput
-                        label="Capacité maximale"
+                        label="Effectif maximal"
                         type="number"
-                        value={formData.capaciteMax?.toString() || '40'}
-                        onChange={(value: any) => handleChange('capaciteMax', parseInt(value))}
+                        value={formData.effectifMax?.toString() || '50'}
+                        onChange={(value: any) => handleChange('effectifMax', parseInt(value))}
                         min="1"
                         max="100"
                     />
-                    <ElisaSelect
-                        label="Statut"
-                        value={formData.statut || 'actif'}
-                        onChange={(value: any) => handleChange('statut', value)}
-                        options={[
-                            { value: 'actif', label: 'Actif' },
-                            { value: 'inactif', label: 'Inactif' },
-                        ]}
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description (optionnel)
+                    </label>
+                    <textarea
+                        value={formData.description || ''}
+                        onChange={(e) => handleChange('description', e.target.value)}
+                        placeholder="Description ou remarques spécifiques..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                 </div>
             </form>

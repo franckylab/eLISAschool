@@ -14,12 +14,3 @@ export const Route = createFileRoute('/_auth/competences')({
     beforeLoad: () => requireModulePermission('competences'),
     component: () => <CompetencesPage />,
 });
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/_auth/competences')({
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  return <div>Hello "/_auth/competences"!</div>
-}

@@ -20,12 +20,8 @@ export function useToutesClasses(etablissementId?: string) {
     return useQuery({
         queryKey: CLASSES_KEYS.toutes(),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Classe[] }>('/api/classes', {
-                limit: 1000,
-                page: 1,
-            });
-            // Extraire le tableau de classes depuis response.data
-            return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+            const response = await apiClient.get<{ success: boolean; data: Classe[] }>('/api/classes/all');
+            return response.data?.data || [];
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 min

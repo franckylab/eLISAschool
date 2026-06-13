@@ -9,6 +9,17 @@
 - [niveaux.controller.ts](file://backend/src/modules/niveaux/controllers/niveaux.controller.ts)
 - [matieres.controller.ts](file://backend/src/modules/matieres/controllers/matieres.controller.ts)
 - [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [cycles.dto.ts](file://backend/src/modules/cycles/dto/cycle.dto.ts)
+- [cycles.entity.ts](file://backend/src/modules/cycles/entities/cycle.entity.ts)
+- [filieres.controller.ts](file://backend/src/modules/filieres/controllers/filieres.controller.ts)
+- [filieres.dto.ts](file://backend/src/modules/filieres/dto/filiere.dto.ts)
+- [filieres.entity.ts](file://backend/src/modules/filieres/entities/filiere.entity.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [specialites.dto.ts](file://backend/src/modules/specialites/dto/specialite.dto.ts)
+- [specialites.entity.ts](file://backend/src/modules/specialites/entities/specialite.entity.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
+- [competences.dto.ts](file://backend/src/modules/competences/dto/competence.dto.ts)
+- [competences.entity.ts](file://backend/src/modules/competences/entities/competence.entity.ts)
 - [annees-scolaires.controller.ts](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts)
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
@@ -28,11 +39,12 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced Notes module documentation to include validation workflow integration
-- Added new Validation Workflow module documentation covering automatic workflow creation and intelligent validation routing
-- Updated Grades endpoint documentation to reflect automatic workflow creation upon note creation
-- Added intelligent validation routing based on status changes for notes module
-- Included validation workflow statistics and configuration endpoints
+- Removed deprecated types-cycles API endpoints and integrated functionality into existing cycles API
+- Added new Specialities (Spécialités) module with CRUD endpoints for technical specialization management
+- Added new Competences module with CRUD endpoints for competency-based learning management
+- Updated Academic Year and Period management to reflect structural changes
+- Enhanced Cycles module with enriched fields (description, duration, diploma)
+- Updated institutional hierarchy to remove TypeCycle and integrate competencies/specialties functionality
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -48,7 +60,7 @@
 11. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, establishment management, and the integrated validation workflow system. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, institutional hierarchy management, and automated validation processes. The documentation also outlines data relationships between academic entities, validation rules, workflow automation, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
+This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. The module has been enhanced with new Specialities and Competences management capabilities, replacing the previous TypeCycles system. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, establishment management, specialities, competences, and the integrated validation workflow system. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, institutional hierarchy management, and automated validation processes. The documentation also outlines data relationships between academic entities, validation rules, workflow automation, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
 
 ## Project Structure
 The Academic Management module is organized by domain entities under the backend/src/modules directory. Each domain includes:
@@ -68,9 +80,11 @@ M["MatieresController<br/>Subjects"]
 Y["AnneesScolairesController<br/>Academic Years"]
 P["PeriodesController<br/>Periods"]
 X["CyclesController<br/>Cycles"]
-S["EtablissementController<br/>Establishment"]
+F["FilieresController<br/>Program Streams"]
+S["SpecialitesController<br/>Specialities"]
 B["BulletinsController<br/>Reports"]
 T["NotesController<br/>Grades"]
+COMP["CompetencesController<br/>Competences"]
 end
 subgraph "Validation Workflow System"
 VW["ValidationWorkflowController<br/>Validation Workflows"]
@@ -117,6 +131,11 @@ X --> RM
 X --> PG
 X --> EF
 X --> RI
+F --> AM
+F --> RM
+F --> PG
+F --> EF
+F --> RI
 S --> AM
 S --> RM
 S --> PG
@@ -132,6 +151,11 @@ T --> RM
 T --> PG
 T --> EF
 T --> RI
+COMP --> AM
+COMP --> RM
+COMP --> PG
+COMP --> EF
+COMP --> RI
 VW --> AM
 VW --> RM
 VW --> PG
@@ -145,6 +169,9 @@ VW --> RI
 - [niveaux.controller.ts](file://backend/src/modules/niveaux/controllers/niveaux.controller.ts)
 - [matieres.controller.ts](file://backend/src/modules/matieres/controllers/matieres.controller.ts)
 - [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [filieres.controller.ts](file://backend/src/modules/filieres/controllers/filieres.controller.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 - [annees-scolaires.controller.ts](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts)
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
@@ -243,13 +270,35 @@ This section documents the primary academic management endpoints and their assoc
 **Section sources**
 - [matieres.controller.ts](file://backend/src/modules/matieres/controllers/matieres.controller.ts)
 
-### Cycles
+### Cycles (Updated)
 - Base URL: `/api/cycles`
 - Methods:
-  - GET /: List cycles
-  - POST /: Create a cycle
-  - PATCH /:id: Update a cycle
+  - GET /: List cycles with enriched fields (description, duration, diploma)
+  - POST /: Create a cycle with enhanced properties
+  - PATCH /:id: Update a cycle with enriched fields
   - DELETE /:id: Delete a cycle
+- Authentication and Roles:
+  - Requires authentication middleware
+  - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT, PERSONNEL
+- Request/Response Schemas:
+  - DTO validation enforced with new cycle fields
+  - Responses include success flag and data payload
+- Business Rules:
+  - Validation errors return structured error response
+  - **Updated**: Integrated competences/specialites functionality previously handled by separate types-cycles module
+
+**Section sources**
+- [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [cycles.dto.ts](file://backend/src/modules/cycles/dto/cycle.dto.ts)
+- [cycles.entity.ts](file://backend/src/modules/cycles/entities/cycle.entity.ts)
+
+### Program Streams (Filieres)
+- Base URL: `/api/filieres`
+- Methods:
+  - GET /: List program streams
+  - POST /: Create a program stream
+  - PATCH /:id: Update a program stream
+  - DELETE /:id: Delete a program stream
 - Authentication and Roles:
   - Requires authentication middleware
   - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT, PERSONNEL
@@ -260,7 +309,53 @@ This section documents the primary academic management endpoints and their assoc
   - Validation errors return structured error response
 
 **Section sources**
-- [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [filieres.controller.ts](file://backend/src/modules/filieres/controllers/filieres.controller.ts)
+- [filieres.dto.ts](file://backend/src/modules/filieres/dto/filiere.dto.ts)
+- [filieres.entity.ts](file://backend/src/modules/filieres/entities/filiere.entity.ts)
+
+### Specialities (Spécialités) - New
+- Base URL: `/api/specialites`
+- Methods:
+  - GET /: List specialities with stream filtering
+  - POST /: Create a speciality
+  - PATCH /:id: Update a speciality
+  - DELETE /:id: Delete a speciality
+- Authentication and Roles:
+  - Requires authentication middleware
+  - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT, PERSONNEL
+- Request/Response Schemas:
+  - DTO validation enforced with speciality-specific fields
+  - Responses include success flag and data payload
+- Business Rules:
+  - Validation errors return structured error response
+  - **New**: Technical specialization management for MINESEC-compliant programs
+
+**Section sources**
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [specialites.dto.ts](file://backend/src/modules/specialites/dto/specialite.dto.ts)
+- [specialites.entity.ts](file://backend/src/modules/specialites/entities/specialite.entity.ts)
+
+### Competences (Updated)
+- Base URL: `/api/competences`
+- Methods:
+  - GET /: List competences with competency framework filtering
+  - POST /: Create a competence
+  - PATCH /:id: Update a competence
+  - DELETE /:id: Delete a competence
+- Authentication and Roles:
+  - Requires authentication middleware
+  - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT, PERSONNEL
+- Request/Response Schemas:
+  - DTO validation enforced with competence-specific fields
+  - Responses include success flag and data payload
+- Business Rules:
+  - Validation errors return structured error response
+  - **New**: Competency-based learning management aligned with APC framework
+
+**Section sources**
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
+- [competences.dto.ts](file://backend/src/modules/competences/dto/competence.dto.ts)
+- [competences.entity.ts](file://backend/src/modules/competences/entities/competence.entity.ts)
 
 ### Academic Years (AnneesScolaires)
 - Base URL: `/api/annees-scolaires`
@@ -362,13 +457,14 @@ This section documents the primary academic management endpoints and their assoc
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 
 ## Architecture Overview
-The Academic Management API follows a layered architecture with integrated validation workflow support:
+The Academic Management API follows a layered architecture with integrated validation workflow support and enhanced academic structure management:
 - Controllers handle HTTP requests, enforce authentication/authorization, and delegate to services
 - Services encapsulate business logic and coordinate with repositories/entities
 - DTOs validate request/response payloads
 - Validation workflow service manages automated approval processes
 - Middlewares and guards enforce authentication and role-based access
 - Filters and interceptors standardize error handling and logging
+- **Updated**: Integrated competences and specialities modules provide comprehensive academic framework management
 
 ```mermaid
 graph TB
@@ -379,6 +475,8 @@ RoleMW["Role Middleware"]
 Guard["Permission Guard"]
 Service["Services"]
 ValidationService["Validation Workflow Service"]
+CompetenceService["Competence Service"]
+SpecialiteService["Specialite Service"]
 DTO["DTOs"]
 Entity["Entities"]
 Filter["Error Filter"]
@@ -391,6 +489,8 @@ Ctrl --> Service
 Service --> ValidationService
 Service --> DTO
 Service --> Entity
+Service --> CompetenceService
+Service --> SpecialiteService
 Ctrl --> Filter
 Ctrl --> Interceptor
 ```
@@ -403,6 +503,8 @@ Ctrl --> Interceptor
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
 
 ## Detailed Component Analysis
 
@@ -453,6 +555,38 @@ PeriodesCtrl-->>Admin : 201 Created
 **Diagram sources**
 - [annees-scolaires.controller.ts](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts)
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
+
+### Enhanced Academic Structure Management
+The enhanced academic structure now includes competences and specialities management integrated into the cycles system.
+
+```mermaid
+sequenceDiagram
+participant Admin as "Admin"
+participant CyclesCtrl as "CyclesController"
+participant FilieresCtrl as "FilieresController"
+participant SpecialitesCtrl as "SpecialitesController"
+participant CompetencesCtrl as "CompetencesController"
+Admin->>CyclesCtrl : POST /api/cycles (enriched with description, duration, diploma)
+CyclesCtrl->>CyclesCtrl : validate(enriched cycle DTO)
+CyclesCtrl-->>Admin : 201 Created
+Admin->>FilieresCtrl : POST /api/filieres
+FilieresCtrl->>FilieresCtrl : validate(stream DTO)
+FilieresCtrl-->>Admin : 201 Created
+Admin->>SpecialitesCtrl : POST /api/specialites
+SpecialitesCtrl->>SpecialitesCtrl : validate(speciality DTO)
+SpecialitesCtrl-->>Admin : 201 Created
+Admin->>CompetencesCtrl : POST /api/competences
+CompetencesCtrl->>CompetencesCtrl : validate(competence DTO)
+CompetencesCtrl-->>Admin : 201 Created
+```
+
+**Updated** Added competences and specialities management to the academic structure
+
+**Diagram sources**
+- [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [filieres.controller.ts](file://backend/src/modules/filieres/controllers/filieres.controller.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 
 ### Establishment Hierarchy Management
 Establishment-level updates manage institutional hierarchy and policies.
@@ -562,7 +696,7 @@ The system intelligently routes validation decisions based on:
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
 ## Dependency Analysis
-The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints, with enhanced integration for validation workflows.
+The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints, with enhanced integration for validation workflows and new competences/specialities management.
 
 ```mermaid
 graph TB
@@ -576,13 +710,22 @@ ElevesCtrl --> EleveEntity["Eleve Entity"]
 NotesCtrl["NotesController"] --> ValidationService["Validation Workflow Service"]
 NotesCtrl --> NotesService["Notes Service"]
 ValidationService --> WorkflowEntity["Workflow Validation Entity"]
+SpecialitesCtrl["SpecialitesController"] --> SpecialitesService["Specialites Service"]
+SpecialitesService --> SpecialiteEntity["Specialite Entity"]
+CompetencesCtrl["CompetencesController"] --> CompetencesService["Competences Service"]
+CompetencesService --> CompetenceEntity["Competence Entity"]
+CyclesCtrl["CyclesController"] --> CyclesService["Cycles Service"]
+CyclesService --> CycleEntity["Cycle Entity"]
 ```
 
-**Updated** Added validation workflow service integration for notes module
+**Updated** Added competences and specialities service integration for comprehensive academic management
 
 **Diagram sources**
 - [eleves.controller.ts:1-58](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L58)
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
+- [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [role.middleware.ts](file://backend/src/modules/auth/middlewares/role.middleware.ts)
@@ -595,6 +738,8 @@ ValidationService --> WorkflowEntity["Workflow Validation Entity"]
 **Section sources**
 - [eleves.controller.ts:1-58](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L58)
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 
 ## Performance Considerations
 - Centralized validation reduces redundant checks and improves error consistency
@@ -603,6 +748,7 @@ ValidationService --> WorkflowEntity["Workflow Validation Entity"]
 - DTO-driven validation prevents malformed payloads and reduces service-level error handling overhead
 - **Enhanced** Validation workflow integration optimizes approval processes and reduces manual intervention
 - **Enhanced** Automatic workflow creation eliminates manual setup overhead for academic data
+- **Enhanced** Integrated competences and specialities modules provide unified academic framework management
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -612,8 +758,10 @@ Common issues and resolutions:
 - Logging: Enable request logging to capture request/response metadata for debugging
 - **New** Validation workflow issues: Check workflow configuration and role assignments for the specific module
 - **New** Status synchronization problems: Verify that validation workflow completion triggers proper status updates
+- **New** Competences/specialities integration issues: Ensure proper entity relationships and foreign key constraints
+- **New** Academic structure migration problems: Verify that old types-cycles data has been properly migrated to enriched cycles
 
-**Updated** Added troubleshooting guidance for validation workflow integration
+**Updated** Added troubleshooting guidance for validation workflow integration and new academic modules
 
 **Section sources**
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
@@ -622,7 +770,7 @@ Common issues and resolutions:
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
 ## Conclusion
-The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data with integrated validation workflow support. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The enhanced notes module now supports automatic workflow creation and intelligent validation routing, streamlining academic approval processes. The documented endpoints, schemas, validation workflows, and automated approval processes enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, establishment hierarchies, and grading operations while supporting comprehensive reporting and validation capabilities.
+The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data with integrated validation workflow support and comprehensive academic structure management. The enhanced system now includes specialized management for competences and specialities, replacing the previous types-cycles approach with a more streamlined academic hierarchy. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The enhanced notes module now supports automatic workflow creation and intelligent validation routing, streamlining academic approval processes. The documented endpoints, schemas, validation workflows, and automated approval processes enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, establishment hierarchies, grading operations, competences, and specialities while supporting comprehensive reporting and validation capabilities.
 
 ## Appendices
 
@@ -631,13 +779,22 @@ The Academic Management API provides a robust, secure, and scalable foundation f
 - Classes: GET /api/classes, POST /api/classes, PATCH /api/classes/:id, DELETE /api/classes/:id
 - Levels: GET /api/niveaux, POST /api/niveaux, PATCH /api/niveaux/:id, DELETE /api/niveaux/:id
 - Subjects: GET /api/matieres, POST /api/matieres, PATCH /api/matieres/:id, DELETE /api/matieres/:id
-- Cycles: GET /api/cycles, POST /api/cycles, PATCH /api/cycles/:id, DELETE /api/cycles/:id
+- **Updated** Cycles: GET /api/cycles, POST /api/cycles, PATCH /api/cycles/:id, DELETE /api/cycles/:id
+- **Updated** Program Streams: GET /api/filieres, POST /api/filieres, PATCH /api/filieres/:id, DELETE /api/filieres/:id
+- **New** Specialities: GET /api/specialites, POST /api/specialites, PATCH /api/specialites/:id, DELETE /api/specialites/:id
+- **New** Competences: GET /api/competences, POST /api/competences, PATCH /api/competences/:id, DELETE /api/competences/:id
 - Academic Years: GET /api/annees-scolaires, POST /api/annees-scolaires, PATCH /api/annees-scolaires/:id, DELETE /api/annees-scolaires/:id
 - Periods: GET /api/periodes, POST /api/periodes, PATCH /api/periodes/:id, DELETE /api/periodes/:id
 - Establishment: GET /api/etablissement, PATCH /api/etablissement
 - Reports: GET /api/bulletins, POST /api/bulletins, PATCH /api/bulletins/:id, DELETE /api/bulletins/:id
 - Grades: GET /api/notes, POST /api/notes, PATCH /api/notes/:id, DELETE /api/notes/:id
 - **New** Validation Workflows: GET /api/validation-workflows/check/:module/:entityId, PUT /api/validation-workflows/config/:module, GET /api/validation-workflows/stats/:module
+
+### Academic Structure Enhancements
+- **Updated** Cycles: Enriched with description, duration in years, and sanctioning diploma fields
+- **New** Specialities: Technical specialization management for MINESEC-compliant programs
+- **New** Competences: Competency-based learning management aligned with APC framework
+- **Removed** Types-Cycles: Consolidated into enriched cycles functionality
 
 ### Validation Workflow Configuration
 - **Automatic Creation**: Validation workflows are automatically created when grades are submitted

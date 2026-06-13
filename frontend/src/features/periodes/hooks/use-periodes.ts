@@ -23,11 +23,17 @@ export function usePeriodes(filtres: PeriodeFiltres = {}) {
     return useQuery({
         queryKey: PERIODES_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Periode>('/api/periodes', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.anneeScolaireId) params.anneeScolaireId = filtres.anneeScolaireId;
+            if (filtres.type) params.type = filtres.type;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.getPaginated<Periode>('/api/periodes', params);
             return response.data;
         },
         enabled: isAuthenticated,

@@ -236,6 +236,8 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
     // ─── Global mouse listeners (mousemove / mouseup) ──────────
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current && !isResizing.current) return;
+
             if (isDragging.current) {
                 const dx = e.clientX - dragStart.current.x;
                 const dy = e.clientY - dragStart.current.y;
@@ -291,7 +293,8 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
             resizeDirection.current = null;
         };
 
-        document.addEventListener('mousemove', handleMouseMove);
+        // Utilisation de listeners passifs pour améliorer les performances
+        document.addEventListener('mousemove', handleMouseMove, { passive: true });
         document.addEventListener('mouseup', handleMouseUp);
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);

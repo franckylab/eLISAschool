@@ -47,6 +47,8 @@ export class ClassesService {
         const qb = this.classeRepo
             .createQueryBuilder('c')
             .leftJoinAndSelect('c.niveau', 'n')
+            .leftJoinAndSelect('n.cycle', 'cycle')
+            .leftJoinAndSelect('c.filiere', 'f')
             .leftJoinAndSelect('c.professeurPrincipal', 'pp')
             .leftJoinAndSelect('c.anneeScolaire', 'a')
             .where('1=1');
@@ -91,7 +93,7 @@ export class ClassesService {
         if (etablissementId) where.etablissementId = etablissementId;
         const classe = await this.classeRepo.findOne({
             where,
-            relations: ['niveau', 'professeurPrincipal', 'anneeScolaire'],
+            relations: ['niveau', 'niveau.cycle', 'filiere', 'professeurPrincipal', 'anneeScolaire'],
         });
         if (!classe) throw new AppError('Classe non trouvée', 404, 'NOT_FOUND');
         return classe;

@@ -8,9 +8,10 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
-import { apiClient } from '@/lib/api-client';
-import type { Classe, CreerClasseDto, ModifierClasseDto, ClasseFiltres } from '../types/classe.types';
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+import type { PaginatedResult } from '@shared/types/api.types';
+import type { Classe, CreerClasseDto, ModifierClasseDto, ClasseFiltres } from '../types/classe.types';
 
 const CLASSES_KEYS = {
     all: ['classes'] as const,
@@ -28,13 +29,25 @@ export function useClasses(filtres: ClasseFiltres = {}) {
     return useQuery({
         queryKey: CLASSES_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Classe>('/api/classes', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                sortBy: filtres.sortBy,
-                sortOrder: filtres.sortOrder,
-                ...filtres,
-            });
+                sortBy: filtres.sortBy || 'nom',
+                sortOrder: filtres.sortOrder || 'ASC',
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.niveauId) params.niveauId = filtres.niveauId;
+            if (filtres.anneeScolaireId) params.anneeScolaireId = filtres.anneeScolaireId;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.get<PaginatedResult<Classe>>('/api/classes', params);
+            
+            if (!response.data) {
+                throw new Error('Réponse API invalide : données manquantes');
+            }
+            
             return response.data;
         },
         enabled: isAuthenticated,
@@ -43,13 +56,20 @@ export function useClasses(filtres: ClasseFiltres = {}) {
 }
 
 export function useClasse(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: CLASSES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: Classe }>(`/api/classes/${id}`);
+            const response = await apiClient.get<Classe>(`/api/classes/${id}`);
+            
+            if (!response.data) {
+                throw new Error('Classe non trouvée');
+            }
+            
             return response.data;
         },
-        enabled: !!id,
+        enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
     });
 }
@@ -58,7 +78,12 @@ export function useClassesStats(etablissementId?: string) {
     return useQuery({
         queryKey: CLASSES_KEYS.stats(),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: any }>('/api/classes/stats');
+            const response = await apiClient.get<any>('/api/classes/stats');
+            
+            if (!response.data) {
+                throw new Error('Statistiques non disponibles');
+            }
+            
             return response.data;
         },
         enabled: !!etablissementId,
@@ -68,49 +93,68 @@ export function useClassesStats(etablissementId?: string) {
 // MUTATIONS
 export function useCreerClasse() {
     const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: async (dto: CreerClasseDto) => {
-            const response = await apiClient.post<{ data: Classe }>('/api/classes', dto);
+            const response = await apiClient.post<Classe>('/api/classes', dto);
+            
+            if (!response.data) {
+                throw new Error('Erreur lors de la création de la classe');
+            }
+            
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.stats() });
-            toast.success(`Classe ${data?.data?.nom} créée avec succès`);
+            toast.success('Classe créée avec succès');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la création');
+        },
     });
 }
 
 export function useModifierClasse() {
     const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async (dto: ModifierClasseDto) => {
-            const { id, ...data } = dto;
-            const response = await apiClient.patch<{ data: Classe }>(`/api/classes/${id}`, data);
+        mutationFn: async ({ id, ...dto }: ModifierClasseDto) => {
+            const response = await apiClient.patch<Classe>(`/api/classes/${id}`, dto);
+            
+            if (!response.data) {
+                throw new Error('Erreur lors de la modification de la classe');
+            }
+            
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.listes() });
-            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.detail(data?.data?.id) });
+            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.detail(variables.id) });
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.stats() });
-            toast.success(`Classe ${data?.data?.nom} modifiée avec succès`);
+            toast.success('Classe modifiée avec succès');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+        },
     });
 }
 
 export function useSupprimerClasse() {
     const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/classes/${id}`);
+            return id;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.stats() });
             toast.success('Classe supprimée avec succès');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+        },
     });
 }

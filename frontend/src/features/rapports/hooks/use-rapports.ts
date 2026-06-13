@@ -22,7 +22,17 @@ export function useRapports(filtres?: FiltresRapports) {
     return useQuery({
         queryKey: RAPPORTS_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Rapport[]; meta: any }>('/api/rapports', { params: filtres });
+            const params: Record<string, any> = {
+                page: filtres?.page || 1,
+                limit: filtres?.limit || 20,
+            };
+
+            if (filtres?.type) params.type = filtres.type;
+            if (filtres?.statut) params.statut = filtres.statut;
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+
+            const response = await apiClient.get<{ success: boolean; data: Rapport[]; meta: any }>('/api/rapports', params);
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

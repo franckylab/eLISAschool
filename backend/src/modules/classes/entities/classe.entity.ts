@@ -15,9 +15,29 @@ import {
     Index,
 } from 'typeorm';
 import { Niveau } from '@modules/niveaux/entities';
+import { Filiere } from '@modules/filieres/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+
+/**
+ * Type de classe (contexte camerounais)
+ */
+export enum TypeClasse {
+    NORMALE = 'NORMALE',
+    BILINGUE = 'BILINGUE',
+    RENFORCEE = 'RENFORCEE',
+    INTERNATIONALE = 'INTERNATIONALE',
+}
+
+/**
+ * Créneau horaire principal
+ */
+export enum CreneauHoraire {
+    MATIN = 'MATIN',
+    APRES_MIDI = 'APRES_MIDI',
+    JOURNEE_COMPLETE = 'JOURNEE_COMPLETE',
+}
 
 @Entity('classes')
 @Index(['niveauId'])
@@ -25,6 +45,8 @@ import { Etablissement } from '@modules/etablissement/entities';
 @Index(['etablissementId'])
 @Index(['etablissementId', 'anneeScolaireId'])
 @Index(['etablissementId', 'niveauId'])
+@Index(['filiereId'])
+@Index(['typeClasse'])
 export class Classe {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -56,6 +78,13 @@ export class Classe {
     @JoinColumn({ name: 'professeurPrincipalId' })
     professeurPrincipal?: MembrePersonnel;
 
+    @Column({ type: 'uuid', nullable: true })
+    filiereId?: string;
+
+    @ManyToOne(() => Filiere, { nullable: true })
+    @JoinColumn({ name: 'filiereId' })
+    filiere?: Filiere;
+
     @Column({ type: 'varchar', length: 100, nullable: true })
     sallePrincipale?: string;
 
@@ -65,8 +94,14 @@ export class Classe {
     @Column({ type: 'int', default: 0 })
     effectifActuel!: number;
 
-    @Column({ type: 'simple-json', nullable: true })
-    options?: string[]; // BILINGUE, ARTISTIQUE...
+    @Column({ type: 'varchar', length: 20, default: TypeClasse.NORMALE })
+    typeClasse!: TypeClasse;
+
+    @Column({ type: 'varchar', length: 20, default: CreneauHoraire.MATIN })
+    creneauHoraire!: CreneauHoraire;
+
+    @Column({ type: 'text', nullable: true })
+    description?: string;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

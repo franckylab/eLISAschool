@@ -51,13 +51,6 @@ export enum TypeEtablissement {
     AUTRE = 'AUTRE',
 }
 
-export enum CycleScolaire {
-    MATERNELLE = 'MATERNELLE',
-    PRIMAIRE = 'PRIMAIRE',
-    COLLEGE = 'COLLEGE',
-    LYCEE = 'LYCEE',
-}
-
 // ==================================
 // Entité Etablissement (multi-établissements)
 // ==================================

@@ -24,11 +24,17 @@ export function usePersonnel(filtres: PersonnelFiltres = {}) {
     return useQuery({
         queryKey: PERSONNEL_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<MembrePersonnel>('/api/personnel', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.typePersonnelId) params.typePersonnelId = filtres.typePersonnelId;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.getPaginated<MembrePersonnel>('/api/personnel', params);
             return response.data;
         },
         enabled: isAuthenticated,

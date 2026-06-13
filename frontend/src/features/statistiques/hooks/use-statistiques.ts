@@ -21,9 +21,11 @@ export function useStatistiquesGlobales(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.globales(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: StatistiquesGlobales }>('/api/statistiques/globales', {
-                params: filtres,
-            });
+            const params: Record<string, any> = {};
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+
+            const response = await apiClient.get<{ success: boolean; data: StatistiquesGlobales }>('/api/statistiques/globales', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -51,7 +53,12 @@ export function useStatistiquesEleves(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('eleves', filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/eleves', { params: filtres });
+            const params: Record<string, any> = {};
+            if (filtres?.classeId) params.classeId = filtres.classeId;
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+
+            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/eleves', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -65,7 +72,12 @@ export function useStatistiquesPersonnel(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('personnel', filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/personnel', { params: filtres });
+            const params: Record<string, any> = {};
+            if (filtres?.typePersonnelId) params.typePersonnelId = filtres.typePersonnelId;
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+
+            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/personnel', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -79,7 +91,12 @@ export function useStatistiquesFinances(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('finances', filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/finances', { params: filtres });
+            const params: Record<string, any> = {};
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+            if (filtres?.typePaiement) params.typePaiement = filtres.typePaiement;
+
+            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/finances', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -93,7 +110,12 @@ export function useStatistiquesPedagogique(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('pedagogique', filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/pedagogique', { params: filtres });
+            const params: Record<string, any> = {};
+            if (filtres?.classeId) params.classeId = filtres.classeId;
+            if (filtres?.matiereId) params.matiereId = filtres.matiereId;
+            if (filtres?.periode) params.periode = filtres.periode;
+
+            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/pedagogique', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -107,7 +129,12 @@ export function useStatistiquesVieScolaire(filtres?: FiltresStatistiques) {
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('vie-scolaire', filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/vie-scolaire', { params: filtres });
+            const params: Record<string, any> = {};
+            if (filtres?.type) params.type = filtres.type;
+            if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
+            if (filtres?.dateFin) params.dateFin = filtres.dateFin;
+
+            const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/vie-scolaire', params);
             return response.data?.data;
         },
         enabled: isAuthenticated,

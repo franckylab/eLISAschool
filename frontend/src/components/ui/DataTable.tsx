@@ -897,9 +897,9 @@ export function DataTable<T>({
             resizeRef.current = null;
             setResizeKey(null);
         };
-        window.addEventListener('mousemove', handleGlobalMove);
+        window.addEventListener('mousemove', handleGlobalMove, { passive: true });
         window.addEventListener('mouseup', handleGlobalUp);
-        window.addEventListener('touchmove', handleGlobalMove);
+        window.addEventListener('touchmove', handleGlobalMove, { passive: true });
         window.addEventListener('touchend', handleGlobalUp);
         return () => {
             window.removeEventListener('mousemove', handleGlobalMove);

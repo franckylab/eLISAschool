@@ -21,8 +21,6 @@ import {
 
 // Import pour le type de relation (sans créer de référence circulaire)
 import type { Etablissement } from './etablissement.entity';
-// Import CycleScolaire depuis etablissement.entity.ts
-import { CycleScolaire } from './etablissement.entity';
 
 /**
  * Configuration spécifique à un établissement (cycles actifs, bulletin, etc.).
@@ -43,7 +41,11 @@ export class EtablissementConfig {
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
-    @Column({ type: 'simple-json', default: () => "'[\"COLLEGE\", \"LYCEE\"]'" })
+    /**
+     * Cycles actifs pour cet établissement (références vers les IDs des cycles)
+     * Exemple: ['uuid-1', 'uuid-2', 'uuid-3']
+     */
+    @Column({ type: 'simple-array', default: '' })
     cyclesActifs!: string[];
 
     @Column({ type: 'simple-json', nullable: true })

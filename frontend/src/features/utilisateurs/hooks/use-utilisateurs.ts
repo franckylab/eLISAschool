@@ -24,11 +24,17 @@ export function useUtilisateurs(filtres: UtilisateurFiltres = {}) {
     return useQuery({
         queryKey: UTILISATEURS_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Utilisateur>('/api/utilisateurs', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.role) params.role = filtres.role;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.getPaginated<Utilisateur>('/api/utilisateurs', params);
             return response.data;
         },
         enabled: isAuthenticated,

@@ -24,8 +24,8 @@
         "codes": {
             "MATERNELLE": "Maternelle",
             "PRIMAIRE": "Primaire",
-            "SECONDAIRE_1": "Secondaire 1er Cycle",
-            "SECONDAIRE_2": "Secondaire 2nd Cycle"
+            "COLLEGE": "Collège (1er cycle secondaire)",
+            "LYCEE": "Lycée (2nd cycle secondaire)"
         },
         "messages": {
             "createSuccess": "Type de cycle créé avec succès",

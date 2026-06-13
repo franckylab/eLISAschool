@@ -55,6 +55,9 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                cleanupOutdatedCaches: true,
+                skipWaiting: true,
+                clientsClaim: true,
                 runtimeCaching: [
                     {
                         urlPattern: /^\/api\/.*/i,
@@ -73,6 +76,9 @@ export default defineConfig({
                         },
                     },
                 ],
+            },
+            devOptions: {
+                enabled: false, // Désactiver PWA en développement pour éviter les violations message
             },
         }),
     ],

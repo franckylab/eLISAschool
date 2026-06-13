@@ -24,7 +24,7 @@ export class Cycle {
     nom!: string; // "Enseignement Maternel", "Enseignement Primaire", etc.
 
     @Column({ type: 'varchar', length: 50, unique: true })
-    code!: string; // "MATERNELLE", "PRIMAIRE", "SECONDAIRE_1", "SECONDAIRE_2"
+    code!: string; // "MATERNELLE", "PRIMAIRE", "COLLEGE", "LYCEE"
 
     @Column({ type: 'text', nullable: true })
     description?: string;

@@ -20,12 +20,9 @@ export function useToutesAnneesScolaires(etablissementId?: string) {
     return useQuery({
         queryKey: ANNEES_SCOLAIRES_KEYS.toutes(),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: AnneeScolaire[] }>('/api/annees-scolaires', {
-                limit: 1000,
-                page: 1,
-            });
-            // Extraire le tableau d'années scolaires depuis response.data
-            return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+            const params = { limit: 100, page: 1 };
+            const response = await apiClient.get<{ success: boolean; data: AnneeScolaire[] }>('/api/annees-scolaires', params);
+            return response.data?.data || [];
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 min

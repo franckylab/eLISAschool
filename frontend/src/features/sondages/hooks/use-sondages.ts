@@ -24,11 +24,15 @@ export function useSondages(filtres: SondageFiltres = {}) {
     return useQuery({
         queryKey: SONDAGES_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Sondage>('/api/sondages', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            if (filtres.statut) params.statut = filtres.statut;
+            if (filtres.recherche) params.search = filtres.recherche;
+
+            const response = await apiClient.getPaginated<Sondage>('/api/sondages', params);
             return response;
         },
         enabled: isAuthenticated,

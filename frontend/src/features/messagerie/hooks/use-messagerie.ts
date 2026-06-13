@@ -46,8 +46,7 @@ export function useMessage(id: string) {
             const response = await apiClient.get<{ success: boolean; data: Message }>(`/api/messagerie/messages/${id}`);
             return response.data?.data;
         },
-        enabled: !!id,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !!id,
         staleTime: 2 * 60 * 1000,
     });
 }

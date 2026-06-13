@@ -24,17 +24,21 @@ export function useNiveaux(filtres: NiveauFiltres = {}) {
     return useQuery({
         queryKey: NIVEAUX_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<PaginatedResult<Niveau>>('/api/niveaux', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                search: filtres.recherche,
-                cycleId: filtres.cycleId,
-                sousSysteme: filtres.sousSysteme,
-                actif: filtres.actif,
-                estClasseExamen: filtres.estClasseExamen,
                 sortBy: filtres.sortBy || 'ordre',
                 sortOrder: filtres.sortOrder || 'ASC',
-            });
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.cycleId) params.cycleId = filtres.cycleId;
+            if (filtres.sousSysteme) params.sousSysteme = filtres.sousSysteme;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+            if (filtres.estClasseExamen !== undefined) params.estClasseExamen = filtres.estClasseExamen;
+
+            const response = await apiClient.get<PaginatedResult<Niveau>>('/api/niveaux', params);
             return (response as any).data as PaginatedResult<Niveau>;
         },
         enabled: isAuthenticated,

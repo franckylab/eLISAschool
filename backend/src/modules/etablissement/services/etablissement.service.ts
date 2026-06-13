@@ -14,6 +14,29 @@ import { logger } from '@common/utils/logger.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
+export interface EtablissementStats {
+    totalEtablissements: number;
+    etablissementsActifs: number;
+    etablissementsInactifs: number;
+    parSousSysteme: Record<string, number>;
+    parType: Record<string, number>;
+}
+
+export interface EtablissementDetailStats {
+    etablissementId: string;
+    nomEtablissement: string;
+    nombreClasses: number;
+    nombreEleves: number;
+    nombrePersonnel: number;
+    nombreNiveaux: number;
+    tauxOccupation: number; // effectifActuel / effectifMax * 100
+    config: {
+        cyclesActifs: number;
+        modulesActifs: number;
+        planAbonnement?: string;
+    };
+}
+
 export class EtablissementService {
     private etablissementRepo: Repository<Etablissement>;
     private configRepo: Repository<EtablissementConfig>;
@@ -223,6 +246,105 @@ export class EtablissementService {
         await this.configRepo.save(config);
         logger.info(`Configuration mise à jour pour établissement ${etablissementId}`);
         return config;
+    }
+
+    // ==================================
+    // Statistiques
+    // ==================================
+
+    /**
+     * Statistiques globales de tous les établissements
+     */
+    async getStats(): Promise<EtablissementStats> {
+        const tous = await this.etablissementRepo.find();
+
+        const stats: EtablissementStats = {
+            totalEtablissements: tous.length,
+            etablissementsActifs: tous.filter(e => e.actif).length,
+            etablissementsInactifs: tous.filter(e => !e.actif).length,
+            parSousSysteme: {},
+            parType: {},
+        };
+
+        // Compter par sous-système
+        tous.forEach(e => {
+            stats.parSousSysteme[e.sousSysteme] = (stats.parSousSysteme[e.sousSysteme] || 0) + 1;
+            stats.parType[e.type] = (stats.parType[e.type] || 0) + 1;
+        });
+
+        return stats;
+    }
+
+    /**
+     * Statistiques détaillées d'un établissement
+     */
+    async getEtablissementStats(etablissementId: string): Promise<EtablissementDetailStats> {
+        const etablissement = await this.findOne(etablissementId);
+        const config = await this.getConfig(etablissementId).catch(() => null);
+
+        // Compter les classes
+        const classesRepo = AppDataSource.getRepository('Classe');
+        const nombreClasses = await classesRepo.count({
+            where: { 
+                anneeScolaire: { 
+                    etablissementId 
+                } 
+            },
+            relations: ['anneeScolaire'],
+        });
+
+        // Compter les élèves
+        const affectationRepo = AppDataSource.getRepository('AffectationEleve');
+        const nombreEleves = await affectationRepo.count({
+            where: { 
+                classe: {
+                    anneeScolaire: {
+                        etablissementId
+                    }
+                },
+                actif: true
+            },
+            relations: ['classe', 'classe.anneeScolaire'],
+        });
+
+        // Compter le personnel
+        const membreRepo = AppDataSource.getRepository('MembrePersonnel');
+        const nombrePersonnel = await membreRepo.count({
+            where: { etablissementId, actif: true },
+        });
+
+        // Compter les niveaux (via les classes)
+        const niveaux = new Set<string>();
+        const classes = await classesRepo.find({
+            where: { anneeScolaire: { etablissementId } },
+            relations: ['niveau', 'anneeScolaire'],
+            select: ['niveauId'],
+        });
+        classes.forEach(c => {
+            if (c.niveauId) niveaux.add(c.niveauId);
+        });
+
+        // Taux d'occupation
+        const tauxOccupation = etablissement.effectifMax
+            ? Math.round((etablissement.effectifActuel / etablissement.effectifMax) * 100)
+            : 0;
+
+        return {
+            etablissementId,
+            nomEtablissement: etablissement.nom,
+            nombreClasses,
+            nombreEleves,
+            nombrePersonnel,
+            nombreNiveaux: niveaux.size,
+            tauxOccupation,
+            config: {
+                cyclesActifs: config?.cyclesActifs?.length || 0,
+                modulesActifs: config?.modulesActifs
+                    ? Object.values(config.modulesActifs).filter(Boolean).length
+                    : 0,
+                planAbonnement: config?.planAbonnement,
+            },
+        };
     }
 }
 

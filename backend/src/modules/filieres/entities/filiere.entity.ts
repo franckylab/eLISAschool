@@ -20,6 +20,7 @@ import {
     Index,
 } from 'typeorm';
 import { Cycle } from '@modules/cycles/entities';
+import { SousSysteme } from '@modules/etablissement/entities';
 
 @Entity('filieres')
 @Index(['cycleId'])
@@ -43,8 +44,8 @@ export class Filiere {
     @JoinColumn({ name: 'cycleId' })
     cycle?: Cycle;
 
-    @Column({ type: 'varchar', length: 20, default: 'FRANCOPHONE', name: 'soussysteme' })
-    sousSysteme!: string; // "FRANCOPHONE", "ANGLOPHONE"
+    @Column({ type: 'enum', enum: SousSysteme, default: SousSysteme.FRANCOPHONE, name: 'soussysteme' })
+    sousSysteme!: SousSysteme;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

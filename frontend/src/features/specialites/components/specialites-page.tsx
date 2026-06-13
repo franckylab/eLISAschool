@@ -9,10 +9,18 @@
  * CRUD avec modal, filtres par filière, et affichage enrichi
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, AlertTriangle, BookOpen, Hash } from 'lucide-react';
-import { useToutesFilières } from '@/features/filieres/hooks/use-toutes-filieres';
+import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
+import {
+    useSpecialites,
+    useCreerSpecialite,
+    useModifierSpecialite,
+    useSupprimerSpecialite,
+    type Specialite,
+    type SpecialiteFormData,
+} from '../hooks/use-specialites';
 import { usePermissions } from '@/hooks';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -21,19 +29,6 @@ import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import type { Column } from '@/components/ui/DataTable';
 
 // Types
-interface Specialite {
-    id: string;
-    nom: string;
-    code: string;
-    description?: string;
-    filiereId: string;
-    filiere?: { id: string; nom: string; code: string };
-    ordre: number;
-    actif: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
 interface SpecialiteFormData {
     nom: string;
     code: string;
@@ -43,26 +38,9 @@ interface SpecialiteFormData {
     actif: boolean;
 }
 
-// Hook mock - À remplacer par le hook React Query réel
-function useSpecialites(_filtres: any) {
-    return { data: { items: [], meta: { totalItems: 0 } }, isLoading: false };
-}
-
-function useCreerSpecialite() {
-    return { mutateAsync: async (_data: any) => {}, isPending: false };
-}
-
-function useModifierSpecialite() {
-    return { mutateAsync: async (_data: any) => {}, isPending: false };
-}
-
-function useSupprimerSpecialite() {
-    return { mutateAsync: async (_id: string) => {}, isPending: false };
-}
-
 export function SpecialitesPage() {
     const { hasPermission } = usePermissions();
-    const { data: filieres } = useToutesFilières();
+    const { data: filieres } = useToutesFilieres();
     
     const [filtres, setFiltres] = useState({ page: 1, limit: 20, recherche: '', filiereId: '' });
     const [showFormModal, setShowFormModal] = useState(false);
@@ -314,7 +292,7 @@ function SpecialiteFormModal({ open, onOpenChange, specialite, onSave, isLoading
     const [ordre, setOrdre] = useState(1);
     const [actif, setActif] = useState(true);
 
-    useState(() => {
+    useEffect(() => {
         if (specialite) {
             setNom(specialite.nom);
             setCode(specialite.code);
@@ -330,7 +308,7 @@ function SpecialiteFormModal({ open, onOpenChange, specialite, onSave, isLoading
             setOrdre(1);
             setActif(true);
         }
-    });
+    }, [specialite]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

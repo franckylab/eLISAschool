@@ -23,11 +23,16 @@ export function useGroupes(filtres: GroupeFiltres = {}) {
     return useQuery({
         queryKey: ORGANISATION_KEYS.groupes.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<GroupeEtablissement>('/api/organisation/groupes', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.type) params.type = filtres.type;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.getPaginated<GroupeEtablissement>('/api/organisation/groupes', params);
             return response.data;
         },
         enabled: isAuthenticated,

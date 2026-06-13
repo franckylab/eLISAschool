@@ -21,6 +21,7 @@ const FILIERES_KEYS = {
     all: ['filieres'] as const,
     lists: () => [...FILIERES_KEYS.all, 'list'] as const,
     list: (filtres: FiliereFiltres) => [...FILIERES_KEYS.lists(), filtres] as const,
+    toutes: () => [...FILIERES_KEYS.all, 'toutes'] as const,
     details: () => [...FILIERES_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...FILIERES_KEYS.details(), id] as const,
 };
@@ -30,20 +31,37 @@ export function useFilieres(filtres: FiliereFiltres = {}) {
     return useQuery({
         queryKey: FILIERES_KEYS.list(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<PaginatedResult<Filiere>>('/api/filieres', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                search: filtres.recherche,
-                cycleId: filtres.cycleId,
-                sousSysteme: filtres.sousSysteme,
-                actif: filtres.actif,
                 sortBy: 'nom',
                 sortOrder: 'ASC',
-            });
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.cycleId) params.cycleId = filtres.cycleId;
+            if (filtres.sousSysteme) params.sousSysteme = filtres.sousSysteme;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.get<PaginatedResult<Filiere>>('/api/filieres', params);
             return (response as any).data as PaginatedResult<Filiere>;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+    });
+}
+
+export function useToutesFilieres() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: FILIERES_KEYS.toutes(),
+        queryFn: async () => {
+            const response = await apiClient.get<{ success: boolean; data: Filiere[] }>('/api/filieres/all');
+            return response.data?.data || [];
+        },
+        enabled: isAuthenticated,
+        staleTime: 15 * 60 * 1000,
     });
 }
 

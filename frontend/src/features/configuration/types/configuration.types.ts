@@ -10,6 +10,12 @@
 // CONFIGURATION APPLICATION
 // =============================================
 
+/**
+ * @deprecated Utiliser Etablissement + EtablissementConfig à la place
+ * @see {@link ../../etablissement/types/etablissement.types.ts}
+ * Cette interface sera supprimée dans une version future.
+ * Migration recommandée : utiliser les hooks du module etablissement/
+ */
 export interface ConfigurationApp {
     id: string;
     nomEtablissement: string;

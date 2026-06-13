@@ -44,8 +44,7 @@ export function useBulletin(id: string) {
             const response = await apiClient.get<{ success: boolean; data: Bulletin }>(`/api/bulletins/${id}`);
             return response.data?.data;
         },
-        enabled: !!id,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !!id,
         staleTime: 10 * 60 * 1000,
     });
 }

@@ -9,10 +9,18 @@
  * CRUD avec modal, filtres par niveau/matière/domaine
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, BookOpen, GraduationCap, Layers, Target } from 'lucide-react';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
+import {
+    useCompetences,
+    useCreerCompetence,
+    useModifierCompetence,
+    useSupprimerCompetence,
+    type Competence,
+    type CompetenceFormData,
+} from '../hooks/use-competences';
 import { usePermissions } from '@/hooks';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -21,22 +29,6 @@ import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import type { Column } from '@/components/ui/DataTable';
 
 // Types
-interface Competence {
-    id: string;
-    code: string;
-    libelle: string;
-    description?: string;
-    domaine: string;
-    niveauId: string;
-    niveau?: { id: string; nom: string; code: string };
-    matiereId?: string;
-    matiere?: { id: string; nom: string; code: string };
-    ordre: number;
-    actif: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
 interface CompetenceFormData {
     code: string;
     libelle: string;
@@ -46,20 +38,6 @@ interface CompetenceFormData {
     matiereId?: string;
     ordre: number;
     actif: boolean;
-}
-
-// Hooks mock - À remplacer par les hooks React Query réels
-function useCompetences(_filtres: any) {
-    return { data: { items: [], meta: { totalItems: 0 } }, isLoading: false };
-}
-function useCreerCompetence() {
-    return { mutateAsync: async (_data: any) => {}, isPending: false };
-}
-function useModifierCompetence() {
-    return { mutateAsync: async (_data: any) => {}, isPending: false };
-}
-function useSupprimerCompetence() {
-    return { mutateAsync: async (_id: string) => {}, isPending: false };
 }
 
 // Domaines prédéfinis
@@ -358,7 +336,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
     const [ordre, setOrdre] = useState(1);
     const [actif, setActif] = useState(true);
 
-    useState(() => {
+    useEffect(() => {
         if (competence) {
             setCode(competence.code);
             setLibelle(competence.libelle);
@@ -378,7 +356,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
             setOrdre(1);
             setActif(true);
         }
-    });
+    }, [competence]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

@@ -24,8 +24,8 @@
         "codes": {
             "MATERNELLE": "Kindergarten",
             "PRIMAIRE": "Primary",
-            "SECONDAIRE_1": "Secondary 1st Cycle",
-            "SECONDAIRE_2": "Secondary 2nd Cycle"
+            "COLLEGE": "Middle School (1st cycle)",
+            "LYCEE": "High School (2nd cycle)"
         },
         "messages": {
             "createSuccess": "Cycle type created successfully",

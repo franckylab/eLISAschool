@@ -156,5 +156,36 @@ router.patch(
     }
 );
 
+/**
+ * GET /api/etablissements/stats
+ * Statistiques globales des établissements (SUPER_ADMIN uniquement)
+ */
+router.get(
+    '/stats',
+    authMiddleware,
+    requireRoles(Role.SUPER_ADMIN),
+    async (_req: Request, res: Response, next: NextFunction) => {
+        try {
+            const stats = await etablissementService.getStats();
+            res.json({ success: true, data: stats });
+        } catch (error) { next(error); }
+    }
+);
+
+/**
+ * GET /api/etablissements/:id/stats
+ * Statistiques d'un établissement spécifique
+ */
+router.get(
+    '/:id/stats',
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const stats = await etablissementService.getEtablissementStats(req.params.id);
+            res.json({ success: true, data: stats });
+        } catch (error) { next(error); }
+    }
+);
+
 export const etablissementController = router;
 export default router;

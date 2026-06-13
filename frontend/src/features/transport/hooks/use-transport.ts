@@ -26,11 +26,15 @@ export function useLignesTransport(filtres: LigneFiltres = {}) {
     return useQuery({
         queryKey: TRANSPORT_KEYS.lignes.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<LigneTransport>('/api/transport/lignes', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
+            const response = await apiClient.getPaginated<LigneTransport>('/api/transport/lignes', params);
             return response.data;
         },
         enabled: isAuthenticated,
@@ -44,11 +48,16 @@ export function useInscriptionsTransport(filtres: InscriptionTransportFiltres = 
     return useQuery({
         queryKey: TRANSPORT_KEYS.inscriptions.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<InscriptionTransport>('/api/transport/inscriptions', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
-            });
+            };
+
+            if (filtres.ligneId) params.ligneId = filtres.ligneId;
+            if (filtres.eleveId) params.eleveId = filtres.eleveId;
+            if (filtres.statut) params.statut = filtres.statut;
+
+            const response = await apiClient.getPaginated<InscriptionTransport>('/api/transport/inscriptions', params);
             return response.data;
         },
         enabled: isAuthenticated,

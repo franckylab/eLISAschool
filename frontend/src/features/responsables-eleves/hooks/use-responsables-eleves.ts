@@ -30,6 +30,16 @@ export function useResponsablesEleves(filtres: ResponsableEleveFiltres = {}) {
     return useQuery({
         queryKey: RESPONSABLES_ELEVES_KEYS.list(filtres),
         queryFn: async () => {
+            const params: Record<string, any> = {
+                page: filtres.page || 1,
+                limit: filtres.limit || 20,
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.eleveId) params.eleveId = filtres.eleveId;
+            if (filtres.utilisateurId) params.utilisateurId = filtres.utilisateurId;
+
             const response = await apiClient.get<{
                 data: ResponsableEleve[];
                 meta: {
@@ -38,7 +48,7 @@ export function useResponsablesEleves(filtres: ResponsableEleveFiltres = {}) {
                     totalPages: number;
                     itemsPerPage: number;
                 };
-            }>('/api/responsables-eleves', filtres);
+            }>('/api/responsables-eleves', params);
 
             if (!response.data) {
                 throw new Error("Responsables d'élèves non disponibles");

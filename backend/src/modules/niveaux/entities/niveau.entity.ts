@@ -38,6 +38,11 @@ export class Niveau {
     @JoinColumn({ name: 'cycleId' })
     cycle?: Cycle;
 
+    /**
+     * @deprecated Utiliser Classe.filiereId à la place.
+     * Une filière s'applique à une classe, pas à un niveau.
+     * Ce champ sera supprimé dans la version 3.0.
+     */
     @Column({ type: 'uuid', nullable: true })
     filiereId?: string;
 

@@ -30,6 +30,19 @@ export function useProgrammes(filtres: ProgrammeFiltres = {}) {
     return useQuery({
         queryKey: PROGRAMMES_KEYS.list(filtres),
         queryFn: async () => {
+            const params: Record<string, any> = {
+                page: filtres.page || 1,
+                limit: filtres.limit || 20,
+                sortBy: filtres.sortBy || 'nom',
+                sortOrder: filtres.sortOrder || 'ASC',
+            };
+
+            // Ajouter uniquement les filtres non vides
+            if (filtres.recherche) params.search = filtres.recherche;
+            if (filtres.matiereId) params.matiereId = filtres.matiereId;
+            if (filtres.classeId) params.classeId = filtres.classeId;
+            if (filtres.actif !== undefined) params.actif = filtres.actif;
+
             const response = await apiClient.get<{
                 data: ProgrammePedagogique[];
                 meta: {
@@ -38,7 +51,7 @@ export function useProgrammes(filtres: ProgrammeFiltres = {}) {
                     totalPages: number;
                     itemsPerPage: number;
                 };
-            }>('/api/programmes', { params: filtres });
+            }>('/api/programmes', params);
 
             if (!response.data) {
                 throw new Error('Programmes pédagogiques non disponibles');
