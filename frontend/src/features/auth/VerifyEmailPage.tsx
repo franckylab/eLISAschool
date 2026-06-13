@@ -31,7 +31,7 @@ export function VerifyEmailPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-[var(--color-fond)] px-4">
             <div className="w-full max-w-md text-center">
-                <Link to="/" className="text-2xl font-bold text-[var(--color-dominante)]">
+                <Link to="/"  className="text-2xl font-bold text-[var(--color-dominante)]">
                     elisa<span className="text-[var(--color-accent)]">°</span>school
                 </Link>
 
@@ -50,7 +50,7 @@ export function VerifyEmailPage() {
                             <h2 className="mt-4 text-xl font-semibold text-[var(--color-texte)]">
                                 {t('verifyEmail.succes')}
                             </h2>
-                            <Link to="/login" className="mt-6 inline-block">
+                            <Link to="/login"  className="mt-6 inline-block">
                                 <ElisaButton variant="primary">{t('verifyEmail.retourConnexion')}</ElisaButton>
                             </Link>
                         </>
@@ -61,7 +61,7 @@ export function VerifyEmailPage() {
                             <h2 className="mt-4 text-xl font-semibold text-[var(--color-texte)]">
                                 {t('verifyEmail.echec')}
                             </h2>
-                            <Link to="/login" className="mt-6 inline-block">
+                            <Link to="/login"  className="mt-6 inline-block">
                                 <ElisaButton variant="outline">{t('verifyEmail.retourConnexion')}</ElisaButton>
                             </Link>
                         </>

@@ -44,7 +44,7 @@ export function ForgotPasswordPage() {
         <div className="flex min-h-screen items-center justify-center bg-[var(--color-fond)] px-4">
             <div className="w-full max-w-md">
                 <div className="mb-8 text-center">
-                    <Link to="/" className="text-2xl font-bold text-[var(--color-dominante)]">
+                    <Link to="/"  className="text-2xl font-bold text-[var(--color-dominante)]">
                         elisa<span className="text-[var(--color-accent)]">°</span>school
                     </Link>
                 </div>
@@ -59,7 +59,7 @@ export function ForgotPasswordPage() {
                                 {t('forgotPassword.succes', { email: emailSent })}
                             </div>
                             <p className="text-sm text-[var(--color-texte-secondaire)]">{t('forgotPassword.verifierSpam')}</p>
-                            <Link to="/login">
+                            <Link to="/login" >
                                 <ElisaButton variant="outline" fullWidth icon={<ArrowLeft className="h-4 w-4" />}>
                                     {t('forgotPassword.retourConnexion')}
                                 </ElisaButton>
@@ -90,7 +90,7 @@ export function ForgotPasswordPage() {
                             >
                                 {t('forgotPassword.boutonEnvoyer')}
                             </ElisaButton>
-                            <Link to="/login">
+                            <Link to="/login" >
                                 <ElisaButton variant="ghost" fullWidth icon={<ArrowLeft className="h-4 w-4" />}>
                                     {t('forgotPassword.retourConnexion')}
                                 </ElisaButton>

@@ -163,7 +163,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 {options?.select ? (
                     <select
                         value={value}
-                        onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [name]: e.target.value })}
                         className={`rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
                                 ? 'border-red-500 bg-red-50'
@@ -182,7 +182,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         type={type}
                         value={value}
                         placeholder={options?.placeholder}
-                        onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [name]: e.target.value })}
                         className={`rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
                                 ? 'border-red-500 bg-red-50'
@@ -203,7 +203,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 <input
                     type="checkbox"
                     checked={(formData as any)[name] || false}
-                    onChange={(e) => setFormData({ ...formData, [name]: e.target.checked })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [name]: e.target.checked })}
                     className="peer sr-only"
                 />
                 <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>

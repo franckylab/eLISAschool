@@ -137,16 +137,16 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                     <ElisaInput
                         label="Nom de la matière"
                         value={formData.nom || ''}
-                        onChange={(value) => handleChange('nom', value)}
-                        erreur={erreurs.nom}
+                        onChange={(value: any) => handleChange('nom', value)}
+                        error={erreurs.nom}
                         placeholder="Ex: Mathématiques"
                         required
                     />
                     <ElisaInput
                         label="Code"
                         value={formData.code || ''}
-                        onChange={(value) => handleChange('code', value)}
-                        erreur={erreurs.code}
+                        onChange={(value: any) => handleChange('code', value)}
+                        error={erreurs.code}
                         placeholder="Ex: MATH"
                         required
                     />
@@ -158,8 +158,8 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         label="Coefficient"
                         type="number"
                         value={formData.coefficient?.toString() || '1'}
-                        onChange={(value) => handleChange('coefficient', parseFloat(value))}
-                        erreur={erreurs.coefficient}
+                        onChange={(value: any) => handleChange('coefficient', parseFloat(value))}
+                        error={erreurs.coefficient}
                         min="0.5"
                         max="10"
                         step="0.5"
@@ -168,7 +168,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         label="Nombre d'heures/semaine"
                         type="number"
                         value={formData.nombreHeures?.toString() || '0'}
-                        onChange={(value) => handleChange('nombreHeures', parseInt(value))}
+                        onChange={(value: any) => handleChange('nombreHeures', parseInt(value))}
                         min="0"
                         max="20"
                     />
@@ -195,7 +195,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
-                        onChange={(value) => handleChange('statut', value)}
+                        onChange={(value: any) => handleChange('statut', value)}
                         options={[
                             { value: 'actif', label: 'Actif' },
                             { value: 'inactif', label: 'Inactif' },
@@ -204,24 +204,28 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                 </div>
 
                 {/* Description */}
-                <ElisaInput
-                    label="Description"
-                    type="textarea"
-                    value={formData.description || ''}
-                    onChange={(value) => handleChange('description', value)}
-                    placeholder="Description optionnelle de la matière..."
-                    rows={3}
-                />
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Description</label>
+                    <textarea
+                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        value={formData.description || ''}
+                        onChange={(e) => handleChange('description', e.target.value)}
+                        placeholder="Description optionnelle de la matière..."
+                        rows={3}
+                    />
+                </div>
 
                 {/* Programme */}
-                <ElisaInput
-                    label="Programme"
-                    type="textarea"
-                    value={formData.programme || ''}
-                    onChange={(value) => handleChange('programme', value)}
-                    placeholder="Contenu du programme..."
-                    rows={3}
-                />
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Programme</label>
+                    <textarea
+                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        value={formData.programme || ''}
+                        onChange={(e) => handleChange('programme', e.target.value)}
+                        placeholder="Contenu du programme..."
+                        rows={3}
+                    />
+                </div>
             </form>
         </CustomModal>
     );

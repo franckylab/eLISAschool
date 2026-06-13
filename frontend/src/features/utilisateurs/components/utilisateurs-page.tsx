@@ -25,7 +25,7 @@ import type { Utilisateur, UtilisateurFiltres } from '../types/utilisateur.types
 import type { Column } from '@/components/ui/DataTable';
 
 export function UtilisateursPage() {
-    const { t } = useTranslation();
+    useTranslation();
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     

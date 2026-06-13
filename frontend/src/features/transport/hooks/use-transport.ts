@@ -39,6 +39,8 @@ export function useLignesTransport(filtres: LigneFiltres = {}) {
 }
 
 export function useInscriptionsTransport(filtres: InscriptionTransportFiltres = {}) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: TRANSPORT_KEYS.inscriptions.liste(filtres),
         queryFn: async () => {
@@ -59,7 +61,7 @@ export function useCreerLigneTransport() {
 
     return useMutation({
         mutationFn: async (dto: CreerLigneDto) => {
-            const response = await apiClient.post('/api/transport/lignes', dto);
+            const response = await apiClient.post<any>('/api/transport/lignes', dto);
             return response.data?.data;
         },
         onSuccess: () => {
@@ -77,7 +79,7 @@ export function useCreerInscriptionTransport() {
 
     return useMutation({
         mutationFn: async (dto: CreerInscriptionTransportDto) => {
-            const response = await apiClient.post('/api/transport/inscriptions', dto);
+            const response = await apiClient.post<any>('/api/transport/inscriptions', dto);
             return response.data?.data;
         },
         onSuccess: () => {

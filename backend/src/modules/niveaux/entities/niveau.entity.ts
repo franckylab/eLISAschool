@@ -15,6 +15,8 @@ import {
     Index,
 } from 'typeorm';
 import { Cycle } from '@modules/cycles/entities';
+import { Filiere } from '@modules/filieres/entities';
+import { ExamenNational } from '@modules/examens-nationaux/entities';
 import { SousSysteme } from '@modules/etablissement/entities';
 
 @Entity('niveaux')
@@ -35,6 +37,23 @@ export class Niveau {
     @ManyToOne(() => Cycle)
     @JoinColumn({ name: 'cycleId' })
     cycle?: Cycle;
+
+    @Column({ type: 'uuid', nullable: true })
+    filiereId?: string;
+
+    @ManyToOne(() => Filiere, { nullable: true })
+    @JoinColumn({ name: 'filiereId' })
+    filiere?: Filiere;
+
+    @Column({ type: 'uuid', nullable: true })
+    examenNationalId?: string;
+
+    @ManyToOne(() => ExamenNational, { nullable: true })
+    @JoinColumn({ name: 'examenNationalId' })
+    examenNational?: ExamenNational;
+
+    @Column({ type: 'boolean', default: false })
+    estClasseExamen!: boolean; // true pour CM2, 3ème, Terminale, etc.
 
     @Column({ type: 'enum', enum: SousSysteme, default: SousSysteme.FRANCOPHONE })
     sousSysteme!: SousSysteme;

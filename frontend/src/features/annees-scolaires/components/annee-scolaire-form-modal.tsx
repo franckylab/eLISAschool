@@ -162,16 +162,16 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                     <ElisaInput
                         label="Libellé"
                         value={formData.libelle || ''}
-                        onChange={(value) => handleChange('libelle', value)}
-                        erreur={erreurs.libelle}
+                        onChange={(value: any) => handleChange('libelle', value)}
+                        error={erreurs.libelle}
                         placeholder="Ex: Année scolaire 2024-2025"
                         required
                     />
                     <ElisaInput
                         label="Code"
                         value={formData.code || ''}
-                        onChange={(value) => handleChange('code', value)}
-                        erreur={erreurs.code}
+                        onChange={(value: any) => handleChange('code', value)}
+                        error={erreurs.code}
                         placeholder="Ex: 2024-2025"
                         required
                     />
@@ -183,16 +183,16 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                         label="Date de début"
                         type="date"
                         value={formData.dateDebut || ''}
-                        onChange={(value) => handleDateChange('dateDebut', value)}
-                        erreur={erreurs.dateDebut}
+                        onChange={(value: any) => handleDateChange('dateDebut', value)}
+                        error={erreurs.dateDebut}
                         required
                     />
                     <ElisaInput
                         label="Date de fin"
                         type="date"
                         value={formData.dateFin || ''}
-                        onChange={(value) => handleDateChange('dateFin', value)}
-                        erreur={erreurs.dateFin}
+                        onChange={(value: any) => handleDateChange('dateFin', value)}
+                        error={erreurs.dateFin}
                         required
                     />
                 </div>
@@ -201,7 +201,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                 <ElisaSelect
                     label="Statut"
                     value={formData.statut || 'future'}
-                    onChange={(value) => handleChange('statut', value)}
+                    onChange={(value: any) => handleChange('statut', value)}
                     options={[
                         { value: 'active', label: 'Active' },
                         { value: 'inactive', label: 'Inactive' },

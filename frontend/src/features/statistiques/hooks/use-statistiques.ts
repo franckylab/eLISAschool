@@ -24,7 +24,7 @@ export function useStatistiquesGlobales(filtres?: FiltresStatistiques) {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesGlobales }>('/api/statistiques/globales', {
                 params: filtres,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -32,11 +32,13 @@ export function useStatistiquesGlobales(filtres?: FiltresStatistiques) {
 }
 
 export function useStatistiquesPeriodiques(periode: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.periodiques(periode),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesPeriodiques }>(`/api/statistiques/periodiques/${periode}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -44,11 +46,13 @@ export function useStatistiquesPeriodiques(periode: string) {
 }
 
 export function useStatistiquesEleves(filtres?: FiltresStatistiques) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('eleves', filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/eleves', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -56,11 +60,13 @@ export function useStatistiquesEleves(filtres?: FiltresStatistiques) {
 }
 
 export function useStatistiquesPersonnel(filtres?: FiltresStatistiques) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('personnel', filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/personnel', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -68,11 +74,13 @@ export function useStatistiquesPersonnel(filtres?: FiltresStatistiques) {
 }
 
 export function useStatistiquesFinances(filtres?: FiltresStatistiques) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('finances', filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/finances', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -80,11 +88,13 @@ export function useStatistiquesFinances(filtres?: FiltresStatistiques) {
 }
 
 export function useStatistiquesPedagogique(filtres?: FiltresStatistiques) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('pedagogique', filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/pedagogique', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -92,11 +102,13 @@ export function useStatistiquesPedagogique(filtres?: FiltresStatistiques) {
 }
 
 export function useStatistiquesVieScolaire(filtres?: FiltresStatistiques) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STATISTIQUES_KEYS.parModule('vie-scolaire', filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any }>('/api/statistiques/vie-scolaire', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -109,7 +121,7 @@ export function useGenererRapport() {
     return useMutation({
         mutationFn: async (data: { type: string; format: string; parametres?: any }) => {
             const response = await apiClient.post<{ success: boolean; data: any }>('/api/statistiques/generer', data);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: STATISTIQUES_KEYS.globales() });
@@ -121,13 +133,11 @@ export function useGenererRapport() {
 export function useExporterStatistiques() {
     return useMutation({
         mutationFn: async (data: { format: 'pdf' | 'excel' | 'csv'; type: string; filtres?: any }) => {
-            const response = await apiClient.post('/api/statistiques/export', data, {
-                responseType: 'blob',
-            });
+            const response = await apiClient.post('/api/statistiques/export', data);
             return response.data;
         },
         onSuccess: (data) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `statistiques-${Date.now()}`);

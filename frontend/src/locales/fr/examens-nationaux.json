@@ -1,0 +1,60 @@
+{
+    "examens_nationaux": {
+        "title": "Examens Nationaux",
+        "description": "Gestion des examens officiels (CEP, BEPC, Probatoire, BACCALAURÉAT, GCE)",
+        "create": "Créer un examen national",
+        "edit": "Modifier l'examen national",
+        "delete": "Supprimer l'examen national",
+        "detail": "Détails de l'examen national",
+        "fields": {
+            "nom": "Nom",
+            "code": "Code",
+            "type": "Type",
+            "niveauId": "Niveau",
+            "dateProgrammation": "Date de programmation",
+            "coefficient": "Coefficient",
+            "estObligatoire": "Obligatoire",
+            "diplomeDelivre": "Diplôme délivré",
+            "description": "Description",
+            "sousSysteme": "Sous-système",
+            "actif": "Actif"
+        },
+        "placeholders": {
+            "nom": "Ex: BACCALAURÉAT",
+            "code": "Ex: BACCALAUREAT, BEPC, CEP",
+            "diplomeDelivre": "Ex: BACCALAUREAT"
+        },
+        "types": {
+            "NATIONAL": "National",
+            "REGIONAL": "Régional",
+            "INTERNATIONAL": "International"
+        },
+        "sousSystemes": {
+            "FRANCOPHONE": "Francophone",
+            "ANGLOPHONE": "Anglophone"
+        },
+        "examens": {
+            "CEP": "Certificat d'Études Primaires",
+            "BEPC": "Brevet d'Études du Premier Cycle",
+            "PROBATOIRE": "Probatoire",
+            "BACCALAUREAT": "Baccalauréat",
+            "GCE_OL": "GCE Ordinary Level",
+            "GCE_AL": "GCE Advanced Level"
+        },
+        "messages": {
+            "createSuccess": "Examen national créé avec succès",
+            "updateSuccess": "Examen national modifié avec succès",
+            "deleteSuccess": "Examen national supprimé avec succès",
+            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet examen national ?",
+            "codeExists": "Ce code d'examen existe déjà"
+        },
+        "actions": {
+            "create": "Créer un examen",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "view": "Voir les détails",
+            "activate": "Activer",
+            "deactivate": "Désactiver"
+        }
+    }
+}

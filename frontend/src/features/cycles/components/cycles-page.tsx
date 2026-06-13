@@ -6,10 +6,11 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, BookOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useCycles, useSupprimerCycle, useCreerCycle, useModifierCycle } from '../hooks/use-cycles';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import type { Cycle, CycleFiltres } from '../types/cycle.types';
 import type { Column } from '@/components/ui/DataTable';
@@ -23,8 +24,6 @@ export function CyclesPage() {
 
     const { data, isLoading } = useCycles(filtres);
     const supprimer = useSupprimerCycle();
-    const creer = useCreerCycle();
-    const modifier = useModifierCycle();
 
     const colonnes: Column<Cycle>[] = [
         {
@@ -43,10 +42,12 @@ export function CyclesPage() {
             render: (c) => <span className="font-medium">{c.nom}</span>,
         },
         {
-            key: 'description',
-            header: 'Description',
+            key: 'typeCycle',
+            header: 'Type',
             render: (c) => (
-                <span className="text-sm text-gray-600 line-clamp-1">{c.description || '—'}</span>
+                <span className="text-sm text-gray-600">
+                    {c.typeCycle?.nom || <span className="text-gray-400 italic">—</span>}
+                </span>
             ),
         },
         {
@@ -61,15 +62,18 @@ export function CyclesPage() {
             ),
         },
         {
-            key: 'statut',
+            key: 'actif',
             header: 'Statut',
             sortable: true,
             className: 'text-center',
             render: (c) => (
-                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                    c.statut === 'actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    c.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                    {c.statut === 'actif' ? 'Actif' : 'Inactif'}
+                    {c.actif
+                        ? <><ToggleRight className="h-3.5 w-3.5" /> Actif</>
+                        : <><ToggleLeft className="h-3.5 w-3.5" /> Inactif</>
+                    }
                 </span>
             ),
         },
@@ -144,7 +148,7 @@ export function CyclesPage() {
                 enableColumnVisibility
                 searchPlaceholder="Rechercher un cycle..."
                 onSearchChange={(recherche) =>
-                    setFiltres({ ...filtres, recherche })
+                    setFiltres({ ...filtres, recherche, page: 1 })
                 }
                 disableClientSearch
                 pagination={data?.meta ? {
@@ -156,7 +160,7 @@ export function CyclesPage() {
                     hasPrev: data.meta.currentPage > 1,
                 } : undefined}
                 onPageChange={(page) => setFiltres({ ...filtres, page })}
-                onLimitChange={(limit) => setFiltres({ ...filtres, limit })}
+                onLimitChange={(limit) => setFiltres({ ...filtres, limit, page: 1 })}
             />
 
             {showFormModal && (
@@ -171,20 +175,23 @@ export function CyclesPage() {
 
             {cycleToDelete && (
                 <ConfirmDialog
+                    open={!!cycleToDelete}
+                    onOpenChange={(open) => { if (!open) setCycleToDelete(null); }}
                     title="Supprimer le cycle"
-                    message={`Êtes-vous sûr de vouloir supprimer le cycle "${cycleToDelete.nom}" ?`}
+                    description={`Êtes-vous sûr de vouloir supprimer le cycle "${cycleToDelete.nom}" ?`}
+                    confirmText="Supprimer"
+                    variant="danger"
                     onConfirm={async () => {
                         await supprimer.mutateAsync(cycleToDelete.id);
                         setCycleToDelete(null);
                     }}
-                    onCancel={() => setCycleToDelete(null)}
                 />
             )}
         </div>
     );
 }
 
-// Modal Formulaire Cycle
+// ─── Modal Formulaire Cycle ──────────────────────────────────────────────────
 function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () => void }) {
     const creer = useCreerCycle();
     const modifier = useModifierCycle();
@@ -192,27 +199,23 @@ function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () =
 
     const [nom, setNom] = useState(cycle?.nom || '');
     const [code, setCode] = useState(cycle?.code || '');
-    const [description, setDescription] = useState(cycle?.description || '');
     const [ordre, setOrdre] = useState(cycle?.ordre || 1);
-    const [statut, setStatut] = useState<'actif' | 'inactif'>(cycle?.statut || 'actif');
+    const [actif, setActif] = useState(cycle?.actif ?? true);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
-        
         if (!nom.trim()) newErrors.nom = 'Le nom est requis';
         if (!code.trim()) newErrors.code = 'Le code est requis';
-        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
         if (!validate()) return;
 
-        const dto = { nom, code, description, ordre, statut };
+        const dto = { nom, code, ordre, actif };
 
         try {
             if (isEditMode && cycle) {
@@ -221,8 +224,8 @@ function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () =
                 await creer.mutateAsync(dto);
             }
             onClose();
-        } catch (error) {
-            // Erreur déjà gérée par le hook
+        } catch {
+            // Erreur déjà gérée par le hook (toast)
         }
     };
 
@@ -263,24 +266,13 @@ function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () =
                         {errors.code && <p className="text-red-600 text-xs mt-1">{errors.code}</p>}
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
-                            rows={3}
-                            placeholder="Description du cycle..."
-                        />
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ordre</label>
                             <input
                                 type="number"
                                 value={ordre}
-                                onChange={(e) => setOrdre(parseInt(e.target.value))}
+                                onChange={(e) => setOrdre(parseInt(e.target.value) || 1)}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                                 min="1"
                             />
@@ -288,14 +280,20 @@ function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () =
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-                            <select
-                                value={statut}
-                                onChange={(e) => setStatut(e.target.value as 'actif' | 'inactif')}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                            <button
+                                type="button"
+                                onClick={() => setActif(!actif)}
+                                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                                    actif
+                                        ? 'border-green-300 bg-green-50 text-green-800'
+                                        : 'border-gray-300 bg-gray-50 text-gray-800'
+                                }`}
                             >
-                                <option value="actif">Actif</option>
-                                <option value="inactif">Inactif</option>
-                            </select>
+                                {actif
+                                    ? <><ToggleRight className="h-5 w-5 text-green-600" /> Actif</>
+                                    : <><ToggleLeft className="h-5 w-5 text-gray-500" /> Inactif</>
+                                }
+                            </button>
                         </div>
                     </div>
 
@@ -316,38 +314,6 @@ function CycleFormModal({ cycle, onClose }: { cycle: Cycle | null; onClose: () =
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-    );
-}
-
-// Dialog de confirmation
-function ConfirmDialog({ title, message, onConfirm, onCancel }: {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-}) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-full bg-red-100">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                    </div>
-                    <p className="text-gray-600 mb-6">{message}</p>
-                    <div className="flex gap-3 justify-end">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-                            Annuler
-                        </button>
-                        <button onClick={onConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
-                            Supprimer
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     );

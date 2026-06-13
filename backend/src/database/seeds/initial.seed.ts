@@ -13,6 +13,7 @@ import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth
 import { Role } from '@shared/enums/roles.enum';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { RBACSeedService } from './rbac.seed';
+import { seedStructureAcademique } from './seed-structure-academique';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -27,7 +28,10 @@ export async function runSeeds(): Promise<void> {
     // 2. RBAC (rôles, permissions, mappings)
     await seedRBAC();
 
-    // 3. Super admin
+    // 3. Structure académique (types cycles, cycles, niveaux, filières, examens)
+    await seedStructureAcademique();
+
+    // 4. Super admin
     await seedSuperAdmin();
 
     logger.info('✅ Seeds exécutés avec succès');

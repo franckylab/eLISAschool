@@ -36,6 +36,8 @@ export function useBulletins(filtres: BulletinFiltres = {}) {
 }
 
 export function useBulletin(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: BULLETINS_KEYS.detail(id),
         queryFn: async () => {
@@ -96,7 +98,7 @@ export function useExporterBulletin() {
             return response.data;
         },
         onSuccess: (data) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `bulletin.pdf`);

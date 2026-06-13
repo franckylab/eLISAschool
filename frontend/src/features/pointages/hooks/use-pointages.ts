@@ -22,7 +22,7 @@ export function usePointages(filtres?: PointageFiltres) {
         queryKey: POINTAGES_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Pointage[]; meta: any }>('/api/pointages', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -34,7 +34,7 @@ export function usePointage(id: string) {
         queryKey: POINTAGES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Pointage }>(`/api/pointages/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -46,7 +46,7 @@ export function useCreerPointage() {
     return useMutation({
         mutationFn: async (dto: CreerPointageDto) => {
             const response = await apiClient.post<{ success: boolean; data: Pointage }>('/api/pointages', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: POINTAGES_KEYS.listes() });
@@ -62,7 +62,7 @@ export function useModifierPointage(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerPointageDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Pointage }>(`/api/pointages/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: POINTAGES_KEYS.listes() });
@@ -93,7 +93,7 @@ export function usePointerArrivee() {
     return useMutation({
         mutationFn: async (data: { personnelId: string; heureArrivee: string }) => {
             const response = await apiClient.post<{ success: boolean; data: Pointage }>('/api/pointages/arrivee', data);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: POINTAGES_KEYS.listes() });
@@ -110,7 +110,7 @@ export function usePointerDepart() {
             const response = await apiClient.patch<{ success: boolean; data: Pointage }>(`/api/pointages/${data.pointageId}/depart`, {
                 heureDepart: data.heureDepart,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: POINTAGES_KEYS.listes() });
@@ -120,11 +120,13 @@ export function usePointerDepart() {
 }
 
 export function useStatistiquesPointages() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: POINTAGES_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesPointages }>('/api/pointages/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

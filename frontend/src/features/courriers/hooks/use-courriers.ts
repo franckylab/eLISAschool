@@ -22,7 +22,7 @@ export function useCourriers(filtres?: CourrierFiltres) {
         queryKey: COURRIERS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Courrier[]; meta: any }>('/api/courriers', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -34,7 +34,7 @@ export function useCourrier(id: string) {
         queryKey: COURRIERS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Courrier }>(`/api/courriers/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -46,7 +46,7 @@ export function useCreerCourrier() {
     return useMutation({
         mutationFn: async (dto: CreerCourrierDto) => {
             const response = await apiClient.post<{ success: boolean; data: Courrier }>('/api/courriers', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: COURRIERS_KEYS.listes() });
@@ -62,7 +62,7 @@ export function useModifierCourrier(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerCourrierDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Courrier }>(`/api/courriers/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: COURRIERS_KEYS.listes() });
@@ -77,7 +77,7 @@ export function useMarquerCommeLu() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<{ success: boolean; data: Courrier }>(`/api/courriers/${id}/marquer-lu`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: COURRIERS_KEYS.listes() });
@@ -103,11 +103,13 @@ export function useSupprimerCourrier() {
 }
 
 export function useStatistiquesCourriers() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: COURRIERS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesCourriers }>('/api/courriers/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

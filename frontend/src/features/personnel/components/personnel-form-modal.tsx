@@ -161,16 +161,16 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Nom"
                         value={formData.nom || ''}
-                        onChange={(value) => handleChange('nom', value)}
-                        erreur={erreurs.nom}
+                        onChange={(value: any) => handleChange('nom', value)}
+                        error={erreurs.nom}
                         placeholder="Nom de famille"
                         required
                     />
                     <ElisaInput
                         label="Prénom"
                         value={formData.prenom || ''}
-                        onChange={(value) => handleChange('prenom', value)}
-                        erreur={erreurs.prenom}
+                        onChange={(value: any) => handleChange('prenom', value)}
+                        error={erreurs.prenom}
                         placeholder="Prénom"
                         required
                     />
@@ -182,14 +182,14 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         label="Date de naissance"
                         type="date"
                         value={formData.dateNaissance || ''}
-                        onChange={(value) => handleChange('dateNaissance', value)}
-                        erreur={erreurs.dateNaissance}
+                        onChange={(value: any) => handleChange('dateNaissance', value)}
+                        error={erreurs.dateNaissance}
                         required
                     />
                     <ElisaSelect
                         label="Sexe"
                         value={formData.sexe || 'M'}
-                        onChange={(value) => handleChange('sexe', value)}
+                        onChange={(value: any) => handleChange('sexe', value)}
                         options={[
                             { value: 'M', label: 'Masculin' },
                             { value: 'F', label: 'Féminin' },
@@ -203,14 +203,14 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         label="Email"
                         type="email"
                         value={formData.email || ''}
-                        onChange={(value) => handleChange('email', value)}
-                        erreur={erreurs.email}
+                        onChange={(value: any) => handleChange('email', value)}
+                        error={erreurs.email}
                         placeholder="email@exemple.com"
                     />
                     <ElisaInput
                         label="Téléphone"
                         value={formData.telephone || ''}
-                        onChange={(value) => handleChange('telephone', value)}
+                        onChange={(value: any) => handleChange('telephone', value)}
                         placeholder="+237 6XX XXX XXX"
                     />
                 </div>
@@ -220,15 +220,15 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Poste"
                         value={formData.poste || ''}
-                        onChange={(value) => handleChange('poste', value)}
-                        erreur={erreurs.poste}
+                        onChange={(value: any) => handleChange('poste', value)}
+                        error={erreurs.poste}
                         placeholder="Ex: Enseignant, Secrétaire..."
                         required
                     />
                     <ElisaInput
                         label="Département"
                         value={formData.departement || ''}
-                        onChange={(value) => handleChange('departement', value)}
+                        onChange={(value: any) => handleChange('departement', value)}
                         placeholder="Ex: Sciences, Administration..."
                     />
                 </div>
@@ -238,7 +238,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaSelect
                         label="Type de contrat"
                         value={formData.typeContrat || 'cdi'}
-                        onChange={(value) => handleChange('typeContrat', value)}
+                        onChange={(value: any) => handleChange('typeContrat', value)}
                         options={[
                             { value: 'cdi', label: 'CDI' },
                             { value: 'cdd', label: 'CDD' },
@@ -249,7 +249,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
-                        onChange={(value) => handleChange('statut', value)}
+                        onChange={(value: any) => handleChange('statut', value)}
                         options={[
                             { value: 'actif', label: 'Actif' },
                             { value: 'inactif', label: 'Inactif' },
@@ -264,8 +264,8 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     label="Date d'entrée"
                     type="date"
                     value={formData.dateEntree || ''}
-                    onChange={(value) => handleChange('dateEntree', value)}
-                    erreur={erreurs.dateEntree}
+                    onChange={(value: any) => handleChange('dateEntree', value)}
+                    error={erreurs.dateEntree}
                     required
                 />
 
@@ -274,26 +274,28 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Qualification"
                         value={formData.qualification || ''}
-                        onChange={(value) => handleChange('qualification', value)}
+                        onChange={(value: any) => handleChange('qualification', value)}
                         placeholder="Ex: Master, Licence..."
                     />
                     <ElisaInput
                         label="Spécialité"
                         value={formData.specialite || ''}
-                        onChange={(value) => handleChange('specialite', value)}
+                        onChange={(value: any) => handleChange('specialite', value)}
                         placeholder="Ex: Mathématiques, Français..."
                     />
                 </div>
 
                 {/* Adresse */}
-                <ElisaInput
-                    label="Adresse"
-                    type="textarea"
-                    value={formData.adresse || ''}
-                    onChange={(value) => handleChange('adresse', value)}
-                    placeholder="Adresse complète..."
-                    rows={2}
-                />
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Adresse</label>
+                    <textarea
+                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        value={formData.adresse || ''}
+                        onChange={(e) => handleChange('adresse', e.target.value)}
+                        placeholder="Adresse complète..."
+                        rows={2}
+                    />
+                </div>
             </form>
         </CustomModal>
     );

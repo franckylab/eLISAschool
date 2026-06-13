@@ -22,7 +22,7 @@ export function useConges(filtres?: CongeFiltres) {
         queryKey: CONGES_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Conge[]; meta: any }>('/api/conges', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -34,7 +34,7 @@ export function useConge(id: string) {
         queryKey: CONGES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Conge }>(`/api/conges/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -46,7 +46,7 @@ export function useCreerConge() {
     return useMutation({
         mutationFn: async (dto: CreerCongeDto) => {
             const response = await apiClient.post<{ success: boolean; data: Conge }>('/api/conges', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: CONGES_KEYS.listes() });
@@ -65,7 +65,7 @@ export function useValiderConge() {
                 action: data.action,
                 motifRefus: data.motifRefus,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: CONGES_KEYS.listes() });
@@ -92,11 +92,13 @@ export function useSupprimerConge() {
 }
 
 export function useStatistiquesConges() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: CONGES_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesConges }>('/api/conges/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

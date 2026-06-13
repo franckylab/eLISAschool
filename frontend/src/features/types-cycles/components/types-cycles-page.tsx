@@ -26,7 +26,6 @@ import { TypeCycleFormModal } from './type-cycle-form-modal';
 export function TypesCyclesPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [recherche, setRecherche] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [typeToEdit, setTypeToEdit] = useState<TypeCycle | null>(null);
     const [typeToDelete, setTypeToDelete] = useState<TypeCycle | null>(null);
@@ -35,16 +34,17 @@ export function TypesCyclesPage() {
     const { data, isLoading } = useTypesCycles({
         page,
         limit,
-        recherche: recherche || undefined,
     });
 
     const creer = useCreerTypeCycle();
     const modifier = useModifierTypeCycle();
     const supprimer = useSupprimerTypeCycle();
 
-    const types = data?.data || [];
-    const total = data?.meta?.totalItems || 0;
-    const totalPages = data?.meta?.totalPages || 1;
+    const types = data?.items || [];
+    const meta = data?.meta;
+    const total = meta?.totalItems || 0;
+    const totalPages = meta?.totalPages || 1;
+    const currentPage = meta?.currentPage || page;
 
     const colonnes: Column<TypeCycle>[] = [
         {
@@ -241,18 +241,15 @@ export function TypesCyclesPage() {
                     columns={colonnes}
                     data={types}
                     isLoading={isLoading}
-                    pagination={{
-                        page,
-                        limit,
+                    pagination={meta ? {
+                        page: currentPage,
+                        limit: meta.itemsPerPage,
                         total,
                         totalPages,
+                        hasNext: currentPage < totalPages,
+                        hasPrev: currentPage > 1,
                         onPageChange: setPage,
-                    }}
-                    search={{
-                        value: recherche,
-                        onSearch: setRecherche,
-                        placeholder: 'Rechercher un type de cycle...',
-                    }}
+                    } : undefined}
                     emptyMessage="Aucun type de cycle trouvé"
                 />
             </motion.div>
@@ -277,12 +274,12 @@ export function TypesCyclesPage() {
             {/* Dialog Confirmation Suppression */}
             <ConfirmDialog
                 open={!!typeToDelete}
-                onClose={() => setTypeToDelete(null)}
-                onConfirm={handleDelete}
+                onOpenChange={(open) => { if (!open) setTypeToDelete(null); }}
                 title="Supprimer le type de cycle"
                 description={`Êtes-vous sûr de vouloir supprimer "${typeToDelete?.nom}" ? Cette action est irréversible.`}
                 confirmText="Supprimer"
                 variant="danger"
+                onConfirm={handleDelete}
                 isLoading={supprimer.isPending}
             />
         </div>

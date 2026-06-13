@@ -150,16 +150,16 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaInput
                         label="Nom de la classe"
                         value={formData.nom || ''}
-                        onChange={(value) => handleChange('nom', value)}
-                        erreur={erreurs.nom}
+                        onChange={(value: any) => handleChange('nom', value)}
+                        error={erreurs.nom}
                         placeholder="Ex: 6ème A"
                         required
                     />
                     <ElisaInput
                         label="Code"
                         value={formData.code || ''}
-                        onChange={(value) => handleChange('code', value)}
-                        erreur={erreurs.code}
+                        onChange={(value: any) => handleChange('code', value)}
+                        error={erreurs.code}
                         placeholder="Ex: 6A"
                         required
                     />
@@ -170,15 +170,15 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Cycle"
                         value={formData.cycle || ''}
-                        onChange={(value) => handleChange('cycle', value)}
+                        onChange={(value: any) => handleChange('cycle', value)}
                         options={cycles?.map(c => ({ value: c.nom, label: c.nom })) || []}
                         placeholder="Sélectionner un cycle"
                     />
                     <ElisaSelect
                         label="Niveau"
                         value={formData.niveau || ''}
-                        onChange={(value) => handleChange('niveau', value)}
-                        erreur={erreurs.niveau}
+                        onChange={(value: any) => handleChange('niveau', value)}
+                        error={erreurs.niveau}
                         options={niveaux?.map(n => ({ value: n.nom, label: n.nom })) || []}
                         placeholder="Sélectionner un niveau"
                         required
@@ -190,8 +190,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Année scolaire"
                         value={formData.anneeScolaireId || ''}
-                        onChange={(value) => handleChange('anneeScolaireId', value)}
-                        erreur={erreurs.anneeScolaireId}
+                        onChange={(value: any) => handleChange('anneeScolaireId', value)}
+                        error={erreurs.anneeScolaireId}
                         options={anneesScolaires?.map(a => ({
                             value: a.id,
                             label: `${a.nom} (${a.statut})`
@@ -202,7 +202,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaInput
                         label="Salle"
                         value={formData.salle || ''}
-                        onChange={(value) => handleChange('salle', value)}
+                        onChange={(value: any) => handleChange('salle', value)}
                         placeholder="Ex: Salle 101"
                     />
                 </div>
@@ -213,14 +213,14 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                         label="Capacité maximale"
                         type="number"
                         value={formData.capaciteMax?.toString() || '40'}
-                        onChange={(value) => handleChange('capaciteMax', parseInt(value))}
+                        onChange={(value: any) => handleChange('capaciteMax', parseInt(value))}
                         min="1"
                         max="100"
                     />
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
-                        onChange={(value) => handleChange('statut', value)}
+                        onChange={(value: any) => handleChange('statut', value)}
                         options={[
                             { value: 'actif', label: 'Actif' },
                             { value: 'inactif', label: 'Inactif' },

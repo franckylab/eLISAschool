@@ -22,7 +22,7 @@ export function useStages(filtres?: FiltresStage) {
         queryKey: STAGE_KEYS.stages(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Stage[]; meta: any }>('/api/stages', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -30,11 +30,13 @@ export function useStages(filtres?: FiltresStage) {
 }
 
 export function useEntreprises() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STAGE_KEYS.entreprises(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Entreprise[] }>('/api/stages/entreprises');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -47,7 +49,7 @@ export function useCreerStage() {
     return useMutation({
         mutationFn: async (dto: CreerStageDto) => {
             const response = await apiClient.post<{ success: boolean; data: Stage }>('/api/stages', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: STAGE_KEYS.stages() });
@@ -63,7 +65,7 @@ export function useValiderStage() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<{ success: boolean; data: Stage }>(`/api/stages/${id}/valider`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: STAGE_KEYS.stages() });
@@ -81,7 +83,7 @@ export function useEvaluerStage() {
                 note: data.note,
                 appreciation: data.appreciation,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: STAGE_KEYS.stages() });
@@ -92,11 +94,13 @@ export function useEvaluerStage() {
 }
 
 export function useStatistiquesStages() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: STAGE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesStages }>('/api/stages/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

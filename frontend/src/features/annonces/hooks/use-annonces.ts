@@ -37,6 +37,8 @@ export function useAnnonces(filtres: AnnonceFiltres = {}) {
 }
 
 export function useAnnonce(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ANNONCES_KEYS.detail(id),
         queryFn: async () => {
@@ -49,6 +51,8 @@ export function useAnnonce(id: string) {
 }
 
 export function useStatistiquesAnnonces() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ANNONCES_KEYS.stats(),
         queryFn: async () => {

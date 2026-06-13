@@ -30,7 +30,7 @@ export function requireModulePermission(module: string, fallbackAction: string =
     const { utilisateur } = useAuthStore.getState();
 
     if (!utilisateur) {
-        throw redirect({ to: '/login' });
+        throw redirect({ to: '/login' as any });
     }
 
     // SUPER_ADMIN et ADMIN ont toujours accès
@@ -54,11 +54,7 @@ export function requireModulePermission(module: string, fallbackAction: string =
 
     if (!hasAccess) {
         throw redirect({
-            to: '/unauthorized',
-            search: {
-                from: typeof window !== 'undefined' ? window.location.pathname : undefined,
-                reason: `module:${module}`,
-            },
+            to: '/' as any,
         });
     }
 }
@@ -79,7 +75,7 @@ export function requirePermission(permission: string) {
     const { utilisateur } = useAuthStore.getState();
 
     if (!utilisateur) {
-        throw redirect({ to: '/login' });
+        throw redirect({ to: '/login' as any });
     }
 
     // SUPER_ADMIN et ADMIN ont toujours accès
@@ -91,11 +87,7 @@ export function requirePermission(permission: string) {
 
     if (!permissions.includes(permission)) {
         throw redirect({
-            to: '/unauthorized',
-            search: {
-                from: typeof window !== 'undefined' ? window.location.pathname : undefined,
-                reason: `permission:${permission}`,
-            },
+            to: '/' as any,
         });
     }
 }
@@ -116,16 +108,12 @@ export function requireRole(roles: string[]) {
     const { utilisateur } = useAuthStore.getState();
 
     if (!utilisateur) {
-        throw redirect({ to: '/login' });
+        throw redirect({ to: '/login' as any });
     }
 
     if (!roles.includes(utilisateur.role)) {
         throw redirect({
-            to: '/unauthorized',
-            search: {
-                from: typeof window !== 'undefined' ? window.location.pathname : undefined,
-                reason: `role:${utilisateur.role}`,
-            },
+            to: '/' as any,
         });
     }
 }
@@ -145,7 +133,7 @@ export function requireAllPermissions(permissions: string[]) {
     const { utilisateur } = useAuthStore.getState();
 
     if (!utilisateur) {
-        throw redirect({ to: '/login' });
+        throw redirect({ to: '/login' as any });
     }
 
     // SUPER_ADMIN et ADMIN ont toujours accès
@@ -158,11 +146,7 @@ export function requireAllPermissions(permissions: string[]) {
 
     if (!hasAll) {
         throw redirect({
-            to: '/unauthorized',
-            search: {
-                from: typeof window !== 'undefined' ? window.location.pathname : undefined,
-                reason: `permissions:all:${permissions.join(',')}`,
-            },
+            to: '/' as any,
         });
     }
 }
@@ -182,7 +166,7 @@ export function requireAnyPermission(permissions: string[]) {
     const { utilisateur } = useAuthStore.getState();
 
     if (!utilisateur) {
-        throw redirect({ to: '/login' });
+        throw redirect({ to: '/login' as any });
     }
 
     // SUPER_ADMIN et ADMIN ont toujours accès
@@ -195,11 +179,7 @@ export function requireAnyPermission(permissions: string[]) {
 
     if (!hasAny) {
         throw redirect({
-            to: '/unauthorized',
-            search: {
-                from: typeof window !== 'undefined' ? window.location.pathname : undefined,
-                reason: `permissions:any:${permissions.join(',')}`,
-            },
+            to: '/' as any,
         });
     }
 }

@@ -37,11 +37,13 @@ export function useUtilisateurs(filtres: UtilisateurFiltres = {}) {
 }
 
 export function useUtilisateur(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: UTILISATEURS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Utilisateur }>(`/api/utilisateurs/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
@@ -49,11 +51,13 @@ export function useUtilisateur(id: string) {
 }
 
 export function useRoles() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: UTILISATEURS_KEYS.roles(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Role[] }>('/api/roles');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 30 * 60 * 1000,
@@ -66,7 +70,7 @@ export function useCreerUtilisateur() {
     return useMutation({
         mutationFn: async (dto: CreerUtilisateurDto) => {
             const response = await apiClient.post<{ success: boolean; data: Utilisateur }>('/api/utilisateurs', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.listes() });
@@ -84,7 +88,7 @@ export function useModifierUtilisateur() {
     return useMutation({
         mutationFn: async ({ id, ...dto }: ModifierUtilisateurDto) => {
             const response = await apiClient.patch<{ success: boolean; data: Utilisateur }>(`/api/utilisateurs/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.listes() });

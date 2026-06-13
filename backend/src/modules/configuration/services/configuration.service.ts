@@ -1040,10 +1040,13 @@ export class ConfigurationService {
             qb.where('p."etablissementId" IS NULL');
         }
 
+        // Par défaut, ne montrer que les paramètres visibles
+        const visibleFilter = query.visible !== undefined ? query.visible : true;
+        qb.andWhere('p.visible = :visible', { visible: visibleFilter });
+
         if (query.categorie) qb.andWhere('p.categorie = :categorie', { categorie: query.categorie });
         if (query.module) qb.andWhere('p.module = :module', { module: query.module });
         if (query.modifiableRuntime !== undefined) qb.andWhere('p.modifiableRuntime = :mr', { mr: query.modifiableRuntime });
-        if (query.visible !== undefined) qb.andWhere('p.visible = :visible', { visible: query.visible });
         if (query.search) qb.andWhere('(p.cle LIKE :search OR p.description LIKE :search)', { search: `%${query.search}%` });
 
         return qb.orderBy('p.ordre', 'ASC').addOrderBy('p.cle', 'ASC').getMany();

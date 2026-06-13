@@ -18,6 +18,16 @@ description: >
 - Travailler sur la **configuration dynamique** et ses effets
 - Modifier les **flux de données** académiques ou logistiques
 
+## Règle de Consolidation des Documents
+
+**Avant de créer ou modifier** une règle métier, un workflow ou une documentation :
+
+1. **Vérifier** si le sujet existe déjà dans le codebase
+2. **Consolider** dans le fichier existant si pertinent
+3. **Nettoyer** les fichiers redondants ou obsolètes
+
+**Objectif** : Documentation concise, compacte, sans redondances.
+
 ---
 
 ## Architecture des dépendances

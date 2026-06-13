@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
+import type { PaginatedResult } from '@shared/types/api.types';
 import type {
     TypeCycle,
     CreerTypeCycleDto,
@@ -30,24 +31,18 @@ export function useTypesCycles(filtres: TypeCycleFiltres = {}) {
     return useQuery({
         queryKey: TYPES_CYCLES_KEYS.list(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{
-                data: TypeCycle[];
-                meta: {
-                    totalItems: number;
-                    currentPage: number;
-                    totalPages: number;
-                    itemsPerPage: number;
-                };
-            }>('/api/types-cycles', { params: filtres });
-
-            if (!response.data) {
-                throw new Error('Types de cycles non disponibles');
-            }
-
-            return response.data;
+            const response = await apiClient.get<PaginatedResult<TypeCycle>>('/api/types-cycles', {
+                page: filtres.page || 1,
+                limit: filtres.limit || 20,
+                search: filtres.recherche,
+                actif: filtres.actif,
+                sortBy: 'ordre',
+                sortOrder: 'ASC',
+            });
+            return (response as any).data as PaginatedResult<TypeCycle>;
         },
         enabled: isAuthenticated,
-        staleTime: 5 * 60 * 1000,
+        staleTime: 10 * 60 * 1000,
     });
 }
 

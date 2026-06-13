@@ -16,7 +16,7 @@ import type { Note, NoteFiltres } from '../types/note.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function NotesPage() {
-    const { t } = useTranslation();
+    useTranslation();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
 

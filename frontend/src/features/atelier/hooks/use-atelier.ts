@@ -23,7 +23,7 @@ export function useAteliers(filtres?: FiltresAtelier) {
         queryKey: ATELIER_KEYS.ateliers(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Atelier[] }>('/api/ateliers', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -31,11 +31,13 @@ export function useAteliers(filtres?: FiltresAtelier) {
 }
 
 export function useInscriptions(filtres?: FiltresAtelier) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ATELIER_KEYS.inscriptions(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: InscriptionAtelier[]; meta: any }>('/api/ateliers/inscriptions', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -48,7 +50,7 @@ export function useCreerAtelier() {
     return useMutation({
         mutationFn: async (dto: CreerAtelierDto) => {
             const response = await apiClient.post<{ success: boolean; data: Atelier }>('/api/ateliers', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ATELIER_KEYS.ateliers() });
@@ -64,7 +66,7 @@ export function useInscrireAtelier() {
     return useMutation({
         mutationFn: async (data: { atelierId: string; eleveId: string }) => {
             const response = await apiClient.post<{ success: boolean; data: InscriptionAtelier }>('/api/ateliers/inscriptions', data);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ATELIER_KEYS.inscriptions() });
@@ -74,11 +76,13 @@ export function useInscrireAtelier() {
 }
 
 export function useStatistiquesAtelier() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ATELIER_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesAtelier }>('/api/ateliers/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

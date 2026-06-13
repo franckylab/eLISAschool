@@ -38,11 +38,13 @@ export function useEvenements(filtres: EvenementFiltres = {}) {
 }
 
 export function useEvenement(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EVENEMENTS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Evenement }>(`/api/evenements/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -55,7 +57,7 @@ export function useCreerEvenement() {
     return useMutation({
         mutationFn: async (dto: CreerEvenementDto) => {
             const response = await apiClient.post<{ success: boolean; data: Evenement }>('/api/evenements', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EVENEMENTS_KEYS.listes() });
@@ -71,7 +73,7 @@ export function useModifierEvenement(id: string) {
     return useMutation({
         mutationFn: async (dto: ModifierEvenementDto) => {
             const response = await apiClient.patch<{ success: boolean; data: Evenement }>(`/api/evenements/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EVENEMENTS_KEYS.listes() });
@@ -99,11 +101,13 @@ export function useSupprimerEvenement() {
 }
 
 export function useStatistiquesEvenements() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EVENEMENTS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesEvenements }>('/api/evenements/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -115,10 +119,10 @@ export function useInscrireEvenement() {
 
     return useMutation({
         mutationFn: async (data: { evenementId: string; utilisateurIds: string[] }) => {
-            const response = await apiClient.post(`/api/evenements/${data.evenementId}/participants`, {
+            const response = await apiClient.post<any>(`/api/evenements/${data.evenementId}/participants`, {
                 utilisateur_ids: data.utilisateurIds,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: EVENEMENTS_KEYS.detail(variables.evenementId) });

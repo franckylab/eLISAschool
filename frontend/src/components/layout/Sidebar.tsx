@@ -13,8 +13,6 @@ import {
     LayoutDashboard,
     GraduationCap,
     Users,
-    BookOpen,
-    ClipboardList,
     Calendar,
     CreditCard,
     MessageSquare,
@@ -33,6 +31,11 @@ import {
     FolderTree,
     FileText,
     TrendingUp,
+    Award,
+    ScrollText,
+    LayoutGrid,
+    ChevronDown,
+    ChevronRight,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -40,17 +43,133 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModulePermissions } from '@/hooks';
 import { cn } from '@/lib/cn';
 import { ElisaLogo } from '@/components/branding';
+import { useState } from 'react';
 
 interface NavItem {
     label: string;
     path: string;
     icon: LucideIcon;
     module?: string;
+    children?: NavItem[];
 }
 
 interface NavSection {
     title: string;
     items: NavItem[];
+}
+
+// Composant pour les items avec sous-menus (accordéon)
+function NavItemWithChildren({
+    item,
+    Icon,
+    isActive,
+    isCollapsed,
+    matchRoute,
+}: {
+    item: NavItem;
+    Icon: LucideIcon;
+    isActive: boolean;
+    isCollapsed: boolean;
+    matchRoute: any;
+}) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    // Vérifier si un child est actif
+    const isChildActive = item.children?.some(child => 
+        matchRoute({ to: child.path, fuzzy: true })
+    );
+    
+    // Auto-expand si un child est actif
+    if (isChildActive && !isExpanded) {
+        setIsExpanded(true);
+    }
+    
+    return (
+        <div>
+            <div
+                className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    isActive || isChildActive
+                        ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
+                        : 'text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]',
+                    isCollapsed && 'justify-center px-2',
+                )}
+                title={isCollapsed ? item.label : undefined}
+            >
+                {/* Lien vers la page parent */}
+                <Link
+                    to={item.path as any}
+                    className="flex flex-1 items-center gap-3"
+                    onClick={(e) => {
+                        // Empêcher la propagation pour ne pas déclencher d'autres événements
+                        e.stopPropagation();
+                    }}
+                >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {!isCollapsed && <span className="flex-1">{item.label}</span>}
+                </Link>
+                
+                {/* Bouton pour expand/collapse (seulement si pas collapsé) */}
+                {!isCollapsed && (
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsExpanded(!isExpanded);
+                        }}
+                        className="p-1 rounded hover:bg-[var(--color-surface-hover)] transition-colors"
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? 'Réduire le menu' : 'Développer le menu'}
+                    >
+                        {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                        ) : (
+                            <ChevronRight className="h-4 w-4" />
+                        )}
+                    </button>
+                )}
+            </div>
+            
+            {/* Sous-menu */}
+            {!isCollapsed && isExpanded && item.children && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="ml-4 mt-1 border-l-2 border-[var(--color-bordure)] pl-2"
+                >
+                    {item.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const isChildActive = !!matchRoute({ to: child.path, fuzzy: true });
+                        
+                        return (
+                            <Link
+                                key={child.path}
+                                to={child.path as any}
+                                className={cn(
+                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                                    isChildActive
+                                        ? 'bg-[var(--color-dominante)]/15 text-[var(--color-dominante)] translate-x-1'
+                                        : 'text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] hover:translate-x-0.5',
+                                )}
+                            >
+                                <ChildIcon className="h-4 w-4 shrink-0" />
+                                <span className="flex-1">{child.label}</span>
+                                {/* Indicateur d'état actif */}
+                                {isChildActive && (
+                                    <motion.div
+                                        layoutId="activeChildIndicator"
+                                        className="h-1.5 w-1.5 rounded-full bg-[var(--color-dominante)]"
+                                    />
+                                )}
+                            </Link>
+                        );
+                    })}
+                </motion.div>
+            )}
+        </div>
+    );
 }
 
 const NAV_SECTIONS: NavSection[] = [
@@ -61,13 +180,24 @@ const NAV_SECTIONS: NavSection[] = [
         ],
     },
     {
-        title: 'Structure Académique',
+        title: 'Organisation Académique',
         items: [
             { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
             { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
-            { label: 'Types Cycles', path: '/types-cycles', icon: Layers, module: 'types-cycles' },
-            { label: 'Cycles', path: '/cycles', icon: Layers, module: 'cycles' },
-            { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
+            {
+                label: 'Structure Académique',
+                path: '/parametres/structure-academique',
+                icon: GraduationCap,
+                children: [
+                    { label: 'Vue d\'ensemble', path: '/parametres/structure-academique', icon: LayoutGrid },
+                    { label: 'Types Cycles', path: '/types-cycles', icon: Layers, module: 'types-cycles' },
+                    { label: 'Cycles', path: '/cycles', icon: School, module: 'cycles' },
+                    { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
+                    { label: 'Filières', path: '/filieres', icon: Award, module: 'filieres' },
+                    { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileText, module: 'examens-nationaux' },
+                    { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: ScrollText, module: 'diplomes-eleves' },
+                ]
+            },
             { label: 'Classes', path: '/classes', icon: School, module: 'classes' },
             { label: 'Années Scolaires', path: '/annees-scolaires', icon: CalendarDays, module: 'anneesScolaires' },
             { label: 'Matières', path: '/matieres', icon: Atom, module: 'matieres' },
@@ -107,6 +237,7 @@ const NAV_SECTIONS: NavSection[] = [
         title: 'Système',
         items: [
             { label: 'Configuration', path: '/configuration', icon: Settings },
+            { label: 'Paramètres', path: '/parametres', icon: Settings },
         ],
     },
 ];
@@ -119,8 +250,12 @@ export function Sidebar() {
 
     // Vérifier les permissions pour chaque module
     const etablissementsPerms = useModulePermissions('etablissements');
+    const typesCyclesPerms = useModulePermissions('types-cycles');
     const cyclesPerms = useModulePermissions('cycles');
     const niveauxPerms = useModulePermissions('niveaux');
+    const filieresPerms = useModulePermissions('filieres');
+    const examensNationauxPerms = useModulePermissions('examens-nationaux');
+    const diplomesElevesPerms = useModulePermissions('diplomes-eleves');
     const classesPerms = useModulePermissions('classes');
     const anneesScolairesPerms = useModulePermissions('anneesScolaires');
     const matieresPerms = useModulePermissions('matieres');
@@ -137,32 +272,68 @@ export function Sidebar() {
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
         ...section,
-        items: section.items.filter((item) => {
-            // Si pas de module spécifié, toujours afficher (Dashboard, etc.)
-            if (!item.module) return true;
-
-            // Vérifier les permissions pour le module
-            const permsMap: Record<string, { canAccess: boolean }> = {
-                etablissements: etablissementsPerms,
-                cycles: cyclesPerms,
-                niveaux: niveauxPerms,
-                classes: classesPerms,
-                anneesScolaires: anneesScolairesPerms,
-                matieres: matieresPerms,
-                eleves: elevesPerms,
-                personnel: personnelPerms,
-                enseignants: enseignantsPerms,
-                notes: notesPerms,
-                finances: financesPerms,
-                transport: transportPerms,
-                communication: communicationPerms,
-                utilisateurs: utilisateursPerms,
-                roles: rolesPerms,
-            };
-
-            const perms = permsMap[item.module];
-            return perms?.canAccess ?? true;
-        }),
+        items: section.items
+            .map((item) => {
+                // Si l'item a des children, filtrer les children selon les permissions
+                if (item.children) {
+                    const filteredChildren = item.children.filter((child) => {
+                        if (!child.module) return true;
+                        const permsMap: Record<string, { canAccess: boolean }> = {
+                            'types-cycles': typesCyclesPerms,
+                            cycles: cyclesPerms,
+                            niveaux: niveauxPerms,
+                            filieres: filieresPerms,
+                            'examens-nationaux': examensNationauxPerms,
+                            'diplomes-eleves': diplomesElevesPerms,
+                        };
+                        const perms = permsMap[child.module];
+                        return perms?.canAccess ?? true;
+                    });
+                    
+                    // Retourner l'item avec ses children filtrés
+                    return {
+                        ...item,
+                        children: filteredChildren,
+                    };
+                }
+                
+                // Item sans children - filtrage normal
+                if (!item.module) return item;
+                
+                const permsMap: Record<string, { canAccess: boolean }> = {
+                    etablissements: etablissementsPerms,
+                    'types-cycles': typesCyclesPerms,
+                    cycles: cyclesPerms,
+                    niveaux: niveauxPerms,
+                    filieres: filieresPerms,
+                    'examens-nationaux': examensNationauxPerms,
+                    'diplomes-eleves': diplomesElevesPerms,
+                    classes: classesPerms,
+                    anneesScolaires: anneesScolairesPerms,
+                    matieres: matieresPerms,
+                    eleves: elevesPerms,
+                    personnel: personnelPerms,
+                    enseignants: enseignantsPerms,
+                    notes: notesPerms,
+                    finances: financesPerms,
+                    transport: transportPerms,
+                    communication: communicationPerms,
+                    utilisateurs: utilisateursPerms,
+                    roles: rolesPerms,
+                };
+                
+                const perms = permsMap[item.module];
+                return perms?.canAccess ?? true ? item : null;
+            })
+            .filter((item): item is NavItem => item !== null)
+            .map((item) => {
+                // Si l'item a des children vides, le retirer
+                if (item.children && item.children.length === 0) {
+                    return null;
+                }
+                return item;
+            })
+            .filter((item): item is NavItem => item !== null),
     })).filter((section) => section.items.length > 0); // Masquer les sections vides
 
     return (
@@ -209,8 +380,24 @@ export function Sidebar() {
                         )}
                         {section.items.map((item) => {
                             const Icon = item.icon;
-                            const isActive = matchRoute({ to: item.path, fuzzy: true });
-
+                            const isActive = !!matchRoute({ to: item.path, fuzzy: true });
+                            const hasChildren = item.children && item.children.length > 0;
+                            
+                            // Composant pour les items avec sous-menus
+                            if (hasChildren) {
+                                return (
+                                    <NavItemWithChildren
+                                        key={item.path}
+                                        item={item}
+                                        Icon={Icon}
+                                        isActive={isActive}
+                                        isCollapsed={isCollapsed}
+                                        matchRoute={matchRoute}
+                                    />
+                                );
+                            }
+                            
+                            // Composant pour les items simples
                             return (
                                 <Link
                                     key={item.path}

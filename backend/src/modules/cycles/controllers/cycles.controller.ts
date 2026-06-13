@@ -6,17 +6,33 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { CyclesService } from '../services';
-import { createCycleSchema, updateCycleSchema } from '../dto';
+import { createCycleSchema, updateCycleSchema, queryCyclesSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
 const router = Router();
 const cyclesService = new CyclesService();
 
+/**
+ * GET /api/cycles
+ * Liste paginée avec recherche et filtres
+ */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const cycles = await cyclesService.findAll();
+        const query = validateDto(queryCyclesSchema, req.query);
+        const result = await cyclesService.findAll(query);
+        res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/cycles/all
+ * Liste complète (sans pagination) — pour les selects/dropdowns
+ */
+router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const cycles = await cyclesService.findAllSimple();
         res.json({ success: true, data: cycles });
     } catch (error) { next(error); }
 });

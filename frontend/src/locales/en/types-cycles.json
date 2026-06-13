@@ -1,0 +1,38 @@
+{
+    "types_cycles": {
+        "title": "Cycle Types",
+        "description": "Management of main education types (Kindergarten, Primary, Secondary)",
+        "create": "Create cycle type",
+        "edit": "Edit cycle type",
+        "delete": "Delete cycle type",
+        "detail": "Cycle type details",
+        "fields": {
+            "nom": "Name",
+            "code": "Code",
+            "description": "Description",
+            "dureeAnnees": "Duration (years)",
+            "ordre": "Order",
+            "diplomeSanctionnant": "Awarded diploma",
+            "actif": "Active"
+        },
+        "placeholders": {
+            "nom": "E.g.: Kindergarten Education",
+            "code": "E.g.: KINDERGARTEN",
+            "description": "Cycle type description",
+            "diplomeSanctionnant": "E.g.: CEP, BEPC, BACCALAUREATE"
+        },
+        "codes": {
+            "MATERNELLE": "Kindergarten",
+            "PRIMAIRE": "Primary",
+            "SECONDAIRE_1": "Secondary 1st Cycle",
+            "SECONDAIRE_2": "Secondary 2nd Cycle"
+        },
+        "messages": {
+            "createSuccess": "Cycle type created successfully",
+            "updateSuccess": "Cycle type updated successfully",
+            "deleteSuccess": "Cycle type deleted successfully",
+            "deleteConfirm": "Are you sure you want to delete this cycle type? All associated cycles will be affected.",
+            "noData": "No cycle types to display"
+        }
+    }
+}

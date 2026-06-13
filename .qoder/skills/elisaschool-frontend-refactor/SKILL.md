@@ -22,6 +22,16 @@ description: >
 
 > **Prérequis** : Lire d'abord la règle `elisaschool-frontend.md` et le skill `elisaschool-frontend-dev`.
 
+## Règle de Consolidation des Documents
+
+**Avant de créer ou refactoriser** un composant, hook ou documentation :
+
+1. **Vérifier** si le sujet existe déjà dans le codebase
+2. **Consolider** dans le fichier existant si pertinent
+3. **Nettoyer** les fichiers redondants ou obsolètes
+
+**Objectif** : Documentation concise, compacte, sans redondances.
+
 ---
 
 ## Processus de Refactorisation

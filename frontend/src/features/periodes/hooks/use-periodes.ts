@@ -36,6 +36,8 @@ export function usePeriodes(filtres: PeriodeFiltres = {}) {
 }
 
 export function usePeriode(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: PERIODES_KEYS.detail(id),
         queryFn: async () => {

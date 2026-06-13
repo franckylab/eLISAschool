@@ -37,6 +37,8 @@ export function useDocuments(filtres: DocumentFiltres = {}) {
 }
 
 export function useDocument(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: DOCUMENTS_KEYS.detail(id),
         queryFn: async () => {
@@ -61,9 +63,7 @@ export function useCreerDocument() {
             formData.append('estPublic', String(data.dto.estPublic || false));
             if (data.dto.tags) formData.append('tags', JSON.stringify(data.dto.tags));
 
-            const response = await apiClient.post<{ success: boolean; data: Document }>('/api/documents', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            const response = await apiClient.post<{ success: boolean; data: Document }>('/api/documents', formData);
             return response.data?.data;
         },
         onSuccess: () => {
@@ -116,7 +116,7 @@ export function useTelechargerDocument() {
             return response.data;
         },
         onSuccess: (data, id) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `document-${id}`);
@@ -129,6 +129,8 @@ export function useTelechargerDocument() {
 }
 
 export function useStatistiquesDocuments() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: DOCUMENTS_KEYS.stats(),
         queryFn: async () => {

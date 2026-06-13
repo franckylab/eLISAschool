@@ -6,11 +6,12 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { useNiveaux, useSupprimerNiveau } from '../hooks/use-niveaux';
 import { NiveauFormModal } from './niveau-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import type { Niveau, NiveauFiltres } from '../types/niveau.types';
 import type { Column } from '@/components/ui/DataTable';
@@ -58,13 +59,11 @@ export function NiveauxPage() {
             ),
         },
         {
-            key: 'statut',
+            key: 'actif',
             header: 'Statut',
-            sortable: true,
-            className: 'text-center',
             render: (n) => (
-                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${n.statut === 'actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {n.statut === 'actif' ? 'Actif' : 'Inactif'}
+                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${n.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {n.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
         },
@@ -113,7 +112,7 @@ export function NiveauxPage() {
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
                     <h1 className="text-3xl font-bold">Niveaux</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta ? { page: data.meta.currentPage, limit: data.meta.itemsPerPage, total: data.meta.totalItems, totalPages: data.meta.totalPages, hasNext: data.meta.currentPage < data.meta.totalPages, hasPrev: data.meta.currentPage > 1 } : undefined?.total || 0} niveau(x)</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} niveau(x)</p>
                 </div>
                 {hasPermission('niveaux:create') && (
                     <ElisaButton
@@ -159,47 +158,19 @@ export function NiveauxPage() {
 
             {niveauToDelete && (
                 <ConfirmDialog
+                    open={!!niveauToDelete}
+                    onOpenChange={(open) => { if (!open) setNiveauToDelete(null); }}
                     title="Supprimer le niveau"
-                    message={`Êtes-vous sûr de vouloir supprimer le niveau "${niveauToDelete.nom}" ?`}
+                    description={`Êtes-vous sûr de vouloir supprimer le niveau "${niveauToDelete.nom}" ?`}
+                    confirmText="Supprimer"
+                    variant="danger"
                     onConfirm={async () => {
                         await supprimer.mutateAsync(niveauToDelete.id);
                         setNiveauToDelete(null);
                     }}
-                    onCancel={() => setNiveauToDelete(null)}
+                    isLoading={supprimer.isPending}
                 />
             )}
-        </div>
-    );
-}
-
-// Dialog de confirmation
-function ConfirmDialog({ title, message, onConfirm, onCancel }: {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-}) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-full bg-red-100">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                    </div>
-                    <p className="text-gray-600 mb-6">{message}</p>
-                    <div className="flex gap-3 justify-end">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-                            Annuler
-                        </button>
-                        <button onClick={onConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
-                            Supprimer
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

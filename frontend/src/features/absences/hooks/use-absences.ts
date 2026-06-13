@@ -37,11 +37,13 @@ export function useAbsences(filtres: AbsencesFiltres = {}) {
 }
 
 export function useAbsence(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ABSENCES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Absence }>(`/api/absences/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -54,7 +56,7 @@ export function useCreerAbsence() {
     return useMutation({
         mutationFn: async (dto: CreerAbsenceDto) => {
             const response = await apiClient.post<{ success: boolean; data: Absence }>('/api/absences', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ABSENCES_KEYS.listes() });
@@ -70,7 +72,7 @@ export function useJustifierAbsence() {
     return useMutation({
         mutationFn: async (data: { id: string; dto: JustifierAbsenceDto }) => {
             const response = await apiClient.patch<{ success: boolean; data: Absence }>(`/api/absences/${data.id}/justifier`, data.dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ABSENCES_KEYS.listes() });
@@ -97,11 +99,13 @@ export function useSupprimerAbsence() {
 }
 
 export function useStatistiquesAbsences() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ABSENCES_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesAbsences }>('/api/absences/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

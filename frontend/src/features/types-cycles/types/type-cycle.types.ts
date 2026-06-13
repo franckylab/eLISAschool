@@ -13,10 +13,11 @@ export interface TypeCycle {
     description?: string;
     dureeAnnees?: number;
     ordre: number;
+    diplomeSanctionnant?: string;
     actif: boolean;
     nbCycles?: number;
-    creeAt: string;
-    majAt: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface CreerTypeCycleDto {

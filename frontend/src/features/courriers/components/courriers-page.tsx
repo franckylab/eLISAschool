@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Mail, Plus, Eye, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
+import { Mail, Plus, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCourriers, useMarquerCommeLu, useSupprimerCourrier, useStatistiquesCourriers } from '../hooks/use-courriers';

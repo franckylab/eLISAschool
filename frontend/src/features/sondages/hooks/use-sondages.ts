@@ -37,11 +37,13 @@ export function useSondages(filtres: SondageFiltres = {}) {
 }
 
 export function useSondage(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SONDAGES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Sondage }>(`/api/sondages/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -54,7 +56,7 @@ export function useCreerSondage() {
     return useMutation({
         mutationFn: async (dto: CreerSondageDto) => {
             const response = await apiClient.post<{ success: boolean; data: Sondage }>('/api/sondages', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: SONDAGES_KEYS.listes() });
@@ -83,8 +85,8 @@ export function useVoter() {
 
     return useMutation({
         mutationFn: async (data: { sondageId: string; vote: VoterDto }) => {
-            const response = await apiClient.post(`/api/sondages/${data.sondageId}/voter`, data.vote);
-            return response.data.data;
+            const response = await apiClient.post<any>(`/api/sondages/${data.sondageId}/voter`, data.vote);
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: SONDAGES_KEYS.detail(variables.sondageId) });
@@ -95,11 +97,13 @@ export function useVoter() {
 }
 
 export function useStatistiquesSondage(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SONDAGES_KEYS.stats(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesSondage }>(`/api/sondages/${id}/analyses`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -116,7 +120,7 @@ export function useExporterSondage() {
             return { data: response.data, format: data.format };
         },
         onSuccess: ({ data, format }) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `sondage-export.${format}`);

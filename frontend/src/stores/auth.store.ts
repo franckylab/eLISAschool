@@ -84,9 +84,10 @@ export const useAuthStore = create<AuthState>()(
                     try {
                         const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
                         if (meResponse.data) {
+                            const currentUtilisateur = get().utilisateur;
                             set({ 
                                 utilisateur: {
-                                    ...state.utilisateur,
+                                    ...currentUtilisateur,
                                     ...meResponse.data,
                                     permissions: meResponse.data.permissions || [],
                                 } 

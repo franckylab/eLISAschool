@@ -23,7 +23,7 @@ export function useMateriels(filtres?: InventaireFiltres) {
         queryKey: INVENTAIRE_KEYS.materiels(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Materiel[]; meta: any }>('/api/inventaire/materiels', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -35,7 +35,7 @@ export function useMateriel(id: string) {
         queryKey: INVENTAIRE_KEYS.materiel(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Materiel }>(`/api/inventaire/materiels/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -47,7 +47,7 @@ export function useCreerMateriel() {
     return useMutation({
         mutationFn: async (dto: CreerMaterielDto) => {
             const response = await apiClient.post<{ success: boolean; data: Materiel }>('/api/inventaire/materiels', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: INVENTAIRE_KEYS.materiels() });
@@ -63,7 +63,7 @@ export function useModifierMateriel(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerMaterielDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Materiel }>(`/api/inventaire/materiels/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: INVENTAIRE_KEYS.materiels() });
@@ -89,12 +89,14 @@ export function useSupprimerMateriel() {
 }
 
 export function useMouvementsStock(materielId?: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: INVENTAIRE_KEYS.mouvements(materielId),
         queryFn: async () => {
             const url = materielId ? `/api/inventaire/mouvements?materielId=${materielId}` : '/api/inventaire/mouvements';
             const response = await apiClient.get<{ success: boolean; data: MouvementStock[] }>(url);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -107,7 +109,7 @@ export function useEnregistrerMouvement() {
     return useMutation({
         mutationFn: async (data: { materielId: string; type: string; quantite: number; motif: string }) => {
             const response = await apiClient.post<{ success: boolean; data: MouvementStock }>('/api/inventaire/mouvements', data);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: INVENTAIRE_KEYS.mouvements() });
@@ -125,7 +127,7 @@ export function useReformerMateriel() {
             const response = await apiClient.post<{ success: boolean; data: Materiel }>(`/api/inventaire/materiels/${data.materielId}/reformer`, {
                 motif: data.motif,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: INVENTAIRE_KEYS.materiels() });
@@ -136,11 +138,13 @@ export function useReformerMateriel() {
 }
 
 export function useStatistiquesInventaire() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: INVENTAIRE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesInventaire }>('/api/inventaire/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

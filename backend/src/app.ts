@@ -49,8 +49,12 @@ import { orientationController } from '@modules/orientation';
 import { impressionsController } from '@modules/impressions';
 import { scoringService } from '@modules/scoring';
 import { etablissementController } from '@modules/etablissement';
+import { typesCyclesController } from '@modules/types-cycles';
 import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
+import { filieresController } from '@modules/filieres';
+import { examensNationauxController } from '@modules/examens-nationaux';
+import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
 import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
 import { classesController } from '@modules/classes';
@@ -288,8 +292,12 @@ export function createApp(): Application {
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);
+    app.use('/api/types-cycles', typesCyclesController);
     app.use('/api/cycles', cyclesController);
     app.use('/api/niveaux', niveauxController);
+    app.use('/api/filieres', filieresController);
+    app.use('/api/examens-nationaux', examensNationauxController);
+    app.use('/api/diplomes-eleves', diplomesElevesController);
     app.use('/api/annees-scolaires', anneesScolairesController);
     app.use('/api/personnel', requireModuleActive('personnel'), personnelController);
     app.use('/api/personnel/contrats', requireModuleActive('personnel'), contratController);

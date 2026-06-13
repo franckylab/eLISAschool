@@ -16,10 +16,8 @@ export function useTousNiveaux() {
     return useQuery({
         queryKey: ['niveaux', 'tous'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Niveau[] }>('/api/niveaux', {
-                params: { limit: 100, page: 1 },
-            });
-            return response.data?.data || [];
+            const response = await apiClient.get<Niveau[]>('/api/niveaux/all');
+            return (response as any).data || [];
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

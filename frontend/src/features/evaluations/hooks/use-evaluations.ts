@@ -22,7 +22,7 @@ export function useEvaluations(filtres?: EvaluationFiltres) {
         queryKey: EVALUATIONS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Evaluation[]; meta: any }>('/api/evaluations', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -34,7 +34,7 @@ export function useEvaluation(id: string) {
         queryKey: EVALUATIONS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Evaluation }>(`/api/evaluations/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -46,7 +46,7 @@ export function useCreerEvaluation() {
     return useMutation({
         mutationFn: async (dto: CreerEvaluationDto) => {
             const response = await apiClient.post<{ success: boolean; data: Evaluation }>('/api/evaluations', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EVALUATIONS_KEYS.listes() });
@@ -62,7 +62,7 @@ export function useFinaliserEvaluation() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<{ success: boolean; data: Evaluation }>(`/api/evaluations/${id}/finaliser`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EVALUATIONS_KEYS.listes() });
@@ -88,11 +88,13 @@ export function useSupprimerEvaluation() {
 }
 
 export function useStatistiquesEvaluations() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EVALUATIONS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesEvaluations }>('/api/evaluations/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

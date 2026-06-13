@@ -23,7 +23,7 @@ export function useExamens(filtres?: ExamenFiltres) {
         queryKey: EXAMENS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Examen[]; meta: any }>('/api/examens', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -35,7 +35,7 @@ export function useExamen(id: string) {
         queryKey: EXAMENS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Examen }>(`/api/examens/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -47,7 +47,7 @@ export function useCreerExamen() {
     return useMutation({
         mutationFn: async (dto: CreerExamenDto) => {
             const response = await apiClient.post<{ success: boolean; data: Examen }>('/api/examens', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EXAMENS_KEYS.listes() });
@@ -63,7 +63,7 @@ export function useModifierExamen(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerExamenDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Examen }>(`/api/examens/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EXAMENS_KEYS.listes() });
@@ -90,11 +90,12 @@ export function useSupprimerExamen() {
 }
 
 export function useResultatsExamen(examenId: string) {
+    const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: EXAMENS_KEYS.resultats(examenId),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: ResultatExamen[] }>(`/api/examens/${examenId}/resultats`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!examenId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -110,7 +111,7 @@ export function useSaisirResultat() {
                 `/api/examens/${data.examenId}/resultats`,
                 { eleveId: data.eleveId, note: data.note, remarque: data.remarque }
             );
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: EXAMENS_KEYS.resultats(variables.examenId) });
@@ -120,11 +121,13 @@ export function useSaisirResultat() {
 }
 
 export function useStatistiquesExamens() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EXAMENS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesExamen }>('/api/examens/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

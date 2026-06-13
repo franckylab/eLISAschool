@@ -37,6 +37,8 @@ export function useSanctions(filtres: SanctionFiltres = {}) {
 }
 
 export function useSanction(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: DISCIPLINE_KEYS.detail(id),
         queryFn: async () => {
@@ -114,6 +116,8 @@ export function useAmnistierSanction() {
 }
 
 export function useStatistiquesDiscipline() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: DISCIPLINE_KEYS.stats(),
         queryFn: async () => {

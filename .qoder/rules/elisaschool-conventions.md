@@ -1119,6 +1119,35 @@ Les modals **spécialisés** (caméra QR scanner, video player) peuvent utiliser
 
 ---
 
+## 24. Consolidation des Documents
+
+**Règle** : Avant de créer un nouveau document (règle, skill, guide, documentation), **TOUJOURS** :
+
+1. **Vérifier l'existence** de documents traitant du même sujet
+2. **Consolider** le contenu dans le document existant si pertinent
+3. **Nettoyer** les fichiers redondants ou obsolètes
+
+**Objectif** : Éviter les redondances inutiles et maintenir une documentation concise, compacte et pertinente.
+
+### Anti-patterns
+
+- **NE PAS** créer un nouveau fichier si le sujet existe déjà ailleurs
+- **NE PAS** dupliquer des informations entre plusieurs fichiers
+- **NE PAS** conserver des versions anciennes après consolidation
+
+### Pattern de Consolidation
+
+```bash
+# 1. Chercher les documents existants sur le sujet
+grep -r "sujet" .qoder/rules/ .qoder/skills/ docs/
+
+# 2. Identifier les overlaps et redondances
+# 3. Fusionner le contenu pertinent dans le fichier principal
+# 4. Supprimer les fichiers dupliqués ou obsolètes
+```
+
+---
+
 ## 21. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :

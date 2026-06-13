@@ -22,7 +22,7 @@ export function useInterventions(filtres?: FiltresMaintenance) {
         queryKey: MAINTENANCE_KEYS.interventions(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Intervention[]; meta: any }>('/api/maintenance/interventions', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -30,11 +30,13 @@ export function useInterventions(filtres?: FiltresMaintenance) {
 }
 
 export function useEquipements() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: MAINTENANCE_KEYS.equipements(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Equipement[] }>('/api/maintenance/equipements');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -47,7 +49,7 @@ export function useCreerIntervention() {
     return useMutation({
         mutationFn: async (dto: CreerInterventionDto) => {
             const response = await apiClient.post<{ success: boolean; data: Intervention }>('/api/maintenance/interventions', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MAINTENANCE_KEYS.interventions() });
@@ -63,7 +65,7 @@ export function useDemarrerIntervention() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<{ success: boolean; data: Intervention }>(`/api/maintenance/interventions/${id}/demarrer`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MAINTENANCE_KEYS.interventions() });
@@ -81,7 +83,7 @@ export function useTerminerIntervention() {
                 observations: data.observations,
                 cout: data.cout,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MAINTENANCE_KEYS.interventions() });
@@ -92,11 +94,13 @@ export function useTerminerIntervention() {
 }
 
 export function useStatistiquesMaintenance() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: MAINTENANCE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesMaintenance }>('/api/maintenance/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

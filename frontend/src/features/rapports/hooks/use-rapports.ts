@@ -23,7 +23,7 @@ export function useRapports(filtres?: FiltresRapports) {
         queryKey: RAPPORTS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Rapport[]; meta: any }>('/api/rapports', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -35,18 +35,20 @@ export function useRapport(id: string) {
         queryKey: RAPPORTS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Rapport }>(`/api/rapports/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
 }
 
 export function useTemplatesRapports() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: RAPPORTS_KEYS.templates(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: TemplateRapport[] }>('/api/rapports/templates');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -59,7 +61,7 @@ export function useCreerRapport() {
     return useMutation({
         mutationFn: async (dto: CreerRapportDto) => {
             const response = await apiClient.post<{ success: boolean; data: Rapport }>('/api/rapports', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: RAPPORTS_KEYS.listes() });
@@ -78,7 +80,7 @@ export function useTelechargerRapport() {
             return response.data;
         },
         onSuccess: (data, id) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `rapport-${id}`);
@@ -96,7 +98,7 @@ export function useArchiverRapport() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<{ success: boolean; data: Rapport }>(`/api/rapports/${id}/archiver`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: RAPPORTS_KEYS.listes() });
@@ -122,11 +124,13 @@ export function useSupprimerRapport() {
 }
 
 export function useStatistiquesRapports() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: RAPPORTS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesRapports }>('/api/rapports/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

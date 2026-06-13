@@ -23,7 +23,7 @@ export function usePlaces(filtres?: FiltresParking) {
         queryKey: PARKING_KEYS.places(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: PlaceParking[] }>('/api/parking/places', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -31,11 +31,13 @@ export function usePlaces(filtres?: FiltresParking) {
 }
 
 export function useVehicules() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: PARKING_KEYS.vehicules(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Vehicule[] }>('/api/parking/vehicules');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -43,11 +45,13 @@ export function useVehicules() {
 }
 
 export function useAbonnements() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: PARKING_KEYS.abonnements(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: AbonnementParking[] }>('/api/parking/abonnements');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -60,7 +64,7 @@ export function useCreerAbonnement() {
     return useMutation({
         mutationFn: async (dto: CreerAbonnementDto) => {
             const response = await apiClient.post<{ success: boolean; data: AbonnementParking }>('/api/parking/abonnements', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PARKING_KEYS.abonnements() });
@@ -71,11 +75,13 @@ export function useCreerAbonnement() {
 }
 
 export function useStatistiquesParking() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: PARKING_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesParking }>('/api/parking/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

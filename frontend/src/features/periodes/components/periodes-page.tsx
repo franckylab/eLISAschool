@@ -16,7 +16,7 @@ import type { Periode, PeriodeFiltres } from '../types/periode.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function PeriodesPage() {
-    const { t } = useTranslation();
+    useTranslation();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PeriodeFiltres>({ page: 1, limit: 20 });
 

@@ -18,5 +18,18 @@ export const createNiveauSchema = z.object({
 
 export const updateNiveauSchema = createNiveauSchema.partial();
 
+export const queryNiveauxSchema = z.object({
+    page: z.coerce.number().int().min(1).default(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
+    search: z.string().optional(),
+    cycleId: z.string().uuid().optional(),
+    sousSysteme: z.nativeEnum(SousSysteme).optional(),
+    actif: z.coerce.boolean().optional(),
+    estClasseExamen: z.coerce.boolean().optional(),
+    sortBy: z.string().default('ordre').optional(),
+    sortOrder: z.enum(['ASC', 'DESC']).default('ASC').optional(),
+});
+
 export type CreateNiveauDto = z.infer<typeof createNiveauSchema>;
 export type UpdateNiveauDto = z.infer<typeof updateNiveauSchema>;
+export type QueryNiveauxDto = z.infer<typeof queryNiveauxSchema>;

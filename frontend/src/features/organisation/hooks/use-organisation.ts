@@ -36,11 +36,13 @@ export function useGroupes(filtres: GroupeFiltres = {}) {
 }
 
 export function useGroupe(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ORGANISATION_KEYS.groupes.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: GroupeEtablissement }>(`/api/organisation/groupes/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -53,7 +55,7 @@ export function useCreerGroupe() {
     return useMutation({
         mutationFn: async (dto: CreerGroupeDto) => {
             const response = await apiClient.post<{ success: boolean; data: GroupeEtablissement }>('/api/organisation/groupes', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ORGANISATION_KEYS.groupes.all });
@@ -71,7 +73,7 @@ export function useModifierGroupe() {
     return useMutation({
         mutationFn: async ({ id, ...dto }: any) => {
             const response = await apiClient.patch<{ success: boolean; data: GroupeEtablissement }>(`/api/organisation/groupes/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ORGANISATION_KEYS.groupes.all });

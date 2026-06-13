@@ -48,6 +48,8 @@ export function useAnneeScolaire(id: string) {
 }
 
 export function useAnneeScolaireActive() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ANNEES_KEYS.active(),
         queryFn: async () => {

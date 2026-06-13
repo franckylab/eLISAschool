@@ -16,10 +16,8 @@ export function useTousCycles() {
     return useQuery({
         queryKey: ['cycles', 'tous'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Cycle[] }>('/api/cycles', {
-                params: { limit: 100, page: 1 },
-            });
-            return response.data?.data || [];
+            const response = await apiClient.get<Cycle[]>('/api/cycles/all');
+            return (response as any).data || [];
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

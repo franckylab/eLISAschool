@@ -1,0 +1,45 @@
+/**
+ * ==================================
+ * eLISAschool - Auth Layout Route
+ * ==================================
+ * Layout commun pour les routes authentifiées
+ * Inclut AuthGuard + PageLayout
+ */
+
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { authGuard } from '@/app/route-guards';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { AlertTriangle } from 'lucide-react';
+
+function AuthLayout() {
+    return (
+        <PageLayout>
+            <Outlet />
+        </PageLayout>
+    );
+}
+
+function AuthNotFound() {
+    return (
+        <div className="flex min-h-[400px] items-center justify-center">
+            <div className="text-center space-y-4">
+                <AlertTriangle className="h-16 w-16 text-yellow-500 mx-auto" />
+                <h2 className="text-2xl font-bold text-foreground">Page non trouvée</h2>
+                <p className="text-muted-foreground max-w-md">
+                    La page que vous cherchez n'existe pas ou a été déplacée.
+                </p>
+                <p className="text-sm text-muted-foreground font-mono bg-muted/50 rounded px-3 py-2">
+                    Code d'erreur : 404
+                </p>
+            </div>
+        </div>
+    );
+}
+
+export const Route = createFileRoute('/_auth')({
+    beforeLoad: () => {
+        authGuard();
+    },
+    component: AuthLayout,
+    notFoundComponent: AuthNotFound,
+});

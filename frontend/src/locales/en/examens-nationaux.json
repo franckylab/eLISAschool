@@ -1,0 +1,52 @@
+{
+    "examens_nationaux": {
+        "title": "National Examinations",
+        "description": "Management of official examinations (CEP, BEPC, Probatoire, BACCALAUREATE, GCE)",
+        "create": "Create a national examination",
+        "edit": "Edit the national examination",
+        "delete": "Delete the national examination",
+        "detail": "National examination details",
+        "fields": {
+            "nom": "Name",
+            "code": "Code",
+            "type": "Type",
+            "niveauId": "Level",
+            "dateProgrammation": "Scheduled date",
+            "coefficient": "Coefficient",
+            "estObligatoire": "Mandatory",
+            "diplomeDelivre": "Awarded diploma",
+            "description": "Description",
+            "sousSysteme": "Sub-system",
+            "actif": "Active"
+        },
+        "placeholders": {
+            "nom": "E.g.: BACCALAUREATE",
+            "code": "E.g.: BACCALAUREAT",
+            "description": "Examination description"
+        },
+        "types": {
+            "NATIONAL": "National",
+            "REGIONAL": "Regional",
+            "INTERNATIONAL": "International"
+        },
+        "sousSystemes": {
+            "FRANCOPHONE": "Francophone",
+            "ANGLOPHONE": "Anglophone"
+        },
+        "examens": {
+            "CEP": "Primary Education Certificate",
+            "BEPC": "First Cycle Studies Diploma",
+            "PROBATOIRE": "Probationary Examination",
+            "BACCALAUREAT": "Baccalaureate",
+            "GCE_OL": "GCE Ordinary Level",
+            "GCE_AL": "GCE Advanced Level"
+        },
+        "messages": {
+            "createSuccess": "National examination created successfully",
+            "updateSuccess": "National examination updated successfully",
+            "deleteSuccess": "National examination deleted successfully",
+            "deleteConfirm": "Are you sure you want to delete this examination? Student diplomas may be affected.",
+            "noData": "No national examinations to display"
+        }
+    }
+}

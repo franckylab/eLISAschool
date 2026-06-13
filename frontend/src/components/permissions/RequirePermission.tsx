@@ -117,7 +117,6 @@ export function RequirePermission({
             
             navigate({ 
                 to: redirectTo, 
-                search: { from: location.pathname },
                 replace: true 
             });
         }
@@ -187,7 +186,6 @@ export function useRequirePermission(
             
             navigate({ 
                 to: redirectTo, 
-                search: { from: location.pathname },
                 replace: true 
             });
         }
@@ -238,7 +236,6 @@ export function RequireRole({
             
             navigate({ 
                 to: redirectTo, 
-                search: { from: location.pathname },
                 replace: true 
             });
         }

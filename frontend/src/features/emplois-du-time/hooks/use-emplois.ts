@@ -23,7 +23,7 @@ export function useCreneaux(filtres?: EmploiDuTempsFiltres) {
         queryKey: EMPLOIS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Creneau[]; meta: any }>('/api/emplois-du-temps/creneaux', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -35,7 +35,7 @@ export function useCreneau(id: string) {
         queryKey: EMPLOIS_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Creneau }>(`/api/emplois-du-temps/creneaux/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -47,7 +47,7 @@ export function useCreerCreneau() {
     return useMutation({
         mutationFn: async (dto: CreerCreneauDto) => {
             const response = await apiClient.post<{ success: boolean; data: Creneau }>('/api/emplois-du-temps/creneaux', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EMPLOIS_KEYS.listes() });
@@ -67,7 +67,7 @@ export function useModifierCreneau(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerCreneauDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Creneau }>(`/api/emplois-du-temps/creneaux/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: EMPLOIS_KEYS.listes() });
@@ -95,11 +95,13 @@ export function useSupprimerCreneau() {
 }
 
 export function useStatistiquesEmploiDuTemps() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EMPLOIS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesEmploiDuTemps }>('/api/emplois-du-temps/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -107,11 +109,13 @@ export function useStatistiquesEmploiDuTemps() {
 }
 
 export function useConflitsCreneaux() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: EMPLOIS_KEYS.conflits(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: any[] }>('/api/emplois-du-temps/conflits');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,

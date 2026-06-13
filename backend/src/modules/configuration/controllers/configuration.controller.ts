@@ -257,7 +257,7 @@ router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModu
 router.get('/parametres', authMiddleware, canViewParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryParametresSchema, req.query);
-        const parametres = await configurationService.getParametres(query);
+        const parametres = await configurationService.getParametres(query, req.utilisateur?.etablissementId);
         res.json({ success: true, data: parametres, total: parametres.length });
     } catch (error) { next(error); }
 });

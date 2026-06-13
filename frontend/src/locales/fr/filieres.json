@@ -1,0 +1,49 @@
+{
+    "filieres": {
+        "title": "Filières",
+        "description": "Gestion des filières et spécialités du second cycle secondaire",
+        "create": "Créer une filière",
+        "edit": "Modifier la filière",
+        "delete": "Supprimer la filière",
+        "detail": "Détails de la filière",
+        "fields": {
+            "nom": "Nom",
+            "code": "Code",
+            "description": "Description",
+            "cycleId": "Cycle",
+            "sousSysteme": "Sous-système",
+            "actif": "Actif"
+        },
+        "placeholders": {
+            "nom": "Ex: Série C - Mathématiques et Physique",
+            "code": "Ex: C, D, E, A, A1",
+            "description": "Description de la filière"
+        },
+        "sousSystemes": {
+            "FRANCOPHONE": "Francophone",
+            "ANGLOPHONE": "Anglophone"
+        },
+        "series": {
+            "C": "Mathématiques et Physique",
+            "D": "Sciences de la Nature",
+            "E": "Génie Civil",
+            "A": "Lettres et Sciences Humaines",
+            "A1": "Langues"
+        },
+        "messages": {
+            "createSuccess": "Filière créée avec succès",
+            "updateSuccess": "Filière modifiée avec succès",
+            "deleteSuccess": "Filière supprimée avec succès",
+            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette filière ?",
+            "codeExists": "Ce code de filière existe déjà pour ce cycle"
+        },
+        "actions": {
+            "create": "Créer une filière",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "view": "Voir les détails",
+            "activate": "Activer",
+            "deactivate": "Désactiver"
+        }
+    }
+}

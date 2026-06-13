@@ -23,7 +23,7 @@ export function useOuvrages(filtres?: BibliothequeFiltres) {
         queryKey: BIBLIOTHEQUE_KEYS.ouvrages(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Ouvrage[]; meta: any }>('/api/bibliotheque/ouvrages', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -35,7 +35,7 @@ export function useOuvrage(id: string) {
         queryKey: BIBLIOTHEQUE_KEYS.ouvrage(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Ouvrage }>(`/api/bibliotheque/ouvrages/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -47,7 +47,7 @@ export function useCreerOuvrage() {
     return useMutation({
         mutationFn: async (dto: CreerOuvrageDto) => {
             const response = await apiClient.post<{ success: boolean; data: Ouvrage }>('/api/bibliotheque/ouvrages', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BIBLIOTHEQUE_KEYS.ouvrages() });
@@ -63,7 +63,7 @@ export function useModifierOuvrage(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerOuvrageDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: Ouvrage }>(`/api/bibliotheque/ouvrages/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BIBLIOTHEQUE_KEYS.ouvrages() });
@@ -89,11 +89,13 @@ export function useSupprimerOuvrage() {
 }
 
 export function usePrets() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: BIBLIOTHEQUE_KEYS.prets(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Pret[] }>('/api/bibliotheque/prets');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -106,7 +108,7 @@ export function useCreerPret() {
     return useMutation({
         mutationFn: async (dto: CreerPretDto) => {
             const response = await apiClient.post<{ success: boolean; data: Pret }>('/api/bibliotheque/prets', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BIBLIOTHEQUE_KEYS.prets() });
@@ -123,7 +125,7 @@ export function useRetournerOuvrage() {
     return useMutation({
         mutationFn: async (pretId: string) => {
             const response = await apiClient.post<{ success: boolean; data: Pret }>(`/api/bibliotheque/prets/${pretId}/retour`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BIBLIOTHEQUE_KEYS.prets() });
@@ -142,7 +144,7 @@ export function useProlongerPret() {
                 `/api/bibliotheque/prets/${data.pretId}/prolonger`,
                 { dateRetourPrevue: data.nouvelleDate }
             );
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BIBLIOTHEQUE_KEYS.prets() });
@@ -152,11 +154,13 @@ export function useProlongerPret() {
 }
 
 export function useStatistiquesBibliotheque() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: BIBLIOTHEQUE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesBibliotheque }>('/api/bibliotheque/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

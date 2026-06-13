@@ -39,6 +39,8 @@ export function useInscriptionsCantine(filtres: InscriptionCantineFiltres = {}) 
 }
 
 export function useMenusCantine(filtres: MenuFiltres = {}) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: CANTINE_KEYS.menus.liste(filtres),
         queryFn: async () => {
@@ -59,7 +61,7 @@ export function useCreerInscriptionCantine() {
 
     return useMutation({
         mutationFn: async (dto: CreerInscriptionCantineDto) => {
-            const response = await apiClient.post('/api/cantine/inscriptions', dto);
+            const response = await apiClient.post<any>('/api/cantine/inscriptions', dto);
             return response.data?.data;
         },
         onSuccess: () => {
@@ -77,7 +79,7 @@ export function useCreerMenu() {
 
     return useMutation({
         mutationFn: async (dto: CreerMenuDto) => {
-            const response = await apiClient.post('/api/cantine/menus', dto);
+            const response = await apiClient.post<any>('/api/cantine/menus', dto);
             return response.data?.data;
         },
         onSuccess: () => {

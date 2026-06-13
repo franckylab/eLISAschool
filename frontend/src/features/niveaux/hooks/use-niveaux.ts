@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import type { PaginatedResult } from '@shared/types/api.types';
 import type { Niveau, CreerNiveauDto, ModifierNiveauDto, NiveauFiltres } from '../types/niveau.types';
 
 const NIVEAUX_KEYS = {
@@ -23,12 +24,18 @@ export function useNiveaux(filtres: NiveauFiltres = {}) {
     return useQuery({
         queryKey: NIVEAUX_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Niveau>('/api/niveaux', {
+            const response = await apiClient.get<PaginatedResult<Niveau>>('/api/niveaux', {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
+                search: filtres.recherche,
+                cycleId: filtres.cycleId,
+                sousSysteme: filtres.sousSysteme,
+                actif: filtres.actif,
+                estClasseExamen: filtres.estClasseExamen,
+                sortBy: filtres.sortBy || 'ordre',
+                sortOrder: filtres.sortOrder || 'ASC',
             });
-            return response.data;
+            return (response as any).data as PaginatedResult<Niveau>;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -36,6 +43,8 @@ export function useNiveaux(filtres: NiveauFiltres = {}) {
 }
 
 export function useNiveau(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: NIVEAUX_KEYS.detail(id),
         queryFn: async () => {

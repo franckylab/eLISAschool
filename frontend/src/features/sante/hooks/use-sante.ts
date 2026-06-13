@@ -41,11 +41,13 @@ export function useVisitesInfirmerie(filtres: VisitesFiltres = {}) {
 }
 
 export function useVisiteInfirmerie(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SANTE_KEYS.visites.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: VisiteInfirmerie }>(`/api/sante/visites/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -58,7 +60,7 @@ export function useCreerVisite() {
     return useMutation({
         mutationFn: async (dto: CreerVisiteDto) => {
             const response = await apiClient.post<{ success: boolean; data: VisiteInfirmerie }>('/api/sante/visites', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: SANTE_KEYS.visites.all });
@@ -69,11 +71,13 @@ export function useCreerVisite() {
 }
 
 export function useDossierMedical(eleveId: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SANTE_KEYS.dossiers.detail(eleveId),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: DossierMedical }>(`/api/sante/dossiers-medicaux/${eleveId}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!eleveId && isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -81,11 +85,13 @@ export function useDossierMedical(eleveId: string) {
 }
 
 export function useStatistiquesSante() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SANTE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesSante }>('/api/sante/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

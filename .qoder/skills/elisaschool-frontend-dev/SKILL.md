@@ -30,6 +30,16 @@ description: >
 - Backend en cours d'exécution (`npm run dev:backend`)
 - Frontend initialisé : `npm run dev:frontend`
 
+## Règle de Consolidation des Documents
+
+**Avant de créer un nouveau fichier** (composant, hook, page, guide) :
+
+1. **Vérifier** si le sujet existe déjà dans le codebase
+2. **Consolider** dans le fichier existant si pertinent
+3. **Nettoyer** les fichiers redondants ou obsolètes
+
+**Objectif** : Documentation concise, compacte, sans redondances.
+
 ---
 
 ## Workflow : Initialiser le Projet Frontend

@@ -38,11 +38,13 @@ export function useMessages(filtres: MessageFiltres = {}) {
 }
 
 export function useMessage(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: MESSAGERIE_KEYS.messages.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Message }>(`/api/messagerie/messages/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
         enabled: isAuthenticated,
@@ -51,11 +53,13 @@ export function useMessage(id: string) {
 }
 
 export function useMessagesNonLus() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: MESSAGERIE_KEYS.messages.nonLus(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: { count: number } }>('/api/messagerie/messages/non-lus/count');
-            return response.data.data.count;
+            return response.data?.data.count;
         },
         enabled: isAuthenticated,
         staleTime: 1 * 60 * 1000,
@@ -63,11 +67,13 @@ export function useMessagesNonLus() {
 }
 
 export function useStatistiquesMessagerie() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: MESSAGERIE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesMessagerie }>('/api/messagerie/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -80,7 +86,7 @@ export function useEnvoyerMessage() {
     return useMutation({
         mutationFn: async (dto: CreerMessageDto) => {
             const response = await apiClient.post<{ success: boolean; data: Message }>('/api/messagerie/messages', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MESSAGERIE_KEYS.messages.all });
@@ -98,8 +104,8 @@ export function useMarquerCommeLu() {
 
     return useMutation({
         mutationFn: async (id: string) => {
-            const response = await apiClient.patch(`/api/messagerie/messages/${id}/lu`);
-            return response.data.data;
+            const response = await apiClient.patch<any>(`/api/messagerie/messages/${id}/lu`);
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MESSAGERIE_KEYS.messages.all });

@@ -41,6 +41,8 @@ export function useFraisScolaires(filtres: FraisFiltres = {}) {
 }
 
 export function usePaiements(filtres: PaiementFiltres = {}) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: FINANCES_KEYS.paiements.liste(filtres),
         queryFn: async () => {
@@ -57,11 +59,13 @@ export function usePaiements(filtres: PaiementFiltres = {}) {
 }
 
 export function useStatistiquesFinancieres() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: FINANCES_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesFinancieres }>('/api/finances/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -74,7 +78,7 @@ export function useCreerFrais() {
     return useMutation({
         mutationFn: async (dto: CreerFraisDto) => {
             const response = await apiClient.post<{ success: boolean; data: FraisScolaire }>('/api/finances/frais', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: FINANCES_KEYS.frais.all });
@@ -93,7 +97,7 @@ export function useCreerPaiement() {
     return useMutation({
         mutationFn: async (dto: CreerPaiementDto) => {
             const response = await apiClient.post<{ success: boolean; data: Paiement }>('/api/finances/paiements', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: FINANCES_KEYS.paiements.all });
@@ -115,7 +119,7 @@ export function useExporterRecu() {
             return response.data;
         },
         onSuccess: (data) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `recu.pdf`);

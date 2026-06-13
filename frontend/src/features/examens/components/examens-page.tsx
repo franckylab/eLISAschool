@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { FileText, Plus, Eye, Edit, Trash2, Calendar, Award, TrendingUp } from 'lucide-react';
+import { FileText, Plus, Eye, Trash2, Calendar, Award, TrendingUp } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useExamens, useSupprimerExamen, useStatistiquesExamens } from '../hooks/use-examens';

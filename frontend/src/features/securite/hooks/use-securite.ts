@@ -22,7 +22,7 @@ export function useIncidents(filtres?: FiltresSecurite) {
         queryKey: SECURITE_KEYS.incidents(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Incident[]; meta: any }>('/api/securite/incidents', { params: filtres });
-            return { data: response.data.data, meta: response.data.meta };
+            return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
@@ -30,11 +30,13 @@ export function useIncidents(filtres?: FiltresSecurite) {
 }
 
 export function useRondes() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SECURITE_KEYS.rondes(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Ronde[] }>('/api/securite/rondes');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -47,7 +49,7 @@ export function useCreerIncident() {
     return useMutation({
         mutationFn: async (dto: CreerIncidentDto) => {
             const response = await apiClient.post<{ success: boolean; data: Incident }>('/api/securite/incidents', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: SECURITE_KEYS.incidents() });
@@ -65,7 +67,7 @@ export function useResoudreIncident() {
             const response = await apiClient.patch<{ success: boolean; data: Incident }>(`/api/securite/incidents/${data.id}/resoudre`, {
                 mesuresPrises: data.mesuresPrises,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: SECURITE_KEYS.incidents() });
@@ -76,11 +78,13 @@ export function useResoudreIncident() {
 }
 
 export function useStatistiquesSecurite() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: SECURITE_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesSecurite }>('/api/securite/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

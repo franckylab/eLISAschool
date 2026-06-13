@@ -13,14 +13,14 @@ import type { Niveau } from '../types/niveau.types';
 export function NiveauFormModal({ niveau, onClose }: { niveau: Niveau | null; onClose: () => void }) {
     const creer = useCreerNiveau();
     const modifier = useModifierNiveau();
-    const { data: cycles } = useCycles({ page: 1, limit: 50, statut: 'actif' });
+    const { data: cycles } = useCycles({ page: 1, limit: 50, actif: true });
     const isEditMode = !!niveau;
 
     const [nom, setNom] = useState(niveau?.nom || '');
     const [code, setCode] = useState(niveau?.code || '');
     const [cycleId, setCycleId] = useState(niveau?.cycleId || '');
     const [ordre, setOrdre] = useState(niveau?.ordre || 1);
-    const [statut, setStatut] = useState<'actif' | 'inactif'>(niveau?.statut || 'actif');
+    const [actif, setActif] = useState(niveau?.actif ?? true);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Auto-générer le code
@@ -57,7 +57,7 @@ export function NiveauFormModal({ niveau, onClose }: { niveau: Niveau | null; on
             code,
             cycleId,
             ordre,
-            statut,
+            actif,
         };
 
         try {
@@ -122,7 +122,7 @@ export function NiveauFormModal({ niveau, onClose }: { niveau: Niveau | null; on
                             className={`w-full px-4 py-2 rounded-lg border ${errors.cycleId ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
                         >
                             <option value="">Sélectionner un cycle...</option>
-                            {cycles?.data?.map((cycle) => (
+                            {cycles?.items?.map((cycle: any) => (
                                 <option key={cycle.id} value={cycle.id}>
                                     {cycle.nom} ({cycle.code})
                                 </option>
@@ -146,8 +146,8 @@ export function NiveauFormModal({ niveau, onClose }: { niveau: Niveau | null; on
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                             <select
-                                value={statut}
-                                onChange={(e) => setStatut(e.target.value as 'actif' | 'inactif')}
+                                value={actif ? 'actif' : 'inactif'}
+                                onChange={(e) => setActif(e.target.value === 'actif')}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                             >
                                 <option value="actif">Actif</option>

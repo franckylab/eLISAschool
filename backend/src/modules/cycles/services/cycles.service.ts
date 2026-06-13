@@ -7,9 +7,10 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Cycle } from '../entities';
-import { CreateCycleDto, UpdateCycleDto } from '../dto';
+import { CreateCycleDto, UpdateCycleDto, QueryCyclesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
 export class CyclesService {
     private repo: Repository<Cycle>;
@@ -30,12 +31,39 @@ export class CyclesService {
         return cycle;
     }
 
-    async findAll(): Promise<Cycle[]> {
-        return this.repo.find({ order: { ordre: 'ASC' } });
+    async findAll(query: QueryCyclesDto = {}): Promise<PaginatedResult<Cycle>> {
+        const { page = 1, limit = 20, search, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
+
+        const qb = this.repo.createQueryBuilder('cycle')
+            .leftJoinAndSelect('cycle.typeCycle', 'typeCycle');
+
+        // Filtre par recherche
+        if (search) {
+            qb.andWhere('(cycle.nom ILIKE :search OR cycle.code ILIKE :search)', { search: `%${search}%` });
+        }
+
+        // Filtre par statut actif
+        if (actif !== undefined) {
+            qb.andWhere('cycle.actif = :actif', { actif });
+        }
+
+        // Tri - champs autorisés
+        const allowedSortFields = ['ordre', 'nom', 'code', 'createdAt', 'actif'];
+        const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'ordre';
+        qb.orderBy(`cycle.${orderField}`, sortOrder === 'DESC' ? 'DESC' : 'ASC');
+
+        return paginateWithQueryBuilder(qb, page, limit);
+    }
+
+    async findAllSimple(): Promise<Cycle[]> {
+        return this.repo.find({
+            order: { ordre: 'ASC' },
+            relations: ['typeCycle'],
+        });
     }
 
     async findOne(id: string): Promise<Cycle> {
-        const cycle = await this.repo.findOne({ where: { id } });
+        const cycle = await this.repo.findOne({ where: { id }, relations: ['typeCycle'] });
         if (!cycle) throw new AppError('Cycle non trouvé', 404, 'NOT_FOUND');
         return cycle;
     }

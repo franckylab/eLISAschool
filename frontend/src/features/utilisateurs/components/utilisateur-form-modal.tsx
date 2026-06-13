@@ -170,7 +170,7 @@ export function UtilisateurFormModal({
                             label="Prénom"
                             value={formData.prenom}
                             onChange={(e) => handleChange('prenom', e.target.value)}
-                            erreur={erreurs.prenom}
+                            error={erreurs.prenom}
                             placeholder="Jean"
                             required
                         />
@@ -178,7 +178,7 @@ export function UtilisateurFormModal({
                             label="Nom"
                             value={formData.nom}
                             onChange={(e) => handleChange('nom', e.target.value)}
-                            erreur={erreurs.nom}
+                            error={erreurs.nom}
                             placeholder="Dupont"
                             required
                         />
@@ -197,7 +197,7 @@ export function UtilisateurFormModal({
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
-                            erreur={erreurs.email}
+                            error={erreurs.email}
                             placeholder="jean.dupont@exemple.com"
                             icon={<Mail className="h-4 w-4" />}
                             required
@@ -247,7 +247,7 @@ export function UtilisateurFormModal({
                                 type="password"
                                 value={formData.motDePasse}
                                 onChange={(e) => handleChange('motDePasse', e.target.value)}
-                                erreur={erreurs.motDePasse}
+                                error={erreurs.motDePasse}
                                 placeholder="••••••••"
                                 required
                             />

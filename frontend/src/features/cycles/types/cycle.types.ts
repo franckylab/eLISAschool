@@ -4,25 +4,30 @@
  * ==================================
  */
 
+export interface TypeCycle {
+    id: string;
+    nom: string;
+    code: string;
+}
+
 export interface Cycle {
     id: string;
     nom: string;
     code: string;
-    description?: string;
+    typeCycleId?: string;
+    typeCycle?: TypeCycle;
     ordre: number;
-    etablissementId: string;
-    statut?: 'actif' | 'inactif';
+    actif: boolean;
     createdAt: string;
     updatedAt: string;
-    nombreNiveaux?: number;
 }
 
 export interface CreerCycleDto {
     nom: string;
     code: string;
-    description?: string;
+    typeCycleId?: string;
     ordre: number;
-    statut?: 'actif' | 'inactif';
+    actif?: boolean;
 }
 
 export interface ModifierCycleDto extends Partial<CreerCycleDto> {
@@ -31,7 +36,7 @@ export interface ModifierCycleDto extends Partial<CreerCycleDto> {
 
 export interface CycleFiltres {
     recherche?: string;
-    statut?: 'actif' | 'inactif';
+    actif?: boolean;
     page?: number;
     limit?: number;
     sortBy?: string;

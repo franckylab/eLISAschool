@@ -12,7 +12,7 @@
 import { useState, useMemo } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { RequireRole } from '@/components/permissions';
-import { Shield, Check, X, Search, Filter, Download, Eye } from 'lucide-react';
+import { Shield, Check, X, Search, Filter, Download } from 'lucide-react';
 
 // ==================================
 // TYPES

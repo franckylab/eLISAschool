@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Plus, Eye, Edit, Trash2, Shield, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Plus, Eye, Trash2, Shield, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useSanctions, useSupprimerSanction, useAmnistierSanction, useStatistiquesDiscipline } from '../hooks/use-discipline';

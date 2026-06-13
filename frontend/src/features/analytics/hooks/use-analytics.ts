@@ -25,7 +25,7 @@ export function useDashboardAnalytics(filtres?: FiltresAnalytics) {
             const response = await apiClient.get<{ success: boolean; data: DashboardAnalytics }>('/api/analytics/dashboard', {
                 params: filtres,
             });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -33,11 +33,13 @@ export function useDashboardAnalytics(filtres?: FiltresAnalytics) {
 }
 
 export function useKPIs(filtres?: FiltresAnalytics) {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ANALYTICS_KEYS.kpis(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: KPI[] }>('/api/analytics/kpis', { params: filtres });
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -49,7 +51,7 @@ export function useKPI(id: string) {
         queryKey: ANALYTICS_KEYS.kpi(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: KPI }>(`/api/analytics/kpis/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id,
     });
@@ -61,7 +63,7 @@ export function useCreerKPI() {
     return useMutation({
         mutationFn: async (dto: CreerKPIDto) => {
             const response = await apiClient.post<{ success: boolean; data: KPI }>('/api/analytics/kpis', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANALYTICS_KEYS.kpis() });
@@ -77,7 +79,7 @@ export function useModifierKPI(id: string) {
     return useMutation({
         mutationFn: async (dto: Partial<CreerKPIDto>) => {
             const response = await apiClient.patch<{ success: boolean; data: KPI }>(`/api/analytics/kpis/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANALYTICS_KEYS.kpis() });
@@ -108,7 +110,7 @@ export function useActualiserKPI() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.post<{ success: boolean; data: KPI }>(`/api/analytics/kpis/${id}/actualiser`);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANALYTICS_KEYS.kpis() });
@@ -118,11 +120,13 @@ export function useActualiserKPI() {
 }
 
 export function useStatistiquesAnalytics() {
+    const { isAuthenticated } = useAuthStore();
+    
     return useQuery({
         queryKey: ANALYTICS_KEYS.stats(),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesAnalytics }>('/api/analytics/statistiques');
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,

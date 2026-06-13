@@ -71,12 +71,12 @@ export function LandingPage() {
             {/* Navigation */}
             <nav className="sticky top-0 z-50 border-b border-[var(--color-bordure)] bg-[var(--color-surface)]/95 backdrop-blur-sm">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <Link to="/" className="transition-transform hover:scale-105">
+                    <Link to="/"  className="transition-transform hover:scale-105">
                         <ElisaLogo variant="horizontal" size="sm" />
                     </Link>
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
-                        <Link to="/login">
+                        <Link to="/login" >
                             <ElisaButton variant="ghost" size="sm">
                                 {t('boutons.connecter')}
                             </ElisaButton>
@@ -104,7 +104,7 @@ export function LandingPage() {
                             moderne, intuitive et sécurisée. De l'inscription au bulletin, en un clic.
                         </p>
                         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                            <Link to="/login">
+                            <Link to="/login" >
                                 <ElisaButton variant="primary" size="lg" iconRight={<ChevronRight className="h-5 w-5" />}>
                                     Commencer maintenant
                                 </ElisaButton>

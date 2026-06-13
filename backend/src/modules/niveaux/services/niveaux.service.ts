@@ -7,9 +7,10 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Niveau } from '../entities';
-import { CreateNiveauDto, UpdateNiveauDto } from '../dto';
+import { CreateNiveauDto, UpdateNiveauDto, QueryNiveauxDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
 export class NiveauxService {
     private repo: Repository<Niveau>;
@@ -25,7 +26,40 @@ export class NiveauxService {
         return niveau;
     }
 
-    async findAll(cycleId?: string): Promise<Niveau[]> {
+    async findAll(query: QueryNiveauxDto = {}): Promise<PaginatedResult<Niveau>> {
+        const { page = 1, limit = 20, search, cycleId, sousSysteme, actif, estClasseExamen, sortBy = 'ordre', sortOrder = 'ASC' } = query;
+
+        const qb = this.repo.createQueryBuilder('niveau')
+            .leftJoinAndSelect('niveau.cycle', 'cycle');
+
+        if (search) {
+            qb.andWhere('(niveau.nom ILIKE :search OR niveau.code ILIKE :search)', { search: `%${search}%` });
+        }
+
+        if (cycleId) {
+            qb.andWhere('niveau.cycleId = :cycleId', { cycleId });
+        }
+
+        if (sousSysteme) {
+            qb.andWhere('niveau.sousSysteme = :sousSysteme', { sousSysteme });
+        }
+
+        if (actif !== undefined) {
+            qb.andWhere('niveau.actif = :actif', { actif });
+        }
+
+        if (estClasseExamen !== undefined) {
+            qb.andWhere('niveau.estClasseExamen = :estClasseExamen', { estClasseExamen });
+        }
+
+        const allowedSortFields = ['ordre', 'nom', 'code', 'createdAt', 'actif'];
+        const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'ordre';
+        qb.orderBy(`niveau.${orderField}`, sortOrder === 'DESC' ? 'DESC' : 'ASC');
+
+        return paginateWithQueryBuilder(qb, page, limit);
+    }
+
+    async findAllSimple(cycleId?: string): Promise<Niveau[]> {
         const where: any = {};
         if (cycleId) where.cycleId = cycleId;
         return this.repo.find({ where, order: { cycleId: 'ASC', ordre: 'ASC' }, relations: ['cycle'] });

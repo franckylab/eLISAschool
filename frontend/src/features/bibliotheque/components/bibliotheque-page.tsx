@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Book, Plus, Eye, Edit, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { Book, Plus, Eye, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useOuvrages, usePrets, useSupprimerOuvrage, useStatistiquesBibliotheque } from '../hooks/use-bibliotheque';

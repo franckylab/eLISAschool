@@ -355,12 +355,12 @@ export function ClasseDetailPage() {
                                     <div className="flex justify-between text-sm mb-1">
                                         <span>Garçons</span>
                                         <span className="font-medium">
-                                            {eleves.filter(e => e.sexe === 'M').length}
+                                            {eleves.filter((e: any) => e.sexe === 'M').length}
                                         </span>
                                     </div>
                                     <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-100">
                                         <div
-                                            style={{ width: `${eleves.length > 0 ? eleves.filter(e => e.sexe === 'M').length / eleves.length * 100 : 0}%` }}
+                                            style={{ width: `${eleves.length > 0 ? eleves.filter((e: any) => e.sexe === 'M').length / eleves.length * 100 : 0}%` }}
                                             className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
                                         />
                                     </div>
@@ -369,12 +369,12 @@ export function ClasseDetailPage() {
                                     <div className="flex justify-between text-sm mb-1">
                                         <span>Filles</span>
                                         <span className="font-medium">
-                                            {eleves.filter(e => e.sexe === 'F').length}
+                                            {eleves.filter((e: any) => e.sexe === 'F').length}
                                         </span>
                                     </div>
                                     <div className="overflow-hidden h-2 text-xs flex rounded bg-pink-100">
                                         <div
-                                            style={{ width: `${eleves.length > 0 ? eleves.filter(e => e.sexe === 'F').length / eleves.length * 100 : 0}%` }}
+                                            style={{ width: `${eleves.length > 0 ? eleves.filter((e: any) => e.sexe === 'F').length / eleves.length * 100 : 0}%` }}
                                             className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500"
                                         />
                                     </div>

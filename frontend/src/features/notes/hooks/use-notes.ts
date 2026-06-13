@@ -45,7 +45,7 @@ export function useNote(id: string) {
         queryKey: NOTES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Note }>(`/api/notes/${id}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -59,7 +59,7 @@ export function useStatistiquesNotes(periodeId: string) {
         queryKey: NOTES_KEYS.statsPeriode(periodeId),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: StatistiquesNotes }>(`/api/notes/statistiques/${periodeId}`);
-            return response.data.data;
+            return response.data?.data;
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -72,7 +72,7 @@ export function useCreerNote() {
     return useMutation({
         mutationFn: async (dto: CreerNoteDto) => {
             const response = await apiClient.post<{ success: boolean; data: Note }>('/api/notes', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: NOTES_KEYS.listes() });
@@ -91,7 +91,7 @@ export function useCreerNotesEnMasse() {
     return useMutation({
         mutationFn: async (dto: CreerNoteEnMasseDto) => {
             const response = await apiClient.post<{ success: boolean; data: Note[] }>('/api/notes/en-masse', dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: NOTES_KEYS.listes() });
@@ -110,7 +110,7 @@ export function useModifierNote() {
     return useMutation({
         mutationFn: async ({ id, ...dto }: ModifierNoteDto) => {
             const response = await apiClient.patch<{ success: boolean; data: Note }>(`/api/notes/${id}`, dto);
-            return response.data.data;
+            return response.data?.data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: NOTES_KEYS.listes() });

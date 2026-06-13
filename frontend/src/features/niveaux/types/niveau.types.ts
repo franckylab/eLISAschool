@@ -7,15 +7,27 @@
 export interface Niveau {
     id: string;
     nom: string;
-    code: string;
-    description?: string;
-    ordre: number;
+    code?: string;
     cycleId: string;
-    etablissementId: string;
-    statut?: 'actif' | 'inactif';
+    filiereId?: string;
+    examenNationalId?: string;
+    estClasseExamen: boolean;
+    sousSysteme: string;
+    ordre: number;
+    actif: boolean;
     createdAt: string;
     updatedAt: string;
     cycle?: {
+        id: string;
+        nom: string;
+        code: string;
+    };
+    filiere?: {
+        id: string;
+        nom: string;
+        code: string;
+    };
+    examenNational?: {
         id: string;
         nom: string;
         code: string;
@@ -25,11 +37,14 @@ export interface Niveau {
 
 export interface CreerNiveauDto {
     nom: string;
-    code: string;
-    description?: string;
-    ordre: number;
+    code?: string;
     cycleId: string;
-    statut?: 'actif' | 'inactif';
+    filiereId?: string;
+    examenNationalId?: string;
+    estClasseExamen?: boolean;
+    sousSysteme?: string;
+    ordre: number;
+    actif?: boolean;
 }
 
 export interface ModifierNiveauDto extends Partial<CreerNiveauDto> {
@@ -39,7 +54,9 @@ export interface ModifierNiveauDto extends Partial<CreerNiveauDto> {
 export interface NiveauFiltres {
     cycleId?: string;
     recherche?: string;
-    statut?: 'actif' | 'inactif';
+    sousSysteme?: string;
+    actif?: boolean;
+    estClasseExamen?: boolean;
     page?: number;
     limit?: number;
     sortBy?: string;

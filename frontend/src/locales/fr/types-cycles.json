@@ -1,0 +1,46 @@
+{
+    "types_cycles": {
+        "title": "Types de Cycles",
+        "description": "Gestion des grands types d'enseignement (Maternelle, Primaire, Secondaire)",
+        "create": "Créer un type de cycle",
+        "edit": "Modifier le type de cycle",
+        "delete": "Supprimer le type de cycle",
+        "detail": "Détails du type de cycle",
+        "fields": {
+            "nom": "Nom",
+            "code": "Code",
+            "description": "Description",
+            "dureeAnnees": "Durée (années)",
+            "ordre": "Ordre",
+            "diplomeSanctionnant": "Diplôme sanctionnant",
+            "actif": "Actif"
+        },
+        "placeholders": {
+            "nom": "Ex: Enseignement Maternel",
+            "code": "Ex: MATERNELLE",
+            "description": "Description du type de cycle",
+            "diplomeSanctionnant": "Ex: CEP, BEPC, BACCALAUREAT"
+        },
+        "codes": {
+            "MATERNELLE": "Maternelle",
+            "PRIMAIRE": "Primaire",
+            "SECONDAIRE_1": "Secondaire 1er Cycle",
+            "SECONDAIRE_2": "Secondaire 2nd Cycle"
+        },
+        "messages": {
+            "createSuccess": "Type de cycle créé avec succès",
+            "updateSuccess": "Type de cycle modifié avec succès",
+            "deleteSuccess": "Type de cycle supprimé avec succès",
+            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce type de cycle ? Cette action est irréversible.",
+            "codeExists": "Ce code existe déjà"
+        },
+        "actions": {
+            "create": "Créer un type de cycle",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "view": "Voir les détails",
+            "activate": "Activer",
+            "deactivate": "Désactiver"
+        }
+    }
+}

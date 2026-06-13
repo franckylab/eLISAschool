@@ -6,9 +6,9 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { NiveauxService } from '../services';
-import { createNiveauSchema, updateNiveauSchema } from '../dto';
+import { createNiveauSchema, updateNiveauSchema, queryNiveauxSchema } from '../dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -16,8 +16,17 @@ const niveauxService = new NiveauxService();
 
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const cycleId = req.query.cycleId as string;
-        const niveaux = await niveauxService.findAll(cycleId);
+        const query = validateDto(queryNiveauxSchema, req.query);
+        const result = await niveauxService.findAll(query);
+        res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+// GET /api/niveaux/all - Liste complète pour dropdowns
+router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const cycleId = req.query.cycleId as string | undefined;
+        const niveaux = await niveauxService.findAllSimple(cycleId);
         res.json({ success: true, data: niveaux });
     } catch (error) { next(error); }
 });
