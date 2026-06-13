@@ -7,7 +7,9 @@
 // Utilisateur et enums
 export { Utilisateur, StatutUtilisateur } from './utilisateur.entity';
 // Note: l'enum Role est exporté depuis @shared/enums/roles.enum
-export { ProfilUtilisateur, Genre } from './profil-utilisateur.entity';
+// Note: l'enum Genre est exporté depuis @shared/enums/statuts.enum
+export { ProfilUtilisateur } from './profil-utilisateur.entity';
+export { Genre } from '@shared/enums/statuts.enum';
 export { RefreshToken } from './refresh-token.entity';
 export { AuditLog, AuditAction, AuditSeverity } from './audit-log.entity';
 

@@ -68,7 +68,7 @@ export class PreferenceUtilisateur {
     typeValeur!: string;
 
     /** Catégorie de la préférence */
-    @Column({ type: 'varchar', length: 50, enum: CategoriePreference, default: CategoriePreference.PERSONNALISATION })
+    @Column({ type: 'enum', enum: CategoriePreference, default: CategoriePreference.PERSONNALISATION })
     categorie!: CategoriePreference;
 
     /** Valeur par défaut du système */

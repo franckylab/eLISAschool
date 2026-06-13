@@ -60,10 +60,11 @@ export * from './recrutement';
 
 // Modules académiques (multi-établissements)
 export * from './etablissement';
-export * from './types-cycles';
 export * from './cycles';
 export * from './niveaux';
 export * from './filieres';
+export * from './specialites';
+export * from './competences';
 export * from './examens-nationaux';
 export * from './annees-scolaires';
 export * from './personnel';

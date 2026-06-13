@@ -43,8 +43,8 @@ export class Permission {
     @Column({ type: 'varchar', length: 50 })
     module!: string; // ex: "notes", "eleves", "cantine"
 
-    @Column({ type: 'varchar', length: 20 })
-    action!: string; // ex: "view", "create", "edit", "delete", "manage"
+    @Column({ type: 'varchar', length: 50 })
+    action!: string; // ex: "view", "create", "edit", "delete", "manage", "etablissements:manage"
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

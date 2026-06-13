@@ -29,9 +29,9 @@ export const databaseConfig: DataSourceOptions = {
     password: envConfig.database.password,
     database: envConfig.database.name,
 
-    // Synchronisation automatique (désactivée - utiliser les migrations)
-    // NOTE: synchronize doit être FALSE pour éviter les conflits avec les migrations
-    synchronize: false,
+    // Synchronisation automatique (activée en développement UNIQUEMENT pour cette session)
+    // NOTE: En production, DOIT être FALSE et utiliser les migrations
+    synchronize: envConfig.app.isDevelopment,
 
     // Journalisation des requêtes SQL
     logging: envConfig.app.isDevelopment ? ['query', 'error', 'warn'] : ['error'],

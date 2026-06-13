@@ -128,7 +128,7 @@ export class RdvOrientation {
     @Column({ type: 'simple-json', nullable: true })
     recommandations?: string[];
 
-    @Column({ type: 'enum', enum: ['PLANIFIE', 'TERMINE', 'ANNULE'], default: 'PLANIFIE' })
+    @Column({ type: 'varchar', length: 20, default: 'PLANIFIE' })
     statut!: 'PLANIFIE' | 'TERMINE' | 'ANNULE';
 
     @CreateDateColumn()

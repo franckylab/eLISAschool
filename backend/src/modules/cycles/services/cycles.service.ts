@@ -34,12 +34,11 @@ export class CyclesService {
     async findAll(query: QueryCyclesDto = {}): Promise<PaginatedResult<Cycle>> {
         const { page = 1, limit = 20, search, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
 
-        const qb = this.repo.createQueryBuilder('cycle')
-            .leftJoinAndSelect('cycle.typeCycle', 'typeCycle');
+        const qb = this.repo.createQueryBuilder('cycle');
 
         // Filtre par recherche
         if (search) {
-            qb.andWhere('(cycle.nom ILIKE :search OR cycle.code ILIKE :search)', { search: `%${search}%` });
+            qb.andWhere('(cycle.nom ILIKE :search OR cycle.code ILIKE :search OR cycle.description ILIKE :search)', { search: `%${search}%` });
         }
 
         // Filtre par statut actif
@@ -48,7 +47,7 @@ export class CyclesService {
         }
 
         // Tri - champs autorisés
-        const allowedSortFields = ['ordre', 'nom', 'code', 'createdAt', 'actif'];
+        const allowedSortFields = ['ordre', 'nom', 'code', 'createdAt', 'actif', 'dureeAnnees'];
         const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'ordre';
         qb.orderBy(`cycle.${orderField}`, sortOrder === 'DESC' ? 'DESC' : 'ASC');
 
@@ -58,12 +57,11 @@ export class CyclesService {
     async findAllSimple(): Promise<Cycle[]> {
         return this.repo.find({
             order: { ordre: 'ASC' },
-            relations: ['typeCycle'],
         });
     }
 
     async findOne(id: string): Promise<Cycle> {
-        const cycle = await this.repo.findOne({ where: { id }, relations: ['typeCycle'] });
+        const cycle = await this.repo.findOne({ where: { id } });
         if (!cycle) throw new AppError('Cycle non trouvé', 404, 'NOT_FOUND');
         return cycle;
     }

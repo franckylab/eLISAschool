@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 import { SousSysteme } from '@modules/etablissement/entities';
+import { Genre } from '@shared/enums/statuts.enum';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 
 export const createEleveSchema = z.object({
@@ -14,7 +15,7 @@ export const createEleveSchema = z.object({
     matricule: z.string().min(2).max(50),
     dateNaissance: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     lieuNaissance: z.string().min(2).max(100),
-    sexe: z.enum(['M', 'F']),
+    sexe: z.nativeEnum(Genre),
     nationalite: z.string().optional(),
     sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
     nomPere: z.string().optional(),
@@ -58,7 +59,7 @@ export const preinscriptionSchema = z.object({
     prenom: z.string().min(2).max(100),
     dateNaissance: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     lieuNaissance: z.string().min(2).max(100),
-    sexe: z.enum(['M', 'F']),
+    sexe: z.nativeEnum(Genre),
     nationalite: z.string().optional(),
     sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
     

@@ -1,23 +1,23 @@
 /**
  * ==================================
- * eLISAschool - Types Cycle
+ * eLISAschool - Types Cycle (Refactorisé)
  * ==================================
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Types refactorisés après suppression de TypeCycle - attributs fusionnés dans Cycle
  */
-
-export interface TypeCycle {
-    id: string;
-    nom: string;
-    code: string;
-}
 
 export interface Cycle {
     id: string;
     nom: string;
     code: string;
-    typeCycleId?: string;
-    typeCycle?: TypeCycle;
+    description?: string;
+    dureeAnnees?: number;
+    diplomeSanctionnant?: string;
     ordre: number;
     actif: boolean;
+    nbNiveaux?: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -25,7 +25,9 @@ export interface Cycle {
 export interface CreerCycleDto {
     nom: string;
     code: string;
-    typeCycleId?: string;
+    description?: string;
+    dureeAnnees?: number;
+    diplomeSanctionnant?: string;
     ordre: number;
     actif?: boolean;
 }

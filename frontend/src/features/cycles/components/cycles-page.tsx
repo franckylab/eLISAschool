@@ -6,13 +6,14 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, ToggleLeft, ToggleRight, Calendar, Award } from 'lucide-react';
 import { useCycles, useSupprimerCycle, useCreerCycle, useModifierCycle } from '../hooks/use-cycles';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { CycleFormModal } from './cycle-form-modal';
 import { usePermissions } from '@/hooks';
-import type { Cycle, CycleFiltres } from '../types/cycle.types';
+import type { Cycle, CycleFiltres, CreerCycleDto } from '../types/cycle.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function CyclesPage() {
@@ -42,11 +43,39 @@ export function CyclesPage() {
             render: (c) => <span className="font-medium">{c.nom}</span>,
         },
         {
-            key: 'typeCycle',
-            header: 'Type',
+            key: 'description',
+            header: 'Description',
             render: (c) => (
-                <span className="text-sm text-gray-600">
-                    {c.typeCycle?.nom || <span className="text-gray-400 italic">—</span>}
+                <span className="text-sm text-gray-600 line-clamp-1">
+                    {c.description || <span className="text-gray-400 italic">—</span>}
+                </span>
+            ),
+        },
+        {
+            key: 'dureeAnnees',
+            header: 'Durée',
+            sortable: true,
+            className: 'text-center',
+            render: (c) => (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800">
+                    <Calendar className="h-3 w-3" />
+                    {c.dureeAnnees} an{c.dureeAnnees > 1 ? 's' : ''}
+                </span>
+            ),
+        },
+        {
+            key: 'diplomeSanctionnant',
+            header: 'Diplôme',
+            render: (c) => (
+                <span className="inline-flex items-center gap-1 text-sm">
+                    {c.diplomeSanctionnant ? (
+                        <>
+                            <Award className="h-3.5 w-3.5 text-orange-600" />
+                            <span className="font-semibold text-orange-700">{c.diplomeSanctionnant}</span>
+                        </>
+                    ) : (
+                        <span className="text-gray-400 italic">—</span>
+                    )}
                 </span>
             ),
         },

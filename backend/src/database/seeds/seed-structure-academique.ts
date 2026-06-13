@@ -2,15 +2,19 @@
  * ==================================
  * eLISAschool - Seed Structure Académique Complète
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
- * Crée les types de cycles, cycles, niveaux, filières et examens nationaux
+ * Crée les cycles, niveaux, filières, spécialités et examens nationaux
  * conformes au système éducatif camerounais (francophone et anglophone)
+ * 
+ * Changements v2.0:
+ * - Suppression de TypeCycle (fusionné dans Cycle)
+ * - Ajout des filières technologiques/industrielles
+ * - Ajout des spécialités pour les filières techniques
  */
 
 import { AppDataSource } from '@database/data-source';
-import { TypeCycle } from '@modules/types-cycles/entities';
 import { Cycle } from '@modules/cycles/entities';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
@@ -21,18 +25,17 @@ import { logger } from '@common/utils/logger.util';
 export async function seedStructureAcademique(): Promise<void> {
     logger.info('🎓 Seed de la structure académique...');
 
-    const typeCycleRepo = AppDataSource.getRepository(TypeCycle);
     const cycleRepo = AppDataSource.getRepository(Cycle);
     const niveauRepo = AppDataSource.getRepository(Niveau);
     const filiereRepo = AppDataSource.getRepository(Filiere);
     const examenRepo = AppDataSource.getRepository(ExamenNational);
 
     // ==================================
-    // 1. TYPES DE CYCLES
+    // 1. CYCLES PÉDAGOGIQUES (avec attributs fusionnés de TypeCycle)
     // ==================================
-    logger.info('📚 Création des types de cycles...');
+    logger.info('🔄 Création des cycles pédagogiques...');
 
-    const typesCyclesData = [
+    const cyclesData = [
         {
             nom: 'Enseignement Maternel',
             code: 'MATERNELLE',
@@ -64,31 +67,6 @@ export async function seedStructureAcademique(): Promise<void> {
             ordre: 4,
             diplomeSanctionnant: 'BACCALAUREAT',
         },
-    ];
-
-    const typesCycles: TypeCycle[] = [];
-    for (const data of typesCyclesData) {
-        const existing = await typeCycleRepo.findOne({ where: { code: data.code } });
-        if (!existing) {
-            const typeCycle = typeCycleRepo.create(data);
-            await typeCycleRepo.save(typeCycle);
-            typesCycles.push(typeCycle);
-            logger.info(`  ✓ Type de cycle créé: ${data.nom}`);
-        } else {
-            typesCycles.push(existing);
-        }
-    }
-
-    // ==================================
-    // 2. CYCLES PÉDAGOGIQUES
-    // ==================================
-    logger.info('🔄 Création des cycles pédagogiques...');
-
-    const cyclesData = [
-        { nom: 'Cycle Maternel', code: 'CYCLE_MATERNEL', typeCycleId: typesCycles[0].id, ordre: 1 },
-        { nom: 'Cycle Primaire', code: 'CYCLE_PRIMAIRE', typeCycleId: typesCycles[1].id, ordre: 1 },
-        { nom: 'Premier Cycle Secondaire', code: 'CYCLE_SECONDAIRE_1', typeCycleId: typesCycles[2].id, ordre: 1 },
-        { nom: 'Second Cycle Secondaire', code: 'CYCLE_SECONDAIRE_2', typeCycleId: typesCycles[3].id, ordre: 1 },
     ];
 
     const cycles: Cycle[] = [];
@@ -218,6 +196,7 @@ export async function seedStructureAcademique(): Promise<void> {
     logger.info('🎯 Création des filières (Second Cycle Francophone)...');
 
     const filieresData = [
+        // === SÉRIES GÉNÉRALES ===
         {
             nom: 'Série C - Mathématiques et Physique',
             code: 'C',
@@ -250,6 +229,77 @@ export async function seedStructureAcademique(): Promise<void> {
             nom: 'Série A1 - Langues',
             code: 'A1',
             description: 'Langues vivantes et littérature',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        // === SÉRIES TECHNOLOGIQUES ET INDUSTRIELLES ===
+        {
+            nom: 'Série F1 - Génie Mécanique',
+            code: 'F1',
+            description: 'Mécanique automobile, maintenance industrielle, usinage',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série F2 - Génie Électrotechnique',
+            code: 'F2',
+            description: 'Électricité, électronique, automatismes, informatique industrielle',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série F3 - Génie Civil Bâtiment',
+            code: 'F3',
+            description: 'Construction, architecture, topographie, bâtiment',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série F4 - Génie Chimique',
+            code: 'F4',
+            description: 'Chimie industrielle, laboratoires, procédés chimiques',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série G1 - Techniques Administratives',
+            code: 'G1',
+            description: 'Secrétariat, bureautique, gestion administrative',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série G2 - Techniques Commerciales',
+            code: 'G2',
+            description: 'Commerce, vente, marketing, action commerciale',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série H - Techniques Économiques',
+            code: 'H',
+            description: 'Comptabilité, finance, économie, gestion',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série I - Informatique',
+            code: 'I',
+            description: 'Développement, réseaux, systèmes d\'information',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série K - Arts Appliqués',
+            code: 'K',
+            description: 'Design, mode, stylisme, arts graphiques',
+            cycleId: cycles[3].id,
+            sousSysteme: 'FRANCOPHONE',
+        },
+        {
+            nom: 'Série L - Hôtellerie-Restauration',
+            code: 'L',
+            description: 'Cuisine, service, gestion hôtelière, tourisme',
             cycleId: cycles[3].id,
             sousSysteme: 'FRANCOPHONE',
         },
@@ -359,10 +409,9 @@ export async function seedStructureAcademique(): Promise<void> {
     // RÉCAPITULATIF
     // ==================================
     logger.info('✅ Structure académique seedée avec succès:');
-    logger.info(`  - ${typesCycles.length} types de cycles`);
-    logger.info(`  - ${cycles.length} cycles pédagogiques`);
+    logger.info(`  - ${cycles.length} cycles pédagogiques (avec attributs TypeCycle fusionnés)`);
     logger.info(`  - ${niveauxFR.length + niveauxEN.length} niveaux (${niveauxFR.length} FR + ${niveauxEN.length} EN)`);
-    logger.info(`  - ${filieres.length} filières`);
+    logger.info(`  - ${filieres.length} filières (générales + technologiques)`);
     logger.info(`  - ${examens.length} examens nationaux`);
 }
 

@@ -18,6 +18,7 @@ import {
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 import { SousSysteme, Etablissement } from '@modules/etablissement/entities';
 import { Classe } from '@modules/classes/entities';
+import { Genre } from '@shared/enums/statuts.enum';
 
 /**
  * Statut workflow d'un dossier élève
@@ -28,6 +29,14 @@ export enum StatutEleve {
     EXCLU = 'EXCLU',
     ABANDON = 'ABANDON',
     DIPLOME = 'DIPLOME',
+}
+
+/**
+ * Type d'inscription
+ */
+export enum TypeInscription {
+    COMPLET = 'COMPLET',
+    INCOMPLET = 'INCOMPLET',
 }
 
 @Entity('eleves')
@@ -65,8 +74,8 @@ export class Eleve {
     @Column({ type: 'varchar', length: 100 })
     lieuNaissance!: string;
 
-    @Column({ type: 'enum', enum: ['M', 'F'] })
-    sexe!: 'M' | 'F';
+    @Column({ type: 'varchar', length: 1 })
+    sexe!: Genre;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     nationalite?: string;
@@ -214,8 +223,8 @@ export class Eleve {
     @Column({ type: 'varchar', length: 30, default: StatutEleve.ACTIF })
     statut!: StatutEleve;
 
-    @Column({ type: 'enum', enum: ['COMPLET', 'INCOMPLET'], default: 'INCOMPLET' })
-    etatDossier!: 'COMPLET' | 'INCOMPLET';
+    @Column({ type: 'varchar', length: 20, default: TypeInscription.INCOMPLET })
+    etatDossier!: TypeInscription;
 
     // ==================================
     // Champs d'inscription et préinscription (v2.0)

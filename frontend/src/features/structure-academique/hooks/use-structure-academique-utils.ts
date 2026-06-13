@@ -2,14 +2,13 @@
  * ==================================
  * eLISAschool - Hooks Utilitaires Structure Académique
  * ==================================
- * Version: 1.1.0 (corrigée)
+ * Version: 2.0.0 (refactorisée - TypeCycle supprimé)
  * Auteur: franck arlos chendjou
  * 
  * Hooks pour les dropdowns, sélections et relations hiérarchiques
  */
 
 import { useMemo } from 'react';
-import { useTypesCycles } from '@/features/types-cycles/hooks/use-types-cycles';
 import { useTousCycles } from '@/features/cycles/hooks/use-tous-cycles';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useFilieres } from '@/features/filieres/hooks/use-filieres';
@@ -20,26 +19,8 @@ import { useExamensNationaux } from '@/features/examens-nationaux/hooks/use-exam
 // ==================================
 
 /**
- * Hook pour obtenir la liste de tous les types de cycles (pour dropdown)
- */
-export function useTypesCyclesDropdown() {
-    const { data, isLoading } = useTypesCycles();
-    
-    const options = useMemo(() => {
-        if (!data?.items) return [];
-        return data.items.map((tc: any) => ({
-            value: tc.id,
-            label: tc.nom,
-            description: tc.description || undefined,
-            code: tc.code,
-        }));
-    }, [data?.items]);
-
-    return { options, isLoading };
-}
-
-/**
  * Hook pour obtenir la liste de tous les cycles (pour dropdown)
+ * Note: Les cycles incluent maintenant les attributs de TypeCycle fusionnés
  */
 export function useCyclesDropdown() {
     const { data, isLoading } = useTousCycles();
@@ -50,6 +31,9 @@ export function useCyclesDropdown() {
             value: c.id,
             label: c.nom,
             code: c.code,
+            description: c.description,
+            dureeAnnees: c.dureeAnnees,
+            diplomeSanctionnant: c.diplomeSanctionnant,
             ordre: c.ordre,
         }));
     }, [data]);
@@ -128,23 +112,6 @@ export function useExamensNationauxDropdown(sousSysteme?: string) {
 // ==================================
 // Filtres hiérarchiques
 // ==================================
-
-/**
- * Hook pour obtenir les cycles filtrés par type de cycle
- * Note: Cette fonctionnalité nécessiterait que Cycle ait une propriété typeCycleId
- * Actuellement retourné tous les cycles
- */
-export function useCyclesByTypeCycle(_typeCycleId?: string) {
-    const { data: allCycles, isLoading } = useTousCycles();
-    
-    const cycles = useMemo(() => {
-        if (!allCycles || !Array.isArray(allCycles)) return [];
-        // TODO: Filtrer par typeCycleId quand la relation sera ajoutée au type Cycle
-        return allCycles;
-    }, [allCycles]);
-
-    return { cycles, isLoading };
-}
 
 /**
  * Hook pour obtenir les niveaux filtrés par cycle

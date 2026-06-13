@@ -26,16 +26,35 @@ import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 
 // ==================== TYPES ET ENUMS ====================
 
-export type AnnonceStatut = 'brouillon' | 'actif' | 'programmé' | 'expiré' | 'archive';
-export type AnnonceValidation = 'brouillon' | 'en_attente_validation' | 'valide' | 'rejete';
-export type AnnonceTypeContenu = 'texte' | 'html' | 'enrichi';
-export type CiblageType =
-  | 'role'           // Ciblage par rôle
-  | 'utilisateur'    // Ciblage par utilisateur spécifique
-  | 'classe'         // Ciblage par classe
-  | 'niveau'         // Ciblage par niveau scolaire
-  | 'fonction'       // Ciblage par fonction personnel
-  | 'etablissement'; // Ciblage par établissement
+export enum AnnonceTypeContenu {
+    TEXTE = 'texte',
+    HTML = 'html',
+    ENRICHI = 'enrichi',
+}
+
+export enum AnnonceStatut {
+    BROUILLON = 'brouillon',
+    ACTIF = 'actif',
+    PROGRAMME = 'programmé',
+    EXPIRE = 'expiré',
+    ARCHIVE = 'archive',
+}
+
+export enum AnnonceValidation {
+    BROUILLON = 'brouillon',
+    EN_ATTENTE_VALIDATION = 'en_attente_validation',
+    VALIDE = 'valide',
+    REJETE = 'rejete',
+}
+
+export enum CiblageType {
+    ROLE = 'role',
+    UTILISATEUR = 'utilisateur',
+    CLASSE = 'classe',
+    NIVEAU = 'niveau',
+    FONCTION = 'fonction',
+    ETABLISSEMENT = 'etablissement',
+}
 
 // ==================== ENTITÉ PRINCIPALE ====================
 
@@ -56,8 +75,8 @@ export class Annonce {
   @Column({
     type: 'varchar',
     length: 20,
-    default: 'texte',
-    enum: ['texte', 'html', 'enrichi'],
+    default: AnnonceTypeContenu.TEXTE,
+    enum: AnnonceTypeContenu,
   })
   typeContenu!: AnnonceTypeContenu;
 
@@ -67,16 +86,16 @@ export class Annonce {
   @Column({
     type: 'varchar',
     length: 20,
-    default: 'brouillon',
-    enum: ['brouillon', 'actif', 'programmé', 'expiré', 'archive'],
+    default: AnnonceStatut.BROUILLON,
+    enum: AnnonceStatut,
   })
   statut!: AnnonceStatut;
 
   @Column({
     type: 'varchar',
     length: 30,
-    default: 'brouillon',
-    enum: ['brouillon', 'en_attente_validation', 'valide', 'rejete'],
+    default: AnnonceValidation.BROUILLON,
+    enum: AnnonceValidation,
   })
   validation!: AnnonceValidation;
 
@@ -158,7 +177,7 @@ export class AnnonceCiblage {
   @Column({
     type: 'varchar',
     length: 30,
-    enum: ['role', 'utilisateur', 'classe', 'niveau', 'fonction', 'etablissement'],
+    enum: CiblageType,
   })
   typeCible!: CiblageType;
 

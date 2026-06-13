@@ -1,11 +1,11 @@
 /**
  * ==================================
- * eLISAschool - DTOs Cycles (Mis à jour)
+ * eLISAschool - DTOs Cycles (Refactorisé)
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
- * DTOs mis à jour pour supporter typeCycleId au lieu de CycleScolaire enum
+ * DTOs refactorisés après suppression de TypeCycle - attributs fusionnés dans Cycle
  */
 
 import { z } from 'zod';
@@ -13,7 +13,9 @@ import { z } from 'zod';
 export const createCycleSchema = z.object({
     nom: z.string().min(2).max(100),
     code: z.string().min(2).max(50),
-    typeCycleId: z.string().uuid().optional(),
+    description: z.string().optional(),
+    dureeAnnees: z.number().int().min(0).default(0).optional(),
+    diplomeSanctionnant: z.string().max(50).optional(),
     ordre: z.number().int().min(1).default(1),
     actif: z.boolean().default(true),
 });

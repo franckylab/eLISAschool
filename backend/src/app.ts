@@ -49,10 +49,11 @@ import { orientationController } from '@modules/orientation';
 import { impressionsController } from '@modules/impressions';
 import { scoringService } from '@modules/scoring';
 import { etablissementController } from '@modules/etablissement';
-import { typesCyclesController } from '@modules/types-cycles';
 import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
 import { filieresController } from '@modules/filieres';
+import { specialitesController } from '@modules/specialites';
+import { competencesController } from '@modules/competences';
 import { examensNationauxController } from '@modules/examens-nationaux';
 import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
@@ -292,10 +293,11 @@ export function createApp(): Application {
 
     // Modules académiques (multi-établissements)
     app.use('/api/etablissements', etablissementController);
-    app.use('/api/types-cycles', typesCyclesController);
     app.use('/api/cycles', cyclesController);
     app.use('/api/niveaux', niveauxController);
     app.use('/api/filieres', filieresController);
+    app.use('/api/specialites', specialitesController);
+    app.use('/api/competences', competencesController);
     app.use('/api/examens-nationaux', examensNationauxController);
     app.use('/api/diplomes-eleves', diplomesElevesController);
     app.use('/api/annees-scolaires', anneesScolairesController);

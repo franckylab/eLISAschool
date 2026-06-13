@@ -1,0 +1,2 @@
+fuser -k 7000/tcp 2>/dev/null && sleep 1 && cd /mnt/DONNEES/projets/eLISAschool/backend && npm run dev
+fuser -k 7001/tcp 2>/dev/null && sleep 1 && cd /mnt/DONNEES/projets/eLISAschool/frontend && npm run dev

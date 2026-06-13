@@ -13,13 +13,13 @@ import { motion } from 'framer-motion';
 import { useNavigate } from '@tanstack/react-router';
 import {
     BookOpen,
-    Layers,
     GraduationCap,
     Award,
     FileText,
     ScrollText,
     ChevronRight,
     School,
+    Target,
 } from 'lucide-react';
 
 interface ModuleCard {
@@ -41,18 +41,9 @@ export function StructureAcademiquePage() {
 
     const modules: ModuleCard[] = [
         {
-            id: 'types-cycles',
-            title: 'Types de Cycles',
-            description: 'Grands types d\'enseignement (Maternelle, Primaire, Secondaire)',
-            icon: <Layers className="h-6 w-6" />,
-            route: '/parametres/structure-academique/types-cycles',
-            color: 'text-purple-600 dark:text-purple-400',
-            bgColor: 'bg-purple-50 dark:bg-purple-950',
-        },
-        {
             id: 'cycles',
             title: 'Cycles Pédagogiques',
-            description: 'Cycles d\'enseignement (Maternel, Primaire, Secondaire 1 & 2)',
+            description: 'Types et cycles d\'enseignement (Maternelle, Primaire, Secondaire 1 & 2)',
             icon: <School className="h-6 w-6" />,
             route: '/parametres/structure-academique/cycles',
             color: 'text-blue-600 dark:text-blue-400',
@@ -70,11 +61,20 @@ export function StructureAcademiquePage() {
         {
             id: 'filieres',
             title: 'Filières',
-            description: 'Spécialités du second cycle (C, D, E, A, A1)',
+            description: 'Spécialités du second cycle (C, D, E, A, A1, F1, F2, F3, F4, G1, G2, H, I, K, L)',
             icon: <Award className="h-6 w-6" />,
             route: '/parametres/structure-academique/filieres',
             color: 'text-orange-600 dark:text-orange-400',
             bgColor: 'bg-orange-50 dark:bg-orange-950',
+        },
+        {
+            id: 'specialites',
+            title: 'Spécialités',
+            description: 'Options par filière technique (Maintenance, Électrotechnique, Génie Civil, etc.)',
+            icon: <BookOpen className="h-6 w-6" />,
+            route: '/specialites',
+            color: 'text-purple-600 dark:text-purple-400',
+            bgColor: 'bg-purple-50 dark:bg-purple-950',
         },
         {
             id: 'examens-nationaux',
@@ -93,6 +93,15 @@ export function StructureAcademiquePage() {
             route: '/parametres/structure-academique/diplomes-eleves',
             color: 'text-indigo-600 dark:text-indigo-400',
             bgColor: 'bg-indigo-50 dark:bg-indigo-950',
+        },
+        {
+            id: 'competences',
+            title: 'Compétences',
+            description: 'Approche Par Compétences (APC) - Référentiel de compétences par niveau et matière',
+            icon: <Target className="h-6 w-6" />,
+            route: '/competences',
+            color: 'text-teal-600 dark:text-teal-400',
+            bgColor: 'bg-teal-50 dark:bg-teal-950',
         },
     ];
 
@@ -125,10 +134,6 @@ export function StructureAcademiquePage() {
             >
                 <h2 className="text-lg font-semibold text-foreground mb-2">Organisation Hiérarchique</h2>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
-                        Types de Cycles
-                    </span>
-                    <ChevronRight className="h-4 w-4" />
                     <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
                         Cycles
                     </span>
@@ -140,13 +145,20 @@ export function StructureAcademiquePage() {
                     <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
                         Filières
                     </span>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                        Spécialités
+                    </span>
                 </div>
-                <div className="mt-3 text-sm text-muted-foreground">
+                <div className="mt-3 text-sm text-muted-foreground space-y-1">
                     <p>
                         <strong>Examens Nationaux</strong> → Associés aux niveaux d'examen
                     </p>
                     <p>
                         <strong>Diplômes Élèves</strong> → Enregistrement des diplômes obtenus
+                    </p>
+                    <p>
+                        <strong>Compétences</strong> → Référentiel APC pour l'évaluation par compétences
                     </p>
                 </div>
             </motion.div>

@@ -89,7 +89,7 @@ export class Conversation {
     @Column({ type: 'varchar', length: 255, nullable: true })
     titre?: string;
 
-    @Column({ type: 'varchar', length: 30, enum: TypeConversation, default: TypeConversation.INDIVIDUELLE })
+    @Column({ type: 'enum', enum: TypeConversation, default: TypeConversation.INDIVIDUELLE })
     type!: TypeConversation;
 
     @Column({ type: 'uuid', nullable: true })
@@ -302,7 +302,7 @@ export class MessageReaction {
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur!: Utilisateur;
 
-    @Column({ type: 'varchar', length: 20, enum: EmojiReaction })
+    @Column({ type: 'enum', enum: EmojiReaction })
     emoji!: EmojiReaction;
 
     @CreateDateColumn({ type: 'timestamp' })
@@ -393,7 +393,7 @@ export class TemplateMessage {
     @Column({ type: 'text' })
     contenu!: string;
 
-    @Column({ type: 'varchar', length: 50, enum: CategorieTemplate })
+    @Column({ type: 'enum', enum: CategorieTemplate })
     categorie!: CategorieTemplate;
 
     @Column({ type: 'boolean', default: true })

@@ -18,7 +18,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { Role } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 
 @Entity('role_limitations_etablissements')
 export class RoleLimitationEtablissement {

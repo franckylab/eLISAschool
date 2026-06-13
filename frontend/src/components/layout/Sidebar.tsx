@@ -22,7 +22,6 @@ import {
     Shield,
     UserCog,
     Building2,
-    Layers,
     GraduationCap as LevelIcon,
     School,
     CalendarDays,
@@ -36,6 +35,8 @@ import {
     LayoutGrid,
     ChevronDown,
     ChevronRight,
+    Target,
+    BookOpen,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -190,12 +191,13 @@ const NAV_SECTIONS: NavSection[] = [
                 icon: GraduationCap,
                 children: [
                     { label: 'Vue d\'ensemble', path: '/parametres/structure-academique', icon: LayoutGrid },
-                    { label: 'Types Cycles', path: '/types-cycles', icon: Layers, module: 'types-cycles' },
                     { label: 'Cycles', path: '/cycles', icon: School, module: 'cycles' },
                     { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
                     { label: 'Filières', path: '/filieres', icon: Award, module: 'filieres' },
+                    { label: 'Spécialités', path: '/specialites', icon: BookOpen, module: 'specialites' },
                     { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileText, module: 'examens-nationaux' },
                     { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: ScrollText, module: 'diplomes-eleves' },
+                    { label: 'Compétences', path: '/competences', icon: Target, module: 'competences' },
                 ]
             },
             { label: 'Classes', path: '/classes', icon: School, module: 'classes' },
@@ -250,10 +252,11 @@ export function Sidebar() {
 
     // Vérifier les permissions pour chaque module
     const etablissementsPerms = useModulePermissions('etablissements');
-    const typesCyclesPerms = useModulePermissions('types-cycles');
     const cyclesPerms = useModulePermissions('cycles');
     const niveauxPerms = useModulePermissions('niveaux');
     const filieresPerms = useModulePermissions('filieres');
+    const specialitesPerms = useModulePermissions('specialites');
+    const competencesPerms = useModulePermissions('competences');
     const examensNationauxPerms = useModulePermissions('examens-nationaux');
     const diplomesElevesPerms = useModulePermissions('diplomes-eleves');
     const classesPerms = useModulePermissions('classes');
@@ -279,10 +282,11 @@ export function Sidebar() {
                     const filteredChildren = item.children.filter((child) => {
                         if (!child.module) return true;
                         const permsMap: Record<string, { canAccess: boolean }> = {
-                            'types-cycles': typesCyclesPerms,
                             cycles: cyclesPerms,
                             niveaux: niveauxPerms,
                             filieres: filieresPerms,
+                            specialites: specialitesPerms,
+                            competences: competencesPerms,
                             'examens-nationaux': examensNationauxPerms,
                             'diplomes-eleves': diplomesElevesPerms,
                         };
@@ -302,7 +306,6 @@ export function Sidebar() {
                 
                 const permsMap: Record<string, { canAccess: boolean }> = {
                     etablissements: etablissementsPerms,
-                    'types-cycles': typesCyclesPerms,
                     cycles: cyclesPerms,
                     niveaux: niveauxPerms,
                     filieres: filieresPerms,

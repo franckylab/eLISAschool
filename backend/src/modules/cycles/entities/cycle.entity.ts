@@ -11,40 +11,38 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
-    ManyToOne,
-    JoinColumn,
     Index,
 } from 'typeorm';
-import { TypeCycle } from '@modules/types-cycles/entities';
 import { Niveau } from '@modules/niveaux/entities';
 
 @Entity('cycles')
-@Index(['typeCycleId'])
 export class Cycle {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 100 })
-    nom!: string; // "Cycle Maternel", "Cycle Primaire", etc.
+    @Column({ type: 'varchar', length: 100, unique: true })
+    nom!: string; // "Enseignement Maternel", "Enseignement Primaire", etc.
 
-    @Column({ type: 'varchar', length: 50 })
-    code!: string; // "CYCLE_MATERNEL", "CYCLE_PRIMAIRE", etc.
+    @Column({ type: 'varchar', length: 50, unique: true })
+    code!: string; // "MATERNELLE", "PRIMAIRE", "SECONDAIRE_1", "SECONDAIRE_2"
 
-    @Column({ type: 'uuid', nullable: true })
-    typeCycleId!: string;
+    @Column({ type: 'text', nullable: true })
+    description?: string;
 
-    @ManyToOne(() => TypeCycle, (typeCycle) => typeCycle.cycles)
-    @JoinColumn({ name: 'typeCycleId' })
-    typeCycle?: TypeCycle;
+    @Column({ type: 'int', default: 0 })
+    ordre!: number; // Ordre d'affichage
 
-    @OneToMany(() => Niveau, (niveau) => niveau.cycle)
-    niveaux?: Niveau[];
+    @Column({ type: 'int', default: 0, name: 'dureeannees' })
+    dureeAnnees!: number; // Durée en années (3, 6, 4, 3)
 
-    @Column({ type: 'int', default: 1 })
-    ordre!: number;
+    @Column({ type: 'varchar', length: 50, nullable: true, name: 'diplomesanctionnant' })
+    diplomeSanctionnant?: string; // "CEP", "BEPC", "BACCALAUREAT"
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    @OneToMany(() => Niveau, (niveau) => niveau.cycle)
+    niveaux?: Niveau[];
 
     @CreateDateColumn()
     createdAt!: Date;

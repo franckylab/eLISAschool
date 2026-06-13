@@ -16,15 +16,7 @@ import {
     JoinColumn,
 } from 'typeorm';
 import { Utilisateur } from './utilisateur.entity';
-
-/**
- * Genre
- */
-export enum Genre {
-    MASCULIN = 'M',
-    FEMININ = 'F',
-    AUTRE = 'A',
-}
+import { Genre } from '@shared/enums/statuts.enum';
 
 /**
  * Entité Profil Utilisateur
