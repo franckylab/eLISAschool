@@ -36,7 +36,10 @@ const PARAMETRES_KEYS = {
 /**
  * Récupérer la liste des paramètres avec filtres
  */
-export function useParametres(filtres: ParametreFiltres = {}) {return useQuery({
+export function useParametres(filtres: ParametreFiltres = {}) {
+    const { isAuthenticated } = useAuthStore();
+    
+    return useQuery({
         queryKey: PARAMETRES_KEYS.liste(filtres),
         queryFn: async () => {
             // Construire les params sans les boolean (URLSearchParams les convertit en string)

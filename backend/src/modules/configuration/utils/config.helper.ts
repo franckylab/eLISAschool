@@ -1,12 +1,12 @@
 /**
  * ==================================
- * eLISAschool - Helper Configuration v2.0
+ * eLISAschool - Helper Configuration v6.0
  * ==================================
- * Version: 2.0.0
+ * Version: 6.0.0
  * Auteur: franck arlos chendjou
  * 
  * Fonctions utilitaires pour accéder aux paramètres
- * avec cache rapide et typage fort
+ * avec cache rapide, typage fort et support multi-tenant
  */
 
 import { configurationService } from '../services/configuration.service';
@@ -19,17 +19,29 @@ const quickCache: Map<string, { value: any; expiry: number }> = new Map();
 const QUICK_CACHE_TTL = 60 * 1000;
 
 /**
- * Récupère un paramètre avec cache rapide
+ * Récupère un paramètre avec contexte d'établissement
+ * 
+ * @param cle Clé du paramètre
+ * @param options Options de contexte
+ * @param options.etablissementId ID de l'établissement (optionnel)
+ * @param options.defaultValue Valeur par défaut si paramètre non trouvé
  */
-export async function getParam<T = string>(cle: string, defaultValue?: T): Promise<T> {
-    const cached = quickCache.get(cle);
+export async function getParam<T = string>(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: T }
+): Promise<T> {
+    const { etablissementId, defaultValue } = options || {};
+    const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
+
+    const cached = quickCache.get(cacheKey);
     if (cached && Date.now() < cached.expiry) {
         return cached.value as T;
     }
 
-    const value = await configurationService.getParametre<T>(cle);
+    // ✅ PASSER etablissementId au service
+    const value = await configurationService.getParametre<T>(cle, etablissementId);
     if (value !== null) {
-        quickCache.set(cle, { value, expiry: Date.now() + QUICK_CACHE_TTL });
+        quickCache.set(cacheKey, { value, expiry: Date.now() + QUICK_CACHE_TTL });
         return value;
     }
 
@@ -37,18 +49,39 @@ export async function getParam<T = string>(cle: string, defaultValue?: T): Promi
 }
 
 /**
+ * Récupère un paramètre depuis le contexte de la requête
+ * Utilise automatiquement req.etablissementId
+ */
+export async function getParamFromRequest<T = string>(
+    cle: string,
+    req: { etablissementId?: string },
+    defaultValue?: T
+): Promise<T> {
+    return getParam<T>(cle, {
+        etablissementId: req.etablissementId,
+        defaultValue
+    });
+}
+
+/**
  * Récupère un paramètre numérique
  */
-export async function getParamNumber(cle: string, defaultValue: number = 0): Promise<number> {
-    const value = await getParam<number>(cle, defaultValue);
-    return typeof value === 'number' ? value : parseFloat(String(value)) || defaultValue;
+export async function getParamNumber(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: number }
+): Promise<number> {
+    const value = await getParam<number>(cle, options);
+    return typeof value === 'number' ? value : parseFloat(String(value)) || options?.defaultValue || 0;
 }
 
 /**
  * Récupère un paramètre booléen
  */
-export async function getParamBoolean(cle: string, defaultValue: boolean = false): Promise<boolean> {
-    const value = await getParam<boolean | string>(cle, defaultValue);
+export async function getParamBoolean(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: boolean }
+): Promise<boolean> {
+    const value = await getParam<boolean | string>(cle, options);
     if (typeof value === 'boolean') return value;
     return value === 'true' || value === '1';
 }
@@ -56,17 +89,23 @@ export async function getParamBoolean(cle: string, defaultValue: boolean = false
 /**
  * Récupère un paramètre JSON
  */
-export async function getParamJson<T = any>(cle: string, defaultValue?: T): Promise<T | undefined> {
-    const value = await getParam<T>(cle, defaultValue);
+export async function getParamJson<T = any>(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: T }
+): Promise<T | undefined> {
+    const value = await getParam<T>(cle, options);
     return value;
 }
 
 /**
  * Récupère un paramètre tableau
  */
-export async function getParamArray<T = string>(cle: string, defaultValue: T[] = []): Promise<T[]> {
-    const value = await getParam<T[]>(cle, defaultValue);
-    return Array.isArray(value) ? value : defaultValue;
+export async function getParamArray<T = string>(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: T[] }
+): Promise<T[]> {
+    const value = await getParam<T[]>(cle, options);
+    return Array.isArray(value) ? value : options?.defaultValue || [];
 }
 
 /**
@@ -74,13 +113,6 @@ export async function getParamArray<T = string>(cle: string, defaultValue: T[] =
  */
 export async function isModuleActive(moduleNom: string, etablissementId?: string): Promise<boolean> {
     return configurationService.isModuleActive(moduleNom, etablissementId);
-}
-
-/**
- * Récupère la configuration de l'établissement
- */
-export async function getAppConfig() {
-    return configurationService.getConfigApp();
 }
 
 /**
@@ -118,12 +150,12 @@ export { CategorieParametre };
 
 export default {
     getParam,
+    getParamFromRequest,
     getParamNumber,
     getParamBoolean,
     getParamJson,
     getParamArray,
     isModuleActive,
-    getAppConfig,
     getModuleParams,
     invalidateConfigCache,
     setParam,

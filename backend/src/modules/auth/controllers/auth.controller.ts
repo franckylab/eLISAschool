@@ -9,6 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { utilisateurEtablissementService } from '../services/utilisateur-etablissement.service';
+import { etablissementSelectionService } from '../services/etablissement-selection.service';
 import { tokenService } from '../services/token.service';
 import { auditService } from '../services/audit.service';
 import {
@@ -322,6 +323,99 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
                     role: etablissementData.role,
                 },
             },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/pre-login
+ * Vérifie si l'utilisateur doit sélectionner un établissement
+ * Retourne la liste des établissements si >1, ou indique connexion automatique
+ * 
+ * Requiert authentification (juste après validation credentials)
+ */
+router.post('/pre-login', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        
+        const result = await etablissementSelectionService.preLogin(
+            utilisateurId,
+            req.ip,
+            req.get('User-Agent')
+        );
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: result.requiereSelection 
+                ? 'Sélection d\'établissement requise'
+                : 'Connexion automatique possible',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/complete-login
+ * Finalise la connexion après sélection d'établissement
+ * Génère un token complet avec etablissementId et rôle contextuel
+ * 
+ * Requiert authentification (token temporaire)
+ */
+router.post('/complete-login', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { etablissementId } = req.body;
+        
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT_ID');
+        }
+
+        const utilisateurId = req.utilisateur!.id;
+
+        const result = await etablissementSelectionService.completeLogin(
+            utilisateurId,
+            etablissementId,
+            req.ip,
+            req.get('User-Agent')
+        );
+
+        // Audit connexion complète
+        await auditService.log({
+            utilisateurId,
+            action: 'LOGIN' as any,
+            severity: 'INFO' as any,
+            description: `Connexion complète - Établissement: ${etablissementId}`,
+            module: 'auth',
+        }, req);
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: 'Connexion établie avec succès',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/auth/etablissements-disponibles
+ * Récupère la liste des établissements disponibles pour l'utilisateur connecté
+ * 
+ * Requiert authentification
+ */
+router.get('/etablissements-disponibles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        
+        const etablissements = await etablissementSelectionService.getEtablissementsDisponibles(utilisateurId);
+
+        res.status(200).json({
+            success: true,
+            data: etablissements,
         });
     } catch (error) {
         next(error);

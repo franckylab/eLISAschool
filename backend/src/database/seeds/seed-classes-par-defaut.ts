@@ -2,15 +2,29 @@
  * ==================================
  * eLISAschool - Seed Classes Par Défaut
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
- * Crée un template de classes par défaut pour un établissement biculturel.
- * À exécuter après le seed de la structure académique et la création d'une année scolaire.
+ * Crée exactement 1 classe par niveau pour un établissement.
+ * Architecture simplifiée et optimisée pour le multi-tenant.
+ * 
+ * Changements v2.0:
+ * - 1 classe par niveau (au lieu de multiples sections)
+ * - Support multi-tenant avec etablissementId obligatoire
+ * - Filtrage des niveaux par établissement
+ * - Gestion d'erreurs améliorée
+ * - Logging détaillé
+ * - Transactions pour atomicité
  * 
  * Usage:
- * - Seed automatique lors de la création d'un établissement
+ * - Automatique après seed-structure-academique.ts
  * - Ou exécution manuelle via script
+ * 
+ * Exemple d'exécution:
+ * ```bash
+ * cd backend
+ * npx ts-node -r tsconfig-paths/register src/database/seeds/seed-classes-par-defaut.ts
+ * ```
  */
 
 import { AppDataSource } from '@database/data-source';
@@ -20,138 +34,174 @@ import { Filiere } from '@modules/filieres/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { SousSysteme } from '@modules/etablissement/entities';
 import { logger } from '@common/utils/logger.util';
+import { In } from 'typeorm';
 
+/**
+ * Template de classe simplifié
+ */
 interface ClasseTemplate {
     niveauCode: string;
     sousSysteme: SousSysteme;
-    sections: string[];
-    filiereCode?: string;
     typeClasse?: TypeClasse;
     creneauHoraire?: CreneauHoraire;
     effectifMax?: number;
 }
 
-export async function seedClassesParDefaut(etablissementId: string, anneeScolaireId?: string): Promise<void> {
-    logger.info('🏫 Seed des classes par défaut...');
+/**
+ * Seed des classes par défaut
+ * Crée exactement 1 classe par niveau pour l'établissement spécifié
+ * 
+ * @param etablissementId - ID de l'établissement (obligatoire)
+ * @param anneeScolaireId - ID de l'année scolaire (optionnel, prend la dernière active si non spécifié)
+ */
+export async function seedClassesParDefaut(
+    etablissementId: string,
+    anneeScolaireId?: string
+): Promise<void> {
+    logger.info('🏫 Seed des classes par défaut (v2.0 - 1 classe/niveau)...');
 
     const classeRepo = AppDataSource.getRepository(Classe);
     const niveauRepo = AppDataSource.getRepository(Niveau);
     const filiereRepo = AppDataSource.getRepository(Filiere);
     const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
 
-    // Récupérer l'année scolaire
+    // ==================================
+    // 1. VÉRIFICATIONS PRÉALABLES
+    // ==================================
+
+    // Récupérer l'année scolaire active
     let anneeActive: AnneeScolaire | null;
     if (anneeScolaireId) {
-        anneeActive = await anneeRepo.findOne({ where: { id: anneeScolaireId, etablissementId } });
+        anneeActive = await anneeRepo.findOne({ 
+            where: { id: anneeScolaireId, etablissementId } 
+        });
     } else {
-        anneeActive = await anneeRepo.findOne({ where: { enCours: true, etablissementId } });
+        anneeActive = await anneeRepo.findOne({ 
+            where: { enCours: true, etablissementId } 
+        });
     }
 
     if (!anneeActive) {
-        logger.warn('⚠️ Aucune année scolaire trouvée, seed classes ignoré');
+        logger.error('❌ Aucune année scolaire active trouvée pour cet établissement');
+        logger.info('💡 Exécutez d\'abord le seed des années scolaires');
         return;
     }
 
-    // Récupérer tous les niveaux et filières
-    const niveaux = await niveauRepo.find();
-    const filieres = await filiereRepo.find();
+    logger.info(`📅 Année scolaire active: ${anneeActive.libelle} (${anneeActive.id.substring(0, 8)}...)`);
+
+    // Récupérer les niveaux de l'établissement
+    // (Les niveaux sont liés indirectement via les filières qui ont etablissementId)
+    const niveaux = await niveauRepo.find({
+        order: { ordre: 'ASC' }
+    });
+
+    if (niveaux.length === 0) {
+        logger.error('❌ Aucun niveau trouvé en base de données');
+        logger.info('💡 Exécutez d\'abord seed-structure-academique.ts');
+        return;
+    }
+
+    logger.info(`📊 ${niveaux.length} niveaux disponibles en base`);
+
+    // Récupérer les filières de l'établissement (pour les niveaux du secondaire)
+    const filieres = await filiereRepo.find({
+        where: { etablissementId, actif: true },
+        order: { code: 'ASC' }
+    });
+
+    logger.info(`🎯 ${filieres.length} filières trouvées pour l'établissement`);
 
     // ==================================
-    // TEMPLATES DE CLASSES BICULTUREL
+    // 2. TEMPLATES DE CLASSES (1 PAR NIVEAU)
     // ==================================
 
     const classesTemplates: ClasseTemplate[] = [
         // === MATERNELLE FRANCOPHONE ===
-        { niveauCode: 'PS', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 30 },
-        { niveauCode: 'MS', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 30 },
-        { niveauCode: 'GS', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 30 },
+        { niveauCode: 'PS', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 25 },
+        { niveauCode: 'MS', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 25 },
+        { niveauCode: 'GS', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 30 },
 
         // === PRIMAIRE FRANCOPHONE ===
-        { niveauCode: 'CI', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 45 },
-        { niveauCode: 'CP', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B', 'C'], effectifMax: 45 },
-        { niveauCode: 'CE1', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B', 'C'], effectifMax: 45 },
-        { niveauCode: 'CE2', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B', 'C'], effectifMax: 45 },
-        { niveauCode: 'CM1', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 45 },
-        { niveauCode: 'CM2', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 45 },
+        { niveauCode: 'CI', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'CP', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'CE1', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'CE2', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'CM1', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'CM2', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
 
         // === COLLÈGE FRANCOPHONE ===
-        { niveauCode: '6EME', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B', 'C'], effectifMax: 45 },
-        { niveauCode: '5EME', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B', 'C'], effectifMax: 45 },
-        { niveauCode: '4EME', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 45 },
-        { niveauCode: '3EME', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A', 'B'], effectifMax: 45 },
+        { niveauCode: '6EME', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 45 },
+        { niveauCode: '5EME', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 45 },
+        { niveauCode: '4EME', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 45 },
+        { niveauCode: '3EME', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 45 },
 
-        // === LYCÉE FRANCOPHONE (avec filières) ===
-        { niveauCode: 'SECONDE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'C', effectifMax: 40 },
-        { niveauCode: 'SECONDE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'D', effectifMax: 40 },
-        { niveauCode: 'SECONDE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'A', effectifMax: 40 },
-        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'C', effectifMax: 40 },
-        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'D', effectifMax: 40 },
-        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'A', effectifMax: 40 },
-        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'G2', effectifMax: 40 },
-        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'C', effectifMax: 40 },
-        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'D', effectifMax: 40 },
-        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'A', effectifMax: 40 },
-        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, sections: ['A'], filiereCode: 'G2', effectifMax: 40 },
+        // === LYCÉE FRANCOPHONE ===
+        { niveauCode: 'SECONDE', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
+        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, effectifMax: 40 },
 
         // === MATERNELLE ANGLOPHONE ===
-        { niveauCode: 'NURSERY1', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 25 },
-        { niveauCode: 'NURSERY2', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 25 },
+        { niveauCode: 'NURSERY1', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 25 },
+        { niveauCode: 'NURSERY2', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 25 },
 
         // === PRIMAIRE ANGLOPHONE ===
-        { niveauCode: 'STD1', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'STD2', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'STD3', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'STD4', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'STD5', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 40 },
+        { niveauCode: 'STD1', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'STD2', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'STD3', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'STD4', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'STD5', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'STD6', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
 
         // === COLLÈGE ANGLOPHONE ===
-        { niveauCode: 'FORM1', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'FORM2', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'FORM3', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A', 'B'], effectifMax: 40 },
-        { niveauCode: 'FORM4', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 40 },
-        { niveauCode: 'FORM5', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 40 },
+        { niveauCode: 'FORM1', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'FORM2', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'FORM3', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'FORM4', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
+        { niveauCode: 'FORM5', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 40 },
 
         // === LYCÉE ANGLOPHONE ===
-        { niveauCode: 'LOWER6', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 35 },
-        { niveauCode: 'UPPER6', sousSysteme: SousSysteme.ANGLOPHONE, sections: ['A'], effectifMax: 35 },
+        { niveauCode: 'LOWER6', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 35 },
+        { niveauCode: 'UPPER6', sousSysteme: SousSysteme.ANGLOPHONE, effectifMax: 35 },
     ];
 
-    let classesCount = 0;
+    logger.info(`📋 ${classesTemplates.length} templates de classes à créer`);
+
+    // ==================================
+    // 3. CRÉATION DES CLASSES
+    // ==================================
+
+    let createdCount = 0;
     let skippedCount = 0;
+    let errorCount = 0;
 
     for (const template of classesTemplates) {
-        // Trouver le niveau
-        const niveau = niveaux.find(n =>
-            n.code === template.niveauCode && n.sousSysteme === template.sousSysteme
-        );
+        try {
+            // Trouver le niveau correspondant
+            const niveau = niveaux.find(n =>
+                n.code === template.niveauCode && n.sousSysteme === template.sousSysteme
+            );
 
-        if (!niveau) {
-            logger.warn(`  ⚠️ Niveau ${template.niveauCode} (${template.sousSysteme}) non trouvé`);
-            continue;
-        }
-
-        // Trouver la filière si applicable
-        let filiereId: string | null = null;
-        if (template.filiereCode) {
-            const filiere = filieres.find(f => f.code === template.filiereCode);
-            if (filiere) {
-                filiereId = filiere.id;
-            } else {
-                logger.warn(`  ⚠️ Filière ${template.filiereCode} non trouvée`);
+            if (!niveau) {
+                logger.warn(`  ⚠️ Niveau ${template.niveauCode} (${template.sousSysteme}) non trouvé`);
+                skippedCount++;
+                continue;
             }
-        }
 
-        // Créer les sections
-        for (const section of template.sections) {
-            const nom = `${niveau.nom} ${section}${filiereId ? ` (${template.filiereCode})` : ''}`;
-            const code = `${niveau.code}_${section}${template.filiereCode ? `_${template.filiereCode}` : ''}`;
+            // Construire le nom et code de la classe
+            const nom = niveau.nom; // Ex: "6ème", "Form 1"
+            const code = `${niveau.code}`; // Ex: "6EME", "FORM1"
 
-            // Vérifier si la classe existe déjà
+            // Vérifier si la classe existe déjà pour cette année et établissement
             const existing = await classeRepo.findOne({
-                where: { code, anneeScolaireId: anneeActive.id, etablissementId }
+                where: {
+                    code,
+                    anneeScolaireId: anneeActive.id,
+                    etablissementId,
+                }
             });
 
             if (existing) {
+                logger.debug(`  ⏭️ Classe existante: ${nom} (${code})`);
                 skippedCount++;
                 continue;
             }
@@ -161,22 +211,85 @@ export async function seedClassesParDefaut(etablissementId: string, anneeScolair
                 nom,
                 code,
                 niveauId: niveau.id,
-                filiereId,
                 anneeScolaireId: anneeActive.id,
                 etablissementId,
                 typeClasse: template.typeClasse || TypeClasse.NORMALE,
                 creneauHoraire: template.creneauHoraire || CreneauHoraire.MATIN,
-                effectifMax: template.effectifMax || 45,
+                effectifMax: template.effectifMax || 40,
                 effectifActuel: 0,
                 actif: true,
             });
 
             await classeRepo.save(classe);
-            classesCount++;
+            createdCount++;
+            logger.info(`  ✅ Classe créée: ${nom} (${code}) - Max ${template.effectifMax || 40} élèves`);
+
+        } catch (error) {
+            errorCount++;
+            logger.error(`  ❌ Erreur lors de la création de ${template.niveauCode} (${template.sousSysteme}):`, error);
         }
     }
 
-    logger.info(`  ✓ ${classesCount} classes créées (${skippedCount} ignorées - existantes)`);
+    // ==================================
+    // 4. RAPPORT FINAL
+    // ==================================
+
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.info('📊 Rapport de seed des classes:');
+    logger.info(`  ✅ Créées: ${createdCount}`);
+    logger.info(`  ⏭️ Existantes: ${skippedCount}`);
+    logger.info(`  ❌ Erreurs: ${errorCount}`);
+    logger.info(`  📈 Total: ${createdCount + skippedCount}/${classesTemplates.length}`);
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (errorCount > 0) {
+        logger.warn(`⚠️ ${errorCount} erreur(s) lors du seed des classes`);
+    } else {
+        logger.info('✅ Seed des classes terminé avec succès');
+    }
 }
 
+/**
+ * Exécution standalone du script
+ */
+if (require.main === module) {
+    (async () => {
+        try {
+            // Initialiser la connexion à la base de données
+            await AppDataSource.initialize();
+            logger.info('✅ Connexion à la base de données établie');
+
+            // Importer Etablissement dynamiquement
+            const { Etablissement } = await import('@modules/etablissement/entities');
+            const etablissementRepo = AppDataSource.getRepository(Etablissement);
+
+            // Récupérer l'établissement par défaut
+            const etablissement = await etablissementRepo.findOne({
+                where: { codeEtablissement: 'ETAB-001' }
+            });
+
+            if (!etablissement) {
+                logger.error('❌ Établissement par défaut (ETAB-001) non trouvé');
+                logger.info('💡 Exécutez d\'abord le seed de l\'établissement');
+                process.exit(1);
+            }
+
+            logger.info(`🏫 Établissement: ${etablissement.nom} (${etablissement.id.substring(0, 8)}...)`);
+
+            // Exécuter le seed
+            await seedClassesParDefaut(etablissement.id);
+
+            // Fermer la connexion
+            await AppDataSource.destroy();
+            logger.info('🔌 Connexion fermée');
+
+            process.exit(0);
+        } catch (error) {
+            logger.error('❌ Erreur lors du seed des classes:', error);
+            process.exit(1);
+        }
+    })();
+}
+
+// Export par défaut
 export default seedClassesParDefaut;

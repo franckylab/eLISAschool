@@ -58,62 +58,80 @@ const seedService = new ConfigurationSeedService();
 const historyService = new ConfigurationHistoryService();
 
 // =============================================
-// CONFIGURATION APPLICATION
+// CONFIGURATION APPLICATION - Migré vers ParametreSysteme
 // =============================================
 
+/**
+ * GET /api/configuration
+ * Récupère les paramètres globaux de l'application
+ */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const config = await configurationService.getConfigApp();
-        const publicConfig = {
-            nomEtablissement: config.nomEtablissement,
-            typeEtablissement: config.typeEtablissement,
-            logoUrl: config.logoUrl,
-            sloganEtablissement: config.sloganEtablissement,
-            messageAccueil: config.messageAccueil,
-            langueDefaut: config.langueDefaut,
-            devise: config.devise,
-            couleurPrimaire: config.couleurPrimaire,
-            couleurSecondaire: config.couleurSecondaire,
-            couleurAccent: config.couleurAccent,
-            theme: config.theme,
-            version: config.version,
-        };
+        // Récupérer les paramètres globaux depuis ParametreSysteme
+        const params = await configurationService.getParametres({ visible: true });
+        
+        // Construire la configuration publique
+        const publicConfig: any = {};
+        for (const param of params) {
+            if (!param.etablissementId) { // Uniquement les paramètres globaux
+                try {
+                    publicConfig[param.cle] = JSON.parse(param.valeur);
+                } catch {
+                    publicConfig[param.cle] = param.valeur;
+                }
+            }
+        }
+        
         res.json({ success: true, data: publicConfig });
     } catch (error) { next(error); }
 });
 
+/**
+ * GET /api/configuration/full
+ * Récupère TOUS les paramètres (admin uniquement)
+ */
 router.get('/full', authMiddleware, canViewConfigApp, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const config = await configurationService.getConfigApp();
-        res.json({ success: true, data: config });
+        const params = await configurationService.getAllParametres();
+        res.json({ success: true, data: params });
     } catch (error) { next(error); }
 });
 
+/**
+ * PATCH /api/configuration
+ * Met à jour les paramètres globaux
+ */
 router.patch('/', authMiddleware, canEditConfigApp, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const ancienneValeur = await configurationService.getConfigApp();
         const dto = validateDto(updateConfigAppSchema, req.body);
-        const config = await configurationService.updateConfigApp(dto);
+        
+        // Mettre à jour chaque paramètre individuellement
+        const updated: any = {};
+        for (const [key, value] of Object.entries(dto)) {
+            if (value !== undefined) {
+                await configurationService.setParametre(`app.${key}`, value);
+                updated[key] = value;
+            }
+        }
 
         await historyService.logAction({
             utilisateurId: req.utilisateur?.id,
             action: ActionConfiguration.UPDATE,
             cible: CibleConfiguration.APP,
-            ancienneValeur,
-            nouvelleValeur: config,
+            nouvelleValeur: updated,
             req,
         });
 
         configurationListener.emitChange({
             action: ActionConfiguration.UPDATE,
             cible: CibleConfiguration.APP,
-            ancienneValeur,
-            nouvelleValeur: config,
+            nouvelleValeur: updated,
             timestamp: new Date(),
             utilisateurId: req.utilisateur?.id,
         });
 
-        res.json({ success: true, data: config, message: 'Configuration mise à jour' });
+        logger.info('Configuration application mise à jour (via ParametreSysteme)');
+        res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 

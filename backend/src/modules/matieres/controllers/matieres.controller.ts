@@ -2,6 +2,12 @@
  * ==================================
  * eLISAschool - Controller Matières
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec etablissementId
+ * - Toutes les routes passent etablissementId aux services
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -22,7 +28,14 @@ const service = new MatieresService();
 // Matières CRUD
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const matieres = await service.findAll();
+        const query = validateDto(require('zod').z.object({
+            page: require('zod').z.coerce.number().optional(),
+            limit: require('zod').z.coerce.number().optional(),
+            groupeId: require('zod').z.string().optional(),
+            actif: require('zod').z.coerce.boolean().optional(),
+        }), req.query);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const matieres = await service.findAll(query, etablissementId);
         res.json({ success: true, data: matieres });
     } catch (error) { next(error); }
 });
@@ -30,8 +43,26 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMatiereSchema, req.body);
-        const matiere = await service.create(dto);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const matiere = await service.create(dto, etablissementId);
         res.status(201).json({ success: true, data: matiere });
+    } catch (error) { next(error); }
+});
+
+router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(updateMatiereSchema, req.body);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const matiere = await service.update(req.params.id, dto, etablissementId);
+        res.json({ success: true, data: matiere });
+    } catch (error) { next(error); }
+});
+
+router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        await service.delete(req.params.id, etablissementId);
+        res.json({ success: true, message: 'Matière supprimée' });
     } catch (error) { next(error); }
 });
 

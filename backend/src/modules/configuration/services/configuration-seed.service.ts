@@ -10,7 +10,6 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { ConfigurationApp } from '../entities/configuration-app.entity';
 import { ConfigurationModule } from '../entities/configuration-module.entity';
 import { ParametreSysteme, CategorieParametre, TypeValeurParametre } from '../entities/parametre-systeme.entity';
 import { logger } from '@common/utils/logger.util';
@@ -37,12 +36,10 @@ interface ParametreDefaut {
  * Service de seed pour la configuration
  */
 export class ConfigurationSeedService {
-    private configAppRepo: Repository<ConfigurationApp>;
     private configModuleRepo: Repository<ConfigurationModule>;
     private parametreRepo: Repository<ParametreSysteme>;
 
     constructor() {
-        this.configAppRepo = AppDataSource.getRepository(ConfigurationApp);
         this.configModuleRepo = AppDataSource.getRepository(ConfigurationModule);
         this.parametreRepo = AppDataSource.getRepository(ParametreSysteme);
     }
@@ -51,83 +48,18 @@ export class ConfigurationSeedService {
      * Exécute tous les seeds de configuration
      * @param force Si true, force la réinitialisation des valeurs existantes vers les valeurs par défaut
      */
-    async runAllSeeds(force: boolean = false): Promise<{ app: boolean; modules: number; parametres: number }> {
+    async runAllSeeds(force: boolean = false): Promise<{ modules: number; parametres: number }> {
         logger.info(`🌱 Démarrage du seed de configuration${force ? ' (FORCÉ)' : ''}...`);
 
-        const appCreated = await this.seedConfigurationApp(force);
         const modulesCreated = await this.seedConfigurationModules(force);
         const parametresCreated = await this.seedParametresSysteme(force);
 
-        logger.info(`✅ Seed terminé: App=${appCreated}, Modules=${modulesCreated}, Paramètres=${parametresCreated}`);
+        logger.info(`✅ Seed terminé: Modules=${modulesCreated}, Paramètres=${parametresCreated}`);
 
         return {
-            app: appCreated,
             modules: modulesCreated,
             parametres: parametresCreated,
         };
-    }
-
-    /**
-     * Seed de la configuration application
-     * @param force Si true, force la réinitialisation même si la config existe
-     */
-    async seedConfigurationApp(force: boolean = false): Promise<boolean> {
-        const existing = await this.configAppRepo.findOne({ where: {} });
-        
-        if (existing && !force) {
-            logger.info('Configuration app déjà existante, skip...');
-            return false;
-        }
-
-        if (existing && force) {
-            // Forcer la réinitialisation vers les valeurs par défaut
-            const defaultValues = {
-                nomEtablissement: 'eLISAschool Demo',
-                typeEtablissement: 'MIXTE',
-                langueDefaut: 'fr',
-                devise: 'XAF',
-                fuseauHoraire: 'Africa/Douala',
-                couleurPrimaire: '#28a745',
-                couleurSecondaire: '#ffc107',
-                couleurAccent: '#007bff',
-                theme: 'default',
-                messageAccueil: 'Bienvenue sur eLISAschool - Votre solution de gestion scolaire',
-                modulesActifs: this.getDefaultActiveModules(),
-                version: '1.0.0',
-            };
-            
-            Object.assign(existing, {
-                ...defaultValues,
-                valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
-            });
-            await this.configAppRepo.save(existing);
-            logger.info('✅ Configuration app réinitialisée (force)');
-            return true;
-        }
-
-        const defaultValues = {
-            nomEtablissement: 'eLISAschool Demo',
-            typeEtablissement: 'MIXTE',
-            langueDefaut: 'fr',
-            devise: 'XAF',
-            fuseauHoraire: 'Africa/Douala',
-            couleurPrimaire: '#28a745',
-            couleurSecondaire: '#ffc107',
-            couleurAccent: '#007bff',
-            theme: 'default',
-            messageAccueil: 'Bienvenue sur eLISAschool - Votre solution de gestion scolaire',
-            modulesActifs: this.getDefaultActiveModules(),
-            version: '1.0.0',
-        };
-
-        const config = this.configAppRepo.create({
-            ...defaultValues,
-            valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
-        });
-
-        await this.configAppRepo.save(config);
-        logger.info('✅ Configuration app créée');
-        return true;
     }
 
     /**
@@ -240,17 +172,6 @@ export class ConfigurationSeedService {
 
         logger.info(`✅ ${created} paramètres système créés, ${updated} réinitialisés (force)`);
         return created + updated;
-    }
-
-    /**
-     * Modules actifs par défaut
-     */
-    private getDefaultActiveModules(): Record<string, boolean> {
-        const modules: Record<string, boolean> = {};
-        Object.values(MODULE_REGISTRY).forEach((m: ModuleConfig) => {
-            modules[m.name] = m.defaultActive;
-        });
-        return modules;
     }
 
     /**

@@ -14,3 +14,9 @@ export {
     requirePermissionWithContext,
 } from './permission.middleware';
 export { requirePermissions } from '../guards/permission.guard';
+export { 
+    filterByEtablissement, 
+    validateResourceOwnership,
+    getEtablissementId,
+    getEtablissementIdOptional,
+} from './etablissement.middleware';

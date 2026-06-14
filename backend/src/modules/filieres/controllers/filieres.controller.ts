@@ -2,8 +2,12 @@
  * ==================================
  * eLISAschool - Controller Filières
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec req.utilisateur.etablissementId
+ * - Toutes les requêtes sont isolées par établissement
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -20,7 +24,8 @@ const filieresService = new FilieresService();
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryFilieresSchema, req.query);
-        const result = await filieresService.findAll(query);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const result = await filieresService.findAll(query, etablissementId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });
@@ -29,7 +34,8 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const cycleId = req.query.cycleId as string | undefined;
-        const filieres = await filieresService.findAllSimple(cycleId);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const filieres = await filieresService.findAllSimple(cycleId, etablissementId);
         res.json({ success: true, data: filieres });
     } catch (error) { next(error); }
 });
@@ -37,7 +43,8 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
 // GET /api/filieres/:id - Détail d'une filière
 router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const filiere = await filieresService.findOne(req.params.id);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const filiere = await filieresService.findOne(req.params.id, etablissementId);
         res.json({ success: true, data: filiere });
     } catch (error) { next(error); }
 });
@@ -46,7 +53,8 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createFiliereSchema, req.body);
-        const filiere = await filieresService.create(dto);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const filiere = await filieresService.create(dto, etablissementId);
         res.status(201).json({ success: true, data: filiere });
     } catch (error) { next(error); }
 });
@@ -55,7 +63,8 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateFiliereSchema, req.body);
-        const filiere = await filieresService.update(req.params.id, dto);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const filiere = await filieresService.update(req.params.id, dto, etablissementId);
         res.json({ success: true, data: filiere });
     } catch (error) { next(error); }
 });
@@ -63,7 +72,8 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
 // DELETE /api/filieres/:id - Supprimer une filière
 router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await filieresService.delete(req.params.id);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        await filieresService.delete(req.params.id, etablissementId);
         res.json({ success: true, message: 'Filière supprimée' });
     } catch (error) { next(error); }
 });

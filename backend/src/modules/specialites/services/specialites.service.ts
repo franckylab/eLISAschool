@@ -2,8 +2,13 @@
  * ==================================
  * eLISAschool - Service Specialites
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec etablissementId
+ * - Toutes les requêtes sont filtrées par établissement
+ * - Isolation totale des données entre établissements
  */
 
 import { Repository } from 'typeorm';
@@ -21,26 +26,30 @@ export class SpecialitesService {
         this.repo = AppDataSource.getRepository(Specialite);
     }
 
-    async create(dto: CreateSpecialiteDto): Promise<Specialite> {
-        // Vérifier unicité du code par filière
+    async create(dto: CreateSpecialiteDto, etablissementId: string): Promise<Specialite> {
+        // Vérifier unicité du code par filière ET établissement
         const existing = await this.repo.findOne({ 
-            where: { code: dto.code, filiereId: dto.filiereId } 
+            where: { code: dto.code, filiereId: dto.filiereId, etablissementId } 
         });
         if (existing) {
-            throw new AppError('Une spécialité avec ce code existe déjà dans cette filière', 409, 'SPECIALITE_EXISTS');
+            throw new AppError('Une spécialité avec ce code existe déjà dans cette filière pour cet établissement', 409, 'SPECIALITE_EXISTS');
         }
 
-        const specialite = this.repo.create(dto);
+        const specialite = this.repo.create({
+            ...dto,
+            etablissementId,
+        });
         await this.repo.save(specialite);
-        logger.info(`Spécialité créée: ${dto.nom}`);
+        logger.info(`Spécialité créée: ${dto.nom} pour établissement ${etablissementId}`);
         return specialite;
     }
 
-    async findAll(query: QuerySpecialitesDto = {}): Promise<PaginatedResult<Specialite>> {
+    async findAll(query: QuerySpecialitesDto = {}, etablissementId: string): Promise<PaginatedResult<Specialite>> {
         const { page = 1, limit = 20, search, filiereId, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('specialite')
-            .leftJoinAndSelect('specialite.filiere', 'filiere');
+            .leftJoinAndSelect('specialite.filiere', 'filiere')
+            .where('specialite.etablissementId = :etablissementId', { etablissementId });
 
         // Filtre par filière
         if (filiereId) {
@@ -65,39 +74,40 @@ export class SpecialitesService {
         return paginateWithQueryBuilder(qb, page, limit);
     }
 
-    async findByFiliere(filiereId: string): Promise<Specialite[]> {
+    async findByFiliere(filiereId: string, etablissementId: string): Promise<Specialite[]> {
         return this.repo.find({
-            where: { filiereId, actif: true },
+            where: { filiereId, etablissementId, actif: true },
             order: { ordre: 'ASC' },
             relations: ['filiere'],
         });
     }
 
-    async findAllSimple(): Promise<Specialite[]> {
+    async findAllSimple(etablissementId: string): Promise<Specialite[]> {
         return this.repo.find({
+            where: { etablissementId },
             order: { ordre: 'ASC' },
             relations: ['filiere'],
         });
     }
 
-    async findOne(id: string): Promise<Specialite> {
+    async findOne(id: string, etablissementId: string): Promise<Specialite> {
         const specialite = await this.repo.findOne({ 
-            where: { id }, 
+            where: { id, etablissementId }, 
             relations: ['filiere'] 
         });
         if (!specialite) throw new AppError('Spécialité non trouvée', 404, 'NOT_FOUND');
         return specialite;
     }
 
-    async update(id: string, dto: UpdateSpecialiteDto): Promise<Specialite> {
-        const specialite = await this.findOne(id);
+    async update(id: string, dto: UpdateSpecialiteDto, etablissementId: string): Promise<Specialite> {
+        const specialite = await this.findOne(id, etablissementId);
         Object.assign(specialite, dto);
         await this.repo.save(specialite);
         return specialite;
     }
 
-    async delete(id: string): Promise<void> {
-        const specialite = await this.findOne(id);
+    async delete(id: string, etablissementId: string): Promise<void> {
+        const specialite = await this.findOne(id, etablissementId);
         await this.repo.remove(specialite);
         logger.info(`Spécialité supprimée: ${id}`);
     }

@@ -47,31 +47,6 @@ export enum Role {
     ELEVE = 'ELEVE',
 
     // ==================================
-    // ADMINISTRATION NATIONALE/RÉGIONALE (7 rôles)
-    // ==================================
-    
-    /** Ministre de l'Éducation / Responsable politique */
-    MINISTRE = 'MINISTRE',
-    
-    /** Secrétaire Général du Ministère */
-    SECRETAIRE_GENERAL = 'SECRETAIRE_GENERAL',
-    
-    /** Inspecteur Général de l'Éducation */
-    INSPECTEUR_GENERAL = 'INSPECTEUR_GENERAL',
-    
-    /** Délégué/Directeur Régional de l'Éducation */
-    DIRECTEUR_REGIONAL = 'DIRECTEUR_REGIONAL',
-    
-    /** Délégué Départemental / Inspecteur départemental */
-    DELEGUE_DEPARTEMENTAL = 'DELEGUE_DEPARTEMENTAL',
-    
-    /** Inspecteur Pédagogique / IA-IPR */
-    INSPECTEUR_PEDAGOGIQUE = 'INSPECTEUR_PEDAGOGIQUE',
-    
-    /** Inspecteur National (spécifique pays) */
-    INSPECTEUR_NATIONAL = 'INSPECTEUR_NATIONAL',
-
-    // ==================================
     // DIRECTION D'ÉTABLISSEMENT (6 rôles)
     // ==================================
     
@@ -1037,6 +1012,432 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.BULLETINS_VIEW,
         Permission.CLUBS_VIEW,
         Permission.GAMIFICATION_VIEW,
+    ],
+
+    // ==================================
+    // DIRECTION D'ÉTABLISSEMENT
+    // ==================================
+
+    [Role.PROVISEUR]: [
+        // Permissions CHEF_ETABLISSEMENT (héritage)
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
+        Permission.CONFIG_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        // Validation niveaux 2-3
+        Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
+        Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW,
+        Permission.VALIDATION_CLASSES_LEVEL2, Permission.VALIDATION_CLASSES_LEVEL3,
+        Permission.VALIDATION_ELEVES_LEVEL2, Permission.VALIDATION_ELEVES_LEVEL3,
+        Permission.VALIDATION_PERSONNEL_LEVEL2,
+        // Finances (lecture + validation)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_DEPENSES_VIEW, Permission.FINANCES_DEPENSES_VALIDATE,
+        Permission.FINANCES_COMPTABILITE_VIEW, Permission.FINANCES_COMPTABILITE_VALIDER,
+        Permission.FINANCES_BUDGET_VIEW, Permission.FINANCES_BUDGET_VALIDATE,
+        Permission.FINANCES_DASHBOARD_VIEW, Permission.FINANCES_RAPPORTS_GENERER,
+        // Programmes Pédagogiques
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    [Role.PRINCIPAL]: [
+        // Similaire à PROVISEUR (collège au lieu de lycée)
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
+        Permission.CONFIG_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
+        Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW,
+        Permission.VALIDATION_CLASSES_LEVEL2, Permission.VALIDATION_CLASSES_LEVEL3,
+        Permission.VALIDATION_ELEVES_LEVEL2, Permission.VALIDATION_ELEVES_LEVEL3,
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_DEPENSES_VIEW, Permission.FINANCES_DEPENSES_VALIDATE,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    [Role.DIRECTEUR]: [
+        // École primaire - permissions simplifiées
+        Permission.USERS_VIEW, Permission.USERS_CREATE,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
+        Permission.CONFIG_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.VALIDATION_NOTES_LEVEL2,
+        Permission.VALIDATION_BULLETINS_LEVEL2,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_PAIEMENT_VALIDATE,
+        Permission.FINANCES_DASHBOARD_VIEW,
+    ],
+
+    [Role.CENSEUR]: [
+        // Discipline & organisation
+        Permission.USERS_VIEW,
+        Permission.ELEVES_VIEW, Permission.ELEVES_CREATE, Permission.ELEVES_EDIT,
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.DOCUMENTS_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        // Sanctions & discipline
+        Permission.VALIDATION_ELEVES_LEVEL2,
+        Permission.VALIDATION_CLUBS_LEVEL2,
+        // Finances (lecture seule)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW,
+    ],
+
+    [Role.DIRECTEUR_ADJOINT]: [
+        // Similaire à CHEF_ETABLISSEMENT mais en lecture pour finances
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.VALIDATION_NOTES_LEVEL2,
+        Permission.VALIDATION_BULLETINS_LEVEL2,
+        Permission.VALIDATION_CLASSES_LEVEL2,
+        Permission.VALIDATION_ELEVES_LEVEL2,
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    [Role.RESPONSABLE_PEDAGOGIQUE]: [
+        // Conseil pédagogique
+        Permission.USERS_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.CLASSES_VIEW,
+        Permission.MATIERES_VIEW,
+        Permission.MESSAGES_SEND,
+        // Programmes Pédagogiques (complet)
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CHAPITRE_EDIT, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+        // Validation
+        Permission.VALIDATION_NOTES_LEVEL2,
+        Permission.VALIDATION_BULLETINS_LEVEL2,
+        Permission.VALIDATION_MATIERES_LEVEL2,
+        Permission.VALIDATION_PERIODES_LEVEL2,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    // ==================================
+    // ENSEIGNANTS SPÉCIALISÉS
+    // ==================================
+
+    [Role.PROFESSEUR_CERTIFIE]: [
+        // Hérite ENSEIGNANT + programmes
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CHAPITRE_EDIT,
+        Permission.PROGRAMMES_CORRELATION_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    [Role.PROFESSEUR_AGREGE]: [
+        // Similaire à PROFESSEUR_CERTIFIE (lycée)
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CHAPITRE_EDIT, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    [Role.INSTITUTEUR]: [
+        // Primaire - simplifié
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    [Role.MAITRE_AUXILIAIRE]: [
+        // Contractuel - permissions limitées
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.PROFESSEUR_TECHNIQUE]: [
+        // Enseignement technique
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_CREATE,
+        Permission.PROGRAMMES_CORRELATION_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+        // Matériel technique
+        Permission.MATERIEL_VIEW, Permission.MATERIEL_PRETS_CREATE,
+    ],
+
+    [Role.EDUCATEUR_MATERNELLE]: [
+        // Maternelle - très simplifié
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.PROFESSEUR_PRINCIPAL]: [
+        // Responsable de classe - vision complète de SA classe
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.CLASSES_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_BULLETINS_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+        // Finances (lecture pour sa classe)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW,
+    ],
+
+    [Role.COORDINATEUR_DISCIPLINE]: [
+        // Coordinateur matière/département
+        Permission.NOTES_VIEW, Permission.NOTES_EDIT, Permission.NOTES_VALIDATE,
+        Permission.BULLETINS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CLASSES_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.VALIDATION_NOTES_LEVEL2,
+        Permission.VALIDATION_BULLETINS_LEVEL2,
+        Permission.VALIDATION_MATIERES_LEVEL2,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_EDIT,
+        Permission.PROGRAMMES_CHAPITRE_VALIDATE,
+        Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    // ==================================
+    // ORIENTATION & CONSEIL
+    // ==================================
+
+    [Role.CONSEILLER_ORIENTEUR]: [
+        // Orientation scolaire
+        Permission.ELEVES_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Orientation (module dédié)
+        Permission.ORIENTATION_PROFILS_VIEW, Permission.ORIENTATION_PROFILS_CREATE,
+        Permission.ORIENTATION_PROFILS_EDIT,
+        Permission.ORIENTATION_SUGGESTIONS_VIEW,
+        Permission.ORIENTATION_FICHES_VIEW, Permission.ORIENTATION_FICHES_CREATE,
+        Permission.ORIENTATION_RDV_VIEW, Permission.ORIENTATION_RDV_CREATE,
+        Permission.ORIENTATION_RDV_EDIT,
+        // Statistiques
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW,
+    ],
+
+    [Role.PSYCHOLOGUE_SCOLAIRE]: [
+        // Psychologue
+        Permission.ELEVES_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+        // Orientation (lecture + fiches)
+        Permission.ORIENTATION_PROFILS_VIEW,
+        Permission.ORIENTATION_SUGGESTIONS_VIEW,
+        Permission.ORIENTATION_FICHES_VIEW, Permission.ORIENTATION_FICHES_CREATE,
+        Permission.ORIENTATION_RDV_VIEW, Permission.ORIENTATION_RDV_CREATE,
+        Permission.ORIENTATION_RDV_EDIT,
+    ],
+
+    [Role.ASSISTANT_SOCIAL]: [
+        // Assistant social
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.ORIENTATION_PROFILS_VIEW,
+        Permission.ORIENTATION_RDV_VIEW, Permission.ORIENTATION_RDV_CREATE,
+        // Aide sociale (via requêtes)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_REMISE_GRANT,
+    ],
+
+    // ==================================
+    // PERSONNEL ADMINISTRATIF
+    // ==================================
+
+    [Role.SECRETAIRE_DIRECTION]: [
+        // Secrétaire
+        Permission.USERS_VIEW, Permission.USERS_CREATE,
+        Permission.ELEVES_VIEW, Permission.ELEVES_CREATE, Permission.ELEVES_EDIT,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Inscriptions
+        Permission.VALIDATION_ELEVES_LEVEL1,
+        // Finances (lecture + encaissement)
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_PAIEMENT_CREATE,
+        Permission.FINANCES_RECU_GENERATE,
+        Permission.FINANCES_DASHBOARD_VIEW,
+    ],
+
+    [Role.GESTIONNAIRE]: [
+        // Gestionnaire matériel/logistique
+        Permission.MATERIEL_VIEW, Permission.MATERIEL_CREATE, Permission.MATERIEL_EDIT,
+        Permission.MATERIEL_PRETS_VIEW, Permission.MATERIEL_PRETS_CREATE,
+        Permission.MATERIEL_PRETS_RETOUR, Permission.MATERIEL_INVENTAIRE_MANAGE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Finances (dépenses)
+        Permission.FINANCES_DEPENSES_VIEW, Permission.FINANCES_DEPENSES_CREATE,
+        Permission.FINANCES_DEPENSES_EXPORT,
+        Permission.FINANCES_FOURNISSEURS_VIEW,
+    ],
+
+    [Role.BIBLIOTHECAIRE]: [
+        // Bibliothèque
+        Permission.MATERIEL_VIEW, // Livres = matériel
+        Permission.MATERIEL_PRETS_VIEW, Permission.MATERIEL_PRETS_CREATE,
+        Permission.MATERIEL_PRETS_RETOUR,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.DOCUMENTALISTE]: [
+        // Documentation (similaire à bibliothécaire)
+        Permission.MATERIEL_VIEW,
+        Permission.MATERIEL_PRETS_VIEW, Permission.MATERIEL_PRETS_CREATE,
+        Permission.MATERIEL_PRETS_RETOUR,
+        Permission.DOCUMENTS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.ARCHIVISTE]: [
+        // Archives
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
+        Permission.ELEVES_VIEW, // Archives élèves
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    // ==================================
+    // PERSONNEL TECHNIQUE
+    // ==================================
+
+    [Role.TECHNICIEN_LABO]: [
+        // Technicien laboratoire
+        Permission.MATERIEL_VIEW, Permission.MATERIEL_PRETS_CREATE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Accès salles/labos
+        Permission.CLASSES_VIEW,
+    ],
+
+    [Role.TECHNICIEN_INFO]: [
+        // Technicien informatique
+        Permission.USERS_VIEW,
+        Permission.CONFIG_VIEW,
+        Permission.MONITORING_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        // Matériel informatique
+        Permission.MATERIEL_VIEW, Permission.MATERIEL_CREATE, Permission.MATERIEL_EDIT,
+    ],
+
+    [Role.CONSEILLER_TIC]: [
+        // Conseiller TIC pédagogique
+        Permission.USERS_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+        // Matériel TIC
+        Permission.MATERIEL_VIEW,
+    ],
+
+    [Role.AIDE_EDUCATEUR]: [
+        // Assistant pédagogique
+        Permission.NOTES_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+        Permission.CLUBS_VIEW,
+    ],
+
+    // ==================================
+    // SURVEILLANCE & VIE SCOLAIRE
+    // ==================================
+
+    [Role.SURVEILLANT_GENERAL]: [
+        // Responsable surveillance
+        Permission.ELEVES_VIEW,
+        Permission.CLASSES_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        // Sanctions
+        Permission.VALIDATION_ELEVES_LEVEL2,
+        Permission.VALIDATION_CLUBS_LEVEL2,
+        // Retards/absences (via cantine/transport)
+        Permission.CANTINE_VIEW,
+        Permission.TRANSPORT_VIEW,
+    ],
+
+    [Role.SURVEILLANT]: [
+        // Surveillant
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.CANTINE_VIEW,
+        Permission.TRANSPORT_VIEW,
     ],
 };
 

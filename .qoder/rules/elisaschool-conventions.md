@@ -927,18 +927,19 @@ value as unknown as Map<string, number>
 
 ---
 
-## 22. Système d'Activation des Modules
+## 22. Système d'Activation des Modules (v3.0+)
 
 ### Architecture
 
-Le système d'activation/désactivation des modules repose sur **trois niveaux de stockage** avec résolution en cascade :
+Le système d'activation/désactivation des modules repose sur **3 niveaux** avec `ParametreSysteme` comme source unique :
 
-| Niveau | Entité | Usage | Priorité |
+| Niveau | Source | Usage | Priorité |
 |--------|--------|-------|----------|
-| 1 | `EtablissementConfig.modulesActifs` | Multi-tenant (recommandé) | **Priorité 1** |
-| 2 | `ConfigurationApp.modulesActifs` | Legacy (déprécié) | Fallback |
-| 3 | `ConfigurationModule.actif` | Config détaillée par module | Fallback |
-| 4 | `MODULE_REGISTRY.defaultActive` | Valeur par défaut | Dernier fallback |
+| 1 | `ParametreSysteme` (scopé établissement) | Override établissement | **Priorité 1** |
+| 2 | `ParametreSysteme` (global) | Configuration globale | Fallback |
+| 3 | `MODULE_REGISTRY.defaultActive` | Valeur par défaut | Dernier fallback |
+
+**⚠️ SUPPRIMÉ** : `ConfigurationApp` et `EtablissementConfig.modulesActifs` n'existent plus.
 
 ### Conventions d'Implémentation
 
@@ -986,9 +987,9 @@ const actif = await getParamBoolean('notes.actif');
 
 ### Bonnes Pratiques
 
-- **TOUJOURS** utiliser `EtablissementConfig` pour le multi-tenant
-- **TOUJOURS** invalider le cache après modification (`this.invalidateCache()`)
-- **TOUJOURS** logger dans l'historique (`this.historyService.logAction()`)
+- **TOUJOURS** utiliser `ParametreSysteme` avec `etablissementId` pour le multi-tenant
+- **TOUJOURS** invalider le cache après modification
+- **TOUJOURS** logger dans l'historique
 - **JAMAIS** bypasser le middleware de protection
 - **VÉRIFIER** les dépendances avant d'activer un module
 - **EXCLURE** les modules critiques de la vérification

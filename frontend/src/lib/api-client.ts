@@ -26,7 +26,39 @@ interface LoginResponseData {
         role: string;
         nom: string;
         prenom: string;
+        etablissementActif?: string;
+        etablissements?: Array<{
+            etablissementId: string;
+            role: string;
+            etablissementPrincipal: boolean;
+            actif: boolean;
+        }>;
     };
+    // NOUVEAU v3.0
+    etablissementsDisponibles?: Array<{
+        id: string;
+        nom: string;
+        code?: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        logoUrl?: string;
+    }>;
+    requiereSelectionEtablissement?: boolean;
+    tokenTemporaire?: boolean;
+}
+
+interface PreLoginResponse {
+    requiereSelection: boolean;
+    etablissements?: Array<{
+        id: string;
+        nom: string;
+        code?: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        logoUrl?: string;
+    }>;
+    tokenTemporaire?: string;
+    expiresIn?: number;
 }
 
 interface SwitchEtablissementResponse {
@@ -347,6 +379,56 @@ class ApiClient {
         } finally {
             this.clearTokens();
         }
+    }
+
+    // ─── NOUVEAU v3.0 - Sélection d'établissement ──────────────────────────────
+
+    /**
+     * Étape 1 : Pré-login - Récupère les établissements disponibles
+     * Retourne是否需要 sélection et token temporaire si multi-établissements
+     */
+    async preLogin(): Promise<PreLoginResponse> {
+        const response = await this.request<ApiResponse<PreLoginResponse>>('/api/auth/pre-login', {
+            method: 'POST',
+        });
+        return response.data!;
+    }
+
+    /**
+     * Étape 2 : Complete-login - Finalise la connexion avec l'établissement sélectionné
+     */
+    async completeLogin(etablissementId: string): Promise<LoginResponseData> {
+        const response = await this.request<ApiResponse<LoginResponseData>>('/api/auth/complete-login', {
+            method: 'POST',
+            body: JSON.stringify({ etablissementId }),
+        });
+        if (response.data) {
+            this.setTokens({
+                accessToken: response.data.accessToken,
+                refreshToken: response.data.refreshToken,
+            });
+        }
+        return response.data!;
+    }
+
+    /**
+     * Récupère tous les établissements disponibles pour l'utilisateur
+     */
+    async getEtablissementsDisponibles(): Promise<Array<{
+        id: string;
+        nom: string;
+        code?: string;
+        role: string;
+        etablissementPrincipal: boolean;
+    }>> {
+        const response = await this.request<ApiResponse<Array<{
+            id: string;
+            nom: string;
+            code?: string;
+            role: string;
+            etablissementPrincipal: boolean;
+        }>>>('/api/auth/etablissements-disponibles');
+        return response.data || [];
     }
 
     async getMe() {

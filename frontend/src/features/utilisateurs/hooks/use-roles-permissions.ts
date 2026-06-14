@@ -44,6 +44,11 @@ export function useRoles(filtres: RoleFiltres = {}) {
             if (filtres.recherche) params.recherche = filtres.recherche;
 
             const response = await apiClient.get<Role[]>('/api/rbac/roles', params);
+            
+            if (!response.data) {
+                throw new Error('Aucun rôle disponible');
+            }
+            
             return response.data;
         },
         enabled: isAuthenticated,
@@ -72,10 +77,13 @@ export function useTousRoles() {
     return useQuery({
         queryKey: [...ROLES_KEYS.all, 'tous'],
         queryFn: async () => {
-            const response = await apiClient.get<Role[]>('/api/rbac/roles/tous');
+            // Utiliser le endpoint correct: /api/rbac/roles (pas /tous)
+            const response = await apiClient.get<Role[]>('/api/rbac/roles');
+            
             if (!response.data) {
                 throw new Error('Aucun rôle disponible');
             }
+            
             return response.data;
         },
         enabled: isAuthenticated,
@@ -251,6 +259,7 @@ export function useStatsRoles() {
     return useQuery({
         queryKey: [...ROLES_KEYS.all, 'stats'],
         queryFn: async () => {
+            // apiClient.get<T> retourne ApiResponse<T> = { success: boolean, data?: T }
             const response = await apiClient.get<{
                 totalRoles: number;
                 rolesSysteme: number;
@@ -266,6 +275,13 @@ export function useStatsRoles() {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        // Valeurs par défaut en cas d'erreur
+        placeholderData: {
+            totalRoles: 0,
+            rolesSysteme: 0,
+            rolesPersonnalises: 0,
+            rolesParModule: [],
+        },
     });
 }
 

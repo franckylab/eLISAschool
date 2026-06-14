@@ -2,6 +2,13 @@
  * ==================================
  * eLISAschool - Service Matières
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec etablissementId
+ * - Toutes les requêtes filtrées par établissement
+ * - Unicité des matières par établissement
  */
 
 import { Repository } from 'typeorm';
@@ -31,22 +38,31 @@ export class MatieresService {
 
     // ==== MATIERES ====
 
-    async create(dto: CreateMatiereDto): Promise<Matiere> {
-        const existing = await this.matiereRepo.findOne({ where: { nom: dto.nom } });
-        if (existing) throw new AppError('Matière déjà existante', 409, 'MATIERE_EXISTS');
+    /**
+     * Créer une matière (isolée par établissement)
+     */
+    async create(dto: CreateMatiereDto, etablissementId: string): Promise<Matiere> {
+        const existing = await this.matiereRepo.findOne({ 
+            where: { nom: dto.nom, etablissementId } 
+        });
+        if (existing) throw new AppError('Matière déjà existante dans cet établissement', 409, 'MATIERE_EXISTS');
 
-        const matiere = this.matiereRepo.create(dto);
+        const matiere = this.matiereRepo.create({
+            ...dto,
+            etablissementId,
+        });
         await this.matiereRepo.save(matiere);
+        logger.info(`Matière créée: ${dto.nom} pour établissement ${etablissementId}`);
         return matiere;
     }
 
     /**
-     * Rechercher toutes les matières avec pagination
+     * Rechercher toutes les matières avec pagination (filtré par établissement)
      */
-    async findAll(query?: QueryMatieresDto): Promise<PaginatedResult<Matiere>> {
-        const { page = 1, limit = 20, groupeId, actif } = query || {};
+    async findAll(query: QueryMatieresDto = {}, etablissementId: string): Promise<PaginatedResult<Matiere>> {
+        const { page = 1, limit = 20, groupeId, actif } = query;
 
-        const where: any = {};
+        const where: any = { etablissementId };
         
         if (groupeId) {
             where.groupeId = groupeId;
@@ -64,12 +80,29 @@ export class MatieresService {
         });
     }
 
-    async update(id: string, dto: UpdateMatiereDto): Promise<Matiere> {
-        const matiere = await this.matiereRepo.findOne({ where: { id } });
+    /**
+     * Mettre à jour une matière (vérification appartenance établissement)
+     */
+    async update(id: string, dto: UpdateMatiereDto, etablissementId: string): Promise<Matiere> {
+        const matiere = await this.matiereRepo.findOne({ 
+            where: { id, etablissementId } 
+        });
         if (!matiere) throw new AppError('Matière non trouvée', 404, 'NOT_FOUND');
         Object.assign(matiere, dto);
         await this.matiereRepo.save(matiere);
         return matiere;
+    }
+
+    /**
+     * Supprimer une matière (vérification appartenance établissement)
+     */
+    async delete(id: string, etablissementId: string): Promise<void> {
+        const matiere = await this.matiereRepo.findOne({ 
+            where: { id, etablissementId } 
+        });
+        if (!matiere) throw new AppError('Matière non trouvée', 404, 'NOT_FOUND');
+        await this.matiereRepo.remove(matiere);
+        logger.info(`Matière supprimée: ${id} pour établissement ${etablissementId}`);
     }
 
     // ==== GROUPES ====

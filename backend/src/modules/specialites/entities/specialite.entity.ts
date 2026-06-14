@@ -2,11 +2,15 @@
  * ==================================
  * eLISAschool - Entité Specialite
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
  * Représente les spécialités/options au sein des filières techniques
  * (ex: F1 Mécanique option Maintenance Automobile, F2 Électrotechnique option Électronique)
+ * 
+ * Changements v2.0:
+ * - Ajout etablissementId pour support multi-tenant
+ * - Chaque établissement choisit ses spécialités par filière
  */
 
 import {
@@ -20,9 +24,12 @@ import {
     Index,
 } from 'typeorm';
 import { Filiere } from '@modules/filieres/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('specialites')
 @Index(['filiereId'])
+@Index(['etablissementId'])
+@Index(['filiereId', 'etablissementId']) // Index composite multi-tenant
 export class Specialite {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -42,6 +49,17 @@ export class Specialite {
     @ManyToOne(() => Filiere)
     @JoinColumn({ name: 'filiereId' })
     filiere?: Filiere;
+
+    /**
+     * Relation multi-tenant : chaque spécialité appartient à un établissement.
+     * Permet à chaque établissement d'offrir des spécialités différentes.
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement)
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @Column({ type: 'int', default: 1 })
     ordre!: number; // Ordre d'affichage

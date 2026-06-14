@@ -2,10 +2,10 @@
  * ==================================
  * eLISAschool - Seed des données initiales
  * ==================================
- * Version: 2.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  * 
- * Inclut: Configuration app, Paramètres système, Super admin
+ * Inclut: Établissement par défaut, Paramètres système, Modules, RBAC, Super admin
  */
 
 import { AppDataSource } from '../data-source';
@@ -13,7 +13,10 @@ import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth
 import { Role } from '@shared/enums/roles.enum';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { RBACSeedService } from './rbac.seed';
+import { seedEtablissementParDefaut } from './seed-etablissement-par-defaut';
+import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { seedStructureAcademique } from './seed-structure-academique';
+import { seedClassesParDefaut } from './seed-classes-par-defaut';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -22,29 +25,40 @@ import { logger } from '@common/utils/logger.util';
 export async function runSeeds(): Promise<void> {
     logger.info('🌱 Exécution des seeds...');
 
-    // 1. Configuration (app, modules, paramètres)
-    await seedConfiguration();
+    // 1. Établissement par défaut (source de vérité multi-tenant)
+    const etablissementId = await seedEtablissementParDefaut();
 
-    // 2. RBAC (rôles, permissions, mappings)
+    // 2. Configuration (modules, paramètres système)
+    await seedConfiguration(etablissementId);
+
+    // 3. RBAC (rôles, permissions, mappings)
     await seedRBAC();
 
-    // 3. Structure académique (types cycles, cycles, niveaux, filières, examens)
-    await seedStructureAcademique();
+    // 4. Structure académique (types cycles, cycles, niveaux, filières, examens)
+    await seedStructureAcademique(etablissementId);
 
-    // 4. Super admin
-    await seedSuperAdmin();
+    // 5. Classes par défaut (1 classe par niveau)
+    await seedClassesParDefaut(etablissementId);
+
+    // 6. Super admin (lié à l'établissement)
+    await seedSuperAdmin(etablissementId);
+
+    // 7. Utilisateurs de test par rôle
+    await seedUtilisateursParRole(etablissementId);
 
     logger.info('✅ Seeds exécutés avec succès');
+    logger.info(`🏫 Établissement par défaut: ${etablissementId}`);
 }
 
 /**
  * Seed de la configuration via le service dédié
+ * @param etablissementId ID de l'établissement pour scopage des paramètres
  */
-async function seedConfiguration(): Promise<void> {
+async function seedConfiguration(etablissementId: string): Promise<void> {
     const seedService = new ConfigurationSeedService();
     const result = await seedService.runAllSeeds();
 
-    logger.info(`Configuration seeds: App=${result.app}, Modules=${result.modules}, Params=${result.parametres}`);
+    logger.info(`Configuration seeds: Modules=${result.modules}, Params=${result.parametres}`);
 }
 
 /**
@@ -59,8 +73,9 @@ async function seedRBAC(): Promise<void> {
 
 /**
  * Seed du super administrateur par défaut
+ * @param etablissementId ID de l'établissement pour lier le super admin
  */
-async function seedSuperAdmin(): Promise<void> {
+async function seedSuperAdmin(etablissementId: string): Promise<void> {
     const userRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
 
@@ -81,6 +96,7 @@ async function seedSuperAdmin(): Promise<void> {
         statut: StatutUtilisateur.ACTIF,
         emailVerifie: true,
         langue: 'fr',
+        etablissementId: etablissementId, // Lié à l'établissement par défaut
     });
 
     await userRepo.save(superAdmin);
@@ -95,6 +111,7 @@ async function seedSuperAdmin(): Promise<void> {
     await profilRepo.save(profil);
 
     logger.info('✅ Super admin créé: admin@elisaschool.cm');
+    logger.info(`🔗 Super admin lié à l'établissement: ${etablissementId}`);
     logger.warn('⚠️  ATTENTION: Changez le mot de passe par défaut en production !');
 }
 

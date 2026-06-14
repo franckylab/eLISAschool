@@ -23,6 +23,7 @@
 - [annees-scolaires.controller.ts](file://backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts)
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
+- [etablissement.service.ts](file://backend/src/modules/etablissement/services/etablissement.service.ts)
 - [bulletins.controller.ts](file://backend/src/modules/bulletins/controllers/bulletins.controller.ts)
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
@@ -39,12 +40,10 @@
 
 ## Update Summary
 **Changes Made**
-- Removed deprecated types-cycles API endpoints and integrated functionality into existing cycles API
-- Added new Specialities (Spécialités) module with CRUD endpoints for technical specialization management
-- Added new Competences module with CRUD endpoints for competency-based learning management
-- Updated Academic Year and Period management to reflect structural changes
-- Enhanced Cycles module with enriched fields (description, duration, diploma)
-- Updated institutional hierarchy to remove TypeCycle and integrate competencies/specialties functionality
+- Added new establishment statistical endpoints: GET /api/etablissements/stats and GET /api/etablissements/:id/stats
+- Enhanced establishment management with comprehensive analytics capabilities
+- Updated endpoint documentation to include new statistics endpoints
+- Added new establishment statistics types and schemas
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -53,14 +52,15 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Validation Workflow System](#validation-workflow-system)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
-11. [Appendices](#appendices)
+7. [Establishment Statistics System](#establishment-statistics-system)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
+12. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. The module has been enhanced with new Specialities and Competences management capabilities, replacing the previous TypeCycles system. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, establishment management, specialities, competences, and the integrated validation workflow system. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, institutional hierarchy management, and automated validation processes. The documentation also outlines data relationships between academic entities, validation rules, workflow automation, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
+This document provides comprehensive API documentation for the Academic Management module of the eLISAschool platform. The module has been enhanced with new Specialities and Competences management capabilities, replacing the previous TypeCycles system, and now includes comprehensive establishment statistics functionality. It covers endpoints for students, classes, levels, subjects, cycles, academic years, periods, establishment management, specialities, competences, establishment statistics, and the integrated validation workflow system. For each endpoint, we specify HTTP methods, URL patterns, request/response schemas, business rule validations, and operational workflows such as enrollment, class assignments, subject allocations, grading periods, institutional hierarchy management, establishment analytics, and automated validation processes. The documentation also outlines data relationships between academic entities, validation rules, workflow automation, and reporting capabilities, with examples of academic workflow integrations and administrative operations.
 
 ## Project Structure
 The Academic Management module is organized by domain entities under the backend/src/modules directory. Each domain includes:
@@ -85,6 +85,7 @@ S["SpecialitesController<br/>Specialities"]
 B["BulletinsController<br/>Reports"]
 T["NotesController<br/>Grades"]
 COMP["CompetencesController<br/>Competences"]
+END["EtablissementController<br/>Establishment Stats"]
 end
 subgraph "Validation Workflow System"
 VW["ValidationWorkflowController<br/>Validation Workflows"]
@@ -161,6 +162,11 @@ VW --> RM
 VW --> PG
 VW --> EF
 VW --> RI
+END --> AM
+END --> RM
+END --> PG
+END --> EF
+END --> RI
 ```
 
 **Diagram sources**
@@ -395,19 +401,25 @@ This section documents the primary academic management endpoints and their assoc
 **Section sources**
 - [periodes.controller.ts](file://backend/src/modules/periodes/controllers/periodes.controller.ts)
 
-### Establishment (Etablissement)
+### Establishment (Etablissement) - Enhanced
 - Base URL: `/api/etablissement`
 - Methods:
   - GET /: Retrieve establishment details
   - PATCH /: Update establishment details
+  - GET /stats: Retrieve global establishment statistics (SUPER_ADMIN only)
+  - GET /:id/stats: Retrieve detailed establishment metrics
 - Authentication and Roles:
   - Requires authentication middleware
-  - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT
+  - Allowed roles: ADMIN, SUPER_ADMIN, CHEF_ETABLISSEMENT for basic operations; SUPER_ADMIN for statistics
 - Request/Response Schemas:
   - DTO validation enforced
-  - Responses include success flag and data payload
+  - Statistics responses include comprehensive analytics data
 - Business Rules:
   - Validation errors return structured error response
+  - Statistics endpoints require elevated privileges
+  - Global statistics require SUPER_ADMIN role
+
+**Updated** Added comprehensive statistics endpoints for establishment analytics
 
 **Section sources**
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
@@ -457,14 +469,16 @@ This section documents the primary academic management endpoints and their assoc
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 
 ## Architecture Overview
-The Academic Management API follows a layered architecture with integrated validation workflow support and enhanced academic structure management:
+The Academic Management API follows a layered architecture with integrated validation workflow support, enhanced academic structure management, and comprehensive establishment statistics capabilities:
 - Controllers handle HTTP requests, enforce authentication/authorization, and delegate to services
 - Services encapsulate business logic and coordinate with repositories/entities
 - DTOs validate request/response payloads
 - Validation workflow service manages automated approval processes
+- Statistics service provides comprehensive establishment analytics
 - Middlewares and guards enforce authentication and role-based access
 - Filters and interceptors standardize error handling and logging
 - **Updated**: Integrated competences and specialities modules provide comprehensive academic framework management
+- **Updated**: Statistics endpoints enable real-time establishment analytics and reporting
 
 ```mermaid
 graph TB
@@ -475,6 +489,7 @@ RoleMW["Role Middleware"]
 Guard["Permission Guard"]
 Service["Services"]
 ValidationService["Validation Workflow Service"]
+StatsService["Statistics Service"]
 CompetenceService["Competence Service"]
 SpecialiteService["Specialite Service"]
 DTO["DTOs"]
@@ -487,6 +502,7 @@ Ctrl --> RoleMW
 Ctrl --> Guard
 Ctrl --> Service
 Service --> ValidationService
+Service --> StatsService
 Service --> DTO
 Service --> Entity
 Service --> CompetenceService
@@ -503,6 +519,7 @@ Ctrl --> Interceptor
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
+- [etablissement.service.ts](file://backend/src/modules/etablissement/services/etablissement.service.ts)
 - [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 - [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
 
@@ -603,6 +620,35 @@ EtabCtrl-->>Admin : 200 OK
 **Diagram sources**
 - [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 
+### Establishment Statistics Analytics
+The establishment statistics system provides comprehensive analytics for institutional performance monitoring.
+
+```mermaid
+sequenceDiagram
+participant SuperAdmin as "Super Admin"
+participant EtabStatsCtrl as "EtablissementStatsController"
+participant EtabStatsSvc as "EtablissementStatsService"
+SuperAdmin->>EtabStatsCtrl : GET /api/etablissements/stats
+EtabStatsCtrl->>EtabStatsCtrl : authenticate(SUPER_ADMIN)
+EtabStatsCtrl->>EtabStatsSvc : getStats()
+EtabStatsSvc->>EtabStatsSvc : aggregateGlobalStats()
+EtabStatsSvc-->>EtabStatsCtrl : comprehensiveStats
+EtabStatsCtrl-->>SuperAdmin : 200 OK (global statistics)
+SuperAdmin->>EtabStatsCtrl : GET /api/etablissements/ : id/stats
+EtabStatsCtrl->>EtabStatsCtrl : authenticate(user)
+EtabStatsCtrl->>EtabStatsSvc : getEtablissementStats(id)
+EtabStatsSvc->>EtabStatsSvc : fetchEtablissementData(id)
+EtabStatsSvc->>EtabStatsSvc : calculateMetrics()
+EtabStatsSvc-->>EtabStatsCtrl : detailedStats
+EtabStatsCtrl-->>SuperAdmin : 200 OK (detailed establishment metrics)
+```
+
+**Updated** Added comprehensive establishment statistics workflow
+
+**Diagram sources**
+- [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
+- [etablissement.service.ts](file://backend/src/modules/etablissement/services/etablissement.service.ts)
+
 ### Enhanced Grade Validation Workflow
 The enhanced notes module now integrates with validation workflows for automatic approval processes.
 
@@ -695,8 +741,65 @@ The system intelligently routes validation decisions based on:
 - [validation-workflow.controller.ts](file://backend/src/modules/validation-workflow/controllers/validation-workflow.controller.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 
+## Establishment Statistics System
+The establishment statistics system provides comprehensive analytics for institutional performance monitoring with both global and detailed metrics.
+
+### Statistics Endpoints
+- Base URL: `/api/etablissements`
+- Methods:
+  - GET /stats: Retrieve global establishment statistics (SUPER_ADMIN only)
+  - GET /:id/stats: Retrieve detailed establishment metrics
+
+### Global Statistics Endpoint
+- **GET /api/etablissements/stats**
+- **Authentication**: SUPER_ADMIN required
+- **Purpose**: Provides comprehensive analytics across all establishments
+- **Response**: Includes enrollment statistics, academic performance, infrastructure metrics, and administrative data
+- **Business Rules**: 
+  - Only accessible to users with SUPER_ADMIN role
+  - Aggregates data from all establishment instances
+  - Returns comprehensive statistical overview
+
+### Detailed Statistics Endpoint
+- **GET /api/etablissements/:id/stats**
+- **Authentication**: Requires authentication
+- **Purpose**: Provides establishment-specific metrics and analytics
+- **Response**: Includes detailed enrollment data, academic performance indicators, resource utilization, and comparative metrics
+- **Business Rules**:
+  - Access controlled by user permissions
+  - Returns establishment-specific analytics
+  - Includes comparative benchmarks
+
+### Statistics Data Categories
+The establishment statistics system provides analytics across multiple domains:
+
+#### Academic Statistics
+- Student enrollment counts and distributions
+- Class size metrics and capacity utilization
+- Academic performance indicators
+- Subject allocation statistics
+
+#### Administrative Statistics
+- Establishment type and subsystem distributions
+- Infrastructure capacity metrics
+- Resource allocation patterns
+
+#### Financial Statistics
+- Budget utilization and expenditure patterns
+- Revenue generation metrics
+- Cost allocation and efficiency indicators
+
+#### Performance Metrics
+- Academic achievement benchmarks
+- Attendance and engagement indicators
+- Infrastructure utilization rates
+
+**Section sources**
+- [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
+- [etablissement.service.ts](file://backend/src/modules/etablissement/services/etablissement.service.ts)
+
 ## Dependency Analysis
-The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints, with enhanced integration for validation workflows and new competences/specialities management.
+The Academic Management module relies on shared authentication and common utilities for consistent behavior across endpoints, with enhanced integration for validation workflows, new competences/specialities management, and comprehensive establishment statistics.
 
 ```mermaid
 graph TB
@@ -716,9 +819,11 @@ CompetencesCtrl["CompetencesController"] --> CompetencesService["Competences Ser
 CompetencesService --> CompetenceEntity["Competence Entity"]
 CyclesCtrl["CyclesController"] --> CyclesService["Cycles Service"]
 CyclesService --> CycleEntity["Cycle Entity"]
+EtabStatsCtrl["EtablissementStatsController"] --> EtabStatsService["EtablissementStats Service"]
+EtabStatsService --> StatsEntity["Statistics Entity"]
 ```
 
-**Updated** Added competences and specialities service integration for comprehensive academic management
+**Updated** Added establishment statistics service integration for comprehensive analytics
 
 **Diagram sources**
 - [eleves.controller.ts:1-58](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L58)
@@ -726,6 +831,7 @@ CyclesService --> CycleEntity["Cycle Entity"]
 - [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
 - [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 - [cycles.controller.ts](file://backend/src/modules/cycles/controllers/cycles.controller.ts)
+- [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [role.middleware.ts](file://backend/src/modules/auth/middlewares/role.middleware.ts)
@@ -740,6 +846,7 @@ CyclesService --> CycleEntity["Cycle Entity"]
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 - [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
 - [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
+- [etablissement.controller.ts](file://backend/src/modules/etablissement/controllers/etablissement.controller.ts)
 
 ## Performance Considerations
 - Centralized validation reduces redundant checks and improves error consistency
@@ -749,6 +856,8 @@ CyclesService --> CycleEntity["Cycle Entity"]
 - **Enhanced** Validation workflow integration optimizes approval processes and reduces manual intervention
 - **Enhanced** Automatic workflow creation eliminates manual setup overhead for academic data
 - **Enhanced** Integrated competences and specialities modules provide unified academic framework management
+- **Enhanced** Statistics service implements efficient aggregation algorithms for real-time analytics
+- **Enhanced** Role-based statistics access ensures optimal security and performance
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -760,17 +869,20 @@ Common issues and resolutions:
 - **New** Status synchronization problems: Verify that validation workflow completion triggers proper status updates
 - **New** Competences/specialities integration issues: Ensure proper entity relationships and foreign key constraints
 - **New** Academic structure migration problems: Verify that old types-cycles data has been properly migrated to enriched cycles
+- **New** Statistics endpoint failures: Verify SUPER_ADMIN role for global stats, ensure establishment exists for detailed stats
+- **New** Performance issues with statistics: Check database indexes and consider implementing caching strategies for frequently accessed metrics
 
-**Updated** Added troubleshooting guidance for validation workflow integration and new academic modules
+**Updated** Added troubleshooting guidance for validation workflow integration, new academic modules, and establishment statistics
 
 **Section sources**
 - [error.filter.ts](file://backend/src/common/filters/error.filter.ts)
 - [request-logger.interceptor.ts](file://backend/src/common/interceptors/request-logger.interceptor.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
 - [validation-workflow.service.ts](file://backend/src/modules/validation-workflow/services/validation-workflow.service.ts)
+- [etablissement.service.ts](file://backend/src/modules/etablissement/services/etablissement.service.ts)
 
 ## Conclusion
-The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data with integrated validation workflow support and comprehensive academic structure management. The enhanced system now includes specialized management for competences and specialities, replacing the previous types-cycles approach with a more streamlined academic hierarchy. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The enhanced notes module now supports automatic workflow creation and intelligent validation routing, streamlining academic approval processes. The documented endpoints, schemas, validation workflows, and automated approval processes enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, establishment hierarchies, grading operations, competences, and specialities while supporting comprehensive reporting and validation capabilities.
+The Academic Management API provides a robust, secure, and scalable foundation for managing educational institution data with integrated validation workflow support, comprehensive academic structure management, and advanced establishment statistics capabilities. The enhanced system now includes specialized management for competences and specialities, replacing the previous types-cycles approach with a more streamlined academic hierarchy, and provides comprehensive analytics for institutional performance monitoring. By enforcing strict validation, authentication, and authorization controls, it ensures data integrity and operational safety. The enhanced notes module now supports automatic workflow creation and intelligent validation routing, streamlining academic approval processes. The establishment statistics system enables real-time monitoring and reporting across all institutional units. The documented endpoints, schemas, validation workflows, automated approval processes, and comprehensive analytics capabilities enable administrators to efficiently manage students, classes, levels, subjects, cycles, academic years, periods, establishment hierarchies, grading operations, competences, specialities, and establishment analytics while supporting comprehensive reporting and validation capabilities.
 
 ## Appendices
 
@@ -785,7 +897,7 @@ The Academic Management API provides a robust, secure, and scalable foundation f
 - **New** Competences: GET /api/competences, POST /api/competences, PATCH /api/competences/:id, DELETE /api/competences/:id
 - Academic Years: GET /api/annees-scolaires, POST /api/annees-scolaires, PATCH /api/annees-scolaires/:id, DELETE /api/annees-scolaires/:id
 - Periods: GET /api/periodes, POST /api/periodes, PATCH /api/periodes/:id, DELETE /api/periodes/:id
-- Establishment: GET /api/etablissement, PATCH /api/etablissement
+- Establishment: GET /api/etablissement, PATCH /api/etablissement, GET /api/etablissements/stats, GET /api/etablissements/:id/stats
 - Reports: GET /api/bulletins, POST /api/bulletins, PATCH /api/bulletins/:id, DELETE /api/bulletins/:id
 - Grades: GET /api/notes, POST /api/notes, PATCH /api/notes/:id, DELETE /api/notes/:id
 - **New** Validation Workflows: GET /api/validation-workflows/check/:module/:entityId, PUT /api/validation-workflows/config/:module, GET /api/validation-workflows/stats/:module
@@ -795,6 +907,12 @@ The Academic Management API provides a robust, secure, and scalable foundation f
 - **New** Specialities: Technical specialization management for MINESEC-compliant programs
 - **New** Competences: Competency-based learning management aligned with APC framework
 - **Removed** Types-Cycles: Consolidated into enriched cycles functionality
+
+### Establishment Statistics Enhancements
+- **New** Global Statistics: Comprehensive analytics across all establishments (SUPER_ADMIN only)
+- **New** Detailed Statistics: Establishment-specific metrics and performance indicators
+- **New** Multi-domain Analytics: Academic, administrative, financial, and performance metrics
+- **New** Real-time Monitoring: Live establishment performance tracking and reporting
 
 ### Validation Workflow Configuration
 - **Automatic Creation**: Validation workflows are automatically created when grades are submitted

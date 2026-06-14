@@ -2,8 +2,13 @@
  * ==================================
  * eLISAschool - Service Filières
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec etablissementId
+ * - Toutes les requêtes sont filtrées par établissement
+ * - Isolation totale des données entre établissements
  */
 
 import { Repository } from 'typeorm';
@@ -21,26 +26,30 @@ export class FilieresService {
         this.repo = AppDataSource.getRepository(Filiere);
     }
 
-    async create(dto: CreateFiliereDto): Promise<Filiere> {
-        // Vérifier unicité du code pour un cycle donné
+    async create(dto: CreateFiliereDto, etablissementId: string): Promise<Filiere> {
+        // Vérifier unicité du code pour un cycle ET établissement donnés
         const existing = await this.repo.findOne({ 
-            where: { code: dto.code, cycleId: dto.cycleId } 
+            where: { code: dto.code, cycleId: dto.cycleId, etablissementId } 
         });
         if (existing) {
-            throw new AppError('Une filière avec ce code existe déjà pour ce cycle', 409, 'FILIERE_EXISTS');
+            throw new AppError('Une filière avec ce code existe déjà pour ce cycle dans cet établissement', 409, 'FILIERE_EXISTS');
         }
 
-        const filiere = this.repo.create(dto);
+        const filiere = this.repo.create({
+            ...dto,
+            etablissementId,
+        });
         await this.repo.save(filiere);
-        logger.info(`Filière créée: ${dto.nom} (${dto.code})`);
+        logger.info(`Filière créée: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
         return filiere;
     }
 
-    async findAll(query: QueryFilieresDto = {}): Promise<PaginatedResult<Filiere>> {
+    async findAll(query: QueryFilieresDto = {}, etablissementId: string): Promise<PaginatedResult<Filiere>> {
         const { page = 1, limit = 20, search, cycleId, sousSysteme, actif, sortBy = 'nom', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('filiere')
-            .leftJoinAndSelect('filiere.cycle', 'cycle');
+            .leftJoinAndSelect('filiere.cycle', 'cycle')
+            .where('filiere.etablissementId = :etablissementId', { etablissementId });
 
         if (search) {
             qb.andWhere('(filiere.nom ILIKE :search OR filiere.code ILIKE :search)', { search: `%${search}%` });
@@ -65,14 +74,17 @@ export class FilieresService {
         return paginateWithQueryBuilder(qb, page, limit);
     }
 
-    async findAllSimple(cycleId?: string): Promise<Filiere[]> {
-        const where = cycleId ? { cycleId } : {};
+    async findAllSimple(cycleId: string | undefined, etablissementId: string): Promise<Filiere[]> {
+        const where: any = { etablissementId };
+        if (cycleId) {
+            where.cycleId = cycleId;
+        }
         return this.repo.find({ where, order: { nom: 'ASC' }, relations: ['cycle'] });
     }
 
-    async findOne(id: string): Promise<Filiere> {
+    async findOne(id: string, etablissementId: string): Promise<Filiere> {
         const filiere = await this.repo.findOne({ 
-            where: { id },
+            where: { id, etablissementId },
             relations: ['cycle']
         });
         if (!filiere) {
@@ -81,14 +93,14 @@ export class FilieresService {
         return filiere;
     }
 
-    async update(id: string, dto: UpdateFiliereDto): Promise<Filiere> {
-        const filiere = await this.findOne(id);
+    async update(id: string, dto: UpdateFiliereDto, etablissementId: string): Promise<Filiere> {
+        const filiere = await this.findOne(id, etablissementId);
 
         // Vérifier unicité du code si modifié
         if (dto.code && dto.code !== filiere.code) {
             const cycleId = dto.cycleId || filiere.cycleId;
             const existing = await this.repo.findOne({ 
-                where: { code: dto.code, cycleId } 
+                where: { code: dto.code, cycleId, etablissementId } 
             });
             if (existing) {
                 throw new AppError('Une filière avec ce code existe déjà pour ce cycle', 409, 'FILIERE_EXISTS');
@@ -101,8 +113,8 @@ export class FilieresService {
         return filiere;
     }
 
-    async delete(id: string): Promise<void> {
-        const filiere = await this.findOne(id);
+    async delete(id: string, etablissementId: string): Promise<void> {
+        const filiere = await this.findOne(id, etablissementId);
         await this.repo.remove(filiere);
         logger.info(`Filière supprimée: ${filiere.nom}`);
     }

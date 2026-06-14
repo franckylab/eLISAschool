@@ -28,10 +28,11 @@ export class TokenService {
     /**
      * Génère un access token JWT
      * @param payload - Données à inclure dans le token
+     * @param expiresIn - Durée d'expiration optionnelle (override config)
      */
-    generateAccessToken(payload: JwtPayload): string {
+    generateAccessToken(payload: JwtPayload, expiresIn?: string | number): string {
         return jwt.sign(payload, envConfig.jwt.secret, {
-            expiresIn: envConfig.jwt.expiresIn as any,
+            expiresIn: expiresIn || (envConfig.jwt.expiresIn as any),
             issuer: 'eLISAschool',
             audience: 'elisaschool-api',
         });

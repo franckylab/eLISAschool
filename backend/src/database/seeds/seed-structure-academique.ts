@@ -2,16 +2,16 @@
  * ==================================
  * eLISAschool - Seed Structure Académique Complète
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
  * Crée les cycles, niveaux, filières, spécialités et examens nationaux
  * conformes au système éducatif camerounais (francophone et anglophone)
+ * Liés à un établissement spécifique
  * 
- * Changements v2.0:
- * - Suppression de TypeCycle (fusionné dans Cycle)
- * - Ajout des filières technologiques/industrielles
- * - Ajout des spécialités pour les filières techniques
+ * Changements v3.0:
+ * - Ajout du paramètre etablissementId pour le multi-tenant
+ * - Toutes les entités sont liées à l'établissement
  */
 
 import { AppDataSource } from '@database/data-source';
@@ -24,7 +24,7 @@ import { Competence } from '@modules/competences/entities/competence.entity';
 import { SousSysteme } from '@modules/etablissement/entities';
 import { logger } from '@common/utils/logger.util';
 
-export async function seedStructureAcademique(): Promise<void> {
+export async function seedStructureAcademique(etablissementId: string): Promise<void> {
     logger.info('🎓 Seed de la structure académique...');
 
     const cycleRepo = AppDataSource.getRepository(Cycle);
@@ -312,9 +312,23 @@ export async function seedStructureAcademique(): Promise<void> {
 
     const filieres: Filiere[] = [];
     for (const data of filieresData) {
-        const existing = await filiereRepo.findOne({ where: { code: data.code, cycleId: data.cycleId } });
+        const existing = await filiereRepo.findOne({ 
+            where: { 
+                code: data.code, 
+                cycleId: data.cycleId,
+                etablissementId 
+            } 
+        });
         if (!existing) {
-            const filiere = filiereRepo.create(data);
+            const filiere = filiereRepo.create({
+                nom: data.nom,
+                code: data.code,
+                description: data.description,
+                cycleId: data.cycleId,
+                etablissementId,
+                sousSysteme: data.sousSysteme as SousSysteme,
+                actif: true,
+            });
             await filiereRepo.save(filiere);
             filieres.push(filiere);
             logger.info(`  ✓ Filière créée: ${data.nom}`);
@@ -494,13 +508,20 @@ export async function seedStructureAcademique(): Promise<void> {
             continue;
         }
 
-        const existing = await specialiteRepo.findOne({ where: { code: spec.code, filiereId } });
+        const existing = await specialiteRepo.findOne({ 
+            where: { 
+                code: spec.code, 
+                filiereId,
+                etablissementId 
+            } 
+        });
         if (!existing) {
             const specialite = specialiteRepo.create({
                 nom: spec.nom,
                 code: spec.code,
                 description: spec.description,
                 filiereId,
+                etablissementId,
                 ordre: spec.ordre,
                 actif: true,
             });
@@ -589,13 +610,19 @@ export async function seedStructureAcademique(): Promise<void> {
             continue;
         }
 
-        const existing = await competenceRepo.findOne({ where: { code: comp.code } });
+        const existing = await competenceRepo.findOne({ 
+            where: { 
+                code: comp.code,
+                etablissementId 
+            } 
+        });
         if (!existing) {
             const competence = competenceRepo.create({
                 code: comp.code,
                 libelle: comp.libelle,
                 domaine: comp.domaine,
                 niveauId,
+                etablissementId,
                 description: comp.description,
                 ordre: comp.ordre,
                 actif: true,

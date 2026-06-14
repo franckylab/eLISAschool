@@ -8,7 +8,7 @@
  * Page complète de gestion des rôles et permissions
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Plus, Shield, Users, Edit, Trash2, Lock, Unlock, 
@@ -38,8 +38,28 @@ export function RolesPage() {
     const [filtreType, setFiltreType] = useState<'all' | 'systeme' | 'personnalise'>('all');
 
     const { data, isLoading, error, refetch } = useRoles(filtres);
-    const { data: stats } = useStatsRoles();
+    const { data: statsApi } = useStatsRoles();
     const supprimer = useSupprimerRole();
+
+    // Calculer les stats depuis la liste des rôles (fallback si l'API stats échoue)
+    const statsCalculees = useMemo(() => {
+        if (!data || data.length === 0) {
+            return {
+                totalRoles: 0,
+                rolesSysteme: 0,
+                rolesPersonnalises: 0,
+            };
+        }
+
+        return {
+            totalRoles: data.length,
+            rolesSysteme: data.filter(r => r.estSysteme).length,
+            rolesPersonnalises: data.filter(r => !r.estSysteme).length,
+        };
+    }, [data]);
+
+    // Utiliser les stats de l'API si disponibles, sinon utiliser les stats calculées
+    const stats = statsApi?.totalRoles ? statsApi : statsCalculees;
 
     // Filtrage côté client selon le type
     const dataFiltree = data?.filter(role => {

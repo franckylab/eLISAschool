@@ -57,7 +57,25 @@ export interface LoginResponseDto {
         role: string;
         nom: string;
         prenom: string;
+        etablissementActif?: string;
+        etablissements?: Array<{
+            etablissementId: string;
+            role: string;
+            etablissementPrincipal: boolean;
+            actif: boolean;
+        }>;
     };
+    // NOUVEAU v3.0 : Sélection d'établissement
+    etablissementsDisponibles?: Array<{
+        id: string;
+        nom: string;
+        code?: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        logoUrl?: string;
+    }>;
+    requiereSelectionEtablissement?: boolean;
+    tokenTemporaire?: boolean;
 }
 
 /**
@@ -70,6 +88,7 @@ export interface JwtPayload {
     roles?: string[];
     permissions?: string[];
     etablissementId?: string;
+    roleDansEtablissement?: string; // NOUVEAU v3.0 : rôle spécifique à l'établissement actif
     etablissements?: Array<{
         etablissementId: string;
         role: string;

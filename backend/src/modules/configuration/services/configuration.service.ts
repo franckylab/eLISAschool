@@ -15,7 +15,7 @@
 import { Repository, Like, In, IsNull } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { ConfigurationApp, ConfigurationModule } from '../entities';
+import { ConfigurationModule } from '../entities';
 import { ParametreSysteme, CategorieParametre, TypeValeurParametre } from '../entities/parametre-systeme.entity';
 import { ActionConfiguration, CibleConfiguration } from '../entities/historique-configuration.entity';
 import {
@@ -39,7 +39,6 @@ import { ConfigurationHistoryService, configurationHistoryService } from './conf
  * Cache en mémoire pour les configurations
  */
 interface ConfigCache {
-    app: ConfigurationApp | null;
     modules: Map<string, ConfigurationModule>;
     parametres: Map<string, any>;
     modulesActifs: Map<string, { value: boolean; expiry: number }>;
@@ -49,28 +48,26 @@ interface ConfigCache {
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Service de gestion de la configuration hybride v5.0
+ * Service de gestion de la configuration unifiée v6.0
+ * 
+ * Architecture simplifiée:
+ * - ParametreSysteme: TOUS les paramètres (global + établissement)
+ * - ConfigurationModule: Config technique uniquement (champs perso, widgets)
+ * - EtablissementConfig: Uniquement quotas/abonnement SaaS
  */
 export class ConfigurationService {
-    private configAppRepository: Repository<ConfigurationApp>;
     private configModuleRepository: Repository<ConfigurationModule>;
     private parametreRepository: Repository<ParametreSysteme>;
     private historyService: ConfigurationHistoryService;
 
     private cache: ConfigCache = {
-        app: null,
         modules: new Map(),
         parametres: new Map(),
         modulesActifs: new Map(),
         lastRefresh: 0,
     };
 
-    // Compteur d'erreurs DB pour monitoring
-    private dbErrorCount = 0;
-    private readonly MAX_DB_ERRORS = 5;
-
     constructor() {
-        this.configAppRepository = AppDataSource.getRepository(ConfigurationApp);
         this.configModuleRepository = AppDataSource.getRepository(ConfigurationModule);
         this.parametreRepository = AppDataSource.getRepository(ParametreSysteme);
         this.historyService = configurationHistoryService;
@@ -80,8 +77,7 @@ export class ConfigurationService {
     // CACHE
     // ============================================
 
-    invalidateCache(type?: 'app' | 'modules' | 'parametres'): void {
-        if (!type || type === 'app') this.cache.app = null;
+    invalidateCache(type?: 'modules' | 'parametres'): void {
         if (!type || type === 'modules') this.cache.modules.clear();
         if (!type || type === 'parametres') this.cache.parametres.clear();
         this.cache.lastRefresh = 0;
@@ -94,74 +90,17 @@ export class ConfigurationService {
     }
 
     // ============================================
-    // CONFIGURATION APPLICATION
+    // PARAMÈTRES SYSTÈME - Accès rapide
     // ============================================
 
-    async getConfigApp(): Promise<ConfigurationApp> {
-        if (this.cache.app && this.isCacheValid()) {
-            return this.cache.app;
-        }
-
-        let config = await this.configAppRepository.findOne({ where: {} });
-
-        if (!config) {
-            config = this.configAppRepository.create({
-                nomEtablissement: 'Mon Établissement',
-                langueDefaut: 'fr',
-                devise: 'XOF',
-                fuseauHoraire: 'Africa/Douala',
-                couleurPrimaire: '#28a745',
-                couleurSecondaire: '#ffc107',
-                couleurAccent: '#007bff',
-                theme: 'default',
-                modulesActifs: this.getDefaultActiveModules(),
-                version: '1.0.0',
-            });
-            await this.configAppRepository.save(config);
-        }
-
-        this.cache.app = config;
-        this.cache.lastRefresh = Date.now();
-        return config;
-    }
-
-    async updateConfigApp(updateDto: UpdateConfigAppDto, utilisateurId?: string, req?: Request): Promise<ConfigurationApp> {
-        const config = await this.getConfigApp();
-        const ancienneValeur = { ...config };
-
-        Object.assign(config, updateDto);
-        await this.configAppRepository.save(config);
-        this.invalidateCache('app');
-
-        // Historique
-        await this.historyService.logAction({
-            utilisateurId,
-            action: ActionConfiguration.UPDATE,
-            cible: CibleConfiguration.APP,
-            ancienneValeur,
-            nouvelleValeur: config,
-            restaurable: true,
-            req,
-        });
-
-        // Événement
-        this.emitChange(ActionConfiguration.UPDATE, CibleConfiguration.APP, undefined, undefined, ancienneValeur, config, utilisateurId);
-
-        logger.info('Configuration application mise à jour');
-        return config;
-    }
-
-    private getDefaultActiveModules(): Record<string, boolean> {
-        const modules: Record<string, boolean> = {};
-        Object.values(MODULE_REGISTRY).forEach((m: ModuleConfig) => {
-            modules[m.name] = m.defaultActive;
-        });
-        return modules;
-    }
-
-    // ============================================
-    // CONFIGURATION MODULES
-    // ============================================
+    /**
+     * Récupère un paramètre avec logique de fallback multi-établissement
+     * 
+     * Ordre de résolution :
+     * 1. Paramètre scopé à l'établissement (si etablissementId fourni)
+     * 2. Paramètre global (etablissementId = NULL)
+     * 3. Valeur par défaut (si fournie)
+     */
 
     async getConfigModule(moduleNom: string, etablissementId?: string): Promise<ConfigurationModule> {
         const cacheKey = `${moduleNom}:${etablissementId || 'global'}`;
@@ -259,12 +198,8 @@ export class ConfigurationService {
         // 2. Récupérer l'ancien état
         const ancienEtat = await this.isModuleActive(moduleNom, etablissementId);
 
-        // 3. Écrire dans EtablissementConfig (priorité) ou ConfigurationApp (fallback)
-        if (etablissementId) {
-            await this.toggleModuleEtablissement(moduleNom, actif, etablissementId);
-        } else {
-            await this.toggleModuleApp(moduleNom, actif);
-        }
+        // 3. Écrire dans ParametreSysteme (source unique de vérité)
+        await this.toggleModuleParametre(moduleNom, actif, etablissementId);
 
         // 4. Synchroniser ConfigurationModule.actif
         await this.syncConfigurationModule(moduleNom, actif, etablissementId);
@@ -305,26 +240,12 @@ export class ConfigurationService {
         };
     }
 
-    private async toggleModuleEtablissement(moduleNom: string, actif: boolean, etablissementId: string): Promise<void> {
-        const configRepo = AppDataSource.getRepository('EtablissementConfig');
-        let config = await configRepo.findOne({ where: { etablissementId } });
-        
-        if (!config) {
-            config = configRepo.create({ etablissementId, modulesActifs: {} });
-        }
-
-        if (!config.modulesActifs) {
-            config.modulesActifs = {};
-        }
-
-        config.modulesActifs[moduleNom] = actif;
-        await configRepo.save(config);
-    }
-
-    private async toggleModuleApp(moduleNom: string, actif: boolean): Promise<void> {
-        const config = await this.getConfigApp();
-        config.modulesActifs[moduleNom] = actif;
-        await this.configAppRepository.save(config);
+    /**
+     * Active/désactive un module dans ParametreSysteme
+     */
+    private async toggleModuleParametre(moduleNom: string, actif: boolean, etablissementId?: string): Promise<void> {
+        const cle = `modules.${moduleNom}.actif`;
+        await this.setParametre(cle, actif, etablissementId);
     }
 
     private async syncConfigurationModule(moduleNom: string, actif: boolean, etablissementId?: string): Promise<void> {
@@ -388,11 +309,7 @@ export class ConfigurationService {
                 if (!estActive) {
                     // Auto-activation de la dépendance
                     try {
-                        if (etablissementId) {
-                            await this.toggleModuleEtablissement(dep, true, etablissementId);
-                        } else {
-                            await this.toggleModuleApp(dep, true);
-                        }
+                        await this.toggleModuleParametre(dep, true, etablissementId);
                         await this.syncConfigurationModule(dep, true, etablissementId);
                         modulesAutoActivés.push(dep);
                     } catch (error) {
@@ -457,58 +374,26 @@ export class ConfigurationService {
             return cached.value;
         }
 
-        let result = false;
+        let result: boolean | null = null;
 
-        // 1. Priorité: EtablissementConfig (multi-tenant)
+        // Niveau 1: Paramètre scopé à l'établissement
         if (etablissementId) {
-            try {
-                const configRepo = AppDataSource.getRepository('EtablissementConfig');
-                const config = await configRepo.findOne({ where: { etablissementId } });
-                if (config?.modulesActifs && moduleNom in config.modulesActifs) {
-                    result = config.modulesActifs[moduleNom];
-                    this.dbErrorCount = 0; // Reset compteur
-                }
-            } catch (error) {
-                this.dbErrorCount++;
-                logger.warn(`Erreur lecture EtablissementConfig (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
-                if (this.dbErrorCount >= this.MAX_DB_ERRORS) {
-                    logger.error(`⚠️ Trop d'erreurs DB consecutives (${this.dbErrorCount}). Vérifier la connection!`);
-                }
+            const value = await this.getParametre<boolean>(`modules.${moduleNom}.actif`, etablissementId);
+            if (value !== null) {
+                result = value;
             }
         }
 
-        // 2. Fallback: ConfigurationApp (legacy)
-        if (!result || !etablissementId) {
-            try {
-                const appConfig = await this.getConfigApp();
-                if (appConfig.modulesActifs && moduleNom in appConfig.modulesActifs) {
-                    result = appConfig.modulesActifs[moduleNom];
-                    this.dbErrorCount = 0;
-                }
-            } catch (error) {
-                this.dbErrorCount++;
-                logger.warn(`Erreur lecture ConfigurationApp (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
+        // Niveau 2: Paramètre global (fallback)
+        if (result === null) {
+            const globalValue = await this.getParametre<boolean>(`modules.${moduleNom}.actif`);
+            if (globalValue !== null) {
+                result = globalValue;
             }
         }
 
-        // 3. Fallback: ConfigurationModule.actif
-        if (!result) {
-            try {
-                const moduleConfig = await this.configModuleRepository.findOne({
-                    where: { moduleNom, etablissementId: etablissementId || undefined }
-                });
-                if (moduleConfig) {
-                    result = moduleConfig.actif;
-                    this.dbErrorCount = 0;
-                }
-            } catch (error) {
-                this.dbErrorCount++;
-                logger.warn(`Erreur lecture ConfigurationModule (${this.dbErrorCount}/${this.MAX_DB_ERRORS}): ${error}`);
-            }
-        }
-
-        // 4. Fallback: MODULE_REGISTRY defaultActive
-        if (!result) {
+        // Niveau 3: MODULE_REGISTRY defaultActive (dernier fallback)
+        if (result === null) {
             const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
             result = registryConfig?.defaultActive ?? false;
         }
@@ -1077,10 +962,6 @@ export class ConfigurationService {
     async exportConfig(options: ExportConfigDto): Promise<any> {
         const exported: any = { exportedAt: new Date().toISOString(), version: '1.0.0' };
 
-        if (options.includeApp) {
-            exported.app = await this.getConfigApp();
-        }
-
         if (options.includeModules) {
             exported.modules = await this.configModuleRepository.find();
         }
@@ -1093,24 +974,19 @@ export class ConfigurationService {
     }
 
     // ============================================
-    // LICENCE
+    // LICENCE - Migré vers ParametreSysteme
     // ============================================
 
+    /**
+     * @deprecated Utiliser setParametre('app.licence_*') à la place
+     */
     async activerLicence(dto: ActiverLicenceDto): Promise<{ success: boolean; message: string }> {
-        const config = await this.getConfigApp();
+        // Migré vers ParametreSysteme
+        await this.setParametre('app.licence_key', dto.licenceKey);
+        await this.setParametre('app.licence_active', true);
+        await this.setParametre('app.licence_expiration', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
 
-        if (dto.licenceKey.length < 10) {
-            throw new AppError('Clé de licence invalide', 400, 'INVALID_LICENSE');
-        }
-
-        config.licenceKey = dto.licenceKey;
-        config.licenceActive = true;
-        config.licenceExpiration = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-
-        await this.configAppRepository.save(config);
-        this.invalidateCache('app');
-
-        logger.info('Licence activée avec succès');
+        logger.info('Licence activée avec succès (via ParametreSysteme)');
         return { success: true, message: 'Licence activée avec succès' };
     }
 

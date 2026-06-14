@@ -14,12 +14,32 @@ import { validateDto } from '@common/utils';
 const router = Router();
 const service = new ClassesService();
 
+/**
+ * @route   GET /api/classes
+ * @desc    Récupérer les classes avec pagination
+ * @access  Authentifié
+ */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
         const classes = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC' as const, niveauId, anneeScolaireId: anneeId }, req.etablissementId);
         res.json({ success: true, data: classes });
+    } catch (error) { next(error); }
+});
+
+/**
+ * @route   GET /api/classes/all
+ * @desc    Récupérer toutes les classes (sans pagination, pour dropdowns)
+ * @access  Authentifié
+ */
+router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const niveauId = req.query.niveauId as string;
+        const anneeId = req.query.anneeId as string;
+        const classes = await service.findAll({ page: 1, limit: 1000, sortBy: 'nom', sortOrder: 'ASC' as const, niveauId, anneeScolaireId: anneeId }, req.etablissementId);
+        // Retourner uniquement le tableau de classes (pas de métadonnées de pagination)
+        res.json({ success: true, data: classes.items || classes });
     } catch (error) { next(error); }
 });
 

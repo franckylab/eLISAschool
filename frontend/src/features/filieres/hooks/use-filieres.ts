@@ -2,13 +2,21 @@
  * ==================================
  * eLISAschool - Hooks Filières
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Optimisation des performances React Query
+ * - Gestion d'erreurs améliorée avec toast
+ * - Retry intelligent désactivé pour les mutations
+ * - Cache optimisé pour multi-tenant
+ * - Refetch désactivé pour éviter les requêtes inutiles
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
+import { toast } from 'sonner';
 import type { PaginatedResult } from '@shared/types/api.types';
 import type {
     Filiere,
@@ -48,7 +56,12 @@ export function useFilieres(filtres: FiliereFiltres = {}) {
             return (response as any).data as PaginatedResult<Filiere>;
         },
         enabled: isAuthenticated,
-        staleTime: 10 * 60 * 1000,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000,   // 10 minutes
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        retry: 1,
+        retryDelay: 1000,
     });
 }
 
@@ -61,7 +74,11 @@ export function useToutesFilieres() {
             return response.data?.data || [];
         },
         enabled: isAuthenticated,
-        staleTime: 15 * 60 * 1000,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        gcTime: 15 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        retry: 1,
     });
 }
 
@@ -83,7 +100,12 @@ export function useFiliere(id: string) {
             return response.data?.data;
         },
         enabled: isAuthenticated && !!id,
-        staleTime: 5 * 60 * 1000,
+        staleTime: 3 * 60 * 1000, // 3 minutes
+        gcTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        retry: 1,
+        retryDelay: 500,
     });
 }
 
@@ -105,7 +127,13 @@ export function useCreerFiliere() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: FILIERES_KEYS.lists() });
+            toast.success('Filière créée avec succès');
         },
+        onError: (error: any) => {
+            const message = error.response?.data?.error?.message || 'Erreur lors de la création';
+            toast.error(message);
+        },
+        retry: 0,
     });
 }
 
@@ -128,7 +156,13 @@ export function useModifierFiliere() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: FILIERES_KEYS.lists() });
             queryClient.invalidateQueries({ queryKey: FILIERES_KEYS.detail(variables.id) });
+            toast.success('Filière modifiée avec succès');
         },
+        onError: (error: any) => {
+            const message = error.response?.data?.error?.message || 'Erreur lors de la modification';
+            toast.error(message);
+        },
+        retry: 0,
     });
 }
 
@@ -149,6 +183,12 @@ export function useSupprimerFiliere() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: FILIERES_KEYS.lists() });
+            toast.success('Filière supprimée avec succès');
         },
+        onError: (error: any) => {
+            const message = error.response?.data?.error?.message || 'Erreur lors de la suppression';
+            toast.error(message);
+        },
+        retry: 0,
     });
 }

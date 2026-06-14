@@ -481,13 +481,40 @@ etablissementId!: string;
 etablissementId!: string;
 ```
 
-### Règle 2 : Utilisation de la configuration scopée
+### Règle 2 : ParametreSysteme - Source unique de vérité (v3.0+)
+
+**Architecture** : Un seul système de configuration avec scopage établissement.
 
 ```typescript
-// Dans un service ou controller
-const config = await configurationService.getParametre('theme.primary_color', req.etablissementId);
-// Résolution : override établissement → fallback global
+// ✅ Lecture avec contexte établissement
+const valeur = await getParam('app.langue_defaut', {
+    etablissementId: req.etablissementId,  // Scopé
+    defaultValue: 'fr'                      // Fallback
+});
+
+// ✅ Résolution en cascade :
+// 1. Override établissement (si existe)
+// 2. Paramètre global (si existe)
+// 3. valeurDefaut (si définie)
+// 4. defaultValue du helper
 ```
+
+**Helper contextuel** :
+```typescript
+// Dans controller/service
+import { getParamFromRequest } from '@modules/configuration/utils/config.helper';
+
+const theme = await getParamFromRequest('app.theme', req, 'default');
+```
+
+**Modules** :
+```typescript
+// Activation/désactivation
+await configurationService.toggleModule('bulletins', true, etablissementId);
+const isActive = await configurationService.isModuleActive('bulletins', etablissementId);
+```
+
+**⚠️ ConfigurationApp SUPPRIMÉ** : Utiliser exclusivement `ParametreSysteme`.
 
 ### Règle 3 : Éviter les références circulaires
 

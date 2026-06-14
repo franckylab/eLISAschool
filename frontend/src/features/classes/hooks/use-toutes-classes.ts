@@ -20,8 +20,14 @@ export function useToutesClasses(etablissementId?: string) {
     return useQuery({
         queryKey: CLASSES_KEYS.toutes(),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Classe[] }>('/api/classes/all');
-            return response.data?.data || [];
+            // apiClient.get<T> retourne ApiResponse<T> = { success: boolean, data?: T }
+            const response = await apiClient.get<Classe[]>('/api/classes/all');
+            
+            if (!response.data) {
+                throw new Error('Aucune classe disponible');
+            }
+            
+            return response.data;
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 min

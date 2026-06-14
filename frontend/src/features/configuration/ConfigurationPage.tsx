@@ -20,7 +20,9 @@ import { LangueRegionTab } from './components/LangueRegionTab';
 import { ModulesTab } from './components/ModulesTab';
 import { NotificationsTab } from './components/NotificationsTab';
 import { HistoriqueTab } from './components/HistoriqueTab';
-import { useConfigurationApp, useUpdateConfigurationApp } from './hooks/use-configuration';
+import { useParametres, useModifierParametre } from './hooks/use-configuration';
+import { useEtablissement, useModifierEtablissement } from '@/features/etablissement/hooks/use-etablissements';
+import { useAuthStore } from '@/stores/auth.store';
 
 type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications' | 'historique';
 
@@ -38,37 +40,46 @@ export function ConfigurationPage() {
     const { t } = useTranslation('configuration');
     const [activeTab, setActiveTab] = useState<TabId>('general');
     const themeStore = useThemeStore();
+    const { etablissementId } = useAuthStore();
 
-    // Hooks TanStack Query
-    const { data: configResponse, isLoading: isLoadingConfig } = useConfigurationApp();
-    const updateConfig = useUpdateConfigurationApp();
+    // Charger les données de l'établissement (source de vérité)
+    const { data: etablissement, isLoading: isLoadingEtablissement } = useEtablissement(
+        etablissementId || ''
+    );
+    const modifierEtablissement = useModifierEtablissement();
 
-    const config = configResponse?.data;
-
-    // État du formulaire général
+    // État du formulaire général (depuis l'entité Etablissement)
     const [formData, setFormData] = useState({
-        nomEtablissement: '',
-        codeEtablissement: '',
-        email: '',
-        telephone: '',
-        adresse: '',
+        nomEtablissement: etablissement?.nom || '',
+        codeEtablissement: etablissement?.codeEtablissement || '',
+        email: etablissement?.contactEmail || '',
+        telephone: etablissement?.contactTelephone || '',
+        adresse: etablissement?.adresse || '',
     });
 
-    // Synchroniser avec la config chargée
+    // Synchroniser avec l'établissement chargé
     useEffect(() => {
-        if (config) {
+        if (etablissement) {
             setFormData({
-                nomEtablissement: config.nomEtablissement || '',
-                codeEtablissement: config.codeEtablissement || '',
-                email: config.email || '',
-                telephone: config.telephone || '',
-                adresse: config.adresse || '',
+                nomEtablissement: etablissement.nom || '',
+                codeEtablissement: etablissement.codeEtablissement || '',
+                email: etablissement.contactEmail || '',
+                telephone: etablissement.contactTelephone || '',
+                adresse: etablissement.adresse || '',
             });
         }
-    }, [config]);
+    }, [etablissement]);
 
     const handleSaveGeneral = async () => {
-        await updateConfig.mutateAsync(formData);
+        // Mettre à jour l'entité Etablissement (source de vérité)
+        await modifierEtablissement.mutateAsync({
+            id: etablissementId!,
+            nom: formData.nomEtablissement,
+            codeEtablissement: formData.codeEtablissement,
+            contactEmail: formData.email,
+            contactTelephone: formData.telephone,
+            adresse: formData.adresse,
+        });
     };
 
     return (
@@ -114,7 +125,7 @@ export function ConfigurationPage() {
                                     {t('sections.general.description')}
                                 </p>
                             </div>
-                            {isLoadingConfig ? (
+                            {isLoadingEtablissement ? (
                                 <div className="py-8 text-center">Chargement...</div>
                             ) : (
                                 <>
@@ -155,7 +166,7 @@ export function ConfigurationPage() {
                                     <ElisaButton
                                         variant="primary"
                                         onClick={handleSaveGeneral}
-                                        isLoading={updateConfig.isPending}
+                                        isLoading={modifierEtablissement.isPending}
                                     >
                                         {t('boutons.enregistrer', { ns: 'common' })}
                                     </ElisaButton>

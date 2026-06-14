@@ -2,6 +2,12 @@
  * ==================================
  * eLISAschool - Entités Matières
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Ajout etablissementId pour support multi-tenant
+ * - Chaque établissement choisit ses matières actives
  */
 
 import {
@@ -14,6 +20,7 @@ import {
     JoinColumn,
     Index
 } from 'typeorm';
+import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('groupes_matieres')
 export class GroupeMatiere {
@@ -34,11 +41,13 @@ export class GroupeMatiere {
 }
 
 @Entity('matieres')
+@Index(['etablissementId'])
+@Index(['code', 'etablissementId'])
 export class Matiere {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 100, unique: true })
+    @Column({ type: 'varchar', length: 100 })
     nom!: string;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
@@ -49,6 +58,17 @@ export class Matiere {
 
     @Column({ type: 'varchar', length: 20, default: '#000000' })
     couleur!: string;
+
+    /**
+     * Relation multi-tenant : chaque matière appartient à un établissement.
+     * Permet à chaque établissement d'avoir sa propre grille de matières.
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement)
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

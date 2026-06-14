@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { Globe, Clock, DollarSign, Calendar } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useConfigurationApp, useUpdateConfigurationApp } from '../hooks/use-configuration';
+import { useParametres, useModifierParametre } from '../hooks/use-configuration';
 
 const LANGUES = [
     { code: 'fr', nom: 'Français' },
@@ -38,33 +38,53 @@ const FORMATS_DATE = [
 ];
 
 export function LangueRegionTab() {
-    const { data: configResponse, isLoading } = useConfigurationApp();
-    const updateConfig = useUpdateConfigurationApp();
+    // Charger les paramètres régionaux
+    const { data: paramsResponse, isLoading } = useParametres({
+        categorie: 'REGIONAL',
+        limit: 100,
+    });
+    const modifierParametre = useModifierParametre();
 
-    const config = configResponse?.data;
+    // Extraire les valeurs des paramètres
+    const params = paramsResponse?.data || [];
+    const getParamValue = (cle: string, defaultValue: string) => {
+        const param = params.find(p => p.cle === `app.${cle}`);
+        return param ? param.valeur : defaultValue;
+    };
 
-    const [langueDefaut, setLangueDefaut] = useState(config?.langueDefaut || 'fr');
-    const [fuseauHoraire, setFuseauHoraire] = useState(config?.fuseauHoraire || 'Africa/Douala');
-    const [devise, setDevise] = useState(config?.devise || 'XAF');
-    const [formatDate, setFormatDate] = useState(config?.formatDate || 'DD/MM/YYYY');
+    const [langueDefaut, setLangueDefaut] = useState(getParamValue('langue_defaut', 'fr'));
+    const [fuseauHoraire, setFuseauHoraire] = useState(getParamValue('fuseau_horaire', 'Africa/Douala'));
+    const [devise, setDevise] = useState(getParamValue('devise', 'XAF'));
+    const [formatDate, setFormatDate] = useState(getParamValue('format_date', 'DD/MM/YYYY'));
 
-    // Synchroniser avec la config chargée
+    // Synchroniser avec les paramètres chargés
     useEffect(() => {
-        if (config) {
-            setLangueDefaut(config.langueDefaut || 'fr');
-            setFuseauHoraire(config.fuseauHoraire || 'Africa/Douala');
-            setDevise(config.devise || 'XAF');
-            setFormatDate(config.formatDate || 'DD/MM/YYYY');
+        if (params.length > 0) {
+            setLangueDefaut(getParamValue('langue_defaut', 'fr'));
+            setFuseauHoraire(getParamValue('fuseau_horaire', 'Africa/Douala'));
+            setDevise(getParamValue('devise', 'XAF'));
+            setFormatDate(getParamValue('format_date', 'DD/MM/YYYY'));
         }
-    }, [config]);
+    }, [params]);
 
     const handleSave = async () => {
-        await updateConfig.mutateAsync({
-            langueDefaut,
-            fuseauHoraire,
-            devise,
-            formatDate,
-        });
+        // Mettre à jour chaque paramètre
+        const paramUpdates = [
+            { cle: 'app.langue_defaut', valeur: JSON.stringify(langueDefaut) },
+            { cle: 'app.fuseau_horaire', valeur: JSON.stringify(fuseauHoraire) },
+            { cle: 'app.devise', valeur: JSON.stringify(devise) },
+            { cle: 'app.format_date', valeur: JSON.stringify(formatDate) },
+        ];
+
+        for (const update of paramUpdates) {
+            const param = params.find(p => p.cle === update.cle);
+            if (param) {
+                await modifierParametre.mutateAsync({
+                    id: param.id,
+                    valeur: update.valeur,
+                });
+            }
+        }
     };
 
     if (isLoading) {
@@ -162,7 +182,7 @@ export function LangueRegionTab() {
             <ElisaButton
                 variant="primary"
                 onClick={handleSave}
-                isLoading={updateConfig.isPending}
+                isLoading={modifierParametre.isPending}
             >
                 Enregistrer les paramètres régionaux
             </ElisaButton>

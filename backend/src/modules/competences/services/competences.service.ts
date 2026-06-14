@@ -2,8 +2,13 @@
  * ==================================
  * eLISAschool - Service Competences
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ * 
+ * Changements v2.0:
+ * - Support multi-tenant avec etablissementId
+ * - Toutes les requêtes sont filtrées par établissement
+ * - Isolation totale des données entre établissements
  */
 
 import { Repository } from 'typeorm';
@@ -21,25 +26,31 @@ export class CompetencesService {
         this.repo = AppDataSource.getRepository(Competence);
     }
 
-    async create(dto: CreateCompetenceDto): Promise<Competence> {
-        // Vérifier unicité du code
-        const existing = await this.repo.findOne({ where: { code: dto.code } });
+    async create(dto: CreateCompetenceDto, etablissementId: string): Promise<Competence> {
+        // Vérifier unicité du code PAR établissement
+        const existing = await this.repo.findOne({ 
+            where: { code: dto.code, etablissementId } 
+        });
         if (existing) {
-            throw new AppError('Une compétence avec ce code existe déjà', 409, 'COMPETENCE_EXISTS');
+            throw new AppError('Une compétence avec ce code existe déjà dans cet établissement', 409, 'COMPETENCE_EXISTS');
         }
 
-        const competence = this.repo.create(dto);
+        const competence = this.repo.create({
+            ...dto,
+            etablissementId,
+        });
         await this.repo.save(competence);
-        logger.info(`Compétence créée: ${dto.libelle}`);
+        logger.info(`Compétence créée: ${dto.libelle} pour établissement ${etablissementId}`);
         return competence;
     }
 
-    async findAll(query: QueryCompetencesDto = {}): Promise<PaginatedResult<Competence>> {
+    async findAll(query: QueryCompetencesDto = {}, etablissementId: string): Promise<PaginatedResult<Competence>> {
         const { page = 1, limit = 20, search, niveauId, matiereId, domaine, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('competence')
             .leftJoinAndSelect('competence.niveau', 'niveau')
-            .leftJoinAndSelect('competence.matiere', 'matiere');
+            .leftJoinAndSelect('competence.matiere', 'matiere')
+            .where('competence.etablissementId = :etablissementId', { etablissementId });
 
         // Filtre par niveau
         if (niveauId) {
@@ -74,47 +85,48 @@ export class CompetencesService {
         return paginateWithQueryBuilder(qb, page, limit);
     }
 
-    async findByNiveau(niveauId: string): Promise<Competence[]> {
+    async findByNiveau(niveauId: string, etablissementId: string): Promise<Competence[]> {
         return this.repo.find({
-            where: { niveauId, actif: true },
+            where: { niveauId, etablissementId, actif: true },
             order: { ordre: 'ASC' },
             relations: ['niveau', 'matiere'],
         });
     }
 
-    async findByMatiere(matiereId: string): Promise<Competence[]> {
+    async findByMatiere(matiereId: string, etablissementId: string): Promise<Competence[]> {
         return this.repo.find({
-            where: { matiereId, actif: true },
+            where: { matiereId, etablissementId, actif: true },
             order: { ordre: 'ASC' },
             relations: ['niveau', 'matiere'],
         });
     }
 
-    async findAllSimple(): Promise<Competence[]> {
+    async findAllSimple(etablissementId: string): Promise<Competence[]> {
         return this.repo.find({
+            where: { etablissementId },
             order: { ordre: 'ASC' },
             relations: ['niveau', 'matiere'],
         });
     }
 
-    async findOne(id: string): Promise<Competence> {
+    async findOne(id: string, etablissementId: string): Promise<Competence> {
         const competence = await this.repo.findOne({ 
-            where: { id }, 
+            where: { id, etablissementId }, 
             relations: ['niveau', 'matiere'] 
         });
         if (!competence) throw new AppError('Compétence non trouvée', 404, 'NOT_FOUND');
         return competence;
     }
 
-    async update(id: string, dto: UpdateCompetenceDto): Promise<Competence> {
-        const competence = await this.findOne(id);
+    async update(id: string, dto: UpdateCompetenceDto, etablissementId: string): Promise<Competence> {
+        const competence = await this.findOne(id, etablissementId);
         Object.assign(competence, dto);
         await this.repo.save(competence);
         return competence;
     }
 
-    async delete(id: string): Promise<void> {
-        const competence = await this.findOne(id);
+    async delete(id: string, etablissementId: string): Promise<void> {
+        const competence = await this.findOne(id, etablissementId);
         await this.repo.remove(competence);
         logger.info(`Compétence supprimée: ${id}`);
     }

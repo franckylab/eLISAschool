@@ -53,19 +53,64 @@ export class RBACSeedService {
     }
 
     /**
-     * Seed des 9 rôles système
+     * Seed de TOUS les rôles système (sauf administration nationale supprimée)
      */
     private async seedRoles(): Promise<number> {
         const rolesDefinition = [
+            // Rôles principaux
             { code: RoleEnum.SUPER_ADMIN, libelle: 'Super Administrateur', description: 'Accès total à toutes les fonctionnalités' },
             { code: RoleEnum.ADMIN, libelle: 'Administrateur', description: 'Administrateur de l\'établissement' },
             { code: RoleEnum.CHEF_ETABLISSEMENT, libelle: 'Chef d\'Établissement', description: 'Direction de l\'établissement' },
-            { code: RoleEnum.ENSEIGNANT, libelle: 'Enseignant', description: 'Enseignant' },
-            { code: RoleEnum.PERSONNEL, libelle: 'Personnel', description: 'Personnel non-enseignant (secrétaire, etc.)' },
+            { code: RoleEnum.ENSEIGNANT, libelle: 'Enseignant', description: 'Enseignant (générique)' },
+            { code: RoleEnum.PERSONNEL, libelle: 'Personnel', description: 'Personnel non-enseignant (générique)' },
+            { code: RoleEnum.PARENT, libelle: 'Parent', description: 'Parent d\'élève (générique)' },
+            { code: RoleEnum.ELEVE, libelle: 'Élève', description: 'Élève (générique)' },
+            
+            // Direction d'établissement
+            { code: RoleEnum.PROVISEUR, libelle: 'Proviseur', description: 'Chef d\'établissement secondaire (lycée)' },
+            { code: RoleEnum.PRINCIPAL, libelle: 'Principal', description: 'Chef d\'établissement collège' },
+            { code: RoleEnum.DIRECTEUR, libelle: 'Directeur', description: 'Chef d\'école primaire' },
+            { code: RoleEnum.CENSEUR, libelle: 'Censeur', description: 'Responsable discipline & organisation' },
+            { code: RoleEnum.DIRECTEUR_ADJOINT, libelle: 'Directeur Adjoint', description: 'Chef d\'établissement adjoint' },
+            { code: RoleEnum.RESPONSABLE_PEDAGOGIQUE, libelle: 'Responsable Pédagogique', description: 'Conseiller pédagogique interne' },
+            
+            // Enseignants spécialisés
+            { code: RoleEnum.PROFESSEUR_CERTIFIE, libelle: 'Professeur Certifié', description: 'Enseignant secondaire certifié' },
+            { code: RoleEnum.PROFESSEUR_AGREGE, libelle: 'Professeur Agrégé', description: 'Enseignant lycée (agrégé)' },
+            { code: RoleEnum.INSTITUTEUR, libelle: 'Instituteur', description: 'Enseignant primaire' },
+            { code: RoleEnum.MAITRE_AUXILIAIRE, libelle: 'Maître Auxiliaire', description: 'Enseignant contractuel' },
+            { code: RoleEnum.PROFESSEUR_TECHNIQUE, libelle: 'Professeur Technique', description: 'Enseignant technique/professionnel' },
+            { code: RoleEnum.EDUCATEUR_MATERNELLE, libelle: 'Éducateur Maternelle', description: 'Enseignant maternelle' },
+            { code: RoleEnum.PROFESSEUR_PRINCIPAL, libelle: 'Professeur Principal', description: 'Responsable de classe' },
+            { code: RoleEnum.COORDINATEUR_DISCIPLINE, libelle: 'Coordinateur', description: 'Coordinateur matière/département' },
+            
+            // Orientation & conseil
+            { code: RoleEnum.CONSEILLER_ORIENTEUR, libelle: 'Conseiller d\'Orientation', description: 'Conseiller orientation scolaire' },
+            { code: RoleEnum.PSYCHOLOGUE_SCOLAIRE, libelle: 'Psychologue Scolaire', description: 'Psychologue de l\'éducation' },
+            { code: RoleEnum.ASSISTANT_SOCIAL, libelle: 'Assistant Social', description: 'Assistant social scolaire' },
+            
+            // Personnel administratif
+            { code: RoleEnum.SECRETAIRE_DIRECTION, libelle: 'Secrétaire de Direction', description: 'Secrétaire de direction' },
+            { code: RoleEnum.COMPTABLE, libelle: 'Comptable', description: 'Agent comptable' },
+            { code: RoleEnum.GESTIONNAIRE, libelle: 'Gestionnaire', description: 'Gestionnaire matériel/logistique' },
+            { code: RoleEnum.BIBLIOTHECAIRE, libelle: 'Bibliothécaire', description: 'Responsable bibliothèque' },
+            { code: RoleEnum.DOCUMENTALISTE, libelle: 'Documentaliste', description: 'Responsable documentation' },
+            { code: RoleEnum.ARCHIVISTE, libelle: 'Archiviste', description: 'Responsable archives' },
+            
+            // Personnel technique
+            { code: RoleEnum.TECHNICIEN_LABO, libelle: 'Technicien Labo', description: 'Technicien laboratoire sciences' },
+            { code: RoleEnum.TECHNICIEN_INFO, libelle: 'Technicien Informatique', description: 'Technicien informatique' },
+            { code: RoleEnum.CONSEILLER_TIC, libelle: 'Conseiller TIC', description: 'Conseiller TIC pédagogique' },
+            { code: RoleEnum.AIDE_EDUCATEUR, libelle: 'Aide Éducateur', description: 'Assistant pédagogique' },
+            
+            // Surveillance & vie scolaire
+            { code: RoleEnum.SURVEILLANT_GENERAL, libelle: 'Surveillant Général', description: 'Responsable surveillance' },
+            { code: RoleEnum.SURVEILLANT, libelle: 'Surveillant', description: 'Maître d\'internat / surveillant' },
+            
+            // Services spécifiques
             { code: RoleEnum.RESPONSABLE_CANTINE, libelle: 'Responsable Cantine', description: 'Gestion de la cantine' },
             { code: RoleEnum.RESPONSABLE_TRANSPORT, libelle: 'Responsable Transport', description: 'Gestion du transport' },
-            { code: RoleEnum.PARENT, libelle: 'Parent', description: 'Parent d\'élève' },
-            { code: RoleEnum.ELEVE, libelle: 'Élève', description: 'Élève' },
+            { code: RoleEnum.RESPONSABLE_INFRASTRUCTURE, libelle: 'Responsable Infrastructure', description: 'Parking, maintenance, sécurité' },
         ];
 
         let count = 0;

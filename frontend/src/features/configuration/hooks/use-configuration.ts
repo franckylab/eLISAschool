@@ -10,11 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
 import type {
-    ConfigurationApp,
-    UpdateConfigAppDto,
     ParametreSysteme,
-    CreateParametreDto,
-    UpdateParametreDto,
     ParametreFiltres,
     ConfigurationModule,
     UpdateConfigModuleDto,
@@ -31,7 +27,6 @@ import type {
 
 const CONFIG_KEYS = {
     all: ['configuration'] as const,
-    app: () => [...CONFIG_KEYS.all, 'app'] as const,
     params: () => [...CONFIG_KEYS.all, 'params'] as const,
     paramsList: (filtres: ParametreFiltres) => [...CONFIG_KEYS.params(), 'list', filtres] as const,
     modules: () => [...CONFIG_KEYS.all, 'modules'] as const,
@@ -39,43 +34,6 @@ const CONFIG_KEYS = {
     historyList: (filtres: HistoriqueFiltres) => [...CONFIG_KEYS.history(), 'list', filtres] as const,
     backups: () => [...CONFIG_KEYS.all, 'backups'] as const,
 };
-
-// =============================================
-// CONFIGURATION APPLICATION
-// =============================================
-
-export function useConfigurationApp() {
-    const { isAuthenticated } = useAuthStore();
-
-    return useQuery({
-        queryKey: CONFIG_KEYS.app(),
-        queryFn: async () => {
-            const response = await apiClient.get<{ data: ConfigurationApp }>(
-                '/api/configuration/full'
-            );
-            return response.data;
-        },
-        enabled: isAuthenticated,
-        staleTime: 10 * 60 * 1000,
-    });
-}
-
-export function useUpdateConfigurationApp() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (dto: UpdateConfigAppDto) => {
-            const response = await apiClient.patch<ConfigurationApp>(
-                '/api/configuration',
-                dto
-            );
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.app() });
-        },
-    });
-}
 
 // =============================================
 // PARAMÈTRES SYSTÈME

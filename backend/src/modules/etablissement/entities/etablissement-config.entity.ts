@@ -2,11 +2,14 @@
  * ==================================
  * eLISAschool - Entité EtablissementConfig
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
- * Configuration spécifique à un établissement (thème, quotas, modules, etc.)
+ * Configuration spécifique à un établissement (SaaS uniquement).
  * Relation 1:1 avec Etablissement
+ * 
+ * Note: Les paramètres de thème, régionaux et modules ont été migrés
+ * vers ParametreSysteme pour une source unique de vérité.
  */
 
 import {
@@ -48,6 +51,9 @@ export class EtablissementConfig {
     @Column({ type: 'simple-array', default: '' })
     cyclesActifs!: string[];
 
+    /**
+     * Configuration spécifique du bulletin
+     */
     @Column({ type: 'simple-json', nullable: true })
     configurationBulletin?: {
         style?: string; // 'moderne', 'classique'
@@ -58,42 +64,6 @@ export class EtablissementConfig {
         afficherPhoto?: boolean;
         afficherCourbeProgression?: boolean;
     };
-
-    /**
-     * Paramètres de thème et personnalisation (migrés depuis ConfigurationApp)
-     */
-    @Column({ type: 'varchar', length: 10, nullable: true })
-    couleurPrimaire?: string;
-
-    @Column({ type: 'varchar', length: 10, nullable: true })
-    couleurSecondaire?: string;
-
-    @Column({ type: 'varchar', length: 10, nullable: true })
-    couleurAccent?: string;
-
-    @Column({ type: 'varchar', length: 20, default: 'default' })
-    theme?: string; // default, dark, cameroon
-
-    /**
-     * Paramètres régionaux (migrés depuis ConfigurationApp)
-     */
-    @Column({ type: 'varchar', length: 10, default: 'fr' })
-    langueDefaut?: string;
-
-    @Column({ type: 'varchar', length: 10, default: 'XOF' })
-    devise?: string;
-
-    @Column({ type: 'varchar', length: 50, default: 'Africa/Douala' })
-    fuseauHoraire?: string;
-
-    @Column({ type: 'text', nullable: true })
-    messageAccueil?: string;
-
-    /**
-     * Modules actifs pour cet établissement
-     */
-    @Column({ type: 'simple-json', default: '{}' })
-    modulesActifs?: Record<string, boolean>;
 
     /**
      * Quotas et limites (plans SaaS)
@@ -110,6 +80,9 @@ export class EtablissementConfig {
     @Column({ type: 'int', nullable: true })
     stockageMaxMB?: number;
 
+    /**
+     * Abonnement SaaS
+     */
     @Column({ type: 'timestamp', nullable: true })
     dateExpirationAbonnement?: Date;
 

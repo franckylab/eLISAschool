@@ -6,79 +6,10 @@
  * Auteur: franck arlos chendjou
  */
 
-// =============================================
-// CONFIGURATION APPLICATION
-// =============================================
-
 /**
- * @deprecated Utiliser Etablissement + EtablissementConfig à la place
- * @see {@link ../../etablissement/types/etablissement.types.ts}
- * Cette interface sera supprimée dans une version future.
- * Migration recommandée : utiliser les hooks du module etablissement/
+ * Types pour la configuration
+ * @note Utiliser exclusivement ParametreSysteme avec scopage établissement
  */
-export interface ConfigurationApp {
-    id: string;
-    nomEtablissement: string;
-    codeEtablissement?: string;
-    typeEtablissement: 'PRIMAIRE' | 'SECONDAIRE' | 'UNIVERSITE' | 'AUTRE';
-    logoUrl?: string;
-    sloganEtablissement?: string;
-    messageAccueil?: string;
-    email?: string;
-    telephone?: string;
-    adresse?: string;
-    ville?: string;
-    pays?: string;
-    siteWeb?: string;
-    
-    // Paramètres système
-    langueDefaut: string;
-    devise: string;
-    fuseauHoraire: string;
-    formatDate: string;
-    
-    // Thème
-    couleurPrimaire: string;
-    couleurSecondaire: string;
-    couleurAccent: string;
-    theme: 'light' | 'dark' | 'auto';
-    
-    // Licence
-    licenceActive?: boolean;
-    dateExpirationLicence?: string;
-    typeLicence?: 'GRATUIT' | 'STANDARD' | 'PREMIUM' | 'ENTREPRISE';
-    
-    // Modules
-    modulesActifs: string[];
-    
-    // Métadonnées
-    version: string;
-    creeAt: string;
-    majAt: string;
-}
-
-export interface UpdateConfigAppDto {
-    nomEtablissement?: string;
-    codeEtablissement?: string;
-    typeEtablissement?: string;
-    logoUrl?: string;
-    sloganEtablissement?: string;
-    messageAccueil?: string;
-    email?: string;
-    telephone?: string;
-    adresse?: string;
-    ville?: string;
-    pays?: string;
-    siteWeb?: string;
-    langueDefaut?: string;
-    devise?: string;
-    fuseauHoraire?: string;
-    formatDate?: string;
-    couleurPrimaire?: string;
-    couleurSecondaire?: string;
-    couleurAccent?: string;
-    theme?: string;
-}
 
 // =============================================
 // PARAMÈTRES SYSTÈME
