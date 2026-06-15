@@ -81,11 +81,11 @@ export function useSecuriteConfig() {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Query: Charger tous les paramètres de sécurité
-    const { data: parametresData, isLoading } = useQuery({
+    const { data: parametresData, isLoading } = useQuery<any[]>({
         queryKey: SECURITE_KEYS.parametres(),
         queryFn: async () => {
             const response = await apiClient.get('/api/configuration/parametres', {
-                params: { categorie: 'SECURITE' }
+                params: { categorie: 'SECURITE' } as any
             });
             return response.data;
         },
@@ -94,10 +94,10 @@ export function useSecuriteConfig() {
 
     // Charger les valeurs depuis les paramètres
     useEffect(() => {
-        if (parametresData?.data) {
+        if (parametresData) {
             const newValues: Partial<SecuriteConfigValues> = {};
             
-            parametresData.data.forEach((param: any) => {
+            parametresData.forEach((param: any) => {
                 const mappedKey = PARAM_MAPPING[param.cle];
                 if (mappedKey) {
                     // Parser la valeur selon le type

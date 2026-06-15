@@ -16,6 +16,7 @@ import {
 } from 'typeorm';
 import { Matiere, GroupeMatiere } from './matiere.entity';
 import { Niveau } from '@modules/niveaux/entities';
+import { Filiere } from '@modules/filieres/entities';
 
 /**
  * Statut du programme matière-niveau (support workflow de validation)
@@ -29,6 +30,8 @@ export enum StatutMatiereNiveau {
 @Entity('matieres_niveaux')
 @Index(['niveauId'])
 @Index(['matiereId'])
+@Index(['filiereId'])
+@Index(['niveauId', 'filiereId']) // Index composite pour filtrage par filière
 export class MatiereNiveau {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -53,6 +56,18 @@ export class MatiereNiveau {
     @ManyToOne(() => GroupeMatiere)
     @JoinColumn({ name: 'groupeId' })
     groupe?: GroupeMatiere;
+
+    /**
+     * Filière optionnelle : si NULL, la matière s'applique à toutes les filières du niveau.
+     * Si défini, la matière est spécifique à cette filière.
+     * Ex: Physique avancée uniquement en Série C
+     */
+    @Column({ type: 'uuid', nullable: true })
+    filiereId?: string;
+
+    @ManyToOne(() => Filiere, { nullable: true })
+    @JoinColumn({ name: 'filiereId' })
+    filiere?: Filiere;
 
     // Système Francophone
     @Column({ type: 'float', default: 1 })

@@ -44,4 +44,7 @@ export interface ResponsableEleveFiltres {
     recherche?: string;
     lienParente?: string;
     responsableLegal?: boolean;
+    utilisateurId?: string;
+    enfantId?: string;
+    eleveId?: string;
 }

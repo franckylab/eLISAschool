@@ -52,7 +52,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
     // Déterminer si le niveau sélectionné est du 2nd cycle (Lycée uniquement pour les filières)
-    const niveauSelectionne = niveaux?.find(n => n.id === formData.niveauId);
+    const niveauSelectionne = niveaux?.find((n: { id: string; cycle?: { code: string } }) => n.id === formData.niveauId);
     const estSecondCycle = niveauSelectionne?.cycle?.code === 'LYCEE';
 
     useEffect(() => {
@@ -178,9 +178,9 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Niveau"
                         value={formData.niveauId || ''}
-                        onChange={(value: any) => handleChange('niveauId', value)}
+                        onValueChange={(value: any) => handleChange('niveauId', value)}
                         error={erreurs.niveauId}
-                        options={niveaux?.map(n => ({ value: n.id, label: n.nom })) || []}
+                        options={niveaux?.map((n: any) => ({ value: n.id, label: n.nom })) || []}
                         placeholder="Sélectionner un niveau"
                         required
                     />
@@ -188,8 +188,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                         <ElisaSelect
                             label="Filière (optionnel)"
                             value={formData.filiereId || ''}
-                            onChange={(value: any) => handleChange('filiereId', value || null)}
-                            options={filieres?.map(f => ({ value: f.id, label: `${f.nom} (${f.code})` })) || []}
+                            onValueChange={(value: any) => handleChange('filiereId', value || null)}
+                            options={filieres?.map((f: any) => ({ value: f.id, label: `${f.nom} (${f.code})` })) || []}
                             placeholder="Sélectionner une filière"
                         />
                     )}
@@ -200,7 +200,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Type de classe"
                         value={formData.typeClasse || TypeClasseEnum.NORMALE}
-                        onChange={(value: any) => handleChange('typeClasse', value as TypeClasse)}
+                        onValueChange={(value: any) => handleChange('typeClasse', value as TypeClasse)}
                         options={[
                             { value: TypeClasseEnum.NORMALE, label: 'Normale' },
                             { value: TypeClasseEnum.BILINGUE, label: 'Bilingue' },
@@ -211,7 +211,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Créneau horaire"
                         value={formData.creneauHoraire || CreneauHoraireEnum.MATIN}
-                        onChange={(value: any) => handleChange('creneauHoraire', value as CreneauHoraire)}
+                        onValueChange={(value: any) => handleChange('creneauHoraire', value as CreneauHoraire)}
                         options={[
                             { value: CreneauHoraireEnum.MATIN, label: 'Matin' },
                             { value: CreneauHoraireEnum.APRES_MIDI, label: 'Après-midi' },
@@ -225,11 +225,11 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     <ElisaSelect
                         label="Année scolaire"
                         value={formData.anneeScolaireId || ''}
-                        onChange={(value: any) => handleChange('anneeScolaireId', value)}
+                        onValueChange={(value: any) => handleChange('anneeScolaireId', value)}
                         error={erreurs.anneeScolaireId}
-                        options={anneesScolaires?.map(a => ({
+                        options={anneesScolaires?.map((a: any) => ({
                             value: a.id,
-                            label: `${a.libelle} (${a.enCours ? 'En cours' : 'Cloturée'})`
+                            label: `${a.libelle} (${a.statut === 'active' ? 'En cours' : 'Cloturée'})`
                         })) || []}
                         placeholder="Sélectionner une année"
                         required

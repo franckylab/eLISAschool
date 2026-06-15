@@ -1,0 +1,521 @@
+/**
+ * ==================================
+ * eLISAschool - Diaporama Login
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Diaporama dynamique avec textes explicatifs, illustrations
+ * et animations variées pour la page de connexion
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    BookOpen,
+    Users,
+    Award,
+    TrendingUp,
+    Shield,
+    Smartphone,
+    Globe,
+    Zap,
+    ClipboardList,
+    CreditCard,
+    Bus,
+    UtensilsCrossed,
+    MessageSquare,
+    BarChart3,
+} from 'lucide-react';
+
+/* ─── Types ───────────────────────────────────────── */
+
+interface SlideData {
+    id: number;
+    titre: string;
+    texte: string;
+    points?: string[];
+    icone: React.ElementType;
+    couleur: string;
+    illustration: 'students' | 'analytics' | 'security' | 'mobile' | 'global';
+}
+
+/* ─── Données des slides ──────────────────────────── */
+
+const SLIDES: SlideData[] = [
+    {
+        id: 1,
+        titre: 'Gestion Académique Complète',
+        texte: 'Gérez les élèves, les classes, les notes et les bulletins en toute simplicité. Un système puissant et intuitif pour le suivi pédagogique.',
+        points: [
+            'Suivi individualisé de chaque élève',
+            'Génération automatique des bulletins',
+            'Historique académique complet',
+            'Statistiques de performance en temps réel',
+        ],
+        icone: BookOpen,
+        couleur: '#28a745',
+        illustration: 'students',
+    },
+    {
+        id: 2,
+        titre: 'Communication Fluide',
+        texte: 'Connectez enseignants, parents et administration dans un espace collaboratif unique. Fini les informations perdues !',
+        points: [
+            'Messagerie interne sécurisée',
+            'Notifications temps réel',
+            'Portail parent dédié',
+            'Annonces et sondages',
+        ],
+        icone: MessageSquare,
+        couleur: '#007bff',
+        illustration: 'global',
+    },
+    {
+        id: 3,
+        titre: 'Gestion Financière Intégrée',
+        texte: 'Suivez les paiements, les remises et les dépenses avec une comptabilité transparente et automatisée.',
+        points: [
+            'Suivi des paiements de scolarité',
+            'Gestion des remises et ristournes',
+            'Tableaux de bord financiers',
+            'Rapports de trésorerie',
+        ],
+        icone: CreditCard,
+        couleur: '#ffc107',
+        illustration: 'analytics',
+    },
+    {
+        id: 4,
+        titre: 'Services Parascolaires',
+        texte: 'Cantine, transport, matériel scolaire : gérez tous les services annexes depuis une plateforme unique.',
+        points: [
+            'Gestion de la cantine et menus',
+            'Planification du transport',
+            'Inventaire du matériel',
+            'Réservation en ligne',
+        ],
+        icone: Bus,
+        couleur: '#fd7e14',
+        illustration: 'mobile',
+    },
+    {
+        id: 5,
+        titre: 'Sécurité et Contrôle',
+        texte: 'Vos données sont protégées avec un chiffrement de niveau entreprise et des sauvegardes automatiques.',
+        points: [
+            'Chiffrement AES-256',
+            'Sauvegardes automatiques',
+            'Contrôle d\'accès par rôles',
+            'Audit trail complet',
+        ],
+        icone: Shield,
+        couleur: '#6f42c1',
+        illustration: 'security',
+    },
+    {
+        id: 6,
+        titre: 'Multi-Établissements',
+        texte: 'Gérez plusieurs établissements depuis un compte unique avec une isolation stricte des données.',
+        points: [
+            'Changement d\'établissement instantané',
+            'Configuration personnalisée par site',
+            'Rapports consolidés',
+            'Administration centralisée',
+        ],
+        icone: Globe,
+        couleur: '#20c997',
+        illustration: 'global',
+    },
+];
+
+/* ─── Illustrations SVG ───────────────────────────── */
+
+function IllustrationStudents() {
+    return (
+        <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
+            {/* Pupitres */}
+            <motion.rect
+                x="20" y="120" width="40" height="30" rx="4"
+                fill="rgba(255,255,255,0.15)"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            />
+            <motion.rect
+                x="80" y="120" width="40" height="30" rx="4"
+                fill="rgba(255,255,255,0.15)"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+            />
+            <motion.rect
+                x="140" y="120" width="40" height="30" rx="4"
+                fill="rgba(255,255,255,0.15)"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            />
+            {/* Élèves */}
+            {[60, 120, 180].map((x, i) => (
+                <motion.g key={x} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 + i * 0.1 }}>
+                    <circle cx={x} cy={90} r="15" fill="rgba(255,255,255,0.3)" />
+                    <path d={`M${x - 20} 130 Q${x} 110 ${x + 20} 130`} stroke="rgba(255,255,255,0.4)" strokeWidth="3" fill="none" />
+                </motion.g>
+            ))}
+            {/* Tableau */}
+            <motion.rect
+                x="40" y="30" width="120" height="50" rx="4"
+                fill="rgba(255,255,255,0.2)"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+            />
+            <motion.text
+                x="100" y="60" textAnchor="middle"
+                fill="rgba(255,255,255,0.6)" fontSize="16" fontWeight="bold"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+            >
+                eLISAschool
+            </motion.text>
+        </svg>
+    );
+}
+
+function IllustrationAnalytics() {
+    return (
+        <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
+            {/* Graphique barres */}
+            {[30, 50, 70, 60, 90, 80, 100].map((h, i) => (
+                <motion.rect
+                    key={i}
+                    x={25 + i * 22} y={140 - h} width="16" height={h} rx="3"
+                    fill="rgba(255,255,255,0.25)"
+                    initial={{ height: 0, y: 140 }}
+                    animate={{ height: h, y: 140 - h }}
+                    transition={{ delay: 0.3 + i * 0.1, type: 'spring', stiffness: 120 }}
+                />
+            ))}
+            {/* Ligne de tendance */}
+            <motion.path
+                d="M 30 110 Q 60 90, 90 100 T 150 50"
+                stroke="rgba(255,255,255,0.6)" strokeWidth="3" fill="none" strokeLinecap="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ delay: 0.8, duration: 1.5 }}
+            />
+            {/* Points */}
+            {[
+                [30, 110], [60, 90], [90, 100], [120, 70], [150, 50]
+            ].map(([x, y], i) => (
+                <motion.circle
+                    key={i} cx={x} cy={y} r="4"
+                    fill="rgba(255,255,255,0.8)"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 1 + i * 0.15 }}
+                />
+            ))}
+        </svg>
+    );
+}
+
+function IllustrationSecurity() {
+    return (
+        <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
+            {/* Bouclier */}
+            <motion.path
+                d="M100 20 L160 50 L160 110 Q160 150 100 180 Q40 150 40 110 L40 50 Z"
+                fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" strokeWidth="3"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6, type: 'spring' }}
+            />
+            {/* Cadenas */}
+            <motion.g
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+            >
+                <rect x="80" y="95" width="40" height="35" rx="5" fill="rgba(255,255,255,0.4)" />
+                <path d="M 88 95 L 88 80 Q 100 70 112 80 L 112 95" stroke="rgba(255,255,255,0.6)" strokeWidth="3" fill="none" />
+                <circle cx="100" cy="110" r="5" fill="rgba(255,255,255,0.8)" />
+            </motion.g>
+            {/* Particules de sécurité */}
+            {[
+                [50, 40], [150, 40], [50, 160], [150, 160]
+            ].map(([x, y], i) => (
+                <motion.circle
+                    key={i} cx={x} cy={y} r="3"
+                    fill="rgba(255,255,255,0.3)"
+                    animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.5, 1] }}
+                    transition={{ delay: i * 0.2, duration: 2, repeat: Infinity }}
+                />
+            ))}
+        </svg>
+    );
+}
+
+function IllustrationMobile() {
+    return (
+        <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
+            {/* Téléphone */}
+            <motion.rect
+                x="60" y="30" width="80" height="140" rx="10"
+                fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" strokeWidth="2"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, type: 'spring' }}
+            />
+            {/* Écran */}
+            <rect x="68" y="45" width="64" height="100" rx="3" fill="rgba(255,255,255,0.2)" />
+            {/* Notifications */}
+            {[
+                [75, 55, 40],
+                [75, 75, 50],
+                [75, 95, 35],
+            ].map(([x, y, w], i) => (
+                <motion.rect
+                    key={i} x={x} y={y} width={w} height="12" rx="2"
+                    fill="rgba(255,255,255,0.3)"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 + i * 0.2 }}
+                />
+            ))}
+            {/* Bouton home */}
+            <circle cx="100" cy="160" r="6" fill="rgba(255,255,255,0.3)" />
+        </svg>
+    );
+}
+
+function IllustrationGlobal() {
+    return (
+        <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
+            {/* Globe */}
+            <motion.circle
+                cx="100" cy="100" r="70"
+                fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" strokeWidth="2"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.8, type: 'spring' }}
+            />
+            {/* Lignes de latitude */}
+            <ellipse cx="100" cy="100" rx="70" ry="35" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
+            <ellipse cx="100" cy="100" rx="70" ry="0" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" />
+            {/* Lignes de longitude */}
+            <ellipse cx="100" cy="100" rx="35" ry="70" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
+            <line x1="100" y1="30" x2="100" y2="170" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+            {/* Points d'établissements */}
+            {[
+                [70, 70], [120, 80], [90, 110], [130, 120], [80, 90]
+            ].map(([x, y], i) => (
+                <motion.g key={i}>
+                    <circle cx={x} cy={y} r="5" fill="rgba(255,255,255,0.5)" />
+                    <motion.circle
+                        cx={x} cy={y} r="8"
+                        fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                        animate={{ r: [8, 12, 8], opacity: [0.5, 0, 0.5] }}
+                        transition={{ delay: i * 0.3, duration: 2, repeat: Infinity }}
+                    />
+                </motion.g>
+            ))}
+        </svg>
+    );
+}
+
+const ILLUSTRATIONS = {
+    students: IllustrationStudents,
+    analytics: IllustrationAnalytics,
+    security: IllustrationSecurity,
+    mobile: IllustrationMobile,
+    global: IllustrationGlobal,
+};
+
+/* ─── Texte machine à écrire ──────────────────────── */
+
+function TypewriterText({ text, delay = 0, speed = 30 }: { text: string; delay?: number; speed?: number }) {
+    const [displayed, setDisplayed] = useState('');
+
+    useEffect(() => {
+        setDisplayed('');
+        const timeout = setTimeout(() => {
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index < text.length) {
+                    setDisplayed(text.slice(0, index + 1));
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, speed);
+            return () => clearInterval(interval);
+        }, delay);
+
+        return () => clearTimeout(timeout);
+    }, [text, delay, speed]);
+
+    return <span>{displayed}</span>;
+}
+
+/* ─── Slide individuel ────────────────────────────── */
+
+function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean }) {
+    const IllustrationComponent = ILLUSTRATIONS[slide.illustration];
+    const IconComponent = slide.icone;
+
+    return (
+        <motion.div
+            className="flex h-full w-full flex-col items-center justify-center px-8"
+            initial={{ opacity: 0, x: 50 }}
+            animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+        >
+            {/* Illustration */}
+            <motion.div
+                className="mb-6 h-48 w-48"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={isActive ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+            >
+                <IllustrationComponent />
+            </motion.div>
+
+            {/* Icône */}
+            <motion.div
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl"
+                style={{ backgroundColor: `${slide.couleur}30`, border: `2px solid ${slide.couleur}50` }}
+                initial={{ rotate: -180, scale: 0 }}
+                animate={isActive ? { rotate: 0, scale: 1 } : { rotate: -180, scale: 0 }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+            >
+                <IconComponent className="h-8 w-8" style={{ color: slide.couleur }} strokeWidth={2} />
+            </motion.div>
+
+            {/* Titre */}
+            <motion.h2
+                className="mb-3 text-center text-2xl font-bold text-white"
+                initial={{ y: -10, opacity: 0 }}
+                animate={isActive ? { y: 0, opacity: 1 } : { y: -10, opacity: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <TypewriterText text={slide.titre} delay={500} speed={50} />
+            </motion.h2>
+
+            {/* Texte descriptif */}
+            <motion.p
+                className="mb-4 max-w-sm text-center text-sm leading-relaxed text-white/80"
+                initial={{ y: 10, opacity: 0 }}
+                animate={isActive ? { y: 0, opacity: 1 } : { y: 10, opacity: 0 }}
+                transition={{ delay: 0.8 }}
+            >
+                <TypewriterText text={slide.texte} delay={1500} speed={25} />
+            </motion.p>
+
+            {/* Points clés */}
+            {slide.points && (
+                <div className="w-full max-w-sm space-y-2">
+                    {slide.points.map((point, index) => (
+                        <motion.div
+                            key={index}
+                            className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 backdrop-blur-sm"
+                            initial={{ x: -30, opacity: 0 }}
+                            animate={isActive ? { x: 0, opacity: 1 } : { x: -30, opacity: 0 }}
+                            transition={{ delay: 2 + index * 0.15 }}
+                        >
+                            <motion.div
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: slide.couleur }}
+                                animate={isActive ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                                transition={{ delay: 2.2 + index * 0.15, duration: 0.5 }}
+                            />
+                            <span className="text-xs text-white/90">
+                                <TypewriterText text={point} delay={2200 + index * 150} speed={20} />
+                            </span>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </motion.div>
+    );
+}
+
+/* ─── Indicateurs de progression ──────────────────── */
+
+function SlideIndicators({ total, current, onNavigate }: { total: number; current: number; onNavigate: (index: number) => void }) {
+    return (
+        <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-2">
+            {Array.from({ length: total }).map((_, index) => (
+                <motion.button
+                    key={index}
+                    onClick={() => onNavigate(index)}
+                    className="h-2 rounded-full transition-all"
+                    style={{
+                        backgroundColor: index === current ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
+                        width: index === current ? '32px' : '8px',
+                    }}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                />
+            ))}
+        </div>
+    );
+}
+
+/* ─── Composant principal ─────────────────────────── */
+
+export function LoginSlideshow() {
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    // Auto-rotation
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+        }, 15000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    const handleNavigate = useCallback((index: number) => {
+        setCurrentSlide(index);
+    }, []);
+
+    return (
+        <div className="relative flex h-full w-full flex-col">
+            {/* Slides */}
+            <div className="relative flex-1 overflow-hidden">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={currentSlide}
+                        className="absolute inset-0"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ duration: 0.6, ease: 'easeInOut' }}
+                    >
+                        <SlideContent slide={SLIDES[currentSlide]} isActive={true} />
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+
+            {/* Indicateurs */}
+            <SlideIndicators
+                total={SLIDES.length}
+                current={currentSlide}
+                onNavigate={handleNavigate}
+            />
+
+            {/* Compteur de slide */}
+            <motion.div
+                className="absolute right-6 top-6 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur-sm"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+            >
+                {currentSlide + 1} / {SLIDES.length}
+            </motion.div>
+        </div>
+    );
+}

@@ -64,7 +64,7 @@ export function useCreerPersonnel() {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
             if (data) {
-                toast.success(`${data.prenom} ${data.nom} ajouté(e) au personnel`);
+                toast.success(`${data.data.prenom} ${data.data.nom} ajouté(e) au personnel`);
             }
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
@@ -83,7 +83,7 @@ export function useModifierPersonnel() {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             if (data) {
                 queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
-                toast.success(`${data.prenom} ${data.nom} modifié(e) avec succès`);
+                toast.success(`${data.data.prenom} ${data.data.nom} modifié(e) avec succès`);
             }
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),

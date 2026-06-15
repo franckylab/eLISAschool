@@ -28,7 +28,6 @@ export function OrganisationPage() {
     });
 
     const supprimer = useSupprimerGroupe();
-    const creer = useCreerGroupe();
 
     const types: any = {
         pedagogique: { label: 'Pédagogique', color: 'blue', icone: Building2 },
@@ -148,7 +147,7 @@ export function OrganisationPage() {
                     icon={<Plus className="h-4 w-4" />}
                     onClick={() => window.alert('Créer groupe')}
                 >
-                    {t('creer')}
+                    {t('')}
                 </ElisaButton>
             </motion.div>
 

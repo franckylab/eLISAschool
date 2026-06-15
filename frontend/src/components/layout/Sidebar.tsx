@@ -37,6 +37,7 @@ import {
     ChevronRight,
     Target,
     BookOpen,
+    DoorOpen,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -222,6 +223,7 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
             { label: 'Bulletins', path: '/bulletins', icon: FileText, module: 'bulletins' },
             { label: 'Emploi du temps', path: '/emploi-du-temps', icon: Calendar, module: 'emploiDuTemps' },
+            { label: 'Salles', path: '/salles', icon: DoorOpen, module: 'salles' },
         ],
     },
     {
@@ -271,6 +273,7 @@ export function Sidebar() {
     const communicationPerms = useModulePermissions('messagerie');
     const utilisateursPerms = useModulePermissions('utilisateurs');
     const rolesPerms = useModulePermissions('roles');
+    const sallesPerms = useModulePermissions('salles');
 
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
@@ -323,6 +326,7 @@ export function Sidebar() {
                     communication: communicationPerms,
                     utilisateurs: utilisateursPerms,
                     roles: rolesPerms,
+                    salles: sallesPerms,
                 };
                 
                 const perms = permsMap[item.module];

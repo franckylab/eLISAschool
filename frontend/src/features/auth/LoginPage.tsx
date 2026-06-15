@@ -16,7 +16,7 @@ import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Mail, Lock, LogIn, Eye, EyeOff, QrCode,
-    GraduationCap, BookOpen, Users, Award,
+    BookOpen, Users, Award,
     AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,6 +25,9 @@ import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { cn } from '@/lib/cn';
 import { CustomModal } from '@/components/modals';
 import { ElisaLogo } from '@/components/branding';
+import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
+import apiClient from '@/lib/api-client';
+import { LoginSlideshow } from './LoginSlideshow';
 
 interface LoginForm {
     identifiant: string;
@@ -36,6 +39,18 @@ interface LoginForm {
 function IllustrationScolaire() {
     return (
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+            {/* Image de fond scolaire avec overlay */}
+            <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{
+                    backgroundImage: "url('/images/login-background.png')",
+                }}
+            />
+            {/* Overlay dégradé pour lisibilité */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a]/95 via-[#28a745]/90 to-[#20c997]/85" />
+            {/* Pattern décoratif subtil */}
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+
             {/* Éléments flottants en arrière-plan */}
             <motion.div
                 className="absolute inset-0"
@@ -233,9 +248,9 @@ function QRScannerModal({
 /* ─── Composant principal ─────────────────────────── */
 export function LoginPage() {
     const { t } = useTranslation('auth');
+    const { login, isLoading, completeLogin, preLoginData, showEtablissementModal, setShowEtablissementModal } = useAuthStore();
     const router = useRouter();
     const search = useSearch({ from: '/login' }) as { redirect?: string };
-    const { login, isLoading } = useAuthStore();
 
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -274,12 +289,25 @@ export function LoginPage() {
         setError(null);
         setSuccessPulse(false);
         try {
+            // Étape 1 : Login avec validation établissements
+            // Le store gère MAINTENANT la détection multi-établissements
             await login(data.identifiant, data.motDePasse);
+            
             setSuccessPulse(true);
-            toast.success(t('login.bienvenue'));
-            setTimeout(() => {
-                router.navigate({ to: (search as any).redirect || '/dashboard' });
-            }, 300);
+
+            // Étape 2 : Vérifier si modal de sélection affiché par le store
+            const currentPreLoginData = useAuthStore.getState().preLoginData;
+            
+            if (currentPreLoginData?.requiereSelection) {
+                // Multi-établissements → modal déjà affiché par le store
+                toast.info('Veuillez sélectionner votre établissement');
+            } else {
+                // Mono-établissement → redirection directe
+                toast.success(t('login.bienvenue'));
+                setTimeout(() => {
+                    router.navigate({ to: (search as any).redirect || '/dashboard' });
+                }, 300);
+            }
         } catch (err: any) {
             const code = err?.code || '';
             const message = code === 'INVALID_CREDENTIALS'
@@ -288,8 +316,28 @@ export function LoginPage() {
                 ? t('erreurs.compteVerrouille')
                 : code === 'ACCOUNT_SUSPENDED' || code === 'ACCOUNT_INACTIVE'
                 ? t('erreurs.compteDesactive')
+                : code === 'NO_ETABLISSEMENT'
+                ? 'Aucun établissement associé à votre compte. Contactez l\'administrateur.'
                 : err?.message || t('erreurs.sessionExpiree');
             setError(message);
+            setSuccessPulse(false);
+        }
+    };
+
+    /**
+     * Callback après sélection d'établissement dans le modal
+     */
+    const handleEtablissementSelect = async (etablissementId: string) => {
+        try {
+            await completeLogin(etablissementId);
+            setShowEtablissementModal(false);
+            toast.success(t('login.bienvenue'));
+            setTimeout(() => {
+                router.navigate({ to: (search as any).redirect || '/dashboard' });
+            }, 300);
+        } catch (err: any) {
+            setError(err?.message || 'Erreur lors de la sélection de l\'établissement');
+            setShowEtablissementModal(false);
         }
     };
 
@@ -300,12 +348,19 @@ export function LoginPage() {
 
     return (
         <div className="flex min-h-screen">
-            {/* ─── Panneau gauche : Illustration (desktop) ─── */}
+            {/* ─── Panneau gauche : Diaporama dynamique ─── */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
-                {/* Fond dégradé dynamique */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a] via-[#28a745] to-[#20c997]" />
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40" />
-                <IllustrationScolaire />
+                {/* Image de fond */}
+                <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{
+                        backgroundImage: "url('/images/login-background.png')",
+                    }}
+                />
+                {/* Overlay dégradé */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a]/92 via-[#28a745]/88 to-[#20c997]/82" />
+                {/* Pattern décoratif */}
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
 
                 {/* Logo en haut à gauche */}
                 <div className="absolute left-8 top-8 z-20">
@@ -313,6 +368,9 @@ export function LoginPage() {
                         <ElisaLogo variant="horizontal" size="sm" theme="white" animated />
                     </Link>
                 </div>
+
+                {/* Diaporama */}
+                <LoginSlideshow />
             </div>
 
             {/* ─── Panneau droit : Formulaire ──────────────── */}
@@ -568,6 +626,17 @@ export function LoginPage() {
                 onClose={() => setQrOpen(false)}
                 onScan={handleQRScan}
             />
+
+            {/* ─── NOUVEAU v3.0 : Modal de sélection d'établissement ─── */}
+            {preLoginData && (
+                <EtablissementSelectionModal
+                    open={showEtablissementModal}
+                    etablissements={preLoginData.etablissements || []}
+                    onSelect={handleEtablissementSelect}
+                    tokenTemporaire={preLoginData.tokenTemporaire || ''}
+                    expiresIn={preLoginData.expiresIn}
+                />
+            )}
         </div>
     );
 }

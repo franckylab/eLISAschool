@@ -10,11 +10,33 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { authGuard } from '@/app/route-guards';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { AlertTriangle } from 'lucide-react';
+import { useEtablissementRequired } from '@/hooks/use-etablissement-required';
+import { useSessionExpired } from '@/hooks/use-session-expired';
+import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
 
 function AuthLayout() {
+    // NOUVEAU: Écouter l'événement 'auth:etablissement-required'
+    const {
+        showEtablissementModal,
+        etablissements,
+        expiresIn,
+        handleSelectEtablissement,
+    } = useEtablissementRequired();
+
+    // NOUVEAU: Gérer l'expiration de session et la déconnexion
+    useSessionExpired();
+
     return (
         <PageLayout>
             <Outlet />
+            
+            {/* Modal de sélection d'établissement (global) */}
+            <EtablissementSelectionModal
+                open={showEtablissementModal}
+                etablissements={etablissements}
+                onSelect={handleSelectEtablissement}
+                expiresIn={expiresIn}
+            />
         </PageLayout>
     );
 }

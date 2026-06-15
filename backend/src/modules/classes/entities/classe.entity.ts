@@ -85,9 +85,6 @@ export class Classe {
     @JoinColumn({ name: 'filiereId' })
     filiere?: Filiere;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    sallePrincipale?: string;
-
     @Column({ type: 'int', default: 50 })
     effectifMax!: number;
 

@@ -83,6 +83,21 @@ function loadEnvConfig(): EnvConfig {
         // En développement, on utilise des valeurs par défaut sécurisées
         if (process.env.NODE_ENV !== 'production') {
             console.warn('⚠️ Utilisation des valeurs par défaut en mode développement');
+            
+            // CRITIQUE: Utiliser process.env.JWT_SECRET si présent, sinon générer
+            // Cela garantit que le secret reste le même entre les redémarrages
+            const jwtSecret = process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32
+                ? process.env.JWT_SECRET
+                : generateDevSecret(64);
+            
+            const encryptionKey = process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length === 32
+                ? process.env.ENCRYPTION_KEY
+                : generateDevSecret(32);
+            
+            if (!process.env.JWT_SECRET) {
+                console.warn('⚠️ JWT_SECRET non défini, génération d\'un valeur aléatoire (tokens invalidés au prochain redémarrage)');
+            }
+            
             return {
                 NODE_ENV: 'development',
                 APP_NAME: 'eLISAschool',
@@ -94,10 +109,10 @@ function loadEnvConfig(): EnvConfig {
                 DB_NAME: 'elisaschool',
                 DB_USER: 'elisaschool_user',
                 DB_PASSWORD: 'dev_password',
-                JWT_SECRET: generateDevSecret(64), // Généré dynamiquement
+                JWT_SECRET: jwtSecret, // ← Utiliser depuis process.env si valide
                 JWT_EXPIRES_IN: '7d',
                 JWT_REFRESH_EXPIRES_IN: '30d',
-                ENCRYPTION_KEY: generateDevSecret(32), // Généré dynamiquement
+                ENCRYPTION_KEY: encryptionKey, // ← Utiliser depuis process.env si valide
                 REDIS_HOST: 'localhost',
                 REDIS_PORT: 6379,
                 REDIS_PASSWORD: '',
@@ -121,6 +136,12 @@ function loadEnvConfig(): EnvConfig {
 
 // Chargement de la configuration
 const env = loadEnvConfig();
+
+// Log de démarrage pour diagnostiquer les problèmes de JWT
+if (env.NODE_ENV === 'development') {
+    console.log(`[ENV Config] JWT_SECRET utilisé: ${env.JWT_SECRET.substring(0, 15)}... (longueur: ${env.JWT_SECRET.length})`);
+    console.log(`[ENV Config] JWT_SECRET source: ${process.env.JWT_SECRET ? '.env' : 'généré dynamiquement'}`);
+}
 
 /**
  * Objet de configuration exporté, structuré par domaine

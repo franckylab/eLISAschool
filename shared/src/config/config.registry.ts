@@ -231,6 +231,25 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.EMPLOI_DU_TEMPS]: {
+        name: ModuleName.EMPLOI_DU_TEMPS,
+        label: 'Emploi du Temps',
+        description: 'Gestion des emplois du temps',
+        icon: 'Calendar',
+        basePath: '/emploi-du-temps',
+        defaultActive: false,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT, Role.PROVISEUR],
+        permissions: [Permission.EMPLOI_DU_TEMPS_VIEW, Permission.EMPLOI_DU_TEMPS_CREATE, Permission.EMPLOI_DU_TEMPS_EDIT, Permission.EMPLOI_DU_TEMPS_GENERER],
+        dependencies: [ModuleName.AUTH, ModuleName.ELEVES],
+        defaultSettings: {
+            heuresDebut: '07:00',
+            heuresFin: '18:00',
+            joursTravail: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'],
+            dureeCreneau: 60, // minutes
+        },
+    },
+
     [ModuleName.ELEVES]: {
         name: ModuleName.ELEVES,
         label: 'Élèves',

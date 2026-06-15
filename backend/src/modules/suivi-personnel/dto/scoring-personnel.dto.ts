@@ -50,7 +50,7 @@ export type UpdateRegleScoringDto = z.infer<typeof updateRegleScoringSchema>;
 // DTOs pour HistoriqueScorePersonnel
 // =====================================================
 
-export const attribuerPointsSchema = z.object({
+export const attribuerPointsPersonnelSchema = z.object({
     membrePersonnelId: z.string().uuid(),
     points: z.number().int().min(-100).max(100),
     typeAction: z.enum(['ASSIDUITE', 'COMPORTEMENT', 'PERFORMANCE', 'PEDAGOGIE']),
@@ -82,6 +82,6 @@ export const classementPersonnelSchema = z.object({
     sortOrder: z.enum(['ASC', 'DESC']).default('DESC'),
 });
 
-export type AttribuerPointsDto = z.infer<typeof attribuerPointsSchema>;
+export type AttribuerPointsPersonnelDto = z.infer<typeof attribuerPointsPersonnelSchema>;
 export type RecalculerScoreDto = z.infer<typeof recalculerScoreSchema>;
 export type ClassementPersonnelDto = z.infer<typeof classementPersonnelSchema>;

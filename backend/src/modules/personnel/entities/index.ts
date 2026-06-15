@@ -3,6 +3,7 @@ export * from './contrat-personnel.entity';
 export * from './type-contrat.entity';
 export * from './affectation-poste.entity';
 export * from './heure-cours.entity';
+export * from './indisponibilite-enseignant.entity';
 export * from './absence-personnel.entity';
 export * from './evaluation-enseignant.entity';
 export * from './progression-programme.entity';

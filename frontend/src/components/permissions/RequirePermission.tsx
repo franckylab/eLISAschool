@@ -71,7 +71,6 @@ export function RequirePermission({
     permissions,
     module,
     redirectTo = '/unauthorized',
-    loadingFallback = null,
     children,
     mode = 'any',
 }: RequirePermissionProps) {
@@ -158,7 +157,7 @@ export function useRequirePermission(
 ) {
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission, hasAnyPermission, hasAllPermissions, isSuperAdmin, isAdmin } = usePermissions();
+    const { hasPermission, hasAnyPermission, isSuperAdmin, isAdmin } = usePermissions();
     const canAccessModule = module ? useCanAccess(module) : true;
 
     useEffect(() => {

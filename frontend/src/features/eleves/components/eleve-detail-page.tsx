@@ -380,7 +380,7 @@ export function EleveDetailPage() {
 
                         {documents && documents.length > 0 ? (
                             <div className="space-y-3">
-                                {documents.map((doc, index) => (
+                                {documents.map((doc: { id: string; nom: string; type: string }, index: number) => (
                                     <div key={index} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-4">
                                         <div>
                                             <p className="font-medium">{doc.type}</p>

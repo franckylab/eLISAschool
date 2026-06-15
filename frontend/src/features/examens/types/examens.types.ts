@@ -93,6 +93,9 @@ export interface ExamenFiltres {
     matiereId?: string;
     type?: string;
     statut?: string;
+    recherche?: string;
     dateDebut?: string;
     dateFin?: string;
+    page?: number;
+    limit?: number;
 }

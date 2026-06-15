@@ -114,5 +114,8 @@ export interface StatistiquesBibliotheque {
 export interface BibliothequeFiltres {
     categorie?: string;
     disponibilite?: 'disponible' | 'indisponible' | 'tous';
+    disponible?: boolean;
     recherche?: string;
+    page?: number;
+    limit?: number;
 }

@@ -23,7 +23,6 @@ export function EtablissementsPage() {
 
     const { data, isLoading } = useEtablissements(filtres);
     const supprimer = useSupprimerEtablissement();
-    const creer = useCreerEtablissement();
     const modifier = useModifierEtablissement();
 
     const getTypeLabel = (type?: string) => {

@@ -80,7 +80,9 @@ export function useGenererBulletinsEnMasse() {
         },
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.listes() });
-            toast.success(`${result.genere}/${result.total} bulletins générés avec succès`);
+            if (result) {
+                toast.success(`${result.genere}/${result.total} bulletins générés avec succès`);
+            }
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.error?.message || 'Erreur lors de la génération en masse');

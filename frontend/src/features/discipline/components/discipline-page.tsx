@@ -21,13 +21,14 @@ export function DisciplinePage() {
     const [filtreType, setFiltreType] = useState<string>('');
     const [filtreGravite, setFiltreGravite] = useState<string>('');
 
-    const { data, isLoading, meta } = useSanctions({
+    const { data: result, isLoading } = useSanctions({
         page,
         limit,
         recherche: recherche || undefined,
         type: filtreType || undefined,
         gravite: filtreGravite || undefined,
     });
+    const data = result?.data;
 
     const { data: stats } = useStatistiquesDiscipline();
     const supprimer = useSupprimerSanction();
@@ -203,7 +204,7 @@ export function DisciplinePage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Total sanctions</p>
-                                <p className="text-lg font-bold text-red-600">{stats.totalSanctions}</p>
+                                <p className="text-lg font-bold text-red-600">{stats.totalItemsSanctions}</p>
                             </div>
                         </div>
                     </div>
@@ -288,7 +289,7 @@ export function DisciplinePage() {
                     if (key === 'gravite') setFiltreGravite(valeur);
                 }}
                 disableClientSearch
-                pagination={data?.meta ? {
+                pagination={data ? {
                     page,
                     limit,
                     total: data.meta.total,

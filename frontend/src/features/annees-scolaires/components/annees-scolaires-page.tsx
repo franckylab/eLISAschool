@@ -12,8 +12,7 @@ import { useAnneesScolaires, useActiverAnneeScolaire, useSupprimerAnneeScolaire 
 import { AnneeScolaireFormModal } from './annee-scolaire-form-modal';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { AnneeScolaire, AnneeScolaireFiltres } from '../types/annee-scolaire.types';
@@ -173,20 +172,22 @@ export function AnneesScolairesPage() {
         },
     ];
 
-    // Affichage skeleton pendant le chargement
+    // Affichage loading pendant le chargement
     if (isLoading) {
-        return <PageSkeleton showStats showTable />;
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des années scolaires..." />
+            </div>
+        );
     }
 
     // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
-                <ErrorMessage
-                    title="Erreur de chargement"
+                <ErrorState
                     message={error.message || "Impossible de charger les années scolaires"}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
                 />
             </div>
         );

@@ -27,6 +27,7 @@ export enum ModuleName {
   // Modules académiques
   NOTES = 'notes',
   BULLETINS = 'bulletins',
+  EMPLOI_DU_TEMPS = 'emploi-du-temps',
   ELEVES = 'eleves',
   ORIENTATION = 'orientation',
   RESPONSABLES_ELEVES = 'responsables-eleves',
@@ -97,6 +98,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   
   [ModuleName.NOTES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.BULLETINS]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.EMPLOI_DU_TEMPS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ELEVES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ORIENTATION]: ModuleCategory.ACADEMIQUES,
   [ModuleName.RESPONSABLES_ELEVES]: ModuleCategory.ACADEMIQUES,

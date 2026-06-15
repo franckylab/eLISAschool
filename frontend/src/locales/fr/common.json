@@ -62,7 +62,13 @@
         "sessionExpiree": "Session expirée, veuillez vous reconnecter",
         "confirmationSuppression": "Êtes-vous sûr de vouloir supprimer cet élément ?",
         "operationIrreversible": "Cette action est irréversible",
-        "requeteAnnulee": "Requête annulée"
+        "requeteAnnulee": "Requête annulée",
+        "etablissementChange": "Établissement changé avec succès",
+        "erreurChangement": "Erreur lors du changement d'établissement"
+    },
+    "header": {
+        "changerEtablissement": "Changer d'établissement",
+        "etablissements": "Établissements"
     },
     "pagination": {
         "pageSur": "Page {{page}} sur {{total}}",
@@ -126,5 +132,20 @@
         "informations": "Informations",
         "obligatoire": "Obligatoire",
         "optionnel": "Optionnel"
+    },
+    "modalEtablissement": {
+        "titre": "Choisir un établissement",
+        "description": "Vous appartenez à plusieurs établissements. Sélectionnez celui dans lequel vous souhaitez travailler.",
+        "rechercher": "Rechercher un établissement...",
+        "info": "Sélection obligatoire pour l'isolation des données. Vous pourrez changer à tout moment depuis le header.",
+        "selectionRequise": "Veuillez sélectionner un établissement",
+        "erreurSelection": "Erreur lors de la sélection",
+        "continuer": "Continuer",
+        "principal": "Principal",
+        "aucunResultat": "Aucun établissement trouvé",
+        "raccourciSelection": "Sélection rapide",
+        "raccourciConfirmer": "Confirmer",
+        "sessionExpiree": "Session expirée. Veuillez vous reconnecter.",
+        "tempsFaible": "Temps restant"
     }
 }

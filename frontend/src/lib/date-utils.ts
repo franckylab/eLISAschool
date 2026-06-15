@@ -5,7 +5,7 @@
  * Fonctions de formatage de dates avec date-fns et locale
  */
 
-import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
+import { format, formatDistanceToNow, parseISO, isValid, Locale } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
 import { enUS } from 'date-fns/locale/en-US';
 

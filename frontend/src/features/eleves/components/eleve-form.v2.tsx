@@ -299,12 +299,12 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         {...registre}
                         type={type}
                         placeholder={options?.placeholder}
-                        disabled={options.disabled}
+                        disabled={options?.disabled}
                         className={`rounded-lg border px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
                                 ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                                 : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-dominant-400)]'
-                        } ${options.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${options?.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         aria-invalid={!!erreur}
                         aria-describedby={erreur ? `${name}-error` : undefined}
                     />

@@ -8,7 +8,6 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, BookOpen, Clock, FileText, Users,
@@ -23,7 +22,6 @@ type OngletActif = 'informations' | 'programme' | 'statistiques';
 export function MatiereDetailPage() {
     const { id } = useParams({ from: '/_auth/matieres/$id' });
     const navigate = useNavigate();
-    const { t } = useTranslation('matieres');
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const { data: matiereData, isLoading } = useMatiere(id);

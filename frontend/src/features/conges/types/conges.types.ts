@@ -31,6 +31,8 @@ export interface Conge {
         prenom: string;
         role?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerCongeDto {
@@ -38,6 +40,8 @@ export interface CreerCongeDto {
     dateDebut: string;
     dateFin: string;
     motif: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesConges {
@@ -51,6 +55,8 @@ export interface StatistiquesConges {
         demandes: number;
         joursTotal: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface CongeFiltres {
@@ -59,4 +65,6 @@ export interface CongeFiltres {
     demandeurId?: string;
     dateDebut?: string;
     dateFin?: string;
+    page?: number;
+    limit?: number;
 }

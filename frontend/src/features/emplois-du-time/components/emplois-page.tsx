@@ -242,8 +242,8 @@ export function EmploisDuTempsPage() {
             </motion.div>
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning

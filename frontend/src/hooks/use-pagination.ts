@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { PaginatedResult } from '@shared/types/api.types';
 
 interface UsePaginationOptions<T> {
@@ -61,9 +61,9 @@ export function usePaginatedQuery<T>({
     const pagination = {
         page,
         limit,
-        total: data?.total || 0,
-        totalPages: Math.ceil((data?.total || 0) / limit),
-        hasNext: page * limit < (data?.total || 0),
+        total: data?.meta?.totalItems || 0,
+        totalPages: Math.ceil((data?.meta?.totalItems || 0) / limit),
+        hasNext: page * limit < (data?.meta?.totalItems || 0),
         hasPrev: page > 1,
     };
 
@@ -80,7 +80,7 @@ export function usePaginatedQuery<T>({
     }, [pagination.hasPrev]);
 
     return {
-        data: data?.data || [],
+        data: data?.items || [],
         pagination,
         isLoading,
         isError,

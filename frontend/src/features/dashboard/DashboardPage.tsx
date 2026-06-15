@@ -22,7 +22,6 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-import { formatMontant, nombreFormate, formatPourcentage } from '@/lib/format-utils';
 import { cn } from '@/lib/cn';
 
 interface WidgetData {
@@ -70,7 +69,7 @@ export function DashboardPage() {
     const utilisateur = useAuthStore((s) => s.utilisateur);
 
     // Charger les widgets depuis l'API
-    const { data: widgetsResponse, isLoading } = useQuery({
+    const { data: widgetsResponse, isLoading } = useQuery<any>({
         queryKey: ['dashboard', 'widgets'],
         queryFn: () => apiClient.get('/api/dashboard/widgets'),
         retry: 1,
@@ -129,7 +128,7 @@ export function DashboardPage() {
     ];
 
     // Utiliser les données API si disponibles, sinon fallback par défaut
-    const apiData = widgetsResponse?.data;
+    const apiData = widgetsResponse;
     const widgets: WidgetData[] = Array.isArray(apiData)
         ? apiData
         : Array.isArray(apiData?.widgets)

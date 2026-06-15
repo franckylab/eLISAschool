@@ -124,7 +124,7 @@ export function NotesPage() {
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
                     <h1 className="text-3xl font-bold">Notes</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.pagination?.total || 0} note(s)</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} note(s)</p>
                 </div>
                 <div className="flex gap-2">
                     {hasPermission('notes:create') && (
@@ -151,7 +151,14 @@ export function NotesPage() {
                     setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                 }
                 disableClientSearch
-                pagination={data?.pagination}
+                pagination={data?.meta ? {
+                    page: data.meta.currentPage,
+                    limit: data.meta.itemsPerPage,
+                    total: data.meta.totalItems,
+                    totalPages: data.meta.totalPages,
+                    hasNext: data.meta.currentPage < data.meta.totalPages,
+                    hasPrev: data.meta.currentPage > 1,
+                } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
             />

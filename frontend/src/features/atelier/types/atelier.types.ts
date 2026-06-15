@@ -24,6 +24,8 @@ export interface Atelier {
         nom: string;
         prenom: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface InscriptionAtelier {
@@ -44,6 +46,8 @@ export interface InscriptionAtelier {
         prenom: string;
         classe?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface SeanceAtelier {
@@ -59,6 +63,8 @@ export interface SeanceAtelier {
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerAtelierDto {
@@ -70,6 +76,8 @@ export interface CreerAtelierDto {
     horaire?: string;
     tarif?: number;
     materielRequis?: string[];
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesAtelier {
@@ -86,10 +94,14 @@ export interface StatistiquesAtelier {
         mois: string;
         inscriptions: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface FiltresAtelier {
     type?: string;
     statut?: string;
     eleveId?: string;
+    page?: number;
+    limit?: number;
 }

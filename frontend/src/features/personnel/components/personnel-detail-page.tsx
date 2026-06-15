@@ -8,7 +8,6 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase,
@@ -45,7 +44,6 @@ const COULEURS_STATUT: Record<string, string> = {
 export function PersonnelDetailPage() {
     const { id } = useParams({ from: '/_auth/personnel/$id' });
     const navigate = useNavigate();
-    const { t } = useTranslation('personnel');
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const { data: membreData, isLoading } = useMembrePersonnel(id);

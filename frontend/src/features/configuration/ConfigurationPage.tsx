@@ -13,16 +13,14 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { useThemeStore } from '@/stores/theme.store';
 import { COULEURS_DOMINANTES } from '@/lib/theme-utils';
-import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { SecuriteTab } from './components/SecuriteTab';
 import { LangueRegionTab } from './components/LangueRegionTab';
 import { ModulesTab } from './components/ModulesTab';
 import { NotificationsTab } from './components/NotificationsTab';
 import { HistoriqueTab } from './components/HistoriqueTab';
-import { useParametres, useModifierParametre } from './hooks/use-configuration';
-import { useEtablissement, useModifierEtablissement } from '@/features/etablissement/hooks/use-etablissements';
 import { useAuthStore } from '@/stores/auth.store';
+import { useEtablissement, useModifierEtablissement } from '@/features/etablissement';
 
 type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications' | 'historique';
 

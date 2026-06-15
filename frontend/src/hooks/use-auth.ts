@@ -40,7 +40,7 @@ export function useAuth() {
         login,
         logout: async () => {
             await logout();
-            navigate({ to: '/auth/login' });
+            navigate({ to: '/login', search: { redirect: undefined } });
         },
         verifierSession,
         reset,

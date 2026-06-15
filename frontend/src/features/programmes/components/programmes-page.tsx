@@ -279,7 +279,7 @@ export function ProgrammesPage() {
             {/* Dialog Confirmation Suppression */}
             <ConfirmDialog
                 open={!!programmeToDelete}
-                onClose={() => setProgrammeToDelete(null)}
+                onOpenChange={(open) => { if (!open) setProgrammeToDelete(null); }}
                 onConfirm={handleDelete}
                 title="Supprimer le programme"
                 description={`Êtes-vous sûr de vouloir supprimer "${programmeToDelete?.nom}" ? Cette action est irréversible.`}

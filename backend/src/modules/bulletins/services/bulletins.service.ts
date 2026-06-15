@@ -16,6 +16,7 @@ import { periodesService } from '@modules/periodes/services';
 import { notesService } from '@modules/notes/services';
 import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
 import { matieresService } from '@modules/matieres/services';
+import { AffectationMatiere } from '@modules/matieres/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
@@ -84,6 +85,26 @@ export class BulletinsService {
             // OPTIMISATION : Charger toutes les moyennes en UNE requête batch
             const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
             
+            // CHARGEMENT des affectations matières de la classe pour les coefficients spécifiques
+            const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
+            const affectationsClasse = await affectationRepo.find({
+                where: { 
+                    classeId: classe.id,
+                    anneeScolaireId: classe.anneeScolaireId,
+                    statut: 'ACTIVE'
+                }
+            });
+            
+            // Créer un map matièreId -> coefficient de l'affectation
+            const coeffAffectationMap = new Map<string, number>();
+            for (const aff of affectationsClasse) {
+                if (aff.coefficient !== null && aff.coefficient !== undefined) {
+                    coeffAffectationMap.set(aff.matiereId, aff.coefficient);
+                }
+            }
+            
+            logger.info(`[Bulletins] ${affectationsClasse.length} affectations chargées, ${coeffAffectationMap.size} avec coefficients spécifiques`);
+            
             // Préparer les clés de batch pour tous les élèves et matières
             const batchKeys = [];
             for (const eleve of eleves) {
@@ -117,9 +138,16 @@ export class BulletinsService {
                     const moyenneMatiere = eleveMoyennes.get(matiereNiveau.matiereId) || 0;
                     
                     // Méthode de calcul : arithmétique ou pondérée
-                    const coefficient = params.calculationMethod === 'ponderee' 
-                        ? matiereNiveau.coefficient 
-                        : 1;
+                    // PRIORITÉ 1: Coefficient de l'affectation (spécifique à la classe/filière)
+                    // PRIORITÉ 2: Coefficient de MatiereNiveau (général au niveau)
+                    // PRIORITÉ 3: 1 (méthode arithmétique)
+                    let coefficient = 1;
+                    
+                    if (params.calculationMethod === 'ponderee') {
+                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId) 
+                            ?? matiereNiveau.coefficient 
+                            ?? 1;
+                    }
                     
                     totalPoints += moyenneMatiere * coefficient;
                     totalCoeffs += coefficient;

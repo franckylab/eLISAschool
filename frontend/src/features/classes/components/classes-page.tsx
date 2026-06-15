@@ -13,8 +13,7 @@ import { useClasses, useSupprimerClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { Classe, ClasseFiltres } from '../types/classe.types';
@@ -199,18 +198,20 @@ export function ClassesPage() {
 
     // Affichage skeleton pendant le chargement
     if (isLoading) {
-        return <PageSkeleton showStats showTable />;
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des classes..." />
+            </div>
+        );
     }
 
     // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
-                <ErrorMessage
-                    title="Erreur de chargement"
+                <ErrorState
                     message={error.message || "Impossible de charger les classes"}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
                 />
             </div>
         );

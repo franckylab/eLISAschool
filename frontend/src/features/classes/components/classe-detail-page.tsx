@@ -8,7 +8,6 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Users, BookOpen, Calendar, MapPin,
@@ -25,7 +24,6 @@ type OngletActif = 'informations' | 'eleves' | 'statistiques';
 export function ClasseDetailPage() {
     const { id } = useParams({ from: '/_auth/classes/$id' });
     const navigate = useNavigate();
-    const { t } = useTranslation('classes');
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const { data: classeData, isLoading: loadingClasse } = useClasse(id);
@@ -66,9 +64,9 @@ export function ClasseDetailPage() {
             header: 'Statut',
             render: (e) => (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    e.statut === 'actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    e.statut === 'ACTIF' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                    {e.statut === 'actif' ? 'Actif' : 'Inactif'}
+                    {e.statut === 'ACTIF' ? 'Actif' : 'Inactif'}
                 </span>
             ),
         },

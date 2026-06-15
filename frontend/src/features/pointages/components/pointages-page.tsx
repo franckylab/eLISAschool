@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Clock, CheckCircle, XCircle, AlertCircle, Users, TrendingUp, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
 import { usePointages, useStatistiquesPointages } from '../hooks/use-pointages';
 import { DataTable } from '@/components/ui/DataTable';
 

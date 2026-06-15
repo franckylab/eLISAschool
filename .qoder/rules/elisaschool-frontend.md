@@ -1,3 +1,6 @@
+---
+trigger: always_on
+---
 /**
  * ==================================
  * eLISAschool - Règles Frontend

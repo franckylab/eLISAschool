@@ -64,13 +64,13 @@ export class AuthService {
 
         // Charger depuis la configuration (utilise déjà le cache du configurationService)
         const params = {
-            maxLoginAttempts: await getParamNumber('auth.max_login_attempts', 5),
-            lockoutDuration: await getParamNumber('auth.lockout_duration', 15),
-            sessionDuration: await getParamNumber('auth.session_duration', 1440),
-            passwordMinLength: await getParamNumber('auth.password_min_length', 8),
-            require2FA: await getParamBoolean('auth.require_2fa', false),
-            passwordRequireUppercase: await getParamBoolean('auth.password_require_uppercase', true),
-            passwordRequireNumber: await getParamBoolean('auth.password_require_number', true),
+            maxLoginAttempts: await getParamNumber('auth.max_login_attempts', { defaultValue: 5 }),
+            lockoutDuration: await getParamNumber('auth.lockout_duration', { defaultValue: 15 }),
+            sessionDuration: await getParamNumber('auth.session_duration', { defaultValue: 1440 }),
+            passwordMinLength: await getParamNumber('auth.password_min_length', { defaultValue: 8 }),
+            require2FA: await getParamBoolean('auth.require_2fa', { defaultValue: false }),
+            passwordRequireUppercase: await getParamBoolean('auth.password_require_uppercase', { defaultValue: true }),
+            passwordRequireNumber: await getParamBoolean('auth.password_require_number', { defaultValue: true }),
         };
 
         // Mettre en cache
@@ -183,12 +183,28 @@ export class AuthService {
             order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
         });
 
+        // VALIDATION FAIL-FAST: Vérifier que l'utilisateur a AU MOINS 1 établissement
+        if (utilisateurEtablissements.length === 0) {
+            await auditService.logLogin(utilisateur.id, false, req, 'Aucun établissement associé');
+            throw new AppError(
+                'Aucun établissement associé à votre compte. Veuillez contacter l\'administrateur.',
+                403,
+                'NO_ETABLISSEMENT'
+            );
+        }
+
         const etablissementsPayload = utilisateurEtablissements.map(ue => ({
             etablissementId: ue.etablissementId,
             role: ue.role,
             etablissementPrincipal: ue.etablissementPrincipal,
             actif: ue.actif
         }));
+
+        // Décider du mode de connexion
+        const requiereSelection = utilisateurEtablissements.length > 1;
+        const etablissementActifId = !requiereSelection && utilisateurEtablissements.length === 1
+            ? utilisateurEtablissements[0].etablissementId
+            : undefined; // Sera défini après sélection si multi-établissements
 
         // Génération des tokens
         const payload: JwtPayload = {
@@ -197,8 +213,8 @@ export class AuthService {
             role: utilisateur.role, // backward compat
             roles: userRoles.map(r => r.code), // NOUVEAU : tous les rôles
             permissions: Array.from(resolvedPermissions), // NOUVEAU : permissions résolues
-            etablissementId: utilisateur.etablissementId, // Legacy (single-établissement)
-            etablissements: etablissementsPayload.length > 0 ? etablissementsPayload : undefined, // Multi-établissements
+            etablissementId: etablissementActifId, // Défini si mono-établissement
+            etablissements: etablissementsPayload, // TOUJOURS présent après validation
         };
 
         const accessToken = this.tokenService.generateAccessToken(payload);
@@ -216,10 +232,31 @@ export class AuthService {
         // Durée de session en secondes depuis config
         const expiresIn = securityParams.sessionDuration * 60;
 
+        // Charger les détails des établissements pour la réponse
+        const etablissementRepo = AppDataSource.getRepository('Etablissement');
+        const etablissementsDetails = await Promise.all(
+            utilisateurEtablissements.map(async (ue) => {
+                const etab = await etablissementRepo.findOne({
+                    where: { id: ue.etablissementId },
+                    select: ['id', 'nom', 'codeEtablissement', 'logoUrl']
+                }) as any;
+                return {
+                    id: ue.etablissementId,
+                    nom: etab?.nom || 'Établissement',
+                    code: etab?.codeEtablissement,
+                    role: ue.role,
+                    etablissementPrincipal: ue.etablissementPrincipal,
+                    logoUrl: etab?.logoUrl,
+                };
+            })
+        );
+
         return {
             accessToken,
             refreshToken,
             expiresIn,
+            requiereSelectionEtablissement: requiereSelection,
+            tokenTemporaire: requiereSelection,
             utilisateur: {
                 id: utilisateur.id,
                 email: utilisateur.email,
@@ -227,7 +264,10 @@ export class AuthService {
                 role: utilisateur.role,
                 nom: profil?.nom || '',
                 prenom: profil?.prenom || '',
+                etablissementActif: etablissementActifId,
+                etablissements: etablissementsPayload,
             },
+            etablissementsDisponibles: etablissementsDetails,
         };
     }
 
@@ -282,17 +322,16 @@ export class AuthService {
         }
 
         // Rôle par défaut depuis config
-        const defaultRole = await getParam<string>('utilisateurs.default_role', Role.ELEVE);
+        const defaultRole = await getParam<string>('utilisateurs.default_role', { defaultValue: 'ELEVE' });
 
-        const utilisateur = this.utilisateurRepository.create({
-            email: registerDto.email.toLowerCase(),
-            matricule: matricule!,
-            motDePasse: registerDto.motDePasse,
-            role: defaultRole as Role,
-            statut: StatutUtilisateur.EN_ATTENTE_VALIDATION,
-            langue: registerDto.langue || 'fr',
-            tokenVerificationEmail: generateSecureToken(),
-        });
+        const utilisateur = new Utilisateur();
+        utilisateur.email = registerDto.email.toLowerCase();
+        utilisateur.matricule = matricule!;
+        utilisateur.motDePasse = registerDto.motDePasse;
+        utilisateur.role = defaultRole as any;
+        utilisateur.statut = StatutUtilisateur.EN_ATTENTE_VALIDATION;
+        utilisateur.langue = registerDto.langue || 'fr';
+        utilisateur.tokenVerificationEmail = generateSecureToken();
 
         await this.utilisateurRepository.save(utilisateur);
 
@@ -560,6 +599,16 @@ export class AuthService {
         const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId);
         const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
 
+        // NOUVEAU: Charger les établissements de l'utilisateur
+        const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
+            where: { utilisateurId, actif: true },
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+        });
+
+        // Déterminer l'établissement actif (principal ou premier)
+        const etablissementActifId = utilisateurEtablissements.find(ue => ue.etablissementPrincipal)?.etablissementId 
+            || utilisateurEtablissements[0]?.etablissementId;
+
         return {
             id: utilisateur.id,
             email: utilisateur.email,
@@ -570,6 +619,14 @@ export class AuthService {
             emailVerifie: utilisateur.emailVerifie,
             langue: utilisateur.langue,
             permissions: Array.from(resolvedPermissions),
+            // NOUVEAU: Informations multi-tenant
+            etablissementActif: etablissementActifId || null,
+            etablissements: utilisateurEtablissements.map(ue => ({
+                etablissementId: ue.etablissementId,
+                role: ue.role,
+                etablissementPrincipal: ue.etablissementPrincipal,
+                actif: ue.actif
+            })),
             profil: profil ? {
                 nom: profil.nom,
                 prenom: profil.prenom,

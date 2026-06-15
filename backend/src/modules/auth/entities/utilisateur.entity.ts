@@ -100,6 +100,15 @@ export class Utilisateur {
     @Column({ type: 'varchar', length: 10, default: 'fr' })
     langue!: string;
 
+    /**
+     * NOUVEAU v3.0 - Nombre maximum d'établissements actifs
+     * 0 = illimité (généralement pour super_admin)
+     * 1 = mono-établissement (par défaut)
+     * N = multi-établissements limités à N
+     */
+    @Column({ type: 'int', default: 1 })
+    maxEtablissementsPersonnel!: number;
+
     @Column({ type: 'uuid', nullable: true })
     etablissementId?: string;
 

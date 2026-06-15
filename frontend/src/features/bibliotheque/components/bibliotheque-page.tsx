@@ -21,13 +21,16 @@ export function BibliothequePage() {
     const [filtreCategorie, setFiltreCategorie] = useState('');
     const [filtreDispo, setFiltreDispo] = useState('tous');
 
-    const { data, isLoading, meta } = useOuvrages({
+    const { data: result, isLoading } = useOuvrages({
         recherche: recherche || undefined,
         categorie: filtreCategorie || undefined,
         disponibilite: filtreDispo as any,
     });
+    const data = result?.data;
+    const meta = result?.data?.meta;
 
-    const { data: prets } = usePrets();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    usePrets(); // prets non utilisé
     const { data: stats } = useStatistiquesBibliotheque();
     const supprimer = useSupprimerOuvrage();
 
@@ -214,8 +217,8 @@ export function BibliothequePage() {
 
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                columns={colonnes}
+                data={data?.data || []}
                 isLoading={isLoading}
                 enableReordering
                 enableRowHeight

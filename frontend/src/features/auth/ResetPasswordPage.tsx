@@ -50,7 +50,7 @@ export function ResetPasswordPage() {
                 <div className="w-full max-w-md text-center">
                     <CheckCircle2 className="mx-auto h-16 w-16 text-[var(--color-dominante)]" />
                     <h1 className="mt-4 text-2xl font-bold text-[var(--color-texte)]">{t('resetPassword.succes')}</h1>
-                    <Link to="/login"  className="mt-6 inline-block">
+                    <Link to="/login" search={{ redirect: undefined }} className="mt-6 inline-block">
                         <ElisaButton variant="primary">{t('forgotPassword.retourConnexion')}</ElisaButton>
                     </Link>
                 </div>
@@ -109,7 +109,7 @@ export function ResetPasswordPage() {
                         >
                             {t('resetPassword.boutonReinitialiser')}
                         </ElisaButton>
-                        <Link to="/login" >
+                        <Link to="/login" search={{ redirect: undefined }}>
                             <ElisaButton variant="ghost" fullWidth icon={<ArrowLeft className="h-4 w-4" />}>
                                 {t('forgotPassword.retourConnexion')}
                             </ElisaButton>

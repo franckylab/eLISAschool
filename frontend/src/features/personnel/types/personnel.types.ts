@@ -57,6 +57,8 @@ export interface PersonnelFiltres {
     departement?: string;
     typeContrat?: 'cdi' | 'cdd' | 'vacataire' | 'stage';
     statut?: 'actif' | 'inactif' | 'en_conge' | 'demission';
+    typePersonnelId?: string;
+    actif?: boolean;
     recherche?: string;
     page?: number;
     limit?: number;

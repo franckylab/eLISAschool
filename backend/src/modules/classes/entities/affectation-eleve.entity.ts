@@ -32,6 +32,8 @@ export enum StatutAffectationEleve {
 @Index(['classeId'])
 @Index(['anneeScolaireId'])
 @Index(['etablissementId'])
+@Index(['statut'])
+@Index(['eleveId', 'anneeScolaireId', 'statut']) // Index composite pour requêtes d'historique
 export class AffectationEleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -55,6 +57,15 @@ export class AffectationEleve {
 
     @Column({ type: 'date' })
     dateAffectation!: Date;
+
+    @Column({ type: 'date', nullable: true })
+    dateSortie?: Date;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    motifChangement?: string; // 'REDOUBLEMENT', 'CHANGEMENT_CLASSE', 'PASSAGE_NIVEAU', 'RADIATION', 'TRANSFERE'
+
+    @Column({ type: 'text', nullable: true })
+    commentaire?: string;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

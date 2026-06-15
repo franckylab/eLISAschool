@@ -23,18 +23,20 @@ import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
+import { EtablissementSwitcher } from '@/components/auth/EtablissementSwitcher';
 
 export function Header() {
     const { t } = useTranslation('common');
     const router = useRouter();
     const { toggleMobile } = useSidebarStore();
-    const { utilisateur, logout } = useAuthStore();
+    const { utilisateur } = useAuthStore();
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleLogout = async () => {
-        await logout();
-        window.location.href = '/login';
+        // Utiliser le service de déconnexion sécurisée
+        const { handleLogout: secureHandleLogout } = await import('@/lib/secure-logout');
+        await secureHandleLogout({ redirect: true });
     };
 
     return (
@@ -96,6 +98,9 @@ export function Header() {
             <div className="flex items-center gap-2">
                 <LanguageSwitcher />
                 <ThemeSwitcher />
+
+                {/* NOUVEAU v3.0 : Sélecteur d'établissement */}
+                <EtablissementSwitcher />
 
                 {/* Notifications */}
                 <button

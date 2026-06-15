@@ -54,6 +54,8 @@ export * from './organisation';
 // Modules complémentaires
 export * from './orientation';
 export * from './impressions';
+export * from './salles';
+export * from './options';
 
 // Module RH & Recrutement
 export * from './recrutement';
@@ -76,3 +78,4 @@ export * from './eleves';
 export * from './bulletins';
 export * from './responsables-eleves';
 export * from './diplomes-eleves';
+export * from './emploi-du-temps';

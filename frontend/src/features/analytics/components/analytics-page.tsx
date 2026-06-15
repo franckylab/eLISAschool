@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { TrendingUp, AlertTriangle, CheckCircle, Activity, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, Activity } from 'lucide-react';
 import { useDashboardAnalytics, useStatistiquesAnalytics } from '../hooks/use-analytics';
 
 const statutsKPI: any = {

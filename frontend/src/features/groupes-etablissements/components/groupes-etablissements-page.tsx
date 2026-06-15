@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Eye, Building2, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Building2, Users } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -270,7 +270,7 @@ export function GroupesEtablissementsPage() {
             {/* Dialog Confirmation Suppression */}
             <ConfirmDialog
                 open={!!groupeToDelete}
-                onClose={() => setGroupeToDelete(null)}
+                onOpenChange={(open) => { if (!open) setGroupeToDelete(null); }}
                 onConfirm={handleDelete}
                 title="Supprimer le groupe"
                 description={`Êtes-vous sûr de vouloir supprimer "${groupeToDelete?.nom}" ? Cette action est irréversible.`}

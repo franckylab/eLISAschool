@@ -12,20 +12,21 @@
 import { useState, useMemo } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { RequireRole } from '@/components/permissions';
-import { Shield, Check, X, Search, Filter, Download } from 'lucide-react';
+import { Check, X, Search, Download } from 'lucide-react';
 
 // ==================================
 // TYPES
 // ==================================
 
-interface PermissionMatrix {
-    module: string;
-    permissions: {
-        code: string;
-        label: string;
-        roles: Record<string, boolean>;
-    }[];
-}
+// types importés mais non utilisés temporairement
+// interface PermissionMatrix {
+//     module: string;
+//     permissions: {
+//         code: string;
+//         label: string;
+//         roles: Record<string, boolean>;
+//     }[];
+// }
 
 interface RoleInfo {
     code: string;
@@ -59,6 +60,7 @@ const MODULES_LIST = [
 // ==================================
 
 export function AdminPermissionsMatrixPage() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { permissions: userPermissions, isSuperAdmin } = usePermissions();
     const [selectedRole, setSelectedRole] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');

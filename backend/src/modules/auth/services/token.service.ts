@@ -84,8 +84,23 @@ export class TokenService {
             }) as JwtPayload;
 
             return decoded;
-        } catch (error) {
-            logger.warn('Échec de vérification du token JWT', { error });
+        } catch (error: any) {
+            // Log détaillé pour diagnostiquer pourquoi le token est rejeté
+            logger.warn('Échec de vérification du token JWT', { 
+                error: error.message,
+                errorName: error.name,
+                tokenPrefix: token.substring(0, 20) + '...',
+            });
+            
+            // Log spécifique selon le type d'erreur
+            if (error.name === 'TokenExpiredError') {
+                logger.warn('Token expiré', { expiredAt: error.expiredAt });
+            } else if (error.name === 'JsonWebTokenError') {
+                logger.warn('Token malformé ou signature invalide', { message: error.message });
+            } else if (error.name === 'NotBeforeError') {
+                logger.warn('Token pas encore valide', { date: error.date });
+            }
+            
             return null;
         }
     }

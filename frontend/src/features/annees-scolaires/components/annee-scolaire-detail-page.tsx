@@ -8,15 +8,13 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Calendar, Clock, BookOpen, Users,
-    Edit, Trash2, FileText, AlertCircle, Play, Archive
+    Edit, Trash2, FileText, AlertCircle, Play
 } from 'lucide-react';
 import { useAnneeScolaire, useSupprimerAnneeScolaire, useActiverAnneeScolaire } from '../hooks/use-annees-scolaires';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { AnneeScolaire } from '../types/annee-scolaire.types';
 
 type OngletActif = 'informations' | 'periodes' | 'statistiques';
 
@@ -37,7 +35,6 @@ const COULEURS_STATUT: Record<string, string> = {
 export function AnneeScolaireDetailPage() {
     const { id } = useParams({ from: '/_auth/annees-scolaires/$id' });
     const navigate = useNavigate();
-    const { t } = useTranslation('annees-scolaires');
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const { data: anneeData, isLoading } = useAnneeScolaire(id);

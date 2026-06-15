@@ -9,11 +9,11 @@
  */
 
 import { AppDataSource } from '../data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, UtilisateurRole } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { RBACSeedService } from './rbac.seed';
-import { seedEtablissementParDefaut } from './seed-etablissement-par-defaut';
+import { seedEtablissementsParDefaut, EtablissementsDefaut } from './seed-etablissement-par-defaut';
 import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { seedStructureAcademique } from './seed-structure-academique';
 import { seedClassesParDefaut } from './seed-classes-par-defaut';
@@ -25,29 +25,40 @@ import { logger } from '@common/utils/logger.util';
 export async function runSeeds(): Promise<void> {
     logger.info('🌱 Exécution des seeds...');
 
-    // 1. Établissement par défaut (source de vérité multi-tenant)
-    const etablissementId = await seedEtablissementParDefaut();
+    // 1. Établissements par défaut (2 établissements)
+    const etablissements = await seedEtablissementsParDefaut();
+    const etablissementPrincipalId = etablissements.principal;
+    const etablissementSecondaireId = etablissements.secondaire;
 
-    // 2. Configuration (modules, paramètres système)
-    await seedConfiguration(etablissementId);
+    logger.info(`🏫 Établissement principal: ${etablissementPrincipalId}`);
+    logger.info(`🏫 Établissement secondaire: ${etablissementSecondaireId}`);
 
-    // 3. RBAC (rôles, permissions, mappings)
+    // 2. Structure académique pour les 2 établissements
+    await seedStructureAcademique(etablissementPrincipalId);
+    await seedStructureAcademique(etablissementSecondaireId);
+
+    // 3. Classes par défaut pour les 2 établissements
+    await seedClassesParDefaut(etablissementPrincipalId);
+    await seedClassesParDefaut(etablissementSecondaireId);
+
+    // 4. Configuration (modules, paramètres système) - scopé au principal
+    await seedConfiguration(etablissementPrincipalId);
+
+    // 5. RBAC (rôles, permissions, mappings)
     await seedRBAC();
 
-    // 4. Structure académique (types cycles, cycles, niveaux, filières, examens)
-    await seedStructureAcademique(etablissementId);
+    // 6. Super admin (lié aux 2 établissements)
+    await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
 
-    // 5. Classes par défaut (1 classe par niveau)
-    await seedClassesParDefaut(etablissementId);
+    // 7. Chef établissement pour le 2ème établissement
+    await seedChefEtablissementSecondaire(etablissementSecondaireId);
 
-    // 6. Super admin (lié à l'établissement)
-    await seedSuperAdmin(etablissementId);
-
-    // 7. Utilisateurs de test par rôle
-    await seedUtilisateursParRole(etablissementId);
+    // 8. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
+    await seedUtilisateursParRole(etablissementPrincipalId, etablissementSecondaireId);
 
     logger.info('✅ Seeds exécutés avec succès');
-    logger.info(`🏫 Établissement par défaut: ${etablissementId}`);
+    logger.info(`🏫 Établissement principal: ${etablissementPrincipalId}`);
+    logger.info(`🏫 Établissement secondaire: ${etablissementSecondaireId}`);
 }
 
 /**
@@ -72,12 +83,14 @@ async function seedRBAC(): Promise<void> {
 }
 
 /**
- * Seed du super administrateur par défaut
- * @param etablissementId ID de l'établissement pour lier le super admin
+ * Seed du super administrateur par défaut (lié aux 2 établissements)
+ * @param etablissementPrincipalId ID de l'établissement principal
+ * @param etablissementSecondaireId ID de l'établissement secondaire
  */
-async function seedSuperAdmin(etablissementId: string): Promise<void> {
+async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSecondaireId: string): Promise<void> {
     const userRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
+    const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
 
     const existant = await userRepo.findOne({
         where: { email: 'admin@elisaschool.cm' },
@@ -96,7 +109,8 @@ async function seedSuperAdmin(etablissementId: string): Promise<void> {
         statut: StatutUtilisateur.ACTIF,
         emailVerifie: true,
         langue: 'fr',
-        etablissementId: etablissementId, // Lié à l'établissement par défaut
+        etablissementId: etablissementPrincipalId, // Établissement principal (legacy)
+        maxEtablissementsPersonnel: 0, // 0 = illimité pour super_admin
     });
 
     await userRepo.save(superAdmin);
@@ -110,9 +124,118 @@ async function seedSuperAdmin(etablissementId: string): Promise<void> {
 
     await profilRepo.save(profil);
 
+    // CRITIQUE: Lier le Super Admin aux 2 établissements
+    
+    // Lien avec l'établissement principal
+    const superAdminPrincipal = utilisateurEtablissementRepo.create({
+        utilisateurId: superAdmin.id,
+        etablissementId: etablissementPrincipalId,
+        role: Role.SUPER_ADMIN,
+        etablissementPrincipal: true, // Principal par défaut
+        actif: true,
+        dateDebut: new Date(),
+    });
+
+    await utilisateurEtablissementRepo.save(superAdminPrincipal);
+
+    // Lien avec l'établissement secondaire
+    const superAdminSecondaire = utilisateurEtablissementRepo.create({
+        utilisateurId: superAdmin.id,
+        etablissementId: etablissementSecondaireId,
+        role: Role.SUPER_ADMIN,
+        etablissementPrincipal: false,
+        actif: true,
+        dateDebut: new Date(),
+    });
+
+    await utilisateurEtablissementRepo.save(superAdminSecondaire);
+
     logger.info('✅ Super admin créé: admin@elisaschool.cm');
-    logger.info(`🔗 Super admin lié à l'établissement: ${etablissementId}`);
+    logger.info(`🔗 Super admin lié à l'établissement principal: ${etablissementPrincipalId}`);
+    logger.info(`🔗 Super admin lié à l'établissement secondaire: ${etablissementSecondaireId}`);
     logger.warn('⚠️  ATTENTION: Changez le mot de passe par défaut en production !');
+}
+
+/**
+ * Seed du chef d'établissement pour le 2ème établissement
+ * @param etablissementSecondaireId ID de l'établissement secondaire
+ */
+async function seedChefEtablissementSecondaire(etablissementSecondaireId: string): Promise<void> {
+    const userRepo = AppDataSource.getRepository(Utilisateur);
+    const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
+    const utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
+    const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
+    const roleRepo = AppDataSource.getRepository('Role');
+
+    // Vérifier si l'utilisateur existe déjà
+    const existant = await userRepo.findOne({
+        where: { email: 'chef.palmiers@elisaschool.cm' },
+    });
+
+    if (existant) {
+        logger.info('Chef établissement secondaire déjà existant, skip...');
+        return;
+    }
+
+    // Trouver le rôle CHEF_ETABLISSEMENT
+    const role = await roleRepo.findOne({
+        where: { code: Role.CHEF_ETABLISSEMENT },
+    });
+
+    if (!role) {
+        logger.warn('⚠ Rôle CHEF_ETABLISSEMENT non trouvé');
+        return;
+    }
+
+    // Créer l'utilisateur
+    const chefEtablissement = userRepo.create({
+        email: 'chef.palmiers@elisaschool.cm',
+        matricule: 'CHEF-002',
+        motDePasse: 'Test123456!',
+        role: Role.CHEF_ETABLISSEMENT,
+        statut: StatutUtilisateur.ACTIF,
+        emailVerifie: true,
+        langue: 'fr',
+        etablissementId: etablissementSecondaireId,
+        maxEtablissementsPersonnel: 1, // Mono-établissement
+    });
+
+    await userRepo.save(chefEtablissement);
+
+    // Créer le profil
+    const profil = profilRepo.create({
+        utilisateurId: chefEtablissement.id,
+        nom: 'ONGUENE',
+        prenom: 'Claire',
+        telephone: '+237690111111',
+    });
+
+    await profilRepo.save(profil);
+
+    // Créer le lien utilisateur-rôle
+    const utilisateurRole = utilisateurRoleRepo.create({
+        utilisateurId: chefEtablissement.id,
+        roleId: (role as any).id,
+        estPrincipal: true,
+        dateAttribution: new Date(),
+    });
+
+    await utilisateurRoleRepo.save(utilisateurRole);
+
+    // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement
+    const utilisateurEtablissement = utilisateurEtablissementRepo.create({
+        utilisateurId: chefEtablissement.id,
+        etablissementId: etablissementSecondaireId,
+        role: Role.CHEF_ETABLISSEMENT,
+        etablissementPrincipal: true,
+        actif: true,
+        dateDebut: new Date(),
+    });
+
+    await utilisateurEtablissementRepo.save(utilisateurEtablissement);
+
+    logger.info('✅ Chef établissement secondaire créé: chef.palmiers@elisaschool.cm');
+    logger.info(`🔗 Lié à l'établissement: ${etablissementSecondaireId}`);
 }
 
 export default runSeeds;

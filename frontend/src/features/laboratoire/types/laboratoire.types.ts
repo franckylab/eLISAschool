@@ -21,6 +21,8 @@ export interface Laboratoire {
         nom: string;
         prenom: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface ReservationLaboratoire {
@@ -45,6 +47,8 @@ export interface ReservationLaboratoire {
         prenom: string;
         role?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface Experience {
@@ -61,6 +65,8 @@ export interface Experience {
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerReservationDto {
@@ -72,6 +78,8 @@ export interface CreerReservationDto {
     classeId?: string;
     matiereId?: string;
     notes?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesLaboratoire {
@@ -88,6 +96,8 @@ export interface StatistiquesLaboratoire {
         mois: string;
         reservations: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface FiltresLaboratoire {
@@ -95,4 +105,6 @@ export interface FiltresLaboratoire {
     statut?: string;
     dateDebut?: string;
     dateFin?: string;
+    page?: number;
+    limit?: number;
 }

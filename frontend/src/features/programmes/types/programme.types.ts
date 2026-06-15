@@ -45,5 +45,7 @@ export interface ProgrammeFiltres {
     recherche?: string;
     cycleId?: string;
     niveauId?: string;
+    classeId?: string;
+    matiereId?: string;
     actif?: boolean;
 }

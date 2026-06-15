@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, BookOpen, Hash } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, BookOpen, Hash } from 'lucide-react';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import {
     useSpecialites,
@@ -259,16 +259,18 @@ export function SpecialitesPage() {
 
             {/* Modal Confirmation Suppression */}
             <ConfirmDialog
-                isOpen={showDeleteConfirm}
-                title="Supprimer la spécialité ?"
-                message={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.nom}" ? Cette action est irréversible.`}
-                confirmLabel="Supprimer"
-                variant="danger"
-                onConfirm={handleDelete}
-                onCancel={() => {
-                    setShowDeleteConfirm(false);
-                    setItemToDelete(null);
+                open={showDeleteConfirm}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowDeleteConfirm(false);
+                        setItemToDelete(null);
+                    }
                 }}
+                onConfirm={handleDelete}
+                title="Supprimer la spécialité ?"
+                description={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.nom}" ? Cette action est irréversible.`}
+                confirmText="Supprimer"
+                variant="danger"
             />
         </div>
     );

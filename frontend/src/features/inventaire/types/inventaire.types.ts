@@ -26,6 +26,8 @@ export interface Materiel {
         prenom: string;
         role?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerMaterielDto {
@@ -39,6 +41,8 @@ export interface CreerMaterielDto {
     prixUnitaire?: number;
     fournisseur?: string;
     responsableId?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface MouvementStock {
@@ -62,6 +66,8 @@ export interface MouvementStock {
         nom: string;
         prenom: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesInventaire {
@@ -75,6 +81,8 @@ export interface StatistiquesInventaire {
         entrees: number;
         sorties: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface InventaireFiltres {
@@ -82,4 +90,7 @@ export interface InventaireFiltres {
     etat?: string;
     recherche?: string;
     emplacement?: string;
+    page?: number;
+    limit?: number;
+    actif?: boolean;
 }

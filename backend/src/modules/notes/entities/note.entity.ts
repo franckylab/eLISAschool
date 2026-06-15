@@ -14,7 +14,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Utilisateur } from '@modules/utilisateurs/entities';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Classe } from '@modules/classes/entities';
@@ -64,10 +64,10 @@ export class Note {
     @Column({ type: 'uuid' })
     enseignantId!: string;
 
-    // On garde le lien vers l'utilisateur pour l'audit et la simplicité (l'identité numérique)
-    @ManyToOne(() => Utilisateur)
+    // L'enseignant est un MembrePersonnel (cohérent avec AffectationMatiere)
+    @ManyToOne(() => MembrePersonnel)
     @JoinColumn({ name: 'enseignantId' })
-    enseignant!: Utilisateur;
+    enseignant!: MembrePersonnel;
 
     @Column({ type: 'uuid' })
     matiereId!: string;

@@ -7,14 +7,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useMatieres, useSupprimerMatiere } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { Matiere, MatiereFiltres } from '../types/matiere.types';
@@ -138,18 +137,20 @@ export function MatieresPage() {
 
     // Affichage skeleton pendant le chargement
     if (isLoading) {
-        return <PageSkeleton showStats showTable />;
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des matières..." />
+            </div>
+        );
     }
 
     // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
-                <ErrorMessage
-                    title="Erreur de chargement"
+                <ErrorState
                     message={error.message || "Impossible de charger les matières"}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
                 />
             </div>
         );

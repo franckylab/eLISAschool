@@ -19,6 +19,7 @@ import { MembrePersonnel } from './personnel.entity';
 import { Classe } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Periode } from '@modules/periodes/entities';
+import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -36,8 +37,11 @@ export enum StatutEffectue {
 @Index(['classeId'])
 @Index(['date'])
 @Index(['periodeId'])
+@Index(['salleId'])
 @Index(['etablissementId'])
 @Index(['enseignantId', 'date', 'heureDebut']) // Index composite pour détection conflits
+@Index(['classeId', 'date', 'heureDebut']) // Conflits de classe
+@Index(['salleId', 'date', 'heureDebut']) // Conflits de salle
 export class HeureCours {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -63,12 +67,19 @@ export class HeureCours {
     @JoinColumn({ name: 'matiereId' })
     matiere?: Matiere;
 
-    @Column({ type: 'uuid', nullable: true })
-    periodeId?: string;
+    @Column({ type: 'uuid' })
+    periodeId!: string;
 
     @ManyToOne(() => Periode)
     @JoinColumn({ name: 'periodeId' })
     periode?: Periode;
+
+    @Column({ type: 'uuid', nullable: true })
+    salleId?: string;
+
+    @ManyToOne(() => Salle, { nullable: true })
+    @JoinColumn({ name: 'salleId' })
+    salle?: Salle;
 
     @Column({ type: 'date' })
     date!: Date;
@@ -83,7 +94,10 @@ export class HeureCours {
     statutEffectue!: StatutEffectue;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
-    salle?: string | null;
+    salleObsolète?: string | null; // @deprecated Utiliser salleId à la place
+
+    @Column({ type: 'text', nullable: true })
+    commentaire?: string; // Observations, remplacement, annulation
 
     @Column({ type: 'uuid', nullable: true })
     remplacantId?: string | null;

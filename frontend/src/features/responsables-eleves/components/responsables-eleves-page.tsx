@@ -282,7 +282,7 @@ export function ResponsablesElevesPage() {
             {/* Dialog Confirmation Suppression */}
             <ConfirmDialog
                 open={!!responsableToDelete}
-                onClose={() => setResponsableToDelete(null)}
+                onOpenChange={(open) => { if (!open) setResponsableToDelete(null); }}
                 onConfirm={handleDelete}
                 title="Supprimer le responsable"
                 description={`Êtes-vous sûr de vouloir supprimer ce responsable ? Cette action est irréversible.`}

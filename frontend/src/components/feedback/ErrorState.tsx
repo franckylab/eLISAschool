@@ -1,48 +1,72 @@
 /**
  * ==================================
- * eLISAschool - ErrorState
+ * eLISAschool - Error State Component
  * ==================================
- * État d'erreur avec bouton réessayer
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ * 
+ * Composant réutilisable pour afficher un état d'erreur avec action de retry
  */
 
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { ElisaButton } from '@/components/ui/ElisaButton';
+import { AlertTriangle, RefreshCw, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 interface ErrorStateProps {
-    message?: string;
+    /** Titre de l'erreur */
+    title?: string;
+    /** Message d'erreur détaillé */
+    message: string;
+    /** Icône à afficher (défaut: AlertTriangle) */
+    icon?: LucideIcon;
+    /** Callback du bouton retry */
     onRetry?: () => void;
+    /** Label du bouton retry (défaut: "Réessayer") */
+    retryLabel?: string;
+    /** Classe CSS supplémentaire */
     className?: string;
 }
 
-export function ErrorState({ message, onRetry, className }: ErrorStateProps) {
-    const { t } = useTranslation('common');
-
+export function ErrorState({
+    title = "Une erreur est survenue",
+    message,
+    icon: Icon = AlertTriangle,
+    onRetry,
+    retryLabel = "Réessayer",
+    className,
+}: ErrorStateProps) {
     return (
-        <div className={cn('flex flex-col items-center justify-center py-16 text-center', className)}>
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-error)]/10">
-                <AlertTriangle className="h-8 w-8 text-[var(--color-error)]" />
+        <div className={cn(
+            "flex min-h-[400px] items-center justify-center p-8",
+            className
+        )}>
+            <div className="text-center space-y-6 max-w-md">
+                {/* Icône avec effet de glow */}
+                <div className="relative">
+                    <Icon className="h-20 w-20 text-destructive/50 mx-auto" />
+                    <div className="absolute inset-0 h-20 w-20 mx-auto bg-destructive/10 rounded-full blur-xl" />
+                </div>
+                
+                {/* Texte */}
+                <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+                    <p className="text-muted-foreground">{message}</p>
+                </div>
+
+                {/* Bouton retry */}
+                {onRetry && (
+                    <div className="flex justify-center pt-4">
+                        <button
+                            onClick={onRetry}
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            {retryLabel}
+                        </button>
+                    </div>
+                )}
             </div>
-            <h3 className="text-lg font-semibold text-[var(--color-texte)]">
-                {t('messages.erreurServeur')}
-            </h3>
-            {message && (
-                <p className="mt-2 max-w-sm text-sm text-[var(--color-texte-secondaire)]">
-                    {message}
-                </p>
-            )}
-            {onRetry && (
-                <ElisaButton
-                    variant="outline"
-                    size="sm"
-                    className="mt-6"
-                    onClick={onRetry}
-                    icon={<RefreshCw className="h-4 w-4" />}
-                >
-                    {t('boutons.reessayer')}
-                </ElisaButton>
-            )}
         </div>
     );
 }
+
+export default ErrorState;

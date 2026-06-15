@@ -24,6 +24,8 @@ export interface Archive {
         prenom: string;
         role?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerArchiveDto {
@@ -33,6 +35,8 @@ export interface CreerArchiveDto {
     anneeScolaire?: string;
     tags?: string[];
     fichier: File;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesArchives {
@@ -45,6 +49,8 @@ export interface StatistiquesArchives {
         nombre: number;
         taille: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface ArchiveFiltres {
@@ -52,4 +58,6 @@ export interface ArchiveFiltres {
     anneeScolaire?: string;
     recherche?: string;
     tag?: string;
+    page?: number;
+    limit?: number;
 }

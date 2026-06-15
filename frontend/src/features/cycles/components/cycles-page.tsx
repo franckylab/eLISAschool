@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, ToggleLeft, ToggleRight, Calendar, Award } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Calendar, Award } from 'lucide-react';
 import { useCycles, useSupprimerCycle, useCreerCycle, useModifierCycle } from '../hooks/use-cycles';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';

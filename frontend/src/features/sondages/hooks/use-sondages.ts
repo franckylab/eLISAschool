@@ -118,7 +118,7 @@ export function useExporterSondage() {
     return useMutation({
         mutationFn: async (data: { sondageId: string; format: 'csv' | 'pdf' }) => {
             const response = await apiClient.get(`/api/sondages/${data.sondageId}/analyses/export`, {
-                params: { format: data.format },
+                params: { format: data.format } as any,
                 responseType: 'blob',
             });
             return { data: response.data, format: data.format };

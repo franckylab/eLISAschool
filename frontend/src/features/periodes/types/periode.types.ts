@@ -48,4 +48,5 @@ export interface PeriodeFiltres {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    actif?: boolean;
 }

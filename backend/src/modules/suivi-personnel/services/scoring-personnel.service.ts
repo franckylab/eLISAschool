@@ -21,7 +21,7 @@ import {
     TypeModificationScore,
 } from '../entities/scoring-personnel.entity';
 import {
-    AttribuerPointsDto,
+    AttribuerPointsPersonnelDto,
     CreateRegleScoringDto,
     UpdateRegleScoringDto,
     ClassementPersonnelDto,
@@ -61,9 +61,9 @@ export class ScoringPersonnelService {
     /**
      * Attribuer des points à un membre du personnel
      */
-    async attribuerPoints(dto: AttribuerPointsDto, etablissementId: string, anneeScolaireId: string, utilisateurId?: string): Promise<HistoriqueScorePersonnel> {
+    async attribuerPoints(dto: AttribuerPointsPersonnelDto, etablissementId: string, anneeScolaireId: string, utilisateurId?: string): Promise<HistoriqueScorePersonnel> {
         // Vérifier si la règle est active
-        const regleActive = await getParamBoolean('scoring-personnel.actif', false);
+        const regleActive = await getParamBoolean('scoring-personnel.actif', { defaultValue: false });
         if (!regleActive && !dto.declencheurAutomatique) {
             throw new AppError('Le scoring personnel est désactivé', 403, 'SCORING_INACTIVE');
         }
@@ -501,7 +501,7 @@ export class ScoringPersonnelService {
         const annee = await anneeRepo.findOne({
             where: {
                 etablissementId,
-                estActive: true,
+                enCours: true,
             },
         });
 

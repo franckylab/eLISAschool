@@ -203,8 +203,8 @@ export function CourriersPage() {
 
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enableRowHeight

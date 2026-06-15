@@ -18,6 +18,8 @@ export interface KPI {
     seuilCritique?: number;
     statut: 'bon' | 'attention' | 'critique';
     derniereMAJ: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface DashboardAnalytics {
@@ -38,6 +40,8 @@ export interface DashboardAnalytics {
         donnees: { date: string; valeur: number; }[];
         prevision?: { date: string; valeur: number; }[];
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerKPIDto {
@@ -48,6 +52,8 @@ export interface CreerKPIDto {
     objectif?: number;
     seuilAlerte?: number;
     seuilCritique?: number;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesAnalytics {
@@ -61,10 +67,14 @@ export interface StatistiquesAnalytics {
         nombreKPIs: number;
         alertes: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface FiltresAnalytics {
     categorie?: string;
     statut?: string;
     periode?: 'jour' | 'semaine' | 'mois' | 'trimestre' | 'annee';
+    page?: number;
+    limit?: number;
 }

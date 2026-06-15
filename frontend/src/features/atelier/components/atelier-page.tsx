@@ -21,7 +21,7 @@ const typesAtelier: any = {
 
 export function AtelierPage() {
     const { data: ateliers } = useAteliers();
-    const { data: inscriptionsData } = useInscriptions();
+    useInscriptions(); // inscriptionsData non utilisé
     const { data: stats } = useStatistiquesAtelier();
 
     const ateliersList = ateliers || [];
@@ -80,7 +80,7 @@ export function AtelierPage() {
                 </motion.div>
             </div>
 
-            {ateliersList}<DataTable
+            <DataTable
                 data={ateliersList}
                 columns={colonnes}
                 enableReordering

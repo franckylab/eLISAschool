@@ -301,16 +301,18 @@ export function CompetencesPage() {
 
             {/* Modal Confirmation Suppression */}
             <ConfirmDialog
-                isOpen={showDeleteConfirm}
-                title="Supprimer la compétence ?"
-                message={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.libelle}" ? Cette action est irréversible.`}
-                confirmLabel="Supprimer"
-                variant="danger"
-                onConfirm={handleDelete}
-                onCancel={() => {
-                    setShowDeleteConfirm(false);
-                    setItemToDelete(null);
+                open={showDeleteConfirm}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowDeleteConfirm(false);
+                        setItemToDelete(null);
+                    }
                 }}
+                onConfirm={handleDelete}
+                title="Supprimer la compétence ?"
+                description={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.libelle}" ? Cette action est irréversible.`}
+                confirmText="Supprimer"
+                variant="danger"
             />
         </div>
     );

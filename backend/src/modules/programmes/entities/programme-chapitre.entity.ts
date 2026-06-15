@@ -69,6 +69,23 @@ export class ProgrammeChapitre {
     @Column({ type: 'int', nullable: true })
     dureePrevueHeures?: number;
 
+    @Column({ type: 'simple-json', nullable: true })
+    prerequis?: string[]; // IDs des chapitres prérequis (optionnel)
+
+    @Column({ type: 'int', default: 0 })
+    progressionPourcentage!: number; // 0-100, suivi de l'avancement (validation dans le service)
+
+    @Column({ type: 'simple-json', nullable: true })
+    ressourcesPedagogiques?: Array<{
+        type: 'MANUEL' | 'VIDEO' | 'DOCUMENT' | 'LIEN';
+        titre: string;
+        url?: string;
+        description?: string;
+    }>;
+
+    @Column({ type: 'simple-json', nullable: true })
+    competencesAssociees?: string[]; // IDs des compétences travaillées
+
     @Column({ type: 'varchar', length: 30, default: StatutChapitre.ACTIF })
     statut!: StatutChapitre;
 

@@ -32,6 +32,8 @@ export interface Intervention {
         nom: string;
         prenom: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface Equipement {
@@ -50,6 +52,8 @@ export interface Equipement {
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerInterventionDto {
@@ -60,6 +64,8 @@ export interface CreerInterventionDto {
     equipementId?: string;
     datePlanification: string;
     technicienId?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesMaintenance {
@@ -74,6 +80,8 @@ export interface StatistiquesMaintenance {
         interventions: number;
         cout: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface FiltresMaintenance {
@@ -83,4 +91,6 @@ export interface FiltresMaintenance {
     technicienId?: string;
     dateDebut?: string;
     dateFin?: string;
+    page?: number;
+    limit?: number;
 }

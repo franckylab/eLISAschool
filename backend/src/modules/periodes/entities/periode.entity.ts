@@ -76,14 +76,20 @@ export class Periode {
     @Column({ type: 'float', default: 1 })
     poids!: number; // Pour le calcul annuel
 
-    @Column({ type: 'boolean', default: false })
-    cloturee!: boolean;
-
     /**
      * Statut de la période (support workflow de clôture)
+     * Remplace l'ancien champ cloturee (boolean)
      */
     @Column({ type: 'varchar', length: 30, default: StatutPeriode.OUVERTE })
     statut!: StatutPeriode;
+
+    /**
+     * Getter de compatibilité pour l'ancien champ cloturee
+     * @deprecated Utiliser statut === StatutPeriode.CLOTUREE à la place
+     */
+    get cloturee(): boolean {
+        return this.statut === StatutPeriode.CLOTUREE;
+    }
 
     @CreateDateColumn()
     createdAt!: Date;

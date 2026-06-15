@@ -16,6 +16,7 @@ import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
 import { AffectationEleve } from '@modules/classes/entities';
 import { notificationTemplates } from '@modules/notifications/services';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Utilisateur } from '@modules/utilisateurs/entities';
@@ -104,7 +105,7 @@ export class NotesService {
         try {
             const eleveRepo = AppDataSource.getRepository(Eleve);
             const matiereRepo = AppDataSource.getRepository(Matiere);
-            const userRepo = AppDataSource.getRepository(Utilisateur);
+            const personnelRepo = AppDataSource.getRepository(MembrePersonnel);
 
             const eleve = await eleveRepo.findOne({ 
                 where: { id: createDto.eleveId },
@@ -113,7 +114,11 @@ export class NotesService {
             
             if (eleve) {
                 const matiere = await matiereRepo.findOne({ where: { id: createDto.matiereId } });
-                const enseignant = await userRepo.findOne({ where: { id: enseignantId } });
+                // L'enseignantId est maintenant un MembrePersonnel, on récupère son utilisateur
+                const enseignant = await personnelRepo.findOne({ 
+                    where: { id: enseignantId },
+                    relations: ['utilisateur']
+                });
                 const periode = await periodesService.findOne(createDto.periodeId);
 
                 // Trouver les responsables de cet élève
@@ -135,7 +140,9 @@ export class NotesService {
                             note: createDto.valeur,
                             bareme: createDto.bareme || 20,
                             periode: periode?.nom || 'Période',
-                            enseignant: 'Enseignant',
+                            enseignant: enseignant?.utilisateur 
+                                ? `${enseignant.utilisateur.prenom} ${enseignant.utilisateur.email?.split('@')[0] || ''}`
+                                : 'Enseignant',
                         });
                     }
                 }

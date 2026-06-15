@@ -11,18 +11,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload } from 'lucide-react';
+import { Plus, Download, Upload, Users } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useEleves, useSupprimerEleve, useExporterEleves } from '../hooks/use-eleves';
 import { EleveFormModal } from './eleve-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions, useKeyboardShortcuts } from '@/hooks';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import type { Eleve, EleveFiltres, StatutEleve, Sexe } from '../types/eleve.types';
 import type { Column } from '@/components/ui/DataTable';
 
@@ -216,18 +216,20 @@ export function ElevesPage() {
 
     // Affichage skeleton pendant le chargement
     if (isLoading) {
-        return <PageSkeleton showStats showTable />;
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des élèves..." />
+            </div>
+        );
     }
 
     // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
-                <ErrorMessage
-                    title="Erreur de chargement"
+                <ErrorState
                     message={error.message || "Impossible de charger les élèves"}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
                 />
             </div>
         );

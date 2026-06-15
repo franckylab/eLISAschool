@@ -163,7 +163,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 {options?.select ? (
                     <select
                         value={value}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [name]: e.target.value })}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, [name]: e.target.value })}
                         className={`rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
                                 ? 'border-red-500 bg-red-50'

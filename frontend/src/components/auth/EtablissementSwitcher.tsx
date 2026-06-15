@@ -1,235 +1,282 @@
 /**
  * ==================================
- * eLISAschool - Sélecteur d'Établissement (Navbar)
+ * eLISAschool - Switcher d'établissement (Header)
  * ==================================
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  * 
- * Composant avancé pour changer d'établissement depuis la navbar.
- * Design moderne avec dropdown animé et informations contextuelles.
- * 
- * Fonctionnalités :
- * - Dropdown animé avec Framer Motion
- * - Affichage de l'établissement actif
- * - Changement rapide avec rechargement intelligent
- * - Badge "Principal" sur l'établissement par défaut
- * - Tooltip et feedback visuel
- * - Accessibilité clavier
+ * Composant compact de switch rapide d'établissement.
+ * Affiche uniquement l'icône + dropdown épuré (nom/déconnexion gérés par UserMenu).
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Building2,
-    ChevronDown,
     Check,
     Loader2,
-    ExternalLink,
+    Star,
 } from 'lucide-react';
-import { useAuthStore, Etablissement } from '@/stores/auth.store';
-import { cn } from '@/lib/cn';
+import { useAuthStore } from '@/stores/auth.store';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
-interface EtablissementSwitcherProps {
-    className?: string;
+interface EtablissementInfo {
+    id: string;
+    nom: string;
+    code?: string;
+    role: string;
+    etablissementPrincipal: boolean;
+    logoUrl?: string;
 }
 
-export function EtablissementSwitcher({ className }: EtablissementSwitcherProps) {
-    const {
-        etablissementId,
-        etablissements,
-        switchEtablissement,
-        isLoading,
-    } = useAuthStore();
+/**
+ * Génère initiales à partir du nom de l'établissement
+ */
+function getInitials(nom: string): string {
+    return nom
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(word => word[0]?.toUpperCase() || '')
+        .join('');
+}
 
+export function EtablissementSwitcher() {
+    const { t } = useTranslation('common');
+    const { etablissementId } = useAuthStore();
     const [isOpen, setIsOpen] = useState(false);
-    const [isSwitching, setIsSwitching] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [etablissements, setEtablissements] = useState<EtablissementInfo[]>([]);
+    const [etablissementActuel, setEtablissementActuel] = useState<EtablissementInfo | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // Fermer le dropdown au clic extérieur
+    // Charger les établissements disponibles
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
+        const loadEtablissements = async () => {
+            if (!etablissementId) return;
+
+            try {
+                const etablissementsDisponibles = await apiClient.getEtablissementsDisponibles();
+                
+                const transformed = etablissementsDisponibles.map(e => ({
+                    id: e.id,
+                    nom: e.nom,
+                    code: e.code,
+                    role: e.role,
+                    etablissementPrincipal: e.etablissementPrincipal,
+                }));
+                
+                setEtablissements(transformed);
+
+                const current = transformed.find(e => e.id === etablissementId);
+                if (current) {
+                    setEtablissementActuel(current);
+                }
+            } catch (error) {
+                console.error('[EtablissementSwitcher] Erreur chargement:', error);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        loadEtablissements();
+    }, [etablissementId]);
 
-    // Ne rien afficher si 0 ou 1 établissement
-    if (!etablissements || etablissements.length <= 1) {
-        return null;
-    }
-
-    const etablissementActif = etablissements.find(
-        (e) => e.etablissementId === etablissementId
-    );
-
-    const handleSwitch = async (etab: Etablissement) => {
-        if (etab.etablissementId === etablissementId || isSwitching) return;
-
-        setIsSwitching(true);
+    const handleChangeEtablissement = async (nouveauId: string) => {
+        setIsLoading(true);
         setIsOpen(false);
 
         try {
-            await switchEtablissement(etab.etablissementId);
-            toast.success(`Établissement changé : ${etab.nom}`);
+            await apiClient.switchEtablissement(nouveauId);
+            
+            const { switchEtablissement: switchEtabStore } = useAuthStore.getState();
+            await switchEtabStore(nouveauId);
+            
+            const selected = etablissements.find(e => e.id === nouveauId);
+            if (selected) {
+                setEtablissementActuel(selected);
+            }
 
-            // Recharger la page pour rafraîchir toutes les données
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
-        } catch (error) {
-            toast.error('Erreur lors du changement d\'établissement');
-            console.error(error);
-        } finally {
-            setIsSwitching(false);
+            toast.success(t('messages.etablissementChange', { defaultValue: 'Établissement changé' }));
+            
+            // Invalidation cache + reload
+            try {
+                const { queryClient } = await import('@/lib/query-client');
+                queryClient.clear();
+            } catch { /* non-bloquant */ }
+            
+            window.location.reload();
+        } catch (error: any) {
+            toast.error(error.message || t('messages.erreurChangement', { defaultValue: 'Erreur lors du changement' }));
+            setIsLoading(false);
         }
     };
 
+    // Fermer au clic extérieur
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const handleClickOutside = (e: MouseEvent) => {
+            if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    // Raccourci clavier Escape
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+                triggerRef.current?.focus();
+            }
+        };
+        
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isOpen]);
+
+    if (!etablissementActuel || etablissements.length <= 1) {
+        return null;
+    }
+
     return (
-        <div className={cn('relative', className)} ref={dropdownRef}>
-            {/* Bouton principal */}
+        <div className="relative">
+            {/* ─── Bouton Trigger : Icône compacte uniquement ─── */}
             <motion.button
+                ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
-                disabled={isSwitching}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                    'flex items-center gap-2 rounded-lg border px-3 py-2 transition-all',
-                    'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md',
-                    'focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:ring-offset-2',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                    isOpen && 'border-green-500 bg-green-50 shadow-sm',
-                )}
+                disabled={isLoading}
+                whileTap={{ scale: 0.95 }}
+                className={`
+                    relative flex h-9 w-9 items-center justify-center rounded-lg
+                    transition-all duration-200 ease-out
+                    text-[var(--color-texte-secondaire)]
+                    hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominante-500)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${isOpen ? 'bg-[var(--color-surface-hover)] text-[var(--color-texte)]' : ''}
+                `}
+                aria-expanded={isOpen}
+                aria-haspopup="menu"
+                aria-label={t('header.changerEtablissement', { defaultValue: 'Changer d\'établissement' })}
+                title={etablissementActuel.nom}
             >
-                {isSwitching ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                {isLoading ? (
+                    <Loader2 className="h-[18px] w-[18px] animate-spin" />
+                ) : etablissementActuel.logoUrl ? (
+                    <img
+                        src={etablissementActuel.logoUrl}
+                        alt={etablissementActuel.nom}
+                        className="h-5 w-5 rounded object-cover"
+                    />
                 ) : (
-                    <>
-                        <Building2 className="h-4 w-4 text-gray-700" />
-                        <span className="max-w-[150px] truncate text-sm font-medium text-gray-900">
-                            {etablissementActif?.nom || 'Établissement'}
-                        </span>
-                        <motion.div
-                            animate={{ rotate: isOpen ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <ChevronDown className="h-4 w-4 text-gray-500" />
-                        </motion.div>
-                    </>
+                    <Building2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 )}
+
+                {/* Pastille indicatrice */}
+                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--color-dominante)] ring-2 ring-[var(--color-surface)]" />
             </motion.button>
 
-            {/* Dropdown */}
+            {/* ─── Dropdown Menu ─── */}
             <AnimatePresence>
                 {isOpen && (
                     <>
-                        {/* Backdrop */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                        {/* Overlay transparent pour fermer */}
+                        <div
                             className="fixed inset-0 z-40"
                             onClick={() => setIsOpen(false)}
+                            aria-hidden="true"
                         />
 
-                        {/* Menu dropdown */}
+                        {/* Menu */}
                         <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl"
+                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            role="menu"
+                            className="absolute right-0 top-full mt-1.5 w-72 overflow-hidden rounded-xl bg-[var(--color-surface)] shadow-lg shadow-black/8 ring-1 ring-[var(--color-border)] z-50"
                         >
-                            {/* Header */}
-                            <div className="border-b border-gray-200 px-4 py-3">
-                                <h3 className="text-sm font-semibold text-gray-900">
-                                    Changer d'établissement
-                                </h3>
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                    {etablissements.length} établissements disponibles
+                            {/* Header compact */}
+                            <div className="px-3 py-2.5 border-b border-[var(--color-border)]">
+                                <p className="text-xs font-medium text-[var(--color-texte-secondaire)] uppercase tracking-wider">
+                                    {t('header.etablissements', { defaultValue: 'Établissements' })}
+                                    <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-dominante-100)] text-[10px] font-bold text-[var(--color-dominante)]">
+                                        {etablissements.length}
+                                    </span>
                                 </p>
                             </div>
 
-                            {/* Liste */}
-                            <div className="max-h-96 overflow-y-auto p-2">
-                                {etablissements.map((etab, index) => {
-                                    const isActive = etab.etablissementId === etablissementId;
-
+                            {/* Liste compacte */}
+                            <div className="max-h-[280px] overflow-y-auto py-1" role="listbox">
+                                {etablissements.map((etab) => {
+                                    const isCurrent = etab.id === etablissementActuel.id;
+                                    const etabInitials = getInitials(etab.nom);
+                                    
                                     return (
                                         <motion.button
-                                            key={etab.etablissementId}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            onClick={() => handleSwitch(etab)}
-                                            disabled={isActive || isSwitching}
-                                            className={cn(
-                                                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all',
-                                                isActive
-                                                    ? 'bg-green-50'
-                                                    : 'hover:bg-gray-50',
-                                                'disabled:cursor-not-allowed',
-                                            )}
+                                            key={etab.id}
+                                            onClick={() => !isCurrent && handleChangeEtablissement(etab.id)}
+                                            disabled={isCurrent || isLoading}
+                                            whileHover={!isCurrent ? { x: 2 } : {}}
+                                            role="option"
+                                            aria-selected={isCurrent}
+                                            className={`
+                                                w-full flex items-center gap-2.5 px-3 py-2 transition-colors
+                                                ${isCurrent
+                                                    ? 'bg-[var(--color-dominante-50)]'
+                                                    : 'hover:bg-[var(--color-surface-hover)] cursor-pointer'
+                                                }
+                                                ${isLoading && !isCurrent ? 'opacity-50 pointer-events-none' : ''}
+                                            `}
                                         >
-                                            {/* Icône */}
-                                            <div
-                                                className={cn(
-                                                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                                                    isActive ? 'bg-green-100' : 'bg-gray-100',
-                                                )}
-                                            >
-                                                <Building2
-                                                    className={cn(
-                                                        'h-5 w-5',
-                                                        isActive ? 'text-green-600' : 'text-gray-600',
-                                                    )}
+                                            {/* Avatar compact */}
+                                            {etab.logoUrl ? (
+                                                <img
+                                                    src={etab.logoUrl}
+                                                    alt={etab.nom}
+                                                    className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
                                                 />
-                                            </div>
+                                            ) : (
+                                                <div className={`
+                                                    flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0
+                                                    text-xs font-bold
+                                                    ${isCurrent
+                                                        ? 'bg-[var(--color-dominante)] text-white'
+                                                        : 'bg-[var(--color-dominante-100)] text-[var(--color-dominante)]'
+                                                    }
+                                                `}>
+                                                    {etabInitials}
+                                                </div>
+                                            )}
 
-                                            {/* Infos */}
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                            {/* Nom établissement (tronqué) */}
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={`text-sm truncate ${isCurrent ? 'font-semibold text-[var(--color-dominante)]' : 'font-medium text-[var(--color-texte)]'}`}>
                                                         {etab.nom}
                                                     </span>
                                                     {etab.etablissementPrincipal && (
-                                                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-800">
-                                                            Principal
-                                                        </span>
+                                                        <Star className="h-3 w-3 text-amber-500 flex-shrink-0" fill="currentColor" />
                                                     )}
                                                 </div>
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    {etab.role.replace(/_/g, ' ')}
-                                                </p>
                                             </div>
 
-                                            {/* Check si actif */}
-                                            {isActive && (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500"
-                                                >
-                                                    <Check className="h-4 w-4 text-white" />
-                                                </motion.div>
-                                            )}
+                                            {/* Indicateur actif */}
+                                            {isCurrent ? (
+                                                <Check className="h-4 w-4 text-[var(--color-dominante)] flex-shrink-0" strokeWidth={2.5} />
+                                            ) : isLoading ? (
+                                                <Loader2 className="h-3.5 w-3.5 text-[var(--color-texte-secondaire)] animate-spin flex-shrink-0" />
+                                            ) : null}
                                         </motion.button>
                                     );
                                 })}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="border-t border-gray-200 px-4 py-3">
-                                <p className="flex items-center gap-1.5 text-xs text-gray-500">
-                                    <ExternalLink className="h-3 w-3" />
-                                    <span>
-                                        Le changement rechargera la page automatiquement
-                                    </span>
-                                </p>
                             </div>
                         </motion.div>
                     </>
@@ -238,3 +285,5 @@ export function EtablissementSwitcher({ className }: EtablissementSwitcherProps)
         </div>
     );
 }
+
+export default EtablissementSwitcher;

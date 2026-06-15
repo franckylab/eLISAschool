@@ -76,7 +76,7 @@ export function LandingPage() {
                     </Link>
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
-                        <Link to="/login" >
+                        <Link to="/login" search={{ redirect: undefined }}>
                             <ElisaButton variant="ghost" size="sm">
                                 {t('boutons.connecter')}
                             </ElisaButton>
@@ -104,7 +104,7 @@ export function LandingPage() {
                             moderne, intuitive et sécurisée. De l'inscription au bulletin, en un clic.
                         </p>
                         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                            <Link to="/login" >
+                            <Link to="/login" search={{ redirect: undefined }}>
                                 <ElisaButton variant="primary" size="lg" iconRight={<ChevronRight className="h-5 w-5" />}>
                                     Commencer maintenant
                                 </ElisaButton>

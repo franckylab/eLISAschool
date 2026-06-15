@@ -14,7 +14,25 @@
 - [classe.entity.ts](file://backend/src/modules/classes/entities/classe.entity.ts)
 - [personnel.entity.ts](file://backend/src/modules/personnel/entities/personnel.entity.ts)
 - [etablissement.entity.ts](file://backend/src/modules/etablissement/entities/etablissement.entity.ts)
+- [filiere.entity.ts](file://backend/src/modules/filieres/entities/filiere.entity.ts)
+- [specialite.entity.ts](file://backend/src/modules/specialites/entities/specialite.entity.ts)
+- [competence.entity.ts](file://backend/src/modules/competences/entities/competence.entity.ts)
+- [filieres.service.ts](file://backend/src/modules/filieres/services/filieres.service.ts)
+- [specialites.service.ts](file://backend/src/modules/specialites/services/specialites.service.ts)
+- [competences.service.ts](file://backend/src/modules/competences/services/competences.service.ts)
+- [filieres.controller.ts](file://backend/src/modules/filieres/controllers/filieres.controller.ts)
+- [specialites.controller.ts](file://backend/src/modules/specialites/controllers/specialites.controller.ts)
+- [filiere.dto.ts](file://backend/src/modules/filieres/dto/filiere.dto.ts)
+- [specialite.dto.ts](file://backend/src/modules/specialites/dto/specialite.dto.ts)
+- [competence.dto.ts](file://backend/src/modules/competences/dto/competence.dto.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new Academic Program entities: Filiere (Stream/Specialty), Specialite (Specialization), and Competence (Competency)
+- Integrated multi-tenant architecture with etablissementId foreign keys across academic entities
+- Updated institutional structure to support both national frameworks and establishment-specific configurations
+- Enhanced curriculum design capabilities with establishment-level customization options
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -22,16 +40,17 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Multi-Tenant Academic Framework](#multi-tenant-academic-framework)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the academic data model used in eLISAschool. It focuses on the entities that define subjects, curriculum structure, teacher assignments, grades, transcripts, periods, academic years, and cycles. It explains relationships, constraints, and business rules that govern academic workflows such as curriculum delivery, grade recording, and transcript generation.
+This document describes the comprehensive academic data model used in eLISAschool. It covers core academic entities (subjects, curriculum, teacher assignments, grades, transcripts, periods, academic years, cycles) along with newly integrated academic program entities (streams, specializations, competencies) that support multi-tenant institutional configurations. The model now accommodates both national educational frameworks and establishment-specific customizations, enabling institutions to tailor their academic programs while maintaining data isolation across multiple tenants.
 
 ## Project Structure
-The academic domain is organized around dedicated modules under backend/src/modules. The relevant modules for this document are:
+The academic domain is organized around dedicated modules under backend/src/modules. The core academic modules include:
 - matieres: subject and curriculum entities
 - notes: grade records
 - bulletins: transcripts
@@ -40,6 +59,9 @@ The academic domain is organized around dedicated modules under backend/src/modu
 - cycles and niveaux: educational program structure
 - classes and personnel: organizational units and staff
 - etablissement: institution configuration and system variants
+- **NEW**: filieres: academic streams and specializations
+- **NEW**: specialites: establishment-specific specializations
+- **NEW**: competences: competency-based learning framework
 
 ```mermaid
 graph TB
@@ -54,21 +76,32 @@ AN["AnneeScolaire<br/>Academic Year"]
 PE["Periode<br/>Period"]
 NO["Note<br/>Grade"]
 BU["Bulletin<br/>Transcript"]
-PP["MembrePersonnel<br/>Staff Member"]
+PP["Personnel<br/>Staff Member"]
+ET["Etablissement<br/>Institution"]
+end
+subgraph "Academic Programs (NEW)"
+FL["Filiere<br/>Stream/Specialty"]
+SP["Specialite<br/>Specialization"]
+CO["Competence<br/>Competency"]
 end
 MAT --> MN
 NV --> MN
 CY --> NV
 CL --> AM
 MAT --> AM
-PP --> NO
+PP --> AM
+PE --> NO
 AN --> PE
 AN --> NO
 AN --> BU
 CL --> NO
 CL --> BU
-PP --> AM
 PP --> NO
+FL --> SP
+SP --> CO
+FL --> ET
+SP --> ET
+CO --> ET
 ```
 
 **Diagram sources**
@@ -83,6 +116,10 @@ PP --> NO
 - [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
 - [bulletin.entity.ts:23-93](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L93)
 - [personnel.entity.ts:38-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L38-L79)
+- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
 
 **Section sources**
 - [matiere.entity.ts:1-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L1-L62)
@@ -97,77 +134,32 @@ PP --> NO
 - [classe.entity.ts:1-76](file://backend/src/modules/classes/entities/classe.entity.ts#L1-L76)
 - [personnel.entity.ts:1-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L1-L79)
 - [etablissement.entity.ts:1-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L1-L93)
+- [filiere.entity.ts:1-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L1-L77)
+- [specialite.entity.ts:1-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L1-L76)
+- [competence.entity.ts:1-88](file://backend/src/modules/competences/entities/competence.entity.ts#L1-L88)
 
 ## Core Components
-This section documents the primary academic entities and their roles.
+This section documents the primary academic entities and their roles, including the newly integrated academic program entities.
 
-- Subject (Matiere)
-  - Purpose: Defines a subject (e.g., Mathematics, French) with metadata such as name, code, color, and activity flag.
-  - Key attributes: UUID identifier, unique name, optional code, optional English name, color, activity status, timestamps.
-  - Constraints: Unique subject name enforced at the database level.
-  - Notes: A grouping concept (GroupeMatiere) exists alongside subjects but is not part of the core objective here.
+### Core Academic Entities
+- **Subject (Matiere)**: Defines a subject (e.g., Mathematics, French) with metadata such as name, code, color, and activity flag.
+- **Subject-Level (MatiereNiveau)**: Links a subject to a grade level and defines curriculum details for that combination.
+- **Teacher Assignment (AffectationMatiere)**: Assigns a staff member to teach a specific subject within a class during an academic year.
+- **Grade (Note)**: Records a single assessment result for a student in a subject during a period.
+- **Transcript (Bulletin)**: Aggregates a student's performance for a period into a report card.
+- **Period (Periode)**: Defines a time window within an academic year (e.g., trimester, semester, sequence).
+- **Academic Year (AnneeScolaire)**: Represents the school year with lifecycle flags.
+- **Cycle and Level (Cycle, Niveau)**: Define the educational program structure and grade levels.
+- **Class (Classe)**: Groups students by level and academic year, with a homeroom teacher and capacity.
+- **Staff (Personnel)**: Associates a user account to staff with role and employment details.
 
-- Subject-Level (MatiereNiveau)
-  - Purpose: Links a subject to a grade level and defines curriculum details for that combination.
-  - Key attributes: UUID identifier, subject and level foreign keys, group reference (optional), coefficient, credits (anglophone system), scale (bareme), weekly hours, requirement (obligatoire), timestamps.
-  - Business rules:
-    - Coefficient is mandatory for francophone grading.
-    - Credits are optional and intended for anglophone/LMD systems.
-    - Bareme indicates the maximum score scale (e.g., 20, 100, 10).
-    - Weekly hours and requirement flags support curriculum planning.
+### **NEW** Academic Program Entities
+- **Stream/Specialty (Filiere)**: Represents academic streams or specializations (e.g., Scientific, Literary, Technical series) within secondary education. Each stream belongs to a cycle and is associated with an establishment.
+- **Specialization (Specialite)**: Represents specific specializations or options within streams (e.g., Mechanical Maintenance, Electrical Engineering). Each specialization belongs to a stream and establishment.
+- **Competency (Competence)**: Represents competency-based learning objectives aligned with national frameworks. Each competency belongs to a level, optionally a subject, and establishment.
 
-- Teacher Assignment (AffectationMatiere)
-  - Purpose: Assigns a staff member to teach a specific subject within a class during an academic year.
-  - Key attributes: UUID identifier, subject, class, staff member, academic year, weekly workload, timestamps.
-  - Constraints: Indexes on class and staff member aid query performance.
-  - Notes: Connects to Classe, MembrePersonnel, and AnneeScolaire.
-
-- Grade (Note)
-  - Purpose: Records a single assessment result for a student in a subject during a period.
-  - Key attributes: UUID identifier, student, teacher (via user identity), subject, class, period, academic year, evaluation type, description, raw value, scale (bareme), coefficient, comment, evaluation date, status (draft, validated, published), validator and timestamp, timestamps.
-  - Business rules:
-    - Evaluation types enumerate common assessment categories.
-    - Status controls lifecycle: draft -> validated -> published.
-    - Standardized grade on 20 computed via value/bareme*20.
-    - Indexes optimize queries by student, subject, class, period, and teacher.
-
-- Transcript (Bulletin)
-  - Purpose: Aggregates a student’s performance for a period into a report card.
-  - Key attributes: UUID identifier, student, class, period, academic year, computed averages (general, class, min, max), rank, council comments, sanctions, encouragements, publication flag, timestamps.
-  - Business rules:
-    - Stores precomputed metrics to avoid heavy historical recomputations.
-    - Publication flag controls visibility.
-
-- Period (Periode)
-  - Purpose: Defines a time window within an academic year (e.g., trimester, semester, sequence).
-  - Key attributes: UUID identifier, name, type (TypePeriode), academic year, start/end dates, order, weight (poids), closure flag, timestamps.
-  - Business rules:
-    - Weight supports annual aggregation.
-    - Closure prevents further changes after closing.
-
-- Academic Year (AnneeScolaire)
-  - Purpose: Represents the school year with lifecycle flags.
-  - Key attributes: UUID identifier, label, start/end dates, current and closed flags, timestamps.
-  - Business rules:
-    - Exactly one “current” year at a time.
-    - Closed year cannot accept new changes.
-
-- Cycle and Level (Cycle, Niveau)
-  - Purpose: Define the educational program structure and grade levels.
-  - Key attributes:
-    - Cycle: code (MATERNELLE, PRIMAIRE, COLLEGE, LYCEE), order, activity flag.
-    - Niveau: name/code, cycle, subsystem (francophone/anglophone/bicultural), order, activity flag.
-  - Business rules:
-    - Levels belong to a cycle.
-    - Subsystem influences grading and curriculum defaults.
-
-- Class (Classe)
-  - Purpose: Groups students by level and academic year, with a homeroom teacher and capacity.
-  - Key attributes: UUID identifier, name/code, level, academic year, homeroom teacher, room, max/current enrollment, options, activity flag, timestamps.
-
-- Staff (MembrePersonnel)
-  - Purpose: Associates a user account to staff with role and employment details.
-  - Key attributes: UUID identifier, user, staff type, badge number, hire date, status, specialties, qualifications, timestamps.
+### Institutional Configuration
+- **Establishment (Etablissement)**: Defines institutional configuration including active cycles, subsystem (francophone/anglophone/bicultural), and multi-tenant isolation.
 
 **Section sources**
 - [matiere.entity.ts:36-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L36-L62)
@@ -181,9 +173,13 @@ This section documents the primary academic entities and their roles.
 - [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
 - [classe.entity.ts:21-76](file://backend/src/modules/classes/entities/classe.entity.ts#L21-L76)
 - [personnel.entity.ts:38-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L38-L79)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
 
 ## Architecture Overview
-The academic entities form a cohesive model centered on the student’s learning journey. The relationships connect subjects to levels (curriculum), teachers to subjects and classes (assignments), grades to students and periods (assessments), and transcripts to periods and students (summaries). Academic year and period define temporal boundaries, while cycle and level structure the educational framework.
+The academic entities form a comprehensive model centered on the student's learning journey, now enhanced with multi-tenant academic program structures. The relationships connect subjects to levels (curriculum), teachers to subjects and classes (assignments), grades to students and periods (assessments), and transcripts to periods and students (summaries). Academic year and period define temporal boundaries, while cycle, level, stream, specialization, and competency structure the educational framework with establishment-specific customization.
 
 ```mermaid
 classDiagram
@@ -210,14 +206,14 @@ class AffectationMatiere {
 +id
 +matiereId
 +classeId
-+enseignantId
++personnelId
 +anneeScolaireId
 +volumeHoraireHebdo
 }
 class Note {
 +id
 +eleveId
-+enseignantId
++personnelId
 +matiereId
 +classeId
 +periodeId
@@ -290,14 +286,14 @@ class Classe {
 +code
 +niveauId
 +anneeScolaireId
-+professeurPrincipalId
++personnelId
 +sallePrincipale
 +effectifMax
 +effectifActuel
 +options
 +actif
 }
-class MembrePersonnel {
+class Personnel {
 +id
 +utilisateurId
 +typePersonnelId
@@ -307,12 +303,59 @@ class MembrePersonnel {
 +specialites
 +diplomes
 }
+class Etablissement {
++id
++nom
++codeEtablissement
++cyclesActifs
++sousSysteme
++actif
+}
+class Filiere {
++id
++nom
++code
++description
++cycleId
++etablissementId
++sousSysteme
++actif
+}
+class Specialite {
++id
++nom
++code
++description
++filiereId
++etablissementId
++ordre
++actif
+}
+class Competence {
++id
++code
++libelle
++description
++domaine
++niveauId
++matiereId
++etablissementId
++ordre
++actif
+}
 Matiere "1" -- "many" MatiereNiveau : "has"
 Niveau "1" -- "many" MatiereNiveau : "defines"
 Cycle "1" -- "many" Niveau : "contains"
+Cycle "1" -- "many" Filiere : "contains"
+Etablissement "1" -- "many" Filiere : "hosts"
+Etablissement "1" -- "many" Specialite : "hosts"
+Etablissement "1" -- "many" Competence : "hosts"
+Filiere "1" -- "many" Specialite : "contains"
+Niveau "1" -- "many" Competence : "defines"
+Matiere "1" -- "many" Competence : "aligns with"
 Classe "1" -- "many" AffectationMatiere : "hosts"
 Matiere "1" -- "many" AffectationMatiere : "taught in"
-MembrePersonnel "1" -- "many" AffectationMatiere : "teaches"
+Personnel "1" -- "many" AffectationMatiere : "teaches"
 AnneeScolaire "1" -- "many" Periode : "contains"
 AnneeScolaire "1" -- "many" Note : "records"
 AnneeScolaire "1" -- "many" Bulletin : "generates"
@@ -334,253 +377,176 @@ Classe "1" -- "many" Bulletin : "groups"
 - [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
 - [classe.entity.ts:21-76](file://backend/src/modules/classes/entities/classe.entity.ts#L21-L76)
 - [personnel.entity.ts:38-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L38-L79)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
 
 ## Detailed Component Analysis
 
-### Subject (Matiere) and Curriculum (MatiereNiveau)
-- Subject definition: Unique subject name, optional code and English name, color, activity flag, timestamps.
-- Curriculum linkage: MatiereNiveau connects a subject to a level, optionally to a group, and defines grading parameters (coefficient, credits, bareme, weekly hours) and requirement flag.
-- Business rules:
-  - Coefficient mandatory for francophone grading.
-  - Bareme determines the maximum score scale.
-  - Weekly hours and obligation support course load and requirements.
+### Academic Program Entities (NEW)
+
+#### Stream/Specialty (Filiere)
+- **Purpose**: Represents academic streams or specializations within secondary education (e.g., Scientific, Literary, Technical series).
+- **Key attributes**: UUID identifier, name, code, description, cycle association, establishment association, subsystem, activity flag, timestamps.
+- **Multi-tenant design**: Each stream belongs to a specific establishment, enabling customized academic offerings.
+- **Business rules**: 
+  - Code uniqueness within a cycle per establishment.
+  - Establishments can choose which streams to activate.
+  - Supports both national cycle alignment and establishment-specific variations.
+
+#### Specialization (Specialite)
+- **Purpose**: Represents specific specializations or options within streams (e.g., Mechanical Maintenance, Electrical Engineering).
+- **Key attributes**: UUID identifier, name, code, description, stream association, establishment association, order, activity flag, timestamps.
+- **Multi-tenant design**: Specializations are isolated per establishment with establishment-level customization.
+- **Business rules**:
+  - Code uniqueness within a stream per establishment.
+  - Ordered presentation within streams.
+  - Establishment-specific activation/deactivation.
+
+#### Competency (Competence)
+- **Purpose**: Represents competency-based learning objectives aligned with national frameworks and establishment-specific adaptations.
+- **Key attributes**: UUID identifier, code, label, description, domain, level association, optional subject association, establishment association, order, activity flag, timestamps.
+- **Multi-tenant design**: Competencies can be customized per establishment while maintaining alignment with national standards.
+- **Business rules**:
+  - Composite uniqueness across level, subject, and establishment.
+  - Optional subject alignment for curriculum integration.
+  - Domain categorization (Mathematics, Sciences, Languages, etc.).
 
 ```mermaid
 erDiagram
-MATIERE {
+FILIERE {
 uuid id
 varchar nom
 varchar code
-varchar nomAnglais
-varchar couleur
-boolean actif
-}
-MATIERE_NIVEAU {
-uuid id
-uuid matiereId
-uuid niveauId
-uuid groupeId
-float coefficient
-float credits
-int bareme
-int volumeHoraire
-boolean obligatoire
-}
-NIVEAU {
-uuid id
-varchar nom
-varchar code
+text description
 uuid cycleId
+uuid etablissementId
 enum sousSysteme
-int ordre
 boolean actif
 }
-CYCLE {
+SPECIALITE {
 uuid id
 varchar nom
-enum code
+varchar code
+text description
+uuid filiereId
+uuid etablissementId
 int ordre
 boolean actif
 }
-CYCLE ||--o{ NIVEAU : "contains"
-NIVEAU ||--o{ MATIERE_NIVEAU : "defines"
-MATIERE ||--o{ MATIERE_NIVEAU : "has"
+COMPETENCE {
+uuid id
+varchar code
+varchar libelle
+text description
+varchar domaine
+uuid niveauId
+uuid matiereId
+uuid etablissementId
+int ordre
+boolean actif
+}
+CYCLE ||--o{ FILIERE : "contains"
+ETABLISSEMENT ||--o{ FILIERE : "hosts"
+ETABLISSEMENT ||--o{ SPECIALITE : "hosts"
+ETABLISSEMENT ||--o{ COMPETENCE : "hosts"
+FILIERE ||--o{ SPECIALITE : "contains"
+NIVEAU ||--o{ COMPETENCE : "defines"
+MATIERE ||--o{ COMPETENCE : "aligns with"
 ```
 
 **Diagram sources**
-- [matiere.entity.ts:36-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L36-L62)
-- [matiere-niveau.entity.ts:20-71](file://backend/src/modules/matieres/entities/matiere-niveau.entity.ts#L20-L71)
-- [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
 - [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
+- [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
+- [matiere.entity.ts:36-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L36-L62)
 
 **Section sources**
-- [matiere.entity.ts:36-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L36-L62)
-- [matiere-niveau.entity.ts:20-71](file://backend/src/modules/matieres/entities/matiere-niveau.entity.ts#L20-L71)
-- [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
-- [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [filieres.service.ts:29-45](file://backend/src/modules/filieres/services/filieres.service.ts#L29-L45)
+- [specialites.service.ts:29-45](file://backend/src/modules/specialites/services/specialites.service.ts#L29-L45)
+- [competences.service.ts:1-117](file://backend/src/modules/competences/services/competences.service.ts#L1-L117)
 
-### Teacher Assignment (AffectationMatiere)
-- Purpose: Assigns a staff member to a subject within a class for a given academic year, optionally capturing weekly workload.
-- Relationships: Links to Classe, Matiere, MembrePersonnel, and AnneeScolaire.
-- Constraints: Indexes on class and staff member improve query performance.
+### Enhanced Academic Workflow Integration
+The addition of academic program entities creates new pathways in the academic workflow:
+- Students can be enrolled in streams/specializations that define their competency framework
+- Teachers can be assigned to deliver competencies within specific streams
+- Grades can be recorded against competency-based assessments
+- Transcripts can aggregate performance across competency domains
 
 ```mermaid
 sequenceDiagram
-participant Admin as "Admin"
-participant Service as "MatieresService"
-participant AM as "AffectationMatiere"
-participant Cl as "Classe"
-participant Ma as "Matiere"
-participant PP as "MembrePersonnel"
-Admin->>Service : "Create assignment"
-Service->>AM : "Persist {matiereId, classeId, enseignantId, anneeScolaireId}"
-AM->>Ma : "Load subject"
-AM->>Cl : "Load class"
-AM->>PP : "Load staff"
-AM-->>Service : "Assignment saved"
-Service-->>Admin : "OK"
+participant Student as "Student"
+participant Stream as "Stream/Filiere"
+participant Speciality as "Specialization/Specialite"
+participant Competency as "Competency/Competence"
+participant Grade as "Grade/Note"
+Student->>Stream : Enroll in stream
+Stream->>Speciality : Select specialization
+Speciality->>Competency : Define competency framework
+Student->>Grade : Complete competency assessments
+Grade->>Competency : Record competency achievement
 ```
 
 **Diagram sources**
-- [affectation-matiere.entity.ts:22-66](file://backend/src/modules/matieres/entities/affectation-matiere.entity.ts#L22-L66)
-- [classe.entity.ts:21-76](file://backend/src/modules/classes/entities/classe.entity.ts#L21-L76)
-- [matiere.entity.ts:36-62](file://backend/src/modules/matieres/entities/matiere.entity.ts#L36-L62)
-- [personnel.entity.ts:38-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L38-L79)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
 
 **Section sources**
-- [affectation-matiere.entity.ts:22-66](file://backend/src/modules/matieres/entities/affectation-matiere.entity.ts#L22-L66)
-- [classe.entity.ts:21-76](file://backend/src/modules/classes/entities/classe.entity.ts#L21-L76)
-- [personnel.entity.ts:38-79](file://backend/src/modules/personnel/entities/personnel.entity.ts#L38-L79)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
 
-### Grade (Note) and Grading System
-- Purpose: Captures a single assessment with evaluation type, description, raw score, scale, coefficient, and status.
-- Computation: Standardized grade on 20 derived from value/bareme*20.
-- Lifecycle: Draft -> Validated -> Published via status transitions and validator metadata.
-- Relationships: Tied to Eleve, Utilisateur (teacher identity), Matiere, Classe, Periode, AnneeScolaire.
+## Multi-Tenant Academic Framework
+The academic model now supports comprehensive multi-tenant isolation through etablissementId foreign keys added to academic program entities.
+
+### Multi-Tenant Implementation Details
+- **Data Isolation**: All academic program entities (Filiere, Specialite, Competence) include etablissementId foreign keys
+- **Query Filtering**: Services automatically filter all queries by establishment context
+- **Unique Constraints**: Uniqueness validations consider establishment boundaries
+- **Index Optimization**: Composite indexes support efficient multi-tenant queries
+
+### Service Layer Enhancements
+The service layer implements automatic establishment filtering:
 
 ```mermaid
 flowchart TD
-Start(["Grade Entry"]) --> SetParams["Set value, bareme, coefficient"]
-SetParams --> Compute["Compute standardized grade on 20"]
-Compute --> EvaluateType["Select evaluation type"]
-EvaluateType --> StatusDraft["Set status to DRAFT"]
-StatusDraft --> Review["Validate by authorized user"]
-Review --> StatusValid["Set status to VALIDATED"]
-StatusValid --> Publish["Publish grade"]
-Publish --> StatusPub["Set status to PUBLISHED"]
-StatusPub --> End(["Grade Ready"])
+Start(["API Request"]) --> GetContext["Extract etablissementId from request context"]
+GetContext --> FilterQuery["Apply etablissementId filter to all queries"]
+FilterQuery --> ValidateUniqueness["Validate uniqueness within establishment context"]
+ValidateUniqueness --> ProcessRequest["Process business logic"]
+ProcessRequest --> ReturnData["Return filtered results"]
+ReturnData --> End(["Response"])
 ```
 
 **Diagram sources**
-- [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
+- [filieres.service.ts:47-75](file://backend/src/modules/filieres/services/filieres.service.ts#L47-L75)
+- [specialites.service.ts:47-75](file://backend/src/modules/specialites/services/specialites.service.ts#L47-L75)
+- [competences.service.ts:1-117](file://backend/src/modules/competences/services/competences.service.ts#L1-L117)
+
+### Controller Integration
+Controllers automatically extract establishment context from authenticated requests:
+
+- **Filiere Controller**: Uses `req.utilisateur.etablissementId` for all operations
+- **Specialite Controller**: Implements establishment-aware CRUD operations  
+- **Competence Controller**: Manages establishment-specific competency frameworks
 
 **Section sources**
-- [note.entity.ts:24-142](file://backend/src/modules/notes/entities/note.entity.ts#L24-L142)
-
-### Transcript (Bulletin) Generation
-- Purpose: Summarizes a student’s performance for a period, storing computed averages, rank, and administrative notes.
-- Relationships: Links to Eleve, Classe, Periode, AnneeScolaire.
-- Business rule: Publication flag controls visibility; computed metrics avoid expensive historical recalculation.
-
-```mermaid
-sequenceDiagram
-participant Service as "BulletinsService"
-participant DB as "Database"
-participant Student as "Eleve"
-participant Class as "Classe"
-participant Period as "Periode"
-participant Year as "AnneeScolaire"
-Service->>DB : "Aggregate grades for student, period"
-DB-->>Service : "Computed averages, rank"
-Service->>Student : "Link student"
-Service->>Class : "Link class"
-Service->>Period : "Link period"
-Service->>Year : "Link academic year"
-Service-->>DB : "Persist Bulletin"
-```
-
-**Diagram sources**
-- [bulletin.entity.ts:23-93](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L93)
-- [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
-
-**Section sources**
-- [bulletin.entity.ts:23-93](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L93)
-
-### Period and Academic Year Management
-- Academic Year: Unique label, start/end dates, current and closed flags.
-- Period: Named window with type, academic year, start/end dates, order, weight, and closure flag.
-- Business rules:
-  - Exactly one current year.
-  - Periods within a year are ordered; weights support weighted annual computation.
-  - Closed periods prevent further modifications.
-
-```mermaid
-classDiagram
-class AnneeScolaire {
-+id
-+libelle
-+dateDebut
-+dateFin
-+enCours
-+cloturee
-}
-class TypePeriode {
-+id
-+code
-+nom
-}
-class Periode {
-+id
-+nom
-+typeId
-+anneeScolaireId
-+dateDebut
-+dateFin
-+ordre
-+poids
-+cloturee
-}
-AnneeScolaire "1" -- "many" Periode : "contains"
-TypePeriode "1" -- "many" Periode : "classifies"
-```
-
-**Diagram sources**
-- [annee-scolaire.entity.ts:15-41](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts#L15-L41)
-- [periode.entity.ts:19-79](file://backend/src/modules/periodes/entities/periode.entity.ts#L19-L79)
-
-**Section sources**
-- [annee-scolaire.entity.ts:15-41](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts#L15-L41)
-- [periode.entity.ts:34-79](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L79)
-
-### Cycle and Educational Program Structure
-- Cycle: Defines educational stages (e.g., COLLEGE, LYCEE) with ordering and activity.
-- Niveau: Defines grade levels within a cycle, subsystem, and ordering.
-- Institution configuration (etablissement) defines active cycles and system variant (francophone/anglophone/bicultural).
-
-```mermaid
-classDiagram
-class EtablissementConfig {
-+cyclesActifs
-+sousSysteme
-}
-class Cycle {
-+id
-+nom
-+code
-+ordre
-+actif
-}
-class Niveau {
-+id
-+nom
-+code
-+cycleId
-+sousSysteme
-+ordre
-+actif
-}
-EtablissementConfig --> Cycle : "activates"
-Cycle "1" -- "many" Niveau : "contains"
-```
-
-**Diagram sources**
-- [etablissement.entity.ts:41-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L41-L93)
-- [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
-- [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
-
-**Section sources**
-- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
-- [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
-- [niveau.entity.ts:20-54](file://backend/src/modules/niveaux/entities/niveau.entity.ts#L20-L54)
+- [filieres.service.ts:29-45](file://backend/src/modules/filieres/services/filieres.service.ts#L29-L45)
+- [specialites.service.ts:29-45](file://backend/src/modules/specialites/services/specialites.service.ts#L29-L45)
+- [filieres.controller.ts:27-28](file://backend/src/modules/filieres/controllers/filieres.controller.ts#L27-L28)
+- [specialites.controller.ts:30-31](file://backend/src/modules/specialites/controllers/specialites.controller.ts#L30-L31)
 
 ## Dependency Analysis
-The academic entities exhibit the following dependencies:
-- Subject-Level depends on Subject and Level; Level depends on Cycle.
-- Teacher Assignment depends on Subject, Class, Staff, and Academic Year.
-- Grade depends on Student, Teacher (via user), Subject, Class, Period, and Academic Year.
-- Transcript depends on Student, Class, Period, and Academic Year.
-- Period depends on Academic Year and TypePeriode.
-- Institution configuration influences subsystem and active cycles.
+The academic entities exhibit enhanced dependencies with the addition of academic program entities:
 
 ```mermaid
 graph LR
@@ -589,7 +555,7 @@ NV --> MN["MatiereNiveau"]
 MAT["Matiere"] --> MN
 CL["Classe"] --> AM["AffectationMatiere"]
 MAT --> AM
-PP["MembrePersonnel"] --> AM
+PP["Personnel"] --> AM
 AN["AnneeScolaire"] --> PE["Periode"]
 AN --> NO["Note"]
 AN --> BU["Bulletin"]
@@ -598,6 +564,13 @@ PE --> BU
 CL --> NO
 CL --> BU
 PP --> NO
+CY --> FL["Filiere"]
+ET["Etablissement"] --> FL
+FL --> SP["Specialite"]
+ET --> SP
+NV --> CO["Competence"]
+MAT --> CO
+ET --> CO
 ```
 
 **Diagram sources**
@@ -612,6 +585,11 @@ PP --> NO
 - [periode.entity.ts:34-79](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L79)
 - [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
 - [bulletin.entity.ts:23-93](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L93)
+- [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
 
 **Section sources**
 - [cycle.entity.ts:17-40](file://backend/src/modules/cycles/entities/cycle.entity.ts#L17-L40)
@@ -625,28 +603,29 @@ PP --> NO
 - [periode.entity.ts:34-79](file://backend/src/modules/periodes/entities/periode.entity.ts#L34-L79)
 - [note.entity.ts:45-142](file://backend/src/modules/notes/entities/note.entity.ts#L45-L142)
 - [bulletin.entity.ts:23-93](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L23-L93)
+- [filiere.entity.ts:34-77](file://backend/src/modules/filieres/entities/filiere.entity.ts#L34-L77)
+- [specialite.entity.ts:33-76](file://backend/src/modules/specialites/entities/specialite.entity.ts#L33-L76)
+- [competence.entity.ts:35-88](file://backend/src/modules/competences/entities/competence.entity.ts#L35-L88)
+- [etablissement.entity.ts:17-93](file://backend/src/modules/etablissement/entities/etablissement.entity.ts#L17-L93)
 
 ## Performance Considerations
-- Indexes: Several entities use database indexes on frequently queried foreign keys (e.g., affectation-matiere on class and staff; note on student, subject, class, period, teacher; bulletin on student, class, period). These improve query performance for common academic operations.
-- Precomputed metrics: Transcripts store computed averages and rank to avoid expensive historical recomputations.
-- Weighted aggregations: Period weights enable efficient annual computations without scanning all assessments.
-
-[No sources needed since this section provides general guidance]
+- **Enhanced Indexing**: New entities include composite indexes for multi-tenant queries (e.g., `(cycleId, etablissementId)`, `(filiereId, etablissementId)`, `(niveauId, matiereId, etablissementId)`)
+- **Automatic Filtering**: Services implement transparent establishment filtering without performance overhead
+- **Query Optimization**: Multi-tenant queries leverage established composite indexes for optimal performance
+- **Data Isolation**: Automatic filtering ensures no cross-establishment data leakage while maintaining query efficiency
 
 ## Troubleshooting Guide
-- Duplicate subject name: Subject name is unique; attempts to insert duplicates will fail at the database level.
-- Closed academic year/period: Modifications are prevented when the academic year or period is closed.
-- Grade status lifecycle: Ensure proper transitions (draft -> validated -> published) and that validator metadata is set upon validation.
-- Missing coefficients: For francophone grading, ensure coefficient is set in MatiereNiveau; otherwise, grading calculations may be inconsistent.
-- Cross-year data integrity: Ensure that assessments and transcripts reference the correct academic year to avoid incorrect aggregations.
+- **Multi-tenant Data Isolation**: All academic program entities are automatically filtered by establishment context
+- **Unique Constraint Violations**: Uniqueness validations now consider establishment boundaries (e.g., same code in different establishments)
+- **Cross-establishment Access**: Direct queries bypassing establishment context will be automatically filtered by services
+- **Migration Issues**: Ensure etablissementId is properly populated during migration from legacy systems
 
 **Section sources**
-- [matiere.entity.ts:41-42](file://backend/src/modules/matieres/entities/matiere.entity.ts#L41-L42)
-- [annee-scolaire.entity.ts:29-33](file://backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts#L29-L33)
-- [periode.entity.ts:70-71](file://backend/src/modules/periodes/entities/periode.entity.ts#L70-L71)
-- [note.entity.ts:119-126](file://backend/src/modules/notes/entities/note.entity.ts#L119-L126)
-- [matiere-niveau.entity.ts:48-50](file://backend/src/modules/matieres/entities/matiere-niveau.entity.ts#L48-L50)
-- [bulletin.entity.ts:84-85](file://backend/src/modules/bulletins/entities/bulletin.entity.ts#L84-L85)
+- [filieres.service.ts:47-75](file://backend/src/modules/filieres/services/filieres.service.ts#L47-L75)
+- [specialites.service.ts:47-75](file://backend/src/modules/specialites/services/specialites.service.ts#L47-L75)
+- [filiere.entity.ts:58-63](file://backend/src/modules/filieres/entities/filiere.entity.ts#L58-L63)
+- [specialite.entity.ts:57-62](file://backend/src/modules/specialites/entities/specialite.entity.ts#L57-L62)
+- [competence.entity.ts:69-74](file://backend/src/modules/competences/entities/competence.entity.ts#L69-L74)
 
 ## Conclusion
-The academic data model in eLISAschool provides a robust foundation for curriculum delivery, teacher assignments, grade recording, and transcript generation. It enforces key business rules through entity constraints and status lifecycles, while leveraging indexes and precomputed metrics to maintain performance. The model aligns closely with typical francophone grading practices and supports anglophone/LMD adaptations through optional fields.
+The enhanced academic data model in eLISAschool now provides comprehensive support for multi-tenant academic program management. The integration of Filiere, Specialite, and Competence entities with establishment-level isolation enables institutions to customize their academic offerings while maintaining strict data separation. This enhancement extends the platform's capability to support diverse educational frameworks and institutional requirements, building upon the existing robust foundation for curriculum delivery, teacher assignments, grade recording, and transcript generation.

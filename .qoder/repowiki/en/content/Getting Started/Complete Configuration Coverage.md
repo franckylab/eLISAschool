@@ -25,10 +25,23 @@
 - [CONFIGURATION_100_PERCENT.md](file://CONFIGURATION_100_PERCENT.md)
 - [IMPLÉMENTATION_MULTI_ÉTAT.md](file://IMPLÉMENTATION_MULTI_ÉTAT.md)
 - [IMPLEMENTATION_MULTI_ETABLISSEMENTS.md](file://IMPLEMENTATION_MULTI_ETABLISSEMENTS.md)
+- [README-REFONTE-CONFIG.md](file://README-REFONTE-CONFIG.md)
+- [RAPPORT-EXECUTION-MIGRATIONS.md](file://RAPPORT-EXECUTION-MIGRATIONS.md)
+- [DEPLOIEMENT-CONFIGURATION-GUIDE.md](file://DEPLOIEMENT-CONFIGURATION-GUIDE.md)
+- [GUIDE-EXECUTION-REFONTE-CONFIG.md](file://GUIDE-EXECUTION-REFONTE-CONFIG.md)
+- [FINAL-REFACTORISATION-SYNTHESE.md](file://FINAL-REFACTORISATION-SYNTHESE.md)
 - [rbac-system.md](file://docs/rbac-system.md)
 - [CONFIGURATION_IMPROVEMENTS.md](file://docs/CONFIGURATION_IMPROVEMENTS.md)
 - [EXECUTIVE_SUMMARY.md](file://EXECUTIVE_SUMMARY.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated consolidated configuration system architecture to reflect unified parameter storage approach
+- Added establishment-specific configuration management with fallback mechanisms
+- Enhanced multi-tenant parameter handling with override capabilities
+- Integrated new parameter versioning and backup systems
+- Updated configuration service with intelligent fallback logic
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -36,50 +49,64 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Consolidated Configuration System](#consolidated-configuration-system)
+7. [Multi-Tenant Parameter Management](#multi-tenant-parameter-management)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides comprehensive coverage of the configuration system in the eLISAschool project, focusing on the complete configuration framework that supports multi-establishment environments, RBAC permissions, and system parameter management. The configuration system encompasses environment variable management, database configuration, Swagger API documentation setup, and a dedicated configuration module that handles application-wide settings, module-specific configurations, and parameter persistence across establishments.
+This document provides comprehensive coverage of the consolidated configuration system in the eLISAschool project, focusing on the unified configuration framework that supports multi-establishment environments with intelligent parameter fallback mechanisms. The configuration system has been completely refactored to consolidate all configuration parameters into a single unified storage approach, establishing-specific configuration management, and comprehensive parameter versioning capabilities.
 
-The system is designed to support educational institution management with advanced configuration capabilities including audit trails, historical tracking, and comprehensive permission controls. The configuration framework ensures that all components can access and modify system parameters while maintaining security and audit compliance.
+The system now features a sophisticated fallback mechanism that prioritizes establishment-specific overrides, followed by global parameters, default values, and null as a last resort. This consolidation eliminates redundancy between separate application and establishment configuration systems while maintaining backward compatibility and extending support for advanced multi-tenant scenarios.
 
 ## Project Structure
-The configuration system is organized across multiple layers within the backend architecture, with dedicated modules for environment management, database connectivity, API documentation, and application configuration.
+The consolidated configuration system is organized across multiple layers with enhanced modularity and clear separation of concerns between unified parameter storage, establishment-specific overrides, and comprehensive backup/restore capabilities.
 
 ```mermaid
 graph TB
-subgraph "Configuration Layer"
+subgraph "Unified Configuration Layer"
 ENV[Environment Config]
 DB[Database Config]
 SWAG[Swagger Config]
-CFG[Configuration Module]
+CFG[Consolidated Configuration Module]
 end
-subgraph "Configuration Module Components"
+subgraph "Enhanced Configuration Components"
 CTRL[Controllers]
-SRV[Services]
-ENT[Entities]
-GUARD[Guards]
-UTIL[Utilities]
+SRV[Configuration Service]
+HIST[History Service]
+BACKUP[Backup Services]
+STORAGE[Storage Providers]
+SEED[Seed Service]
+LISTENER[Configuration Listener]
 end
-subgraph "Supporting Systems"
-MIG[Migrations]
-SEED[Seeds]
-SCRIPTS[Migration Scripts]
+subgraph "Parameter Management"
+PARAM[Parameter System]
+PARAM_VERSION[Parameter Versioning]
+PARAM_BACKUP[Parameter Backup]
+end
+subgraph "Multi-Tenant Support"
+FALLBACK[Fallback Resolution]
+OVERRIDE[Override Management]
+CACHE[Intelligent Caching]
 end
 ENV --> CFG
 DB --> CFG
 SWAG --> CFG
 CFG --> CTRL
 CFG --> SRV
-CFG --> ENT
-CFG --> GUARD
-CFG --> UTIL
-SRV --> MIG
-SRV --> SEED
-MIG --> SCRIPTS
+CFG --> HIST
+CFG --> BACKUP
+CFG --> STORAGE
+CFG --> SEED
+CFG --> LISTENER
+SRV --> PARAM
+SRV --> PARAM_VERSION
+SRV --> PARAM_BACKUP
+PARAM --> FALLBACK
+PARAM --> OVERRIDE
+PARAM --> CACHE
 ```
 
 **Diagram sources**
@@ -87,54 +114,77 @@ MIG --> SCRIPTS
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
+- [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 
 **Section sources**
 - [index.ts](file://backend/src/config/index.ts)
 - [CONFIGURATION_100_PERCENT.md](file://CONFIGURATION_100_PERCENT.md)
+- [README-REFONTE-CONFIG.md](file://README-REFONTE-CONFIG.md)
 
 ## Core Components
-The configuration system consists of several interconnected components that work together to provide comprehensive configuration management capabilities.
+The consolidated configuration system comprises several interconnected components that work together to provide unified configuration management with establishment-specific capabilities and comprehensive parameter versioning.
 
-### Environment Configuration Management
-The environment configuration system manages runtime settings through environment variables, ensuring secure and flexible deployment configurations across different environments.
+### Unified Parameter Storage System
+The core of the consolidated system is the unified parameter storage that replaces separate application and establishment configuration tables with a single, intelligent parameter management system supporting multi-tenant scenarios.
 
-### Database Configuration
-The database configuration module handles connection management, migration coordination, and multi-establishment database support with proper isolation and security boundaries.
+### Enhanced Configuration Service
+The configuration service has been enhanced with intelligent fallback mechanisms, parameter versioning, and comprehensive establishment-specific override management while maintaining backward compatibility.
 
-### Swagger Configuration
-The Swagger API documentation configuration provides comprehensive API documentation generation with security schemes and parameter validation.
+### Comprehensive Backup and Restore System
+The system includes advanced backup and restore capabilities for configuration parameters, ensuring data integrity and enabling disaster recovery scenarios across establishment boundaries.
 
-### Configuration Module
-The dedicated configuration module provides application-wide configuration management, including parameter storage, historical tracking, and permission-based access control.
+### Multi-Tenant Parameter Resolution
+The parameter resolution system implements sophisticated fallback algorithms that prioritize establishment-specific overrides, followed by global parameters, default values, and graceful degradation.
 
 **Section sources**
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 
 ## Architecture Overview
-The configuration architecture follows a layered approach with clear separation of concerns between environment management, database connectivity, API documentation, and application configuration.
+The consolidated configuration architecture follows a modernized layered approach with enhanced multi-tenant support, intelligent parameter fallback mechanisms, and comprehensive backup capabilities.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client Application"
 participant Controller as "Configuration Controller"
-participant Service as "Configuration Service"
+participant Service as "Enhanced Configuration Service"
+participant Fallback as "Fallback Resolver"
+participant Cache as "Intelligent Cache"
+participant DB as "Unified Parameter Store"
 participant History as "History Service"
-participant DB as "Database Layer"
-participant Guard as "Permission Guard"
-Client->>Controller : GET /configuration
-Controller->>Guard : validatePermissions()
-Guard-->>Controller : permissionGranted
-Controller->>Service : getConfigurations()
-Service->>DB : queryConfigurations()
-DB-->>Service : configurationData
+Client->>Controller : GET /configuration/ : cle
+Controller->>Service : getParametre(cle, etablissementId)
+Service->>Cache : getCachedValue(cle, etablissementId)
+Cache-->>Service : cachedValue OR miss
+alt Cache Miss
+Service->>Fallback : resolveParameter(cle, etablissementId)
+Fallback->>DB : queryOverride(cle, etablissementId)
+DB-->>Fallback : overrideValue OR null
+alt Override Found
+Fallback-->>Service : overrideValue
+Service->>Cache : cacheValue(cle : etablissementId, value)
+else No Override
+Fallback->>DB : queryGlobal(cle)
+DB-->>Fallback : globalValue OR null
+alt Global Found
+Fallback-->>Service : globalValue
+Service->>Cache : cacheValue(cle, value)
+else No Global
+Fallback-->>Service : defaultValue
+Service->>Cache : cacheValue(cle, defaultValue)
+end
+end
+else Cache Hit
+Fallback-->>Service : cachedValue
+end
 Service->>History : logAccess()
 History-->>Service : success
-Service-->>Controller : processedConfigurations
+Service-->>Controller : resolvedValue
 Controller-->>Client : configurationResponse
-Note over Client,DB : Configuration retrieval with audit trail
+Note over Client,DB : Consolidated parameter resolution with fallback
 ```
 
 **Diagram sources**
@@ -142,7 +192,7 @@ Note over Client,DB : Configuration retrieval with audit trail
 - [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [config-permissions.ts](file://backend/src/modules/configuration/guards/config-permissions.ts)
 
-The architecture ensures that all configuration operations are properly audited, secured, and tracked for compliance and troubleshooting purposes.
+The architecture ensures that all configuration operations benefit from intelligent caching, comprehensive fallback mechanisms, and detailed audit trails for compliance and troubleshooting.
 
 **Section sources**
 - [configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
@@ -151,41 +201,41 @@ The architecture ensures that all configuration operations are properly audited,
 
 ## Detailed Component Analysis
 
-### Configuration Entity Model
-The configuration system utilizes a comprehensive entity model that supports application-wide settings, module-specific configurations, and parameter management across multiple establishments.
+### Consolidated Parameter Entity Model
+The unified configuration system utilizes a comprehensive entity model that consolidates all parameter types into a single, intelligent parameter storage system with establishment-specific override capabilities.
 
 ```mermaid
 erDiagram
-CONFIGURATION_APP {
-uuid id PK
-string nom
-string valeur
-string type
-boolean actif
-timestamp created_at
-timestamp updated_at
-}
-CONFIGURATION_MODULE {
-uuid id PK
-uuid etablissement_id FK
-uuid module_id FK
-string nom
-string valeur
-string type
-boolean actif
-timestamp created_at
-timestamp updated_at
-}
 PARAMETRE_SYSTEME {
 uuid id PK
-string nom
-string valeur
-string type
+string cle
+json valeur
+uuid etablissement_id FK
+string type_valeur
+string categorie
 string description
 boolean requis
 boolean actif
 timestamp created_at
 timestamp updated_at
+}
+PARAMETRE_VERSION {
+uuid id PK
+uuid parametre_id FK
+json valeur
+timestamp version_date
+uuid utilisateur_id FK
+string action_type
+timestamp created_at
+}
+PARAMETRE_BACKUP {
+uuid id PK
+uuid parametre_id FK
+json valeur
+string backup_type
+timestamp backup_date
+string backup_reference
+timestamp created_at
 }
 HISTORIQUE_CONFIGURATION {
 uuid id PK
@@ -196,44 +246,44 @@ json ancienne_valeur
 json nouvelle_valeur
 timestamp created_at
 }
-CONFIGURATION_APP ||--o{ HISTORIQUE_CONFIGURATION : "has"
-CONFIGURATION_MODULE ||--o{ HISTORIQUE_CONFIGURATION : "has"
-PARAMETRE_SYSTEME ||--o{ CONFIGURATION_APP : "defines"
-PARAMETRE_SYSTEME ||--o{ CONFIGURATION_MODULE : "defines"
+PARAMETRE_SYSTEME ||--o{ PARAMETRE_VERSION : "versioned_by"
+PARAMETRE_SYSTEME ||--o{ PARAMETRE_BACKUP : "backed_up_by"
+PARAMETRE_SYSTEME ||--o{ HISTORIQUE_CONFIGURATION : "tracked_in"
+PARAMETRE_VERSION ||--o{ HISTORIQUE_CONFIGURATION : "generates_audit"
 ```
 
 **Diagram sources**
-- [configuration-app.entity.ts](file://backend/src/modules/configuration/entities/configuration-app.entity.ts)
-- [configuration-module.entity.ts](file://backend/src/modules/configuration/entities/configuration-module.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 
-The entity model supports comprehensive configuration management with audit trails, historical tracking, and multi-establishment support.
+The consolidated entity model supports comprehensive parameter management with versioning, backup capabilities, and detailed audit trails for all configuration changes across establishment boundaries.
 
 **Section sources**
-- [configuration-app.entity.ts](file://backend/src/modules/configuration/entities/configuration-app.entity.ts)
-- [configuration-module.entity.ts](file://backend/src/modules/configuration/entities/configuration-module.entity.ts)
 - [parametre-systeme.entity.ts](file://backend/src/modules/configuration/entities/parametre-systeme.entity.ts)
 - [historique-configuration.entity.ts](file://backend/src/modules/configuration/entities/historique-configuration.entity.ts)
 
-### Configuration Service Architecture
-The configuration service provides centralized management of all configuration operations with support for caching, validation, and audit logging.
+### Enhanced Configuration Service Architecture
+The consolidated configuration service provides centralized management of all configuration operations with support for intelligent fallback mechanisms, parameter versioning, and comprehensive establishment-specific override management.
 
 ```mermaid
 classDiagram
 class ConfigurationService {
-+getConfigurations(filters) Promise~Configuration[]~
-+getConfiguration(id) Promise~Configuration~
-+createConfiguration(data) Promise~Configuration~
-+updateConfiguration(id, data) Promise~Configuration~
-+deleteConfiguration(id) Promise~boolean~
-+validateConfiguration(config) boolean
-+cacheConfiguration(config) void
-+invalidateCache(key) void
++getParametre(cle, etablissementId?) Promise~Parameter~
++setParametre(cle, valeur, etablissementId?, utilisateurId) Promise~Parameter~
++resetParametre(cle, etablissementId?, utilisateurId) Promise~boolean~
++createParametre(data) Promise~Parameter~
++updateParametre(id, data) Promise~Parameter~
++deleteParametre(id) Promise~boolean~
++resolveFallback(cle, etablissementId?) Promise~any~
++validateParametre(parametre) boolean
++cacheParametre(cle, etablissementId?, valeur) void
++invalidateCache(cle, etablissementId?) void
++backupParametre(parametreId) Promise~BackupRecord~
++restoreParametre(backupId) Promise~Parameter~
 }
 class ConfigurationHistoryService {
-+logConfigurationChange(userId, configId, action, oldValue, newValue) Promise~History~
-+getConfigurationHistory(configId, filters) Promise~History[]~
++logConfigurationChange(userId, parametreId, action, oldValue, newValue) Promise~History~
++getConfigurationHistory(parametreId, filters) Promise~History[]~
 +exportHistoryReport(filters) Promise~Report~
 }
 class ConfigurationSeedService {
@@ -243,8 +293,8 @@ class ConfigurationSeedService {
 +cleanupOrphanedConfigs() Promise~void~
 }
 class ConfigurationListener {
-+onConfigurationChange(config) void
-+broadcastToSubscribers(config) void
++onConfigurationChange(parametre) void
++broadcastToSubscribers(parametre) void
 +registerSubscriber(subscriber) void
 +unregisterSubscriber(subscriber) void
 }
@@ -259,7 +309,7 @@ ConfigurationService --> ConfigurationListener : "uses"
 - [configuration-seed.service.ts](file://backend/src/modules/configuration/services/configuration-seed.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 
-The service architecture ensures robust configuration management with proper separation of concerns and extensibility for future enhancements.
+The enhanced service architecture ensures robust configuration management with intelligent fallback resolution, comprehensive versioning, and seamless establishment-specific override capabilities.
 
 **Section sources**
 - [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
@@ -267,40 +317,90 @@ The service architecture ensures robust configuration management with proper sep
 - [configuration-seed.service.ts](file://backend/src/modules/configuration/services/configuration-seed.service.ts)
 - [configuration-listener.ts](file://backend/src/modules/configuration/services/configuration-listener.ts)
 
-### Permission-Based Configuration Access
-The configuration system implements comprehensive RBAC (Role-Based Access Control) permissions to ensure secure access to configuration operations across different establishment contexts.
+### Consolidated Parameter Resolution Logic
+The unified configuration system implements sophisticated parameter resolution logic that intelligently handles establishment-specific overrides, global parameters, default values, and graceful fallback mechanisms.
 
 ```mermaid
 flowchart TD
-Request[Configuration Request] --> Validate[Validate Authentication]
-Validate --> CheckPermissions{Check Permissions}
-CheckPermissions --> |Has Permission| CheckContext{Check Establishment Context}
-CheckPermissions --> |No Permission| Deny[Deny Access]
-CheckContext --> |Valid Context| Process[Process Request]
-CheckContext --> |Invalid Context| Deny
-Process --> Audit[Log Audit Trail]
-Audit --> Return[Return Response]
-Deny --> Return
+Request[Parameter Request] --> Validate[Validate Input]
+Validate --> CheckTenant{Tenant Context?}
+CheckTenant --> |Yes| CheckOverride{Check Override Exists}
+CheckTenant --> |No| CheckGlobal{Check Global Exists}
+CheckOverride --> |Exists| UseOverride[Use Establishment Override]
+CheckOverride --> |Not Exists| CheckGlobal
+CheckGlobal --> |Exists| UseGlobal[Use Global Parameter]
+CheckGlobal --> |Not Exists| CheckDefault{Check Default Value}
+CheckDefault --> |Exists| UseDefault[Use Default Value]
+CheckDefault --> |Not Exists| ReturnNull[Return Null]
+UseOverride --> Cache[Cache Result]
+UseGlobal --> Cache
+UseDefault --> Cache
+Cache --> Return[Return Resolved Value]
+ReturnNull --> Return
 ```
 
 **Diagram sources**
+- [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [config-permissions.ts](file://backend/src/modules/configuration/guards/config-permissions.ts)
-- [config.guard.ts](file://backend/src/modules/configuration/guards/config.guard.ts)
 
-The permission system ensures that users can only access configurations relevant to their establishment and role within the educational institution hierarchy.
+The consolidated resolution logic ensures that configuration parameters are always resolved consistently across establishment boundaries while maintaining backward compatibility and supporting advanced multi-tenant scenarios.
 
 **Section sources**
+- [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [config-permissions.ts](file://backend/src/modules/configuration/guards/config-permissions.ts)
-- [config.guard.ts](file://backend/src/modules/configuration/guards/config.guard.ts)
 
 ### Configuration Helper Utilities
-The configuration helper utilities provide essential functionality for configuration validation, transformation, and integration with the broader system.
+The consolidated configuration helper utilities provide essential functionality for parameter validation, transformation, establishment-specific resolution, and integration with the unified system architecture.
 
 **Section sources**
 - [config.helper.ts](file://backend/src/modules/configuration/utils/config.helper.ts)
 
+## Consolidated Configuration System
+The eLISAschool configuration system has undergone a complete consolidation to eliminate redundancy between separate application and establishment configuration systems while introducing sophisticated multi-tenant parameter management capabilities.
+
+### Unified Parameter Storage Approach
+The consolidated system replaces the previous dual-table approach with a single, intelligent parameter storage system that supports establishment-specific overrides, global parameters, and comprehensive fallback mechanisms. This unification reduces complexity, eliminates data duplication, and improves system maintainability.
+
+### Intelligent Fallback Mechanisms
+The system implements a sophisticated four-tier fallback mechanism:
+1. Establishment-specific override (highest priority)
+2. Global parameter (if override doesn't exist)
+3. Default value (if global parameter doesn't exist)
+4. Null (last resort for graceful degradation)
+
+### Backward Compatibility Preservation
+The consolidation maintains full backward compatibility with existing configuration code while extending support for advanced multi-tenant scenarios. Legacy code continues to function without modification while new establishment-specific features are seamlessly integrated.
+
+### Migration and Deployment
+The consolidation includes comprehensive migration scripts and deployment procedures that ensure zero downtime during the transition from the legacy dual-table system to the unified parameter storage approach.
+
+**Section sources**
+- [README-REFONTE-CONFIG.md](file://README-REFONTE-CONFIG.md)
+- [RAPPORT-EXECUTION-MIGRATIONS.md](file://RAPPORT-EXECUTION-MIGRATIONS.md)
+- [IMPLÉMENTATION_MULTI_ÉTAT.md](file://IMPLÉMENTATION_MULTI_ÉTAT.md)
+
+## Multi-Tenant Parameter Management
+The consolidated configuration system introduces comprehensive multi-tenant parameter management capabilities that enable establishment-specific configuration overrides while maintaining global consistency across the entire system.
+
+### Establishment-Specific Overrides
+Each establishment can create parameter overrides that take precedence over global settings. These overrides are stored separately but resolved through the unified fallback mechanism, ensuring consistent behavior across the system.
+
+### Intelligent Cache Management
+The system implements intelligent caching with composite keys that combine parameter names with establishment identifiers. This ensures that establishment-specific overrides are properly isolated while maintaining optimal performance.
+
+### Parameter Versioning and Auditing
+All parameter changes are tracked through comprehensive versioning and auditing systems. Each change creates a new version record with detailed metadata, enabling full traceability and audit compliance across establishment boundaries.
+
+### Backup and Recovery Capabilities
+The consolidated system includes advanced backup and recovery capabilities that protect parameter configurations across all establishments. This ensures business continuity and enables rapid restoration in case of system failures.
+
+**Section sources**
+- [IMPLEMENTATION_MULTI_ETABLISSEMENTS.md](file://IMPLEMENTATION_MULTI_ETABLISSEMENTS.md)
+- [DEPLOIEMENT-CONFIGURATION-GUIDE.md](file://DEPLOIEMENT-CONFIGURATION-GUIDE.md)
+- [GUIDE-EXECUTION-REFONTE-CONFIG.md](file://GUIDE-EXECUTION-REFONTE-CONFIG.md)
+
 ## Dependency Analysis
-The configuration system exhibits well-structured dependencies that promote maintainability and testability while supporting the complex requirements of educational institution management.
+The consolidated configuration system exhibits enhanced dependencies that promote maintainability, testability, and scalability while supporting the sophisticated requirements of educational institution management across multiple establishments.
 
 ```mermaid
 graph LR
@@ -309,32 +409,46 @@ ENV[dotenv]
 PG[pg]
 SWAGGER[swagger-ui-express]
 JWT[jwt-simple]
+REDIS[redis-cache]
 end
 subgraph "Internal Dependencies"
 COMMON[common utilities]
 RBAC[RBAC system]
 AUDIT[audit trail]
 VALIDATION[DTO validation]
+CACHE[enhanced caching]
+VERSIONING[parameter versioning]
+BACKUP[backup system]
 end
-subgraph "Configuration Module"
-SERVICE[Configuration Service]
+subgraph "Consolidated Configuration Module"
+SERVICE[Enhanced Configuration Service]
 HISTORY[History Service]
 SEED[Seed Service]
 LISTENER[Listener Service]
 GUARDS[Permission Guards]
+BACKUP[Backup Services]
+STORAGE[Storage Providers]
+ENDPOINTS[API Endpoints]
 end
 ENV --> SERVICE
 PG --> SERVICE
 SWAGGER --> SERVICE
 JWT --> GUARDS
+REDIS --> CACHE
 COMMON --> SERVICE
 RBAC --> GUARDS
 AUDIT --> HISTORY
 VALIDATION --> SERVICE
+CACHE --> SERVICE
+VERSIONING --> SERVICE
+BACKUP --> SERVICE
 SERVICE --> HISTORY
 SERVICE --> SEED
 SERVICE --> LISTENER
+SERVICE --> BACKUP
+SERVICE --> STORAGE
 SERVICE --> GUARDS
+SERVICE --> ENDPOINTS
 ```
 
 **Diagram sources**
@@ -342,7 +456,7 @@ SERVICE --> GUARDS
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 
-The dependency graph reveals a clean architecture where the configuration module depends on common utilities and RBAC systems but maintains independence from external frameworks.
+The enhanced dependency graph reveals a sophisticated architecture where the consolidated configuration module leverages advanced caching, versioning, and backup systems while maintaining clean separation of concerns and extensibility for future enhancements.
 
 **Section sources**
 - [configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
@@ -350,42 +464,49 @@ The dependency graph reveals a clean architecture where the configuration module
 - [database.config.ts](file://backend/src/config/database.config.ts)
 
 ## Performance Considerations
-The configuration system incorporates several performance optimization strategies to ensure efficient operation in multi-establishment environments.
+The consolidated configuration system incorporates several advanced performance optimization strategies to ensure efficient operation across multiple establishments with intelligent caching and optimized parameter resolution.
 
-### Caching Strategy
-The configuration service implements intelligent caching mechanisms to reduce database load and improve response times for frequently accessed configuration parameters.
+### Intelligent Caching Strategy
+The enhanced configuration service implements composite key caching that combines parameter names with establishment identifiers. This ensures proper isolation of establishment-specific overrides while maximizing cache hit rates and minimizing database load.
 
-### Batch Operations
-Configuration updates support batch operations to minimize database transactions and improve throughput during bulk configuration changes.
+### Optimized Fallback Resolution
+The fallback resolution algorithm is optimized for minimal database queries by implementing intelligent caching and batch processing capabilities. Frequently accessed parameters are aggressively cached, while establishment-specific overrides are isolated to prevent cache pollution.
 
-### Lazy Loading
-Configuration parameters are loaded lazily to avoid unnecessary database queries for unused configuration options.
+### Parameter Versioning Efficiency
+The parameter versioning system is designed for minimal performance impact through efficient indexing, batch version creation, and optimized query patterns that reduce overhead during high-volume configuration operations.
 
-### Connection Pooling
-Database connections are managed through connection pooling to optimize resource utilization and handle concurrent configuration requests efficiently.
+### Connection Pooling and Resource Management
+Database connections are managed through advanced connection pooling with establishment-aware resource allocation. This ensures optimal resource utilization while handling concurrent configuration requests across multiple establishments efficiently.
+
+### Backup and Restore Optimization
+The backup and restore system is optimized for performance through batch operations, compression, and efficient data serialization that minimizes impact on production systems during maintenance operations.
 
 ## Troubleshooting Guide
-Common configuration issues and their resolution strategies are documented below to assist developers and administrators in maintaining system stability.
+Common issues with the consolidated configuration system and their resolution strategies are documented below to assist developers and administrators in maintaining system stability and optimizing performance.
 
-### Configuration Validation Errors
-Configuration validation failures typically indicate invalid parameter types or missing required fields. The system provides detailed error messages indicating which configuration parameters failed validation and require correction.
+### Parameter Resolution Issues
+Parameter resolution failures typically indicate cache corruption, invalid establishment identifiers, or configuration conflicts. The system provides detailed error messages indicating which fallback tier failed and requires attention.
 
-### Permission Denied Issues
-Access to configuration operations may be denied due to insufficient RBAC permissions or establishment context mismatches. Users should verify their role assignments and establishment affiliations.
+### Establishment Override Conflicts
+Conflicts between establishment-specific overrides and global parameters can cause unexpected behavior. The system's audit trail provides comprehensive visibility into parameter resolution decisions and helps identify conflicting configurations.
 
-### Migration Failures
-Configuration-related database migrations may fail due to constraint violations or existing data conflicts. The migration scripts include rollback capabilities and validation checks to prevent system corruption.
+### Migration and Deployment Failures
+Consolidation-related deployments may encounter issues with existing data conflicts or constraint violations. The migration scripts include comprehensive rollback capabilities and validation checks to prevent system corruption and ensure safe deployment.
 
-### Audit Trail Analysis
-The comprehensive audit trail enables systematic analysis of configuration changes, providing timestamps, user identification, and detailed change descriptions for troubleshooting and compliance purposes.
+### Performance Degradation
+Performance issues often stem from cache misconfiguration, excessive parameter updates, or inefficient query patterns. The system includes monitoring capabilities and performance metrics to identify bottlenecks and optimize configuration operations.
+
+### Backup and Recovery Problems
+Backup and restore operations may encounter issues with data integrity, storage constraints, or version conflicts. The system provides comprehensive verification mechanisms and automated recovery procedures to ensure data consistency and availability.
 
 **Section sources**
 - [migrate-rbac.ts](file://backend/src/database/migrations/migrate-rbac.ts)
 - [test-rbac.ts](file://backend/src/database/migrations/test-rbac.ts)
+- [RAPPORT-EXECUTION-MIGRATIONS.md](file://RAPPORT-EXECUTION-MIGRATIONS.md)
 
 ## Conclusion
-The eLISAschool configuration system represents a comprehensive solution for managing complex educational institution settings across multiple establishments. The system successfully integrates environment management, database connectivity, API documentation, and application configuration into a cohesive framework that supports advanced RBAC permissions, audit trails, and historical tracking.
+The eLISAschool consolidated configuration system represents a significant advancement in educational institution configuration management, successfully transforming a fragmented dual-table system into a unified, intelligent parameter storage approach. The system demonstrates exceptional achievement in consolidating configuration capabilities while introducing sophisticated multi-tenant parameter management, comprehensive fallback mechanisms, and advanced backup/restore capabilities.
 
-Key achievements include complete configuration coverage with multi-establishment support, robust permission controls, comprehensive audit capabilities, and scalable architecture design. The system demonstrates best practices in configuration management while providing the flexibility required for educational institution environments.
+Key accomplishments include the successful consolidation of application and establishment configuration systems, implementation of intelligent parameter fallback resolution, introduction of establishment-specific override management, comprehensive parameter versioning and auditing, and seamless backward compatibility preservation. The system provides a solid foundation for future enhancements while maintaining optimal performance and reliability across multiple establishment environments.
 
-Future enhancements could include dynamic configuration reloading, real-time configuration synchronization across establishments, and enhanced monitoring capabilities for configuration performance metrics. The current architecture provides a solid foundation for these potential improvements while maintaining backward compatibility and system stability.
+The consolidated architecture establishes best practices for modern configuration management in multi-tenant educational systems, offering scalability, maintainability, and comprehensive operational capabilities that support the complex requirements of institutional education management. Future enhancements could include dynamic configuration reloading, real-time parameter synchronization across establishments, and advanced monitoring capabilities for configuration performance metrics, all built upon the robust foundation established by this comprehensive consolidation effort.

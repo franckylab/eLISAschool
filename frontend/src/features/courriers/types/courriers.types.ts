@@ -26,6 +26,8 @@ export interface Courrier {
         prenom: string;
         email?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerCourrierDto {
@@ -38,6 +40,8 @@ export interface CreerCourrierDto {
     contenu?: string;
     priorite: string;
     fichierJoint?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesCourriers {
@@ -51,6 +55,8 @@ export interface StatistiquesCourriers {
         entrants: number;
         sortants: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface CourrierFiltres {
@@ -60,4 +66,6 @@ export interface CourrierFiltres {
     recherche?: string;
     dateDebut?: string;
     dateFin?: string;
+    page?: number;
+    limit?: number;
 }

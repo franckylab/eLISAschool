@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FileText, Download, Award } from 'lucide-react';
 import { useBulletins, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';

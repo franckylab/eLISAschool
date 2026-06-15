@@ -14,6 +14,9 @@ import { AppDataSource } from '@database/data-source';
 import { AuditLog, AuditAction, AuditSeverity } from '../entities/audit-log.entity';
 import { logger } from '@common/utils/logger.util';
 
+// Réexporter les enums pour utilisation dans les controllers
+export { AuditAction, AuditSeverity } from '../entities/audit-log.entity';
+
 /**
  * Options pour créer une entrée d'audit
  */

@@ -289,6 +289,16 @@ export enum Permission {
     BULLETINS_EXPORT = 'bulletins:export',
 
     // ==================================
+    // EMPLOI DU TEMPS
+    // ==================================
+    EMPLOI_DU_TEMPS_VIEW = 'emploi-du-temps:view',
+    EMPLOI_DU_TEMPS_CREATE = 'emploi-du-temps:create',
+    EMPLOI_DU_TEMPS_EDIT = 'emploi-du-temps:edit',
+    EMPLOI_DU_TEMPS_DELETE = 'emploi-du-temps:delete',
+    EMPLOI_DU_TEMPS_GENERER = 'emploi-du-temps:generer',
+    EMPLOI_DU_TEMPS_EXPORT = 'emploi-du-temps:export',
+
+    // ==================================
     // ÉLÈVES & PERSONNEL
     // ==================================
     ELEVES_VIEW = 'eleves:view',

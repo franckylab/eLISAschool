@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { AlertCircle, AlertTriangle, Info, XCircle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Info, XCircle, RefreshCw } from 'lucide-react';
 import { ElisaButton } from './ElisaButton';
 
 interface ErrorMessageProps {
@@ -57,7 +57,7 @@ export function ErrorMessage({
             iconColor: 'text-yellow-600',
             titleColor: 'text-yellow-900',
             textColor: 'text-yellow-700',
-            buttonVariant: 'warning' as const,
+            buttonVariant: 'primary' as const,
         },
         info: {
             bg: 'bg-blue-50',

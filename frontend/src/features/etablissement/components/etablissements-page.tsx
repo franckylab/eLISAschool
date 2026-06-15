@@ -16,7 +16,6 @@ import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
-import { SousSysteme, TypeEtablissement, StatutEtablissement } from '../types/etablissement.types';
 import type { Etablissement } from '../types/etablissement.types';
 import type { Column } from '@/components/ui/DataTable';
 
@@ -242,10 +241,10 @@ export function EtablissementsPage() {
             )}
 
             <ConfirmDialog
-                isOpen={!!etablissementToToggle}
-                title={etablissementToToggle?.actif ? 'Désactiver cet établissement' : 'Activer cet établissement'}
-                message={`Êtes-vous sûr de vouloir ${etablissementToToggle?.actif ? 'désactiver' : 'activer'} l'établissement "${etablissementToToggle?.nom}" ?`}
-                variant={etablissementToToggle?.actif ? 'danger' : 'success'}
+                open={!!etablissementToToggle}
+                onOpenChange={(open) => {
+                    if (!open) setEtablissementToToggle(null);
+                }}
                 onConfirm={async () => {
                     if (etablissementToToggle) {
                         if (etablissementToToggle.actif) {
@@ -256,7 +255,9 @@ export function EtablissementsPage() {
                         setEtablissementToToggle(null);
                     }
                 }}
-                onCancel={() => setEtablissementToToggle(null)}
+                title={etablissementToToggle?.actif ? 'Désactiver cet établissement' : 'Activer cet établissement'}
+                description={`Êtes-vous sûr de vouloir ${etablissementToToggle?.actif ? 'désactiver' : 'activer'} l'établissement "${etablissementToToggle?.nom}" ?`}
+                variant={etablissementToToggle?.actif ? 'danger' : 'warning'}
                 isLoading={desactiver.isPending || activer.isPending}
             />
         </div>

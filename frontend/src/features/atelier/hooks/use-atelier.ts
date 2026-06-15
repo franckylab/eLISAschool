@@ -22,7 +22,7 @@ export function useAteliers(filtres?: FiltresAtelier) {
     return useQuery({
         queryKey: ATELIER_KEYS.ateliers(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Atelier[] }>('/api/ateliers', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Atelier[] }>('/api/ateliers', { params: { ...filtres } as any });
             return response.data?.data;
         },
         enabled: isAuthenticated,
@@ -36,7 +36,7 @@ export function useInscriptions(filtres?: FiltresAtelier) {
     return useQuery({
         queryKey: ATELIER_KEYS.inscriptions(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: InscriptionAtelier[]; meta: any }>('/api/ateliers/inscriptions', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: InscriptionAtelier[]; meta: any }>('/api/ateliers/inscriptions', { params: { ...filtresInscription } as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

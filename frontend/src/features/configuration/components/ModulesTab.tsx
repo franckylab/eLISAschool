@@ -8,7 +8,6 @@
 
 import { useState, useEffect } from 'react';
 import { Blocks, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
-import { ElisaButton } from '@/components/ui/ElisaButton';
 import { cn } from '@/lib/cn';
 import {
     useConfigModules,
@@ -92,7 +91,6 @@ export function ModulesTab() {
             {/* Liste des modules */}
             <div className="grid gap-4">
                 {Object.entries(MODULES_INFO).map(([moduleNom, info]) => {
-                    const moduleConfig = modules.find((m) => m.moduleNom === moduleNom);
                     const estActif = modulesActifs.has(moduleNom);
 
                     return (

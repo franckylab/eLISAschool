@@ -12,7 +12,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ShieldX, ArrowLeft, Home, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { ElisaButton } from '@/components/ui/elisa-button';
+import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 
 interface UnauthorizedSearch {

@@ -31,6 +31,8 @@ export interface Evaluation {
         prenom: string;
         role?: string;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface EvaluationCritere {
@@ -39,6 +41,8 @@ export interface EvaluationCritere {
     note: number; // sur 20
     commentaire?: string;
     poids: number; // coefficient
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerEvaluationDto {
@@ -49,6 +53,8 @@ export interface CreerEvaluationDto {
     pointsForts?: string;
     axesAmelioration?: string;
     recommendations?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesEvaluations {
@@ -66,10 +72,14 @@ export interface StatistiquesEvaluations {
         nombre: number;
         moyenne: number;
     }[];
+    page?: number;
+    limit?: number;
 }
 
 export interface EvaluationFiltres {
     personnelId?: string;
     periode?: string;
     statut?: string;
+    page?: number;
+    limit?: number;
 }

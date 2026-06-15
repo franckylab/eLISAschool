@@ -70,6 +70,7 @@ export interface CreerInscriptionTransportDto {
 export interface LigneFiltres {
     recherche?: string;
     statut?: 'actif' | 'inactif' | 'maintenance';
+    actif?: boolean;
     page?: number;
     limit?: number;
     sortBy?: string;

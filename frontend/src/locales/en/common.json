@@ -62,7 +62,13 @@
         "sessionExpiree": "Session expired, please log in again",
         "confirmationSuppression": "Are you sure you want to delete this item?",
         "operationIrreversible": "This action is irreversible",
-        "requeteAnnulee": "Request cancelled"
+        "requeteAnnulee": "Request cancelled",
+        "etablissementChange": "Establishment changed successfully",
+        "erreurChangement": "Error changing establishment"
+    },
+    "header": {
+        "changerEtablissement": "Switch establishment",
+        "etablissements": "Establishments"
     },
     "pagination": {
         "pageSur": "Page {{page}} of {{total}}",
@@ -126,5 +132,20 @@
         "informations": "Information",
         "obligatoire": "Required",
         "optionnel": "Optional"
+    },
+    "modalEtablissement": {
+        "titre": "Choose an establishment",
+        "description": "You belong to multiple establishments. Select the one you want to work in.",
+        "rechercher": "Search for an establishment...",
+        "info": "Selection required for data isolation. You can change at any time from the header.",
+        "selectionRequise": "Please select an establishment",
+        "erreurSelection": "Error during selection",
+        "continuer": "Continue",
+        "principal": "Main",
+        "aucunResultat": "No establishment found",
+        "raccourciSelection": "Quick select",
+        "raccourciConfirmer": "Confirm",
+        "sessionExpiree": "Session expired. Please log in again.",
+        "tempsFaible": "Time remaining"
     }
 }

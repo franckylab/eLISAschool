@@ -76,7 +76,9 @@ export interface ModifierClasseDto extends Partial<CreerClasseDto> {
 export interface ClasseFiltres {
     anneeScolaireId?: string;
     niveau?: string;
+    niveauId?: string;
     cycle?: string;
+    actif?: boolean;
     recherche?: string;
     statut?: 'actif' | 'inactif';
     page?: number;

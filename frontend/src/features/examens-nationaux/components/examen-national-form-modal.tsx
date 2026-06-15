@@ -83,7 +83,7 @@ export function ExamenNationalFormModal({ open, onOpenChange, examen, onSave, is
     };
 
     // Filtrer les niveaux selon le sous-système
-    const niveauxFiltres = niveaux?.filter(n => (n as any).sousSysteme === sousSysteme) || [];
+    const niveauxFiltres = niveaux?.filter((n: { id: string; sousSysteme?: string }) => (n as any).sousSysteme === sousSysteme) || [];
 
     return (
         <CustomModal
@@ -165,7 +165,7 @@ export function ExamenNationalFormModal({ open, onOpenChange, examen, onSave, is
                             required
                         >
                             <option value="">Sélectionner un niveau</option>
-                            {niveauxFiltres.map((niveau) => (
+                            {niveauxFiltres.map((niveau: { id: string; nom: string; code: string }) => (
                                 <option key={niveau.id} value={niveau.id}>
                                     {niveau.nom} ({niveau.code})
                                 </option>

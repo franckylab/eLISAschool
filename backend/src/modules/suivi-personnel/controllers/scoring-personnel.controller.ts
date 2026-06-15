@@ -17,12 +17,11 @@ import { scoringPersonnelService } from '../services/scoring-personnel.service';
 import {
     createRegleScoringSchema,
     updateRegleScoringSchema,
-    attribuerPointsSchema,
+    attribuerPointsPersonnelSchema,
     recalculerScoreSchema,
     classementPersonnelSchema,
 } from '../dto/scoring-personnel.dto';
 import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
@@ -45,7 +44,7 @@ function validate(schema: any, data: unknown): any {
  * GET /api/scoring-personnel/classement
  * Obtenir le classement du personnel avec filtres multi-dimensionnels
  */
-router.get('/classement', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/classement', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN', 'CHEF_ETABLISSEMENT'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(classementPersonnelSchema, req.query);
         const etablissementId = req.utilisateur?.etablissementId || (dto as any).etablissementId;
@@ -91,7 +90,7 @@ router.get('/score/:membrePersonnelId', authMiddleware, async (req: Request, res
  * POST /api/scoring-personnel/recalculer
  * Recalculer le score d'un membre du personnel
  */
-router.post('/recalculer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/recalculer', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(recalculerScoreSchema, req.body);
         const etablissementId = req.utilisateur?.etablissementId;
@@ -115,9 +114,9 @@ router.post('/recalculer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
  * POST /api/scoring-personnel/points
  * Attribuer des points manuellement à un membre du personnel
  */
-router.post('/points', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/points', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN', 'CHEF_ETABLISSEMENT'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(attribuerPointsSchema, req.body);
+        const dto = validate(attribuerPointsPersonnelSchema, req.body);
         const { anneeScolaireId } = req.body;
         const etablissementId = req.utilisateur?.etablissementId;
 
@@ -140,7 +139,7 @@ router.post('/points', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
  * GET /api/scoring-personnel/regles
  * Obtenir toutes les règles de scoring actives
  */
-router.get('/regles', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/regles', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
 
@@ -159,7 +158,7 @@ router.get('/regles', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * POST /api/scoring-personnel/regles
  * Créer une nouvelle règle de scoring
  */
-router.post('/regles', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/regles', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createRegleScoringSchema, req.body);
         const etablissementId = req.utilisateur?.etablissementId;
@@ -179,7 +178,7 @@ router.post('/regles', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
  * PATCH /api/scoring-personnel/regles/:id
  * Mettre à jour une règle de scoring
  */
-router.patch('/regles/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/regles/:id', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const dto = validate(updateRegleScoringSchema, req.body);
@@ -204,7 +203,7 @@ router.patch('/regles/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
  * POST /api/scoring-personnel/recalculer-tous
  * Recalculer les scores de tous les membres du personnel
  */
-router.post('/recalculer-tous', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/recalculer-tous', authMiddleware, requireRoles('SUPER_ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { runScoringRecalculManual } = await import('../cron-jobs');
         const etablissementId = req.utilisateur?.etablissementId;

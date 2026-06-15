@@ -67,6 +67,14 @@ export class AffectationMatiere {
     volumeHoraireHebdo?: number;
 
     /**
+     * Coefficient spécifique à cette affectation (override du coefficient MatiereNiveau).
+     * Permet d'ajuster les coefficients par classe pour les filières.
+     * Si NULL, utilise le coefficient de MatiereNiveau.
+     */
+    @Column({ type: 'float', nullable: true })
+    coefficient?: number;
+
+    /**
      * Statut de l'affectation (support workflow de validation)
      */
     @Column({ type: 'varchar', length: 30, default: StatutAffectationMatiere.ACTIVE })

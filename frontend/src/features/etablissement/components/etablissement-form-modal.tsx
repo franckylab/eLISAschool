@@ -125,28 +125,28 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         <ElisaInput
                             label="Nom de l'établissement *"
                             value={formData.nom}
-                            onChange={(value: any) => handleChange('nom', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nom', e.target.value)}
                             placeholder="Ex: Lycée Bilingue de Yaoundé"
                             required
                         />
                         <ElisaInput
                             label="Code établissement"
                             value={formData.codeEtablissement}
-                            onChange={(value: any) => handleChange('codeEtablissement', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('codeEtablissement', e.target.value)}
                             placeholder="Ex: LYC-YAO-001"
                         />
                     </div>
                     <ElisaInput
                         label="Slogan"
                         value={formData.slogan}
-                        onChange={(value: any) => handleChange('slogan', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('slogan', e.target.value)}
                         placeholder="Ex: Excellence et Bilinguisme"
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaSelect
                             label="Sous-système"
                             value={formData.sousSysteme}
-                            onChange={(value: any) => handleChange('sousSysteme', value)}
+                            onValueChange={(value: string) => handleChange('sousSysteme', value)}
                             options={[
                                 { value: SousSysteme.FRANCOPHONE, label: 'Francophone' },
                                 { value: SousSysteme.ANGLOPHONE, label: 'Anglophone' },
@@ -156,7 +156,7 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         <ElisaSelect
                             label="Type d'établissement"
                             value={formData.type}
-                            onChange={(value: any) => handleChange('type', value)}
+                            onValueChange={(value: string) => handleChange('type', value)}
                             options={[
                                 { value: TypeEtablissement.LAIC, label: 'Laïc' },
                                 { value: TypeEtablissement.CONFESSIONNEL_CATHOLIQUE, label: 'Catholique' },
@@ -175,19 +175,19 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         <ElisaInput
                             label="N° Arrêté"
                             value={formData.numeroArrete}
-                            onChange={(value: any) => handleChange('numeroArrete', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('numeroArrete', e.target.value)}
                             placeholder="Ex: AR-2024-001"
                         />
                         <ElisaInput
                             label="N° Contribuable"
                             value={formData.numeroContribuable}
-                            onChange={(value: any) => handleChange('numeroContribuable', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('numeroContribuable', e.target.value)}
                             placeholder="Ex: M123456789P"
                         />
                         <ElisaInput
                             label="N° Compte Bancaire"
                             value={formData.numeroCompteBancaire}
-                            onChange={(value: any) => handleChange('numeroCompteBancaire', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('numeroCompteBancaire', e.target.value)}
                             placeholder="Ex: BEPC..."
                         />
                     </div>
@@ -201,39 +201,39 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                             label="Email"
                             type="email"
                             value={formData.contactEmail}
-                            onChange={(value: any) => handleChange('contactEmail', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('contactEmail', e.target.value)}
                             placeholder="contact@etablissement.cm"
                         />
                         <ElisaInput
                             label="Téléphone"
                             value={formData.contactTelephone}
-                            onChange={(value: any) => handleChange('contactTelephone', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('contactTelephone', e.target.value)}
                             placeholder="+237 222 00 00 00"
                         />
                     </div>
                     <ElisaInput
                         label="Adresse"
                         value={formData.adresse}
-                        onChange={(value: any) => handleChange('adresse', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('adresse', e.target.value)}
                         placeholder="Quartier, Ville"
                     />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <ElisaInput
                             label="Site Web"
                             value={formData.siteWeb}
-                            onChange={(value: any) => handleChange('siteWeb', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('siteWeb', e.target.value)}
                             placeholder="https://etablissement.cm"
                         />
                         <ElisaInput
                             label="Facebook"
                             value={formData.facebook}
-                            onChange={(value: any) => handleChange('facebook', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('facebook', e.target.value)}
                             placeholder="https://facebook.com/..."
                         />
                         <ElisaInput
                             label="Twitter"
                             value={formData.twitter}
-                            onChange={(value: any) => handleChange('twitter', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('twitter', e.target.value)}
                             placeholder="https://twitter.com/..."
                         />
                     </div>
@@ -246,20 +246,20 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         <ElisaInput
                             label="Heure d'ouverture"
                             value={formData.heuresOuverture}
-                            onChange={(value: any) => handleChange('heuresOuverture', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('heuresOuverture', e.target.value)}
                             placeholder="07:30"
                         />
                         <ElisaInput
                             label="Heure de fermeture"
                             value={formData.heuresFermeture}
-                            onChange={(value: any) => handleChange('heuresFermeture', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('heuresFermeture', e.target.value)}
                             placeholder="17:00"
                         />
                         <ElisaInput
                             label="Effectif maximum"
                             type="number"
                             value={formData.effectifMax?.toString() || ''}
-                            onChange={(value: any) => handleChange('effectifMax', value ? parseInt(value) : undefined)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('effectifMax', e.target.value ? parseInt(e.target.value) : undefined)}
                             placeholder="1500"
                         />
                     </div>
@@ -272,25 +272,25 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         <ElisaInput
                             label="Directeur(trice)"
                             value={formData.directeurNom}
-                            onChange={(value: any) => handleChange('directeurNom', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('directeurNom', e.target.value)}
                             placeholder="Dr. Jean Mouangue"
                         />
                         <ElisaInput
                             label="Directeur(trice) Adjoint(e)"
                             value={formData.directeurAdjointNom}
-                            onChange={(value: any) => handleChange('directeurAdjointNom', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('directeurAdjointNom', e.target.value)}
                             placeholder="Mme. Marie Ngo Mbock"
                         />
                         <ElisaInput
                             label="Censeur(e)"
                             value={formData.censeurNom}
-                            onChange={(value: any) => handleChange('censeurNom', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('censeurNom', e.target.value)}
                             placeholder="M. Pierre Tchuente"
                         />
                         <ElisaInput
                             label="Surveillant(e) Général(e)"
                             value={formData.surveillantGeneralNom}
-                            onChange={(value: any) => handleChange('surveillantGeneralNom', value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('surveillantGeneralNom', e.target.value)}
                             placeholder="M. Paul Atangana"
                         />
                     </div>

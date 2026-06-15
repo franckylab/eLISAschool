@@ -29,3 +29,9 @@ export {
 export { useKeyboardShortcuts } from './use-keyboard-shortcuts';
 export { useModalWindow } from './use-modal-window';
 export type { ModalWindowState, UseModalWindowOptions, UseModalWindowResult } from './use-modal-window';
+
+// NOUVEAU v3.0 - Sélection d'établissement
+export { useEtablissementSelection } from './use-etablissement-selection';
+
+// Gestion de session et expiration
+export { useSessionExpired } from './use-session-expired';

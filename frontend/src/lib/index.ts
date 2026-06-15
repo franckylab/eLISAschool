@@ -1,6 +1,7 @@
 // Barrel exports - Lib utilities
 export { cn } from './cn';
 export { apiClient } from './api-client';
+export { secureLogout, handleLogout, isLogoutInProgress } from './secure-logout';
 export { queryClient } from './query-client';
 export {
     formatDate,

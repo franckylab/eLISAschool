@@ -11,7 +11,7 @@ import { AuthService } from '../services/auth.service';
 import { utilisateurEtablissementService } from '../services/utilisateur-etablissement.service';
 import { etablissementSelectionService } from '../services/etablissement-selection.service';
 import { tokenService } from '../services/token.service';
-import { auditService } from '../services/audit.service';
+import { auditService, AuditAction, AuditSeverity } from '../services/audit.service';
 import {
     loginSchema,
     registerSchema,
@@ -286,8 +286,8 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
         await auditService.log(
             {
                 utilisateurId,
-                action: 'CONFIG_EDIT' as any, // Utiliser action existante
-                severity: 'INFO' as any,
+                action: AuditAction.CONFIG_CHANGE,
+                severity: AuditSeverity.INFO,
                 description: `Changement d'établissement: ${currentEtablissement} → ${etablissementId}`,
                 module: 'auth',
                 nouvellesValeurs: {
@@ -385,8 +385,8 @@ router.post('/complete-login', authMiddleware, async (req: Request, res: Respons
         // Audit connexion complète
         await auditService.log({
             utilisateurId,
-            action: 'LOGIN' as any,
-            severity: 'INFO' as any,
+            action: AuditAction.LOGIN,
+            severity: AuditSeverity.INFO,
             description: `Connexion complète - Établissement: ${etablissementId}`,
             module: 'auth',
         }, req);

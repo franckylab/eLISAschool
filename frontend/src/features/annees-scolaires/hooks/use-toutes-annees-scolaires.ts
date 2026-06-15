@@ -15,7 +15,7 @@ const ANNEES_SCOLAIRES_KEYS = {
     toutes: () => [...ANNEES_SCOLAIRES_KEYS.all, 'toutes'] as const,
 };
 
-export function useToutesAnneesScolaires(etablissementId?: string) {
+export function useToutesAnneesScolaires(_etablissementId?: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ANNEES_SCOLAIRES_KEYS.toutes(),

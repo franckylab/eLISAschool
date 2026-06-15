@@ -53,6 +53,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
         const payload = tokenService.verifyAccessToken(token);
 
         if (!payload) {
+            // Log de débogage pour identifier pourquoi le token est rejeté
+            console.error('[Auth Middleware] Token invalide ou expiré:', {
+                tokenPrefix: token.substring(0, 20) + '...',
+                tokenLength: token.length,
+                hasThreeParts: token.split('.').length === 3,
+            });
             throw new AppError('Token invalide ou expiré', 401, 'INVALID_TOKEN');
         }
 

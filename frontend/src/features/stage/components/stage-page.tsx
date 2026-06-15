@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Briefcase, Building, CheckCircle, Award, Users } from 'lucide-react';
+import { Briefcase, Building, CheckCircle, Award } from 'lucide-react';
 import { useStages, useStatistiquesStages } from '../hooks/use-stage';
 import { DataTable } from '@/components/ui/DataTable';
 

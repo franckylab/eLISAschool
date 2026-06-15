@@ -23,7 +23,7 @@ export function useDashboardAnalytics(filtres?: FiltresAnalytics) {
         queryKey: ANALYTICS_KEYS.dashboard(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: DashboardAnalytics }>('/api/analytics/dashboard', {
-                params: filtres,
+                params: { ...filtres } as any,
             });
             return response.data?.data;
         },
@@ -38,7 +38,7 @@ export function useKPIs(filtres?: FiltresAnalytics) {
     return useQuery({
         queryKey: ANALYTICS_KEYS.kpis(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: KPI[] }>('/api/analytics/kpis', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: KPI[] }>('/api/analytics/kpis', { params: { ...filtres } as any });
             return response.data?.data;
         },
         enabled: isAuthenticated,

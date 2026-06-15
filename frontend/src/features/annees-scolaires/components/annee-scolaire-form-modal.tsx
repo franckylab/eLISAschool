@@ -201,7 +201,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                 <ElisaSelect
                     label="Statut"
                     value={formData.statut || 'future'}
-                    onChange={(value: any) => handleChange('statut', value)}
+                    onValueChange={(value: any) => handleChange('statut', value)}
                     options={[
                         { value: 'active', label: 'Active' },
                         { value: 'inactive', label: 'Inactive' },

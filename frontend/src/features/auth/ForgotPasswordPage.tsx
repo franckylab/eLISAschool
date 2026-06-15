@@ -59,7 +59,7 @@ export function ForgotPasswordPage() {
                                 {t('forgotPassword.succes', { email: emailSent })}
                             </div>
                             <p className="text-sm text-[var(--color-texte-secondaire)]">{t('forgotPassword.verifierSpam')}</p>
-                            <Link to="/login" >
+                            <Link to="/login" search={{ redirect: undefined }}>
                                 <ElisaButton variant="outline" fullWidth icon={<ArrowLeft className="h-4 w-4" />}>
                                     {t('forgotPassword.retourConnexion')}
                                 </ElisaButton>
@@ -90,7 +90,7 @@ export function ForgotPasswordPage() {
                             >
                                 {t('forgotPassword.boutonEnvoyer')}
                             </ElisaButton>
-                            <Link to="/login" >
+                            <Link to="/login" search={{ redirect: undefined }}>
                                 <ElisaButton variant="ghost" fullWidth icon={<ArrowLeft className="h-4 w-4" />}>
                                     {t('forgotPassword.retourConnexion')}
                                 </ElisaButton>

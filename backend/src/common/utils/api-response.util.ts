@@ -23,17 +23,6 @@ import { Response } from 'express';
 import { PaginationMeta, PaginatedResult } from './pagination.util';
 
 /**
- * Interface pour les métadonnées de pagination (compatibilité descendante)
- * @deprecated Utiliser PaginationMeta de pagination.util.ts
- */
-export interface PaginationMeta {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-}
-
-/**
  * Interface pour une réponse paginée (compatibilité descendante)
  * @deprecated Utiliser PaginatedResult de pagination.util.ts
  */

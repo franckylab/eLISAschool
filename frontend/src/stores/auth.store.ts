@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiClient } from '@/lib/api-client';
+import type { PreLoginResponse } from '@/lib/api-client';
 
 export interface UtilisateurConnecte {
     id: string;
@@ -17,6 +18,19 @@ export interface UtilisateurConnecte {
     nom: string;
     prenom: string;
     permissions?: string[];
+    // NOUVEAU: Informations multi-tenant (retournées par /api/auth/me)
+    etablissementActif?: string;
+    etablissements?: Etablissement[];
+    roles?: Array<{ code: string; libelle: string; estPrincipal: boolean }>;
+    statut?: string;
+    emailVerifie?: boolean;
+    langue?: string;
+    profil?: {
+        nom: string;
+        prenom: string;
+        telephone?: string;
+        photo?: string;
+    };
 }
 
 export interface Etablissement {
@@ -35,13 +49,6 @@ export interface EtablissementDisponible {
     logoUrl?: string;
 }
 
-export interface PreLoginResponse {
-    requiereSelection: boolean;
-    etablissements?: EtablissementDisponible[];
-    tokenTemporaire?: string;
-    expiresIn?: number;
-}
-
 interface AuthState {
     accessToken: string | null;
     refreshToken: string | null;
@@ -50,6 +57,7 @@ interface AuthState {
     etablissements: Etablissement[];
     isLoading: boolean;
     isAuthenticated: boolean;
+    _initialized: boolean; // Pour l'initialisation unique
     
     // NOUVEAU v3.0 : Sélection d'établissement
     preLoginData: PreLoginResponse | null;
@@ -66,6 +74,7 @@ interface AuthState {
     verifierSession: () => Promise<boolean>;
     reset: () => void;
     setShowEtablissementModal: (show: boolean) => void;
+    initialize: () => void; // NOUVEAU: Initialisation au démarrage
 }
 
 const initialState = {
@@ -78,6 +87,7 @@ const initialState = {
     isAuthenticated: false,
     preLoginData: null,
     showEtablissementModal: false,
+    _initialized: false, // NOUVEAU: Pour l'initialisation unique
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -88,7 +98,10 @@ export const useAuthStore = create<AuthState>()(
             login: async (identifiant: string, motDePasse: string) => {
                 set({ isLoading: true });
                 try {
+                    // Étape 1 : Login - retourne MAINTENANT requiereSelectionEtablissement
                     const data = await apiClient.login(identifiant, motDePasse);
+                    
+                    // Étape 2 : Stocker les infos utilisateur SANS token complet si multi-établissements
                     set({
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
@@ -100,25 +113,53 @@ export const useAuthStore = create<AuthState>()(
                             nom: data.utilisateur.nom,
                             prenom: data.utilisateur.prenom,
                         },
+                        etablissements: data.utilisateur.etablissements || [],
+                        etablissementId: data.utilisateur.etablissementActif || null,
                         isAuthenticated: true,
                         isLoading: false,
                     });
 
-                    // Récupérer le profil complet en arrière-plan (avec permissions)
-                    try {
-                        const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
-                        if (meResponse.data) {
-                            const currentUtilisateur = get().utilisateur;
-                            set({ 
-                                utilisateur: {
-                                    ...currentUtilisateur,
-                                    ...meResponse.data,
-                                    permissions: meResponse.data.permissions || [],
-                                } 
-                            });
+                    // Étape 3 : Synchroniser avec api-client
+                    apiClient.setTokens({
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken,
+                    });
+
+                    // Étape 4 : Vérifier si sélection d'établissement requise
+                    if (data.requiereSelectionEtablissement && data.etablissementsDisponibles) {
+                        // Multi-établissements → afficher modal de sélection
+                        set({
+                            preLoginData: {
+                                requiereSelection: true,
+                                etablissements: data.etablissementsDisponibles,
+                                tokenTemporaire: data.accessToken, // Token avec etablissementId undefined
+                                expiresIn: 300, // 5 minutes
+                            },
+                            showEtablissementModal: true,
+                        });
+                    } else {
+                        // Mono-établissement → redirection directe après récupération profil
+                        try {
+                            const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
+                            if (meResponse.data) {
+                                const currentUtilisateur = get().utilisateur;
+                                const currentEtablissementId = get().etablissementId; // ✅ Préserver
+                                
+                                set({ 
+                                    utilisateur: {
+                                        ...currentUtilisateur,
+                                        ...meResponse.data,
+                                        permissions: meResponse.data.permissions || [],
+                                    },
+                                    // ✅ Utiliser etablissementActif du /me OU préserver l'existant
+                                    etablissementId: meResponse.data.etablissementActif || currentEtablissementId,
+                                    // ✅ Mettre à jour la liste des établissements
+                                    etablissements: meResponse.data.etablissements || get().etablissements,
+                                });
+                            }
+                        } catch {
+                            // Non-bloquant - préserver l'état existant
                         }
-                    } catch {
-                        // Non-bloquant
                     }
                 } catch (error) {
                     set({ isLoading: false });
@@ -159,15 +200,42 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true });
                 try {
                     const data = await apiClient.switchEtablissement(etablissementId);
+                    
+                    // ÉTAPE 1: Mettre à jour accessToken et etablissementId
                     set({
                         accessToken: data.accessToken,
                         etablissementId: data.etablissementActif.id,
                         isLoading: false,
                     });
+                    
+                    // ÉTAPE 2: Mettre à jour api-client
                     apiClient.setTokens({
                         accessToken: data.accessToken,
-                        refreshToken: get().refreshToken!,
+                        refreshToken: get().refreshToken!, // Conserver le même refreshToken
                     });
+
+                    // ÉTAPE 3: Charger le profil complet AVEC permissions (CRITIQUE)
+                    try {
+                        const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
+                        if (meResponse.data) {
+                            const currentUtilisateur = get().utilisateur;
+                            
+                            set({ 
+                                utilisateur: {
+                                    ...currentUtilisateur,
+                                    ...meResponse.data,
+                                    permissions: meResponse.data.permissions || [],
+                                },
+                                // Mettre à jour la liste des établissements
+                                etablissements: meResponse.data.etablissements || get().etablissements,
+                            });
+                            
+                            console.log('[Auth Store] Permissions mises à jour après switchEtablissement:', 
+                                meResponse.data.permissions?.length || 0, 'permissions');
+                        }
+                    } catch (error) {
+                        console.warn('[Auth Store] Échec chargement profil après switchEtablissement (non bloquant):', error);
+                    }
                 } catch (error) {
                     set({ isLoading: false });
                     throw error;
@@ -202,6 +270,14 @@ export const useAuthStore = create<AuthState>()(
             reset: () => {
                 apiClient.clearTokens();
                 set(initialState);
+                
+                // FORCER la purge immédiate du localStorage Zustand
+                // Le middleware persist peut être asynchrone, on supprime manuellement
+                try {
+                    localStorage.removeItem('elisaschool-auth');
+                } catch (error) {
+                    console.error('[Auth Store] Erreur purge localStorage:', error);
+                }
             },
 
             // NOUVEAU v3.0 : Compléter la login après sélection d'établissement
@@ -214,6 +290,15 @@ export const useAuthStore = create<AuthState>()(
 
                     if (response.data) {
                         const data = response.data;
+                        
+                        console.log('[Auth Store] completeLogin - Données reçues:', {
+                            userId: data.utilisateur.id,
+                            role: data.utilisateur.role,
+                            etablissementId: data.utilisateur.etablissementActif,
+                            hasRefreshToken: !!data.refreshToken,
+                        });
+                        
+                        // ÉTAPE 1: Mettre à jour les tokens et informations de base
                         set({
                             accessToken: data.accessToken,
                             refreshToken: data.refreshToken,
@@ -237,6 +322,62 @@ export const useAuthStore = create<AuthState>()(
                             accessToken: data.accessToken,
                             refreshToken: data.refreshToken,
                         });
+                        
+                        console.log('[Auth Store] Tokens synchronisés avec apiClient:', {
+                            hasAccessToken: !!apiClient.getAccessToken(),
+                            tokenMatch: apiClient.getAccessToken() === data.accessToken,
+                        });
+
+                        console.log('[Auth Store] ÉTAPE 1 terminée - Store mis à jour');
+
+                        // ÉTAPE 2: Charger le profil complet AVEC permissions (CRITIQUE)
+                        try {
+                            console.log('[Auth Store] Chargement profil complet...');
+                            const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
+                            console.log('[Auth Store] Réponse /api/auth/me:', {
+                                success: meResponse.success,
+                                hasData: !!meResponse.data,
+                                permissionsCount: meResponse.data?.permissions?.length || 0,
+                                role: meResponse.data?.role,
+                            });
+                            
+                            if (meResponse.data) {
+                                const currentUtilisateur = get().utilisateur;
+                                const currentEtablissementId = get().etablissementId;
+                                
+                                set({ 
+                                    utilisateur: {
+                                        ...currentUtilisateur,
+                                        ...meResponse.data,
+                                        permissions: meResponse.data.permissions || [],
+                                    },
+                                    // Utiliser etablissementActif du /me OU préserver l'existant
+                                    etablissementId: meResponse.data.etablissementActif || currentEtablissementId,
+                                    // Mettre à jour la liste des établissements
+                                    etablissements: meResponse.data.etablissements || get().etablissements,
+                                });
+                                
+                                console.log('[Auth Store] ÉTAPE 2 terminée - Permissions chargées:', 
+                                    meResponse.data.permissions?.length || 0, 'permissions');
+                                
+                                // ÉTAPE 3: FORCER la synchronisation immédiate avec localStorage
+                                // Le middleware persist peut être asynchrone, on attend un tick
+                                await new Promise(resolve => setTimeout(resolve, 50));
+                                
+                                // Vérification finale
+                                const finalState = get();
+                                console.log('[Auth Store] État final après completeLogin:', {
+                                    isAuthenticated: finalState.isAuthenticated,
+                                    etablissementId: finalState.etablissementId,
+                                    hasPermissions: !!finalState.utilisateur?.permissions,
+                                    permissionsCount: finalState.utilisateur?.permissions?.length || 0,
+                                    role: finalState.utilisateur?.role,
+                                });
+                            }
+                        } catch (error) {
+                            console.warn('[Auth Store] Échec chargement profil après completeLogin (non bloquant):', error);
+                            // Non-bloquant - l'utilisateur peut quand même accéder avec les infos de base
+                        }
                     }
                 } catch (error) {
                     set({ isLoading: false });
@@ -246,6 +387,23 @@ export const useAuthStore = create<AuthState>()(
 
             setShowEtablissementModal: (show: boolean) => {
                 set({ showEtablissementModal: show });
+            },
+
+            // NOUVEAU: Initialisation unique au démarrage
+            initialize: () => {
+                const state = get();
+                if (state._initialized) return;
+                
+                // Synchroniser les tokens stockés avec api-client
+                if (state.accessToken && state.refreshToken) {
+                    apiClient.setTokens({
+                        accessToken: state.accessToken,
+                        refreshToken: state.refreshToken,
+                    });
+                    console.log('[Auth Store] Tokens synchronisés avec API Client');
+                }
+                
+                set({ _initialized: true });
             },
         }),
         {

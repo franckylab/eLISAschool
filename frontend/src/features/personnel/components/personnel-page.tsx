@@ -7,14 +7,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
 import { PersonnelFormModal } from './personnel-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { MembrePersonnel, PersonnelFiltres } from '../types/personnel.types';
@@ -141,20 +140,22 @@ export function PersonnelPage() {
         },
     ];
 
-    // Affichage skeleton pendant le chargement
+    // Affichage loading pendant le chargement
     if (isLoading) {
-        return <PageSkeleton showStats showTable />;
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement du personnel..." />
+            </div>
+        );
     }
 
     // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
-                <ErrorMessage
-                    title="Erreur de chargement"
+                <ErrorState
                     message={error.message || "Impossible de charger les données du personnel"}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
                 />
             </div>
         );
@@ -165,7 +166,7 @@ export function PersonnelPage() {
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
                     <h1 className="text-3xl font-bold">{t('personnel.titre', { defaultValue: 'Personnel' })}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.pagination?.total || 0} membre(s)</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} membre(s)</p>
                 </div>
                 {hasPermission('personnel:create') && (
                     <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>{t('boutons.nouveau')}</ElisaButton>
@@ -184,7 +185,14 @@ export function PersonnelPage() {
                     setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                 }
                 disableClientSearch
-                pagination={data?.pagination}
+                pagination={data?.meta ? {
+                    page: data.meta.currentPage,
+                    limit: data.meta.itemsPerPage,
+                    total: data.meta.totalItems,
+                    totalPages: data.meta.totalPages,
+                    hasNext: data.meta.currentPage < data.meta.totalPages,
+                    hasPrev: data.meta.currentPage > 1,
+                } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
             />

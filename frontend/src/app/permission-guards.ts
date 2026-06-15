@@ -53,8 +53,9 @@ export function requireModulePermission(module: string, fallbackAction: string =
     });
 
     if (!hasAccess) {
+        // ✅ Rediriger vers dashboard au lieu de / avec message d'erreur
         throw redirect({
-            to: '/' as any,
+            to: '/dashboard' as any,
         });
     }
 }
@@ -87,7 +88,7 @@ export function requirePermission(permission: string) {
 
     if (!permissions.includes(permission)) {
         throw redirect({
-            to: '/' as any,
+            to: '/dashboard' as any,
         });
     }
 }
@@ -113,7 +114,7 @@ export function requireRole(roles: string[]) {
 
     if (!roles.includes(utilisateur.role)) {
         throw redirect({
-            to: '/' as any,
+            to: '/dashboard' as any,
         });
     }
 }
@@ -146,7 +147,7 @@ export function requireAllPermissions(permissions: string[]) {
 
     if (!hasAll) {
         throw redirect({
-            to: '/' as any,
+            to: '/dashboard' as any,
         });
     }
 }
@@ -179,7 +180,7 @@ export function requireAnyPermission(permissions: string[]) {
 
     if (!hasAny) {
         throw redirect({
-            to: '/' as any,
+            to: '/dashboard' as any,
         });
     }
 }

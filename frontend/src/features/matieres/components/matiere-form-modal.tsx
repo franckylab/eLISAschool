@@ -137,7 +137,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                     <ElisaInput
                         label="Nom de la matière"
                         value={formData.nom || ''}
-                        onChange={(value: any) => handleChange('nom', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nom', e.target.value)}
                         error={erreurs.nom}
                         placeholder="Ex: Mathématiques"
                         required
@@ -145,7 +145,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                     <ElisaInput
                         label="Code"
                         value={formData.code || ''}
-                        onChange={(value: any) => handleChange('code', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('code', e.target.value)}
                         error={erreurs.code}
                         placeholder="Ex: MATH"
                         required
@@ -158,7 +158,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         label="Coefficient"
                         type="number"
                         value={formData.coefficient?.toString() || '1'}
-                        onChange={(value: any) => handleChange('coefficient', parseFloat(value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('coefficient', parseFloat(e.target.value))}
                         error={erreurs.coefficient}
                         min="0.5"
                         max="10"
@@ -168,7 +168,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         label="Nombre d'heures/semaine"
                         type="number"
                         value={formData.nombreHeures?.toString() || '0'}
-                        onChange={(value: any) => handleChange('nombreHeures', parseInt(value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nombreHeures', parseInt(value))}
                         min="0"
                         max="20"
                     />
@@ -195,7 +195,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
-                        onChange={(value: any) => handleChange('statut', value)}
+                        onValueChange={(value: string) => handleChange('statut', value)}
                         options={[
                             { value: 'actif', label: 'Actif' },
                             { value: 'inactif', label: 'Inactif' },

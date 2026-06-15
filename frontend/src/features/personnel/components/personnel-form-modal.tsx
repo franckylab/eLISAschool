@@ -161,7 +161,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Nom"
                         value={formData.nom || ''}
-                        onChange={(value: any) => handleChange('nom', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nom', e.target.value)}
                         error={erreurs.nom}
                         placeholder="Nom de famille"
                         required
@@ -169,7 +169,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Prénom"
                         value={formData.prenom || ''}
-                        onChange={(value: any) => handleChange('prenom', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('prenom', e.target.value)}
                         error={erreurs.prenom}
                         placeholder="Prénom"
                         required
@@ -182,14 +182,14 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         label="Date de naissance"
                         type="date"
                         value={formData.dateNaissance || ''}
-                        onChange={(value: any) => handleChange('dateNaissance', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('dateNaissance', e.target.value)}
                         error={erreurs.dateNaissance}
                         required
                     />
                     <ElisaSelect
                         label="Sexe"
                         value={formData.sexe || 'M'}
-                        onChange={(value: any) => handleChange('sexe', value)}
+                        onValueChange={(value: string) => handleChange('sexe', value)}
                         options={[
                             { value: 'M', label: 'Masculin' },
                             { value: 'F', label: 'Féminin' },
@@ -203,14 +203,14 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         label="Email"
                         type="email"
                         value={formData.email || ''}
-                        onChange={(value: any) => handleChange('email', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('email', e.target.value)}
                         error={erreurs.email}
                         placeholder="email@exemple.com"
                     />
                     <ElisaInput
                         label="Téléphone"
                         value={formData.telephone || ''}
-                        onChange={(value: any) => handleChange('telephone', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('telephone', e.target.value)}
                         placeholder="+237 6XX XXX XXX"
                     />
                 </div>
@@ -220,7 +220,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Poste"
                         value={formData.poste || ''}
-                        onChange={(value: any) => handleChange('poste', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('poste', e.target.value)}
                         error={erreurs.poste}
                         placeholder="Ex: Enseignant, Secrétaire..."
                         required
@@ -228,7 +228,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Département"
                         value={formData.departement || ''}
-                        onChange={(value: any) => handleChange('departement', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('departement', e.target.value)}
                         placeholder="Ex: Sciences, Administration..."
                     />
                 </div>
@@ -238,7 +238,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaSelect
                         label="Type de contrat"
                         value={formData.typeContrat || 'cdi'}
-                        onChange={(value: any) => handleChange('typeContrat', value)}
+                        onValueChange={(value: string) => handleChange('typeContrat', value)}
                         options={[
                             { value: 'cdi', label: 'CDI' },
                             { value: 'cdd', label: 'CDD' },
@@ -249,7 +249,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
-                        onChange={(value: any) => handleChange('statut', value)}
+                        onValueChange={(value: string) => handleChange('statut', value)}
                         options={[
                             { value: 'actif', label: 'Actif' },
                             { value: 'inactif', label: 'Inactif' },
@@ -264,7 +264,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     label="Date d'entrée"
                     type="date"
                     value={formData.dateEntree || ''}
-                    onChange={(value: any) => handleChange('dateEntree', value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('dateEntree', e.target.value)}
                     error={erreurs.dateEntree}
                     required
                 />
@@ -274,13 +274,13 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaInput
                         label="Qualification"
                         value={formData.qualification || ''}
-                        onChange={(value: any) => handleChange('qualification', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('qualification', e.target.value)}
                         placeholder="Ex: Master, Licence..."
                     />
                     <ElisaInput
                         label="Spécialité"
                         value={formData.specialite || ''}
-                        onChange={(value: any) => handleChange('specialite', value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('specialite', e.target.value)}
                         placeholder="Ex: Mathématiques, Français..."
                     />
                 </div>

@@ -48,6 +48,7 @@ export interface CreerGroupeDto {
 export interface GroupeFiltres {
     type?: string;
     statut?: 'actif' | 'inactif';
+    actif?: boolean;
     recherche?: string;
     page?: number;
     limit?: number;

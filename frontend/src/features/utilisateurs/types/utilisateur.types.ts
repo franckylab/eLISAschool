@@ -65,6 +65,7 @@ export interface UtilisateurFiltres {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    actif?: boolean;
 }
 
 // ==================== RÔLES ====================

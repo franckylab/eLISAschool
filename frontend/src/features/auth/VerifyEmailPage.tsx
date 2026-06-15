@@ -50,7 +50,7 @@ export function VerifyEmailPage() {
                             <h2 className="mt-4 text-xl font-semibold text-[var(--color-texte)]">
                                 {t('verifyEmail.succes')}
                             </h2>
-                            <Link to="/login"  className="mt-6 inline-block">
+                            <Link to="/login" search={{ redirect: undefined }} className="mt-6 inline-block">
                                 <ElisaButton variant="primary">{t('verifyEmail.retourConnexion')}</ElisaButton>
                             </Link>
                         </>
@@ -61,7 +61,7 @@ export function VerifyEmailPage() {
                             <h2 className="mt-4 text-xl font-semibold text-[var(--color-texte)]">
                                 {t('verifyEmail.echec')}
                             </h2>
-                            <Link to="/login"  className="mt-6 inline-block">
+                            <Link to="/login" search={{ redirect: undefined }} className="mt-6 inline-block">
                                 <ElisaButton variant="outline">{t('verifyEmail.retourConnexion')}</ElisaButton>
                             </Link>
                         </>

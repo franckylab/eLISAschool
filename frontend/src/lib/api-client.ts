@@ -47,7 +47,7 @@ interface LoginResponseData {
     tokenTemporaire?: boolean;
 }
 
-interface PreLoginResponse {
+export interface PreLoginResponse {
     requiereSelection: boolean;
     etablissements?: Array<{
         id: string;
@@ -84,6 +84,108 @@ class ApiClient {
         // Restaurer les tokens depuis localStorage
         this.accessToken = localStorage.getItem('accessToken');
         this.refreshToken = localStorage.getItem('refreshToken');
+        
+        // Validation au démarrage
+        this.validateTokenOnStartup();
+    }
+
+    /**
+     * Valider le token au démarrage de l'application
+     */
+    private validateTokenOnStartup(): void {
+        if (this.accessToken) {
+            const payload = this.decodeJWT(this.accessToken);
+            
+            if (payload && !payload.etablissementId) {
+                console.warn('[API] Token stocké sans etablissementId - sélection requise');
+                
+                // Vérifier si le modal n'est pas déjà affiché (éviter boucle infinie)
+                try {
+                    const { useAuthStore } = require('@/stores/auth.store');
+                    const state = useAuthStore.getState();
+                    
+                    if (state.showEtablissementModal) {
+                        console.log('[API] Modal déjà affiché, événement ignoré');
+                        return;
+                    }
+                    
+                    if (state.etablissementId) {
+                        console.log('[API] Établissement déjà sélectionné, événement ignoré');
+                        return;
+                    }
+                } catch (error) {
+                    // Import échoué, continuer quand même
+                }
+                
+                // Déclencher événement pour afficher modal
+                window.dispatchEvent(new CustomEvent('auth:etablissement-required'));
+            }
+        }
+    }
+
+    /**
+     * Décoder le JWT sans vérification de signature (pour validation client)
+     */
+    private decodeJWT(token: string): any {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
+     * Valider que le token contient un etablissementId avant envoi
+     */
+    private validateTokenBeforeRequest(): boolean {
+        if (!this.accessToken) return false;
+        
+        try {
+            const payload = this.decodeJWT(this.accessToken);
+            
+            if (!payload) {
+                console.error('[API] Token invalide');
+                return false;
+            }
+            
+            // Vérifier que etablissementId est présent
+            if (!payload.etablissementId) {
+                console.warn('[API] Token incomplet: etablissementId manquant');
+                
+                // Vérifier si le modal n'est pas déjà affiché (éviter boucle infinie)
+                try {
+                    const { useAuthStore } = require('@/stores/auth.store');
+                    const state = useAuthStore.getState();
+                    
+                    if (state.showEtablissementModal) {
+                        console.log('[API] Modal déjà affiché, événement ignoré');
+                        return false;
+                    }
+                    
+                    if (state.etablissementId) {
+                        console.log('[API] Établissement déjà sélectionné, événement ignoré');
+                        return false;
+                    }
+                } catch (error) {
+                    // Import échoué, continuer quand même
+                }
+                
+                // Déclencher événement pour afficher modal sélection
+                window.dispatchEvent(new CustomEvent('auth:etablissement-required'));
+                
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('[API] Erreur validation token:', error);
+            return false;
+        }
     }
 
     // ─── Gestion des tokens ──────────────────────────────
@@ -130,6 +232,8 @@ class ApiClient {
 
     private async refreshAccessToken(): Promise<string> {
         if (!this.refreshToken) {
+            // Aucun refresh token → session expirée
+            window.dispatchEvent(new CustomEvent('auth:session-expired'));
             throw new Error('Aucun refresh token disponible');
         }
 
@@ -140,6 +244,7 @@ class ApiClient {
         });
 
         if (!response.ok) {
+            // Refresh token invalide ou expiré
             this.clearTokens();
             window.dispatchEvent(new CustomEvent('auth:session-expired'));
             throw new Error('Session expirée');
@@ -147,7 +252,9 @@ class ApiClient {
 
         const result: ApiResponse<TokenPair> = await response.json();
         if (!result.success || !result.data) {
+            // Réponse invalide du serveur
             this.clearTokens();
+            window.dispatchEvent(new CustomEvent('auth:session-expired'));
             throw new Error('Échec du rafraîchissement du token');
         }
 
@@ -173,6 +280,22 @@ class ApiClient {
         options: RequestInit = {},
         retryCount = 0,
     ): Promise<T> {
+        // EXCEPTIONS: Routes auth n'ont pas besoin de validation etablissementId
+        const authRoutes = [
+            '/api/auth/login',
+            '/api/auth/register',
+            '/api/auth/refresh',
+            '/api/auth/pre-login',
+            '/api/auth/complete-login',
+            '/api/auth/etablissements-disponibles', // ← NOUVEAU: requis pour EtablissementSwitcher
+        ];
+        const isAuthRoute = authRoutes.some(route => endpoint.startsWith(route));
+        
+        // Valider le token AVANT envoi (sauf routes auth)
+        if (!isAuthRoute && !this.validateTokenBeforeRequest()) {
+            throw new Error('Token incomplet: veuillez sélectionner votre établissement');
+        }
+        
         let config: RequestInit & { url: string } = {
             ...options,
             url: `${API_BASE_URL}${endpoint}`,
@@ -188,6 +311,16 @@ class ApiClient {
                 ...config.headers,
                 Authorization: `Bearer ${this.accessToken}`,
             };
+            
+            // Log de débogage pour les requêtes API
+            if (endpoint.includes('/niveaux')) {
+                console.log('[API Client] Requête avec token:', {
+                    endpoint,
+                    hasToken: !!this.accessToken,
+                    tokenPrefix: this.accessToken.substring(0, 20) + '...',
+                    hasEtablissementId: this.decodeJWT(this.accessToken)?.etablissementId,
+                });
+            }
         }
 
         // Appliquer les intercepteurs de requête
@@ -231,10 +364,8 @@ class ApiClient {
                     response = await fetch(config.url, config);
                 } catch (refreshError) {
                     await this.processQueue(refreshError as Error, null);
-                    // Refresh échoué → déconnexion
+                    // Refresh échoué → déconnexion (l'événement est déjà dispatché dans refreshAccessToken)
                     this.clearTokens();
-                    window.dispatchEvent(new CustomEvent('auth:logout'));
-                    window.location.href = '/auth/login';
                     throw refreshError;
                 } finally {
                     this.isRefreshing = false;
@@ -260,8 +391,8 @@ class ApiClient {
             // 401 après refresh ou sans refresh token → déconnexion
             if (response.status === 401 && !this.refreshToken) {
                 this.clearTokens();
-                window.dispatchEvent(new CustomEvent('auth:logout'));
-                window.location.href = '/auth/login';
+                window.dispatchEvent(new CustomEvent('auth:session-expired'));
+                throw new Error('Session expirée - veuillez vous reconnecter');
             }
             
             // 403 → Interdit

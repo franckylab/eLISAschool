@@ -20,7 +20,7 @@ import {
     JoinColumn,
     Index
 } from 'typeorm';
-import { Etablissement } from '@modules/etablissement/entities';
+import { Etablissement, SousSysteme } from '@modules/etablissement/entities';
 
 @Entity('groupes_matieres')
 export class GroupeMatiere {
@@ -69,6 +69,15 @@ export class Matiere {
     @ManyToOne(() => Etablissement)
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    /**
+     * Sous-système éducatif pour les établissements biculturels.
+     * NULL = matière commune aux deux systèmes (ex: Mathématiques, Sciences)
+     * FRANCOPHONE = matière spécifique au système francophone (ex: Français)
+     * ANGLOPHONE = matière spécifique au système anglophone (ex: English Language)
+     */
+    @Column({ type: 'enum', enum: SousSysteme, nullable: true })
+    sousSysteme?: SousSysteme;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

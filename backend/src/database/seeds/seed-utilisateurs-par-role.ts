@@ -10,7 +10,7 @@
  */
 
 import { AppDataSource } from '../data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurRole } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurRole, UtilisateurEtablissement } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 
@@ -89,13 +89,18 @@ const USERS_TO_CREATE: UserRoleConfig[] = [
 
 /**
  * Seed des utilisateurs par rôle
- * @param etablissementId ID de l'établissement par défaut
+ * @param etablissementPrincipalId ID de l'établissement principal
+ * @param etablissementSecondaireId ID de l'établissement secondaire (optionnel, pour le CHEF_ETABLISSEMENT)
  * @returns Nombre d'utilisateurs créés
  */
-export async function seedUtilisateursParRole(etablissementId: string): Promise<number> {
+export async function seedUtilisateursParRole(
+    etablissementPrincipalId: string,
+    etablissementSecondaireId?: string,
+): Promise<number> {
     const utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
     const utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
+    const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
     const roleRepo = AppDataSource.getRepository('Role');
 
     let count = 0;
@@ -132,7 +137,7 @@ export async function seedUtilisateursParRole(etablissementId: string): Promise<
             statut: StatutUtilisateur.ACTIF,
             emailVerifie: true,
             langue: 'fr',
-            etablissementId: etablissementId,
+            etablissementId: etablissementPrincipalId, // Établissement principal (compatibilité legacy)
         });
 
         await utilisateurRepo.save(utilisateur);
@@ -147,7 +152,7 @@ export async function seedUtilisateursParRole(etablissementId: string): Promise<
 
         await profilRepo.save(profil);
 
-        // Créer le lien utilisateur-role (nouveau système multi-rôles)
+        // Créer le lien utilisateur-rôle (nouveau système multi-rôles)
         const utilisateurRole = utilisateurRoleRepo.create({
             utilisateurId: utilisateur.id,
             roleId: (role as any).id,
@@ -157,11 +162,52 @@ export async function seedUtilisateursParRole(etablissementId: string): Promise<
 
         await utilisateurRoleRepo.save(utilisateurRole);
 
-        count++;
-        logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role}`);
+        // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement pour le multi-tenant
+        
+        // Pour le CHEF_ETABLISSEMENT : lier aux 2 établissements si etablissementSecondaireId est fourni
+        if (config.role === Role.CHEF_ETABLISSEMENT && etablissementSecondaireId) {
+            // Lien avec l'établissement principal
+            const utilisateurEtablissementPrincipal = utilisateurEtablissementRepo.create({
+                utilisateurId: utilisateur.id,
+                etablissementId: etablissementPrincipalId,
+                role: config.role,
+                etablissementPrincipal: true, // Principal par défaut
+                actif: true,
+                dateDebut: new Date(),
+            });
+            await utilisateurEtablissementRepo.save(utilisateurEtablissementPrincipal);
+
+            // Lien avec l'établissement secondaire
+            const utilisateurEtablissementSecondaire = utilisateurEtablissementRepo.create({
+                utilisateurId: utilisateur.id,
+                etablissementId: etablissementSecondaireId,
+                role: config.role,
+                etablissementPrincipal: false,
+                actif: true,
+                dateDebut: new Date(),
+            });
+            await utilisateurEtablissementRepo.save(utilisateurEtablissementSecondaire);
+
+            count++;
+            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissements: ${etablissementPrincipalId}, ${etablissementSecondaireId})`);
+        } else {
+            // Pour les autres rôles : un seul établissement (le principal)
+            const utilisateurEtablissement = utilisateurEtablissementRepo.create({
+                utilisateurId: utilisateur.id,
+                etablissementId: etablissementPrincipalId,
+                role: config.role,
+                etablissementPrincipal: true,
+                actif: true,
+                dateDebut: new Date(),
+            });
+
+            await utilisateurEtablissementRepo.save(utilisateurEtablissement);
+            count++;
+            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissement: ${etablissementPrincipalId})`);
+        }
     }
 
-    logger.info(`✅ ${count} utilisateurs créés (mot de passe: ${DEFAULT_PASSWORD})`);
+    logger.info(`✅ ${count} utilisateurs créés et liés à l'établissement (mot de passe: ${DEFAULT_PASSWORD})`);
     return count;
 }
 

@@ -1,11 +1,11 @@
 /**
  * ==================================
- * eLISAschool - Seed Établissement par défaut
+ * eLISAschool - Seed Établissements par défaut
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
- * Crée un établissement par défaut lié à toutes les données du système
+ * Crée deux établissements par défaut liés à toutes les données du système
  */
 
 import { AppDataSource } from '../data-source';
@@ -13,101 +13,182 @@ import { Etablissement, SousSysteme, TypeEtablissement, StatutEtablissement } fr
 import { EtablissementConfig } from '@modules/etablissement/entities/etablissement-config.entity';
 import { logger } from '@common/utils/logger.util';
 
-/**
- * Seed de l'établissement par défaut
- * @returns L'ID de l'établissement créé ou existant
- */
-export async function seedEtablissementParDefaut(): Promise<string> {
-    const etablissementRepo = AppDataSource.getRepository(Etablissement);
-    const configRepo = AppDataSource.getRepository(EtablissementConfig);
-
-    // Vérifier si l'établissement existe déjà
-    const existant = await etablissementRepo.findOne({
-        where: { codeEtablissement: 'ETAB-001' },
-    });
-
-    if (existant) {
-        logger.info('✅ Établissement par défaut déjà existant');
-        return existant.id;
-    }
-
-    logger.info('🏫 Création de l\'établissement par défaut...');
-
-    // Créer l'établissement
-    const etablissement = etablissementRepo.create({
-        nom: 'Lycée Bilingue eLISAschool',
-        codeEtablissement: 'ETAB-001',
-        slogan: 'L\'excellence éducative au service de la réussite',
-        sousSysteme: SousSysteme.BICULTUREL,
-        type: TypeEtablissement.LAIC,
-        contactEmail: 'contact@elisaschool.cm',
-        contactTelephone: '+237 690 000 000',
-        adresse: 'Yaoundé, Cameroun',
-        siteWeb: 'https://elisaschool.cm',
-        actif: true,
-        statut: StatutEtablissement.ACTIF,
-        directeurNom: 'Dr. Jean Dupont',
-        directeurAdjointNom: 'Mme. Marie Ngo Mback',
-        censeurNom: 'M. Pierre Mbarga',
-        surveillantGeneralNom: 'Mme. Aïcha Mahamat',
-        heuresOuverture: '07:00',
-        heuresFermeture: '18:00',
-        effectifMax: 1000,
-        effectifActuel: 0,
-    });
-
-    await etablissementRepo.save(etablissement);
-    logger.info(`✅ Établissement créé: ${etablissement.nom} (ID: ${etablissement.id})`);
-
-    // Créer la configuration associée
-    const config = configRepo.create({
-        etablissementId: etablissement.id,
-        cyclesActifs: [], // Sera peuplé par seed-structure-academique
-        configurationBulletin: {
-            style: 'moderne',
-            couleurPrimaire: '#2563EB',
-            afficherRang: true,
-            afficherMoyenneGenerale: true,
-            afficherAppreciation: true,
-            afficherPhoto: true,
-            afficherCourbeProgression: true,
-        },
-        maxEleves: 1000,
-        maxUtilisateurs: 100,
-        maxClasses: 50,
-        stockageMaxMB: 5000,
-        planAbonnement: 'gratuit',
-    });
-
-    await configRepo.save(config);
-    logger.info('✅ Configuration de l\'établissement créée');
-
-    return etablissement.id;
+export interface EtablissementsDefaut {
+    principal: string; // ETAB-001
+    secondaire: string; // ETAB-002
 }
 
 /**
- * Supprime l'établissement par défaut (pour reset)
+ * Seed des établissements par défaut (2 établissements)
+ * @returns Les IDs des établissements créés
  */
-export async function deleteEtablissementParDefaut(): Promise<void> {
+export async function seedEtablissementsParDefaut(): Promise<EtablissementsDefaut> {
     const etablissementRepo = AppDataSource.getRepository(Etablissement);
     const configRepo = AppDataSource.getRepository(EtablissementConfig);
 
-    const etablissement = await etablissementRepo.findOne({
+    // ==================================
+    // ÉTABLISSEMENT 1 : Principal
+    // ==================================
+    
+    // Vérifier si l'établissement principal existe déjà
+    const existant1 = await etablissementRepo.findOne({
         where: { codeEtablissement: 'ETAB-001' },
     });
 
-    if (!etablissement) {
-        logger.info('Établissement par défaut n\'existe pas, skip...');
-        return;
+    let etablissementPrincipal: Etablissement;
+
+    if (existant1) {
+        logger.info('✅ Établissement principal déjà existant');
+        etablissementPrincipal = existant1;
+    } else {
+        logger.info('🏫 Création de l\'établissement principal...');
+
+        etablissementPrincipal = etablissementRepo.create({
+            nom: 'Lycée Bilingue eLISAschool',
+            codeEtablissement: 'ETAB-001',
+            slogan: 'L\'excellence éducative au service de la réussite',
+            sousSysteme: SousSysteme.BICULTUREL,
+            type: TypeEtablissement.LAIC,
+            contactEmail: 'contact@elisaschool.cm',
+            contactTelephone: '+237 690 000 000',
+            adresse: 'Yaoundé, Cameroun',
+            siteWeb: 'https://elisaschool.cm',
+            actif: true,
+            statut: StatutEtablissement.ACTIF,
+            directeurNom: 'Dr. Jean Dupont',
+            directeurAdjointNom: 'Mme. Marie Ngo Mback',
+            censeurNom: 'M. Pierre Mbarga',
+            surveillantGeneralNom: 'Mme. Aïcha Mahamat',
+            heuresOuverture: '07:00',
+            heuresFermeture: '18:00',
+            effectifMax: 1000,
+            effectifActuel: 0,
+        });
+
+        await etablissementRepo.save(etablissementPrincipal);
+        logger.info(`✅ Établissement principal créé: ${etablissementPrincipal.nom} (ID: ${etablissementPrincipal.id})`);
+
+        // Créer la configuration associée
+        const config1 = configRepo.create({
+            etablissementId: etablissementPrincipal.id,
+            cyclesActifs: [],
+            configurationBulletin: {
+                style: 'moderne',
+                couleurPrimaire: '#2563EB',
+                afficherRang: true,
+                afficherMoyenneGenerale: true,
+                afficherAppreciation: true,
+                afficherPhoto: true,
+                afficherCourbeProgression: true,
+            },
+            maxEleves: 1000,
+            maxUtilisateurs: 100,
+            maxClasses: 50,
+            stockageMaxMB: 5000,
+            planAbonnement: 'gratuit',
+        });
+
+        await configRepo.save(config1);
+        logger.info('✅ Configuration de l\'établissement principal créée');
     }
 
-    // Supprimer la config d'abord
-    await configRepo.delete({ etablissementId: etablissement.id });
+    // ==================================
+    // ÉTABLISSEMENT 2 : Secondaire
+    // ==================================
     
-    // Supprimer l'établissement
-    await etablissementRepo.remove(etablissement);
-    
-    logger.info('🗑️  Établissement par défaut supprimé');
+    // Vérifier si l'établissement secondaire existe déjà
+    const existant2 = await etablissementRepo.findOne({
+        where: { codeEtablissement: 'ETAB-002' },
+    });
+
+    let etablissementSecondaire: Etablissement;
+
+    if (existant2) {
+        logger.info('✅ Établissement secondaire déjà existant');
+        etablissementSecondaire = existant2;
+    } else {
+        logger.info('🏫 Création de l\'établissement secondaire...');
+
+        etablissementSecondaire = etablissementRepo.create({
+            nom: 'Collège Privé Les Palmiers',
+            codeEtablissement: 'ETAB-002',
+            slogan: 'Former les leaders de demain',
+            sousSysteme: SousSysteme.FRANCOPHONE,
+            type: TypeEtablissement.CONFESSIONNEL_CATHOLIQUE,
+            contactEmail: 'contact@palmiers.cm',
+            contactTelephone: '+237 690 111 111',
+            adresse: 'Douala, Cameroun',
+            siteWeb: 'https://palmiers.cm',
+            actif: true,
+            statut: StatutEtablissement.ACTIF,
+            directeurNom: 'Mme. Claire Onguene',
+            directeurAdjointNom: 'M. Thomas Ndongo',
+            censeurNom: 'Mme. Brigitte Ekoa',
+            surveillantGeneralNom: 'M. Robert Bell',
+            heuresOuverture: '07:30',
+            heuresFermeture: '17:30',
+            effectifMax: 500,
+            effectifActuel: 0,
+        });
+
+        await etablissementRepo.save(etablissementSecondaire);
+        logger.info(`✅ Établissement secondaire créé: ${etablissementSecondaire.nom} (ID: ${etablissementSecondaire.id})`);
+
+        // Créer la configuration associée
+        const config2 = configRepo.create({
+            etablissementId: etablissementSecondaire.id,
+            cyclesActifs: [],
+            configurationBulletin: {
+                style: 'classique',
+                couleurPrimaire: '#059669',
+                afficherRang: true,
+                afficherMoyenneGenerale: true,
+                afficherAppreciation: true,
+                afficherPhoto: true,
+                afficherCourbeProgression: false,
+            },
+            maxEleves: 500,
+            maxUtilisateurs: 50,
+            maxClasses: 30,
+            stockageMaxMB: 2000,
+            planAbonnement: 'gratuit',
+        });
+
+        await configRepo.save(config2);
+        logger.info('✅ Configuration de l\'établissement secondaire créée');
+    }
+
+    return {
+        principal: etablissementPrincipal.id,
+        secondaire: etablissementSecondaire.id,
+    };
 }
 
-export default seedEtablissementParDefaut;
+/**
+ * Supprime les établissements par défaut (pour reset)
+ */
+export async function deleteEtablissementsParDefaut(): Promise<void> {
+    const etablissementRepo = AppDataSource.getRepository(Etablissement);
+    const configRepo = AppDataSource.getRepository(EtablissementConfig);
+
+    for (const code of ['ETAB-001', 'ETAB-002']) {
+        const etablissement = await etablissementRepo.findOne({
+            where: { codeEtablissement: code },
+        });
+
+        if (!etablissement) {
+            logger.info(`Établissement ${code} n'existe pas, skip...`);
+            continue;
+        }
+
+        // Supprimer la config d'abord
+        await configRepo.delete({ etablissementId: etablissement.id });
+        
+        // Supprimer l'établissement
+        await etablissementRepo.remove(etablissement);
+        
+        logger.info(`🗑️  Établissement ${code} supprimé`);
+    }
+}
+
+export default seedEtablissementsParDefaut;

@@ -15,7 +15,6 @@ import {
     Index,
 } from 'typeorm';
 import { Cycle } from '@modules/cycles/entities';
-import { Filiere } from '@modules/filieres/entities';
 import { ExamenNational } from '@modules/examens-nationaux/entities';
 import { SousSysteme } from '@modules/etablissement/entities';
 
@@ -37,18 +36,6 @@ export class Niveau {
     @ManyToOne(() => Cycle)
     @JoinColumn({ name: 'cycleId' })
     cycle?: Cycle;
-
-    /**
-     * @deprecated Utiliser Classe.filiereId à la place.
-     * Une filière s'applique à une classe, pas à un niveau.
-     * Ce champ sera supprimé dans la version 3.0.
-     */
-    @Column({ type: 'uuid', nullable: true })
-    filiereId?: string;
-
-    @ManyToOne(() => Filiere, { nullable: true })
-    @JoinColumn({ name: 'filiereId' })
-    filiere?: Filiere;
 
     @Column({ type: 'uuid', nullable: true })
     examenNationalId?: string;

@@ -38,6 +38,8 @@ export interface Creneau {
         nom: string;
         capacite: number;
     };
+    page?: number;
+    limit?: number;
 }
 
 export interface CreerCreneauDto {
@@ -49,6 +51,8 @@ export interface CreerCreneauDto {
     classeId: string;
     salleId?: string;
     anneeScolaireId: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface EmploiDuTempsFiltres {
@@ -56,6 +60,8 @@ export interface EmploiDuTempsFiltres {
     enseignantId?: string;
     salleId?: string;
     jourSemaine?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface StatistiquesEmploiDuTemps {
@@ -65,6 +71,8 @@ export interface StatistiquesEmploiDuTemps {
     parEnseignant: { enseignant: string; nombre: number; }[];
     heuresSemaines: number;
     tauxOccupation: number;
+    page?: number;
+    limit?: number;
 }
 
 export interface ConflitCreneau {
@@ -72,4 +80,6 @@ export interface ConflitCreneau {
     creneau1: Creneau;
     creneau2: Creneau;
     description: string;
+    page?: number;
+    limit?: number;
 }

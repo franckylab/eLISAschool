@@ -133,7 +133,6 @@ export function PermissionButton({
     disabledClassName = 'opacity-50 cursor-not-allowed pointer-events-none',
     children,
     mode = 'any',
-    ...props
 }: PermissionButtonProps) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
