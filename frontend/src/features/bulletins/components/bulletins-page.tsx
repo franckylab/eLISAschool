@@ -10,6 +10,7 @@ import { FileText, Download, Award } from 'lucide-react';
 import { useBulletins, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { usePermissions } from '@/hooks';
 import type { Bulletin, BulletinFiltres } from '../types/bulletin.types';
 import type { Column } from '@/components/ui/DataTable';
@@ -18,9 +19,28 @@ export function BulletinsPage() {
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<BulletinFiltres>({ page: 1, limit: 20 });
 
-    const { data, isLoading } = useBulletins(filtres);
+    const { data, isLoading, error } = useBulletins(filtres);
     const supprimer = useSupprimerBulletin();
     const exporter = useExporterBulletin();
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des bulletins..." />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <ErrorState
+                    message={error.message || "Impossible de charger les bulletins"}
+                    onRetry={() => window.location.reload()}
+                />
+            </div>
+        );
+    }
 
     const colonnes: Column<Bulletin>[] = [
         {
@@ -128,7 +148,7 @@ export function BulletinsPage() {
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
-                isLoading={isLoading}
+                isLoading={false}
                 searchPlaceholder="Rechercher..."
                 enableReordering
                 enablePinning

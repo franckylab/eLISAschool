@@ -77,7 +77,7 @@ export function LaboratoirePage() {
                 </motion.div>
             </div>
 
-            {reservations}<DataTable
+            <DataTable
                 data={reservations}
                 columns={colonnes}
                 enableReordering

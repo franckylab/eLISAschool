@@ -22,7 +22,7 @@ export function useCreneaux(filtres?: EmploiDuTempsFiltres) {
     return useQuery({
         queryKey: EMPLOIS_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Creneau[]; meta: any }>('/api/emplois-du-temps/creneaux', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Creneau[]; meta: any }>('/api/emplois-du-temps/creneaux', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

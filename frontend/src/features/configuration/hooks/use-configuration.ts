@@ -53,7 +53,7 @@ export function useParametres(filtres: ParametreFiltres = {}) {
                     totalPages: number;
                     itemsPerPage: number;
                 };
-            }>('/api/configuration/parametres', { params: filtres });
+            }>('/api/configuration/parametres', { params: filtres as any });
 
             if (!response.data) {
                 throw new Error('Paramètres non disponibles');
@@ -186,7 +186,7 @@ export function useHistoriqueConfiguration(filtres: HistoriqueFiltres = {}) {
                     totalPages: number;
                     itemsPerPage: number;
                 };
-            }>('/api/configuration/historique', { params: filtres });
+            }>('/api/configuration/historique', { params: filtres as any });
 
             if (!response.data) {
                 throw new Error('Historique non disponible');

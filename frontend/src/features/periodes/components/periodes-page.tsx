@@ -106,7 +106,7 @@ export function PeriodesPage() {
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
                     <h1 className="text-3xl font-bold">Périodes</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta ? { page: data.meta.currentPage, limit: data.meta.itemsPerPage, total: data.meta.totalItems, totalPages: data.meta.totalPages, hasNext: data.meta.currentPage < data.meta.totalPages, hasPrev: data.meta.currentPage > 1 } : undefined?.total || 0} période(s)</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} période(s)</p>
                 </div>
                 {hasPermission('periodes:create') && (
                     <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>

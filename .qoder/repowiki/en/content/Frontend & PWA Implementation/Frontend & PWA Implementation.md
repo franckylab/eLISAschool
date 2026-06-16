@@ -17,6 +17,8 @@
 - [frontend/src/routes/_auth.competences.tsx](file://frontend/src/routes/_auth.competences.tsx)
 - [frontend/src/routes/_auth.specialites.tsx](file://frontend/src/routes/_auth.specialites.tsx)
 - [frontend/src/features/auth/LoginSlideshow.tsx](file://frontend/src/features/auth/LoginSlideshow.tsx)
+- [frontend/src/features/auth/LoginPage.tsx](file://frontend/src/features/auth/LoginPage.tsx)
+- [frontend/src/routes/login.tsx](file://frontend/src/routes/login.tsx)
 - [frontend/src/hooks/use-session-expired.ts](file://frontend/src/hooks/use-session-expired.ts)
 - [frontend/src/lib/secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
 - [frontend/src/components/auth/EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
@@ -31,12 +33,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive LoginSlideshow component for enhanced authentication experience
-- Implemented session expiration handling with automatic logout and user notification
-- Integrated secure logout utilities with token clearing and state cleanup
-- Enhanced establishment management hooks with improved session handling
-- Updated authentication flow with slideshow integration and session management
-- Added secure logout functionality with comprehensive cleanup procedures
+- Enhanced LoginSlideshow component with reduced icon imports (12→6) and streamlined interface
+- Improved establishment branding integration within LoginSlideshow
+- Updated LoginPage with dynamic background image rotation using Framer Motion
+- Implemented intelligent image preloading strategy with priority loading of first 5 images and background loading of remaining 15 images
+- Enhanced visual presentation with optimized animations and reduced bundle size
+- Updated authentication flow with improved slideshow integration and session management
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -68,14 +70,14 @@ Key goals:
 - Cover PWA manifest configuration, caching strategies, and performance optimization
 - Address cross-browser compatibility, accessibility, and mobile-first design
 - Document establishment selection system and multi-tenant functionality
-- Integrate new authentication enhancements including slideshow and session management
+- Integrate new authentication enhancements including enhanced slideshow and session management
 
-**Updated** Added comprehensive coverage of LoginSlideshow component, session expiration handling, secure logout utilities, and enhanced establishment management features with improved authentication flow.
+**Updated** Added comprehensive coverage of enhanced LoginSlideshow component with reduced icon imports, dynamic background image rotation using Framer Motion, intelligent image preloading strategy, and improved establishment branding integration within LoginPage and authentication flow.
 
 ## Project Structure
 The repository follows a monorepo layout with three primary workspaces:
 - backend: Express.js API (TypeScript) with multi-tenant middleware support
-- frontend: React + Vite PWA with establishment selection, slideshow authentication, and session management
+- frontend: React + Vite PWA with establishment selection, enhanced slideshow authentication, and session management
 - shared: Shared TypeScript library for types, validators, enums, and constants
 
 ```mermaid
@@ -129,7 +131,7 @@ This section outlines the core building blocks leveraged by the frontend and PWA
 - [shared/src/enums/roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
 
 ## Architecture Overview
-The frontend is structured as a React + Vite PWA. The monorepo's shared library provides type-safe contracts and validation logic used by both frontend and backend. The Dockerfile for the frontend builds the PWA and serves it via Nginx. The establishment selection system integrates seamlessly with the multi-tenant architecture, enhanced by new authentication components and session management.
+The frontend is structured as a React + Vite PWA. The monorepo's shared library provides type-safe contracts and validation logic used by both frontend and backend. The Dockerfile for the frontend builds the PWA and serves it via Nginx. The establishment selection system integrates seamlessly with the multi-tenant architecture, enhanced by new authentication components and session management with improved slideshow and dynamic background presentation.
 
 ```mermaid
 graph TB
@@ -141,7 +143,9 @@ SW["Service Worker"]
 EstablishmentSelection["Establishment Selection System"]
 EstablishmentSwitcher["Establishment Switcher"]
 MultiTenantHooks["Enhanced Multi-Tenant Hooks"]
-LoginSlideshow["Login Slideshow"]
+LoginSlideshow["Enhanced Login Slideshow"]
+DynamicBackground["Dynamic Background Rotation"]
+ImagePreloader["Intelligent Image Preloader"]
 SessionExpired["Session Expiration Handler"]
 SecureLogout["Secure Logout Utilities"]
 end
@@ -169,6 +173,8 @@ SW --> UI
 EstablishmentSelection --> API
 EstablishmentSwitcher --> API
 MultiTenantHooks --> API
+LoginSlideshow --> DynamicBackground
+DynamicBackground --> ImagePreloader
 LoginSlideshow --> SessionExpired
 SessionExpired --> SecureLogout
 SecureLogout --> API
@@ -237,17 +243,24 @@ PaginatedResult <.. PaginationOptions
 - [shared/src/constants/app.constants.ts:23-71](file://shared/src/constants/app.constants.ts#L23-L71)
 
 ### Authentication Flow (Client-Side)
-The client-side authentication flow uses Zod schemas for form validation and integrates with backend endpoints, enhanced by slideshow presentation and session management.
+The client-side authentication flow uses Zod schemas for form validation and integrates with backend endpoints, enhanced by dynamic slideshow presentation with establishment branding and intelligent image preloading.
 
 ```mermaid
 sequenceDiagram
 participant U as "User"
-participant LS as "LoginSlideshow"
+participant LP as "LoginPage"
+participant LS as "Enhanced LoginSlideshow"
+participant DP as "Dynamic Preloader"
+participant FM as "Framer Motion"
 participant C as "Client UI"
 participant V as "Zod Validators"
 participant A as "Auth API"
-U->>LS : "View Login Page"
-LS->>U : "Display Slideshow"
+U->>LP : "View Login Page"
+LP->>LS : "Initialize Slideshow"
+LS->>DP : "Load Priority Images (5)"
+DP-->>LS : "Priority images loaded"
+LS->>FM : "Animate background rotation"
+FM-->>U : "Smooth transitions"
 U->>C : "Enter credentials"
 C->>V : "Validate(loginSchema)"
 V-->>C : "Validation result"
@@ -260,11 +273,13 @@ C->>C : "Persist tokens / redirect"
 - [shared/src/validators/auth.validators.ts:15-25](file://shared/src/validators/auth.validators.ts#L15-L25)
 - [shared/src/types/api.types.ts:12-17](file://shared/src/types/api.types.ts#L12-L17)
 - [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
 
 **Section sources**
 - [shared/src/validators/auth.validators.ts:15-25](file://shared/src/validators/auth.validators.ts#L15-L25)
 - [shared/src/types/api.types.ts:12-17](file://shared/src/types/api.types.ts#L12-L17)
 - [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
 
 ### PWA Build and Deployment Pipeline
 The frontend is built as a PWA and served via Nginx in a containerized environment.
@@ -302,22 +317,22 @@ Note: Theme and responsive patterns are defined in the shared library constants 
 
 ## Authentication Enhancements
 
-### LoginSlideshow Component
-The LoginSlideshow component provides an engaging presentation layer for the authentication process, displaying establishment branding and promotional content while users enter their credentials.
+### Enhanced LoginSlideshow Component
+The LoginSlideshow component has been significantly enhanced with reduced icon imports (12→6), streamlined interface, and improved establishment branding integration. The component now features optimized animations and reduced bundle size while maintaining visual appeal.
 
 ```mermaid
 graph TB
-LoginSlideshow["LoginSlideshow Component"]
-ImageGallery["Image Gallery"]
-SlideControls["Slide Controls"]
-AutoPlay["Auto Play Functionality"]
-EstablishmentBranding["Establishment Branding"]
-LoginForm["Embedded Login Form"]
-LoginSlideshow --> ImageGallery
-ImageGallery --> SlideControls
-ImageGallery --> AutoPlay
-ImageGallery --> EstablishmentBranding
-LoginSlideshow --> LoginForm
+EnhancedLoginSlideshow["Enhanced LoginSlideshow Component"]
+ReducedIcons["Reduced Icon Imports (12→6)"]
+StreamlinedInterface["Streamlined Interface"]
+EstablishmentBranding["Improved Establishment Branding"]
+OptimizedAnimations["Optimized Animations"]
+ReducedBundleSize["Reduced Bundle Size"]
+EnhancedLoginSlideshow --> ReducedIcons
+EnhancedLoginSlideshow --> StreamlinedInterface
+EnhancedLoginSlideshow --> EstablishmentBranding
+EnhancedLoginSlideshow --> OptimizedAnimations
+EnhancedLoginSlideshow --> ReducedBundleSize
 ```
 
 **Diagram sources**
@@ -325,6 +340,53 @@ LoginSlideshow --> LoginForm
 
 **Section sources**
 - [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+
+### LoginPage with Dynamic Background Rotation
+The LoginPage has been updated with dynamic background image rotation using Framer Motion, providing a more engaging user experience with smooth transitions between establishment images.
+
+```mermaid
+graph TB
+LoginPage["Enhanced LoginPage"]
+DynamicRotation["Dynamic Background Rotation"]
+FramerMotion["Framer Motion Integration"]
+PriorityLoading["Priority Loading Strategy"]
+BackgroundImages["15 Background Images"]
+ImagePreloader["Intelligent Image Preloader"]
+LoginPage --> DynamicRotation
+DynamicRotation --> FramerMotion
+FramerMotion --> PriorityLoading
+PriorityLoading --> BackgroundImages
+PriorityLoading --> ImagePreloader
+```
+
+**Diagram sources**
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
+
+**Section sources**
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
+
+### Intelligent Image Preloading Strategy
+The authentication system now implements an intelligent image preloading strategy with priority loading of first 5 images and background loading of remaining 15 images, optimizing performance and reducing initial load time.
+
+```mermaid
+sequenceDiagram
+participant LP as "LoginPage"
+participant IP as "Image Preloader"
+participant PR as "Priority Loader"
+participant BL as "Background Loader"
+LP->>IP : "Initialize preloading"
+IP->>PR : "Load first 5 images (priority)"
+PR-->>IP : "Priority images loaded"
+IP->>BL : "Load remaining 15 images (background)"
+BL-->>IP : "Background images loading"
+IP-->>LP : "Preloading complete"
+```
+
+**Diagram sources**
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
+
+**Section sources**
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
 
 ## Session Management System
 
@@ -563,7 +625,7 @@ The cycles feature maintains its core functionality with enhanced integration wi
 - [frontend/src/features/cycles/types/cycle.types.ts](file://frontend/src/features/cycles/types/cycle.types.ts)
 
 ## Dependency Analysis
-The frontend depends on the shared library for type safety and validation. The backend provides the API consumed by the frontend, including multi-tenant establishment management and enhanced authentication services.
+The frontend depends on the shared library for type safety and validation. The backend provides the API consumed by the frontend, including multi-tenant establishment management and enhanced authentication services with improved slideshow and dynamic background presentation.
 
 ```mermaid
 graph LR
@@ -572,14 +634,18 @@ Frontend["Frontend App"]
 Backend["Backend API"]
 EstablishmentSelection["Establishment Selection System"]
 MultiTenant["Multi-Tenant Hooks"]
-LoginSlideshow["Login Slideshow"]
+EnhancedLoginSlideshow["Enhanced Login Slideshow"]
+DynamicBackground["Dynamic Background Rotation"]
+ImagePreloader["Intelligent Image Preloader"]
 SessionExpired["Session Expiration"]
 SecureLogout["Secure Logout"]
 Backend --> EstablishmentSelection
 EstablishmentSelection --> MultiTenant
 Frontend --> Backend
 Frontend --> MultiTenant
-Frontend --> LoginSlideshow
+Frontend --> EnhancedLoginSlideshow
+EnhancedLoginSlideshow --> DynamicBackground
+DynamicBackground --> ImagePreloader
 Frontend --> SessionExpired
 Frontend --> SecureLogout
 Shared --> Frontend
@@ -594,15 +660,17 @@ Shared --> Frontend
 - [package.json:8-12](file://package.json#L8-L12)
 
 ## Performance Considerations
-- Build-time optimization: Vite's development server and optimized production builds reduce bundle sizes and improve load times.
+- Build-time optimization: Vite's development server and optimized production builds reduce bundle sizes and improve load times, with enhanced LoginSlideshow component reducing icon imports from 12 to 6.
 - Asset delivery: Nginx serves static assets efficiently in production.
 - Caching strategies: Implement service worker caching for offline availability and faster reloads.
 - Bundle splitting: Code-split routes and lazy-load heavy components to minimize initial payload.
-- Image optimization: Use modern formats and responsive images to reduce bandwidth.
+- Image optimization: Modern formats and responsive images with intelligent preloading strategy (priority loading of first 5 images, background loading of remaining 15 images).
 - Minification and tree-shaking: Enable in build pipeline to remove unused code.
 - Establishment switching optimization: Implement efficient token refresh and state synchronization.
 - Session management optimization: Efficient token checking and automatic cleanup procedures.
-- Login slideshow optimization: Optimized image loading and smooth transitions for better user experience.
+- Login slideshow optimization: Optimized image loading with Framer Motion animations and reduced bundle size.
+- Dynamic background rotation: Smooth transitions using Framer Motion for better user experience.
+- Establishment branding integration: Streamlined interface with improved visual presentation.
 
 ## Troubleshooting Guide
 - Authentication validation errors: Ensure form inputs match Zod schemas before submission.
@@ -615,7 +683,9 @@ Shared --> Frontend
 - Multi-tenant conflicts: Verify tenant isolation and proper establishment switching.
 - Establishment management errors: Validate establishment data integrity and CRUD operations.
 - Session expiration issues: Verify token validation and automatic logout functionality.
-- Login slideshow problems: Check image loading and slide transition animations.
+- Enhanced LoginSlideshow problems: Check reduced icon imports and streamlined interface functionality.
+- Dynamic background rotation issues: Verify Framer Motion integration and image preloading strategy.
+- Intelligent image preloading problems: Ensure priority loading of first 5 images and background loading of remaining 15 images.
 - Secure logout failures: Ensure complete token and state cleanup procedures.
 
 **Section sources**
@@ -624,13 +694,14 @@ Shared --> Frontend
 - [frontend/src/components/auth/EtablissementSelectionModal.tsx:43-129](file://frontend/src/components/auth/EtablissementSelectionModal.tsx#L43-L129)
 - [frontend/src/components/auth/EtablissementSwitcher.tsx:49-90](file://frontend/src/components/auth/EtablissementSwitcher.tsx#L49-L90)
 - [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+- [frontend/src/features/auth/LoginPage.tsx:1-100](file://frontend/src/features/auth/LoginPage.tsx#L1-L100)
 - [frontend/src/hooks/use-session-expired.ts:1-80](file://frontend/src/hooks/use-session-expired.ts#L1-L80)
 - [frontend/src/lib/secure-logout.ts:1-100](file://frontend/src/lib/secure-logout.ts#L1-L100)
 
 ## Conclusion
 The eLISAschool frontend is architected as a React + Vite PWA with a strong emphasis on type safety and validation through a shared library. The monorepo structure enables consistent contracts across frontend and backend, while Dockerized deployment ensures reliable production delivery. By leveraging standardized types, validators, and constants, the application maintains robustness, scalability, and maintainability.
 
-**Updated** Recent enhancements include comprehensive establishment selection components with modal interface and auto-selection functionality, enhanced multi-tenant hooks with establishment switching capabilities, establishment management features with administrative controls, improved authentication flow with LoginSlideshow component, session expiration handling with automatic logout, and secure logout utilities with comprehensive cleanup procedures. These additions provide a complete multi-tenant solution with seamless establishment switching, enhanced user experience through slideshow presentation, and robust session management capabilities.
+**Updated** Recent enhancements include comprehensive establishment selection components with modal interface and auto-selection functionality, enhanced multi-tenant hooks with establishment switching capabilities, establishment management features with administrative controls, significantly improved authentication flow with enhanced LoginSlideshow component featuring reduced icon imports (12→6), streamlined interface, and establishment branding integration, dynamic background image rotation using Framer Motion within LoginPage, intelligent image preloading strategy with priority loading of first 5 images and background loading of remaining 15 images, optimized animations and reduced bundle size, and robust session management capabilities with automatic logout functionality. These additions provide a complete multi-tenant solution with seamless establishment switching, enhanced user experience through dynamic slideshow presentation, intelligent image loading optimization, and improved visual presentation with establishment branding elements.
 
 ## Appendices
 
@@ -662,7 +733,9 @@ The eLISAschool frontend is architected as a React + Vite PWA with a strong emph
 - Token Management: Secure token handling and refresh mechanisms
 
 ### Authentication Enhancements
-- Login Slideshow: Engaging presentation layer with establishment branding
+- Enhanced Login Slideshow: Reduced icon imports (12→6), streamlined interface, establishment branding integration
+- Dynamic Background Rotation: Framer Motion-powered smooth transitions between establishment images
+- Intelligent Image Preloading: Priority loading of first 5 images, background loading of remaining 15 images
 - Session Management: Automatic expiration detection and handling
 - Secure Logout: Comprehensive session termination with cleanup procedures
 
@@ -670,3 +743,5 @@ The eLISAschool frontend is architected as a React + Vite PWA with a strong emph
 - Token Validation: Regular session verification and automatic logout
 - State Cleanup: Complete removal of sensitive data on logout
 - Cache Management: Proper cache clearing for security compliance
+- Establishment Branding: Secure integration of establishment-specific visual elements
+- Performance Optimization: Reduced bundle size through optimized icon imports and streamlined interfaces

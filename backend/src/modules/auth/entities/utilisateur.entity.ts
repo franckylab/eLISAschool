@@ -88,11 +88,9 @@ export class Utilisateur {
     @Column({ type: 'timestamp', nullable: true })
     expirationTokenMdp?: Date;
 
-    @Column({ type: 'int', default: 0 })
-    tentativesConnexion!: number;
-
-    @Column({ type: 'timestamp', nullable: true })
-    bloqueJusqua?: Date;
+    // NOTE: tentativesConnexion et bloqueJusqua supprimés
+    // Le blocage est maintenant géré par TentativeConnexion (système à deux niveaux)
+    // Voir: tentative-connexion.entity.ts et blocage-auth.service.ts
 
     @Column({ type: 'timestamp', nullable: true })
     derniereConnexion?: Date;
@@ -162,13 +160,8 @@ export class Utilisateur {
         return bcrypt.compare(motDePasse, this.motDePasse);
     }
 
-    /**
-     * Vérifie si l'utilisateur est bloqué
-     */
-    estBloque(): boolean {
-        if (!this.bloqueJusqua) return false;
-        return new Date() < this.bloqueJusqua;
-    }
+    // NOTE: méthode estBloque() supprimée
+    // Le blocage est maintenant géré par BlocageAuthService.verifierBlocage()
 
     /**
      * Génère un matricule unique

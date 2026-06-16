@@ -26,7 +26,6 @@ import { ProgrammeFormModal } from './programme-form-modal';
 export function ProgrammesPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [recherche, setRecherche] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [programmeToEdit, setProgrammeToEdit] = useState<ProgrammePedagogique | null>(null);
     const [programmeToDelete, setProgrammeToDelete] = useState<ProgrammePedagogique | null>(null);
@@ -249,11 +248,6 @@ export function ProgrammesPage() {
                         total,
                         totalPages,
                         onPageChange: setPage,
-                    }}
-                    search={{
-                        value: recherche,
-                        onSearch: setRecherche,
-                        placeholder: 'Rechercher un programme...',
                     }}
                     emptyMessage="Aucun programme pédagogique trouvé"
                 />

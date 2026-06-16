@@ -36,7 +36,7 @@ export function useReservations(filtres?: FiltresLaboratoire) {
     return useQuery({
         queryKey: LABORATOIRE_KEYS.reservations(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: ReservationLaboratoire[]; meta: any }>('/api/laboratoires/reservations', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: ReservationLaboratoire[]; meta: any }>('/api/laboratoires/reservations', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

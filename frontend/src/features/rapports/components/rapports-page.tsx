@@ -86,7 +86,7 @@ export function RapportsPage() {
                 </motion.div>
             </div>
 
-            {rapports}<DataTable
+            <DataTable
                 data={rapports}
                 columns={colonnes}
                 enableReordering

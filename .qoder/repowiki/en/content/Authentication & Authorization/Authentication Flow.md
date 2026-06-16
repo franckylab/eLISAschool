@@ -21,26 +21,28 @@
 - [utilisateur-etablissement.service.ts](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts)
 - [utilisateur-etablissement.controller.ts](file://backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts)
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
 - [auth.validators.ts](file://shared/src/validators/auth.validators.ts)
 - [027-auth-multi-mode.sql](file://backend/database/migrations/027-auth-multi-mode.sql)
 - [qr.util.ts](file://backend/src/common/utils/qr.util.ts)
-- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
-- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
 - [api-client.ts](file://frontend/src/lib/api-client.ts)
 - [use-etablissement-selection.ts](file://frontend/src/hooks/use-etablissement-selection.ts)
 - [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
 - [use-multi-tenant.ts](file://frontend/src/hooks/use-multi-tenant.ts)
+- [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
+- [MULTI-TENANT-V3-IMPLÉMENTATION-COMPLÈTE.md](file://MULTI-TENANT-V3-IMPLÉMENTATION-COMPLÈTE.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Updated establishment switching capabilities documentation with new etablissement.middleware.ts implementation
-- Enhanced temporary token management documentation with improved validation and security controls
-- Refined JWT structure documentation to reflect secure establishment switching with proper validation
-- Updated establishment selection flow with automatic establishment detection and selection logic
-- Enhanced tenant middleware documentation to cover establishment switching and validation with etablissement middleware integration
-- Added comprehensive establishment switching security validation and audit logging
+- Enhanced establishment switching capabilities with improved etablissement.middleware.ts implementation featuring strict cross-tenant validation and bypass detection
+- Updated JWT token structures with establishment data including roleDansEtablissement field for establishment-specific role resolution
+- Refined tenant middleware functionality for establishment switching operations with comprehensive access validation
+- Added establishment selection service with temporary token management and establishment validation
+- Updated middleware ordering optimization for establishment validation with proper auth middleware precedence
+- Enhanced establishment-specific permission resolution and dynamic RBAC integration
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -350,6 +352,7 @@ The JWT payload now includes enhanced establishment information for multi-site s
   roles: string[],               // ALL roles resolved across establishments
   permissions: string[],         // ALL permissions resolved dynamically
   etablissementId?: string,      // Legacy (single establishment)
+  roleDansEtablissement?: string, // NEW: Role specific to active establishment
   etablissements?: [             // NEW: Multi-establishment array
     {
       etablissementId: string,   // Establishment ID
@@ -768,6 +771,7 @@ const payloadFinal: JwtPayload = {
     roles: userRoles.map(r => r.code),
     permissions: Array.from(resolvedPermissions),
     etablissementId: selectedEtablissementId,
+    roleDansEtablissement: affectation.role, // NEW: Establishment-specific role
     etablissements: etablissementsPayload,
 };
 ```
@@ -790,6 +794,7 @@ interface JwtPayload {
     roles: string[];
     permissions: string[];
     etablissementId?: string;
+    roleDansEtablissement?: string;
     etablissements?: JwtEtablissement[];
     modeAuthentification?: string;
     dernierAcces?: Date;
@@ -990,6 +995,7 @@ class JwtPayload {
 +roles string[]
 +permissions string[]
 +etablissementId string?
++roleDansEtablissement string?
 +etablissements JwtEtablissement[]
 +modeAuthentification string?
 +dernierAcces Date?

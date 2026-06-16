@@ -77,7 +77,7 @@ export function PointagesPage() {
                 </motion.div>
             </div>
 
-            {pointages}<DataTable
+            <DataTable
                 data={pointages}
                 columns={colonnes}
                 enableReordering

@@ -79,7 +79,7 @@ export function StagePage() {
                 </motion.div>
             </div>
 
-            {stages}<DataTable
+            <DataTable
                 data={stages}
                 columns={colonnes}
                 enableReordering

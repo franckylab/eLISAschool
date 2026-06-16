@@ -21,7 +21,7 @@ export function usePointages(filtres?: PointageFiltres) {
     return useQuery({
         queryKey: POINTAGES_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Pointage[]; meta: any }>('/api/pointages', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Pointage[]; meta: any }>('/api/pointages', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

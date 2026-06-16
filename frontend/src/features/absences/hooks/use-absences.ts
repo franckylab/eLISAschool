@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import type { PaginatedResult } from '@shared/types/api.types';
 import type { Absence, CreerAbsenceDto, JustifierAbsenceDto, AbsencesFiltres, StatistiquesAbsences } from '../types/absences.types';
 
 const ABSENCES_KEYS = {
@@ -21,14 +22,14 @@ const ABSENCES_KEYS = {
 
 export function useAbsences(filtres: AbsencesFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    return useQuery<PaginatedResult<Absence>>({
         queryKey: ABSENCES_KEYS.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<Absence>('/api/absences', {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
                 ...filtres,
-            });
+            } as any);
             return response;
         },
         enabled: isAuthenticated,

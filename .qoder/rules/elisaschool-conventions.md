@@ -9,6 +9,25 @@ trigger: always_on
 
 ---
 
+## ⚠️ INVOCATION AUTOMATIQUE DES SKILLS — OBLIGATOIRE
+
+**Avant toute tâche de développement ou modification**, l'IA **DOIT** invoquer proactivement le skill approprié **sans attendre que l'utilisateur le demande** :
+
+| Tâche détectée | Skill à invoquer |
+|----------------|------------------|
+| Créer/modifier un module, endpoint, entité, service, controller, migration | `/elisaschool-dev` |
+| Comprendre/modifier une règle métier, un calcul, un workflow, la config | `/elisaschool-business-logic` |
+| Créer/modifier un composant, page, hook, formulaire frontend | `/elisaschool-frontend-dev` |
+| Refactoriser, optimiser, moderniser du code frontend | `/elisaschool-frontend-refactor` |
+
+**Règles** :
+1. **TOUJOURS** invoquer le skill **avant** de coder
+2. **TOUJOURS** invoquer `/elisaschool-business-logic` avant de modifier un service existant
+3. **Combiner** si nécessaire (ex: module backend + frontend)
+4. **Ne JAMAIS** ignorer cette section
+
+---
+
 ## 1. Nommage
 
 | Élément | Convention | Exemple |

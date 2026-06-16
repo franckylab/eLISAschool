@@ -22,7 +22,7 @@ export function usePlaces(filtres?: FiltresParking) {
     return useQuery({
         queryKey: PARKING_KEYS.places(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: PlaceParking[] }>('/api/parking/places', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: PlaceParking[] }>('/api/parking/places', { params: filtres as any });
             return response.data?.data;
         },
         enabled: isAuthenticated,

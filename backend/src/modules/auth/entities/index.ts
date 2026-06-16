@@ -23,3 +23,6 @@ export { RoleLimitationEtablissement } from './role-limitation-etablissement.ent
 
 // Préférences utilisateur
 export { PreferenceUtilisateur, CategoriePreference } from './preference-utilisateur.entity';
+
+// Gestion de blocage authentification
+export { TentativeConnexion, TypeBlocage } from './tentative-connexion.entity';

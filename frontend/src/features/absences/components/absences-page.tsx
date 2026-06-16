@@ -17,16 +17,10 @@ export function AbsencesPage() {
     const { t } = useTranslation('absences');
     const [page, setPage] = useState(1);
     const limit = 20;
-    const [recherche, setRecherche] = useState('');
-    const [filtreType, setFiltreType] = useState<string>('');
-    const [filtreStatut, setFiltreStatut] = useState<string>('');
 
-    const { data, isLoading, meta } = useAbsences({
+    const { data, isLoading } = useAbsences({
         page,
         limit,
-        recherche: recherche || undefined,
-        type: filtreType || undefined,
-        statut: filtreStatut || undefined,
     });
 
     const { data: stats } = useStatistiquesAbsences();
@@ -237,44 +231,14 @@ export function AbsencesPage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
-                searchPlaceholder={t('rechercher')}
-                enableReordering
-                enablePinning
-                filtres={[
-                    {
-                        key: 'type',
-                        label: 'Type',
-                        options: [
-                            { value: 'absence', label: 'Absence' },
-                            { value: 'retard', label: 'Retard' },
-                            { value: 'departure_anticipe', label: 'Départ anticipé' },
-                        ],
-                        allOptionLabel: 'Tous les types',
-                    },
-                    {
-                        key: 'statut',
-                        label: 'Statut',
-                        options: [
-                            { value: 'non_justifiee', label: 'Non justifiée' },
-                            { value: 'justifiee', label: 'Justifiée' },
-                            { value: 'en_attente', label: 'En attente' },
-                        ],
-                        allOptionLabel: 'Tous les statuts',
-                    },
-                ]}
-                onSearchChange={setRecherche}
-                onFilterChange={(key, valeur) => {
-                    if (key === 'type') setFiltreType(valeur);
-                    if (key === 'statut') setFiltreStatut(valeur);
-                }}
-                disableClientSearch
+                emptyMessage={t('aucuneDonnee')}
                 pagination={{
                     page,
                     limit,
-                    total: meta?.total || 0,
+                    total: data?.meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

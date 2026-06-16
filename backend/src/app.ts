@@ -126,6 +126,28 @@ export function createApp(): Application {
     });
     app.use('/api/', limiter as any);
 
+    // Rate limiting STRICT pour l'authentification (protection brute force)
+    const authLimiter = rateLimit({
+        windowMs: 2 * 60 * 1000, // 2 minutes
+        max: 20, // 20 tentatives de login par 15 minutes par IP
+        message: {
+            success: false,
+            error: {
+                code: 'TOO_MANY_REQUESTS',
+                message: 'Trop de tentatives de connexion. Veuillez patienter 2 minutes.',
+            },
+        },
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => {
+            // Limiter par IP + identifiant (si disponible)
+            const ip = req.ip || req.socket.remoteAddress || 'unknown';
+            const bodyIdentifiant = req.body?.identifiant || req.body?.email || '';
+            return bodyIdentifiant ? `${ip}:${bodyIdentifiant}` : ip;
+        },
+        skipSuccessfulRequests: false, // Compter même les succès
+    });
+
     // ==================================
     // Middlewares de parsing
     // ==================================
@@ -243,6 +265,9 @@ export function createApp(): Application {
     // ==================================
 
     // Modules critiques avec filtrage multi-tenant
+    // IMPORTANT: authLimiter sur login/register pour protéger contre brute force
+    app.use('/api/auth/login', authLimiter as any);
+    app.use('/api/auth/register', authLimiter as any);
     app.use('/api/auth', authController);
     app.use('/api/preferences', authMiddleware, filterByEtablissement(), preferencesController);
     app.use('/api/utilisateurs', authMiddleware, utilisateurEtablissementController); // Multi-établissements (v2.0)

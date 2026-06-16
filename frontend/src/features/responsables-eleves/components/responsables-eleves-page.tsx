@@ -26,7 +26,6 @@ import { ResponsableEleveFormModal } from './responsable-eleve-form-modal';
 export function ResponsablesElevesPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [recherche, setRecherche] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [responsableToEdit, setResponsableToEdit] = useState<ResponsableEleve | null>(null);
     const [responsableToDelete, setResponsableToDelete] = useState<ResponsableEleve | null>(null);
@@ -252,11 +251,6 @@ export function ResponsablesElevesPage() {
                         total,
                         totalPages,
                         onPageChange: setPage,
-                    }}
-                    search={{
-                        value: recherche,
-                        onSearch: setRecherche,
-                        placeholder: 'Rechercher un responsable...',
                     }}
                     emptyMessage="Aucun responsable d'élève trouvé"
                 />

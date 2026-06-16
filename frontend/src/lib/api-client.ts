@@ -388,11 +388,20 @@ class ApiClient {
                 details: errorBody?.error?.details,
             };
             
-            // 401 après refresh ou sans refresh token → déconnexion
-            if (response.status === 401 && !this.refreshToken) {
+            // EXCEPTION: Routes auth (login, register) - NE PAS traiter 401 comme session expirée
+            const isAuthRoute = endpoint.startsWith('/api/auth/login') || 
+                               endpoint.startsWith('/api/auth/register');
+            
+            // 401 après refresh ou sans refresh token → déconnexion (SAUF pour login/register)
+            if (response.status === 401 && !this.refreshToken && !isAuthRoute) {
                 this.clearTokens();
                 window.dispatchEvent(new CustomEvent('auth:session-expired'));
                 throw new Error('Session expirée - veuillez vous reconnecter');
+            }
+            
+            // Pour login/register, toujours propager l'erreur API normale
+            if (isAuthRoute) {
+                throw apiError;
             }
             
             // 403 → Interdit

@@ -35,7 +35,7 @@ export function useEtablissements(filtres: EtablissementFiltres = {}) {
                     totalPages: number;
                     itemsPerPage: number;
                 };
-            }>('/api/etablissements', { params: filtres });
+            }>('/api/etablissements', { params: filtres as any });
 
             if (!response.data) {
                 throw new Error('Établissements non disponibles');

@@ -105,7 +105,7 @@ export async function secureLogout(options: {
         if (redirect) {
             // Utiliser window.location.href pour un rechargement COMPLET
             // (Plus sûr que navigate() après un logout - évite les états résiduels)
-            window.location.href = '/auth/login';
+            window.location.href = '/login';
         }
 
         console.log('[Logout] Déconnexion sécurisée complétée avec succès');
@@ -115,7 +115,7 @@ export async function secureLogout(options: {
         // En cas d'erreur, FORCER le nettoyage et la redirection
         apiClient.clearTokens();
         localStorage.removeItem('elisaschool-auth');
-        window.location.href = '/auth/login';
+        window.location.href = '/login';
     }
 }
 

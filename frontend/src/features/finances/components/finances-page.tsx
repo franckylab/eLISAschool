@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { DollarSign, Plus, Download, Eye, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { usePaiements, useStatistiquesFinancieres } from '../hooks/use-finances';
 import type { Paiement } from '../types/finance.types';
 
@@ -19,13 +20,36 @@ export function FinancesPage() {
     const limit = 20;
     const [recherche, setRecherche] = useState('');
 
-    const { data: paiements, isLoading, meta } = usePaiements({
+    const { data, isLoading, error } = usePaiements({
         page,
         limit,
         recherche: recherche || undefined,
     });
 
     const { data: stats } = useStatistiquesFinancieres();
+
+    const refetchPaiements = () => {
+        // Le refetch sera géré par react-query automatiquement
+    };
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des données financières..." />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <ErrorState
+                    message={error.message || "Impossible de charger les données financières"}
+                    onRetry={() => window.location.reload()}
+                />
+            </div>
+        );
+    }
 
     const statuts: any = {
         effectue: { label: 'Effectué', color: 'green', icone: TrendingUp },
@@ -223,18 +247,14 @@ export function FinancesPage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={paiements || []}
-                isLoading={isLoading}
-                searchPlaceholder={t('rechercher')}
-                enableReordering
-                enablePinning
-                onSearchChange={setRecherche}
-                disableClientSearch
+                columns={colonnes}
+                data={data?.items || []}
+                isLoading={false}
+                emptyMessage={t('aucuneDonnee')}
                 pagination={{
                     page,
                     limit,
-                    total: meta?.total || 0,
+                    total: data?.meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

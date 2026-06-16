@@ -21,7 +21,7 @@ export function useInterventions(filtres?: FiltresMaintenance) {
     return useQuery({
         queryKey: MAINTENANCE_KEYS.interventions(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Intervention[]; meta: any }>('/api/maintenance/interventions', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Intervention[]; meta: any }>('/api/maintenance/interventions', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

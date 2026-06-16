@@ -82,7 +82,7 @@ export function ParkingPage() {
                 </motion.div>
             </div>
 
-            {placesList}<DataTable
+            <DataTable
                 data={placesList}
                 columns={colonnes}
                 enableReordering

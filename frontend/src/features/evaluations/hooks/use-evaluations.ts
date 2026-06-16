@@ -21,7 +21,7 @@ export function useEvaluations(filtres?: EvaluationFiltres) {
     return useQuery({
         queryKey: EVALUATIONS_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Evaluation[]; meta: any }>('/api/evaluations', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Evaluation[]; meta: any }>('/api/evaluations', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

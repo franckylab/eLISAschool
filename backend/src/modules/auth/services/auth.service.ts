@@ -8,7 +8,7 @@
  * Utilise le système de configuration centralisé
  */
 
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur, UtilisateurEtablissement } from '../entities';
 import { TokenService } from './token.service';
@@ -28,6 +28,7 @@ import { logger } from '@common/utils/logger.util';
 import { generateSecureToken } from '@common/utils/crypto.util';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 import { permissionResolverService } from './permission-resolver.service';
+import { blocageAuthService, StatutBlocageComplet } from './blocage-auth.service';
 
 /**
  * Service d'authentification avec configuration centralisée
@@ -80,8 +81,52 @@ export class AuthService {
     }
 
     /**
+     * Vérifie le statut de blocage d'un utilisateur sans incrémenter les tentatives
+     * Utilisé pour le polling frontend pendant le blocage
+     * NOUVEAU: Utilise le système de blocage à deux niveaux
+     */
+    async getBlocageStatus(identifiant: string, adresseIp?: string, userAgent?: string): Promise<{
+        bloque: boolean;
+        bloqueJusqua: string | null;
+        tempsRestantSecondes: number;
+        tentativesActuelles: number;
+        tentativesRestantes: number;
+        maxTentatives: number;
+        // NOUVEAU: Détails complets du blocage à deux niveaux
+        blocageSpecifique?: any;
+        blocageGeneral?: any;
+        typeBlocage?: string | null;
+    }> {
+        const ip = adresseIp || 'unknown';
+        
+        // Utiliser le système de blocage à deux niveaux
+        const statutComplet = await blocageAuthService.verifierBlocage(
+            identifiant,
+            ip,
+            userAgent
+        );
+
+        return {
+            bloque: statutComplet.bloque,
+            bloqueJusqua: statutComplet.blocageSpecifique.bloqueJusqua || statutComplet.blocageGeneral.bloqueJusqua,
+            tempsRestantSecondes: Math.max(
+                statutComplet.blocageSpecifique.tempsRestantSecondes,
+                statutComplet.blocageGeneral.tempsRestantSecondes
+            ),
+            tentativesActuelles: statutComplet.blocageSpecifique.tentativesActuelles,
+            tentativesRestantes: statutComplet.blocageSpecifique.tentativesRestantes,
+            maxTentatives: statutComplet.blocageSpecifique.maxTentatives,
+            // Détails complets du blocage à deux niveaux
+            blocageSpecifique: statutComplet.blocageSpecifique,
+            blocageGeneral: statutComplet.blocageGeneral,
+            typeBlocage: statutComplet.typeBlocage,
+        };
+    }
+
+    /**
      * Connexion d'un utilisateur (v2.0 - multi-mode)
      * Supporte : email, pseudonyme, matricule, QR code, ID
+     * Avec système de blocage à deux niveaux (spécifique + général)
      */
     async login(
         loginDto: LoginDto,
@@ -97,40 +142,92 @@ export class AuthService {
             throw new AppError('Identifiant requis', 400, 'MISSING_IDENTIFIER');
         }
 
+        // SÉCURITÉ: Validation et sanitisation de l'identifiant
+        if (identifiant.length > 255) {
+            throw new AppError('Identifiant trop long', 400, 'INVALID_IDENTIFIER');
+        }
+        
+        // Vérifier qu'il n'y a pas de caractères SQL injection
+        const sqlInjectionPatterns = [
+            /(\b(union|select|insert|update|delete|drop|alter|create|execute|exec)\b)/i,
+            /(--|;|\/\*|\*\/|xp_)/,
+            /(\b(or|and)\b\s+\d+\s*=\s*\d+)/i,
+        ];
+        
+        for (const pattern of sqlInjectionPatterns) {
+            if (pattern.test(identifiant)) {
+                logger.warn(`[Auth] Tentative d'injection SQL détectée: ${identifiant.substring(0, 50)}...`);
+                throw new AppError('Identifiant ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
+            }
+        }
+
         const identifiantNormalise = identifiant.toLowerCase().trim();
+
+        // NOUVEAU: Vérifier le statut de blocage (spécifique + général)
+        const statutBlocage = await blocageAuthService.verifierBlocage(
+            identifiantNormalise,
+            adresseIp || 'unknown',
+            userAgent
+        );
+
+        // Si bloqué, retourner erreur détaillée
+        if (statutBlocage.bloque) {
+            await auditService.logLogin('unknown', false, req, `Compte bloqué (${statutBlocage.typeBlocage})`);
+            
+            const tempsRestant = statutBlocage.blocageSpecifique.tempsRestantSecondes > 0 
+                ? statutBlocage.blocageSpecifique.tempsRestantSecondes
+                : statutBlocage.blocageGeneral.tempsRestantSecondes;
+            
+            const minutes = Math.floor(tempsRestant / 60);
+            const secondes = tempsRestant % 60;
+            
+            const error = new AppError(
+                `Trop de tentatives échouées. Veuillez réessayer dans ${minutes}:${String(secondes).padStart(2, '0')}.`,
+                403,
+                'ACCOUNT_LOCKED'
+            );
+            
+            (error as any).details = {
+                bloque: true,
+                typeBlocage: statutBlocage.typeBlocage,
+                bloqueSpecifique: statutBlocage.blocageSpecifique,
+                bloqueGeneral: statutBlocage.blocageGeneral,
+                tempsRestantSecondes: tempsRestant,
+            };
+            
+            throw error;
+        }
 
         // Recherche multi-critère optimisée avec OR
         const whereConditions: any[] = [];
         
-        // Si contient @, c'est probablement un email
         if (identifiantNormalise.includes('@')) {
             whereConditions.push({ email: identifiantNormalise });
         }
         
-        // Chercher dans tous les cas par matricule, pseudonyme, qrCodeId
-        whereConditions.push({ matricule: identifiantNormalise });
-        whereConditions.push({ pseudonyme: identifiantNormalise });
-        whereConditions.push({ qrCodeId: identifiantNormalise });
+        whereConditions.push({ matricule: ILike(identifiantNormalise) });
+        whereConditions.push({ pseudonyme: ILike(identifiantNormalise) });
+        whereConditions.push({ qrCodeId: ILike(identifiantNormalise) });
         
-        // Si c'est un UUID valide, chercher par ID
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifiantNormalise)) {
             whereConditions.push({ id: identifiantNormalise });
         }
 
         const utilisateur = await this.utilisateurRepository.findOne({
             where: whereConditions,
-            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut', 'tentativesConnexion', 'bloqueJusqua', 'etablissementId'],
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut', 'etablissementId'],
         });
 
         if (!utilisateur) {
+            // NOUVEAU: Enregistrer l'échec dans le système de blocage
+            await blocageAuthService.enregistrerEchec(
+                identifiantNormalise,
+                adresseIp || 'unknown',
+                'Identifiant non trouvé',
+                userAgent
+            );
             await auditService.logLogin('unknown', false, req, 'Identifiant non trouvé');
             throw new AppError('Identifiant ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
-        }
-
-        // Vérification du blocage
-        if (utilisateur.estBloque()) {
-            await auditService.logLogin(utilisateur.id, false, req, 'Compte bloqué');
-            throw new AppError('Compte temporairement bloqué. Veuillez réessayer plus tard.', 403, 'ACCOUNT_LOCKED');
         }
 
         // Vérification du statut
@@ -145,26 +242,44 @@ export class AuthService {
         }
 
         // Vérification du mot de passe
+        if (!loginDto.motDePasse || loginDto.motDePasse.length > 128) {
+            throw new AppError('Mot de passe invalide', 400, 'INVALID_PASSWORD');
+        }
+        
         const motDePasseValide = await utilisateur.verifierMotDePasse(loginDto.motDePasse);
 
         if (!motDePasseValide) {
-            utilisateur.tentativesConnexion += 1;
-
-            // Blocage selon configuration
-            if (utilisateur.tentativesConnexion >= securityParams.maxLoginAttempts) {
-                const bloqueJusqua = new Date();
-                bloqueJusqua.setMinutes(bloqueJusqua.getMinutes() + securityParams.lockoutDuration);
-                utilisateur.bloqueJusqua = bloqueJusqua;
-                logger.warn(`Compte bloqué après ${securityParams.maxLoginAttempts} tentatives: ${utilisateur.email}`);
-            }
-
-            await this.utilisateurRepository.save(utilisateur);
+            // Enregistrer l'échec dans le système de blocage à deux niveaux
+            const resultatBlocage = await blocageAuthService.enregistrerEchec(
+                identifiantNormalise,
+                adresseIp || 'unknown',
+                'Mot de passe incorrect',
+                userAgent
+            );
+            
             await auditService.logLogin(utilisateur.id, false, req, 'Mot de passe incorrect');
-            throw new AppError('Email ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
+            
+            // Créer l'erreur avec les détails du système de blocage
+            const error = new AppError('Identifiant ou mot de passe incorrect', 401, 'INVALID_CREDENTIALS');
+            (error as any).details = {
+                bloque: resultatBlocage.bloque,
+                typeBlocage: resultatBlocage.statut.typeBlocage,
+                blocageSpecifique: resultatBlocage.statut.blocageSpecifique,
+                blocageGeneral: resultatBlocage.statut.blocageGeneral,
+                tentativesRestantes: resultatBlocage.statut.blocageSpecifique.tentativesRestantes,
+                tentativesActuelles: resultatBlocage.statut.blocageSpecifique.tentativesActuelles,
+            };
+            throw error;
         }
 
-        // Réinitialisation du compteur de tentatives
-        utilisateur.tentativesConnexion = 0;
+        // SUCCÈS: Réinitialiser les compteurs de blocage
+        await blocageAuthService.reinitialiserApresSucces(
+            identifiantNormalise,
+            adresseIp || 'unknown',
+            userAgent
+        );
+
+        // Mettre à jour la dernière connexion
         utilisateur.derniereConnexion = new Date();
         await this.utilisateurRepository.save(utilisateur);
 

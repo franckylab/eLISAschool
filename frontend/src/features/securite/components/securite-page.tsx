@@ -84,7 +84,7 @@ export function SecuritePage() {
                 </motion.div>
             </div>
 
-            {incidents}<DataTable
+            <DataTable
                 data={incidents}
                 columns={colonnes}
                 enableReordering

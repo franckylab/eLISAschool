@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign } from 'lucide-react';
+import { Wrench, Clock, CheckCircle, DollarSign } from 'lucide-react';
 import { useInterventions, useStatistiquesMaintenance } from '../hooks/use-maintenance';
 import { DataTable } from '@/components/ui/DataTable';
 
@@ -85,7 +85,7 @@ export function MaintenancePage() {
                 </motion.div>
             </div>
 
-            {interventions}<DataTable
+            <DataTable
                 data={interventions}
                 columns={colonnes}
                 enableReordering

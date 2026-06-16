@@ -7,10 +7,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp, ClipboardList } from 'lucide-react';
 import { useNotes, useSupprimerNote } from '../hooks/use-notes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { usePermissions } from '@/hooks';
 import type { Note, NoteFiltres } from '../types/note.types';
 import type { Column } from '@/components/ui/DataTable';
@@ -20,8 +21,27 @@ export function NotesPage() {
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
 
-    const { data, isLoading } = useNotes(filtres);
+    const { data, isLoading, error } = useNotes(filtres);
     const supprimer = useSupprimerNote();
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <LoadingState message="Chargement des notes..." />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <ErrorState
+                    message={error.message || "Impossible de charger les notes"}
+                    onRetry={() => window.location.reload()}
+                />
+            </div>
+        );
+    }
 
     const typesNote: any = {
         composition: { label: 'Composition', color: 'red' },
@@ -143,7 +163,7 @@ export function NotesPage() {
             <DataTable
                 data={data?.data || []}
                 columns={colonnes}
-                isLoading={isLoading}
+                isLoading={false}
                 searchPlaceholder="Rechercher..."
                 enableReordering
                 enablePinning

@@ -40,26 +40,27 @@ export function Header() {
     };
 
     return (
-        <header className="flex h-16 items-center justify-between border-b border-[var(--color-bordure)] bg-[var(--color-surface)] px-4 sm:px-6">
+        <header className="flex h-12 items-center justify-between border-b border-[var(--color-bordure)] bg-[var(--color-surface)] px-2 xs:h-14 xs:px-3 sm:h-16 sm:px-4 md:px-6">
             {/* Gauche : Burger + Search */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
                 {/* Mobile burger */}
                 <button
                     onClick={toggleMobile}
-                    className="rounded-md p-2 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] lg:hidden"
+                    className="rounded-md p-1 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] xs:p-1.5 sm:p-2 lg:hidden"
                     aria-label="Menu"
                 >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                 </button>
 
-                {/* Search */}
-                <div className="relative hidden sm:block">
+                {/* Search - visible sur toutes les tailles */}
+                <div className="relative">
                     <AnimatePresence>
                         {searchOpen ? (
                             <motion.div
-                                initial={{ width: 40, opacity: 0 }}
-                                animate={{ width: 300, opacity: 1 }}
-                                exit={{ width: 40, opacity: 0 }}
+                                initial={{ width: 36, opacity: 0 }}
+                                animate={{ width: 'min(260px, calc(100vw - 160px))', opacity: 1 }}
+                                exit={{ width: 36, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                                 className="flex items-center"
                             >
                                 <input
@@ -67,15 +68,15 @@ export function Header() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={t('labels.recherche')}
-                                    className="h-9 w-full rounded-lg border border-[var(--color-bordure)] bg-[var(--color-fond)] px-3 pl-9 text-sm text-[var(--color-texte)] placeholder:text-[var(--color-texte-secondaire)]/60 focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20"
+                                    className="h-7 w-full rounded-lg border border-[var(--color-bordure)] bg-[var(--color-fond)] px-2 pl-7 text-[10px] text-[var(--color-texte)] placeholder:text-[var(--color-texte-secondaire)]/60 focus:border-[var(--color-dominante)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominante)]/20 xs:h-8 xs:px-2.5 xs:pl-8 xs:text-xs sm:h-9 sm:px-3 sm:pl-9 sm:text-sm md:h-10"
                                     autoFocus
                                 />
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-texte-secondaire)]" />
+                                <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[var(--color-texte-secondaire)] xs:left-2.5 xs:h-3.5 xs:w-3.5 sm:left-3 sm:h-4 sm:w-4" />
                                 <button
                                     onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)]"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)] xs:right-1.5 sm:right-2"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4" />
                                 </button>
                             </motion.div>
                         ) : (
@@ -84,10 +85,12 @@ export function Header() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 onClick={() => setSearchOpen(true)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
+                                className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] xs:h-8 xs:w-8 sm:h-9 sm:w-9"
                                 aria-label="Rechercher"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                             >
-                                <Search className="h-5 w-5" />
+                                <Search className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                             </motion.button>
                         )}
                     </AnimatePresence>
@@ -95,7 +98,7 @@ export function Header() {
             </div>
 
             {/* Droite : Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
                 <LanguageSwitcher />
                 <ThemeSwitcher />
 
@@ -104,12 +107,14 @@ export function Header() {
 
                 {/* Notifications */}
                 <button
-                    className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
+                    className="relative flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] xs:h-8 xs:w-8 sm:h-9 sm:w-9"
                     aria-label="Notifications"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                 >
-                    <Bell className="h-5 w-5" />
+                    <Bell className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                     {/* Badge placeholder */}
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[var(--color-error)]" />
+                    <span className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-[var(--color-error)] xs:h-1.5 xs:w-1.5 sm:right-1 sm:top-1 sm:h-2 sm:w-2" />
                 </button>
 
                 {/* User Menu */}
@@ -117,13 +122,13 @@ export function Header() {
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                             <button
-                                className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-[var(--color-surface-hover)]"
+                                className="flex items-center gap-1 rounded-lg p-0.5 transition-colors hover:bg-[var(--color-surface-hover)] xs:gap-1.5 xs:p-1 sm:gap-2 sm:p-1.5"
                                 aria-label="Menu utilisateur"
                             >
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-dominante)] text-xs font-bold text-white">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-dominante)] text-[9px] font-bold text-white xs:h-7 xs:w-7 xs:text-[10px] sm:h-8 sm:w-8 sm:text-xs">
                                     {utilisateur.prenom?.[0]}{utilisateur.nom?.[0]}
                                 </div>
-                                <span className="hidden text-sm font-medium text-[var(--color-texte)] md:block">
+                                <span className="hidden text-[10px] font-medium text-[var(--color-texte)] xs:block xs:text-xs sm:text-sm">
                                     {utilisateur.prenom}
                                 </span>
                             </button>
@@ -133,38 +138,38 @@ export function Header() {
                             <DropdownMenu.Content
                                 align="end"
                                 sideOffset={8}
-                                className="z-50 min-w-[200px] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] p-1 shadow-lg"
+                                className="z-50 w-[calc(100vw-2rem)] min-w-[180px] max-w-[280px] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] p-0.5 shadow-lg xs:w-auto xs:min-w-[200px] xs:max-w-[300px] xs:p-1 sm:min-w-[220px]"
                             >
-                                <DropdownMenu.Label className="px-3 py-2">
-                                    <p className="text-sm font-medium text-[var(--color-texte)]">
+                                <DropdownMenu.Label className="px-2 py-1.5 xs:px-3 xs:py-2">
+                                    <p className="text-xs font-medium text-[var(--color-texte)] break-words xs:text-sm">
                                         {utilisateur.prenom} {utilisateur.nom}
                                     </p>
-                                    <p className="text-xs text-[var(--color-texte-secondaire)]">
+                                    <p className="text-[10px] text-[var(--color-texte-secondaire)] break-all xs:text-xs">
                                         {utilisateur.email}
                                     </p>
                                 </DropdownMenu.Label>
-                                <DropdownMenu.Separator className="my-1 h-px bg-[var(--color-bordure)]" />
+                                <DropdownMenu.Separator className="my-0.5 h-px bg-[var(--color-bordure)] xs:my-1" />
                                 <DropdownMenu.Item
-                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)]"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)] xs:gap-2 xs:px-3 xs:py-2 xs:text-sm"
                                     onSelect={() => router.navigate({ to: '/change-password' })}
                                 >
-                                    <KeyRound className="h-4 w-4" />
-                                    {t('boutons.changerMotDePasse')}
+                                    <KeyRound className="h-3.5 w-3.5 flex-shrink-0 xs:h-4 xs:w-4" />
+                                    <span className="break-words">{t('boutons.changerMotDePasse')}</span>
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
-                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)]"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)] xs:gap-2 xs:px-3 xs:py-2 xs:text-sm"
                                     onSelect={() => router.navigate({ to: '/configuration' })}
                                 >
-                                    <Settings className="h-4 w-4" />
-                                    Configuration
+                                    <Settings className="h-3.5 w-3.5 flex-shrink-0 xs:h-4 xs:w-4" />
+                                    <span className="break-words">Configuration</span>
                                 </DropdownMenu.Item>
-                                <DropdownMenu.Separator className="my-1 h-px bg-[var(--color-bordure)]" />
+                                <DropdownMenu.Separator className="my-0.5 h-px bg-[var(--color-bordure)] xs:my-1" />
                                 <DropdownMenu.Item
-                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-error)] outline-none focus:bg-[var(--color-error)]/10"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-[var(--color-error)] outline-none focus:bg-[var(--color-error)]/10 xs:gap-2 xs:px-3 xs:py-2 xs:text-sm"
                                     onSelect={handleLogout}
                                 >
-                                    <LogOut className="h-4 w-4" />
-                                    {t('boutons.deconnecter')}
+                                    <LogOut className="h-3.5 w-3.5 flex-shrink-0 xs:h-4 xs:w-4" />
+                                    <span className="break-words">{t('boutons.deconnecter')}</span>
                                 </DropdownMenu.Item>
                             </DropdownMenu.Content>
                         </DropdownMenu.Portal>

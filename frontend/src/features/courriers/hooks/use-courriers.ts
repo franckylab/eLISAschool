@@ -21,7 +21,7 @@ export function useCourriers(filtres?: CourrierFiltres) {
     return useQuery({
         queryKey: COURRIERS_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Courrier[]; meta: any }>('/api/courriers', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Courrier[]; meta: any }>('/api/courriers', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

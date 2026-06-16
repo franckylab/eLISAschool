@@ -107,18 +107,11 @@ export function EmploiDuTempsListe({ classeId, anneeScolaireId, classeNom }: Emp
                 <ListLoading />
             ) : !creneaux || creneaux.length === 0 ? (
                 <EmptyState
-                    icon={<Clock className="h-16 w-16 text-[var(--color-text-muted)]" />}
+                    icon={Clock}
                     title="Aucun emploi du temps"
                     description="Cet emploi du temps est vide. Générez-le automatiquement ou ajoutez des créneaux manuellement."
-                    action={
-                        <ElisaButton
-                            variant="primary"
-                            icon={<Zap className="h-4 w-4" />}
-                            onClick={() => setGenerationModalOpen(true)}
-                        >
-                            Générer l'emploi du temps
-                        </ElisaButton>
-                    }
+                    actionLabel="Générer l'emploi du temps"
+                    onAction={() => setGenerationModalOpen(true)}
                 />
             ) : (
                 <motion.div

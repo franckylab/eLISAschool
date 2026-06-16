@@ -228,6 +228,30 @@ router.post('/verify-email', async (req: Request, res: Response, next: NextFunct
 });
 
 /**
+ * GET /api/auth/blocage-status/:identifiant
+ * Vérifie le statut de blocage d'un compte sans incrémenter les tentatives
+ * Utilisé par le frontend pour le polling pendant le blocage
+ * NOUVEAU: Retourne les détails du blocage à deux niveaux
+ */
+router.get('/blocage-status/:identifiant', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { identifiant } = req.params;
+        const adresseIp = req.ip || req.socket.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'];
+        
+        const result = await authService.getBlocageStatus(identifiant, adresseIp, userAgent);
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * GET /api/auth/me
  * Récupère l'utilisateur courant
  * Requiert authentification

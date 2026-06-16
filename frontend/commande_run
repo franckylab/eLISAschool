@@ -3,3 +3,11 @@ fuser -k 7001/tcp 2>/dev/null && sleep 1 && cd /mnt/DONNEES/projets/eLISAschool/
 
 
  use-multi-tenant.ts
+
+Super Admin (multi-établissement)
+  Email : admin@elisaschool.cm
+  Mot de passe : AdminSecret123!
+
+Chef ETAB-002 (isolé)
+  Email : chef.palmiers@elisaschool.cm
+  Mot de passe : Test123456!

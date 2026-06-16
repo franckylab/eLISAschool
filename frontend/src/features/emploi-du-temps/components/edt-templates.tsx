@@ -76,18 +76,11 @@ export function EDTTemplatesPage() {
                 <ListLoading />
             ) : !templates || templates.length === 0 ? (
                 <EmptyState
-                    icon={<FileText className="h-16 w-16 text-[var(--color-text-muted)]" />}
+                    icon={FileText}
                     title="Aucun template"
                     description="Créez votre premier template pour standardiser la génération des emplois du temps"
-                    action={
-                        <ElisaButton
-                            variant="primary"
-                            icon={<Plus className="h-4 w-4" />}
-                            onClick={() => setCreationModalOpen(true)}
-                        >
-                            Créer un template
-                        </ElisaButton>
-                    }
+                    actionLabel="Créer un template"
+                    onAction={() => setCreationModalOpen(true)}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

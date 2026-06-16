@@ -21,7 +21,7 @@ export function useConges(filtres?: CongeFiltres) {
     return useQuery({
         queryKey: CONGES_KEYS.listes(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Conge[]; meta: any }>('/api/conges', { params: filtres });
+            const response = await apiClient.get<{ success: boolean; data: Conge[]; meta: any }>('/api/conges', { params: filtres as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

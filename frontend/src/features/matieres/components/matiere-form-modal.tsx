@@ -168,7 +168,7 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         label="Nombre d'heures/semaine"
                         type="number"
                         value={formData.nombreHeures?.toString() || '0'}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nombreHeures', parseInt(value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nombreHeures', parseInt(e.target.value))}
                         min="0"
                         max="20"
                     />

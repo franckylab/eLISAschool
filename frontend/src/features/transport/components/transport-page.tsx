@@ -101,7 +101,7 @@ export function TransportPage() {
                     <Bus className="h-8 w-8 text-blue-600" />
                     <div>
                         <h1 className="text-3xl font-bold">Transport</h1>
-                        <p className="text-sm text-gray-600">{data?.meta ? { page: data.meta.currentPage, limit: data.meta.itemsPerPage, total: data.meta.totalItems, totalPages: data.meta.totalPages, hasNext: data.meta.currentPage < data.meta.totalPages, hasPrev: data.meta.currentPage > 1 } : undefined?.total || 0} inscription(s)</p>
+                        <p className="text-sm text-gray-600">{data?.meta?.totalItems || 0} inscription(s)</p>
                     </div>
                 </div>
                 {hasPermission('transport:create') && (

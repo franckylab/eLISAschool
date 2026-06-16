@@ -26,7 +26,6 @@ import { GroupeEtablissementFormModal } from './groupe-etablissement-form-modal'
 export function GroupesEtablissementsPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [recherche, setRecherche] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [groupeToEdit, setGroupeToEdit] = useState<GroupeEtablissement | null>(null);
     const [groupeToDelete, setGroupeToDelete] = useState<GroupeEtablissement | null>(null);
@@ -240,11 +239,6 @@ export function GroupesEtablissementsPage() {
                         total,
                         totalPages,
                         onPageChange: setPage,
-                    }}
-                    search={{
-                        value: recherche,
-                        onSearch: setRecherche,
-                        placeholder: 'Rechercher un groupe...',
                     }}
                     emptyMessage="Aucun groupe d'établissements trouvé"
                 />

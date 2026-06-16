@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import type { PaginatedResult } from '@shared/types/api.types';
 import type { FraisScolaire, Paiement, CreerFraisDto, CreerPaiementDto, FraisFiltres, PaiementFiltres, StatistiquesFinancieres } from '../types/finance.types';
 
 const FINANCES_KEYS = {
@@ -43,15 +44,15 @@ export function useFraisScolaires(filtres: FraisFiltres = {}) {
 export function usePaiements(filtres: PaiementFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
     
-    return useQuery({
+    return useQuery<PaginatedResult<Paiement>>({
         queryKey: FINANCES_KEYS.paiements.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<Paiement>('/api/finances/paiements', {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
                 ...filtres,
-            });
-            return response.data;
+            } as any);
+            return response;
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,

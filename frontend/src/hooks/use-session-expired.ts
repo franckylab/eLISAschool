@@ -44,7 +44,8 @@ export function useSessionExpired() {
 
             // Redirection vers login
             navigate({
-                to: '/auth/login',
+                to: '/login',
+                search: { redirect: undefined },
                 replace: true, // Empêche le retour en arrière
             });
         };
@@ -64,7 +65,8 @@ export function useSessionExpired() {
 
             // Redirection vers login
             navigate({
-                to: '/auth/login',
+                to: '/login',
+                search: { redirect: undefined },
                 replace: true,
             });
         };

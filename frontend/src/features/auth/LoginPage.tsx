@@ -26,7 +26,6 @@ import { cn } from '@/lib/cn';
 import { CustomModal } from '@/components/modals';
 import { ElisaLogo } from '@/components/branding';
 import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
-import apiClient from '@/lib/api-client';
 import { LoginSlideshow } from './LoginSlideshow';
 
 interface LoginForm {
@@ -310,6 +309,11 @@ export function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [qrOpen, setQrOpen] = useState(false);
     const [successPulse, setSuccessPulse] = useState(false);
+    
+    // Suivi des tentatives de connexion - UNIQUEMENT depuis le backend
+    const [tentativesRestantes, setTentativesRestantes] = useState<number>(20);
+    const [bloqueJusqua, setBloqueJusqua] = useState<Date | null>(null);
+    const [tempsRestant, setTempsRestant] = useState<number>(0);
 
     const {
         register,
@@ -339,6 +343,76 @@ export function LoginPage() {
         }
     };
 
+    // Polling backend pour le temps de blocage réel (toutes les 5 secondes)
+    useEffect(() => {
+        if (!bloqueJusqua) return;
+
+        const pollBlocage = async () => {
+            try {
+                // Utiliser le nouvel endpoint dédié pour vérifier le statut de blocage
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:7000'}/api/auth/blocage-status/__check__`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const status = result?.data;
+                    
+                    if (status) {
+                        if (!status.bloque || status.tempsRestantSecondes <= 0) {
+                            // Compte débloqué
+                            setBloqueJusqua(null);
+                            setTempsRestant(0);
+                            setTentativesRestantes(status.tentativesRestantes || 20);
+                            toast.success('Votre compte est débloqué. Vous pouvez réessayer de vous connecter.');
+                        } else {
+                            // Toujours bloqué - mettre à jour avec les données réelles du backend
+                            const deblocage = new Date(status.bloqueJusqua);
+                            setBloqueJusqua(deblocage);
+                            setTempsRestant(status.tempsRestantSecondes);
+                            setTentativesRestantes(status.tentativesRestantes);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Erreur de connexion - ignorer silencieusement
+                console.debug('[Login] Polling blocage échoué (non bloquant)');
+            }
+        };
+
+        // Premier appel immédiat
+        pollBlocage();
+
+        // Polling toutes les 5 secondes
+        const interval = setInterval(pollBlocage, 5000);
+
+        return () => clearInterval(interval);
+    }, [bloqueJusqua]);
+
+    // Timer local de secours (update chaque seconde pour UX fluide entre les pollings)
+    useEffect(() => {
+        if (bloqueJusqua && tempsRestant > 0) {
+            const timer = setInterval(() => {
+                const maintenant = new Date();
+                const diff = bloqueJusqua.getTime() - maintenant.getTime();
+                
+                if (diff <= 0) {
+                    setBloqueJusqua(null);
+                    setTempsRestant(0);
+                    setTentativesRestantes(20);
+                    clearInterval(timer);
+                    toast.success('Votre compte est débloqué. Vous pouvez réessayer de vous connecter.');
+                } else {
+                    // Décrémenter localement en attendant le prochain polling
+                    setTempsRestant(prev => Math.max(0, prev - 1));
+                }
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [bloqueJusqua, tempsRestant]);
+
     const onSubmit = async (data: LoginForm) => {
         setError(null);
         setSuccessPulse(false);
@@ -346,6 +420,11 @@ export function LoginPage() {
             // Étape 1 : Login avec validation établissements
             // Le store gère MAINTENANT la détection multi-établissements
             await login(data.identifiant, data.motDePasse);
+            
+            // CONNEXION RÉUSSIE : Réinitialiser le compteur de tentatives
+            setTentativesRestantes(20);
+            setBloqueJusqua(null);
+            setTempsRestant(0);
             
             setSuccessPulse(true);
 
@@ -363,16 +442,101 @@ export function LoginPage() {
                 }, 300);
             }
         } catch (err: any) {
+            // DEBUG: Logger l'erreur complète pour diagnostiquer
+            console.error('[Login] Erreur complète:', err);
+            console.error('[Login] Error code:', err?.code);
+            console.error('[Login] Error message:', err?.message);
+            console.error('[Login] Error status:', err?.status);
+            
             const code = err?.code || '';
-            const message = code === 'INVALID_CREDENTIALS'
-                ? t('erreurs.identifiantsInvalides')
-                : code === 'ACCOUNT_LOCKED'
-                ? t('erreurs.compteVerrouille')
-                : code === 'ACCOUNT_SUSPENDED' || code === 'ACCOUNT_INACTIVE'
-                ? t('erreurs.compteDesactive')
-                : code === 'NO_ETABLISSEMENT'
-                ? 'Aucun établissement associé à votre compte. Contactez l\'administrateur.'
-                : err?.message || t('erreurs.sessionExpiree');
+            const status = err?.status || 0;
+            
+            // Mapping des erreurs backend → messages utilisateur
+            let message: string;
+            
+            switch (code) {
+                case 'INVALID_CREDENTIALS':
+                    message = t('erreurs.identifiantsInvalides');
+                    // Utiliser les informations RÉELLES du backend
+                    if (err?.details) {
+                        setTentativesRestantes(err.details.tentativesRestantes ?? 20);
+                        
+                        // Si le backend indique un blocage, l'appliquer
+                        if (err.details.bloque && err.details.bloqueJusqua) {
+                            const deblocage = new Date(err.details.bloqueJusqua);
+                            setBloqueJusqua(deblocage);
+                            const diff = deblocage.getTime() - Date.now();
+                            setTempsRestant(diff > 0 ? Math.ceil(diff / 1000) : 0);
+                        }
+                    } else {
+                        // Fallback si pas de détails
+                        setTentativesRestantes(prev => Math.max(0, prev - 1));
+                    }
+                    
+                    // Toast d'alerte si peu de tentatives restantes
+                    if (tentativesRestantes <= 5 && tentativesRestantes > 0) {
+                        toast.warning(`Attention : il ne vous reste que ${tentativesRestantes} tentative${tentativesRestantes > 1 ? 's' : ''}`);
+                    }
+                    break;
+                case 'ACCOUNT_LOCKED':
+                    message = err?.message || t('erreurs.compteVerrouille');
+                    // Utiliser les informations RÉELLES du backend
+                    const bloqueJusquaBackend = err?.details?.bloqueJusqua;
+                    const tempsRestantBackend = err?.details?.tempsRestantSecondes;
+                    
+                    if (bloqueJusquaBackend && tempsRestantBackend) {
+                        const deblocage = new Date(bloqueJusquaBackend);
+                        setBloqueJusqua(deblocage);
+                        setTempsRestant(tempsRestantBackend);
+                        setTentativesRestantes(0);
+                    } else {
+                        // Fallback si le backend ne retourne pas les détails
+                        const deblocage = new Date(Date.now() + 15 * 60 * 1000);
+                        setBloqueJusqua(deblocage);
+                        setTempsRestant(15 * 60);
+                        setTentativesRestantes(0);
+                    }
+                    break;
+                case 'ACCOUNT_SUSPENDED':
+                case 'ACCOUNT_INACTIVE':
+                    message = t('erreurs.compteDesactive');
+                    break;
+                case 'NO_ETABLISSEMENT':
+                    message = 'Aucun établissement associé à votre compte. Contactez l\'administrateur.';
+                    break;
+                case 'VALIDATION_ERROR':
+                    message = err?.message || 'Données de connexion invalides';
+                    break;
+                case 'MISSING_IDENTIFIER':
+                    message = 'L\'identifiant est requis';
+                    break;
+                case 'TOO_MANY_REQUESTS':
+                    message = 'Trop de tentatives. Veuillez patienter.';
+                    // Utiliser les informations du backend (Retry-After ou details)
+                    const retryAfter = err?.details?.retryAfter || err?.details?.tempsRestantSecondes || 900;
+                    const bloqueJusquaRate = err?.details?.bloqueJusqua 
+                        ? new Date(err.details.bloqueJusqua)
+                        : new Date(Date.now() + retryAfter * 1000);
+                    
+                    setBloqueJusqua(bloqueJusquaRate);
+                    setTempsRestant(retryAfter);
+                    setTentativesRestantes(0);
+                    break;
+                default:
+                    // Erreurs HTTP sans code spécifique
+                    if (status === 401) {
+                        message = t('erreurs.identifiantsInvalides');
+                    } else if (status === 429) {
+                        message = 'Trop de tentatives. Réessayez dans quelques instants.';
+                    } else if (status === 500) {
+                        message = 'Erreur serveur. Veuillez réessayer ultérieurement.';
+                    } else if (status === 0 || status === 'NETWORK_ERROR') {
+                        message = 'Erreur de connexion. Vérifiez votre connexion internet.';
+                    } else {
+                        message = err?.message || t('erreurs.sessionExpiree');
+                    }
+            }
+            
             setError(message);
             setSuccessPulse(false);
         }
@@ -584,19 +748,24 @@ export function LoginPage() {
                                 </Link>
                             </div>
 
-                            {/* Bouton principal */}
+                            {/* Bouton principal avec compteur intégré */}
                             <motion.button
                                 type="submit"
-                                disabled={isLoading || successPulse}
+                                disabled={isLoading || successPulse || bloqueJusqua !== null}
                                 className={cn(
                                     'relative flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all',
-                                    'bg-gradient-to-r from-[var(--color-dominante)] to-[var(--color-dominante)] shadow-lg shadow-[var(--color-dominante)]/25',
-                                    'hover:shadow-xl hover:shadow-[var(--color-dominante)]/30',
+                                    bloqueJusqua
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : tentativesRestantes <= 5 && tentativesRestantes > 0
+                                        ? 'bg-gradient-to-r from-red-600 to-red-700 shadow-lg shadow-red-600/30 hover:shadow-xl hover:shadow-red-600/40'
+                                        : tentativesRestantes <= 10 && tentativesRestantes > 5
+                                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30'
+                                        : 'bg-gradient-to-r from-[var(--color-dominante)] to-[var(--color-dominante)] shadow-lg shadow-[var(--color-dominante)]/25 hover:shadow-xl hover:shadow-[var(--color-dominante)]/30',
                                     'disabled:cursor-not-allowed disabled:opacity-70',
                                     'focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/40 focus:ring-offset-2',
                                 )}
-                                whileHover={!isLoading ? { scale: 1.01 } : {}}
-                                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                                whileHover={!isLoading && !bloqueJusqua ? { scale: 1.01 } : {}}
+                                whileTap={!isLoading && !bloqueJusqua ? { scale: 0.98 } : {}}
                             >
                                 {isLoading ? (
                                     <>
@@ -612,10 +781,34 @@ export function LoginPage() {
                                         <CheckCircle2 className="h-5 w-5" />
                                         <span>{t('login.bienvenue')}</span>
                                     </>
+                                ) : bloqueJusqua ? (
+                                    <>
+                                        <Lock className="h-5 w-5" />
+                                        <span>
+                                            Déblocage dans {String(Math.floor(tempsRestant / 60)).padStart(2, '0')}:{String(tempsRestant % 60).padStart(2, '0')}
+                                        </span>
+                                    </>
                                 ) : (
                                     <>
                                         <LogIn className="h-4 w-4" />
                                         <span>{t('login.boutonConnexion')}</span>
+                                        {/* Badge compteur de tentatives - visible uniquement si < 20 */}
+                                        {tentativesRestantes < 20 && tentativesRestantes > 0 && (
+                                            <motion.span
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className={cn(
+                                                    'absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shadow-lg border-2 border-white',
+                                                    tentativesRestantes <= 5
+                                                        ? 'bg-red-600 text-white animate-pulse'
+                                                        : tentativesRestantes <= 10
+                                                        ? 'bg-amber-500 text-white'
+                                                        : 'bg-blue-500 text-white'
+                                                )}
+                                            >
+                                                {tentativesRestantes}
+                                            </motion.span>
+                                        )}
                                     </>
                                 )}
                             </motion.button>
