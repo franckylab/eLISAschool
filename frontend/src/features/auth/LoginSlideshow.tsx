@@ -13,19 +13,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     BookOpen,
-    Users,
-    Award,
-    TrendingUp,
     Shield,
-    Smartphone,
     Globe,
-    Zap,
-    ClipboardList,
     CreditCard,
     Bus,
-    UtensilsCrossed,
     MessageSquare,
-    BarChart3,
 } from 'lucide-react';
 
 /* ─── Types ───────────────────────────────────────── */
