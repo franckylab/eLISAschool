@@ -3,6 +3,8 @@
 <cite>
 **Referenced Files in This Document**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [index.ts](file://backend/src/common/middlewares/index.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
@@ -24,15 +26,24 @@
 - [token.service.ts](file://backend/src/modules/auth/services/token.service.ts)
 - [context.middleware.ts](file://backend/src/common/middlewares/context.middleware.ts)
 - [auth-multi-etablissement.spec.ts](file://backend/test/integration/auth-multi-etablissement.spec.ts)
+- [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
+- [SESSION-EXPIRATION-IMPLEMENTATION.md](file://SESSION-EXPIRATION-IMPLEMENTATION.md)
+- [SECURE-LOGOUT-IMPLEMENTATION.md](file://SECURE-LOGOUT-IMPLEMENTATION.md)
+- [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
+- [EtablissementSwitcher.tsx](file://frontend/src/components/auth/EtablissementSwitcher.tsx)
+- [auth.store.ts](file://frontend/src/stores/auth.store.ts)
+- [secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
+- [use-session-expired.ts](file://frontend/src/hooks/use-session-expired.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Updated to reflect comprehensive multi-tenant architecture implementation with establishment-centric design
-- Enhanced tenant middleware v3.0 with establishment management controls and maximum establishment limits
-- Updated JWT structure documentation to include establishment arrays and role-specific payloads
-- Added new maximum establishment constraints and administrative controls
-- Enhanced frontend multi-tenant hook with optimized caching and establishment-specific optimizations
+- Updated to reflect comprehensive multi-tenant architecture enhancements including establishment switching improvements, token management, session expiration handling, and secure logout implementation
+- Enhanced middleware ordering with proper establishment validation sequence
+- Added new establishment middleware and selection service for dynamic establishment switching
+- Implemented secure logout with defense-in-depth approach and fail-safe mechanisms
+- Added session expiration handling with establishment-aware token validation
+- Enhanced frontend establishment selection components and store integration
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -42,11 +53,13 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Multi-Etablissement Implementation](#multi-etablissement-implementation)
 7. [Enhanced Tenant Management](#enhanced-tenant-management)
-8. [Database Configuration](#database-configuration)
-9. [Security and Access Control](#security-and-access-control)
-10. [Performance Considerations](#performance-considerations)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+8. [Authentication and Session Management](#authentication-and-session-management)
+9. [Secure Logout Implementation](#secure-logout-implementation)
+10. [Database Configuration](#database-configuration)
+11. [Security and Access Control](#security-and-access-control)
+12. [Performance Considerations](#performance-considerations)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -55,6 +68,8 @@ The eLISAschool project implements a comprehensive multi-tenant architecture des
 **Updated** The architecture now includes enhanced multi-établissements (multi-establishment) support with establishment-centric design principles, tenant middleware v3.0 featuring maximum establishment limits, and an enhanced JWT structure with establishment arrays and role-specific payloads. The v3.0 implementation introduces administrative controls for establishing user limits, ensuring optimal resource utilization while maintaining flexibility for multi-establishment scenarios.
 
 The multi-tenant approach enables the platform to serve diverse educational environments while maintaining compliance with data privacy regulations and institutional autonomy requirements. Each tenant operates within its own isolated data domain, preventing cross-tenant data leakage while allowing centralized management and monitoring capabilities.
+
+**Updated** The authentication system now supports dynamic establishment switching with proper middleware ordering and validation, including establishment middleware for runtime establishment validation and selection services for intelligent establishment management.
 
 ## Project Structure
 
@@ -68,6 +83,7 @@ Controllers[Controllers Layer]
 Services[Services Layer]
 Middlewares[Middlewares Layer]
 FrontendHooks[Frontend Multi-Tenant Hooks]
+FrontendComponents[Frontend Establishment Components]
 end
 subgraph "Infrastructure Layer"
 Config[Configuration]
@@ -82,6 +98,7 @@ Context[Async Context Management]
 end
 subgraph "Tenant Isolation"
 TenantMiddleware[Tenant Middleware v3.0]
+EstablishmentMiddleware[Establishment Middleware]
 SecurityGuard[Security Guards]
 AccessControl[Access Control]
 EstablishmentLimits[Maximum Establishment Limits]
@@ -92,13 +109,21 @@ UserEstablishment[User-Etablissement Mapping]
 JWTHandler[Enhanced JWT Handler]
 SelectionAlgorithm[Improved Selection Algorithm]
 AdminControls[Administrative Controls]
+SelectionService[Establishment Selection Service]
+end
+subgraph "Authentication & Security"
+AuthMiddleware[Auth Middleware]
+TokenService[Token Service]
+SecureLogout[Secure Logout]
+SessionExpiration[Session Expiration Handling]
 end
 App --> Controllers
 Controllers --> Services
 Services --> Database
 App --> Middlewares
 Middlewares --> TenantMiddleware
-TenantMiddleware --> SecurityGuard
+TenantMiddleware --> EstablishmentMiddleware
+EstablishmentMiddleware --> SecurityGuard
 SecurityGuard --> AccessControl
 Config --> Database
 Seed --> Database
@@ -106,15 +131,24 @@ EstablishmentManager --> UserEstablishment
 UserEstablishment --> JWTHandler
 JWTHandler --> SelectionAlgorithm
 FrontendHooks --> EstablishmentLimits
+FrontendComponents --> EstablishmentMiddleware
 EstablishmentLimits --> AdminControls
+SelectionService --> EstablishmentMiddleware
 Context --> TenantMiddleware
+AuthMiddleware --> TokenService
+TokenService --> SecureLogout
+SessionExpiration --> SecureLogout
 ```
 
 **Diagram sources**
 - [app.ts](file://backend/src/app.ts)
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [use-multi-tenant.ts](file://frontend/src/hooks/use-multi-tenant.ts)
+- [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
+- [secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 
 **Section sources**
@@ -127,6 +161,12 @@ The multi-tenant architecture consists of several interconnected components work
 
 ### Enhanced Tenant Middleware System (v3.0)
 The central tenant identification and isolation mechanism operates through a sophisticated middleware pipeline that intercepts all incoming requests and establishes the appropriate tenant context. The v3.0 implementation includes improved selection algorithms for handling users with multiple establishments and administrative controls for maximum establishment limits.
+
+### Establishment Middleware
+A new layer of middleware specifically designed for establishment validation and switching, operating after authentication but before establishment-specific business logic. This middleware ensures that establishment context is properly validated and established for each request.
+
+### Establishment Selection Service
+Intelligent service for managing establishment selection algorithms, handling user establishment preferences, capacity validation, and establishment switching logic with proper error handling and logging.
 
 ### Multi-Etablissement Management
 A comprehensive system for managing users with access to multiple educational establishments, including establishment selection, context switching, and role-based access control across establishments with configurable limits.
@@ -146,8 +186,13 @@ Comprehensive security measures ensure that tenant data remains isolated while p
 ### Configuration Management
 Centralized configuration systems manage tenant-specific settings, preferences, and operational parameters without compromising data isolation, including establishment-specific policies.
 
+### Secure Authentication Flow
+Enhanced authentication system with proper middleware ordering, establishment validation, token management, and session expiration handling.
+
 **Section sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [utilisateur-etablissement.entity.ts](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts)
@@ -161,19 +206,20 @@ The multi-tenant architecture follows a layered approach with clear separation o
 sequenceDiagram
 participant Client as "Client Application"
 participant Context as "Async Context Manager"
-participant Middleware as "Tenant Middleware v3.0"
-participant Establishment as "Establishment Manager"
-participant Admin as "Administrative Controls"
+participant Auth as "Auth Middleware"
+participant Establishment as "Establishment Middleware"
+participant EstablishmentService as "Establishment Selection Service"
 participant Security as "Security Layer"
 participant Service as "Business Service"
 participant Database as "Database Layer"
 Client->>Context : HTTP Request with JWT
-Context->>Middleware : Establish Async Context
-Middleware->>Middleware : Extract Tenant Identifier
-Middleware->>Admin : Check Maximum Establishment Limits
-Admin->>Admin : Validate User Establishment Capacity
-Middleware->>Establishment : Validate User Establishments
-Establishment->>Establishment : Select Active Establishment
+Context->>Auth : Establish Async Context
+Auth->>Auth : Extract and Validate JWT
+Auth->>Establishment : Set Establishment Context
+Establishment->>EstablishmentService : Validate Establishment Access
+EstablishmentService->>EstablishmentService : Check User Capacity Limits
+EstablishmentService->>EstablishmentService : Apply Selection Algorithm
+EstablishmentService->>Establishment : Return Validated Establishment
 Establishment->>Security : Validate Establishment Context
 Security->>Security : Verify User Permissions
 Security->>Service : Forward Request with Tenant Context
@@ -181,20 +227,21 @@ Service->>Database : Execute Tenant-Specific Query
 Database-->>Service : Tenant Data Results
 Service-->>Security : Processed Response
 Security-->>Establishment : Secure Response
-Establishment-->>Middleware : Establishment Context
-Admin-->>Middleware : Capacity Validation Result
-Middleware-->>Context : Context with Establishment Info
+Establishment-->>Auth : Establishment Context
+Auth-->>Context : Authenticated Context
 Context-->>Client : Final Response with Establishment Context
-Note over Client,Database : Enhanced Multi-Etablissement Support with Administrative Controls
+Note over Client,Database : Enhanced Multi-Etablissement Support with Establishment Validation
 ```
 
 **Diagram sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [context.middleware.ts](file://backend/src/common/middlewares/context.middleware.ts)
 - [app.ts](file://backend/src/app.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 
-The architecture ensures that every request passes through enhanced tenant validation, administrative capacity checks, and establishment selection before any business logic is executed, providing comprehensive protection against unauthorized access attempts and seamless establishment switching capabilities with proper resource management.
+The architecture ensures that every request passes through enhanced tenant validation, establishment middleware, administrative capacity checks, and establishment selection before any business logic is executed, providing comprehensive protection against unauthorized access attempts and seamless establishment switching capabilities with proper resource management.
 
 ## Detailed Component Analysis
 
@@ -227,6 +274,34 @@ ErrorHandler --> CompleteRequest
 - [utilisateur-etablissement.service.ts](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts)
 
 The middleware implementation includes comprehensive error handling, logging capabilities, and support for various tenant identification methods including subdomain-based routing, header-based identification, and path-based tenant specification. The v3.0 version now includes intelligent establishment selection algorithms for users with multiple establishments and administrative capacity validation.
+
+### Establishment Middleware and Selection Service
+
+**Updated** A new establishment middleware layer has been introduced to handle establishment-specific validation and switching logic:
+
+```mermaid
+flowchart TD
+AuthRequest[Authenticated Request] --> EstablishmentMiddleware[Establishment Middleware]
+EstablishmentMiddleware --> ValidateEstablishment{Validate Establishment Access}
+ValidateEstablishment --> |Valid| CheckContext{Check Establishment Context}
+ValidateEstablishment --> |Invalid| HandleError[Handle Establishment Error]
+CheckContext --> |Context Missing| SelectEstablishment[Select Establishment]
+CheckContext --> |Context Present| Proceed[Proceed to Business Logic]
+SelectEstablishment --> ApplyAlgorithm[Apply Selection Algorithm]
+ApplyAlgorithm --> ValidateCapacity[Validate User Capacity]
+ValidateCapacity --> |Exceeded| CapacityError[Return Capacity Error]
+ValidateCapacity --> |Within Limit| SetContext[Set Establishment Context]
+SetContext --> Proceed
+Proceed --> BusinessLogic[Execute Business Logic]
+HandleError --> ErrorHandler[Handle Establishment Error]
+CapacityError --> ErrorHandler
+```
+
+**Diagram sources**
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
+
+The establishment middleware operates after authentication but before establishment-specific business logic, ensuring proper establishment context validation. The establishment selection service provides intelligent algorithms for handling users with multiple establishments, including explicit selection, most recent usage, primary establishment defaults, and first available fallback.
 
 ### Multi-Etablissement User Management
 
@@ -276,6 +351,8 @@ Utilisateur --> Etablissement : belongsToMany
 
 **Section sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [utilisateur-etablissement.entity.ts](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts)
 - [utilisateur-etablissement.service.ts](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
@@ -408,6 +485,7 @@ ErrorHandler --> [*]
 
 **Diagram sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 - [utilisateur-etablissement.service.ts](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts)
 
@@ -433,8 +511,125 @@ The system implements multiple layers of data isolation specifically designed fo
 
 **Section sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
 - [express.d.ts](file://backend/src/common/types/express.d.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
+
+## Authentication and Session Management
+
+**Updated** The authentication system has been comprehensively enhanced with establishment-aware middleware ordering, session expiration handling, and secure logout implementation:
+
+### Middleware Ordering and Validation Sequence
+
+**Updated** Proper middleware ordering is critical for establishment validation:
+
+```mermaid
+sequenceDiagram
+participant Client as "Client Request"
+participant AuthMW as "Auth Middleware"
+participant ModuleMW as "Module Activation Middleware"
+participant EstMW as "Establishment Middleware"
+participant Controller as "Controller Handler"
+Client->>AuthMW : Request with JWT
+AuthMW->>AuthMW : Decode and Validate JWT
+AuthMW->>ModuleMW : Set Authenticated Context
+ModuleMW->>EstMW : Validate Module Activation
+EstMW->>EstMW : Validate Establishment Access
+EstMW->>Controller : Establish Context
+Controller->>Controller : Execute Business Logic
+```
+
+**Diagram sources**
+- [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
+- [app.ts](file://backend/src/app.ts)
+
+The middleware sequence must always follow: **Auth Middleware → Module Activation → Establishment Middleware → Controller Handler** to ensure proper establishment context establishment.
+
+### Session Expiration Handling
+
+**Updated** Enhanced session expiration handling with establishment-aware token validation:
+
+```mermaid
+flowchart TD
+TokenRequest[Token Validation Request] --> CheckToken{Token Valid?}
+CheckToken --> |Valid| CheckExpiry{Token Expired?}
+CheckToken --> |Invalid| InvalidToken[Return Invalid Token Error]
+CheckExpiry --> |Expired| CheckEstablishment{Establishment Required?}
+CheckExpiry --> |Valid| ValidToken[Return Valid Token]
+CheckEstablishment --> |Required| MissingEstablishment[Return Missing Establishment Error]
+CheckEstablishment --> |Not Required| ValidToken
+MissingEstablishment --> RedirectLogin[Redirect to Login]
+InvalidToken --> RedirectLogin
+ValidToken --> Success[Success Response]
+```
+
+**Diagram sources**
+- [SESSION-EXPIRATION-IMPLEMENTATION.md](file://SESSION-EXPIRATION-IMPLEMENTATION.md)
+- [token.service.ts](file://backend/src/modules/auth/services/token.service.ts)
+
+### Token Management Enhancements
+
+The token service now includes comprehensive token lifecycle management:
+
+- **Token Cleanup**: Periodic cleanup of expired and revoked tokens
+- **Token Revocation**: Immediate invalidation of tokens on logout
+- **Secure Token Generation**: Cryptographically secure token generation
+- **Token Blacklisting**: Support for token revocation lists
+
+**Section sources**
+- [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
+- [SESSION-EXPIRATION-IMPLEMENTATION.md](file://SESSION-EXPIRATION-IMPLEMENTATION.md)
+- [token.service.ts](file://backend/src/modules/auth/services/token.service.ts)
+- [auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
+
+## Secure Logout Implementation
+
+**Updated** A comprehensive secure logout implementation has been implemented with defense-in-depth security measures:
+
+### Defense-in-Depth Logout Strategy
+
+The secure logout system implements multiple layers of token invalidation and cleanup:
+
+```mermaid
+flowchart TD
+InitiateLogout[Logout Initiated] --> ServerInvalidation[Server Token Invalidation]
+ServerInvalidation --> ClientCleanup[Client Token Cleanup]
+ClientCleanup --> StateCleanup[Zustand Store Cleanup]
+StateCleanup --> QueryCleanup[React Query Cache Cleanup]
+QueryCleanup --> SessionCleanup[Session Storage Cleanup]
+SessionCleanup --> CookieCleanup[Cookie Cleanup]
+CookieCleanup --> PageReload[Force Page Reload]
+PageReload --> RedirectLogin[Redirect to Login]
+```
+
+**Diagram sources**
+- [SECURE-LOGOUT-IMPLEMENTATION.md](file://SECURE-LOGOUT-IMPLEMENTATION.md)
+- [secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
+- [auth.store.ts](file://frontend/src/stores/auth.store.ts)
+
+### Key Security Features
+
+1. **Fail-Safe Design**: Each cleanup step is protected with independent try/catch blocks
+2. **Anti-Double-Click Protection**: Prevents multiple simultaneous logout attempts
+3. **Guaranteed Cleanup**: Finally blocks ensure cleanup completion even in error conditions
+4. **Complete State Reset**: Removes all authentication-related state from client storage
+5. **Server-Side Invalidation**: Immediate token revocation on server side
+
+### Frontend Establishment Components
+
+**Updated** New frontend components support establishment switching and selection:
+
+- **EtablissementSelectionModal**: Modal interface for establishment selection
+- **EtablissementSwitcher**: Navbar component for establishment switching
+- **Enhanced Auth Store**: Store integration with establishment context management
+
+**Section sources**
+- [SECURE-LOGOUT-IMPLEMENTATION.md](file://SECURE-LOGOUT-IMPLEMENTATION.md)
+- [secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
+- [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
+- [EtablissementSwitcher.tsx](file://frontend/src/components/auth/EtablissementSwitcher.tsx)
+- [auth.store.ts](file://frontend/src/stores/auth.store.ts)
+- [use-session-expired.ts](file://frontend/src/hooks/use-session-expired.ts)
 
 ## Database Configuration
 
@@ -544,6 +739,7 @@ Additional security measures for establishment-specific operations:
 
 **Section sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 
 ## Performance Considerations
@@ -577,15 +773,18 @@ The multi-tenant architecture incorporates several performance optimization stra
 
 ### Frontend Multi-Tenant Optimizations
 
-The frontend includes specialized hooks for optimized multi-tenant performance:
+The frontend includes specialized hooks and components for optimized multi-tenant performance:
 
 - **Establishment-Specific Caching**: Separate cache management per establishment
 - **Intelligent Query Optimization**: Automatic query parameter filtering and optimization
 - **Retry Strategies**: Establishment-aware retry mechanisms
 - **Performance Monitoring**: Built-in performance tracking for establishment operations
+- **Establishment Selection Components**: Optimized UI components for establishment switching
 
 **Section sources**
 - [use-multi-tenant.ts](file://frontend/src/hooks/use-multi-tenant.ts)
+- [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
+- [EtablissementSwitcher.tsx](file://frontend/src/components/auth/EtablissementSwitcher.tsx)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 
 ## Troubleshooting Guide
@@ -612,6 +811,15 @@ Common issues and their resolution strategies for the enhanced multi-établissem
 - Check establishment configuration in the database
 - Review middleware logging for establishment identification failures
 - Validate user's establishment capacity limits
+
+### Middleware Ordering Issues
+
+**Symptoms**: 401 Unauthorized errors on authenticated endpoints
+**Causes**: Establishment middleware executing before authentication middleware
+**Solutions**:
+- Verify proper middleware ordering in app.ts
+- Ensure authMiddleware executes before establishment middleware
+- Check route configuration for proper middleware sequencing
 
 ### Enhanced Connection Issues
 
@@ -643,18 +851,44 @@ Common issues and their resolution strategies for the enhanced multi-établissem
 - Adjust user capacity limits if appropriate
 - Review establishment assignment policies
 
+### Session Expiration Issues
+
+**Symptoms**: Users experiencing unexpected logout or token expiration
+**Causes**: Token expiration, establishment context loss, session timeout
+**Solutions**:
+- Verify JWT expiration settings
+- Check establishment context persistence
+- Review session timeout configurations
+- Implement proper token refresh mechanisms
+
+### Secure Logout Issues
+
+**Symptoms**: Users unable to complete logout process or experiencing residual authentication state
+**Causes**: Incomplete token cleanup, server-side invalidation failures, client-side state persistence
+**Solutions**:
+- Verify secure logout implementation
+- Check server-side token invalidation
+- Review client-side cleanup procedures
+- Implement fail-safe cleanup mechanisms
+
 **Section sources**
 - [tenant.middleware.ts](file://backend/src/common/middlewares/tenant.middleware.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
+- [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [utilisateur-etablissement.service.ts](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts)
+- [SECURE-LOGOUT-IMPLEMENTATION.md](file://SECURE-LOGOUT-IMPLEMENTATION.md)
+- [SESSION-EXPIRATION-IMPLEMENTATION.md](file://SESSION-EXPIRATION-IMPLEMENTATION.md)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 
 ## Conclusion
 
 The eLISAschool multi-tenant architecture, enhanced with multi-établissements support and establishment-centric design, provides a robust foundation for serving multiple educational institutions while maintaining strict data isolation and operational efficiency. The implementation demonstrates best practices in tenant management, security, and performance optimization, now extended to support complex multi-establishment scenarios with administrative controls.
 
-Key strengths of the enhanced architecture include comprehensive multi-establishment isolation mechanisms, flexible establishment switching capabilities, enhanced JWT structure with establishment arrays and role-specific payloads, sophisticated selection algorithms for optimal user experience, and administrative controls for establishing user capacity limits. The modular design allows for easy extension and customization while maintaining system stability and security across multiple establishments.
+Key strengths of the enhanced architecture include comprehensive multi-establishment isolation mechanisms, flexible establishment switching capabilities, enhanced JWT structure with establishment arrays and role-specific payloads, sophisticated selection algorithms for optimal user experience, administrative controls for establishing user capacity limits, proper middleware ordering for establishment validation, secure logout implementation with defense-in-depth security, and comprehensive session expiration handling.
 
 The v3.0 tenant middleware introduces intelligent establishment selection algorithms that handle users with multiple establishments seamlessly, while the enhanced JWT structure provides comprehensive establishment context management with role-specific information. The addition of maximum establishment capacity controls ensures optimal resource utilization while maintaining flexibility for complex educational environments.
 
-Future enhancements could include advanced establishment provisioning automation, enhanced cross-establishment analytics with capacity insights, support for additional multi-establishment deployment patterns, and real-time capacity monitoring dashboards. The current enhanced architecture provides an excellent foundation for continued growth and adaptation to evolving multi-tenant requirements, particularly in complex educational environments with multiple institutional structures and administrative oversight needs.
+**Updated** The new establishment middleware and selection service provide robust establishment validation and switching capabilities, while the secure logout implementation ensures complete token invalidation and state cleanup across all layers of the application. The proper middleware ordering prevents authentication bypass vulnerabilities and ensures establishment context is always properly validated.
+
+Future enhancements could include advanced establishment provisioning automation, enhanced cross-establishment analytics with capacity insights, support for additional multi-establishment deployment patterns, real-time capacity monitoring dashboards, and enhanced session management with proactive token refresh capabilities. The current enhanced architecture provides an excellent foundation for continued growth and adaptation to evolving multi-tenant requirements, particularly in complex educational environments with multiple institutional structures and administrative oversight needs.

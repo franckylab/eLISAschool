@@ -368,14 +368,14 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
     return (
         <motion.div
-            className="flex h-full w-full flex-col items-center justify-center px-8"
+            className="flex h-full w-full flex-col items-center justify-center px-6 py-4"
             initial={{ opacity: 0, x: 50 }}
             animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
             {/* Illustration */}
             <motion.div
-                className="mb-6 h-48 w-48"
+                className="mb-4 h-36 w-36"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={isActive ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
@@ -385,13 +385,13 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
             {/* Icône */}
             <motion.div
-                className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl"
+                className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl shadow-lg"
                 style={{ backgroundColor: `${slide.couleur}30`, border: `2px solid ${slide.couleur}50` }}
                 initial={{ rotate: -180, scale: 0 }}
                 animate={isActive ? { rotate: 0, scale: 1 } : { rotate: -180, scale: 0 }}
                 transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
             >
-                <IconComponent className="h-8 w-8" style={{ color: slide.couleur }} strokeWidth={2} />
+                <IconComponent className="h-7 w-7" style={{ color: slide.couleur }} strokeWidth={2} />
             </motion.div>
 
             {/* Titre */}
@@ -406,7 +406,7 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
             {/* Texte descriptif */}
             <motion.p
-                className="mb-4 max-w-sm text-center text-sm leading-relaxed text-white/80"
+                className="mb-4 max-w-lg text-center text-sm leading-relaxed text-white/85"
                 initial={{ y: 10, opacity: 0 }}
                 animate={isActive ? { y: 0, opacity: 1 } : { y: 10, opacity: 0 }}
                 transition={{ delay: 0.8 }}
@@ -416,22 +416,22 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
             {/* Points clés */}
             {slide.points && (
-                <div className="w-full max-w-sm space-y-2">
+                <div className="w-full max-w-lg space-y-2">
                     {slide.points.map((point, index) => (
                         <motion.div
                             key={index}
-                            className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 backdrop-blur-sm"
+                            className="flex items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 backdrop-blur-sm"
                             initial={{ x: -30, opacity: 0 }}
                             animate={isActive ? { x: 0, opacity: 1 } : { x: -30, opacity: 0 }}
                             transition={{ delay: 2 + index * 0.15 }}
                         >
                             <motion.div
-                                className="h-2 w-2 rounded-full"
+                                className="h-2 w-2 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: slide.couleur }}
                                 animate={isActive ? { scale: [1, 1.3, 1] } : { scale: 1 }}
                                 transition={{ delay: 2.2 + index * 0.15, duration: 0.5 }}
                             />
-                            <span className="text-xs text-white/90">
+                            <span className="text-xs text-white/90 leading-relaxed">
                                 <TypewriterText text={point} delay={2200 + index * 150} speed={20} />
                             </span>
                         </motion.div>
@@ -442,27 +442,7 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
     );
 }
 
-/* ─── Indicateurs de progression ──────────────────── */
 
-function SlideIndicators({ total, current, onNavigate }: { total: number; current: number; onNavigate: (index: number) => void }) {
-    return (
-        <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-2">
-            {Array.from({ length: total }).map((_, index) => (
-                <motion.button
-                    key={index}
-                    onClick={() => onNavigate(index)}
-                    className="h-2 rounded-full transition-all"
-                    style={{
-                        backgroundColor: index === current ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
-                        width: index === current ? '32px' : '8px',
-                    }}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                />
-            ))}
-        </div>
-    );
-}
 
 /* ─── Composant principal ─────────────────────────── */
 
@@ -473,7 +453,7 @@ export function LoginSlideshow() {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-        }, 15000);
+        }, 40000);
 
         return () => clearInterval(timer);
     }, []);
@@ -483,8 +463,8 @@ export function LoginSlideshow() {
     }, []);
 
     return (
-        <div className="relative flex h-full w-full flex-col">
-            {/* Slides */}
+        <div className="relative flex w-full h-full flex-col">
+            {/* Slides - Utilise tout l'espace disponible */}
             <div className="relative flex-1 overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -500,22 +480,22 @@ export function LoginSlideshow() {
                 </AnimatePresence>
             </div>
 
-            {/* Indicateurs */}
-            <SlideIndicators
-                total={SLIDES.length}
-                current={currentSlide}
-                onNavigate={handleNavigate}
-            />
-
-            {/* Compteur de slide */}
-            <motion.div
-                className="absolute right-6 top-6 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur-sm"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-            >
-                {currentSlide + 1} / {SLIDES.length}
-            </motion.div>
+            {/* Indicateurs de navigation - En dessous des slides */}
+            <div className="flex items-center justify-center gap-2 py-4">
+                {Array.from({ length: SLIDES.length }).map((_, index) => (
+                    <motion.button
+                        key={index}
+                        onClick={() => handleNavigate(index)}
+                        className="h-2 rounded-full transition-all"
+                        style={{
+                            backgroundColor: index === currentSlide ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
+                            width: index === currentSlide ? '32px' : '8px',
+                        }}
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                    />
+                ))}
+            </div>
         </div>
     );
 }

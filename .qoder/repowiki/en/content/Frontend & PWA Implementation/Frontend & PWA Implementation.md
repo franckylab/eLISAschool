@@ -16,11 +16,9 @@
 - [frontend/src/features/specialites/index.ts](file://frontend/src/features/specialites/index.ts)
 - [frontend/src/routes/_auth.competences.tsx](file://frontend/src/routes/_auth.competences.tsx)
 - [frontend/src/routes/_auth.specialites.tsx](file://frontend/src/routes/_auth.specialites.tsx)
-- [frontend/src/features/cycles/components/cycle-form-modal.tsx](file://frontend/src/features/cycles/components/cycle-form-modal.tsx)
-- [frontend/src/features/cycles/components/cycles-page.tsx](file://frontend/src/features/cycles/components/cycles-page.tsx)
-- [frontend/src/features/cycles/hooks/use-cycles.ts](file://frontend/src/features/cycles/hooks/use-cycles.ts)
-- [frontend/src/features/cycles/hooks/use-tous-cycles.ts](file://frontend/src/features/cycles/hooks/use-tous-cycles.ts)
-- [frontend/src/features/cycles/types/cycle.types.ts](file://frontend/src/features/cycles/types/cycle.types.ts)
+- [frontend/src/features/auth/LoginSlideshow.tsx](file://frontend/src/features/auth/LoginSlideshow.tsx)
+- [frontend/src/hooks/use-session-expired.ts](file://frontend/src/hooks/use-session-expired.ts)
+- [frontend/src/lib/secure-logout.ts](file://frontend/src/lib/secure-logout.ts)
 - [frontend/src/components/auth/EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
 - [frontend/src/components/auth/EtablissementSwitcher.tsx](file://frontend/src/components/auth/EtablissementSwitcher.tsx)
 - [frontend/src/hooks/use-etablissement-selection.ts](file://frontend/src/hooks/use-etablissement-selection.ts)
@@ -33,11 +31,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive establishment selection components with modal interface and auto-selection functionality
-- Enhanced multi-tenant hooks with establishment switching capabilities and token management
-- Implemented establishment switching functionality with real-time tenant context updates
-- Integrated establishment management features with administrative controls
-- Updated routing system to support multi-establishment user flows
+- Added comprehensive LoginSlideshow component for enhanced authentication experience
+- Implemented session expiration handling with automatic logout and user notification
+- Integrated secure logout utilities with token clearing and state cleanup
+- Enhanced establishment management hooks with improved session handling
+- Updated authentication flow with slideshow integration and session management
+- Added secure logout functionality with comprehensive cleanup procedures
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -45,15 +44,18 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Establishment Selection System](#establishment-selection-system)
-7. [Multi-Tenant Hooks Enhancement](#multi-tenant-hooks-enhancement)
-8. [Establishment Management Features](#establishment-management-features)
-9. [New Educational Framework Features](#new-educational-framework-features)
-10. [Dependency Analysis](#dependency-analysis)
-11. [Performance Considerations](#performance-considerations)
-12. [Troubleshooting Guide](#troubleshooting-guide)
-13. [Conclusion](#conclusion)
-14. [Appendices](#appendices)
+6. [Authentication Enhancements](#authentication-enhancements)
+7. [Session Management System](#session-management-system)
+8. [Secure Logout Implementation](#secure-logout-implementation)
+9. [Establishment Selection System](#establishment-selection-system)
+10. [Multi-Tenant Hooks Enhancement](#multi-tenant-hooks-enhancement)
+11. [Establishment Management Features](#establishment-management-features)
+12. [New Educational Framework Features](#new-educational-framework-features)
+13. [Dependency Analysis](#dependency-analysis)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting Guide](#troubleshooting-guide)
+16. [Conclusion](#conclusion)
+17. [Appendices](#appendices)
 
 ## Introduction
 This document describes the eLISAschool frontend and Progressive Web App (PWA) implementation as reflected in the repository. The project is a monorepo with workspaces for backend, frontend, and a shared library. The frontend is built with React and Vite and is configured as a PWA. The shared library centralizes types, validators, enumerations, and constants used across the backend and frontend.
@@ -66,13 +68,14 @@ Key goals:
 - Cover PWA manifest configuration, caching strategies, and performance optimization
 - Address cross-browser compatibility, accessibility, and mobile-first design
 - Document establishment selection system and multi-tenant functionality
+- Integrate new authentication enhancements including slideshow and session management
 
-**Updated** Added comprehensive coverage of establishment selection components, enhanced multi-tenant hooks, establishment switching functionality, and establishment management features.
+**Updated** Added comprehensive coverage of LoginSlideshow component, session expiration handling, secure logout utilities, and enhanced establishment management features with improved authentication flow.
 
 ## Project Structure
 The repository follows a monorepo layout with three primary workspaces:
 - backend: Express.js API (TypeScript) with multi-tenant middleware support
-- frontend: React + Vite PWA with establishment selection and switching
+- frontend: React + Vite PWA with establishment selection, slideshow authentication, and session management
 - shared: Shared TypeScript library for types, validators, enums, and constants
 
 ```mermaid
@@ -126,7 +129,7 @@ This section outlines the core building blocks leveraged by the frontend and PWA
 - [shared/src/enums/roles.enum.ts:12-184](file://shared/src/enums/roles.enum.ts#L12-L184)
 
 ## Architecture Overview
-The frontend is structured as a React + Vite PWA. The monorepo's shared library provides type-safe contracts and validation logic used by both frontend and backend. The Dockerfile for the frontend builds the PWA and serves it via Nginx. The establishment selection system integrates seamlessly with the multi-tenant architecture.
+The frontend is structured as a React + Vite PWA. The monorepo's shared library provides type-safe contracts and validation logic used by both frontend and backend. The Dockerfile for the frontend builds the PWA and serves it via Nginx. The establishment selection system integrates seamlessly with the multi-tenant architecture, enhanced by new authentication components and session management.
 
 ```mermaid
 graph TB
@@ -138,6 +141,9 @@ SW["Service Worker"]
 EstablishmentSelection["Establishment Selection System"]
 EstablishmentSwitcher["Establishment Switcher"]
 MultiTenantHooks["Enhanced Multi-Tenant Hooks"]
+LoginSlideshow["Login Slideshow"]
+SessionExpired["Session Expiration Handler"]
+SecureLogout["Secure Logout Utilities"]
 end
 subgraph "Shared Library"
 Types["Types & Interfaces"]
@@ -163,6 +169,9 @@ SW --> UI
 EstablishmentSelection --> API
 EstablishmentSwitcher --> API
 MultiTenantHooks --> API
+LoginSlideshow --> SessionExpired
+SessionExpired --> SecureLogout
+SecureLogout --> API
 ```
 
 **Diagram sources**
@@ -228,14 +237,17 @@ PaginatedResult <.. PaginationOptions
 - [shared/src/constants/app.constants.ts:23-71](file://shared/src/constants/app.constants.ts#L23-L71)
 
 ### Authentication Flow (Client-Side)
-The client-side authentication flow uses Zod schemas for form validation and integrates with backend endpoints.
+The client-side authentication flow uses Zod schemas for form validation and integrates with backend endpoints, enhanced by slideshow presentation and session management.
 
 ```mermaid
 sequenceDiagram
 participant U as "User"
+participant LS as "LoginSlideshow"
 participant C as "Client UI"
 participant V as "Zod Validators"
 participant A as "Auth API"
+U->>LS : "View Login Page"
+LS->>U : "Display Slideshow"
 U->>C : "Enter credentials"
 C->>V : "Validate(loginSchema)"
 V-->>C : "Validation result"
@@ -247,10 +259,12 @@ C->>C : "Persist tokens / redirect"
 **Diagram sources**
 - [shared/src/validators/auth.validators.ts:15-25](file://shared/src/validators/auth.validators.ts#L15-L25)
 - [shared/src/types/api.types.ts:12-17](file://shared/src/types/api.types.ts#L12-L17)
+- [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
 
 **Section sources**
 - [shared/src/validators/auth.validators.ts:15-25](file://shared/src/validators/auth.validators.ts#L15-L25)
 - [shared/src/types/api.types.ts:12-17](file://shared/src/types/api.types.ts#L12-L17)
+- [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
 
 ### PWA Build and Deployment Pipeline
 The frontend is built as a PWA and served via Nginx in a containerized environment.
@@ -285,6 +299,79 @@ Note: Theme and responsive patterns are defined in the shared library constants 
 
 **Section sources**
 - [shared/src/types/api.types.ts:12-61](file://shared/src/types/api.types.ts#L12-L61)
+
+## Authentication Enhancements
+
+### LoginSlideshow Component
+The LoginSlideshow component provides an engaging presentation layer for the authentication process, displaying establishment branding and promotional content while users enter their credentials.
+
+```mermaid
+graph TB
+LoginSlideshow["LoginSlideshow Component"]
+ImageGallery["Image Gallery"]
+SlideControls["Slide Controls"]
+AutoPlay["Auto Play Functionality"]
+EstablishmentBranding["Establishment Branding"]
+LoginForm["Embedded Login Form"]
+LoginSlideshow --> ImageGallery
+ImageGallery --> SlideControls
+ImageGallery --> AutoPlay
+ImageGallery --> EstablishmentBranding
+LoginSlideshow --> LoginForm
+```
+
+**Diagram sources**
+- [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+
+**Section sources**
+- [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+
+## Session Management System
+
+### Session Expiration Handling
+The session expiration handler provides automatic detection and management of expired authentication sessions, ensuring user safety and application security.
+
+```mermaid
+sequenceDiagram
+participant S as "SessionExpired Hook"
+participant T as "Token Checker"
+participant U as "User"
+participant L as "Login Page"
+S->>T : "Check token validity"
+T-->>S : "Token status"
+alt Token Expired
+S->>U : "Show expiration notification"
+S->>L : "Redirect to login"
+else Token Valid
+S->>S : "Continue normal operation"
+end
+```
+
+**Diagram sources**
+- [frontend/src/hooks/use-session-expired.ts:1-80](file://frontend/src/hooks/use-session-expired.ts#L1-L80)
+
+**Section sources**
+- [frontend/src/hooks/use-session-expired.ts:1-80](file://frontend/src/hooks/use-session-expired.ts#L1-L80)
+
+## Secure Logout Implementation
+
+### Secure Logout Utilities
+The secure logout system provides comprehensive session termination with token clearing, state cleanup, and redirect functionality.
+
+```mermaid
+flowchart TD
+Start(["Logout Request"]) --> ClearTokens["Clear Authentication Tokens"]
+ClearTokens --> ClearState["Clear User State"]
+ClearState --> ClearCache["Clear Application Cache"]
+ClearCache --> Redirect["Redirect to Login"]
+Redirect --> End(["Logout Complete"])
+```
+
+**Diagram sources**
+- [frontend/src/lib/secure-logout.ts:1-100](file://frontend/src/lib/secure-logout.ts#L1-L100)
+
+**Section sources**
+- [frontend/src/lib/secure-logout.ts:1-100](file://frontend/src/lib/secure-logout.ts#L1-L100)
 
 ## Establishment Selection System
 
@@ -364,7 +451,7 @@ Hook->>User : "Success Toast"
 ## Multi-Tenant Hooks Enhancement
 
 ### Enhanced Multi-Tenant Hook
-The enhanced multi-tenant hook provides comprehensive multi-establishment support with establishment management capabilities.
+The enhanced multi-tenant hook provides comprehensive multi-establishment support with establishment management capabilities and improved session handling.
 
 **Section sources**
 - [frontend/src/hooks/use-multi-tenant.ts](file://frontend/src/hooks/use-multi-tenant.ts)
@@ -459,7 +546,7 @@ Specialites --> SpecialiteTypes
 - [frontend/src/routes/_auth.specialites.tsx](file://frontend/src/routes/_auth.specialites.tsx)
 
 ### Updated Routing Structure
-The routing system now includes dedicated routes for competences and specialites features, along with establishment management routes.
+The routing system now includes dedicated routes for competences and specialites features, along with establishment management routes and enhanced authentication components.
 
 **Section sources**
 - [frontend/src/routes/_auth.competences.tsx](file://frontend/src/routes/_auth.competences.tsx)
@@ -476,7 +563,7 @@ The cycles feature maintains its core functionality with enhanced integration wi
 - [frontend/src/features/cycles/types/cycle.types.ts](file://frontend/src/features/cycles/types/cycle.types.ts)
 
 ## Dependency Analysis
-The frontend depends on the shared library for type safety and validation. The backend provides the API consumed by the frontend, including multi-tenant establishment management.
+The frontend depends on the shared library for type safety and validation. The backend provides the API consumed by the frontend, including multi-tenant establishment management and enhanced authentication services.
 
 ```mermaid
 graph LR
@@ -485,10 +572,16 @@ Frontend["Frontend App"]
 Backend["Backend API"]
 EstablishmentSelection["Establishment Selection System"]
 MultiTenant["Multi-Tenant Hooks"]
+LoginSlideshow["Login Slideshow"]
+SessionExpired["Session Expiration"]
+SecureLogout["Secure Logout"]
 Backend --> EstablishmentSelection
 EstablishmentSelection --> MultiTenant
 Frontend --> Backend
 Frontend --> MultiTenant
+Frontend --> LoginSlideshow
+Frontend --> SessionExpired
+Frontend --> SecureLogout
 Shared --> Frontend
 ```
 
@@ -508,6 +601,8 @@ Shared --> Frontend
 - Image optimization: Use modern formats and responsive images to reduce bandwidth.
 - Minification and tree-shaking: Enable in build pipeline to remove unused code.
 - Establishment switching optimization: Implement efficient token refresh and state synchronization.
+- Session management optimization: Efficient token checking and automatic cleanup procedures.
+- Login slideshow optimization: Optimized image loading and smooth transitions for better user experience.
 
 ## Troubleshooting Guide
 - Authentication validation errors: Ensure form inputs match Zod schemas before submission.
@@ -519,17 +614,23 @@ Shared --> Frontend
 - Establishment selection issues: Check establishment availability and user permissions.
 - Multi-tenant conflicts: Verify tenant isolation and proper establishment switching.
 - Establishment management errors: Validate establishment data integrity and CRUD operations.
+- Session expiration issues: Verify token validation and automatic logout functionality.
+- Login slideshow problems: Check image loading and slide transition animations.
+- Secure logout failures: Ensure complete token and state cleanup procedures.
 
 **Section sources**
 - [shared/src/validators/auth.validators.ts:15-103](file://shared/src/validators/auth.validators.ts#L15-L103)
 - [shared/src/types/api.types.ts:12-61](file://shared/src/types/api.types.ts#L12-L61)
 - [frontend/src/components/auth/EtablissementSelectionModal.tsx:43-129](file://frontend/src/components/auth/EtablissementSelectionModal.tsx#L43-L129)
 - [frontend/src/components/auth/EtablissementSwitcher.tsx:49-90](file://frontend/src/components/auth/EtablissementSwitcher.tsx#L49-L90)
+- [frontend/src/features/auth/LoginSlideshow.tsx:1-50](file://frontend/src/features/auth/LoginSlideshow.tsx#L1-L50)
+- [frontend/src/hooks/use-session-expired.ts:1-80](file://frontend/src/hooks/use-session-expired.ts#L1-L80)
+- [frontend/src/lib/secure-logout.ts:1-100](file://frontend/src/lib/secure-logout.ts#L1-L100)
 
 ## Conclusion
 The eLISAschool frontend is architected as a React + Vite PWA with a strong emphasis on type safety and validation through a shared library. The monorepo structure enables consistent contracts across frontend and backend, while Dockerized deployment ensures reliable production delivery. By leveraging standardized types, validators, and constants, the application maintains robustness, scalability, and maintainability.
 
-**Updated** Recent enhancements include comprehensive establishment selection components with modal interface and auto-selection functionality, enhanced multi-tenant hooks with establishment switching capabilities, establishment management features with administrative controls, and improved routing structure supporting multi-establishment user flows. These additions provide a complete multi-tenant solution with seamless establishment switching and management capabilities.
+**Updated** Recent enhancements include comprehensive establishment selection components with modal interface and auto-selection functionality, enhanced multi-tenant hooks with establishment switching capabilities, establishment management features with administrative controls, improved authentication flow with LoginSlideshow component, session expiration handling with automatic logout, and secure logout utilities with comprehensive cleanup procedures. These additions provide a complete multi-tenant solution with seamless establishment switching, enhanced user experience through slideshow presentation, and robust session management capabilities.
 
 ## Appendices
 
@@ -559,3 +660,13 @@ The eLISAschool frontend is architected as a React + Vite PWA with a strong emph
 - Establishment Administration: Full CRUD operations for establishment management
 - Multi-Tenant Isolation: Robust tenant middleware and security enforcement
 - Token Management: Secure token handling and refresh mechanisms
+
+### Authentication Enhancements
+- Login Slideshow: Engaging presentation layer with establishment branding
+- Session Management: Automatic expiration detection and handling
+- Secure Logout: Comprehensive session termination with cleanup procedures
+
+### Enhanced Security Features
+- Token Validation: Regular session verification and automatic logout
+- State Cleanup: Complete removal of sensitive data on logout
+- Cache Management: Proper cache clearing for security compliance

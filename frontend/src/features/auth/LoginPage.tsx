@@ -35,21 +35,67 @@ interface LoginForm {
     seSouvenir: boolean;
 }
 
+/* ─── Configuration des images de fond ────────────── */
+const BACKGROUND_IMAGES = [
+    '/images/login-background.png',
+    '/images/login-background-2.png',
+    '/images/login-background-3.png',
+    '/images/login-background-4.png',
+    '/images/login-background-5.png',
+    '/images/login-background-6.png',
+    '/images/login-background-7.png',
+    '/images/login-background-8.png',
+    '/images/login-background-9.png',
+    '/images/login-background-10.png',
+    '/images/login-background-11.png',
+    '/images/login-background-12.png',
+    '/images/login-background-13.png',
+    '/images/login-background-14.png',
+    '/images/login-background-15.png',
+    '/images/login-background-16.png',
+    '/images/login-background-17.png',
+    '/images/login-background-18.png',
+    '/images/login-background-19.png',
+    '/images/login-background-20.png',
+];
+
+const BACKGROUND_ROTATION_INTERVAL = 12000; // 12 secondes par image
+
 /* ─── Illustration SVG scolaire animée ────────────── */
 function IllustrationScolaire() {
+    const [currentBgIndex, setCurrentBgIndex] = useState(0);
+
+    // Rotation automatique des images de fond
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentBgIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+        }, BACKGROUND_ROTATION_INTERVAL);
+
+        return () => clearInterval(timer);
+    }, []);
+
     return (
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
-            {/* Image de fond scolaire avec overlay */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{
-                    backgroundImage: "url('/images/login-background.png')",
-                }}
-            />
+        <div className="relative flex h-full w-full flex-col items-center justify-center px-8 overflow-hidden">
+            {/* Images de fond avec rotation */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={currentBgIndex}
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.5, ease: 'easeInOut' }}
+                    style={{
+                        backgroundImage: `url('${BACKGROUND_IMAGES[currentBgIndex]}')`,
+                    }}
+                />
+            </AnimatePresence>
             {/* Overlay dégradé pour lisibilité */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a]/95 via-[#28a745]/90 to-[#20c997]/85" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a]/85 via-[#28a745]/80 to-[#20c997]/75" />
             {/* Pattern décoratif subtil */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+
+
 
             {/* Éléments flottants en arrière-plan */}
             <motion.div
@@ -76,84 +122,92 @@ function IllustrationScolaire() {
                 />
             </motion.div>
 
-            {/* Illustration centrale */}
+            {/* Contenu principal : Logo + Slogan + Diaporama */}
             <motion.div
-                className="relative z-10 flex flex-col items-center gap-8 px-8"
+                className="relative z-10 flex flex-col w-full h-full max-w-4xl py-8"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
             >
-                {/* Icônes scolaires animées en cercle */}
-                <div className="relative h-56 w-56">
-                    {/* Centre - Logo eLISAschool */}
-                    <motion.div
-                        className="absolute inset-0 flex items-center justify-center"
-                        animate={{ rotate: [0, 3, -3, 0] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur-sm ring-1 ring-white/20">
-                            <ElisaLogo variant="icon" size="lg" theme="white" />
-                        </div>
-                    </motion.div>
+                {/* Section supérieure : Logo et Slogan */}
+                <div className="flex flex-col items-center gap-4 mb-6">
+                    {/* Icônes scolaires animées en cercle */}
+                    <div className="relative h-40 w-40">
+                        {/* Centre - Logo eLISAschool */}
+                        <motion.div
+                            className="absolute inset-0 flex items-center justify-center"
+                            animate={{ rotate: [0, 3, -3, 0] }}
+                            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur-sm ring-1 ring-white/20">
+                                <ElisaLogo variant="icon" size="lg" theme="white" />
+                            </div>
+                        </motion.div>
 
-                    {/* Orbiting icons */}
-                    <motion.div
-                        className="absolute top-2 left-1/2 -translate-x-1/2"
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
-                            <BookOpen className="h-6 w-6 text-white" strokeWidth={1.5} />
-                        </div>
-                    </motion.div>
-                    <motion.div
-                        className="absolute bottom-2 left-1/2 -translate-x-1/2"
-                        animate={{ y: [0, 6, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
-                            <Users className="h-6 w-6 text-white" strokeWidth={1.5} />
-                        </div>
-                    </motion.div>
-                    <motion.div
-                        className="absolute top-1/2 left-2 -translate-y-1/2"
-                        animate={{ x: [0, -6, 0] }}
-                        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
-                            <Award className="h-6 w-6 text-white" strokeWidth={1.5} />
-                        </div>
-                    </motion.div>
-                    <motion.div
-                        className="absolute top-1/2 right-2 -translate-y-1/2"
-                        animate={{ x: [0, 6, 0] }}
-                        transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
-                            <Mail className="h-6 w-6 text-white" strokeWidth={1.5} />
-                        </div>
-                    </motion.div>
+                        {/* Orbiting icons */}
+                        <motion.div
+                            className="absolute top-1 left-1/2 -translate-x-1/2"
+                            animate={{ y: [0, -5, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
+                                <BookOpen className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            </div>
+                        </motion.div>
+                        <motion.div
+                            className="absolute bottom-1 left-1/2 -translate-x-1/2"
+                            animate={{ y: [0, 5, 0] }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
+                                <Users className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            </div>
+                        </motion.div>
+                        <motion.div
+                            className="absolute top-1/2 left-1 -translate-y-1/2"
+                            animate={{ x: [0, -5, 0] }}
+                            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
+                                <Award className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            </div>
+                        </motion.div>
+                        <motion.div
+                            className="absolute top-1/2 right-1 -translate-y-1/2"
+                            animate={{ x: [0, 5, 0] }}
+                            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
+                                <Mail className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    {/* Texte descriptif / Slogan */}
+                    <div className="text-center">
+                        <motion.p
+                            className="text-xl font-bold text-white"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6 }}
+                        >
+                            École Intelligente
+                        </motion.p>
+                        <motion.p
+                            className="mt-1 max-w-sm text-sm leading-relaxed text-white/70"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                        >
+                            Gérez élèves, enseignants, finances et bien plus,
+                            le tout dans une plateforme unifiée et sécurisée.
+                        </motion.p>
+                    </div>
                 </div>
 
-                {/* Texte descriptif */}
-                <div className="text-center">
-                    <motion.p
-                        className="text-lg font-semibold text-white/90"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                    >
-                        École Intelligente
-                    </motion.p>
-                    <motion.p
-                        className="mt-2 max-w-xs text-sm leading-relaxed text-white/60"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                    >
-                        Gérez élèves, enseignants, finances et bien plus,
-                        le tout dans une plateforme unifiée et sécurisée.
-                    </motion.p>
+                {/* Section inférieure : Diaporama de présentation - Prend tout l'espace restant */}
+                <div className="flex-1 min-h-0">
+                    <LoginSlideshow />
                 </div>
             </motion.div>
         </div>
@@ -348,19 +402,10 @@ export function LoginPage() {
 
     return (
         <div className="flex min-h-screen">
-            {/* ─── Panneau gauche : Diaporama dynamique ─── */}
+            {/* ─── Panneau gauche : Illustration avec rotation ─── */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
-                {/* Image de fond */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                    style={{
-                        backgroundImage: "url('/images/login-background.png')",
-                    }}
-                />
-                {/* Overlay dégradé */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1a7a3a]/92 via-[#28a745]/88 to-[#20c997]/82" />
-                {/* Pattern décoratif */}
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+                {/* Illustration scolaire avec rotation d'images, logo, slogan et diaporama */}
+                <IllustrationScolaire />
 
                 {/* Logo en haut à gauche */}
                 <div className="absolute left-8 top-8 z-20">
@@ -368,9 +413,6 @@ export function LoginPage() {
                         <ElisaLogo variant="horizontal" size="sm" theme="white" animated />
                     </Link>
                 </div>
-
-                {/* Diaporama */}
-                <LoginSlideshow />
             </div>
 
             {/* ─── Panneau droit : Formulaire ──────────────── */}

@@ -26,6 +26,7 @@
 - [027-auth-multi-mode.sql](file://backend/database/migrations/027-auth-multi-mode.sql)
 - [qr.util.ts](file://backend/src/common/utils/qr.util.ts)
 - [etablissement-selection.service.ts](file://backend/src/modules/auth/services/etablissement-selection.service.ts)
+- [etablissement.middleware.ts](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts)
 - [api-client.ts](file://frontend/src/lib/api-client.ts)
 - [use-etablissement-selection.ts](file://frontend/src/hooks/use-etablissement-selection.ts)
 - [EtablissementSelectionModal.tsx](file://frontend/src/components/auth/EtablissementSelectionModal.tsx)
@@ -34,12 +35,12 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive establishment selection flow documentation with pre-login and complete-login endpoints
-- Enhanced JWT structure documentation to include etablissements array with establishment-specific role assignments
-- Documented establishment switching capabilities with temporary tokens and establishment validation
-- Updated authentication flow to reflect multi-establishment login process with automatic establishment selection
-- Added frontend integration points for establishment selection modal and hook-based establishment management
-- Enhanced tenant middleware documentation to cover establishment switching and validation logic
+- Updated establishment switching capabilities documentation with new etablissement.middleware.ts implementation
+- Enhanced temporary token management documentation with improved validation and security controls
+- Refined JWT structure documentation to reflect secure establishment switching with proper validation
+- Updated establishment selection flow with automatic establishment detection and selection logic
+- Enhanced tenant middleware documentation to cover establishment switching and validation with etablissement middleware integration
+- Added comprehensive establishment switching security validation and audit logging
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -72,6 +73,7 @@ subgraph "HTTP Layer"
 AC["auth.controller.ts"]
 UEC["utilisateur-etablissement.controller.ts"]
 ES["etablissement-selection.service.ts"]
+EMW["etablissement.middleware.ts"]
 end
 subgraph "Services"
 AS["auth.service.ts"]
@@ -119,6 +121,7 @@ UES --> UTE
 TS --> RTE
 AMW --> TS
 TMW --> AS
+EMW --> AS
 PG --> ROLES
 AS --> CFG
 TS --> ENV
@@ -136,6 +139,7 @@ MT --> API
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
 - [utilisateur-etablissement.controller.ts:1-200](file://backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts#L1-L200)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [auth.service.ts:1-485](file://backend/src/modules/auth/services/auth.service.ts#L1-L485)
 - [utilisateur-etablissement.service.ts:1-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L1-L216)
 - [token.service.ts:1-181](file://backend/src/modules/auth/services/token.service.ts#L1-L181)
@@ -164,6 +168,7 @@ MT --> API
 - [auth.controller.ts:1-268](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L268)
 - [utilisateur-etablissement.controller.ts:1-200](file://backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts#L1-L200)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [auth.service.ts:1-485](file://backend/src/modules/auth/services/auth.service.ts#L1-L485)
 - [utilisateur-etablissement.service.ts:1-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L1-L216)
 - [token.service.ts:1-181](file://backend/src/modules/auth/services/token.service.ts#L1-L181)
@@ -194,6 +199,7 @@ MT --> API
 - TokenService: Generates JWT access tokens and refresh tokens, validates and revokes refresh tokens, and cleans up expired tokens.
 - Auth Middleware: Extracts Bearer token from Authorization header, verifies JWT, and attaches user identity to the request.
 - Tenant Middleware: NEW - Handles multi-establishment switching and establishment validation for authenticated users, supporting establishment-specific role assignments and dynamic RBAC resolution.
+- Etablissement Middleware: NEW - Specialized middleware for establishment switching validation and security controls, working in conjunction with tenant middleware.
 - Permission Guard: Enforces role-based permissions after authentication.
 - Audit Service: Logs security-relevant events (login attempts, password changes, access denials) and captures IP and User-Agent.
 - Entities: User, Profile, RefreshToken, AuditLog, and the new UserEstablishment relationship define persistence and multi-establishment associations. Enhanced with pseudonym and QR code fields.
@@ -208,6 +214,7 @@ MT --> API
 - [token.service.ts:32-174](file://backend/src/modules/auth/services/token.service.ts#L32-L174)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [tenant.middleware.ts:20-120](file://backend/src/common/middlewares/tenant.middleware.ts#L20-L120)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [permission.guard.ts:44-87](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L87)
 - [audit.service.ts:47-192](file://backend/src/modules/auth/services/audit.service.ts#L47-L192)
 - [utilisateur.entity.ts:52-140](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L52-L140)
@@ -681,7 +688,7 @@ Ctrl-->>Client : 200 OK with full authentication
 - [utilisateur-etablissement.service.ts:184-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L184-L216)
 
 ### Establishment Switching Capabilities
-The system supports dynamic establishment switching during an active session:
+The system supports dynamic establishment switching during an active session with enhanced security validation:
 
 ```typescript
 // Frontend establishment switching hook
@@ -702,10 +709,31 @@ const switchEtablissement = useCallback(async (etablissementId: string) => {
 }, []);
 ```
 
+### Enhanced Establishment Switching Security
+The system now includes comprehensive security validation for establishment switching:
+
+```mermaid
+flowchart TD
+Start(["Establishment Switch Request"]) --> ValidateRequest["Validate etablissementId parameter"]
+ValidateRequest --> CheckToken["Verify temporary token validity"]
+CheckToken --> VerifyAccess["Verify user has access to establishment"]
+VerifyAccess --> CheckActive["Check establishment is active"]
+CheckActive --> LoadContext["Load establishment context"]
+LoadContext --> GenerateTokens["Generate new tokens with establishment context"]
+GenerateTokens --> UpdateSession["Update session with new establishment context"]
+UpdateSession --> LogSwitch["Log establishment switch event"]
+LogSwitch --> Success["Return success response"]
+```
+
+**Diagram sources**
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
+- [auth.controller.ts:314-330](file://backend/src/modules/auth/controllers/auth.controller.ts#L314-L330)
+
 **Section sources**
 - [auth.controller.ts:314-330](file://backend/src/modules/auth/controllers/auth.controller.ts#L314-L330)
 - [use-etablissement-selection.ts:44-79](file://frontend/src/hooks/use-etablissement-selection.ts#L44-L79)
 - [api-client.ts:384-412](file://frontend/src/lib/api-client.ts#L384-L412)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 
 ## Enhanced JWT Structure with Establishment Arrays
 
@@ -784,6 +812,8 @@ The system implements several security measures to prevent abuse of multiple aut
 5. **Account lockout policies**: Unified lockout regardless of authentication mode used
 6. **Establishment validation**: Strict validation of establishment access rights
 7. **Temporary token expiration**: Short-lived tokens for establishment selection
+8. **Etablissement middleware validation**: NEW - Dedicated middleware for establishment switching security
+9. **Cross-establishment access prevention**: Prevents unauthorized establishment switching attempts
 
 ### Performance Optimization Strategies
 - **Conditional querying**: Only executes relevant search conditions based on identifier format
@@ -792,6 +822,7 @@ The system implements several security measures to prevent abuse of multiple aut
 - **Caching strategies**: Potential caching for frequently accessed user data
 - **Establishment loading optimization**: Consider caching establishment-role mappings for frequently accessed users
 - **Multi-establishment RBAC resolution**: Implement caching for resolved permissions to reduce database queries
+- **Etablissement middleware caching**: Cache establishment access validation results
 
 ### Backward Compatibility Measures
 - **Dual field support**: Both new `identifiant` and old `email` fields supported
@@ -804,6 +835,7 @@ The system implements several security measures to prevent abuse of multiple aut
 - [auth.service.ts:85-118](file://backend/src/modules/auth/services/auth.service.ts#L85-L118)
 - [auth.validators.ts:24-40](file://shared/src/validators/auth.validators.ts#L24-L40)
 - [audit.service.ts:47-192](file://backend/src/modules/auth/services/audit.service.ts#L47-L192)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 
 ## Detailed Component Analysis
 
@@ -871,6 +903,7 @@ The system now includes dedicated services for managing establishment-user relat
 - **UserEstablishmentController**: Provides endpoints for establishment management operations
 - **UtilisateurEtablissement Entity**: New N:N relationship table with establishment-specific roles and active status tracking
 - **EstablishmentSelectionService**: NEW - Manages establishment selection flow with temporary tokens and establishment validation
+- **EtablissementMiddleware**: NEW - Specialized middleware for establishment switching security validation
 
 ```mermaid
 classDiagram
@@ -898,19 +931,26 @@ class UtilisateurEtablissement {
 +creePar string
 +statutActif() boolean
 }
+class EtablissementMiddleware {
++validateEstablishmentAccess(req, res, next) Promise~void~
++switchEstablishment(req, res, next) Promise~void~
+}
 EstablishmentSelectionService --> UtilisateurEtablissement : manages
 UtilisateurEtablissementService --> UtilisateurEtablissement : manages
+EtablissementMiddleware --> UtilisateurEtablissement : validates
 ```
 
 **Diagram sources**
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
 - [utilisateur-etablissement.service.ts:184-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L184-L216)
 - [utilisateur-etablissement.entity.ts:1-200](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts#L1-L200)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 
 **Section sources**
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
 - [utilisateur-etablissement.service.ts:184-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L184-L216)
 - [utilisateur-etablissement.entity.ts:1-200](file://backend/src/modules/auth/entities/utilisateur-etablissement.entity.ts#L1-L200)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 
 ### Token Management and Enhanced Session Establishment
 - Access token:
@@ -999,6 +1039,7 @@ TokenService --> RefreshToken : persists
   - Tenant middleware logs establishment switching events.
   - Multi-establishment access attempts are monitored separately.
   - Temporary token tracking for establishment selection flow.
+  - Etablissement middleware validates establishment switching security.
 - Authentication mode tracking:
   - NEW: Audit logs capture which authentication mode was used.
   - Enhanced security monitoring for suspicious multi-mode patterns.
@@ -1043,6 +1084,10 @@ Aud --> Log["Store IP/UA + establishment info + authentication mode in audit_log
   - Supports establishment switching via query parameters.
   - Enforces establishment-specific role permissions.
   - Handles both temporary tokens (no etablissementId) and final tokens (with establishment context).
+- Etablissement middleware:
+  - NEW: Dedicated middleware for establishment switching validation and security controls.
+  - Validates establishment access rights and prevents unauthorized switching.
+  - Integrates with tenant middleware for comprehensive establishment security.
 - Optional auth middleware:
   - Attempts verification but does not fail if absent.
 - Enhanced permission guard:
@@ -1054,11 +1099,17 @@ Aud --> Log["Store IP/UA + establishment info + authentication mode in audit_log
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
+participant EMW as "etablissement.middleware.ts"
 participant TMW as "tenant.middleware.ts"
 participant AMW as "auth.middleware.ts"
 participant Guard as "permission.guard.ts"
 participant Svc as "auth.service.ts"
-Client->>TMW : Request with Authorization + etablissementId (optional)
+Client->>EMW : Request with establishmentId parameter
+EMW->>EMW : Validate establishment access from JWT etablissements
+alt Invalid establishment access
+EMW-->>Client : 403 ACCESS_DENIED
+else Valid establishment
+EMW->>TMW : Pass to tenant middleware
 TMW->>TMW : Validate establishment access from JWT etablissements
 alt Invalid establishment access
 TMW-->>Client : 403 ACCESS_DENIED
@@ -1073,14 +1124,17 @@ else sufficient
 Guard->>Svc : proceed to handler
 end
 end
+end
 ```
 
 **Diagram sources**
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [tenant.middleware.ts:59-88](file://backend/src/common/middlewares/tenant.middleware.ts#L59-L88)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [permission.guard.ts:44-87](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L87)
 
 **Section sources**
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [tenant.middleware.ts:59-88](file://backend/src/common/middlewares/tenant.middleware.ts#L59-L88)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [permission.guard.ts:44-87](file://backend/src/modules/auth/guards/permission.guard.ts#L44-L87)
@@ -1090,6 +1144,7 @@ end
 - AuthService depends on TokenService, AuditService, configuration helpers, and entities.
 - NEW: AuthService now depends on UserEstablishmentService for multi-establishment support and QR utilities for QR code authentication.
 - NEW: AuthService depends on EstablishmentSelectionService for establishment selection flow management.
+- NEW: EtablissementMiddleware depends on AuthService and JWT payload structure for establishment validation.
 - TokenService depends on environment configuration and refresh token entity.
 - Auth Middleware depends on TokenService.
 - Tenant Middleware depends on AuthService and JWT payload structure.
@@ -1111,6 +1166,7 @@ AS --> CFG["config.helper.ts"]
 AS --> UES
 AS --> ES
 AS --> QRU["qr.util.ts"]
+EMW["etablissement.middleware.ts"] --> AS
 TS --> ENV["env.config.ts"]
 TS --> RTE["refresh-token.entity.ts"]
 AS --> UE["utilisateur.entity.ts"]
@@ -1130,6 +1186,7 @@ MT["use-multi-tenant.ts"] --> API
 - [auth.controller.ts:10-19](file://backend/src/modules/auth/controllers/auth.controller.ts#L10-L19)
 - [utilisateur-etablissement.controller.ts:1-200](file://backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts#L1-L200)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [auth.service.ts:13-29](file://backend/src/modules/auth/services/auth.service.ts#L13-L29)
 - [utilisateur-etablissement.service.ts:1-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L1-L216)
 - [token.service.ts:9-16](file://backend/src/modules/auth/services/token.service.ts#L9-L16)
@@ -1144,6 +1201,7 @@ MT["use-multi-tenant.ts"] --> API
 - [auth.controller.ts:10-19](file://backend/src/modules/auth/controllers/auth.controller.ts#L10-L19)
 - [utilisateur-etablissement.controller.ts:1-200](file://backend/src/modules/auth/controllers/utilisateur-etablissement.controller.ts#L1-L200)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 - [auth.service.ts:13-29](file://backend/src/modules/auth/services/auth.service.ts#L13-L29)
 - [utilisateur-etablissement.service.ts:1-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L1-L216)
 - [token.service.ts:9-16](file://backend/src/modules/auth/services/token.service.ts#L9-L16)
@@ -1166,6 +1224,7 @@ MT["use-multi-tenant.ts"] --> API
 - QR code processing: Asynchronous QR code generation prevents blocking during authentication flow.
 - NEW: Establishment selection caching: Cache establishment lists for users with multiple establishments.
 - NEW: Temporary token validation: Efficient validation of temporary tokens for establishment selection flow.
+- NEW: Etablissement middleware caching: Cache establishment access validation results for improved performance.
 
 ## Troubleshooting Guide
 Common error scenarios and resolutions:
@@ -1208,6 +1267,9 @@ Common error scenarios and resolutions:
 - NEW: Tenant middleware validation errors:
   - Cause: Missing establishment context or invalid establishment access.
   - Resolution: Ensure proper establishment selection; verify establishment is active and user has access.
+- NEW: Etablissement middleware validation errors:
+  - Cause: Establishment switching attempt without proper validation.
+  - Resolution: Ensure establishment switching request passes etablissement middleware validation; verify establishment access rights.
 
 **Section sources**
 - [auth.service.ts:74-113](file://backend/src/modules/auth/services/auth.service.ts#L74-L113)
@@ -1216,6 +1278,7 @@ Common error scenarios and resolutions:
 - [auth.middleware.ts:35-46](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L35-L46)
 - [permission.guard.ts:57-81](file://backend/src/modules/auth/guards/permission.guard.ts#L57-L81)
 - [tenant.middleware.ts:71-77](file://backend/src/common/middlewares/tenant.middleware.ts#L71-L77)
+- [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
 
 ## Conclusion
-eLISAschool's enhanced authentication system provides robust multi-mode authentication capabilities with intelligent identifier detection, supporting traditional email/password login, pseudonym-based authentication, matriculation number verification, and QR code scanning. The system maintains backward compatibility while offering enhanced flexibility and security through multiple authentication pathways. The system now supports complex multi-establishment scenarios with establishment-specific role assignments and dynamic RBAC resolution. It leverages enhanced JWT tokens containing establishment arrays, refresh tokens with IP/User-Agent tracking, centralized security configuration, and comprehensive audit logging. The new establishment selection flow provides seamless multi-establishment login with temporary tokens and establishment validation. The tenant middleware enables comprehensive establishment switching while maintaining security boundaries. The addition of QR code utilities and expanded user entity attributes provides comprehensive support for modern authentication requirements. The establishment selection modal and frontend integration hooks provide intuitive user experience for multi-establishment environments. While device fingerprinting is not implemented, IP and user agent capture enable strong security monitoring. The modular design and middleware/guard patterns support scalable and maintainable access control across multiple establishments and authentication modes.
+eLISAschool's enhanced authentication system provides robust multi-mode authentication capabilities with intelligent identifier detection, supporting traditional email/password login, pseudonym-based authentication, matriculation number verification, and QR code scanning. The system maintains backward compatibility while offering enhanced flexibility and security through multiple authentication pathways. The system now supports complex multi-establishment scenarios with establishment-specific role assignments and dynamic RBAC resolution. It leverages enhanced JWT tokens containing establishment arrays, refresh tokens with IP/User-Agent tracking, centralized security configuration, and comprehensive audit logging. The new establishment selection flow provides seamless multi-establishment login with temporary tokens and establishment validation. The tenant middleware enables comprehensive establishment switching while maintaining security boundaries. The addition of QR code utilities and expanded user entity attributes provides comprehensive support for modern authentication requirements. The establishment selection modal and frontend integration hooks provide intuitive user experience for multi-establishment environments. The new etablissement middleware provides specialized security validation for establishment switching operations. While device fingerprinting is not implemented, IP and user agent capture enable strong security monitoring. The modular design and middleware/guard patterns support scalable and maintainable access control across multiple establishments and authentication modes.
