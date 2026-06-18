@@ -129,7 +129,7 @@ export function createApp(): Application {
     // Rate limiting STRICT pour l'authentification (protection brute force)
     const authLimiter = rateLimit({
         windowMs: 2 * 60 * 1000, // 2 minutes
-        max: 10, // 10 tentatives de login par 2 minutes par IP
+        max: 20, // 20 tentatives de login par 15 minutes par IP
         message: {
             success: false,
             error: {
@@ -318,7 +318,7 @@ export function createApp(): Application {
     app.use('/api/monitoring', authMiddleware, requireModuleActive('monitoring'), monitoringController); // Monitoring peut être global
     app.use('/api/dashboard', authMiddleware, requireModuleActive('dashboard'), filterByEtablissement(), dashboardController);
     app.use('/api/validation-workflows', authMiddleware, filterByEtablissement(), validationWorkflowController);
-    app.use('/api/groupes-etablissements', authMiddleware, filterByEtablissement(), groupesController);
+    app.use('/api/groupes', authMiddleware, filterByEtablissement(), groupesController);
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     
     // Module organisation (critique - toujours actif avec filtrage)
