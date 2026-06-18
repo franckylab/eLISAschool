@@ -31,7 +31,7 @@ import { Etablissement } from '@modules/etablissement/entities';
 @Index(['niveauId'])
 @Index(['matiereId'])
 @Index(['etablissementId'])
-@Index(['niveauId', 'matiereId', 'etablissementId']) // Index composite multi-tenant
+@Index(['niveauId', 'matiereId', 'etablissementId'], { unique: true }) // Index composite unique multi-tenant
 export class Competence {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

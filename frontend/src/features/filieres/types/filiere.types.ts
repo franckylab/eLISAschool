@@ -18,6 +18,9 @@ export interface Filiere {
         code: string;
     };
     sousSysteme: 'FRANCOPHONE' | 'ANGLOPHONE';
+    ordre?: number;
+    coefficientFrais?: number;
+    etablissementId: string;
     actif: boolean;
     createdAt: string;
     updatedAt: string;

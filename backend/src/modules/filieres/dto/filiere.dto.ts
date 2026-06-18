@@ -13,7 +13,9 @@ export const createFiliereSchema = z.object({
     code: z.string().min(1).max(50),
     description: z.string().optional(),
     cycleId: z.string().uuid(),
-    sousSysteme: z.enum(['FRANCOPHONE', 'ANGLOPHONE']).default('FRANCOPHONE'),
+    sousSysteme: z.enum(['FRANCOPHONE', 'ANGLOPHONE', 'BICULTUREL']).default('FRANCOPHONE'),
+    ordre: z.number().int().min(0).default(1),
+    coefficientFrais: z.number().min(0).max(10).default(0),
     actif: z.boolean().default(true),
 });
 
@@ -24,7 +26,7 @@ export const queryFilieresSchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
     search: z.string().optional(),
     cycleId: z.string().uuid().optional(),
-    sousSysteme: z.enum(['FRANCOPHONE', 'ANGLOPHONE']).optional(),
+    sousSysteme: z.enum(['FRANCOPHONE', 'ANGLOPHONE', 'BICULTUREL']).optional(),
     actif: z.coerce.boolean().optional(),
     sortBy: z.string().default('nom').optional(),
     sortOrder: z.enum(['ASC', 'DESC']).default('ASC').optional(),

@@ -39,6 +39,7 @@ interface EtablissementSelectionModalProps {
     open: boolean;
     etablissements: EtablissementItem[];
     onSelect: (etablissementId: string) => Promise<void>;
+    onCancel?: () => void;
     tokenTemporaire?: string;
     expiresIn?: number;
 }
@@ -235,6 +236,7 @@ export function EtablissementSelectionModal({
     open,
     etablissements,
     onSelect,
+    onCancel,
     expiresIn,
 }: EtablissementSelectionModalProps) {
     const { t } = useTranslation('common');
@@ -248,6 +250,17 @@ export function EtablissementSelectionModal({
     const searchInputRef = useRef<HTMLInputElement>(null);
     const handleConfirmRef = useRef<() => void>(() => {});
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    /**
+     * Annulation de la sélection d'établissement.
+     * Appelle onCancel (qui doit faire un reset + navigation) pour éviter
+     * que les tokens persistés ne provoquent une connexion fantôme au dashboard.
+     */
+    const handleCancel = useCallback(() => {
+        if (onCancel) {
+            onCancel();
+        }
+    }, [onCancel]);
 
     // Focus sur la recherche à l'ouverture
     useEffect(() => {
@@ -287,9 +300,9 @@ export function EtablissementSelectionModal({
                             defaultValue: 'Session expirée. Veuillez vous reconnecter.'
                         })
                     );
-                    // Rediriger vers login
+                    // Annuler la session (reset + navigation)
                     setTimeout(() => {
-                        window.location.href = '/login';
+                        handleCancel();
                     }, 1500);
                     return 0;
                 }
@@ -442,7 +455,7 @@ export function EtablissementSelectionModal({
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            onClick={() => window.location.href = '/login'}
+                            onClick={handleCancel}
                         >
                             {t('boutons.annuler', { defaultValue: 'Annuler' })}
                         </ElisaButton>

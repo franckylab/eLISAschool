@@ -1,0 +1,67 @@
+{
+    "titre": "Establishment Groups",
+    "sousTitre": "Manage establishment groupings for consolidation",
+    "boutons": {
+        "nouveau": "New group",
+        "modifier": "Edit",
+        "supprimer": "Delete",
+        "voirDetails": "View details",
+        "effacer": "Clear"
+    },
+    "colonnes": {
+        "groupe": "Group",
+        "code": "Code",
+        "etablissements": "Establishments",
+        "statut": "Status",
+        "actions": "Actions"
+    },
+    "champs": {
+        "nom": "Name",
+        "description": "Description",
+        "code": "Code",
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "search": {
+        "placeholder": "Search for a group...",
+        "label": "Search for an establishment group",
+        "effacer": "Clear search"
+    },
+    "indicateurs": {
+        "total": "Total Groups",
+        "actifs": "Active"
+    },
+    "messages": {
+        "aucunGroupe": "No establishment groups found",
+        "chargement": "Loading establishment groups...",
+        "creationSucces": "Group created successfully",
+        "modificationSucces": "Group modified successfully",
+        "suppressionSucces": "Group deleted successfully",
+        "erreurCreation": "Error during creation",
+        "erreurModification": "Error during modification",
+        "erreurSuppression": "Error during deletion"
+    },
+    "confirmation": {
+        "titreSuppression": "Delete group",
+        "messageSuppression": "Are you sure you want to delete \"{{nom}}\"? This action is irreversible.",
+        "confirmText": "Delete"
+    },
+    "details": {
+        "titre": "Group details",
+        "nomGroupe": "Group name",
+        "code": "Code",
+        "etablissements": "Establishments",
+        "statut": "Status",
+        "description": "Description",
+        "dateCreation": "Creation date",
+        "dateModification": "Last modified",
+        "administrateurs": "Administrators",
+        "aucunAdmin": "No administrators for this group",
+        "chargement": "Loading..."
+    },
+    "validation": {
+        "nomRequis": "Name is required",
+        "nomMin": "Name must contain at least 2 characters",
+        "codeFormat": "Code must only contain uppercase letters, numbers, hyphens and underscores"
+    }
+}

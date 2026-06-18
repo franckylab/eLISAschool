@@ -6,13 +6,15 @@
  * Inclut AuthGuard + PageLayout
  */
 
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { authGuard } from '@/app/route-guards';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { AlertTriangle } from 'lucide-react';
 import { useEtablissementRequired } from '@/hooks/use-etablissement-required';
 import { useSessionExpired } from '@/hooks/use-session-expired';
 import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
+import { useAuthStore } from '@/stores/auth.store';
+import { useCallback } from 'react';
 
 function AuthLayout() {
     // NOUVEAU: Écouter l'événement 'auth:etablissement-required'
@@ -26,6 +28,18 @@ function AuthLayout() {
     // NOUVEAU: Gérer l'expiration de session et la déconnexion
     useSessionExpired();
 
+    const router = useRouter();
+    const { reset } = useAuthStore();
+
+    /**
+     * Annulation de la sélection d'établissement dans le modal global.
+     * Reset complet + navigation vers /login pour éviter toute connexion fantôme.
+     */
+    const handleCancelEtablissement = useCallback(() => {
+        reset();
+        router.navigate({ to: '/login', search: { redirect: undefined } });
+    }, [reset, router]);
+
     return (
         <PageLayout>
             <Outlet />
@@ -35,6 +49,7 @@ function AuthLayout() {
                 open={showEtablissementModal}
                 etablissements={etablissements}
                 onSelect={handleSelectEtablissement}
+                onCancel={handleCancelEtablissement}
                 expiresIn={expiresIn}
             />
         </PageLayout>

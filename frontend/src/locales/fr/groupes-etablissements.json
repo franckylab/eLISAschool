@@ -1,0 +1,67 @@
+{
+    "titre": "Groupes d'Établissements",
+    "sousTitre": "Gérez les regroupements d'établissements pour la consolidation",
+    "boutons": {
+        "nouveau": "Nouveau groupe",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer",
+        "voirDetails": "Voir détails",
+        "effacer": "Effacer"
+    },
+    "colonnes": {
+        "groupe": "Groupe",
+        "code": "Code",
+        "etablissements": "Établissements",
+        "statut": "Statut",
+        "actions": "Actions"
+    },
+    "champs": {
+        "nom": "Nom",
+        "description": "Description",
+        "code": "Code",
+        "actif": "Actif",
+        "inactif": "Inactif"
+    },
+    "search": {
+        "placeholder": "Rechercher un groupe...",
+        "label": "Rechercher un groupe d'établissements",
+        "effacer": "Effacer la recherche"
+    },
+    "indicateurs": {
+        "total": "Total Groupes",
+        "actifs": "Actifs"
+    },
+    "messages": {
+        "aucunGroupe": "Aucun groupe d'établissements trouvé",
+        "chargement": "Chargement des groupes d'établissements...",
+        "creationSucces": "Groupe créé avec succès",
+        "modificationSucces": "Groupe modifié avec succès",
+        "suppressionSucces": "Groupe supprimé avec succès",
+        "erreurCreation": "Erreur lors de la création",
+        "erreurModification": "Erreur lors de la modification",
+        "erreurSuppression": "Erreur lors de la suppression"
+    },
+    "confirmation": {
+        "titreSuppression": "Supprimer le groupe",
+        "messageSuppression": "Êtes-vous sûr de vouloir supprimer \"{{nom}}\" ? Cette action est irréversible.",
+        "confirmText": "Supprimer"
+    },
+    "details": {
+        "titre": "Détails du groupe",
+        "nomGroupe": "Nom du groupe",
+        "code": "Code",
+        "etablissements": "Établissements",
+        "statut": "Statut",
+        "description": "Description",
+        "dateCreation": "Date de création",
+        "dateModification": "Dernière modification",
+        "administrateurs": "Administrateurs",
+        "aucunAdmin": "Aucun administrateur pour ce groupe",
+        "chargement": "Chargement..."
+    },
+    "validation": {
+        "nomRequis": "Le nom est requis",
+        "nomMin": "Le nom doit contenir au moins 2 caractères",
+        "codeFormat": "Le code ne doit contenir que des majuscules, chiffres, tirets et underscores"
+    }
+}

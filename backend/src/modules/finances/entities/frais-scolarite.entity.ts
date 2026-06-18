@@ -12,7 +12,7 @@ import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Niveau } from '@modules/niveaux/entities';
 import { Cycle } from '@modules/cycles/entities';
 import { Classe } from '@modules/classes/entities';
-import { Section } from './section.entity';
+import { Filiere } from '@modules/filieres/entities';
 
 @Entity('frais_scolarite')
 @Index(['etablissementId', 'anneeScolaireId', 'niveauId', 'classeId'], { unique: true })
@@ -49,11 +49,11 @@ export class FraisScolarite {
     cycle?: Cycle;
 
     @Column({ type: 'uuid', nullable: true })
-    sectionId?: string;
+    filiereId?: string;
 
-    @ManyToOne(() => Section, { nullable: true })
-    @JoinColumn({ name: 'sectionId' })
-    section?: Section;
+    @ManyToOne(() => Filiere, { nullable: true })
+    @JoinColumn({ name: 'filiereId' })
+    filiere?: Filiere;
 
     @Column({ type: 'uuid', nullable: true })
     classeId?: string;

@@ -92,6 +92,71 @@ export class GroupesService {
     }
 
     /**
+     * Récupère les groupes avec pagination côté base de données
+     * Optimisé pour les grandes quantités de données
+     */
+    async findAllPaginated(
+        utilisateurId: string,
+        utilisateurRole: string,
+        page: number = 1,
+        limit: number = 20,
+        search?: string,
+        actif?: boolean
+    ): Promise<{ groupes: GroupeEtablissement[]; total: number }> {
+        const offset = (page - 1) * limit;
+
+        // Construire la requête de base
+        let query = this.groupeRepo
+            .createQueryBuilder('g')
+            .leftJoin('g.etablissements', 'liens')
+            .where('g.actif = :actif', { actif: actif !== undefined ? actif : true });
+
+        // Filtrer par accès utilisateur
+        if (utilisateurRole !== 'SUPER_ADMIN') {
+            query = query
+                .leftJoin('g.admins', 'a')
+                .andWhere('g.proprietaireId = :uid OR a.utilisateurId = :uid', { uid: utilisateurId });
+        }
+
+        // Filtre de recherche
+        if (search) {
+            query = query.andWhere(
+                '(LOWER(g.nom) LIKE LOWER(:search) OR LOWER(g.code) LIKE LOWER(:search) OR LOWER(g.description) LIKE LOWER(:search))',
+                { search: `%${search}%` }
+            );
+        }
+
+        // Compter le total AVANT pagination
+        const total = await query.getCount();
+
+        // Ajouter les relations nécessaires et la pagination
+        const groupes = await query
+            .leftJoinAndSelect('liens.etablissement', 'etab')
+            .leftJoinAndSelect('g.proprietaire', 'proprietaire')
+            .orderBy('g.nom', 'ASC')
+            .skip(offset)
+            .take(limit)
+            .getMany();
+
+        return { groupes, total };
+    }
+
+    /**
+     * Récupère TOUS les groupes actifs (pour SUPER_ADMIN)
+     * @deprecated Utiliser findAllPaginated() pour de meilleures performances
+     */
+    async getAllGroupes(): Promise<GroupeEtablissement[]> {
+        return this.groupeRepo
+            .createQueryBuilder('g')
+            .where('g.actif = true')
+            .leftJoinAndSelect('g.etablissements', 'liens')
+            .leftJoinAndSelect('liens.etablissement', 'etab')
+            .leftJoinAndSelect('g.proprietaire', 'proprietaire')
+            .orderBy('g.nom', 'ASC')
+            .getMany();
+    }
+
+    /**
      * Récupère tous les groupes d'un utilisateur (propriétaire OU admin)
      */
     async getGroupesForUser(utilisateurId: string): Promise<GroupeEtablissement[]> {
@@ -213,7 +278,21 @@ export class GroupesService {
         etablissementIds: string[],
         ajoutePar: string
     ): Promise<void> {
-        const liens = etablissementIds.map(id =>
+        // Vérifier les liens existants pour éviter les doublons
+        const existingLiens = await manager.find(GroupeEtablissementLien, {
+            where: { groupeId, etablissementId: In(etablissementIds) },
+            select: ['etablissementId'],
+        });
+        
+        const existingIds = new Set(existingLiens.map(l => l.etablissementId));
+        const newIds = etablissementIds.filter(id => !existingIds.has(id));
+        
+        if (newIds.length === 0) {
+            logger.info(`Tous les établissements sont déjà assignés au groupe ${groupeId}`);
+            return; // Rien à ajouter
+        }
+        
+        const liens = newIds.map(id =>
             this.lienRepo.create({
                 groupeId,
                 etablissementId: id,
@@ -221,6 +300,10 @@ export class GroupesService {
             })
         );
         await manager.save(GroupeEtablissementLien, liens);
+        
+        if (newIds.length < etablissementIds.length) {
+            logger.info(`${etablissementIds.length - newIds.length} établissement(s) déjà assigné(s), ignorés`);
+        }
     }
 
     /**

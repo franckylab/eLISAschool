@@ -18,6 +18,7 @@ export interface Cycle {
     ordre: number;
     actif: boolean;
     nbNiveaux?: number;
+    etablissementId: string;
     createdAt: string;
     updatedAt: string;
 }

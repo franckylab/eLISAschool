@@ -2,11 +2,19 @@
  * ==================================
  * eLISAschool - Seed RBAC (Rôles et Permissions)
  * ==================================
- * Version: 2.0.0
+ * Version: 5.0.0
  * Auteur: franck arlos chendjou
  * 
- * Initialise les rôles système, les ~85 permissions,
+ * Initialise les rôles système, les ~397 permissions,
  * et le mapping rôle → permissions depuis DEFAULT_ROLE_PERMISSIONS
+ * 
+ * Modules couverts:
+ * - Core (etablissements, utilisateurs, auth, configuration)
+ * - Académique (élèves, classes, matières, notes, bulletins)
+ * - Services (cantine, transport, cartes, clubs)
+ * - Avancé (gamification, scoring, orientation, requêtes)
+ * - Groupes établissements (9 permissions unifiées)
+ * - Workflow validation (15 modules)
  */
 
 import { Repository } from 'typeorm';
@@ -337,6 +345,19 @@ export class RBACSeedService {
             { code: 'transport:inscriptions:view', libelle: 'Voir les inscriptions', module: 'transport', action: 'inscriptions:view' },
             { code: 'transport:presences:enregistrer', libelle: 'Enregistrer une présence', module: 'transport', action: 'presences:enregistrer' },
             { code: 'transport:presences:view', libelle: 'Voir les présences', module: 'transport', action: 'presences:view' },
+
+            // ==================================
+            // GROUPES ÉTABLISSEMENTS (9 permissions unifiées)
+            // ==================================
+            { code: 'groupes-etablissements:view', libelle: 'Voir groupes', module: 'groupes-etablissements', action: 'view' },
+            { code: 'groupes-etablissements:create', libelle: 'Créer groupe', module: 'groupes-etablissements', action: 'create' },
+            { code: 'groupes-etablissements:edit', libelle: 'Modifier groupes', module: 'groupes-etablissements', action: 'edit' },
+            { code: 'groupes-etablissements:delete', libelle: 'Supprimer groupes', module: 'groupes-etablissements', action: 'delete' },
+            { code: 'groupes-etablissements:manage', libelle: 'Gérer groupes', module: 'groupes-etablissements', action: 'manage' },
+            { code: 'groupes-etablissements:dashboard', libelle: 'Voir dashboard consolidé', module: 'groupes-etablissements', action: 'dashboard' },
+            { code: 'groupes-etablissements:manage-admins', libelle: 'Gérer admins', module: 'groupes-etablissements', action: 'manage-admins' },
+            { code: 'groupes-etablissements:manage-etablissements', libelle: 'Gérer établissements', module: 'groupes-etablissements', action: 'manage-etablissements' },
+            { code: 'groupes-etablissements:rapports', libelle: 'Voir rapports consolidés', module: 'groupes-etablissements', action: 'rapports' },
         ];
 
         // Fusionner avec les permissions existantes (parser les codes)

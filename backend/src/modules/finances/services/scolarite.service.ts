@@ -10,7 +10,7 @@
 
 import { Repository, In, IsNull, Between } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { FraisScolarite, Echeancier, Paiement, RecuPaiement, RelancePaiement, Remise, TypeRemise } from '../entities';
+import { FraisScolarite, Echeancier, Paiement, RecuPaiement, RelancePaiement, Remise, TypeRemise, ScopeRemise } from '../entities';
 import { CreateFraisScolariteDto, CreatePaiementDto, GenerateEcheancierDto, CreateRemiseDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -202,7 +202,7 @@ export class ScolariteService {
 
     /**
      * Trouver les frais de scolarité applicables pour un élève
-     * Algorithme de priorité : section > classe > niveau > cycle > établissement
+     * Algorithme de priorité : filière > classe > niveau > cycle > établissement
      */
     async trouverFraisScolarite(
         eleveId: string,
@@ -210,27 +210,27 @@ export class ScolariteService {
         classeId: string,
         niveauId: string,
         cycleId: string,
-        sectionId: string,
+        filiereId: string,
         etablissementId?: string
     ): Promise<FraisScolarite> {
         const cibleEtablissementId = etablissementId || '';
 
-        logger.info(`[Finances] Recherche frais pour élève ${eleveId} - Section: ${sectionId}, Classe: ${classeId}, Niveau: ${niveauId}, Cycle: ${cycleId}`);
+        logger.info(`[Finances] Recherche frais pour élève ${eleveId} - Filière: ${filiereId}, Classe: ${classeId}, Niveau: ${niveauId}, Cycle: ${cycleId}`);
 
-        // PRIORITÉ 1 : Frais par SECTION (plus spécifique)
-        if (sectionId) {
-            const fraisSection = await this.fraisRepo.findOne({
+        // PRIORITÉ 1 : Frais par FILIÈRE (plus spécifique)
+        if (filiereId) {
+            const fraisFiliere = await this.fraisRepo.findOne({
                 where: {
                     etablissementId: cibleEtablissementId,
                     anneeScolaireId,
-                    sectionId,
+                    filiereId,
                 },
-                relations: ['section', 'classe', 'niveau', 'cycle'],
+                relations: ['filiere', 'classe', 'niveau', 'cycle'],
             });
 
-            if (fraisSection) {
-                logger.info(`[Finances] Frais trouvés par SECTION: ${fraisSection.id}`);
-                return fraisSection;
+            if (fraisFiliere) {
+                logger.info(`[Finances] Frais trouvés par FILIÈRE: ${fraisFiliere.id}`);
+                return fraisFiliere;
             }
         }
 
@@ -242,7 +242,7 @@ export class ScolariteService {
                     anneeScolaireId,
                     niveauId,
                     classeId,
-                    sectionId: IsNull(),
+                    filiereId: IsNull(),
                 },
                 relations: ['classe', 'niveau', 'cycle'],
             });
@@ -260,7 +260,7 @@ export class ScolariteService {
                 anneeScolaireId,
                 niveauId,
                 classeId: IsNull(), // Frais génériques du niveau
-                sectionId: IsNull(),
+                filiereId: IsNull(),
             },
             relations: ['niveau', 'cycle'],
         });
@@ -278,7 +278,7 @@ export class ScolariteService {
                     anneeScolaireId,
                     cycleId,
                     niveauId: IsNull(), // Frais génériques du cycle
-                    sectionId: IsNull(),
+                    filiereId: IsNull(),
                 },
                 relations: ['cycle'],
             });
@@ -297,7 +297,7 @@ export class ScolariteService {
                 niveauId: IsNull(),
                 classeId: IsNull(),
                 cycleId: IsNull(),
-                sectionId: IsNull(),
+                filiereId: IsNull(),
             },
         });
 
@@ -523,10 +523,29 @@ export class ScolariteService {
      * Attribuer une remise à un élève
      */
     async appliquerRemise(dto: CreateRemiseDto, userId: string, etablissementId?: string): Promise<Remise> {
+        // Validation de cohérence scope ↔ FK
+        const scope = dto.scopeRemise || ScopeRemise.ELEVE;
+        if (scope === ScopeRemise.ELEVE && !dto.eleveId) {
+            throw new AppError('Remise élève : eleveId requis', 400, 'VALIDATION_ERROR');
+        }
+        if (scope === ScopeRemise.CLASSE && !dto.classeId) {
+            throw new AppError('Remise classe : classeId requis', 400, 'VALIDATION_ERROR');
+        }
+        if (scope === ScopeRemise.CYCLE && !dto.cycleId) {
+            throw new AppError('Remise cycle : cycleId requis', 400, 'VALIDATION_ERROR');
+        }
+        if (scope === ScopeRemise.FILIERE && !dto.filiereId) {
+            throw new AppError('Remise filière : filiereId requis', 400, 'VALIDATION_ERROR');
+        }
+
         const remise = this.remiseRepo.create({
             eleveId: dto.eleveId,
             fraisScolariteId: dto.fraisScolariteId,
             typeRemise: dto.typeRemise as any, // Conversion pour TypeORM
+            scopeRemise: scope as any,
+            classeId: dto.classeId,
+            cycleId: dto.cycleId,
+            filiereId: dto.filiereId,
             pourcentage: dto.pourcentage,
             montant: dto.montant,
             motif: dto.motif,
@@ -566,12 +585,12 @@ export class ScolariteService {
         classeId: string,
         niveauId: string,
         cycleId: string,
-        sectionId: string,
+        filiereId: string,
         etablissementId: string
     ): Promise<Remise[]> {
         const remisesApplicables: Remise[] = [];
 
-        logger.info(`[Finances] Recherche remises pour élève ${eleveId} - Section: ${sectionId}, Classe: ${classeId}, Niveau: ${niveauId}, Cycle: ${cycleId}`);
+        logger.info(`[Finances] Recherche remises pour élève ${eleveId} - Filière: ${filiereId}, Classe: ${classeId}, Niveau: ${niveauId}, Cycle: ${cycleId}`);
 
         // 1. Remises par ÉLÈVE (scope ELEVE)
         const remisesEleve = await this.remiseRepo.find({
@@ -588,21 +607,21 @@ export class ScolariteService {
             remisesApplicables.push(...remisesEleve);
         }
 
-        // 2. Remises par SECTION (scope SECTION)
-        if (sectionId) {
-            const remisesSection = await this.remiseRepo.find({
+        // 2. Remises par FILIÈRE (scope FILIERE)
+        if (filiereId) {
+            const remisesFiliere = await this.remiseRepo.find({
                 where: {
-                    sectionId,
-                    scopeRemise: 'SECTION' as any,
+                    filiereId,
+                    scopeRemise: 'FILIERE' as any,
                     etablissementId,
                     eleveId: IsNull(),
                 },
                 relations: ['fraisScolarite'],
             });
 
-            if (remisesSection.length > 0) {
-                logger.info(`[Finances] ${remisesSection.length} remise(s) trouvée(s) par SECTION`);
-                remisesApplicables.push(...remisesSection);
+            if (remisesFiliere.length > 0) {
+                logger.info(`[Finances] ${remisesFiliere.length} remise(s) trouvée(s) par FILIÈRE`);
+                remisesApplicables.push(...remisesFiliere);
             }
         }
 

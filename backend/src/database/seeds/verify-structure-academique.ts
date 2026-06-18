@@ -2,11 +2,13 @@
  * ==================================
  * eLISAschool - Vérification Structure Académique
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
+ * Version: 2.0.0
  * 
  * Script de vérification post-seed pour confirmer
- * l'intégrité des données académiques en base
+ * l'intégrité des données académiques en base (scopé par établissement)
+ * 
+ * Usage:
+ *   npx ts-node -r tsconfig-paths/register src/database/seeds/verify-structure-academique.ts <etablissementId>
  */
 
 import { AppDataSource } from '@database/data-source';
@@ -17,8 +19,11 @@ import { Specialite } from '@modules/specialites/entities/specialite.entity';
 import { Competence } from '@modules/competences/entities/competence.entity';
 import { ExamenNational } from '@modules/examens-nationaux/entities';
 
-async function verifyStructureAcademique(): Promise<void> {
+async function verifyStructureAcademique(etablissementId?: string): Promise<void> {
     console.log('\n🔍 VÉRIFICATION DE LA STRUCTURE ACADÉMIQUE\n');
+    if (etablissementId) {
+        console.log(`📌 Établissement: ${etablissementId}\n`);
+    }
     
     await AppDataSource.initialize();
     
@@ -30,23 +35,32 @@ async function verifyStructureAcademique(): Promise<void> {
         competences: AppDataSource.getRepository(Competence),
         examens: AppDataSource.getRepository(ExamenNational),
     };
+
+    // Construire le where conditionnel pour scoping multi-tenant
+    const where = etablissementId ? { etablissementId } : {};
     
     const counts = {
-        cycles: await repos.cycles.count(),
-        niveaux: await repos.niveaux.count(),
-        filieres: await repos.filieres.count(),
-        specialites: await repos.specialites.count(),
-        competences: await repos.competences.count(),
+        cycles: await repos.cycles.count({ where }),
+        niveaux: await repos.niveaux.count({ where }),
+        filieres: await repos.filieres.count({ where }),
+        specialites: await repos.specialites.count({ where }),
+        competences: await repos.competences.count({ where }),
         examens: await repos.examens.count(),
     };
     
     // Vérification des spécialités par filière
     const filieresTechniques = await repos.filieres.find({
-        where: [
-            { code: 'F1' }, { code: 'F2' }, { code: 'F3' }, { code: 'F4' },
-            { code: 'G1' }, { code: 'G2' }, { code: 'H' }, { code: 'I' },
-            { code: 'K' }, { code: 'L' },
-        ],
+        where: etablissementId
+            ? [
+                { code: 'F1', etablissementId }, { code: 'F2', etablissementId }, { code: 'F3', etablissementId }, { code: 'F4', etablissementId },
+                { code: 'G1', etablissementId }, { code: 'G2', etablissementId }, { code: 'H', etablissementId }, { code: 'I', etablissementId },
+                { code: 'K', etablissementId }, { code: 'L', etablissementId },
+              ]
+            : [
+                { code: 'F1' }, { code: 'F2' }, { code: 'F3' }, { code: 'F4' },
+                { code: 'G1' }, { code: 'G2' }, { code: 'H' }, { code: 'I' },
+                { code: 'K' }, { code: 'L' },
+              ],
     });
     
     console.log('📊 RÉSULTATS:');
@@ -69,13 +83,16 @@ async function verifyStructureAcademique(): Promise<void> {
     
     // Détail des compétences par domaine
     console.log('🎯 COMPÉTENCES PAR DOMAINE:');
-    const domaines = await repos.competences
+    const compQb = repos.competences
         .createQueryBuilder('comp')
         .select('comp.domaine', 'domaine')
         .addSelect('COUNT(*)', 'count')
         .groupBy('comp.domaine')
-        .orderBy('domaine', 'ASC')
-        .getRawMany();
+        .orderBy('domaine', 'ASC');
+    if (etablissementId) {
+        compQb.where('comp.etablissementId = :etablissementId', { etablissementId });
+    }
+    const domaines = await compQb.getRawMany();
     
     domaines.forEach((d: any) => {
         console.log(`  ${d.domaine}: ${d.count} compétence(s)`);
@@ -104,7 +121,8 @@ async function verifyStructureAcademique(): Promise<void> {
     await AppDataSource.destroy();
 }
 
-verifyStructureAcademique().catch((error) => {
+const etablissementIdArg = process.argv[2] || undefined;
+verifyStructureAcademique(etablissementIdArg).catch((error) => {
     console.error('❌ Erreur:', error);
     process.exit(1);
 });

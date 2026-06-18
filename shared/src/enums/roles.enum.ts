@@ -736,14 +736,17 @@ export enum Permission {
     FINANCES_RAPPORTS_GENERER = 'finances:rapports:generer',
 
     // ==================================
-    // GROUPES & CONSOLIDATION (6 permissions)
+    // GROUPES ÉTABLISSEMENTS (9 permissions unifiées)
     // ==================================
-    GROUPES_VIEW = 'groupes:view',
-    GROUPES_MANAGE = 'groupes:manage',
-    GROUPES_DASHBOARD_CONSOLIDE = 'groupes:dashboard:consolide',
-    GROUPES_RAPPORTS_SCOLARITE = 'groupes:rapports:scolarite',
-    GROUPES_RAPPORTS_FINANCES = 'groupes:rapports:finances',
-    GROUPES_ETABLISSEMENTS_MANAGE = 'groupes:etablissements:manage',
+    GROUPES_ETABLISSEMENTS_VIEW = 'groupes-etablissements:view',
+    GROUPES_ETABLISSEMENTS_CREATE = 'groupes-etablissements:create',
+    GROUPES_ETABLISSEMENTS_EDIT = 'groupes-etablissements:edit',
+    GROUPES_ETABLISSEMENTS_DELETE = 'groupes-etablissements:delete',
+    GROUPES_ETABLISSEMENTS_MANAGE = 'groupes-etablissements:manage',
+    GROUPES_ETABLISSEMENTS_DASHBOARD = 'groupes-etablissements:dashboard',
+    GROUPES_ETABLISSEMENTS_MANAGE_ADMINS = 'groupes-etablissements:manage-admins',
+    GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS = 'groupes-etablissements:manage-etablissements',
+    GROUPES_ETABLISSEMENTS_RAPPORTS = 'groupes-etablissements:rapports',
 
     // ==================================
     // ORGANISATION (16 permissions)
@@ -935,6 +938,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.FINANCES_DASHBOARD_KPI,
         Permission.FINANCES_RAPPORTS_GENERER,
+        // Groupes Établissements (9 permissions unifiées)
+        Permission.GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.GROUPES_ETABLISSEMENTS_CREATE,
+        Permission.GROUPES_ETABLISSEMENTS_EDIT,
+        Permission.GROUPES_ETABLISSEMENTS_DELETE,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE,
+        Permission.GROUPES_ETABLISSEMENTS_DASHBOARD,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ADMINS,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS,
+        Permission.GROUPES_ETABLISSEMENTS_RAPPORTS,
         // Programmes Pédagogiques
         Permission.PROGRAMMES_CHAPITRE_READ,
         Permission.PROGRAMMES_CHAPITRE_CREATE,
@@ -944,11 +957,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
-        // Groupes & Consolidation
-        Permission.GROUPES_VIEW,
-        Permission.GROUPES_DASHBOARD_CONSOLIDE,
-        Permission.GROUPES_RAPPORTS_SCOLARITE,
-        Permission.GROUPES_RAPPORTS_FINANCES,
     ],
 
     [Role.ENSEIGNANT]: [
@@ -1094,6 +1102,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_SCOLARITE_VIEW,
         Permission.FINANCES_PAIEMENT_VALIDATE,
         Permission.FINANCES_DASHBOARD_VIEW,
+        // Groupes Établissements (9 permissions unifiées)
+        Permission.GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.GROUPES_ETABLISSEMENTS_CREATE,
+        Permission.GROUPES_ETABLISSEMENTS_EDIT,
+        Permission.GROUPES_ETABLISSEMENTS_DELETE,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE,
+        Permission.GROUPES_ETABLISSEMENTS_DASHBOARD,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ADMINS,
+        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS,
+        Permission.GROUPES_ETABLISSEMENTS_RAPPORTS,
     ],
 
     [Role.CENSEUR]: [

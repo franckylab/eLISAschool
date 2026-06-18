@@ -301,7 +301,7 @@ function QRScannerModal({
 /* ─── Composant principal ─────────────────────────── */
 export function LoginPage() {
     const { t } = useTranslation('auth');
-    const { login, isLoading, completeLogin, preLoginData, showEtablissementModal, setShowEtablissementModal } = useAuthStore();
+    const { login, isLoading, completeLogin, preLoginData, showEtablissementModal, setShowEtablissementModal, reset } = useAuthStore();
     const router = useRouter();
     const search = useSearch({ from: '/login' }) as { redirect?: string };
 
@@ -558,6 +558,20 @@ export function LoginPage() {
             setShowEtablissementModal(false);
         }
     };
+
+    /**
+     * Annulation de la sélection d'établissement.
+     * Reset complet du store (tokens, localStorage, état) pour éviter
+     * toute connexion fantôme, puis réinitialisation des états locaux
+     * pour que la page login soit propre.
+     */
+    const handleEtablissementCancel = useCallback(() => {
+        reset();
+        setSuccessPulse(false);
+        setError(null);
+        setValue('motDePasse', '');
+        toast.info(t('login.sessionAnnulee', { defaultValue: 'Session annulée.' }));
+    }, [reset, t, setValue]);
 
     const handleQRScan = useCallback((value: string) => {
         setValue('identifiant', value);
@@ -868,6 +882,7 @@ export function LoginPage() {
                     open={showEtablissementModal}
                     etablissements={preLoginData.etablissements || []}
                     onSelect={handleEtablissementSelect}
+                    onCancel={handleEtablissementCancel}
                     tokenTemporaire={preLoginData.tokenTemporaire || ''}
                     expiresIn={preLoginData.expiresIn}
                 />

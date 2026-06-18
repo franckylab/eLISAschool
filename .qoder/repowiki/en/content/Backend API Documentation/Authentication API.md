@@ -9,12 +9,22 @@
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [utilisateur.entity.ts](file://backend/src/modules/auth/entities/utilisateur.entity.ts)
 - [refresh-token.entity.ts](file://backend/src/modules/auth/entities/refresh-token.entity.ts)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [env.config.ts](file://backend/src/config/env.config.ts)
 - [app.ts](file://backend/src/app.ts)
 - [audit.service.ts](file://backend/src/modules/auth/services/audit.service.ts)
 - [audit-log.entity.ts](file://backend/src/modules/auth/entities/audit-log.entity.ts)
 - [roles.enum.ts](file://shared/src/enums/roles.enum.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new `/api/auth/blocage-status/:identifiant` endpoint for real-time blocking status polling
+- Enhanced login flow with establishment switching capabilities
+- Added comprehensive blocking status information with two-level blocking system
+- Integrated new blocking management service with cron job cleanup functionality
+- Updated authentication flow to handle establishment selection during login
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -29,18 +39,20 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for the Authentication module of the eLISAschool platform. It covers all authentication endpoints including login, logout, register, password reset, token refresh, and session management. It explains request/response schemas, authentication requirements, error handling, JWT token structure, refresh token handling, and security considerations. It also includes integration patterns and client-side usage examples.
+This document provides comprehensive API documentation for the Authentication module of the eLISAschool platform. It covers all authentication endpoints including login, logout, register, password reset, token refresh, establishment switching, and real-time blocking status polling. The enhanced authentication system now includes a sophisticated two-level blocking mechanism with automatic cleanup, comprehensive establishment switching capabilities, and real-time blocking status monitoring for improved security and user experience.
 
 ## Project Structure
-The Authentication module is organized around a controller, service, DTOs, middleware, and entities. The controller exposes REST endpoints under /api/auth. The service encapsulates business logic and integrates with the TokenService for JWT operations and the database repositories for persistence. The middleware validates JWT access tokens and attaches user context to requests.
+The Authentication module is organized around a controller, service, DTOs, middleware, and entities. The controller exposes REST endpoints under /api/auth, including new blocking status polling functionality. The service encapsulates business logic and integrates with the TokenService for JWT operations, BlocageAuthService for blocking management, and the database repositories for persistence. The middleware validates JWT access tokens and attaches user context to requests.
 
 ```mermaid
 graph TB
 Client["Client"] --> Router["Express Router<br/>/api/auth"]
 Router --> Controller["Auth Controller"]
 Controller --> Service["AuthService"]
+Controller --> BlocageService["BlocageAuthService"]
 Service --> TokenService["TokenService"]
 Service --> Entities["User & RefreshToken Entities"]
+BlocageService --> TentativeConnexion["TentativeConnexion Entity"]
 Controller --> Middleware["Auth Middleware"]
 Middleware --> TokenService
 Service --> Audit["AuditService"]
@@ -49,10 +61,12 @@ Service --> Audit["AuditService"]
 **Diagram sources**
 - [auth.controller.ts:33-267](file://backend/src/modules/auth/controllers/auth.controller.ts#L33-L267)
 - [auth.service.ts:34-484](file://backend/src/modules/auth/services/auth.service.ts#L34-L484)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [token.service.ts:21-181](file://backend/src/modules/auth/services/token.service.ts#L21-L181)
 - [auth.middleware.ts:30-92](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L92)
 - [utilisateur.entity.ts:51-143](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L51-L143)
 - [refresh-token.entity.ts:23-72](file://backend/src/modules/auth/entities/refresh-token.entity.ts#L23-L72)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 - [audit.service.ts:37-197](file://backend/src/modules/auth/services/audit.service.ts#L37-L197)
 
 **Section sources**
@@ -60,28 +74,33 @@ Service --> Audit["AuditService"]
 - [app.ts:150](file://backend/src/app.ts#L150)
 
 ## Core Components
-- Auth Controller: Defines all authentication endpoints and delegates to AuthService. It validates request bodies using Zod schemas and applies authMiddleware where required.
-- AuthService: Implements core authentication logic including login, registration, password reset, token refresh, logout, and user profile retrieval. Integrates with TokenService and AuditService.
+- Auth Controller: Defines all authentication endpoints including the new blocking status polling endpoint and delegates to AuthService. It validates request bodies using Zod schemas and applies authMiddleware where required.
+- AuthService: Implements core authentication logic including login, registration, password reset, token refresh, logout, establishment switching, and user profile retrieval. Integrates with TokenService, BlocageAuthService, and AuditService.
+- BlocageAuthService: Manages the two-level blocking system with automatic cleanup, tracking failed login attempts, and providing real-time blocking status information.
 - TokenService: Manages JWT access tokens and refresh tokens, including generation, verification, revocation, and cleanup.
 - Auth Middleware: Extracts and verifies Bearer tokens from Authorization headers and attaches user context to requests.
 - DTOs: Define request/response schemas and typed interfaces for validation and response modeling.
-- Entities: Persist user accounts, refresh tokens, and audit logs.
+- Entities: Persist user accounts, refresh tokens, audit logs, and connection attempts with blocking information.
+- TentativeConnexion Entity: Tracks failed login attempts with detailed blocking information including establishment-specific blocking.
 
 **Section sources**
 - [auth.controller.ts:39-49](file://backend/src/modules/auth/controllers/auth.controller.ts#L39-L49)
 - [auth.service.ts:34-484](file://backend/src/modules/auth/services/auth.service.ts#L34-L484)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [token.service.ts:21-181](file://backend/src/modules/auth/services/token.service.ts#L21-L181)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [auth.dto.ts:113-173](file://backend/src/modules/auth/dto/auth.dto.ts#L113-L173)
 - [utilisateur.entity.ts:51-143](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L51-L143)
 - [refresh-token.entity.ts:23-72](file://backend/src/modules/auth/entities/refresh-token.entity.ts#L23-L72)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 
 ## Architecture Overview
-The authentication flow follows a layered architecture:
-- HTTP Layer: Express routes in the controller.
-- Business Logic Layer: AuthService orchestrates operations.
+The enhanced authentication flow follows a layered architecture with two-level blocking management:
+- HTTP Layer: Express routes in the controller including new blocking status endpoint.
+- Business Logic Layer: AuthService orchestrates operations with establishment switching; BlocageAuthService manages blocking logic.
 - Security Layer: TokenService handles JWT lifecycle; Auth Middleware validates tokens.
-- Persistence Layer: TypeORM repositories manage entities.
+- Blocking Management Layer: BlocageAuthService tracks connection attempts and manages blocking states.
+- Persistence Layer: TypeORM repositories manage entities including blocking attempts.
 - Audit Layer: AuditService logs sensitive actions.
 
 ```mermaid
@@ -89,6 +108,7 @@ sequenceDiagram
 participant Client as "Client"
 participant Controller as "Auth Controller"
 participant Service as "AuthService"
+participant BlocageService as "BlocageAuthService"
 participant TokenSvc as "TokenService"
 participant DB as "Database"
 participant Audit as "AuditService"
@@ -96,17 +116,20 @@ Client->>Controller : POST /api/auth/login
 Controller->>Service : login(loginDto, ip, userAgent)
 Service->>DB : find user by email
 DB-->>Service : User entity
-Service->>Service : verify password, check status
+Service->>Service : verify password, check establishment
+Service->>BlocageService : check blocking status
+BlocageService-->>Service : blocking info (level, expiry, establishment)
 Service->>TokenSvc : generate access token
 Service->>TokenSvc : generate refresh token
 Service->>Audit : log login success
-Service-->>Controller : LoginResponseDto
-Controller-->>Client : 200 OK with tokens
+Service-->>Controller : LoginResponseDto with establishment info
+Controller-->>Client : 200 OK with tokens and establishment data
 ```
 
 **Diagram sources**
 - [auth.controller.ts:55-74](file://backend/src/modules/auth/controllers/auth.controller.ts#L55-L74)
 - [auth.service.ts:61-161](file://backend/src/modules/auth/services/auth.service.ts#L61-L161)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [token.service.ts:32-72](file://backend/src/modules/auth/services/token.service.ts#L32-L72)
 - [audit.service.ts:67-77](file://backend/src/modules/auth/services/audit.service.ts#L67-L77)
 
@@ -123,6 +146,7 @@ Controller-->>Client : 200 OK with tokens
 - POST /api/auth/change-password
 - POST /api/auth/verify-email
 - GET /api/auth/me
+- **GET /api/auth/blocage-status/:identifiant** *(NEW)*
 
 **Section sources**
 - [auth.controller.ts:55-264](file://backend/src/modules/auth/controllers/auth.controller.ts#L55-L264)
@@ -130,24 +154,28 @@ Controller-->>Client : 200 OK with tokens
 ### Endpoint Details
 
 #### POST /api/auth/login
-- Description: Authenticate a user and issue access and refresh tokens.
+- Description: Authenticate a user, issue access and refresh tokens, and handle establishment switching.
 - Authentication: None.
 - Request Body Schema:
   - email: string (required, email format, max 255)
   - motDePasse: string (required, min 8 chars)
   - seRappelerDeMoi: boolean (optional, default false)
+  - etablissementId: string (optional, for establishment switching)
 - Response:
   - accessToken: string
   - refreshToken: string
   - expiresIn: number (seconds)
   - utilisateur: object with id, email, matricule, role, nom, prenom
+  - etablissementCourant: object with establishment information
+  - etablissementsDisponibles: array of available establishments
 - Errors:
   - 400: VALIDATION_ERROR (invalid fields)
   - 401: INVALID_CREDENTIALS (invalid email/password)
-  - 403: ACCOUNT_LOCKED, ACCOUNT_SUSPENDED, ACCOUNT_INACTIVE
+  - 403: ACCOUNT_LOCKED, ACCOUNT_SUSPENDED, ACCOUNT_INACTIVE, ESTABLISHMENT_BLOCKED
 - Security:
   - Password verification uses bcrypt.
-  - Login attempts are tracked; excessive attempts lock the account temporarily.
+  - Login attempts are tracked with two-level blocking system; excessive attempts lock the account temporarily.
+  - Establishment switching requires proper permissions.
   - Audit logged on success/failure.
 
 **Section sources**
@@ -156,6 +184,34 @@ Controller-->>Client : 200 OK with tokens
 - [auth.service.ts:61-161](file://backend/src/modules/auth/services/auth.service.ts#L61-L161)
 - [utilisateur.entity.ts:120-130](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L120-L130)
 - [audit.service.ts:67-77](file://backend/src/modules/auth/services/audit.service.ts#L67-L77)
+
+#### GET /api/auth/blocage-status/:identifiant
+- Description: Real-time blocking status polling endpoint for monitoring account blocking state.
+- Authentication: None.
+- Path Parameters:
+  - identifiant: string (required, user identifier or email)
+- Response Schema:
+  - bloque: boolean (true if account is currently blocked)
+  - niveauBlocage: string (BLOCKED_LEVEL_1 or BLOCKED_LEVEL_2)
+  - tempsRestant: number (remaining blocking time in seconds)
+  - motifBlocage: string (reason for blocking)
+  - derniereTentative: Date (timestamp of last failed attempt)
+  - etablissementId: string (blocking establishment if applicable)
+  - nbDeblocagesAuto: number (number of automatic unlocks)
+- Errors:
+  - 404: USER_NOT_FOUND
+  - 400: INVALID_IDENTIFIANT
+- Security:
+  - No increment of failed attempts (read-only status check).
+  - Used for frontend polling during blocking periods.
+  - Provides comprehensive blocking details for user feedback.
+
+**Updated** Added new endpoint for real-time blocking status monitoring
+
+**Section sources**
+- [auth.controller.ts:230-236](file://backend/src/modules/auth/controllers/auth.controller.ts#L230-L236)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 
 #### POST /api/auth/register
 - Description: Register a new user with profile details.
@@ -344,13 +400,42 @@ Controller-->>Client : 200 OK with tokens
 - Login sets session duration based on configuration (sessionDuration in minutes).
 - Refresh flow invalidates the old refresh token and issues a new one.
 - Logout and logout-all revoke refresh tokens to terminate sessions.
-- Account lockout prevents brute-force login attempts.
+- Two-level blocking system with automatic cleanup every 2 minutes.
+- Establishment switching requires proper permissions and blocks specific establishments.
+
+**Updated** Enhanced with two-level blocking system and establishment switching
 
 **Section sources**
 - [auth.service.ts:146](file://backend/src/modules/auth/services/auth.service.ts#L146)
 - [auth.service.ts:239-279](file://backend/src/modules/auth/services/auth.service.ts#L239-L279)
 - [auth.service.ts:284-305](file://backend/src/modules/auth/services/auth.service.ts#L284-L305)
 - [utilisateur.entity.ts:83-87](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L83-L87)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
+
+### Blocking Management System
+
+#### Two-Level Blocking System
+- Level 1 Blocking: Temporary blocking after first failed attempt (2-minute duration)
+- Level 2 Blocking: Extended blocking after repeated failures (15-minute duration)
+- Automatic Cleanup: Cron job removes old blocking attempts every 2 minutes
+- Establishment-Specific Blocking: Blocks can be specific to individual establishments
+- Real-Time Status Polling: Frontend can poll blocking status without incrementing attempts
+
+#### Blocking Status Information
+- bloque: boolean (current blocking state)
+- niveauBlocage: enum (BLOCKED_LEVEL_1 or BLOCKED_LEVEL_2)
+- tempsRestant: number (remaining blocking time in seconds)
+- motifBlocage: string (reason for blocking)
+- derniereTentative: Date (timestamp of last failed attempt)
+- etablissementId: string (blocking establishment if applicable)
+- nbDeblocagesAuto: number (number of automatic unlocks)
+
+**Updated** Added comprehensive blocking management system with two-level blocking and real-time status polling
+
+**Section sources**
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
+- [auth.controller.ts:230-236](file://backend/src/modules/auth/controllers/auth.controller.ts#L230-L236)
 
 ### Security Considerations
 - Password hashing: bcrypt with 12 rounds.
@@ -359,6 +444,10 @@ Controller-->>Client : 200 OK with tokens
 - CORS and Helmet: Security headers and allowed origins configured.
 - Audit logging: Sensitive actions (login, logout, password changes, access denied) are recorded.
 - Environment validation: JWT secret and encryption key validated at startup.
+- Two-level blocking system prevents brute-force attacks with automatic cleanup.
+- Establishment switching requires proper authorization and audit logging.
+
+**Updated** Enhanced with blocking system security measures
 
 **Section sources**
 - [utilisateur.entity.ts:107-122](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L107-L122)
@@ -366,23 +455,29 @@ Controller-->>Client : 200 OK with tokens
 - [app.ts:66-97](file://backend/src/app.ts#L66-L97)
 - [audit.service.ts:67-137](file://backend/src/modules/auth/services/audit.service.ts#L67-L137)
 - [env.config.ts:29-58](file://backend/src/config/env.config.ts#L29-L58)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 
 ### Integration Patterns
 - Client sends Authorization: Bearer <access_token> for protected endpoints.
-- After successful login, client stores both access and refresh tokens.
+- After successful login, client stores both access and refresh tokens and establishment information.
 - On 401 INVALID_TOKEN, client should attempt refresh using refreshToken.
 - On successful refresh, client replaces tokens and retries the original request.
 - For logout, client sends refreshToken to /api/auth/logout or calls logout-all to invalidate all sessions.
+- **Real-time blocking monitoring**: Client polls /api/auth/blocage-status/:identifiant during blocking periods.
+- **Establishment switching**: Client can switch between available establishments during login.
+
+**Updated** Added blocking status polling and establishment switching integration patterns
 
 **Section sources**
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [auth.controller.ts:101-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L101-L120)
 - [auth.service.ts:239-279](file://backend/src/modules/auth/services/auth.service.ts#L239-L279)
+- [auth.controller.ts:230-236](file://backend/src/modules/auth/controllers/auth.controller.ts#L230-L236)
 
 ### Client-Side Implementation Examples
 - Login:
-  - POST /api/auth/login with { email, motDePasse, seRappelerDeMoi }
-  - Store accessToken and refreshToken
+  - POST /api/auth/login with { email, motDePasse, seRappelerDeMoi, etablissementId }
+  - Store accessToken, refreshToken, and establishment information
 - Refresh:
   - POST /api/auth/refresh with { refreshToken }
   - Replace tokens and retry failed request
@@ -394,10 +489,18 @@ Controller-->>Client : 200 OK with tokens
 - Logout everywhere:
   - POST /api/auth/logout-all with Bearer token
   - Clear stored tokens
+- **Blocking status polling**:
+  - GET /api/auth/blocage-status/:identifiant (polling during blocking)
+  - Display remaining blocking time and blocking level
+- **Establishment switching**:
+  - Include etablissementId in login request for establishment switching
+
+**Updated** Added blocking status polling and establishment switching examples
 
 **Section sources**
 - [auth.controller.ts:55-264](file://backend/src/modules/auth/controllers/auth.controller.ts#L55-L264)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
+- [auth.controller.ts:230-236](file://backend/src/modules/auth/controllers/auth.controller.ts#L230-L236)
 
 ## Dependency Analysis
 
@@ -414,6 +517,7 @@ class AuthController {
 +changePassword()
 +verifyEmail()
 +getCurrentUser()
++blocageStatus()
 }
 class AuthService {
 +login()
@@ -426,6 +530,12 @@ class AuthService {
 +changePassword()
 +verifyEmail()
 +getCurrentUser()
+}
+class BlocageAuthService {
++checkBlockingStatus()
++incrementFailedAttempt()
++getBlockingInfo()
++nettoyerAnciennesTentatives()
 }
 class TokenService {
 +generateAccessToken()
@@ -449,6 +559,13 @@ class RefreshToken {
 +estExpire()
 +estValide()
 }
+class TentativeConnexion {
++estExpire()
++estValide()
++niveauBlocage : string
++motifBlocage : string
++tempsRestant : number
+}
 class AuditService {
 +log()
 +logLogin()
@@ -456,9 +573,11 @@ class AuditService {
 +logAccessDenied()
 }
 AuthController --> AuthService : "delegates"
+AuthController --> BlocageAuthService : "delegates"
 AuthService --> TokenService : "uses"
 AuthService --> Utilisateur : "persists"
 AuthService --> RefreshToken : "persists"
+BlocageAuthService --> TentativeConnexion : "manages"
 AuthService --> AuditService : "logs"
 AuthMiddleware --> TokenService : "verifies"
 ```
@@ -466,19 +585,23 @@ AuthMiddleware --> TokenService : "verifies"
 **Diagram sources**
 - [auth.controller.ts:34-267](file://backend/src/modules/auth/controllers/auth.controller.ts#L34-L267)
 - [auth.service.ts:34-484](file://backend/src/modules/auth/services/auth.service.ts#L34-L484)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [token.service.ts:21-181](file://backend/src/modules/auth/services/token.service.ts#L21-L181)
 - [auth.middleware.ts:30-92](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L92)
 - [utilisateur.entity.ts:51-143](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L51-L143)
 - [refresh-token.entity.ts:23-72](file://backend/src/modules/auth/entities/refresh-token.entity.ts#L23-L72)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 - [audit.service.ts:37-197](file://backend/src/modules/auth/services/audit.service.ts#L37-L197)
 
 **Section sources**
 - [auth.controller.ts:34-267](file://backend/src/modules/auth/controllers/auth.controller.ts#L34-L267)
 - [auth.service.ts:34-484](file://backend/src/modules/auth/services/auth.service.ts#L34-L484)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 - [token.service.ts:21-181](file://backend/src/modules/auth/services/token.service.ts#L21-L181)
 - [auth.middleware.ts:30-92](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L92)
 - [utilisateur.entity.ts:51-143](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L51-L143)
 - [refresh-token.entity.ts:23-72](file://backend/src/modules/auth/entities/refresh-token.entity.ts#L23-L72)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 - [audit.service.ts:37-197](file://backend/src/modules/auth/services/audit.service.ts#L37-L197)
 
 ## Performance Considerations
@@ -486,25 +609,32 @@ AuthMiddleware --> TokenService : "verifies"
 - Refresh token storage uses indexed fields; ensure database performance tuning for high concurrency.
 - Consider background cleanup of expired tokens periodically.
 - Rate limiting protects against abuse; tune limits according to deployment scale.
+- **Blocking system optimization**: Database queries optimized for blocking status checks; consider caching frequently accessed blocking information.
+- **Real-time polling**: Implement appropriate polling intervals to balance user experience with server load.
 
-[No sources needed since this section provides general guidance]
+**Updated** Added blocking system performance considerations
 
 ## Troubleshooting Guide
 - 400 Validation errors: Review request body against DTO schemas.
 - 401 Missing/Invalid token: Ensure Authorization header is present and valid; verify token not expired or revoked.
 - 403 Locked/Suspended/Inactive account: Check user status and unlock policy.
 - 404 User not found: Confirm user exists and identifiers are correct.
+- **Blocking system issues**: 
+  - 423 Locked resource: Account is currently blocked (check blocking level and remaining time)
+  - 429 Too many requests: Excessive polling detected (implement backoff strategy)
+  - Blocking status polling: Use /api/auth/blocage-status endpoint for current blocking state
 - Audit logs: Use audit endpoints to investigate suspicious activity.
+
+**Updated** Added blocking system troubleshooting guidance
 
 **Section sources**
 - [auth.controller.ts:39-49](file://backend/src/modules/auth/controllers/auth.controller.ts#L39-L49)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [audit.service.ts:142-181](file://backend/src/modules/auth/services/audit.service.ts#L142-L181)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
 
 ## Conclusion
-The Authentication module provides a robust, secure, and auditable authentication system with comprehensive endpoints for login, registration, password management, and session control. It leverages JWT for access tokens and server-stored refresh tokens for safe session management, with strong validation, rate limiting, and detailed audit logging.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The Authentication module provides a robust, secure, and auditable authentication system with comprehensive endpoints for login, registration, password management, and session control. The enhanced system now includes sophisticated two-level blocking management with automatic cleanup, real-time blocking status polling, establishment switching capabilities, and comprehensive audit logging. These improvements significantly enhance security while maintaining excellent user experience through intelligent blocking mechanisms and seamless establishment management.
 
 ## Appendices
 
@@ -514,12 +644,24 @@ The Authentication module provides a robust, secure, and auditable authenticatio
   - email: string
   - motDePasse: string
   - seRappelerDeMoi: boolean (optional)
+  - etablissementId: string (optional for establishment switching)
 
 - Login Response
   - accessToken: string
   - refreshToken: string
   - expiresIn: number
   - utilisateur: { id, email, matricule, role, nom, prenom }
+  - etablissementCourant: object (current establishment info)
+  - etablissementsDisponibles: array (available establishments)
+
+- Blocage Status Response *(NEW)*
+  - bloque: boolean
+  - niveauBlocage: string (BLOCKED_LEVEL_1 | BLOCKED_LEVEL_2)
+  - tempsRestant: number (seconds)
+  - motifBlocage: string
+  - derniereTentative: Date
+  - etablissementId: string (if establishment-specific)
+  - nbDeblocagesAuto: number
 
 - Register Request
   - email: string
@@ -552,6 +694,7 @@ The Authentication module provides a robust, secure, and auditable authenticatio
 **Section sources**
 - [auth.dto.ts:18-107](file://backend/src/modules/auth/dto/auth.dto.ts#L18-L107)
 - [auth.dto.ts:128-162](file://backend/src/modules/auth/dto/auth.dto.ts#L128-L162)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 
 ### JWT Payload Fields
 - sub: string (user id)
@@ -579,3 +722,22 @@ The Authentication module provides a robust, secure, and auditable authenticatio
 **Section sources**
 - [roles.enum.ts:12-39](file://shared/src/enums/roles.enum.ts#L12-L39)
 - [roles.enum.ts:120-184](file://shared/src/enums/roles.enum.ts#L120-L184)
+
+### Blocking Status Enum Values *(NEW)*
+- BLOCKED_LEVEL_1: Temporary blocking (2 minutes)
+- BLOCKED_LEVEL_2: Extended blocking (15 minutes)
+- NO_BLOCK: Not blocked
+
+**Section sources**
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
+
+### Establishment Switching Behavior *(NEW)*
+- Requires proper authorization for target establishment
+- Maintains session continuity across establishment changes
+- Logs establishment switching events for audit purposes
+- Supports multi-establishment user profiles
+
+**Section sources**
+- [auth.service.ts:61-161](file://backend/src/modules/auth/services/auth.service.ts#L61-L161)
+- [audit.service.ts:67-77](file://backend/src/modules/auth/services/audit.service.ts#L67-L77)

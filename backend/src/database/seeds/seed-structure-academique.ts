@@ -75,9 +75,9 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     const cycles: Cycle[] = [];
     for (const data of cyclesData) {
-        const existing = await cycleRepo.findOne({ where: { code: data.code } });
+        const existing = await cycleRepo.findOne({ where: { code: data.code, etablissementId } });
         if (!existing) {
-            const cycle = cycleRepo.create(data);
+            const cycle = cycleRepo.create({ ...data, etablissementId });
             await cycleRepo.save(cycle);
             cycles.push(cycle);
             logger.info(`  ✓ Cycle créé: ${data.nom}`);
@@ -93,34 +93,34 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     // Maternelle Francophone
     const niveauxMaternelleFR = [
-        { nom: 'Petite Section', code: 'PS', cycleId: cycles[0].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Moyenne Section', code: 'MS', cycleId: cycles[0].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Grande Section', code: 'GS', cycleId: cycles[0].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE },
+        { nom: 'Petite Section', code: 'PS', cycleId: cycles[0].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Moyenne Section', code: 'MS', cycleId: cycles[0].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Grande Section', code: 'GS', cycleId: cycles[0].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
     ];
 
     // Primaire Francophone
     const niveauxPrimaireFR = [
-        { nom: 'Cours Initial', code: 'CI', cycleId: cycles[1].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cours Préparatoire', code: 'CP', cycleId: cycles[1].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cours Élémentaire 1', code: 'CE1', cycleId: cycles[1].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cours Élémentaire 2', code: 'CE2', cycleId: cycles[1].id, ordre: 4, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cours Moyen 1', code: 'CM1', cycleId: cycles[1].id, ordre: 5, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cours Moyen 2', code: 'CM2', cycleId: cycles[1].id, ordre: 6, sousSysteme: SousSysteme.FRANCOPHONE, estClasseExamen: true },
+        { nom: 'Cours Initial', code: 'CI', cycleId: cycles[1].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cours Préparatoire', code: 'CP', cycleId: cycles[1].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cours Élémentaire 1', code: 'CE1', cycleId: cycles[1].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cours Élémentaire 2', code: 'CE2', cycleId: cycles[1].id, ordre: 4, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cours Moyen 1', code: 'CM1', cycleId: cycles[1].id, ordre: 5, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cours Moyen 2', code: 'CM2', cycleId: cycles[1].id, ordre: 6, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     // Secondaire 1er Cycle Francophone
     const niveauxSecondaire1FR = [
-        { nom: 'Sixième', code: '6EME', cycleId: cycles[2].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Cinquième', code: '5EME', cycleId: cycles[2].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Quatrième', code: '4EME', cycleId: cycles[2].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Troisième', code: '3EME', cycleId: cycles[2].id, ordre: 4, sousSysteme: SousSysteme.FRANCOPHONE, estClasseExamen: true },
+        { nom: 'Sixième', code: '6EME', cycleId: cycles[2].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Cinquième', code: '5EME', cycleId: cycles[2].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Quatrième', code: '4EME', cycleId: cycles[2].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Troisième', code: '3EME', cycleId: cycles[2].id, ordre: 4, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     // Secondaire 2nd Cycle Francophone
     const niveauxSecondaire2FR = [
-        { nom: 'Seconde', code: 'SECONDE', cycleId: cycles[3].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Première', code: 'PREMIERE', cycleId: cycles[3].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE },
-        { nom: 'Terminale', code: 'TERMINALE', cycleId: cycles[3].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE, estClasseExamen: true },
+        { nom: 'Seconde', code: 'SECONDE', cycleId: cycles[3].id, ordre: 1, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Première', code: 'PREMIERE', cycleId: cycles[3].id, ordre: 2, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId },
+        { nom: 'Terminale', code: 'TERMINALE', cycleId: cycles[3].id, ordre: 3, sousSysteme: SousSysteme.FRANCOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     const tousNiveauxFR = [
@@ -132,7 +132,7 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     const niveauxFR: Niveau[] = [];
     for (const data of tousNiveauxFR) {
-        const existing = await niveauRepo.findOne({ where: { code: data.code, sousSysteme: data.sousSysteme } });
+        const existing = await niveauRepo.findOne({ where: { code: data.code, sousSysteme: data.sousSysteme, etablissementId } });
         if (!existing) {
             const niveau = niveauRepo.create(data);
             await niveauRepo.save(niveau);
@@ -149,30 +149,30 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
     logger.info('📝 Création des niveaux (Anglophone)...');
 
     const niveauxNurseryEN = [
-        { nom: 'Nursery 1', code: 'NURSERY1', cycleId: cycles[0].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Nursery 2', code: 'NURSERY2', cycleId: cycles[0].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE },
+        { nom: 'Nursery 1', code: 'NURSERY1', cycleId: cycles[0].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Nursery 2', code: 'NURSERY2', cycleId: cycles[0].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
     ];
 
     const niveauxPrimaryEN = [
-        { nom: 'Standard 1', code: 'STD1', cycleId: cycles[1].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Standard 2', code: 'STD2', cycleId: cycles[1].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Standard 3', code: 'STD3', cycleId: cycles[1].id, ordre: 3, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Standard 4', code: 'STD4', cycleId: cycles[1].id, ordre: 4, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Standard 5', code: 'STD5', cycleId: cycles[1].id, ordre: 5, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Standard 6', code: 'STD6', cycleId: cycles[1].id, ordre: 6, sousSysteme: SousSysteme.ANGLOPHONE, estClasseExamen: true },
+        { nom: 'Standard 1', code: 'STD1', cycleId: cycles[1].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Standard 2', code: 'STD2', cycleId: cycles[1].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Standard 3', code: 'STD3', cycleId: cycles[1].id, ordre: 3, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Standard 4', code: 'STD4', cycleId: cycles[1].id, ordre: 4, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Standard 5', code: 'STD5', cycleId: cycles[1].id, ordre: 5, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Standard 6', code: 'STD6', cycleId: cycles[1].id, ordre: 6, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     const niveauxSecondary1EN = [
-        { nom: 'Form 1', code: 'FORM1', cycleId: cycles[2].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Form 2', code: 'FORM2', cycleId: cycles[2].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Form 3', code: 'FORM3', cycleId: cycles[2].id, ordre: 3, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Form 4', code: 'FORM4', cycleId: cycles[2].id, ordre: 4, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Form 5', code: 'FORM5', cycleId: cycles[2].id, ordre: 5, sousSysteme: SousSysteme.ANGLOPHONE, estClasseExamen: true },
+        { nom: 'Form 1', code: 'FORM1', cycleId: cycles[2].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Form 2', code: 'FORM2', cycleId: cycles[2].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Form 3', code: 'FORM3', cycleId: cycles[2].id, ordre: 3, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Form 4', code: 'FORM4', cycleId: cycles[2].id, ordre: 4, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Form 5', code: 'FORM5', cycleId: cycles[2].id, ordre: 5, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     const niveauxSecondary2EN = [
-        { nom: 'Lower Sixth', code: 'LOWER6', cycleId: cycles[3].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE },
-        { nom: 'Upper Sixth', code: 'UPPER6', cycleId: cycles[3].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE, estClasseExamen: true },
+        { nom: 'Lower Sixth', code: 'LOWER6', cycleId: cycles[3].id, ordre: 1, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId },
+        { nom: 'Upper Sixth', code: 'UPPER6', cycleId: cycles[3].id, ordre: 2, sousSysteme: SousSysteme.ANGLOPHONE, etablissementId, estClasseExamen: true },
     ];
 
     const tousNiveauxEN = [
@@ -184,7 +184,7 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     const niveauxEN: Niveau[] = [];
     for (const data of tousNiveauxEN) {
-        const existing = await niveauRepo.findOne({ where: { code: data.code, sousSysteme: data.sousSysteme } });
+        const existing = await niveauRepo.findOne({ where: { code: data.code, sousSysteme: data.sousSysteme, etablissementId } });
         if (!existing) {
             const niveau = niveauRepo.create(data);
             await niveauRepo.save(niveau);
@@ -441,9 +441,9 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     const filieresTechniques = await filiereRepo.find({
         where: [
-            { code: 'F1' }, { code: 'F2' }, { code: 'F3' }, { code: 'F4' },
-            { code: 'G1' }, { code: 'G2' }, { code: 'H' }, { code: 'I' },
-            { code: 'K' }, { code: 'L' },
+            { code: 'F1', etablissementId }, { code: 'F2', etablissementId }, { code: 'F3', etablissementId }, { code: 'F4', etablissementId },
+            { code: 'G1', etablissementId }, { code: 'G2', etablissementId }, { code: 'H', etablissementId }, { code: 'I', etablissementId },
+            { code: 'K', etablissementId }, { code: 'L', etablissementId },
         ],
     });
 
@@ -597,7 +597,7 @@ export async function seedStructureAcademique(etablissementId: string): Promise<
 
     let competencesCount = 0;
     const niveauMap = new Map<string, string>();
-    const tousNiveaux = await niveauRepo.find();
+    const tousNiveaux = await niveauRepo.find({ where: { etablissementId } });
     tousNiveaux.forEach(n => niveauMap.set(n.code, n.id));
     
     logger.info(`  📊 Niveaux trouvés en base: ${tousNiveaux.length}`);

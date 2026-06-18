@@ -32,6 +32,7 @@ export enum StatutMatiereNiveau {
 @Index(['matiereId'])
 @Index(['filiereId'])
 @Index(['niveauId', 'filiereId']) // Index composite pour filtrage par filière
+@Index(['matiereId', 'niveauId', 'filiereId'], { unique: true }) // Unicité programme par matière+niveau+filière
 export class MatiereNiveau {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

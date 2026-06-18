@@ -4,6 +4,8 @@
 **Referenced Files in This Document**
 - [auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
 - [auth.service.ts](file://backend/src/modules/auth/services/auth.service.ts)
+- [blocage-auth.service.ts](file://backend/src/modules/auth/services/blocage-auth.service.ts)
+- [tentative-connexion.entity.ts](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts)
 - [token.service.ts](file://backend/src/modules/auth/services/token.service.ts)
 - [auth.middleware.ts](file://backend/src/modules/auth/middlewares/auth.middleware.ts)
 - [permission.guard.ts](file://backend/src/modules/auth/guards/permission.guard.ts)
@@ -26,6 +28,7 @@
 - [rbac.seed.ts](file://backend/src/database/seeds/rbac.seed.ts)
 - [auth.validators.ts](file://shared/src/validators/auth.validators.ts)
 - [027-auth-multi-mode.sql](file://backend/database/migrations/027-auth-multi-mode.sql)
+- [018-systeme-blocage-deux-niveaux.sql](file://backend/database/migrations/018-systeme-blocage-deux-niveaux.sql)
 - [qr.util.ts](file://backend/src/common/utils/qr.util.ts)
 - [api-client.ts](file://frontend/src/lib/api-client.ts)
 - [use-etablissement-selection.ts](file://frontend/src/hooks/use-etablissement-selection.ts)
@@ -33,16 +36,18 @@
 - [use-multi-tenant.ts](file://frontend/src/hooks/use-multi-tenant.ts)
 - [CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md](file://CORRECTION-FINALE-401-MIDDLEWARE-ORDER.md)
 - [MULTI-TENANT-V3-IMPLÉMENTATION-COMPLÈTE.md](file://MULTI-TENANT-V3-IMPLÉMENTATION-COMPLÈTE.md)
+- [SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md](file://docs/SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md)
+- [POLLING-BACKEND-BLOCAGE-AUTH.md](file://POLLING-BACKEND-BLOCAGE-AUTH.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced establishment switching capabilities with improved etablissement.middleware.ts implementation featuring strict cross-tenant validation and bypass detection
-- Updated JWT token structures with establishment data including roleDansEtablissement field for establishment-specific role resolution
-- Refined tenant middleware functionality for establishment switching operations with comprehensive access validation
-- Added establishment selection service with temporary token management and establishment validation
-- Updated middleware ordering optimization for establishment validation with proper auth middleware precedence
-- Enhanced establishment-specific permission resolution and dynamic RBAC integration
+- Enhanced authentication flow now includes two-level blocking system with TentativeConnexion entity for comprehensive security monitoring
+- Added real-time blocking status polling with dedicated endpoint for synchronized countdown timers
+- Integrated machine fingerprinting capabilities using cryptographic hash of user agent and IP address
+- Updated establishment switching flow with enhanced security validation and temporary token management
+- Added BlocageAuthService for professional two-level blocking system with configurable parameters
+- Implemented comprehensive audit logging for all blocking events and security violations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -50,24 +55,29 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Enhanced Authentication Flow with Multi-Mode Capabilities](#enhanced-authentication-flow-with-multi-mode-capabilities)
-6. [Multi-Mode Authentication Implementation](#multi-mode-authentication-implementation)
-7. [QR Code Authentication System](#qr-code-authentication-system)
-8. [Enhanced User Entity and Attributes](#enhanced-user-entity-and-attributes)
-9. [Establishment Selection Flow](#establishment-selection-flow)
-10. [Comprehensive Establishment Switching](#comprehensive-establishment-switching)
-11. [Enhanced JWT Structure with Establishment Arrays](#enhanced-jwt-structure-with-establishment-arrays)
-12. [Security Considerations for Multi-Mode Authentication](#security-considerations-for-multi-mode-authentication)
-13. [Detailed Component Analysis](#detailed-component-analysis)
-14. [Dependency Analysis](#dependency-analysis)
-15. [Performance Considerations](#performance-considerations)
-16. [Troubleshooting Guide](#troubleshooting-guide)
-17. [Conclusion](#conclusion)
+6. [Two-Level Blocking System Implementation](#two-level-blocking-system-implementation)
+7. [Real-Time Blocking Status Polling](#real-time-blocking-status-polling)
+8. [Machine Fingerprinting and Security Monitoring](#machine-fingerprinting-and-security-monitoring)
+9. [Multi-Mode Authentication Implementation](#multi-mode-authentication-implementation)
+10. [QR Code Authentication System](#qr-code-authentication-system)
+11. [Enhanced User Entity and Attributes](#enhanced-user-entity-and-attributes)
+12. [Establishment Selection Flow](#establishment-selection-flow)
+13. [Comprehensive Establishment Switching](#comprehensive-establishment-switching)
+14. [Enhanced JWT Structure with Establishment Arrays](#enhanced-jwt-structure-with-establishment-arrays)
+15. [Security Considerations for Multi-Mode Authentication](#security-considerations-for-multi-mode-authentication)
+16. [Detailed Component Analysis](#detailed-component-analysis)
+17. [Dependency Analysis](#dependency-analysis)
+18. [Performance Considerations](#performance-considerations)
+19. [Troubleshooting Guide](#troubleshooting-guide)
+20. [Conclusion](#conclusion)
 
 ## Introduction
 This document describes the complete authentication flow for eLISAschool, covering login, registration with email verification, password reset, change password, and session management. The system now supports multi-mode authentication with intelligent identifier detection, including traditional email/password authentication, pseudonym-based login, matriculation number verification, and QR code scanning. The system maintains backward compatibility while providing enhanced flexibility and security through multiple authentication pathways. It explains JWT access and refresh token generation, session establishment, and security monitoring via audit logs. It also documents IP tracking, user agent detection, establishment selection flow, and how configuration-driven security parameters influence behavior.
 
+**Updated** Enhanced with two-level blocking system, real-time status polling, and comprehensive machine fingerprinting capabilities for professional-grade security monitoring.
+
 ## Project Structure
-The authentication subsystem is organized around a controller that validates requests, a service that orchestrates business logic, a token service for JWT and refresh tokens, middleware for protecting routes, and audit/logging services. Entities model users, profiles, refresh tokens, audit logs, and the new establishment-user relationship. Configuration helpers and environment variables provide centralized security parameters. The system now includes QR code utilities, enhanced user entity attributes supporting multiple authentication modes, and establishment selection services for multi-establishment support.
+The authentication subsystem is organized around a controller that validates requests, a service that orchestrates business logic, a token service for JWT and refresh tokens, middleware for protecting routes, and audit/logging services. Entities model users, profiles, refresh tokens, audit logs, establishment-user relationships, and the new TentativeConnexion entity for security monitoring. Configuration helpers and environment variables provide centralized security parameters. The system now includes QR code utilities, enhanced user entity attributes supporting multiple authentication modes, establishment selection services for multi-establishment support, and comprehensive blocking services for professional-grade security.
 
 ```mermaid
 graph TB
@@ -76,6 +86,7 @@ AC["auth.controller.ts"]
 UEC["utilisateur-etablissement.controller.ts"]
 ES["etablissement-selection.service.ts"]
 EMW["etablissement.middleware.ts"]
+BC["blocage-auth.service.ts"]
 end
 subgraph "Services"
 AS["auth.service.ts"]
@@ -83,6 +94,7 @@ UES["utilisateur-etablissement.service.ts"]
 TS["token.service.ts"]
 AUD["audit.service.ts"]
 QRU["qr.util.ts"]
+BAS["BlocageAuthService"]
 end
 subgraph "Middleware & Guards"
 AMW["auth.middleware.ts"]
@@ -95,6 +107,7 @@ UTE["utilisateur-etablissement.entity.ts"]
 RTE["refresh-token.entity.ts"]
 ALE["audit-log.entity.ts"]
 PE["profil-utilisateur.entity.ts"]
+TCE["tentative-connexion.entity.ts"]
 end
 subgraph "Validation & Config"
 DTO["auth.dto.ts"]
@@ -109,6 +122,7 @@ API["api-client.ts"]
 HOOK["use-etablissement-selection.ts"]
 MODAL["EtablissementSelectionModal.tsx"]
 MT["use-multi-tenant.ts"]
+POLL["Polling Backend"]
 end
 AC --> AS
 UEC --> UES
@@ -119,6 +133,7 @@ AS --> UE
 AS --> UTE
 AS --> PE
 AS --> QRU
+AS --> BC
 UES --> UTE
 TS --> RTE
 AMW --> TS
@@ -131,10 +146,13 @@ AS --> DTO
 AS --> AV
 TS --> CRYPTO
 AUD --> ALE
+BC --> TCE
+BAS --> TCE
 API --> AC
 HOOK --> API
 MODAL --> API
 MT --> API
+POLL --> AC
 ```
 
 **Diagram sources**
@@ -160,6 +178,8 @@ MT --> API
 - [crypto.util.ts:1-119](file://backend/src/common/utils/crypto.util.ts#L1-L119)
 - [roles.enum.ts:1-187](file://shared/src/enums/roles.enum.ts#L1-L187)
 - [profil-utilisateur.entity.ts:1-105](file://backend/src/modules/auth/entities/profil-utilisateur.entity.ts#L1-L105)
+- [tentative-connexion.entity.ts:1-56](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts#L1-L56)
+- [blocage-auth.service.ts:1-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L1-L382)
 - [qr.util.ts:1-141](file://backend/src/common/utils/qr.util.ts#L1-L141)
 - [api-client.ts:384-412](file://frontend/src/lib/api-client.ts#L384-L412)
 - [use-etablissement-selection.ts:44-79](file://frontend/src/hooks/use-etablissement-selection.ts#L44-L79)
@@ -189,6 +209,8 @@ MT --> API
 - [crypto.util.ts:1-119](file://backend/src/common/utils/crypto.util.ts#L1-L119)
 - [roles.enum.ts:1-187](file://shared/src/enums/roles.enum.ts#L1-L187)
 - [profil-utilisateur.entity.ts:1-105](file://backend/src/modules/auth/entities/profil-utilisateur.entity.ts#L1-L105)
+- [tentative-connexion.entity.ts:1-56](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts#L1-L56)
+- [blocage-auth.service.ts:1-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L1-L382)
 - [qr.util.ts:1-141](file://backend/src/common/utils/qr.util.ts#L1-L141)
 - [api-client.ts:384-412](file://frontend/src/lib/api-client.ts#L384-L412)
 - [use-etablissement-selection.ts:44-79](file://frontend/src/hooks/use-etablissement-selection.ts#L44-L79)
@@ -196,15 +218,16 @@ MT --> API
 - [use-multi-tenant.ts:1-200](file://frontend/src/hooks/use-multi-tenant.ts#L1-L200)
 
 ## Core Components
-- Controller: Validates incoming payloads using Zod schemas and delegates to AuthService. It extracts IP and User-Agent for security tracking and audit. Now supports multi-mode authentication input validation and establishment selection endpoints.
-- AuthService: Implements login, registration, token refresh, logout, forgot/reset/change password, and current user retrieval. Reads security parameters from configuration. Now includes multi-mode authentication with intelligent identifier detection and expanded user entity support.
+- Controller: Validates incoming payloads using Zod schemas and delegates to AuthService. It extracts IP and User-Agent for security tracking and audit. Now supports multi-mode authentication input validation, establishment selection endpoints, and new blocking status polling endpoint.
+- AuthService: Implements login, registration, token refresh, logout, forgot/reset/change password, and current user retrieval. Reads security parameters from configuration. Now includes multi-mode authentication with intelligent identifier detection, expanded user entity support, and blocking status checking for real-time polling.
+- BlocageAuthService: NEW - Professional two-level blocking system with TentativeConnexion entity tracking, machine fingerprinting, and configurable security parameters for both specific and general blocking modes.
 - TokenService: Generates JWT access tokens and refresh tokens, validates and revokes refresh tokens, and cleans up expired tokens.
 - Auth Middleware: Extracts Bearer token from Authorization header, verifies JWT, and attaches user identity to the request.
 - Tenant Middleware: NEW - Handles multi-establishment switching and establishment validation for authenticated users, supporting establishment-specific role assignments and dynamic RBAC resolution.
 - Etablissement Middleware: NEW - Specialized middleware for establishment switching validation and security controls, working in conjunction with tenant middleware.
 - Permission Guard: Enforces role-based permissions after authentication.
 - Audit Service: Logs security-relevant events (login attempts, password changes, access denials) and captures IP and User-Agent.
-- Entities: User, Profile, RefreshToken, AuditLog, and the new UserEstablishment relationship define persistence and multi-establishment associations. Enhanced with pseudonym and QR code fields.
+- Entities: User, Profile, RefreshToken, AuditLog, UserEstablishment relationship, and the new TentativeConnexion entity define persistence and multi-establishment associations. Enhanced with pseudonym and QR code fields, plus comprehensive security tracking.
 - DTOs: Strongly-typed request/response shapes validated by Zod, including new multi-mode authentication schemas.
 - Environment & Config: Centralized JWT secrets, token durations, encryption keys, and security parameters.
 - QR Utilities: NEW - Comprehensive QR code generation and processing utilities for authentication and card systems.
@@ -213,6 +236,7 @@ MT --> API
 **Section sources**
 - [auth.controller.ts:55-264](file://backend/src/modules/auth/controllers/auth.controller.ts#L55-L264)
 - [auth.service.ts:61-481](file://backend/src/modules/auth/services/auth.service.ts#L61-L481)
+- [blocage-auth.service.ts:49-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L49-L382)
 - [token.service.ts:32-174](file://backend/src/modules/auth/services/token.service.ts#L32-L174)
 - [auth.middleware.ts:30-60](file://backend/src/modules/auth/middlewares/auth.middleware.ts#L30-L60)
 - [tenant.middleware.ts:20-120](file://backend/src/common/middlewares/tenant.middleware.ts#L20-L120)
@@ -230,15 +254,17 @@ MT --> API
 - [crypto.util.ts:91-93](file://backend/src/common/utils/crypto.util.ts#L91-L93)
 - [qr.util.ts:1-141](file://backend/src/common/utils/qr.util.ts#L1-L141)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
+- [tentative-connexion.entity.ts:36-56](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts#L36-L56)
 
 ## Architecture Overview
-The authentication flow integrates HTTP validation, service orchestration, token management, middleware protection, and audit logging. Security parameters are configurable and enforced at runtime. The system now supports multi-mode authentication with intelligent identifier detection, QR code integration, and multi-establishment support with establishment-specific role assignments and dynamic RBAC resolution.
+The authentication flow integrates HTTP validation, service orchestration, token management, middleware protection, and audit logging. Security parameters are configurable and enforced at runtime. The system now supports multi-mode authentication with intelligent identifier detection, QR code integration, and multi-establishment support with establishment-specific role assignments and dynamic RBAC resolution. The new two-level blocking system provides professional-grade security monitoring with machine fingerprinting and real-time status synchronization.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
 participant Ctrl as "auth.controller.ts"
 participant Svc as "auth.service.ts"
+participant BAS as "BlocageAuthService"
 participant ESS as "etablissement-selection.service.ts"
 participant UES as "utilisateur-etablissement.service.ts"
 participant QRU as "qr.util.ts"
@@ -248,6 +274,10 @@ participant DB as "Database"
 Client->>Ctrl : POST /api/auth/login {identifiant, motDePasse}
 Ctrl->>Svc : login(dto, ip, userAgent)
 Note over Svc,DB : Intelligent identifier detection
+Svc->>BAS : verifierBlocage(identifiant, ip, userAgent)
+BAS->>DB : check blocking status with machine fingerprint
+DB-->>BAS : blocking status
+BAS-->>Svc : blocking status result
 Svc->>DB : find user by email OR matricule OR pseudonyme OR qrCodeId OR id
 DB-->>Svc : user record
 Svc->>UES : load user establishments (multi-establishments)
@@ -281,6 +311,7 @@ end
 - [auth.controller.ts:55-74](file://backend/src/modules/auth/controllers/auth.controller.ts#L55-L74)
 - [auth.controller.ts:339-359](file://backend/src/modules/auth/controllers/auth.controller.ts#L339-L359)
 - [auth.service.ts:61-161](file://backend/src/modules/auth/services/auth.service.ts#L61-L161)
+- [blocage-auth.service.ts:100-170](file://backend/src/modules/auth/services/blocage-auth.service.ts#L100-L170)
 - [etablissement-selection.service.ts:145-173](file://backend/src/modules/auth/services/etablissement-selection.service.ts#L145-L173)
 - [utilisateur-etablissement.service.ts:184-216](file://backend/src/modules/auth/services/utilisateur-etablissement.service.ts#L184-L216)
 - [token.service.ts:46-72](file://backend/src/modules/auth/services/token.service.ts#L46-L72)
@@ -371,6 +402,296 @@ The JWT payload now includes enhanced establishment information for multi-site s
 - [auth.validators.ts:24-40](file://shared/src/validators/auth.validators.ts#L24-L40)
 - [utilisateur.entity.ts:52-140](file://backend/src/modules/auth/entities/utilisateur.entity.ts#L52-L140)
 - [auth.dto.ts:145-172](file://backend/src/modules/auth/dto/auth.dto.ts#L145-L172)
+
+## Two-Level Blocking System Implementation
+
+### Professional Two-Level Blocking Architecture
+The system now implements a sophisticated two-level blocking system designed to prevent brute force attacks while maintaining usability:
+
+**Level 1 - Specific Blocking (per identifier):**
+- Maximum 3 failed attempts per identifier
+- Block duration: 1 minute
+- Protects individual user accounts from targeted attacks
+- Tracks attempts per specific identifier (email, matricule, pseudonyme)
+
+**Level 2 - General Blocking (by machine):**
+- Maximum 20 failed attempts across all identifiers
+- Block duration: 2 minutes  
+- Protects against distributed attacks and credential stuffing
+- Uses machine fingerprinting for identification
+
+```mermaid
+flowchart TD
+Start(["Authentication Attempt"]) --> CheckSpecific["Check Specific Block Status"]
+CheckSpecific --> SpecificBlocked{"Specific block active?"}
+SpecificBlocked --> |Yes| BlockSpecific["Block: 3 attempts, 1 min"]
+SpecificBlocked --> |No| CheckGeneral["Check General Block Status"]
+CheckGeneral --> GeneralBlocked{"General block active?"}
+GeneralBlocked --> |Yes| BlockGeneral["Block: 20 attempts, 2 min"]
+GeneralBlocked --> |No| ProcessLogin["Process Login Attempt"]
+BlockSpecific --> LogAttempt["Log attempt with machine fingerprint"]
+BlockGeneral --> LogAttempt
+ProcessLogin --> VerifyCredentials["Verify credentials"]
+VerifyCredentials --> Correct{"Credentials correct?"}
+Correct --> |Yes| ResetAttempts["Reset attempts & unlock"]
+Correct --> |No| IncrementAttempts["Increment attempts"]
+IncrementAttempts --> CheckThreshold["Check threshold breach"]
+CheckThreshold --> ThresholdBreach{"Threshold breached?"}
+ThresholdBreach --> |Yes| ApplyBlocking["Apply appropriate block level"]
+ThresholdBreach --> |No| AllowLogin["Allow login"]
+ApplyBlocking --> LogBlocking["Log blocking event"]
+ResetAttempts --> LogSuccess["Log successful login"]
+AllowLogin --> LogSuccess
+LogAttempt --> ReturnResult["Return result"]
+LogBlocking --> ReturnResult
+LogSuccess --> ReturnResult
+```
+
+**Diagram sources**
+- [blocage-auth.service.ts:100-170](file://backend/src/modules/auth/services/blocage-auth.service.ts#L100-L170)
+- [tentative-connexion.entity.ts:23-56](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts#L23-L56)
+
+### TentativeConnexion Entity Design
+The TentativeConnexion entity provides comprehensive tracking of authentication attempts with machine fingerprinting:
+
+```typescript
+@Entity('tentatives_connexion')
+@Index(['identifiant', 'adresseIp'])
+@Index(['adresseIp', 'bloqueJusqua'])
+@Index(['typeBlocage', 'bloqueJusqua'])
+export class TentativeConnexion {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column({ type: 'varchar', length: 255 })
+    identifiant: string;           // Email, matricule, or pseudonyme
+
+    @Column({ type: 'varchar', length: 45 })
+    adresseIp: string;             // Client IP address
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    empreinteMachine?: string;     // Cryptographic fingerprint
+
+    @Column({ type: 'varchar', length: 20, default: 'specifique' })
+    typeBlocage: 'specifique' | 'general';
+
+    @Column({ type: 'integer', default: 0 })
+    nombreTentatives: number;
+
+    @Column({ type: 'timestamp', nullable: true })
+    bloqueJusqua?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    motifBlocage?: string;
+
+    @Column({ type: 'timestamp', default: () => 'NOW()' })
+    derniereTentative: string;
+
+    @Column({ type: 'integer', default: 0 })
+    nbDeblocagesAuto: number;
+}
+```
+
+### Machine Fingerprinting Implementation
+The system uses cryptographic hashing to create machine fingerprints without storing sensitive user agent data:
+
+```typescript
+function genererEmpreinteMachine(userAgent: string, adresseIp: string): string {
+    const donnees = `${userAgent}|${adresseIp}`;
+    return crypto.createHash('sha256').update(donnees).digest('hex');
+}
+
+// Usage in authentication flow
+const empreinte = genererEmpreinteMachine(userAgent, adresseIp);
+// Store only the hash, not the raw user agent
+```
+
+**Section sources**
+- [blocage-auth.service.ts:49-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L49-L382)
+- [tentative-connexion.entity.ts:36-56](file://backend/src/modules/auth/entities/tentative-connexion.entity.ts#L36-L56)
+- [018-systeme-blocage-deux-niveaux.sql:10-44](file://backend/database/migrations/018-systeme-blocage-deux-niveaux.sql#L10-L44)
+
+## Real-Time Blocking Status Polling
+
+### Backend Polling Endpoint Implementation
+The system now provides a dedicated endpoint for real-time blocking status checking, eliminating client-side timer manipulation risks:
+
+```typescript
+/**
+ * GET /api/auth/blocage-status/:identifiant
+ * Vérifie le statut de blocage d'un compte sans incrémenter les tentatives
+ */
+router.get('/blocage-status/:identifiant', async (req, res, next) => {
+    try {
+        const { identifiant } = req.params;
+        const result = await authService.getBlocageStatus(identifiant);
+        
+        res.status(200).json({
+            success: true,
+            data: result,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+```
+
+### Frontend Polling Strategy
+The frontend implements a dual-timer system combining local UX timers with backend synchronization:
+
+```typescript
+// Polling backend toutes les 5 secondes
+useEffect(() => {
+    if (!bloqueJusqua) return;
+
+    const pollBlocage = async () => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:7000'}/api/auth/blocage-status/__check__`,
+                { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+            );
+            
+            if (response.ok) {
+                const result = await response.json();
+                const status = result?.data;
+                
+                if (status) {
+                    if (!status.bloque || status.tempsRestantSecondes <= 0) {
+                        // Compte débloqué
+                        setBloqueJusqua(null);
+                        setTempsRestant(0);
+                        setTentativesRestantes(status.tentativesRestantes || 20);
+                        toast.success('Votre compte est débloqué.');
+                    } else {
+                        // Toujours bloqué - données réelles du backend
+                        setBloqueJusqua(new Date(status.bloqueJusqua));
+                        setTempsRestant(status.tempsRestantSecondes);
+                        setTentativesRestantes(status.tentativesRestantes);
+                    }
+                }
+            }
+        } catch (error) {
+            console.debug('[Login] Polling blocage échoué (non bloquant)');
+        }
+    };
+
+    pollBlocage(); // Premier appel immédiat
+    const interval = setInterval(pollBlocage, 5000); // Puis toutes les 5s
+
+    return () => clearInterval(interval);
+}, [bloqueJusqua]);
+```
+
+### Backend Status Calculation Logic
+The AuthService calculates real-time blocking status without incrementing attempt counters:
+
+```typescript
+/**
+ * Vérifie le statut de blocage d'un utilisateur sans incrémenter les tentatives
+ * Utilisé pour le polling frontend pendant le blocage
+ * NOUVEAU: Utilise le système de blocage à deux niveaux
+ */
+async getBlocageStatus(identifiant: string, adresseIp?: string, userAgent?: string): Promise<{
+    bloque: boolean;
+    bloqueJusqua: string | null;
+    tempsRestantSecondes: number;
+    tentativesActuelles: number;
+    tentativesRestantes: number;
+    maxTentatives: number;
+    // NOUVEAU: Détails complets du blocage à deux niveaux
+    blocageSpecifique?: any;
+    blocageGeneral?: any;
+    typeBlocage?: string | null;
+}> {
+    const ip = adresseIp || 'unknown';
+    
+    // Utiliser le système de blocage à deux niveaux
+    const statutComplet = await blocageAuthService.verifierBlocage(
+        identifiant,
+        ip,
+        userAgent
+    );
+    
+    // Calculer le temps restant en temps réel
+    const tempsRestant = statutComplet.bloqueJusqua 
+        ? Math.max(0, Math.floor((new Date(statutComplet.bloqueJusqua).getTime() - Date.now()) / 1000))
+        : 0;
+    
+    return {
+        bloque: statutComplet.bloque,
+        bloqueJusqua: statutComplet.bloqueJusqua,
+        tempsRestantSecondes: tempsRestant,
+        tentativesActuelles: statutComplet.tentativesActuelles,
+        tentativesRestantes: statutComplet.tentativesRestantes,
+        maxTentatives: statutComplet.maxTentatives,
+        blocageSpecifique: statutComplet.blocageSpecifique,
+        blocageGeneral: statutComplet.blocageGeneral,
+        typeBlocage: statutComplet.typeBlocage
+    };
+}
+```
+
+**Section sources**
+- [auth.controller.ts:78-95](file://backend/src/modules/auth/controllers/auth.controller.ts#L78-L95)
+- [auth.service.ts:88-107](file://backend/src/modules/auth/services/auth.service.ts#L88-L107)
+- [POLLING-BACKEND-BLOCAGE-AUTH.md:346-389](file://POLLING-BACKEND-BLOCAGE-AUTH.md#L346-L389)
+- [SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md:218-292](file://docs/SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md#L218-L292)
+
+## Machine Fingerprinting and Security Monitoring
+
+### Comprehensive Security Tracking
+The system implements extensive security monitoring through multiple layers:
+
+1. **Machine Fingerprinting**: Cryptographic hashes of user agent + IP for anonymous identification
+2. **Blocking Status Tracking**: Real-time monitoring of both specific and general blocking states
+3. **Attempt Counting**: Separate tracking for per-identifier and per-machine attempts
+4. **Auto-Cleanup**: Automated removal of expired blocking records
+5. **Audit Logging**: Comprehensive logging of all security events
+
+### Security Parameter Configuration
+All blocking parameters are configurable and can be modified in real-time:
+
+| Parameter | Default Value | Description |
+|-----------|---------------|-------------|
+| `auth.max_tentatives_specifique` | 3 | Maximum attempts per identifier |
+| `auth.duree_blocage_specifique` | 1 | Specific block duration (minutes) |
+| `auth.max_tentatives_general` | 20 | Maximum attempts across all identifiers |
+| `auth.duree_blocage_general` | 2 | General block duration (minutes) |
+
+### Auto-Cleanup Mechanism
+The system includes automated cleanup of expired blocking records:
+
+```typescript
+/**
+ * Nettoie les anciennes tentatives (plus de 24h)
+ * À appeler via cron job
+ */
+async nettoyerAnciennesTentatives(): Promise<number> {
+    const hier = new Date();
+    hier.setHours(hier.getHours() - 24);
+
+    const result = await this.repo
+        .createQueryBuilder()
+        .delete()
+        .from(TentativeConnexion)
+        .where('derniereTentative < :hier', { hier })
+        .andWhere('bloqueJusqua IS NULL OR bloqueJusqua < :maintenant', { maintenant: new Date() })
+        .execute();
+
+    const nbSupprimes = result.affected || 0;
+
+    if (nbSupprimes > 0) {
+        logger.info(`[Blocage] Nettoyage: ${nbSupprimes} anciennes tentatives supprimées`);
+    }
+
+    return nbSupprimes;
+}
+```
+
+**Section sources**
+- [blocage-auth.service.ts:340-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L340-L382)
+- [SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md:188-213](file://docs/SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md#L188-L213)
 
 ## Multi-Mode Authentication Implementation
 
@@ -819,6 +1140,10 @@ The system implements several security measures to prevent abuse of multiple aut
 7. **Temporary token expiration**: Short-lived tokens for establishment selection
 8. **Etablissement middleware validation**: NEW - Dedicated middleware for establishment switching security
 9. **Cross-establishment access prevention**: Prevents unauthorized establishment switching attempts
+10. **Two-level blocking system**: Professional-grade protection against brute force attacks
+11. **Machine fingerprinting**: Anonymous identification of attacking machines
+12. **Real-time status polling**: Prevents client-side timer manipulation
+13. **Auto-cleanup mechanism**: Automated removal of expired blocking records
 
 ### Performance Optimization Strategies
 - **Conditional querying**: Only executes relevant search conditions based on identifier format
@@ -828,6 +1153,8 @@ The system implements several security measures to prevent abuse of multiple aut
 - **Establishment loading optimization**: Consider caching establishment-role mappings for frequently accessed users
 - **Multi-establishment RBAC resolution**: Implement caching for resolved permissions to reduce database queries
 - **Etablissement middleware caching**: Cache establishment access validation results
+- **Blocking status caching**: Cache recent blocking status to reduce database queries
+- **Machine fingerprint caching**: Cache machine fingerprint calculations
 
 ### Backward Compatibility Measures
 - **Dual field support**: Both new `identifiant` and old `email` fields supported
@@ -835,12 +1162,14 @@ The system implements several security measures to prevent abuse of multiple aut
 - **Configuration flags**: Optional enabling/disabling of new authentication modes
 - **Fallback mechanisms**: Automatic fallback to traditional authentication if needed
 - **Legacy establishment support**: Continues to support single-establishment users
+- **Blocking system compatibility**: Maintains compatibility with legacy single-level blocking
 
 **Section sources**
 - [auth.service.ts:85-118](file://backend/src/modules/auth/services/auth.service.ts#L85-L118)
 - [auth.validators.ts:24-40](file://shared/src/validators/auth.validators.ts#L24-L40)
 - [audit.service.ts:47-192](file://backend/src/modules/auth/services/audit.service.ts#L47-L192)
 - [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
+- [blocage-auth.service.ts:340-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L340-L382)
 
 ## Detailed Component Analysis
 
@@ -1050,6 +1379,11 @@ TokenService --> RefreshToken : persists
   - NEW: Audit logs capture which authentication mode was used.
   - Enhanced security monitoring for suspicious multi-mode patterns.
   - Establishment selection pattern monitoring.
+- **NEW: Two-level blocking system tracking**:
+  - Machine fingerprinting for anonymous attack identification
+  - Real-time blocking status polling for synchronized countdown timers
+  - Auto-cleanup of expired blocking records
+  - Comprehensive audit logging for all blocking events
 
 ```mermaid
 flowchart TD
@@ -1150,15 +1484,17 @@ end
 - AuthService depends on TokenService, AuditService, configuration helpers, and entities.
 - NEW: AuthService now depends on UserEstablishmentService for multi-establishment support and QR utilities for QR code authentication.
 - NEW: AuthService depends on EstablishmentSelectionService for establishment selection flow management.
-- NEW: EtablissementMiddleware depends on AuthService and JWT payload structure for establishment validation.
+- NEW: AuthService depends on BlocageAuthService for two-level blocking system integration.
+- NEW: BlocageAuthService depends on TentativeConnexion entity for security tracking.
+- NEW: AuthService depends on EtablissementMiddleware for establishment validation.
 - TokenService depends on environment configuration and refresh token entity.
 - Auth Middleware depends on TokenService.
 - Tenant Middleware depends on AuthService and JWT payload structure.
 - Permission Guard depends on enhanced role/permission resolution.
 - AuditService depends on audit log entity and request metadata extraction.
-- Entities define relationships and constraints for persistence, including new establishment-user relationships and multi-mode authentication fields.
+- Entities define relationships and constraints for persistence, including new establishment-user relationships, multi-mode authentication fields, and comprehensive security tracking through TentativeConnexion.
 - QR Utilities provide standalone QR code generation capabilities independent of authentication flow.
-- NEW: Frontend integration modules for establishment selection and multi-tenant management.
+- NEW: Frontend integration modules for establishment selection, multi-tenant management, and blocking status polling.
 
 ```mermaid
 graph LR
@@ -1172,6 +1508,8 @@ AS --> CFG["config.helper.ts"]
 AS --> UES
 AS --> ES
 AS --> QRU["qr.util.ts"]
+AS --> BAS["BlocageAuthService"]
+BAS --> TCE["tentative-connexion.entity.ts"]
 EMW["etablissement.middleware.ts"] --> AS
 TS --> ENV["env.config.ts"]
 TS --> RTE["refresh-token.entity.ts"]
@@ -1186,6 +1524,7 @@ API["api-client.ts"] --> AC
 HOOK["use-etablissement-selection.ts"] --> API
 MODAL["EtablissementSelectionModal.tsx"] --> API
 MT["use-multi-tenant.ts"] --> API
+POLL["Polling Backend"] --> AC
 ```
 
 **Diagram sources**
@@ -1231,6 +1570,9 @@ MT["use-multi-tenant.ts"] --> API
 - NEW: Establishment selection caching: Cache establishment lists for users with multiple establishments.
 - NEW: Temporary token validation: Efficient validation of temporary tokens for establishment selection flow.
 - NEW: Etablissement middleware caching: Cache establishment access validation results for improved performance.
+- NEW: Blocking status caching: Cache recent blocking status to reduce database queries.
+- NEW: Machine fingerprint caching: Cache machine fingerprint calculations for improved performance.
+- NEW: Auto-cleanup scheduling: Configure optimal cleanup intervals to balance performance and storage.
 
 ## Troubleshooting Guide
 Common error scenarios and resolutions:
@@ -1276,6 +1618,15 @@ Common error scenarios and resolutions:
 - NEW: Etablissement middleware validation errors:
   - Cause: Establishment switching attempt without proper validation.
   - Resolution: Ensure establishment switching request passes etablissement middleware validation; verify establishment access rights.
+- NEW: Two-level blocking system issues:
+  - Cause: Blocking thresholds not properly configured or machine fingerprinting conflicts.
+  - Resolution: Check blocking parameter configuration; verify machine fingerprint calculation; review auto-cleanup settings.
+- NEW: Real-time blocking status polling errors:
+  - Cause: Frontend polling frequency too aggressive or backend endpoint unavailable.
+  - Resolution: Adjust polling interval; verify backend endpoint accessibility; check network connectivity.
+- NEW: Machine fingerprinting conflicts:
+  - Cause: Same fingerprint generated for different user agents or IP changes.
+  - Resolution: Review fingerprint calculation algorithm; consider additional entropy factors; test with various client configurations.
 
 **Section sources**
 - [auth.service.ts:74-113](file://backend/src/modules/auth/services/auth.service.ts#L74-L113)
@@ -1285,6 +1636,9 @@ Common error scenarios and resolutions:
 - [permission.guard.ts:57-81](file://backend/src/modules/auth/guards/permission.guard.ts#L57-L81)
 - [tenant.middleware.ts:71-77](file://backend/src/common/middlewares/tenant.middleware.ts#L71-L77)
 - [etablissement.middleware.ts:1-120](file://backend/src/modules/auth/middlewares/etablissement.middleware.ts#L1-L120)
+- [blocage-auth.service.ts:340-382](file://backend/src/modules/auth/services/blocage-auth.service.ts#L340-L382)
 
 ## Conclusion
-eLISAschool's enhanced authentication system provides robust multi-mode authentication capabilities with intelligent identifier detection, supporting traditional email/password login, pseudonym-based authentication, matriculation number verification, and QR code scanning. The system maintains backward compatibility while offering enhanced flexibility and security through multiple authentication pathways. The system now supports complex multi-establishment scenarios with establishment-specific role assignments and dynamic RBAC resolution. It leverages enhanced JWT tokens containing establishment arrays, refresh tokens with IP/User-Agent tracking, centralized security configuration, and comprehensive audit logging. The new establishment selection flow provides seamless multi-establishment login with temporary tokens and establishment validation. The tenant middleware enables comprehensive establishment switching while maintaining security boundaries. The addition of QR code utilities and expanded user entity attributes provides comprehensive support for modern authentication requirements. The establishment selection modal and frontend integration hooks provide intuitive user experience for multi-establishment environments. The new etablissement middleware provides specialized security validation for establishment switching operations. While device fingerprinting is not implemented, IP and user agent capture enable strong security monitoring. The modular design and middleware/guard patterns support scalable and maintainable access control across multiple establishments and authentication modes.
+eLISAschool's enhanced authentication system provides robust multi-mode authentication capabilities with intelligent identifier detection, supporting traditional email/password login, pseudonym-based authentication, matriculation number verification, and QR code scanning. The system maintains backward compatibility while offering enhanced flexibility and security through multiple authentication pathways. The system now supports complex multi-establishment scenarios with establishment-specific role assignments and dynamic RBAC resolution. It leverages enhanced JWT tokens containing establishment arrays, refresh tokens with IP/User-Agent tracking, centralized security configuration, and comprehensive audit logging. The new establishment selection flow provides seamless multi-establishment login with temporary tokens and establishment validation. The tenant middleware enables comprehensive establishment switching while maintaining security boundaries. The addition of QR code utilities and expanded user entity attributes provides comprehensive support for modern authentication requirements. The establishment selection modal and frontend integration hooks provide intuitive user experience for multi-establishment environments. The new etablissement middleware provides specialized security validation for establishment switching operations. 
+
+**Updated** The system now includes a professional-grade two-level blocking system with TentativeConnexion entity tracking, comprehensive machine fingerprinting capabilities, and real-time blocking status polling for synchronized countdown timers. These enhancements provide robust protection against brute force attacks while maintaining excellent user experience through configurable security parameters and automated cleanup mechanisms. The integration of blocking status polling eliminates client-side timer manipulation risks and provides accurate, real-time feedback on authentication attempt restrictions. The machine fingerprinting system enables anonymous identification of attacking machines without storing sensitive user agent data, ensuring compliance with privacy regulations while maintaining effective security monitoring.

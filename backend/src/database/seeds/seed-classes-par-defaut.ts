@@ -90,8 +90,8 @@ export async function seedClassesParDefaut(
     logger.info(`📅 Année scolaire active: ${anneeActive.libelle} (${anneeActive.id.substring(0, 8)}...)`);
 
     // Récupérer les niveaux de l'établissement
-    // (Les niveaux sont liés indirectement via les filières qui ont etablissementId)
     const niveaux = await niveauRepo.find({
+        where: { etablissementId },
         order: { ordre: 'ASC' }
     });
 

@@ -15,6 +15,7 @@ export interface Niveau {
     sousSysteme: string;
     ordre: number;
     actif: boolean;
+    etablissementId: string;
     createdAt: string;
     updatedAt: string;
     cycle?: {

@@ -2,6 +2,11 @@
  * ==================================
  * eLISAschool - Service Niveaux
  * ==================================
+ * Version: 2.0.0
+ * 
+ * Changements v2.0:
+ * - Toutes les méthodes scopées par etablissementId (multi-tenant)
+ * - Filtrage systématique par établissement
  */
 
 import { Repository } from 'typeorm';
@@ -19,18 +24,29 @@ export class NiveauxService {
         this.repo = AppDataSource.getRepository(Niveau);
     }
 
-    async create(dto: CreateNiveauDto): Promise<Niveau> {
-        const niveau = this.repo.create(dto);
+    async create(dto: CreateNiveauDto, etablissementId: string): Promise<Niveau> {
+        // Vérifier unicité du code pour un sous-système ET établissement donnés
+        if (dto.code) {
+            const existing = await this.repo.findOne({
+                where: { code: dto.code, sousSysteme: dto.sousSysteme, etablissementId }
+            });
+            if (existing) {
+                throw new AppError('Un niveau avec ce code existe déjà pour ce sous-système dans cet établissement', 409, 'NIVEAU_EXISTS');
+            }
+        }
+
+        const niveau = this.repo.create({ ...dto, etablissementId });
         await this.repo.save(niveau);
-        logger.info(`Niveau créé: ${dto.nom}`);
+        logger.info(`Niveau créé: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
         return niveau;
     }
 
-    async findAll(query: QueryNiveauxDto = {}): Promise<PaginatedResult<Niveau>> {
+    async findAll(query: QueryNiveauxDto = {}, etablissementId: string): Promise<PaginatedResult<Niveau>> {
         const { page = 1, limit = 20, search, cycleId, sousSysteme, actif, estClasseExamen, sortBy = 'ordre', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('niveau')
-            .leftJoinAndSelect('niveau.cycle', 'cycle');
+            .leftJoinAndSelect('niveau.cycle', 'cycle')
+            .where('niveau.etablissementId = :etablissementId', { etablissementId });
 
         if (search) {
             qb.andWhere('(niveau.nom ILIKE :search OR niveau.code ILIKE :search)', { search: `%${search}%` });
@@ -59,29 +75,29 @@ export class NiveauxService {
         return paginateWithQueryBuilder(qb, page, limit);
     }
 
-    async findAllSimple(cycleId?: string): Promise<Niveau[]> {
-        const where: any = {};
+    async findAllSimple(etablissementId: string, cycleId?: string): Promise<Niveau[]> {
+        const where: any = { etablissementId };
         if (cycleId) where.cycleId = cycleId;
         return this.repo.find({ where, order: { cycleId: 'ASC', ordre: 'ASC' }, relations: ['cycle'] });
     }
 
-    async findOne(id: string): Promise<Niveau> {
-        const niveau = await this.repo.findOne({ where: { id }, relations: ['cycle'] });
+    async findOne(id: string, etablissementId: string): Promise<Niveau> {
+        const niveau = await this.repo.findOne({ where: { id, etablissementId }, relations: ['cycle'] });
         if (!niveau) throw new AppError('Niveau non trouvé', 404, 'NOT_FOUND');
         return niveau;
     }
 
-    async update(id: string, dto: UpdateNiveauDto): Promise<Niveau> {
-        const niveau = await this.findOne(id);
+    async update(id: string, dto: UpdateNiveauDto, etablissementId: string): Promise<Niveau> {
+        const niveau = await this.findOne(id, etablissementId);
         Object.assign(niveau, dto);
         await this.repo.save(niveau);
         return niveau;
     }
 
-    async delete(id: string): Promise<void> {
-        const niveau = await this.findOne(id);
+    async delete(id: string, etablissementId: string): Promise<void> {
+        const niveau = await this.findOne(id, etablissementId);
         await this.repo.remove(niveau);
-        logger.info(`Niveau supprimé: ${id}`);
+        logger.info(`Niveau supprimé: ${id} (établissement ${etablissementId})`);
     }
 }
 

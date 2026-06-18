@@ -65,6 +65,16 @@ export class Filiere {
     @Column({ type: 'enum', enum: SousSysteme, default: SousSysteme.FRANCOPHONE, name: 'soussysteme' })
     sousSysteme!: SousSysteme;
 
+    @Column({ type: 'int', default: 1 })
+    ordre!: number; // Ordre d'affichage
+
+    /**
+     * Multiplicateur de frais (ex: 1.2 = +20%).
+     * Migré depuis l'ancienne entité Section pour consolider les filières pédagogiques.
+     */
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    coefficientFrais!: number;
+
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 

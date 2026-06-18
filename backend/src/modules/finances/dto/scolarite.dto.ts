@@ -16,7 +16,7 @@ export const createFraisScolariteSchema = z.object({
     anneeScolaireId: z.string().uuid(),
     niveauId: z.string().uuid(),
     cycleId: z.string().uuid().optional(),
-    sectionId: z.string().uuid().optional(),
+    filiereId: z.string().uuid().optional(),
     classeId: z.string().uuid().optional(),
     fraisInscription: z.number().min(0),
     fraisScolariteAnnuel: z.number().min(0),
@@ -74,10 +74,10 @@ export const createRemiseSchema = z.object({
     eleveId: z.string().uuid().optional(),
     fraisScolariteId: z.string().uuid(),
     typeRemise: z.enum(['FRATRIE', 'BOURSE', 'PERSONNEL', 'ANTICIPE', 'AUTRE']),
-    scopeRemise: z.enum(['ETABLISSEMENT', 'CYCLE', 'NIVEAU', 'CLASSE', 'SECTION', 'ELEVE']).default('ELEVE'),
+    scopeRemise: z.enum(['ETABLISSEMENT', 'CYCLE', 'NIVEAU', 'CLASSE', 'FILIERE', 'ELEVE']).default('ELEVE'),
     classeId: z.string().uuid().optional(),
     cycleId: z.string().uuid().optional(),
-    sectionId: z.string().uuid().optional(),
+    filiereId: z.string().uuid().optional(),
     pourcentage: z.number().min(0).max(100),
     montant: z.number().min(0),
     motif: z.string().min(10),
@@ -92,8 +92,8 @@ export const createRemiseSchema = z.object({
     if (data.scopeRemise === 'CYCLE' && !data.cycleId) {
         return false; // cycleId obligatoire pour scope CYCLE
     }
-    if (data.scopeRemise === 'SECTION' && !data.sectionId) {
-        return false; // sectionId obligatoire pour scope SECTION
+    if (data.scopeRemise === 'FILIERE' && !data.filiereId) {
+        return false; // filiereId obligatoire pour scope FILIERE
     }
     return true;
 });

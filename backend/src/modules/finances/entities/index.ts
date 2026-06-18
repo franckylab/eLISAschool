@@ -9,7 +9,6 @@ export { FraisScolarite } from './frais-scolarite.entity';
 export { Echeancier, StatutEcheancier } from './echeancier.entity';
 export { Paiement } from './paiement.entity';
 export { RecuPaiement, RelancePaiement, Remise, TypeRelance, StatutRelance, TypeRemise, ScopeRemise } from './recu-paiement.entity';
-export { Section, TypeSection } from './section.entity';
 
 // Entités Dépenses
 export { CategorieDepense, TypeCharge, Depense, StatutDepense, DemandeDepense, StatutDemande, NiveauUrgence, BonCommande, StatutBonCommande, FactureFournisseur, StatutFacture } from './depenses.entity';

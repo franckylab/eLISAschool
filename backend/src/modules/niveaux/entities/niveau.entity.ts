@@ -2,6 +2,12 @@
  * ==================================
  * eLISAschool - Entités Niveaux
  * ==================================
+ * Version: 2.0.0
+ * 
+ * Changements v2.0:
+ * - Ajout etablissementId pour support multi-tenant
+ * - Chaque établissement possède ses propres niveaux
+ * - Index composites pour requêtes multi-tenant performantes
  */
 
 import {
@@ -16,10 +22,13 @@ import {
 } from 'typeorm';
 import { Cycle } from '@modules/cycles/entities';
 import { ExamenNational } from '@modules/examens-nationaux/entities';
-import { SousSysteme } from '@modules/etablissement/entities';
+import { SousSysteme, Etablissement } from '@modules/etablissement/entities';
 
 @Entity('niveaux')
 @Index(['cycleId'])
+@Index(['etablissementId'])
+@Index(['cycleId', 'etablissementId'])
+@Index(['code', 'sousSysteme', 'etablissementId'], { unique: true })
 export class Niveau {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -55,6 +64,19 @@ export class Niveau {
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
+
+    /**
+     * Relation multi-tenant : chaque niveau appartient à un établissement.
+     * Permet à chaque établissement d'avoir ses propres niveaux personnalisés.
+     * NOTE: Nullable temporairement pour permettre la migration 072.
+     * La migration rendra cette colonne NOT NULL après avoir dupliqué les données.
+     */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @CreateDateColumn()
     createdAt!: Date;

@@ -25,6 +25,7 @@ export interface Competence {
     niveau?: { id: string; nom: string; code: string };
     matiereId?: string;
     matiere?: { id: string; nom: string; code: string };
+    etablissementId: string;
     ordre: number;
     actif: boolean;
     createdAt: string;

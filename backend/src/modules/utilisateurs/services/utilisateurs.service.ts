@@ -124,7 +124,15 @@ export class UtilisateursService {
         const where: FindOptionsWhere<Utilisateur> = {};
 
         if (role) {
-            where.role = role as Role;
+            // Supporter les rôles multiples (séparés par virgule)
+            const roles = role.split(',').map(r => r.trim()) as Role[];
+            if (roles.length === 1) {
+                where.role = roles[0];
+            } else {
+                // Pour plusieurs rôles, utiliser IN
+                // Note: TypeORM ne supporte pas directement IN dans FindOptionsWhere
+                // On va gérer ça via le queryBuilder plus bas
+            }
         }
 
         if (statut) {
@@ -139,6 +147,12 @@ export class UtilisateursService {
         const queryBuilder = this.utilisateurRepository
             .createQueryBuilder('u')
             .where(where);
+
+        // Gérer les rôles multiples (IN clause)
+        if (role && role.includes(',')) {
+            const roles = role.split(',').map(r => r.trim());
+            queryBuilder.andWhere('u.role IN (:...roles)', { roles });
+        }
 
         // Recherche textuelle (uniquement sur email et matricule car profil est récupéré séparément)
         if (search) {

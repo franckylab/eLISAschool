@@ -9,47 +9,68 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, Building2, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
-import type { GroupeEtablissement } from '../types/groupe-etablissement.types';
+import type { GroupeEtablissement, GroupeEtablissementFiltres } from '../types/groupe-etablissement.types';
 import {
     useGroupesEtablissements,
     useCreerGroupeEtablissement,
     useModifierGroupeEtablissement,
     useSupprimerGroupeEtablissement,
+    useEtablissementsDisponibles,
+    useUtilisateursDisponibles,
+    useListerEtablissementsGroupe,
+    useListerAdmins,
 } from '../hooks/use-groupes-etablissements';
 import { GroupeEtablissementFormModal } from './groupe-etablissement-form-modal';
+import { GroupeEtablissementDetailModal } from './groupe-etablissement-detail-modal';
+import { GestionEtablissementsModal } from './gestion-etablissements-modal';
+import { GestionAdminsModal } from './gestion-admins-modal';
 
 export function GroupesEtablissementsPage() {
-    const [page, setPage] = useState(1);
-    const [limit] = useState(20);
+    const { t } = useTranslation('groupes-etablissements');
+    const { hasPermission } = usePermissions();
+    
+    const [filtres, setFiltres] = useState<GroupeEtablissementFiltres>({ 
+        page: 1, 
+        limit: 20, 
+        recherche: '' 
+    });
     const [showFormModal, setShowFormModal] = useState(false);
     const [groupeToEdit, setGroupeToEdit] = useState<GroupeEtablissement | null>(null);
     const [groupeToDelete, setGroupeToDelete] = useState<GroupeEtablissement | null>(null);
+    const [groupeToView, setGroupeToView] = useState<GroupeEtablissement | null>(null);
+    const [groupeToManageEtabs, setGroupeToManageEtabs] = useState<GroupeEtablissement | null>(null);
+    const [groupeToManageAdmins, setGroupeToManageAdmins] = useState<GroupeEtablissement | null>(null);
 
-    const { hasPermission } = usePermissions();
-    const { data, isLoading } = useGroupesEtablissements({
-        page,
-        limit,
-        recherche: recherche || undefined,
-    });
+    const { data: dataGroupes, isLoading } = useGroupesEtablissements(filtres);
+    const { data: dataEtablissements } = useEtablissementsDisponibles();
+    const { data: dataUtilisateurs } = useUtilisateursDisponibles();
+    const { data: dataEtablissementsAssignes } = useListerEtablissementsGroupe(groupeToManageEtabs?.id || '', !!groupeToManageEtabs);
+    const { data: dataAdminsActuels } = useListerAdmins(groupeToManageAdmins?.id || '', !!groupeToManageAdmins);
 
     const creer = useCreerGroupeEtablissement();
     const modifier = useModifierGroupeEtablissement();
     const supprimer = useSupprimerGroupeEtablissement();
 
-    const groupes = data?.data || [];
-    const total = data?.meta?.totalItems || 0;
-    const totalPages = data?.meta?.totalPages || 1;
+    // Extraire les tableaux de données des réponses API
+    // Les hooks retournent déjà les tableaux extraits (queryFn fait return response?.data)
+    const groupes = dataGroupes?.items || [];
+    const etablissementsDisponibles = dataEtablissements || [];
+    const utilisateursDisponibles = dataUtilisateurs || [];
+    const etablissementsAssignes = dataEtablissementsAssignes || [];
+    const adminsActuels = dataAdminsActuels || [];
+    const total = dataGroupes?.meta?.totalItems || 0;
 
     const colonnes: Column<GroupeEtablissement>[] = [
         {
             key: 'nom',
             pinned: 'left' as const,
-            header: 'Groupe',
+            header: t('colonnes.groupe'),
             sortable: true,
             render: (g) => (
                 <div>
@@ -65,7 +86,7 @@ export function GroupesEtablissementsPage() {
         },
         {
             key: 'code',
-            header: 'Code',
+            header: t('colonnes.code'),
             render: (g) => (
                 <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
                     {g.code}
@@ -74,7 +95,7 @@ export function GroupesEtablissementsPage() {
         },
         {
             key: 'nbEtablissements',
-            header: 'Établissements',
+            header: t('colonnes.etablissements'),
             render: (g) => (
                 <div className="flex items-center gap-1">
                     <Users className="h-4 w-4 text-gray-500" />
@@ -86,7 +107,7 @@ export function GroupesEtablissementsPage() {
         },
         {
             key: 'actif',
-            header: 'Statut',
+            header: t('colonnes.statut'),
             render: (g) => (
                 <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -95,41 +116,62 @@ export function GroupesEtablissementsPage() {
                             : 'bg-gray-100 text-gray-800'
                     }`}
                 >
-                    {g.actif ? 'Actif' : 'Inactif'}
+                    {g.actif ? t('champs.actif') : t('champs.inactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
             pinned: 'right' as const,
-            header: 'Actions',
+            header: t('colonnes.actions'),
             className: 'text-right',
             render: (g) => (
                 <div className="flex justify-end gap-1">
                     <button
-                        onClick={() => {/* Voir détails */}}
+                        onClick={() => setGroupeToView(g)}
                         className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
+                        title={t('boutons.voirDetails')}
+                        aria-label={`${t('boutons.voirDetails')} - ${g.nom}`}
                     >
                         <Eye className="h-4 w-4" />
                     </button>
                     {hasPermission('groupes-etablissements:edit') && (
-                        <button
-                            onClick={() => {
-                                setGroupeToEdit(g);
-                                setShowFormModal(true);
-                            }}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setGroupeToManageEtabs(g)}
+                                className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                                title="Gérer les établissements"
+                                aria-label={`Gérer les établissements - ${g.nom}`}
+                            >
+                                <Building2 className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setGroupeToManageAdmins(g)}
+                                className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                                title="Gérer les admins"
+                                aria-label={`Gérer les admins - ${g.nom}`}
+                            >
+                                <Users className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setGroupeToEdit(g);
+                                    setShowFormModal(true);
+                                }}
+                                className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                                title={t('boutons.modifier')}
+                                aria-label={`${t('boutons.modifier')} - ${g.nom}`}
+                            >
+                                <Edit className="h-4 w-4" />
+                            </button>
+                        </>
                     )}
                     {hasPermission('groupes-etablissements:delete') && (
                         <button
                             onClick={() => setGroupeToDelete(g)}
                             className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
+                            title={t('boutons.supprimer')}
+                            aria-label={`${t('boutons.supprimer')} - ${g.nom}`}
                         >
                             <Trash2 className="h-4 w-4" />
                         </button>
@@ -151,98 +193,54 @@ export function GroupesEtablissementsPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 p-6">
             {/* En-tête */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-            >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-[var(--color-texte)]">
-                            Groupes d'Établissements
-                        </h1>
-                        <p className="text-sm text-[var(--color-texte-secondaire)] mt-1">
-                            Gérez les regroupements d'établissements pour la consolidation
-                        </p>
-                    </div>
-                    {hasPermission('groupes-etablissements:create') && (
-                        <ElisaButton
-                            variant="primary"
-                            size="md"
-                            onClick={() => {
-                                setGroupeToEdit(null);
-                                setShowFormModal(true);
-                            }}
-                            leftIcon={<Plus className="h-4 w-4" />}
-                        >
-                            Nouveau groupe
-                        </ElisaButton>
-                    )}
+            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                <div>
+                    <h1 className="text-3xl font-bold">{t('titre')}</h1>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{total} groupe(s)</p>
                 </div>
+                {hasPermission('groupes-etablissements:create') && (
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        icon={<Plus className="h-4 w-4" />}
+                        onClick={() => {
+                            setGroupeToEdit(null);
+                            setShowFormModal(true);
+                        }}
+                    >
+                        {t('boutons.nouveau')}
+                    </ElisaButton>
+                )}
             </motion.div>
 
-            {/* Indicateurs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                    className="bg-white rounded-lg p-4 border border-gray-200"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">Total Groupes</p>
-                            <p className="text-2xl font-bold text-[var(--color-dominante)] mt-1">
-                                {total}
-                            </p>
-                        </div>
-                        <Building2 className="h-8 w-8 text-[var(--color-dominante)]/20" />
-                    </div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
-                    className="bg-white rounded-lg p-4 border border-gray-200"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">Actifs</p>
-                            <p className="text-2xl font-bold text-green-600 mt-1">
-                                {groupes.filter((g) => g.actif).length}
-                            </p>
-                        </div>
-                        <Users className="h-8 w-8 text-green-600/20" />
-                    </div>
-                </motion.div>
-            </div>
-
             {/* Tableau */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-            >
-                <DataTable
-                    columns={colonnes}
-                    data={groupes}
-                    isLoading={isLoading}
+            <DataTable
+                data={groupes}
+                columns={colonnes}
+                isLoading={isLoading}
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                    pagination={{
-                        page,
-                        limit,
-                        total,
-                        totalPages,
-                        onPageChange: setPage,
-                    }}
-                    emptyMessage="Aucun groupe d'établissements trouvé"
-                />
-            </motion.div>
+                searchPlaceholder={t('search.placeholder')}
+                onSearchChange={(val: string) =>
+                    setFiltres((prev) => ({ ...prev, recherche: val, page: 1 }))
+                }
+                disableClientSearch
+                pagination={dataGroupes?.meta ? {
+                    page: dataGroupes.meta.currentPage,
+                    limit: dataGroupes.meta.itemsPerPage,
+                    total: dataGroupes.meta.totalItems,
+                    totalPages: dataGroupes.meta.totalPages,
+                    hasNext: dataGroupes.meta.currentPage < dataGroupes.meta.totalPages,
+                    hasPrev: dataGroupes.meta.currentPage > 1,
+                } : undefined}
+                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                emptyMessage={t('messages.aucunGroupe')}
+                aria-label={t('titre')}
+            />
 
             {/* Modal Formulaire */}
             <GroupeEtablissementFormModal
@@ -266,12 +264,50 @@ export function GroupesEtablissementsPage() {
                 open={!!groupeToDelete}
                 onOpenChange={(open) => { if (!open) setGroupeToDelete(null); }}
                 onConfirm={handleDelete}
-                title="Supprimer le groupe"
-                description={`Êtes-vous sûr de vouloir supprimer "${groupeToDelete?.nom}" ? Cette action est irréversible.`}
-                confirmText="Supprimer"
+                title={t('confirmation.titreSuppression')}
+                description={t('confirmation.messageSuppression', { nom: groupeToDelete?.nom })}
+                confirmText={t('confirmation.confirmText')}
                 variant="danger"
                 isLoading={supprimer.isPending}
             />
+
+            {/* Modal Détails */}
+            {groupeToView && (
+                <GroupeEtablissementDetailModal
+                    open={!!groupeToView}
+                    onOpenChange={(open) => { if (!open) setGroupeToView(null); }}
+                    groupe={groupeToView}
+                />
+            )}
+
+            {/* Modal Gestion Établissements */}
+            {groupeToManageEtabs && (
+                <GestionEtablissementsModal
+                    open={!!groupeToManageEtabs}
+                    onOpenChange={(open) => { if (!open) setGroupeToManageEtabs(null); }}
+                    groupe={groupeToManageEtabs}
+                    etablissementsDisponibles={etablissementsDisponibles}
+                    etablissementsAssignes={etablissementsAssignes}
+                    onRefresh={() => {
+                        // Rafraîchir la liste principale
+                        setGroupeToManageEtabs(null);
+                    }}
+                />
+            )}
+
+            {/* Modal Gestion Admins */}
+            {groupeToManageAdmins && (
+                <GestionAdminsModal
+                    open={!!groupeToManageAdmins}
+                    onOpenChange={(open) => { if (!open) setGroupeToManageAdmins(null); }}
+                    groupe={groupeToManageAdmins}
+                    utilisateursDisponibles={utilisateursDisponibles}
+                    adminsActuels={adminsActuels}
+                    onRefresh={() => {
+                        setGroupeToManageAdmins(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

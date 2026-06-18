@@ -17,6 +17,7 @@ import { seedEtablissementsParDefaut, EtablissementsDefaut } from './seed-etabli
 import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { seedStructureAcademique } from './seed-structure-academique';
 import { seedClassesParDefaut } from './seed-classes-par-defaut';
+import { seedGroupesEtablissements } from './seed-groupes-etablissements';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -50,10 +51,16 @@ export async function runSeeds(): Promise<void> {
     // 6. Super admin (lié aux 2 établissements)
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
 
-    // 7. Chef établissement pour le 2ème établissement
+    // 7. Groupes d'établissements (après super admin pour l'admin du groupe)
+    const superAdmin = await getSuperAdmin();
+    if (superAdmin) {
+        await seedGroupesEtablissements(etablissementPrincipalId, superAdmin.id);
+    }
+
+    // 8. Chef établissement pour le 2ème établissement
     await seedChefEtablissementSecondaire(etablissementSecondaireId);
 
-    // 8. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
+    // 9. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
     await seedUtilisateursParRole(etablissementPrincipalId, etablissementSecondaireId);
 
     logger.info('✅ Seeds exécutés avec succès');
@@ -70,6 +77,16 @@ async function seedConfiguration(etablissementId: string): Promise<void> {
     const result = await seedService.runAllSeeds();
 
     logger.info(`Configuration seeds: Modules=${result.modules}, Params=${result.parametres}`);
+}
+
+/**
+ * Récupère le super admin pour l'utiliser comme propriétaire des groupes
+ */
+async function getSuperAdmin() {
+    const userRepo = AppDataSource.getRepository(Utilisateur);
+    return await userRepo.findOne({
+        where: { email: 'admin@elisaschool.cm' },
+    });
 }
 
 /**

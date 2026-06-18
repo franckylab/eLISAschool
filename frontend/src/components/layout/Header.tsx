@@ -106,7 +106,7 @@ export function Header() {
                 <EtablissementSwitcher />
 
                 {/* Notifications */}
-                <button
+                <motion.button
                     className="relative flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] xs:h-8 xs:w-8 sm:h-9 sm:w-9"
                     aria-label="Notifications"
                     whileHover={{ scale: 1.05 }}
@@ -115,7 +115,7 @@ export function Header() {
                     <Bell className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                     {/* Badge placeholder */}
                     <span className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-[var(--color-error)] xs:h-1.5 xs:w-1.5 sm:right-1 sm:top-1 sm:h-2 sm:w-2" />
-                </button>
+                </motion.button>
 
                 {/* User Menu */}
                 {utilisateur && (

@@ -2,6 +2,10 @@
  * ==================================
  * eLISAschool - Controller Cycles
  * ==================================
+ * Version: 2.0.0
+ * 
+ * Changements v2.0:
+ * - Toutes les routes passent etablissementId au service (multi-tenant)
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -16,12 +20,12 @@ const cyclesService = new CyclesService();
 
 /**
  * GET /api/cycles
- * Liste paginée avec recherche et filtres
+ * Liste paginée avec recherche et filtres (scopée par établissement)
  */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryCyclesSchema, req.query);
-        const result = await cyclesService.findAll(query);
+        const result = await cyclesService.findAll(query, req.etablissementId!);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });
@@ -32,7 +36,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
  */
 router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const cycles = await cyclesService.findAllSimple();
+        const cycles = await cyclesService.findAllSimple(req.etablissementId!);
         res.json({ success: true, data: cycles });
     } catch (error) { next(error); }
 });
@@ -40,7 +44,7 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
 router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createCycleSchema, req.body);
-        const cycle = await cyclesService.create(dto);
+        const cycle = await cyclesService.create(dto, req.etablissementId!);
         res.status(201).json({ success: true, data: cycle });
     } catch (error) { next(error); }
 });
@@ -48,14 +52,14 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateCycleSchema, req.body);
-        const cycle = await cyclesService.update(req.params.id, dto);
+        const cycle = await cyclesService.update(req.params.id, dto, req.etablissementId!);
         res.json({ success: true, data: cycle });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await cyclesService.delete(req.params.id);
+        await cyclesService.delete(req.params.id, req.etablissementId!);
         res.json({ success: true, message: 'Cycle supprimé' });
     } catch (error) { next(error); }
 });

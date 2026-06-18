@@ -11,14 +11,21 @@
 import { useState, useEffect } from 'react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Save } from 'lucide-react';
+import { Save, Building2, Check, X } from 'lucide-react';
 import type { GroupeEtablissement, CreerGroupeEtablissementDto } from '../types/groupe-etablissement.types';
+
+interface EtablissementOption {
+    id: string;
+    nom: string;
+    code: string;
+}
 
 interface GroupeEtablissementFormModalProps {
     open: boolean;
     groupe: GroupeEtablissement | null;
     onClose: () => void;
     onSubmit: (dto: CreerGroupeEtablissementDto) => Promise<void>;
+    etablissementsDisponibles?: EtablissementOption[];
 }
 
 export function GroupeEtablissementFormModal({
@@ -26,12 +33,14 @@ export function GroupeEtablissementFormModal({
     groupe,
     onClose,
     onSubmit,
+    etablissementsDisponibles = [],
 }: GroupeEtablissementFormModalProps) {
     const isEditMode = !!groupe;
 
     const [nom, setNom] = useState(groupe?.nom || '');
     const [description, setDescription] = useState(groupe?.description || '');
     const [code, setCode] = useState(groupe?.code || '');
+    const [selectedEtabIds, setSelectedEtabIds] = useState<string[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,10 +48,10 @@ export function GroupeEtablissementFormModal({
     useEffect(() => {
         if (!isEditMode && nom && !code) {
             const generatedCode = nom
-                .toLowerCase()
+                .toUpperCase()
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/[^A-Z0-9]+/g, '_')
                 .replace(/^_|_$/g, '');
             setCode(generatedCode);
         }
@@ -74,6 +83,7 @@ export function GroupeEtablissementFormModal({
             nom,
             description: description || undefined,
             code: code || undefined,
+            etablissementIds: selectedEtabIds.length > 0 ? selectedEtabIds : undefined,
         };
 
         try {
@@ -136,11 +146,11 @@ export function GroupeEtablissementFormModal({
                     <input
                         type="text"
                         value={code}
-                        onChange={(e) => setCode(e.target.value.toLowerCase())}
+                        onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent font-mono ${
                             errors.code ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="groupe_scolaire_africain"
+                        placeholder="GROUPE_SCOLAIRE_AFRICAIN"
                     />
                     {errors.code && (
                         <p className="text-red-500 text-xs mt-1">{errors.code}</p>
@@ -165,6 +175,56 @@ export function GroupeEtablissementFormModal({
                         placeholder="Description du groupe d'établissements..."
                     />
                 </div>
+
+                {/* Sélection d'établissements (uniquement en création) */}
+                {!isEditMode && etablissementsDisponibles.length > 0 && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Établissements à ajouter au groupe (optionnel)
+                        </label>
+                        <div className="border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                            {etablissementsDisponibles.map((etab) => {
+                                const isSelected = selectedEtabIds.includes(etab.id);
+                                return (
+                                    <button
+                                        key={etab.id}
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedEtabIds(prev =>
+                                                prev.includes(etab.id)
+                                                    ? prev.filter(id => id !== etab.id)
+                                                    : [...prev, etab.id]
+                                            );
+                                        }}
+                                        className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${
+                                            isSelected
+                                                ? 'border-[var(--color-dominante)] bg-[var(--color-dominante)]/5'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-gray-500" />
+                                            <div className="text-left">
+                                                <p className="text-sm font-medium text-gray-900">{etab.nom}</p>
+                                                <code className="text-xs text-gray-500 font-mono">{etab.code}</code>
+                                            </div>
+                                        </div>
+                                        {isSelected ? (
+                                            <Check className="h-4 w-4 text-[var(--color-dominante)]" />
+                                        ) : (
+                                            <X className="h-4 w-4 text-gray-300" />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {selectedEtabIds.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                {selectedEtabIds.length} établissement(s) sélectionné(s)
+                            </p>
+                        )}
+                    </div>
+                )}
             </form>
         </CustomModal>
     );

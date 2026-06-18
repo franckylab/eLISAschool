@@ -11,7 +11,7 @@ import { Paiement } from './paiement.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { Classe } from '@modules/classes/entities';
 import { Cycle } from '@modules/cycles/entities';
-import { Section } from './section.entity';
+import { Filiere } from '@modules/filieres/entities';
 
 @Entity('recus_paiement')
 @Index(['numeroRecu'], { unique: true })
@@ -163,7 +163,7 @@ export enum ScopeRemise {
     CYCLE = 'CYCLE',
     NIVEAU = 'NIVEAU',
     CLASSE = 'CLASSE',
-    SECTION = 'SECTION',
+    FILIERE = 'FILIERE',
     ELEVE = 'ELEVE',
 }
 
@@ -201,11 +201,11 @@ export class Remise {
     cycle?: Cycle;
 
     @Column({ type: 'uuid', nullable: true })
-    sectionId?: string;
+    filiereId?: string;
 
-    @ManyToOne(() => Section, { nullable: true })
-    @JoinColumn({ name: 'sectionId' })
-    section?: Section;
+    @ManyToOne(() => Filiere, { nullable: true })
+    @JoinColumn({ name: 'filiereId' })
+    filiere?: Filiere;
 
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     pourcentage!: number;
