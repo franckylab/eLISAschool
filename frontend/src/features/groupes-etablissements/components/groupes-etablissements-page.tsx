@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, Building2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +26,7 @@ import {
     useUtilisateursDisponibles,
     useListerEtablissementsGroupe,
     useListerAdmins,
+    useTousEtablissementsAssignesIds,
 } from '../hooks/use-groupes-etablissements';
 import { GroupeEtablissementFormModal } from './groupe-etablissement-form-modal';
 import { GroupeEtablissementDetailModal } from './groupe-etablissement-detail-modal';
@@ -34,6 +36,7 @@ import { GestionAdminsModal } from './gestion-admins-modal';
 export function GroupesEtablissementsPage() {
     const { t } = useTranslation('groupes-etablissements');
     const { hasPermission } = usePermissions();
+    const queryClient = useQueryClient();
     
     const [filtres, setFiltres] = useState<GroupeEtablissementFiltres>({ 
         page: 1, 
@@ -52,6 +55,7 @@ export function GroupesEtablissementsPage() {
     const { data: dataUtilisateurs } = useUtilisateursDisponibles();
     const { data: dataEtablissementsAssignes } = useListerEtablissementsGroupe(groupeToManageEtabs?.id || '', !!groupeToManageEtabs);
     const { data: dataAdminsActuels } = useListerAdmins(groupeToManageAdmins?.id || '', !!groupeToManageAdmins);
+    const { data: tousEtablissementsAssignesIds } = useTousEtablissementsAssignesIds();
 
     const creer = useCreerGroupeEtablissement();
     const modifier = useModifierGroupeEtablissement();
@@ -60,7 +64,10 @@ export function GroupesEtablissementsPage() {
     // Extraire les tableaux de données des réponses API
     // Les hooks retournent déjà les tableaux extraits (queryFn fait return response?.data)
     const groupes = dataGroupes?.items || [];
-    const etablissementsDisponibles = dataEtablissements || [];
+    // Filtrer les établissements déjé assignés à N'IMPORTE QUEL groupe
+    const etablissementsDisponibles = (dataEtablissements || []).filter(
+        e => !tousEtablissementsAssignesIds?.has(e.id)
+    );
     const utilisateursDisponibles = dataUtilisateurs || [];
     const etablissementsAssignes = dataEtablissementsAssignes || [];
     const adminsActuels = dataAdminsActuels || [];
@@ -79,7 +86,7 @@ export function GroupesEtablissementsPage() {
                         <span className="font-semibold">{g.nom}</span>
                     </div>
                     {g.description && (
-                        <p className="text-xs text-gray-500 mt-1">{g.description}</p>
+                        <p className="text-xs text-[var(--color-texte-secondaire)] mt-1">{g.description}</p>
                     )}
                 </div>
             ),
@@ -88,7 +95,7 @@ export function GroupesEtablissementsPage() {
             key: 'code',
             header: t('colonnes.code'),
             render: (g) => (
-                <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                <code className="px-2.5 py-1 bg-[var(--color-surface-50)] dark:bg-[var(--color-surface-200)] border border-[var(--color-dominant-200)] dark:border-[var(--color-dominant-800)] rounded-md text-xs font-mono font-semibold text-[var(--color-dominante)]">
                     {g.code}
                 </code>
             ),
@@ -97,9 +104,9 @@ export function GroupesEtablissementsPage() {
             key: 'nbEtablissements',
             header: t('colonnes.etablissements'),
             render: (g) => (
-                <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium">
+                <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-[var(--color-dominante)]" />
+                    <span className="text-sm font-semibold text-[var(--color-texte)]">
                         {g.nbEtablissements || 0}
                     </span>
                 </div>
@@ -110,10 +117,10 @@ export function GroupesEtablissementsPage() {
             header: t('colonnes.statut'),
             render: (g) => (
                 <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                         g.actif
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
+                            : 'bg-gray-50 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
                     }`}
                 >
                     {g.actif ? t('champs.actif') : t('champs.inactif')}
@@ -129,7 +136,7 @@ export function GroupesEtablissementsPage() {
                 <div className="flex justify-end gap-1">
                     <button
                         onClick={() => setGroupeToView(g)}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                         title={t('boutons.voirDetails')}
                         aria-label={`${t('boutons.voirDetails')} - ${g.nom}`}
                     >
@@ -139,7 +146,7 @@ export function GroupesEtablissementsPage() {
                         <>
                             <button
                                 onClick={() => setGroupeToManageEtabs(g)}
-                                className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                                className="p-1.5 rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
                                 title="Gérer les établissements"
                                 aria-label={`Gérer les établissements - ${g.nom}`}
                             >
@@ -147,7 +154,7 @@ export function GroupesEtablissementsPage() {
                             </button>
                             <button
                                 onClick={() => setGroupeToManageAdmins(g)}
-                                className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                                className="p-1.5 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                                 title="Gérer les admins"
                                 aria-label={`Gérer les admins - ${g.nom}`}
                             >
@@ -158,7 +165,7 @@ export function GroupesEtablissementsPage() {
                                     setGroupeToEdit(g);
                                     setShowFormModal(true);
                                 }}
-                                className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="p-1.5 rounded-lg text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] transition-colors"
                                 title={t('boutons.modifier')}
                                 aria-label={`${t('boutons.modifier')} - ${g.nom}`}
                             >
@@ -169,7 +176,7 @@ export function GroupesEtablissementsPage() {
                     {hasPermission('groupes-etablissements:delete') && (
                         <button
                             onClick={() => setGroupeToDelete(g)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                             title={t('boutons.supprimer')}
                             aria-label={`${t('boutons.supprimer')} - ${g.nom}`}
                         >
@@ -289,8 +296,10 @@ export function GroupesEtablissementsPage() {
                     etablissementsDisponibles={etablissementsDisponibles}
                     etablissementsAssignes={etablissementsAssignes}
                     onRefresh={() => {
-                        // Rafraîchir la liste principale
-                        setGroupeToManageEtabs(null);
+                        // Rafraîchir les données sans fermer le modal
+                        queryClient.invalidateQueries({ 
+                            queryKey: ['groupes-etablissements', groupeToManageEtabs?.id, 'etablissements'] 
+                        });
                     }}
                 />
             )}
@@ -304,7 +313,10 @@ export function GroupesEtablissementsPage() {
                     utilisateursDisponibles={utilisateursDisponibles}
                     adminsActuels={adminsActuels}
                     onRefresh={() => {
-                        setGroupeToManageAdmins(null);
+                        // Rafraîchir les données sans fermer le modal
+                        queryClient.invalidateQueries({ 
+                            queryKey: ['groupes-etablissements', groupeToManageAdmins?.id, 'admins'] 
+                        });
                     }}
                 />
             )}

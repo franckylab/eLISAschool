@@ -74,8 +74,9 @@ export function GestionEtablissementsModal({
             toast.success(`${selectedIds.length} établissement(s) ajouté(s)`);
             setSelectedIds([]);
             onRefresh?.();
-        } catch (error) {
-            toast.error('Erreur lors de l\'ajout');
+        } catch (error: any) {
+            const message = error?.message || 'Erreur lors de l\'ajout';
+            toast.error(message);
         }
     };
 
@@ -104,7 +105,7 @@ export function GestionEtablissementsModal({
             size="3xl"
             footer={
                 <div className="flex justify-between items-center w-full">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-[var(--color-texte-secondaire)]">
                         {etablissementsAssignes.length} établissement(s) assigné(s)
                     </span>
                     <div className="flex gap-2">
@@ -127,26 +128,26 @@ export function GestionEtablissementsModal({
             <div className="space-y-6">
                 {/* Barre de recherche */}
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-texte-secondaire)]" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Rechercher un établissement..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-[var(--color-bordure)] rounded-lg bg-[var(--color-surface)] text-[var(--color-texte)] focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent placeholder-[var(--color-texte-secondaire)]"
                     />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Établissements disponibles */}
                     <div>
-                        <h3 className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                        <h3 className="font-semibold text-sm text-[var(--color-texte)] mb-3 flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
                             Disponibles ({filteredDisponibles.length})
                         </h3>
-                        <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                        <div className="space-y-2 max-h-96 overflow-y-auto border border-[var(--color-bordure)] rounded-lg p-2 bg-[var(--color-surface)]">
                             {filteredDisponibles.length === 0 ? (
-                                <p className="text-sm text-gray-500 text-center py-4">
+                                <p className="text-sm text-[var(--color-texte-secondaire)] text-center py-4">
                                     Aucun établissement disponible
                                 </p>
                             ) : (
@@ -158,21 +159,21 @@ export function GestionEtablissementsModal({
                                             onClick={() => toggleSelection(etab.id)}
                                             className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                                                 isSelected
-                                                    ? 'border-[var(--color-dominant-500)] bg-[var(--color-dominant-50)]'
-                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                    ? 'border-[var(--color-dominant-500)] bg-[var(--color-dominant-50)] dark:bg-[var(--color-dominant-900)]/30'
+                                                    : 'border-[var(--color-bordure)] hover:border-[var(--color-bordure-hover)] bg-[var(--color-surface)]'
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className={`h-5 w-5 rounded border-2 flex items-center justify-center ${
                                                     isSelected
                                                         ? 'border-[var(--color-dominant-500)] bg-[var(--color-dominant-500)]'
-                                                        : 'border-gray-300'
+                                                        : 'border-[var(--color-bordure)]'
                                                 }`}>
                                                     {isSelected && <Check className="h-3 w-3 text-white" />}
                                                 </div>
                                                 <div className="text-left">
-                                                    <p className="font-medium text-sm text-gray-900">{etab.nom || ''}</p>
-                                                    <code className="text-xs text-gray-500 font-mono">{etab.code || ''}</code>
+                                                    <p className="font-medium text-sm text-[var(--color-texte)]">{etab.nom || ''}</p>
+                                                    <code className="text-xs text-[var(--color-texte-secondaire)] font-mono">{etab.code || ''}</code>
                                                 </div>
                                             </div>
                                         </button>
@@ -184,31 +185,31 @@ export function GestionEtablissementsModal({
 
                     {/* Établissements assignés */}
                     <div>
-                        <h3 className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-600" />
+                        <h3 className="font-semibold text-sm text-[var(--color-texte)] mb-3 flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                             Assignés ({filteredAssignes.length})
                         </h3>
-                        <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                        <div className="space-y-2 max-h-96 overflow-y-auto border border-[var(--color-bordure)] rounded-lg p-2 bg-[var(--color-surface)]">
                             {filteredAssignes.length === 0 ? (
-                                <p className="text-sm text-gray-500 text-center py-4">
+                                <p className="text-sm text-[var(--color-texte-secondaire)] text-center py-4">
                                     Aucun établissement assigné
                                 </p>
                             ) : (
                                 filteredAssignes.map((etab) => (
                                     <div
                                         key={etab.id}
-                                        className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white"
+                                        className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-200)]"
                                     >
                                         <div className="flex items-center gap-3">
                                             <Building2 className="h-5 w-5 text-[var(--color-dominant-500)]" />
                                             <div className="text-left">
-                                                <p className="font-medium text-sm text-gray-900">{etab.nom || ''}</p>
-                                                <code className="text-xs text-gray-500 font-mono">{etab.code || ''}</code>
+                                                <p className="font-medium text-sm text-[var(--color-texte)]">{etab.nom || ''}</p>
+                                                <code className="text-xs text-[var(--color-texte-secondaire)] font-mono">{etab.code || ''}</code>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleRetirer(etab.id)}
-                                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                            className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                             title="Retirer du groupe"
                                             disabled={retirerMutation.isPending}
                                         >

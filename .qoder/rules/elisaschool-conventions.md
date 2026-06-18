@@ -340,6 +340,7 @@ Les entités sont **auto-découvertes** par TypeORM via le glob pattern `modules
 - **NE PAS** utiliser `express-validator` — la validation se fait **uniquement** avec Zod
 - **NE PAS** créer de migration TypeORM manuelle — utiliser `migration:generate`
 - **NE PAS** commit de secrets dans `.env` — toujours documenter dans `.env.example`
+- **NE PAS** oublier que le frontend est ultra-responsif (100px-2560px) — structurer les API responses en conséquence (pagination, select partiel, etc.)
 
 ---
 
@@ -1174,6 +1175,8 @@ Cette règle et les skills associés sont conçus pour **évoluer avec le projet
 
 - **`elisaschool-dev`** — Guide de développement (créer module, endpoint, entité, **backup**, **activation modules**)
 - **`elisaschool-business-logic`** — Guide complet de la logique métier (règles, flux, calculs, config, **backup**, **activation modules**)
+- **`elisaschool-frontend-dev`** — Guide de développement frontend (**ultra-responsivité**, composants, hooks, intégration API)
+- **`elisaschool-frontend-refactor`** — Guide de refactorisation frontend (optimisation, modernisation, **ultra-responsivité**)
 
 **Modes de mise à jour** :
 - **Automatique** : Lorsque l'IA détecte un nouveau pattern récurrent, elle propose d'ajouter/modifier une section

@@ -127,21 +127,21 @@ export function ConfirmationModal({
                         variant={variantConfig.confirmVariant}
                         onClick={handleConfirm}
                         isLoading={isLoading}
-                        icon={isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
+                        icon={isLoading ? <Loader2 className="h-[var(--icon-sm)] w-[var(--icon-sm)] animate-spin" /> : undefined}
                     >
                         {confirmLabel}
                     </ElisaButton>
                 </>
             }
         >
-            <div className="flex gap-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${variantConfig.iconBg}`}>
-                    <Icon className={`h-5 w-5 ${variantConfig.iconColor}`} />
+            <div className="flex gap-[var(--gap-md)]">
+                <div className={`flex shrink-0 items-center justify-center rounded-full ${variantConfig.iconBg}`} style={{ width: 'clamp(2.5rem, 2rem + 1vw, 3.5rem)', height: 'clamp(2.5rem, 2rem + 1vw, 3.5rem)' }}>
+                    <Icon className={variantConfig.iconColor} style={{ width: 'clamp(1.25rem, 1rem + 0.5vw, 1.5rem)', height: 'clamp(1.25rem, 1rem + 0.5vw, 1.5rem)' }} />
                 </div>
                 <div className="flex-1">
-                    <p className="text-sm text-[var(--color-texte)]">{message}</p>
+                    <p className="text-[var(--color-texte)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>{message}</p>
                     {details && (
-                        <p className="mt-3 text-sm text-[var(--color-texte-secondaire)] bg-gray-50 rounded-lg p-3">{details}</p>
+                        <p className="mt-3 text-[var(--color-texte-secondaire)] bg-gray-50 rounded-lg" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)', padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>{details}</p>
                     )}
                 </div>
             </div>

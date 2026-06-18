@@ -44,6 +44,24 @@ export function GroupeEtablissementFormModal({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Synchroniser les états quand le groupe change (mode édition vs ajout)
+    useEffect(() => {
+        if (groupe) {
+            // Mode édition : charger les données du groupe
+            setNom(groupe.nom || '');
+            setDescription(groupe.description || '');
+            setCode(groupe.code || '');
+            setErrors({});
+        } else {
+            // Mode ajout : réinitialiser le formulaire
+            setNom('');
+            setDescription('');
+            setCode('');
+            setSelectedEtabIds([]);
+            setErrors({});
+        }
+    }, [groupe]);
+
     // Auto-générer le code
     useEffect(() => {
         if (!isEditMode && nom && !code) {

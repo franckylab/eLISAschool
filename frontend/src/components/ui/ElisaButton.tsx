@@ -13,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const buttonVariants = cva(
-    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominante)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+    'inline-flex items-center justify-center font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominante)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
     {
         variants: {
             variant: {
@@ -31,11 +31,11 @@ const buttonVariants = cva(
                     'border border-[var(--color-bordure)] bg-transparent text-[var(--color-texte)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]',
             },
             size: {
-                xs: 'h-7 px-2 text-xs',
-                sm: 'h-8 px-3 text-sm',
-                md: 'h-10 px-4 text-sm',
-                lg: 'h-12 px-6 text-base',
-                xl: 'h-14 px-8 text-lg',
+                xs: 'h-[clamp(1.5rem,1.25rem+0.5vw,1.75rem)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)]',
+                sm: 'h-[clamp(1.75rem,1.5rem+0.5vw,2rem)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)]',
+                md: 'h-[clamp(2rem,1.75rem+0.5vw,2.5rem)] px-[clamp(0.625rem,0.5rem+0.4vw,1rem)]',
+                lg: 'h-[clamp(2.5rem,2.25rem+0.5vw,3rem)] px-[clamp(0.875rem,0.75rem+0.5vw,1.5rem)]',
+                xl: 'h-[clamp(3rem,2.75rem+0.5vw,3.5rem)] px-[clamp(1.25rem,1rem+0.75vw,2rem)]',
             },
             fullWidth: {
                 true: 'w-full',
@@ -83,12 +83,29 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
         },
         ref,
     ) => {
+        const iconSize = {
+            xs: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)',
+            sm: 'clamp(0.875rem, 0.75rem + 0.4vw, 1rem)',
+            md: 'clamp(1rem, 0.85rem + 0.5vw, 1.125rem)',
+            lg: 'clamp(1.125rem, 1rem + 0.5vw, 1.25rem)',
+            xl: 'clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem)',
+        }[size || 'md'];
+
+        const textSize = {
+            xs: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)',
+            sm: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)',
+            md: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)',
+            lg: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)',
+            xl: 'clamp(1rem, 0.9rem + 0.5vw, 1.125rem)',
+        }[size || 'md'];
+
         const resolvedIcon = icon || leftIcon;
         return (
             <motion.button
                 ref={ref}
                 type={type}
                 className={cn(buttonVariants({ variant, size, fullWidth, className }))}
+                style={{ gap: 'var(--gap-sm)', borderRadius: 'var(--radius-md)', fontSize: textSize }}
                 disabled={disabled || isLoading}
                 whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
                 whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
@@ -97,16 +114,16 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
             >
                 {isLoading ? (
                     <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="animate-spin" style={{ width: iconSize, height: iconSize }} />
                         {loadingText || children}
                     </>
                 ) : (
                     <>
-                        {resolvedIcon}
+                        {resolvedIcon && <span style={{ width: iconSize, height: iconSize, display: 'flex' }}>{resolvedIcon}</span>}
                         {children}
-                        {iconRight}
+                        {iconRight && <span style={{ width: iconSize, height: iconSize, display: 'flex' }}>{iconRight}</span>}
                         {shortcut && (
-                            <kbd className="ml-2 hidden rounded border border-white/20 px-1.5 py-0.5 text-xs opacity-60 sm:inline-block">
+                            <kbd className="ml-2 hidden rounded border border-white/20 opacity-60 sm:inline-block" style={{ padding: 'clamp(0.125rem, 0.1rem + 0.05vw, 0.25rem) clamp(0.25rem, 0.2rem + 0.1vw, 0.375rem)', fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
                                 {shortcut}
                             </kbd>
                         )}

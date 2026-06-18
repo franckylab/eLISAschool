@@ -38,6 +38,9 @@ router.use(authMiddleware);
  * Fonction centralisée pour garantir la cohérence des réponses
  */
 function transformGroupeToDto(groupe: any, includeEtablissements: boolean = false): any {
+    // Compter les établissements (liens qui ont un établissement chargé)
+    const nbEtablissements = groupe.etablissements?.length || 0;
+    
     const dto: any = {
         id: groupe.id,
         nom: groupe.nom,
@@ -45,18 +48,22 @@ function transformGroupeToDto(groupe: any, includeEtablissements: boolean = fals
         proprietaireId: groupe.proprietaireId,
         code: groupe.code,
         actif: groupe.actif,
-        nbEtablissements: groupe.etablissements?.length || 0,
+        nbEtablissements, // ✅ Nombre correct d'établissements
         creeAt: groupe.creeAt?.toISOString(),
         majAt: groupe.majAt?.toISOString(),
     };
     
     if (includeEtablissements && groupe.etablissements) {
-        dto.etablissements = groupe.etablissements.map((e: any) => ({
-            id: e.id,
-            nom: e.nom,
-            code: e.code,
-        }));
+        dto.etablissements = groupe.etablissements
+            .filter((lien: any) => lien.etablissement) // ✅ Filtrer les liens sans établissement
+            .map((lien: any) => ({
+                id: lien.etablissement.id,
+                nom: lien.etablissement.nom,
+                code: lien.etablissement.code,
+            }));
     }
+    
+    console.log(`[transformGroupeToDto] ${groupe.nom}: ${nbEtablissements} établissements`);
     
     return dto;
 }

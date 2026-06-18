@@ -12,6 +12,7 @@
 
 import { type ReactNode } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, Minus, Maximize2, Minimize2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/cn';
@@ -130,8 +131,9 @@ export function CustomModal({
                                 ref={containerRef}
                                 style={style}
                                 className={cn(
-                                    'flex flex-col rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-2xl',
+                                    'flex flex-col border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-2xl',
                                     'transition-[border-radius] duration-200',
+                                    'rounded-[var(--radius-xl)]',
                                     isMaximized && 'rounded-none',
                                     isMinimized && 'overflow-hidden',
                                     resizable && !isMaximized && !isMinimized && 'modal-resizable',
@@ -156,10 +158,11 @@ export function CustomModal({
                                 )}
 
                                 {/* ─── Header (zone de drag) ────────────────────────── */}
-                                {(title || showClose) && (
+                                {(title || showClose || true) && (
                                     <div
                                         className={cn(
-                                            'flex items-center justify-between border-b border-[var(--color-bordure)] px-4 py-3 select-none',
+                                            'flex items-center justify-between border-b border-[var(--color-bordure)] select-none',
+                                            'px-[var(--padding-modal-header)] py-[clamp(0.5rem,0.4rem+0.2vw,0.75rem)]',
                                             draggable && state === 'normal' && 'cursor-grab active:cursor-grabbing',
                                             isMinimized && 'border-b-0',
                                         )}
@@ -168,63 +171,57 @@ export function CustomModal({
                                     >
                                         <div className="flex-1 min-w-0">
                                             {title ? (
-                                                <DialogPrimitive.Title className="text-base font-semibold text-[var(--color-texte)] truncate">
-                                                    {title}
-                                                </DialogPrimitive.Title>
+                                                <>
+                                                    <DialogPrimitive.Title className="font-semibold text-[var(--color-texte)] truncate" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.125rem)' }}>
+                                                        {title}
+                                                    </DialogPrimitive.Title>
+                                                    {description && !isMinimized && (
+                                                        <DialogPrimitive.Description className="mt-0.5 text-[var(--color-texte-secondaire)] truncate" style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
+                                                            {description}
+                                                        </DialogPrimitive.Description>
+                                                    )}
+                                                </>
                                             ) : (
-                                                <DialogPrimitive.Title
-                                                    className="absolute w-0 h-0 overflow-hidden whitespace-nowrap"
-                                                    style={{ opacity: 0 }}
-                                                >
-                                                    Modal
-                                                </DialogPrimitive.Title>
-                                            )}
-                                            {description && !isMinimized ? (
-                                                <DialogPrimitive.Description className="mt-0.5 text-xs text-[var(--color-texte-secondaire)] truncate">
-                                                    {description}
-                                                </DialogPrimitive.Description>
-                                            ) : (
-                                                <DialogPrimitive.Description
-                                                    className="absolute w-0 h-0 overflow-hidden whitespace-nowrap"
-                                                    style={{ opacity: 0 }}
-                                                >
-                                                    Modal description
-                                                </DialogPrimitive.Description>
+                                                // Titre caché mais accessible pour les lecteurs d'écran
+                                                <VisuallyHidden>
+                                                    <DialogPrimitive.Title>Modal</DialogPrimitive.Title>
+                                                    <DialogPrimitive.Description>Modal dialog</DialogPrimitive.Description>
+                                                </VisuallyHidden>
                                             )}
                                         </div>
 
                                         {/* ─── Boutons de contrôle ─────────────────── */}
-                                        <div className="flex items-center gap-1 ml-2 shrink-0">
+                                        <div className="flex items-center gap-[var(--gap-xs)] ml-2 shrink-0">
                                             {minimizable && (
                                                 <button
-                                                    className="rounded-md p-1.5 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
+                                                    className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
                                                     onClick={(e) => { e.stopPropagation(); handlers.toggleMinimize(); }}
                                                     title={isMinimized ? 'Restaurer' : 'Réduire'}
                                                     aria-label={isMinimized ? 'Restaurer' : 'Réduire'}
                                                 >
-                                                    <Minus className="h-4 w-4" />
+                                                    <Minus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                                                 </button>
                                             )}
                                             {maximizable && (
                                                 <button
-                                                    className="rounded-md p-1.5 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
+                                                    className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
                                                     onClick={(e) => { e.stopPropagation(); handlers.toggleMaximize(); }}
                                                     title={isMaximized ? 'Restaurer' : 'Agrandir'}
                                                     aria-label={isMaximized ? 'Restaurer' : 'Agrandir'}
                                                 >
                                                     {isMaximized
-                                                        ? <Minimize2 className="h-4 w-4" />
-                                                        : <Maximize2 className="h-4 w-4" />
+                                                        ? <Minimize2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                                                        : <Maximize2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                                                     }
                                                 </button>
                                             )}
                                             {showClose && (
                                                 <DialogPrimitive.Close asChild>
                                                     <button
-                                                        className="rounded-md p-1.5 text-[var(--color-texte-secondaire)] transition-colors hover:bg-red-100 hover:text-red-600"
+                                                        className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-red-100 hover:text-red-600"
                                                         aria-label="Fermer"
                                                     >
-                                                        <X className="h-4 w-4" />
+                                                        <X className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                                                     </button>
                                                 </DialogPrimitive.Close>
                                             )}
@@ -234,14 +231,14 @@ export function CustomModal({
 
                                 {/* ─── Body ─────────────────────────────────────────── */}
                                 {!isMinimized && (
-                                    <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+                                    <div className="flex-1 overflow-y-auto min-h-0" style={{ padding: 'var(--padding-modal-body)' }}>
                                         {children}
                                     </div>
                                 )}
 
                                 {/* ─── Footer ───────────────────────────────────────── */}
                                 {footer && !isMinimized && (
-                                    <div className="flex items-center justify-end gap-3 border-t border-[var(--color-bordure)] px-6 py-3 shrink-0">
+                                    <div className="flex items-center justify-end gap-[var(--gap-md)] border-t border-[var(--color-bordure)] shrink-0" style={{ padding: 'var(--padding-modal-footer)' }}>
                                         {footer}
                                     </div>
                                 )}

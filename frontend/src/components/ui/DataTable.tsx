@@ -67,6 +67,7 @@ import {
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import type { ReactNode } from 'react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 /* ================================================================
  * INTERFACES
@@ -257,28 +258,28 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
     return (
         <th
             style={style}
-            className={`relative px-4 py-3 font-medium text-[var(--color-text-secondary)] select-none ${
+            className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
                 col.sortable ? 'cursor-pointer' : ''
             } ${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
             onClick={() => col.sortable && onSort()}
         >
-            <div className="flex items-center gap-1.5">
-                <span className="truncate">{col.header}</span>
+            <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
+                <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
                 {col.sortable && (
                     <>
                         {isSorted ? (
                             sortDirection === 'ASC' ? (
-                                <ArrowUp className="h-3 w-3 shrink-0" />
+                                <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
                             ) : (
-                                <ArrowDown className="h-3 w-3 shrink-0" />
+                                <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
                             )
                         ) : (
-                            <ArrowUpDown className="h-3 w-3 shrink-0 opacity-40" />
+                            <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
                         )}
                     </>
                 )}
                 {col.pinned && (
-                    <Pin className="h-3 w-3 shrink-0 text-[var(--color-dominant-500)]" />
+                    <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
                 )}
             </div>
             {/* Poignée de redimensionnement */}
@@ -346,38 +347,38 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
         <th
             ref={setNodeRef}
             style={style}
-            className={`relative px-4 py-3 font-medium text-[var(--color-text-secondary)] select-none ${
+            className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
                 col.sortable ? 'cursor-pointer' : ''
             } ${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
             onClick={() => col.sortable && onSort()}
             {...attributes}
         >
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
                 {col.enableReordering !== false && (
                     <button
                         className="cursor-grab touch-none text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] active:cursor-grabbing"
                         {...listeners}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <GripVertical className="h-3.5 w-3.5" />
+                        <GripVertical className="h-[clamp(0.75rem,0.65rem+0.3vw,0.875rem)] w-[clamp(0.75rem,0.65rem+0.3vw,0.875rem)]" />
                     </button>
                 )}
-                <span className="truncate">{col.header}</span>
+                <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
                 {col.sortable && (
                     <>
                         {isSorted ? (
                             sortDirection === 'ASC' ? (
-                                <ArrowUp className="h-3 w-3 shrink-0" />
+                                <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
                             ) : (
-                                <ArrowDown className="h-3 w-3 shrink-0" />
+                                <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
                             )
                         ) : (
-                            <ArrowUpDown className="h-3 w-3 shrink-0 opacity-40" />
+                            <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
                         )}
                     </>
                 )}
                 {col.pinned && (
-                    <Pin className="h-3 w-3 shrink-0 text-[var(--color-dominant-500)]" />
+                    <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
                 )}
             </div>
             {/* Poignée de redimensionnement */}
@@ -442,9 +443,11 @@ function LigneTableauInterne<T>({
             <td
                 key={col.key}
                 style={style}
-                className={`px-4 ${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
+                className={`${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
             >
-                {col.render ? col.render(item, index) : (item as any)[col.key]}
+                <div style={{ padding: 'var(--padding-table-cell)' }}>
+                    {col.render ? col.render(item, index) : (item as any)[col.key]}
+                </div>
             </td>
         );
     });
@@ -590,28 +593,30 @@ function BarreOutils({
     if (!aDesOutils) return null;
 
     return (
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
+        <div className="flex flex-wrap items-center gap-[var(--gap-sm)] border-b border-[var(--color-bordure)]" style={{ padding: 'var(--padding-toolbar)' }}>
             {searchable && (
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                <div className="relative flex-1" style={{ minWidth: 'clamp(120px, 30vw, 384px)', maxWidth: 'clamp(200px, 40vw, 512px)' }}>
+                    <Search className="absolute left-[clamp(0.5rem,0.4rem+0.2vw,0.625rem)] top-1/2 h-[var(--icon-sm)] w-[var(--icon-sm)] -translate-y-1/2 text-[var(--color-text-muted)]" />
                     <input
                         type="text"
                         placeholder={searchPlaceholder || t('tableau.rechercher', { defaultValue: 'Rechercher...' })}
                         value={recherche}
                         onChange={(e) => onRechercheChange(e.target.value)}
-                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pl-9 pr-3 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                        className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] pl-9 pr-3 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                     />
                 </div>
             )}
             {/* Filtres rapides */}
             {filtres && filtres.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
                     {filtres.map((f) => (
                         <select
                             key={f.key}
                             value={valeurFiltres?.[f.key] ?? ''}
                             onChange={(e) => onFiltreChange?.(f.key, e.target.value)}
-                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                            className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                         >
                             <option value="">{f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}`}</option>
                             {f.options.map((opt) => (
@@ -621,14 +626,15 @@ function BarreOutils({
                     ))}
                 </div>
             )}
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-[var(--gap-sm)] ml-auto">
                 {enableRowHeight && (
-                    <div className="flex items-center gap-1.5">
-                        <Rows3 className="h-4 w-4 text-[var(--color-text-muted)]" />
+                    <div className="flex items-center gap-[var(--gap-xs)]">
+                        <Rows3 className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-text-muted)]" />
                         <select
                             value={hauteurLigne}
                             onChange={(e) => onHauteurChange(Number(e.target.value))}
-                            className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
+                            className="rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-xs text-[var(--color-text-secondary)]"
+                            style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}
                         >
                             {PRESETS_HAUTEUR.map((p) => (
                                 <option key={p.valeur} value={p.valeur}>{p.label}</option>
@@ -971,6 +977,9 @@ export function DataTable<T>({
     // --- Animer seulement les petits datasets ---
     const animerLignes = donneesFiltrees.length <= 50;
 
+    // --- Détection petit écran pour vue carte ---
+    const estPetitEcran = useMediaQuery('(max-width: 479px)');
+
     // --- Largeur totale du tableau ---
     const largeurTotale = useMemo(() => {
         return colonnesVisibles.reduce((sum, col) => sum + (largeursColonnes.get(col.key) ?? col.size ?? 150), 0);
@@ -979,7 +988,7 @@ export function DataTable<T>({
     const limits = [10, 20, 50, 100];
 
     return (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm">
             {/* Barre d'outils */}
             <BarreOutils
                 recherche={recherche}
@@ -1015,6 +1024,8 @@ export function DataTable<T>({
                 {/* Sentinel pour détecter le scroll */}
                 {stickyHeader && <div ref={sentinelRef} className="h-0 w-0" />}
 
+                {/* VUE TABLEAU — écrans >= 480px */}
+                {!estPetitEcran && (
                 <table
                     className="w-full text-left text-sm"
                     style={{ minWidth: largeurTotale, tableLayout: 'fixed' }}
@@ -1113,22 +1124,47 @@ export function DataTable<T>({
                         )}
                     </tbody>
                 </table>
+                )}
+
+                {/* VUE CARTE — écrans < 480px */}
+                {estPetitEcran && !isLoading && donneesFiltrees.length > 0 && (
+                    <div className="flex flex-col gap-[var(--gap-sm)] p-[var(--padding-modal-body)]">
+                        {donneesFiltrees.map((item, index) => (
+                            <div
+                                key={getRowId?.(item, index) || index}
+                                className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-[clamp(0.75rem,0.6rem+0.4vw,1rem)]"
+                            >
+                                {colonnesVisibles.map((col) => (
+                                    <div key={col.key} className="flex flex-col gap-[var(--gap-xxs)] py-[var(--space-xxs)]">
+                                        <span className="text-xs font-medium text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
+                                            {col.header}
+                                        </span>
+                                        <div className="text-sm text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                                            {col.render ? col.render(item, index) : (item as any)[col.key]}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
                 </SortableContext>
             </DndContext>
 
             {/* Pagination */}
             {paginationNormalisee && (
-                <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
-                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                        <span>
+                <div className="flex flex-wrap items-center justify-between gap-[var(--gap-md)] border-t border-[var(--color-bordure)]" style={{ padding: 'var(--padding-pagination)' }}>
+                    <div className="flex flex-wrap items-center gap-[var(--gap-sm)] text-sm text-[var(--color-text-secondary)]">
+                        <span style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>
                             {t('pagination.resultats', { total: paginationNormalisee.total })}
                         </span>
                         {paginationNormalisee.onLimitChange && (
                             <select
                                 value={paginationNormalisee.limit}
                                 onChange={(e) => paginationNormalisee.onLimitChange!(Number(e.target.value))}
-                                className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-sm"
+                                className="rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-sm"
+                                style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}
                             >
                                 {limits.map((limit) => (
                                     <option key={limit} value={limit}>
@@ -1139,22 +1175,22 @@ export function DataTable<T>({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.5rem)]">
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            icon={<ChevronsLeft className="h-4 w-4" />}
+                            icon={<ChevronsLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                             onClick={() => paginationNormalisee.onPageChange?.(1)}
                             disabled={!paginationNormalisee.hasPrev}
                         />
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            icon={<ChevronLeft className="h-4 w-4" />}
+                            icon={<ChevronLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                             onClick={() => paginationNormalisee.onPageChange?.(paginationNormalisee.page - 1)}
                             disabled={!paginationNormalisee.hasPrev}
                         />
-                        <span className="px-3 text-sm text-[var(--color-text-secondary)]">
+                        <span className="px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] text-sm text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>
                             {t('pagination.pageSur', {
                                 page: paginationNormalisee.page,
                                 total: paginationNormalisee.totalPages,
@@ -1163,14 +1199,14 @@ export function DataTable<T>({
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            icon={<ChevronRight className="h-4 w-4" />}
+                            icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                             onClick={() => paginationNormalisee.onPageChange?.(paginationNormalisee.page + 1)}
                             disabled={!paginationNormalisee.hasNext}
                         />
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            icon={<ChevronsRight className="h-4 w-4" />}
+                            icon={<ChevronsRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                             onClick={() => paginationNormalisee.onPageChange?.(paginationNormalisee.totalPages)}
                             disabled={!paginationNormalisee.hasNext}
                         />

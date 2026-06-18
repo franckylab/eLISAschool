@@ -35,3 +35,8 @@ export { useEtablissementSelection } from './use-etablissement-selection';
 
 // Gestion de session et expiration
 export { useSessionExpired } from './use-session-expired';
+
+// Ultra-responsivité (100px → 2560px)
+export { useMediaQuery } from './use-media-query';
+export { useBreakpoint } from './use-breakpoint';
+export type { BreakpointName, BreakpointResult } from './use-breakpoint';

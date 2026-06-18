@@ -281,13 +281,18 @@ function genererPalette(dominante: string): {
 
 ---
 
-## 6. Système de Responsivité (9+ Niveaux)
+## 6. Système d'Ultra-Responsivité (11 Niveaux: 100px → 2560px)
 
-### 6.1 Breakpoints
+### ⚠️ OBLIGATOIRE — TOUS les composants DOivent être ultra-responsifs
+
+**Règle d'or** : Chaque composant UI (modal, bouton, tableau, formulaire, card) DOIT s'adapter de **100px à 2560px** sans cassure visuelle.
+
+### 6.1 Breakpoints (11 niveaux)
 
 | Niveau | Nom | Largeur | Usage |
 |--------|-----|---------|-------|
-| 1 | `2xs` | 200-319px | Montres connectées, mini-écrans |
+| 0 | `xxs` | 100-199px | Montres connectées, mini-écrans |
+| 1 | `2xs` | 200-319px | Très petits téléphones |
 | 2 | `xs` | 320-479px | Petits téléphones |
 | 3 | `sm` | 480-639px | Téléphones standards |
 | 4 | `md` | 640-767px | Grandes phablettes |
@@ -298,67 +303,166 @@ function genererPalette(dominante: string): {
 | 9 | `4xl` | 1920-2559px | Grands écrans |
 | 10 | `5xl` | 2560px+ | Écrans 4K+ |
 
-### 6.2 Tailwind Config
-
-```typescript
-// tailwind.config.ts
-export default {
-    theme: {
-        screens: {
-            '2xs': '200px',
-            'xs': '320px',
-            'sm': '480px',
-            'md': '640px',
-            'lg': '768px',
-            'xl': '1024px',
-            '2xl': '1280px',
-            '3xl': '1536px',
-            '4xl': '1920px',
-            '5xl': '2560px',
-        },
-    },
-}
-```
-
-### 6.3 Ajustements Proportionnels
-
-**TOUS les éléments** s'ajustent proportionnellement :
+### 6.2 Configuration Tailwind (globals.css)
 
 ```css
-/* Texte : clamp() pour fluidité */
+/* Dans @theme de globals.css */
+--breakpoint-xxs: 100px;
+--breakpoint-2xs: 200px;
+--breakpoint-xs: 320px;
+--breakpoint-sm: 480px;
+--breakpoint-md: 640px;
+--breakpoint-lg: 768px;
+--breakpoint-xl: 1024px;
+--breakpoint-2xl: 1280px;
+--breakpoint-3xl: 1536px;
+--breakpoint-4xl: 1920px;
+--breakpoint-5xl: 2560px;
+```
+
+### 6.3 Variables CSS clamp() — OBLIGATOIRES
+
+**TOUS les éléments dimensionnels** DOIVENT utiliser `clamp()` via des variables CSS :
+
+```css
+/* Dans :root de globals.css */
+
+/* Tailles de police fluides */
 --text-xs: clamp(0.625rem, 0.58rem + 0.2vw, 0.75rem);
 --text-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
 --text-base: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
 --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
 --text-xl: clamp(1.125rem, 1rem + 0.6vw, 1.25rem);
---text-2xl: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem);
---text-3xl: clamp(1.5rem, 1.2rem + 1.5vw, 1.875rem);
---text-4xl: clamp(1.875rem, 1.5rem + 2vw, 2.25rem);
 
-/* Icônes proportionnelles */
---icon-sm: clamp(14px, 12px + 0.5vw, 16px);
---icon-md: clamp(18px, 16px + 0.5vw, 20px);
---icon-lg: clamp(22px, 20px + 0.5vw, 24px);
-
-/* Boutons proportionnels */
---btn-height-sm: clamp(28px, 26px + 0.5vw, 32px);
---btn-height-md: clamp(34px, 32px + 0.5vw, 38px);
---btn-height-lg: clamp(40px, 38px + 0.5vw, 44px);
-
-/* Espacements proportionnels */
+/* Espacements fluides */
+--space-xxs: clamp(0.125rem, 0.1rem + 0.1vw, 0.25rem);
 --space-xs: clamp(0.25rem, 0.2rem + 0.2vw, 0.5rem);
 --space-sm: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
 --space-md: clamp(0.75rem, 0.6rem + 0.5vw, 1rem);
 --space-lg: clamp(1rem, 0.8rem + 0.7vw, 1.5rem);
 --space-xl: clamp(1.5rem, 1.2rem + 1vw, 2.5rem);
+
+/* Padding composants */
+--padding-modal-header: clamp(0.5rem, 0.4rem + 0.3vw, 1rem);
+--padding-modal-body: clamp(0.75rem, 0.6rem + 0.5vw, 1.5rem);
+--padding-table-cell: clamp(0.375rem, 0.25rem + 0.4vw, 1rem);
+--padding-toolbar: clamp(0.375rem, 0.25rem + 0.3vw, 0.75rem);
+
+/* Tailles d'icônes fluides */
+--icon-xxs: clamp(0.625rem, 0.5rem + 0.3vw, 0.875rem);
+--icon-xs: clamp(0.75rem, 0.65rem + 0.3vw, 1rem);
+--icon-sm: clamp(0.875rem, 0.75rem + 0.4vw, 1.125rem);
+--icon-md: clamp(1rem, 0.85rem + 0.5vw, 1.25rem);
+--icon-lg: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem);
+
+/* Border-radius fluides */
+--radius-sm: clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem);
+--radius-md: clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem);
+--radius-lg: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
+--radius-xl: clamp(0.625rem, 0.5rem + 0.4vw, 1rem);
+
+/* Gaps fluides */
+--gap-xs: clamp(0.25rem, 0.2rem + 0.15vw, 0.5rem);
+--gap-sm: clamp(0.375rem, 0.3rem + 0.2vw, 0.625rem);
+--gap-md: clamp(0.5rem, 0.4rem + 0.3vw, 0.875rem);
+--gap-lg: clamp(0.75rem, 0.6rem + 0.4vw, 1.25rem);
 ```
 
-### 6.4 Hook useMediaQuery
+### 6.4 Pattern d'Utilisation clamp()
+
+**Dans les composants** :
+
+```tsx
+// ✅ CORRECT — Utiliser variables CSS
+<div className="px-[var(--padding-modal-header)] gap-[var(--gap-md)]">
+  <h1 style={{ fontSize: 'clamp(1rem, 0.9rem + 0.5vw, 1.25rem)' }}>Titre</h1>
+  <Icon className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+</div>
+
+// ❌ INTERDIT — Valeurs fixes
+<div className="px-4 gap-2">
+  <h1 className="text-lg">Titre</h1>
+  <Icon className="h-4 w-4" />
+</div>
+```
+
+### 6.5 Hooks de Détection Responsive
+
+#### **useMediaQuery** — Détection de media queries
 
 ```typescript
-const breakpoint = useBreakpoint();
-// Retourne: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
+import { useMediaQuery } from '@/hooks';
+
+const estMobile = useMediaQuery('(max-width: 479px)');
+const estTablette = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+
+// Usage conditionnel
+{estMobile ? <VueCarte /> : <VueTableau />}
 ```
+
+#### **useBreakpoint** — Logique conditionnelle avancée
+
+```typescript
+import { useBreakpoint } from '@/hooks';
+
+const bp = useBreakpoint();
+
+// Propriétés booléennes
+if (bp.isMobile) { /* < 768px */ }
+if (bp.isTablet) { /* 768px - 1023px */ }
+if (bp.isDesktop) { /* 1280px - 1919px */ }
+if (bp.is4K) { /* >= 2560px */ }
+
+// Méthodes
+if (bp.isAtLeast('lg')) { /* >= 768px */ }
+if (bp.isAtMost('md')) { /* <= 640px */ }
+
+// Breakpoint actuel
+console.log(bp.current); // 'sm', 'md', 'lg', etc.
+console.log(bp.width); // largeur actuelle en px
+```
+
+### 6.6 Transformation Structurelle (Tableau → Carte)
+
+**Sur très petits écrans (< 480px)**, transformer les tableaux en cartes verticales :
+
+```tsx
+const estPetitEcran = useMediaQuery('(max-width: 479px)');
+
+// Vue tableau (écrans >= 480px)
+{!estPetitEcran && (
+  <table>...</table>
+)}
+
+// Vue carte (écrans < 480px)
+{estPetitEcran && (
+  <div className="flex flex-col gap-[var(--gap-sm)]">
+    {data.map(item => (
+      <div className="rounded-[var(--radius-lg)] border p-[clamp(0.75rem,0.6rem+0.4vw,1rem)]">
+        {colonnes.map(col => (
+          <div key={col.key}>
+            <span className="text-xs font-medium">{col.header}</span>
+            <div>{col.render(item)}</div>
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+)}
+```
+
+### 6.7 Checklist Ultra-Responsivité
+
+**Avant de valider un composant** :
+- [ ] Tous les paddings utilisent `clamp()` ou `var(--padding-*)`
+- [ ] Tous les gaps utilisent `var(--gap-*)`
+- [ ] Toutes les tailles d'icônes utilisent `var(--icon-*)` ou `clamp()`
+- [ ] Tous les font-size utilisent `clamp()` ou variables texte
+- [ ] Tous les border-radius utilisent `var(--radius-*)`
+- [ ] Testé visuellement sur 3 tailles minimum (320px, 768px, 1920px)
+- [ ] Pas de débordement horizontal sur mobile
+- [ ] Texte lisible sans zoom sur 320px
+- [ ] Boutons assez grands pour le tactile (min 44x44px)
 
 ---
 
@@ -999,6 +1103,161 @@ interface ElisaTabsProps {
     animation?: boolean;
 }
 ```
+
+---
+
+## 21.3 Composants Ultra-Responsifs de Référence
+
+**Ces composants sont les exemples de référence** pour l'ultra-responsivité. **TOUJOURS** s'en inspirer.
+
+### **CustomModal** — Modal ultra-responsif
+
+**Fichier** : `frontend/src/components/modals/CustomModal.tsx`
+
+```tsx
+// ✅ Pattern de référence
+<DialogPrimitive.Content
+    className="fixed z-50 border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-2xl flex flex-col"
+    style={{
+        width: 'clamp(280px, 90vw, 672px)',
+        maxHeight: 'clamp(200px, 85vh, 90vh)',
+        borderRadius: 'var(--radius-xl)',
+    }}
+>
+    {/* Header avec padding et font responsifs */}
+    <div className="px-[var(--padding-modal-header)] py-[clamp(0.5rem,0.4rem+0.2vw,0.75rem)]">
+        <DialogPrimitive.Title 
+            style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.125rem)' }}
+        >
+            {title}
+        </DialogPrimitive.Title>
+    </div>
+
+    {/* Body */}
+    <div style={{ padding: 'var(--padding-modal-body)' }}>{children}</div>
+
+    {/* Footer avec gap responsive */}
+    <div className="flex items-center justify-end gap-[var(--gap-md)]" 
+         style={{ padding: 'var(--padding-modal-footer)' }}>
+        {footer}
+    </div>
+</DialogPrimitive.Content>
+```
+
+**Points clés** :
+- Largeur adaptative : `clamp(280px, 90vw, 672px)`
+- Hauteur max : `clamp(200px, 85vh, 90vh)`
+- Tous les paddings via variables CSS
+- Tous les font-size via `clamp()`
+- Icônes responsives : `h-[var(--icon-sm)] w-[var(--icon-sm)]`
+
+### **DataTable** — Tableau avec transformation carte
+
+**Fichier** : `frontend/src/components/ui/DataTable.tsx`
+
+```tsx
+// Détection petit écran
+const estPetitEcran = useMediaQuery('(max-width: 479px)');
+
+// Barre d'outils responsive
+<div className="flex flex-wrap items-center gap-[var(--gap-sm)]" 
+     style={{ padding: 'var(--padding-toolbar)' }}>
+    <div style={{ minWidth: 'clamp(120px, 30vw, 384px)' }}>
+        <Search className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+        <input style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }} />
+    </div>
+</div>
+
+// En-têtes responsifs
+<th>
+    <div style={{ padding: 'var(--padding-table-cell)' }}>
+        <span style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>
+            {col.header}
+        </span>
+        <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+    </div>
+</th>
+
+// Vue conditionnelle
+{!estPetitEcran && <table>/* rendu tableau */</table>}
+
+{estPetitEcran && (
+    <div className="flex flex-col gap-[var(--gap-sm)]">
+        {data.map(item => (
+            <div className="rounded-[var(--radius-lg)] border p-[clamp(0.75rem,0.6rem+0.4vw,1rem)]">
+                {/* Chaque ligne devient une carte */}
+            </div>
+        ))}
+    </div>
+)}
+```
+
+**Points clés** :
+- Double rendu : tableau >= 480px, cartes < 480px
+- Barre de recherche adaptative : `clamp(120px, 30vw, 384px)`
+- Tous les cells padding via `var(--padding-table-cell)`
+- Pagination adaptative : boutons `clamp()`
+
+### **ElisaButton** — Bouton ultra-responsif
+
+**Fichier** : `frontend/src/components/ui/ElisaButton.tsx`
+
+```tsx
+// Variantes avec clamp() sur heights et paddings
+const buttonVariants = cva('inline-flex items-center justify-center', {
+    variants: {
+        size: {
+            xs: 'h-[clamp(1.5rem,1.25rem+0.5vw,1.75rem)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)]',
+            sm: 'h-[clamp(1.75rem,1.5rem+0.5vw,2rem)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)]',
+            md: 'h-[clamp(2rem,1.75rem+0.5vw,2.5rem)] px-[clamp(0.625rem,0.5rem+0.4vw,1rem)]',
+            lg: 'h-[clamp(2.5rem,2.25rem+0.5vw,3rem)] px-[clamp(0.875rem,0.75rem+0.5vw,1.5rem)]',
+            xl: 'h-[clamp(3rem,2.75rem+0.5vw,3.5rem)] px-[clamp(1.25rem,1rem+0.75vw,2rem)]',
+        },
+    },
+});
+
+// Icônes responsives par taille
+const iconSize = {
+    xs: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)',
+    sm: 'clamp(0.875rem, 0.75rem + 0.4vw, 1rem)',
+    md: 'clamp(1rem, 0.85rem + 0.5vw, 1.125rem)',
+    lg: 'clamp(1.125rem, 1rem + 0.5vw, 1.25rem)',
+    xl: 'clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem)',
+}[size];
+```
+
+**Points clés** :
+- Heights responsives par taille
+- Paddings adaptatifs
+- Icônes dimensionnées par `clamp()`
+- Gap via `var(--gap-sm)`
+
+### **ConfirmationModal** — Modal de confirmation
+
+**Fichier** : `frontend/src/components/ui/ConfirmationModal.tsx`
+
+```tsx
+// Icône adaptative
+<div className="rounded-[var(--radius-lg)]" style={{ padding: 'var(--space-md)' }}>
+    <AlertCircle className="h-[var(--icon-lg)] w-[var(--icon-lg)]" />
+</div>
+
+// Titre et message responsifs
+<h3 style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}>{title}</h3>
+<p style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>{message}</p>
+
+// Détails conditionnels
+{details && (
+    <div className="rounded-[var(--radius-md)]" style={{ padding: 'var(--space-md)' }}>
+        <p style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>{details}</p>
+    </div>
+)}
+```
+
+**Points clés** :
+- Icône alerte responsive
+- Textes avec `clamp()`
+- Gaps et paddings via variables CSS
 
 ---
 
@@ -2003,7 +2262,16 @@ function NotFoundPage() {
 - [ ] Props typées avec interface nommée
 - [ ] Utilisation de Tailwind CSS (pas de CSS custom)
 - [ ] Couleurs via variables CSS (`var(--color-*)`)
-- [ ] Responsive (testé sur au moins 3 breakpoints)
+- [ ] **Ultra-Responsif** : Testé sur 3 breakpoints minimum (320px, 768px, 1920px)
+- [ ] **Ultra-Responsif** : Tous les paddings utilisent `clamp()` ou `var(--padding-*)`
+- [ ] **Ultra-Responsif** : Tous les gaps utilisent `var(--gap-*)`
+- [ ] **Ultra-Responsif** : Toutes les tailles d'icônes utilisent `var(--icon-*)` ou `clamp()`
+- [ ] **Ultra-Responsif** : Tous les font-size utilisent `clamp()` ou variables texte
+- [ ] **Ultra-Responsif** : Tous les border-radius utilisent `var(--radius-*)`
+- [ ] **Ultra-Responsif** : Pas de débordement horizontal sur mobile
+- [ ] **Ultra-Responsif** : Texte lisible sans zoom sur 320px
+- [ ] **Ultra-Responsif** : Boutons assez grands pour le tactile (min 44x44px)
+- [ ] **Ultra-Responsif** : Transformation structurelle sur < 480px si nécessaire (tableau → carte)
 - [ ] Accessible (aria-labels, focus visible, contraste)
 - [ ] Navigation clavier supportée
 - [ ] Animation Framer Motion (hover, transition)

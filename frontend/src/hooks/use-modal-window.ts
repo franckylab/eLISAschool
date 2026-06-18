@@ -100,8 +100,16 @@ export interface UseModalWindowResult {
     resizeHandleClasses: Record<ResizeDirection, string>;
 }
 
-/** Marge de bord de viewport */
-const VIEWPORT_MARGIN = 20;
+/** Marge de bord de viewport — responsive */
+const getViewportMargin = () => {
+    if (typeof window === 'undefined') return 20;
+    const vw = window.innerWidth;
+    // Plus petit sur petits écrans
+    if (vw < 480) return 8;
+    if (vw < 768) return 12;
+    if (vw < 1024) return 16;
+    return 20;
+};
 
 /** Hauteur minimale quand minimisé (barre de titre seulement) */
 const MINIMIZED_HEIGHT = 48;
@@ -119,15 +127,22 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
     const computeInitialPosition = useCallback((): Position => {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
+        const margin = getViewportMargin();
+        // Sur petits écrans, modal occupe presque tout l'écran
+        const adaptedWidth = vw < 480 ? vw - margin * 2 : initialWidth;
+        const adaptedHeight = vw < 480 ? Math.min(vh - margin * 2, initialHeight) : initialHeight;
         return {
-            x: Math.max(VIEWPORT_MARGIN, (vw - initialWidth) / 2),
-            y: Math.max(VIEWPORT_MARGIN, (vh - initialHeight) / 2),
+            x: Math.max(margin, (vw - adaptedWidth) / 2),
+            y: Math.max(margin, (vh - adaptedHeight) / 2),
         };
     }, [initialWidth, initialHeight]);
 
     const [state, setState] = useState<ModalWindowState>(initialState);
     const [position, setPosition] = useState<Position>(computeInitialPosition);
-    const [size, setSize] = useState<Size>({ width: initialWidth, height: initialHeight });
+    const initialWidthAdapted = typeof window !== 'undefined' && window.innerWidth < 480
+        ? window.innerWidth - getViewportMargin() * 2
+        : initialWidth;
+    const [size, setSize] = useState<Size>({ width: initialWidthAdapted, height: initialHeight });
 
     // Sauvegarde avant maximize/minimize
     const previousRef = useRef<PreviousState | null>(null);
@@ -146,14 +161,23 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
     const posResizeStart = useRef<Position>({ x: 0, y: 0 });
 
     // ─── Constraints ───────────────────────────────────────────
-    const getMaxWidth = useCallback(() => options.maxWidth ?? window.innerWidth - VIEWPORT_MARGIN * 2, [options.maxWidth]);
-    const getMaxHeight = useCallback(() => options.maxHeight ?? window.innerHeight - VIEWPORT_MARGIN * 2, [options.maxHeight]);
+    const getMaxWidth = useCallback(() => {
+        const margin = getViewportMargin();
+        return options.maxWidth ?? window.innerWidth - margin * 2;
+    }, [options.maxWidth]);
+    const getMaxHeight = useCallback(() => {
+        const margin = getViewportMargin();
+        return options.maxHeight ?? window.innerHeight - margin * 2;
+    }, [options.maxHeight]);
 
     // ─── Clamp position dans le viewport ───────────────────────
-    const clampPosition = useCallback((pos: Position, sz: Size): Position => ({
-        x: Math.max(VIEWPORT_MARGIN, Math.min(pos.x, window.innerWidth - sz.width - VIEWPORT_MARGIN)),
-        y: Math.max(VIEWPORT_MARGIN, Math.min(pos.y, window.innerHeight - sz.height - VIEWPORT_MARGIN)),
-    }), []);
+    const clampPosition = useCallback((pos: Position, sz: Size): Position => {
+        const margin = getViewportMargin();
+        return {
+            x: Math.max(margin, Math.min(pos.x, window.innerWidth - sz.width - margin)),
+            y: Math.max(margin, Math.min(pos.y, window.innerHeight - sz.height - margin)),
+        };
+    }, []);
 
     // ─── DRAG : handlers ───────────────────────────────────────
     const onHeaderMouseDown = useCallback((e: React.MouseEvent) => {
@@ -180,6 +204,7 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
     // ─── Toggle maximize ────────────────────────────────────────
     const toggleMaximize = useCallback(() => {
         if (state === 'minimized') return;
+        const margin = getViewportMargin();
         if (state === 'maximized') {
             // Restaurer
             if (previousRef.current) {
@@ -190,10 +215,10 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
         } else {
             // Sauvegarder et maximiser
             previousRef.current = { position: { ...position }, size: { ...size } };
-            setPosition({ x: VIEWPORT_MARGIN, y: VIEWPORT_MARGIN });
+            setPosition({ x: margin, y: margin });
             setSize({
-                width: window.innerWidth - VIEWPORT_MARGIN * 2,
-                height: window.innerHeight - VIEWPORT_MARGIN * 2,
+                width: window.innerWidth - margin * 2,
+                height: window.innerHeight - margin * 2,
             });
             setState('maximized');
         }
@@ -210,11 +235,12 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
             setState('normal');
         } else {
             previousRef.current = { position: { ...position }, size: { ...size } };
+            const margin = getViewportMargin();
             // Garder la position X, mais coller en bas et réduire la hauteur
             setSize(prev => ({ ...prev, height: MINIMIZED_HEIGHT }));
             setPosition(prev => ({
                 ...prev,
-                y: window.innerHeight - MINIMIZED_HEIGHT - VIEWPORT_MARGIN,
+                y: window.innerHeight - MINIMIZED_HEIGHT - margin,
             }));
             setState('minimized');
         }

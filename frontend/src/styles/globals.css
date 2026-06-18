@@ -11,8 +11,9 @@
 
 @import 'tailwindcss';
 
-/* ===== Breakpoints personnalisés ===== */
+/* ===== Breakpoints personnalisés (10 niveaux: 100px → 2560px) ===== */
 @theme {
+    --breakpoint-xxs: 100px;
     --breakpoint-2xs: 200px;
     --breakpoint-xs: 320px;
     --breakpoint-sm: 480px;
@@ -105,6 +106,44 @@
         --text-2xl: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem);
         --text-3xl: clamp(1.5rem, 1.2rem + 1.5vw, 1.875rem);
         --text-4xl: clamp(1.875rem, 1.5rem + 2vw, 2.25rem);
+
+        /* Espacements fluides (clamp) */
+        --space-xxs: clamp(0.125rem, 0.1rem + 0.1vw, 0.25rem);
+        --space-xs: clamp(0.25rem, 0.2rem + 0.2vw, 0.5rem);
+        --space-sm: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
+        --space-md: clamp(0.75rem, 0.6rem + 0.5vw, 1rem);
+        --space-lg: clamp(1rem, 0.8rem + 0.7vw, 1.5rem);
+        --space-xl: clamp(1.5rem, 1.2rem + 1vw, 2.5rem);
+        --space-2xl: clamp(2rem, 1.5rem + 1.5vw, 3rem);
+
+        /* Padding fluides pour composants */
+        --padding-modal-header: clamp(0.5rem, 0.4rem + 0.3vw, 1rem);
+        --padding-modal-body: clamp(0.75rem, 0.6rem + 0.5vw, 1.5rem);
+        --padding-modal-footer: clamp(0.5rem, 0.4rem + 0.3vw, 1rem);
+        --padding-table-cell: clamp(0.375rem, 0.25rem + 0.4vw, 1rem);
+        --padding-toolbar: clamp(0.375rem, 0.25rem + 0.3vw, 0.75rem);
+        --padding-pagination: clamp(0.5rem, 0.4rem + 0.3vw, 0.875rem);
+
+        /* Tailles d'icônes fluides */
+        --icon-xxs: clamp(0.625rem, 0.5rem + 0.3vw, 0.875rem);
+        --icon-xs: clamp(0.75rem, 0.65rem + 0.3vw, 1rem);
+        --icon-sm: clamp(0.875rem, 0.75rem + 0.4vw, 1.125rem);
+        --icon-md: clamp(1rem, 0.85rem + 0.5vw, 1.25rem);
+        --icon-lg: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem);
+        --icon-xl: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
+
+        /* Border-radius fluides */
+        --radius-sm: clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem);
+        --radius-md: clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem);
+        --radius-lg: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
+        --radius-xl: clamp(0.625rem, 0.5rem + 0.4vw, 1rem);
+
+        /* Gap fluides */
+        --gap-xs: clamp(0.25rem, 0.2rem + 0.15vw, 0.5rem);
+        --gap-sm: clamp(0.375rem, 0.3rem + 0.2vw, 0.625rem);
+        --gap-md: clamp(0.5rem, 0.4rem + 0.3vw, 0.875rem);
+        --gap-lg: clamp(0.75rem, 0.6rem + 0.4vw, 1.25rem);
+        --gap-xl: clamp(1rem, 0.8rem + 0.6vw, 1.75rem);
     }
 
     /* Mode sombre */

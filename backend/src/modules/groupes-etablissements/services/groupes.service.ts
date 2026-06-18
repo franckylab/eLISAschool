@@ -105,10 +105,11 @@ export class GroupesService {
     ): Promise<{ groupes: GroupeEtablissement[]; total: number }> {
         const offset = (page - 1) * limit;
 
-        // Construire la requête de base
+        // Construire la requête de base AVEC les relations chargées
         let query = this.groupeRepo
             .createQueryBuilder('g')
-            .leftJoin('g.etablissements', 'liens')
+            .leftJoinAndSelect('g.etablissements', 'liens') // ✅ Charger les liens
+            .leftJoin('liens.etablissement', 'etab') // ✅ Joindre établissements (sans select)
             .where('g.actif = :actif', { actif: actif !== undefined ? actif : true });
 
         // Filtrer par accès utilisateur
@@ -131,7 +132,7 @@ export class GroupesService {
 
         // Ajouter les relations nécessaires et la pagination
         const groupes = await query
-            .leftJoinAndSelect('liens.etablissement', 'etab')
+            .addSelect('etab.id') // ✅ Sélectionner juste l'ID pour le comptage
             .leftJoinAndSelect('g.proprietaire', 'proprietaire')
             .orderBy('g.nom', 'ASC')
             .skip(offset)
@@ -208,25 +209,61 @@ export class GroupesService {
 
     /**
      * Supprime un groupe (soft delete via actif=false)
+     * 
+     * Règles métier :
+     * - Seul le propriétaire peut supprimer
+     * - Soft delete : actif=false (pas de suppression physique)
+     * - Libère les établissements (suppression des liens)
+     * - Supprime les admins du groupe
+     * - Invalide le cache
      */
     async deleteGroupe(groupeId: string, utilisateurId: string): Promise<void> {
-        const groupe = await this.groupeRepo.findOne({ where: { id: groupeId } });
-        if (!groupe) {
-            throw new AppError('Groupe non trouvé', 404, 'NOT_FOUND');
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const groupe = await queryRunner.manager.findOne(GroupeEtablissement, { 
+                where: { id: groupeId } 
+            });
+            
+            if (!groupe) {
+                throw new AppError('Groupe non trouvé', 404, 'NOT_FOUND');
+            }
+
+            // Vérifier que c'est le propriétaire
+            if (groupe.proprietaireId !== utilisateurId) {
+                throw new AppError('Vous n\'êtes pas le propriétaire de ce groupe', 403, 'FORBIDDEN');
+            }
+
+            // Vérifier si déjà supprimé
+            if (!groupe.actif) {
+                throw new AppError('Ce groupe est déjà supprimé', 400, 'GROUPE_DEJA_SUPPRIME');
+            }
+
+            // 1. Soft delete du groupe
+            groupe.actif = false;
+            await queryRunner.manager.save(GroupeEtablissement, groupe);
+
+            // 2. Supprimer tous les liens établissements (libère les établissements)
+            await queryRunner.manager.delete(GroupeEtablissementLien, { groupeId });
+            
+            // 3. Supprimer tous les admins du groupe
+            await queryRunner.manager.delete(GroupeAdmin, { groupeId });
+
+            await queryRunner.commitTransaction();
+
+            // 4. Invalider le cache (après commit)
+            await this.invalidateGroupeCache(groupeId);
+
+            logger.info(`Groupe supprimé (soft): ${groupeId} par ${utilisateurId}`);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`Erreur suppression groupe ${groupeId}: ${error}`);
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
-
-        // Vérifier que c'est le propriétaire
-        if (groupe.proprietaireId !== utilisateurId) {
-            throw new AppError('Vous n\'êtes pas le propriétaire de ce groupe', 403, 'FORBIDDEN');
-        }
-
-        groupe.actif = false;
-        await this.groupeRepo.save(groupe);
-
-        // Invalider le cache
-        await this.invalidateGroupeCache(groupeId);
-
-        logger.info(`Groupe supprimé (soft): ${groupeId} par ${utilisateurId}`);
     }
 
     // ==================================
@@ -271,6 +308,7 @@ export class GroupesService {
 
     /**
      * Version transactionnelle pour usage interne
+     * Règle métier : un établissement ne peut appartenir qu'à UN SEUL groupe
      */
     private async addEtablissementsTransaction(
         manager: EntityManager,
@@ -278,13 +316,32 @@ export class GroupesService {
         etablissementIds: string[],
         ajoutePar: string
     ): Promise<void> {
-        // Vérifier les liens existants pour éviter les doublons
-        const existingLiens = await manager.find(GroupeEtablissementLien, {
+        // 1. Vérifier si les établissements appartiennent déjà à un AUTRE groupe
+        const allLiens = await manager.find(GroupeEtablissementLien, {
+            where: { etablissementId: In(etablissementIds) },
+        });
+        
+        // Filtrer les établissements qui appartiennent à un autre groupe
+        const etablissementsDansAutreGroupe = allLiens
+            .filter(l => l.groupeId !== groupeId)
+            .map(l => l.etablissementId);
+        
+        if (etablissementsDansAutreGroupe.length > 0) {
+            const etabIds = [...new Set(etablissementsDansAutreGroupe)].slice(0, 3).join(', ');
+            throw new AppError(
+                `Ces établissements appartiennent déjà à un autre groupe : ${etabIds}${etablissementsDansAutreGroupe.length > 3 ? '...' : ''}`,
+                409,
+                'ETABLISSEMENT_DEJA_DANS_GROUPE'
+            );
+        }
+        
+        // 2. Vérifier les liens existants dans CE groupe pour éviter les doublons
+        const existingLiensCeGroupe = await manager.find(GroupeEtablissementLien, {
             where: { groupeId, etablissementId: In(etablissementIds) },
             select: ['etablissementId'],
         });
         
-        const existingIds = new Set(existingLiens.map(l => l.etablissementId));
+        const existingIds = new Set(existingLiensCeGroupe.map(l => l.etablissementId));
         const newIds = etablissementIds.filter(id => !existingIds.has(id));
         
         if (newIds.length === 0) {

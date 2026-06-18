@@ -80,6 +80,7 @@ export function useGroupesEtablissements(filtres: GroupeEtablissementFiltres = {
 
 /**
  * Hook pour récupérer les établissements disponibles (pour sélection)
+ * Exclut les établissements déjé assignés à un groupe
  */
 export function useEtablissementsDisponibles() {
     const { isAuthenticated } = useAuthStore();
@@ -96,6 +97,85 @@ export function useEtablissementsDisponibles() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+    });
+}
+
+/**
+ * Hook pour récupérer les IDs des établissements déjé assignés à un groupe
+ */
+export function useEtablissementsAssignesIds(groupeId: string, enabled: boolean = true) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: ['groupes-etablissements', 'etablissements-assignes-ids', groupeId],
+        queryFn: async () => {
+            const response = await apiClient.get<any[]>(
+                `/api/groupes-etablissements/${groupeId}/etablissements`
+            );
+            const etablissements = response.data || [];
+            return new Set(etablissements.map((e: any) => e.id));
+        },
+        enabled: isAuthenticated && !!groupeId && enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+/**
+ * Hook pour récupérer TOUS les IDs d'établissements assignés à N'IMPORTE QUEL groupe
+ * Utilisé pour filtrer la liste globale des établissements disponibles
+ * 
+ * Performance : Charge uniquement les groupes actifs et utilise Promise.allSettled
+ */
+export function useTousEtablissementsAssignesIds() {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: ['groupes-etablissements', 'tous-etablissements-assignes-ids'],
+        queryFn: async () => {
+            // Charger uniquement les groupes actifs
+            const response = await apiClient.get<any>(
+                '/api/groupes-etablissements',
+                { page: 1, limit: 1000, actif: true }
+            );
+            
+            // response.data = tableau des groupes
+            const groupes = response?.data || [];
+            
+            console.log('[useTousEtablissementsAssignesIds] Groupes actifs chargés:', groupes.length);
+            
+            // Charger TOUS les établissements en parallèle (plus performant)
+            const results = await Promise.allSettled(
+                groupes.map(async (groupe: any) => {
+                    const etabResponse = await apiClient.get<any[]>(
+                        `/api/groupes-etablissements/${groupe.id}/etablissements`
+                    );
+                    return {
+                        groupeNom: groupe.nom,
+                        etablissements: etabResponse?.data || [],
+                    };
+                })
+            );
+            
+            // Agréger tous les IDs
+            const allAssignedIds = new Set<string>();
+            
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    const { groupeNom, etablissements } = result.value;
+                    console.log(`[useTousEtablissementsAssignesIds] ${groupeNom}: ${etablissements.length} établissements`);
+                    etablissements.forEach((e: any) => allAssignedIds.add(e.id));
+                } else {
+                    console.warn(`[useTousEtablissementsAssignesIds] Erreur chargement groupe ${index}:`, result.reason);
+                }
+            });
+            
+            console.log('[useTousEtablissementsAssignesIds] Total IDs assignés:', allAssignedIds.size);
+            
+            return allAssignedIds;
+        },
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000, // 5 min
+        retry: 2, // Retry 2 fois en cas d'erreur
     });
 }
 
@@ -180,6 +260,8 @@ export function useCreerGroupeEtablissement() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.lists() });
+            // Invalider la liste des établissements assignés
+            queryClient.invalidateQueries({ queryKey: ['groupes-etablissements', 'tous-etablissements-assignes-ids'] });
             toast.success(t('messages.creationSucces'));
         },
         onError: (error: any) => {
@@ -224,6 +306,8 @@ export function useSupprimerGroupeEtablissement() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.lists() });
+            // Invalider la liste des établissements assignés
+            queryClient.invalidateQueries({ queryKey: ['groupes-etablissements', 'tous-etablissements-assignes-ids'] });
             toast.success(t('messages.suppressionSucces'));
         },
         onError: (error: any) => {
@@ -247,6 +331,8 @@ export function useAjouterEtablissement() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.detail(variables.groupeId) });
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.lists() });
+            // Invalider aussi la liste des établissements assignés pour rafraîchir les filtres
+            queryClient.invalidateQueries({ queryKey: ['groupes-etablissements', 'tous-etablissements-assignes-ids'] });
             toast.success(t('messages.creationSucces'));
         },
         onError: (error: any) => {
@@ -267,6 +353,8 @@ export function useRetirerEtablissement() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.detail(variables.groupeId) });
             queryClient.invalidateQueries({ queryKey: GROUPES_ETABLISSEMENTS_KEYS.lists() });
+            // Invalider aussi la liste des établissements assignés pour rafraîchir les filtres
+            queryClient.invalidateQueries({ queryKey: ['groupes-etablissements', 'tous-etablissements-assignes-ids'] });
             toast.success(t('messages.suppressionSucces'));
         },
         onError: (error: any) => {
