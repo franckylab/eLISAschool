@@ -318,7 +318,7 @@ export function createApp(): Application {
     app.use('/api/monitoring', authMiddleware, requireModuleActive('monitoring'), monitoringController); // Monitoring peut être global
     app.use('/api/dashboard', authMiddleware, requireModuleActive('dashboard'), filterByEtablissement(), dashboardController);
     app.use('/api/validation-workflows', authMiddleware, filterByEtablissement(), validationWorkflowController);
-    app.use('/api/groupes', authMiddleware, filterByEtablissement(), groupesController);
+    app.use('/api/groupes-etablissements', authMiddleware, filterByEtablissement(), groupesController);
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     
     // Module organisation (critique - toujours actif avec filtrage)

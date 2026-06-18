@@ -87,16 +87,12 @@ export function useEtablissementsDisponibles() {
     return useQuery({
         queryKey: ['etablissements', 'disponibles'],
         queryFn: async () => {
-            const response = await apiClient.get<{
-                success: boolean;
-                data: Array<{ id: string; nom: string; code: string }>;
-            }>('/api/etablissements', { limit: 100 });
-            
-            console.log('[EtablissementsDebug] response:', response);
-            console.log('[EtablissementsDebug] response.data:', (response as any)?.data);
-            
-            // RÉALITÉ: apiClient.get retourne DIRECTEMENT {success, data}
-            return (response as any)?.data || [];
+            // Backend: res.json({ success: true, data: etablissements[] })
+            // apiClient.get retourne ApiResponse<T>, donc response.data = T = etablissements[]
+            const response = await apiClient.get<Array<{ id: string; nom: string; code: string }>>(
+                '/api/etablissements'
+            );
+            return response.data || [];
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
@@ -112,35 +108,33 @@ export function useUtilisateursDisponibles() {
     return useQuery({
         queryKey: ['utilisateurs', 'disponibles', 'admins'],
         queryFn: async () => {
-            // Récupérer tous les utilisateurs avec pagination (max 100 par page)
+            // Backend: res.json({ success: true, data: {items: [...], meta: {...}} })
+            // apiClient.get retourne ApiResponse<PaginatedResult<User>>
+            // Donc response.data = PaginatedResult<User> = {items: [...], meta: {...}}
             const allUsers: any[] = [];
             let page = 1;
             let hasMore = true;
             
             while (hasMore) {
                 const response = await apiClient.get<{
-                    success: boolean;
-                    data: any[];
-                    pagination?: { total: number; page: number; limit: number };
+                    items: any[];
+                    meta: { totalItems: number; currentPage: number; itemsPerPage: number; totalPages: number };
                 }>('/api/utilisateurs', { 
                     limit: 100, 
                     page,
                     role: 'ADMIN,CHEF_ETABLISSEMENT,DIRECTEUR,SUPER_ADMIN' 
                 });
                 
-                // RÉALITÉ: response = {success, data, pagination} directement
-                const users = (response as any)?.data || [];
-                const pagination = (response as any)?.pagination;
-                
-                console.log('[UtilisateursDebug] page:', page, 'response:', response);
-                console.log('[UtilisateursDebug] users extraits:', users);
-                console.log('[UtilisateursDebug] pagination:', pagination);
+                // response.data = {items: [...], meta: {...}}
+                const paginatedResult = response.data;
+                const users = paginatedResult?.items || [];
+                const meta = paginatedResult?.meta;
                 
                 allUsers.push(...users);
-                hasMore = pagination ? (pagination.page * pagination.limit) < pagination.total : false;
+                
+                hasMore = meta ? meta.currentPage < meta.totalPages : false;
                 page++;
                 
-                // Sécurité : max 10 pages (1000 utilisateurs)
                 if (page > 10) break;
             }
             
@@ -157,17 +151,15 @@ export function useGroupeEtablissementDetail(id: string) {
     return useQuery({
         queryKey: GROUPES_ETABLISSEMENTS_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: GroupeEtablissement }>(
+            const response = await apiClient.get<GroupeEtablissement>(
                 `/api/groupes-etablissements/${id}`
             );
 
-            // RÉALITÉ: response = {success, data} directement
-            const groupe = (response as any)?.data;
-            if (!groupe) {
+            if (!response.data) {
                 throw new Error('Groupe d\'établissements non trouvé');
             }
 
-            return groupe as GroupeEtablissement;
+            return response.data;
         },
         enabled: isAuthenticated && !!id,
         staleTime: 10 * 60 * 1000,
@@ -292,11 +284,11 @@ export function useListerEtablissementsGroupe(groupeId: string, enabled: boolean
     return useQuery({
         queryKey: [...GROUPES_ETABLISSEMENTS_KEYS.details(), groupeId, 'etablissements'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any[] }>(
+            // Backend groupes: res.json({ success: true, data: [...] })
+            const response = await apiClient.get<any[]>(
                 `/api/groupes-etablissements/${groupeId}/etablissements`
             );
-            // RÉALITÉ: response = {success, data} directement
-            return (response as any)?.data || [];
+            return response.data || [];
         },
         enabled: isAuthenticated && !!groupeId && enabled,
         staleTime: 5 * 60 * 1000,
@@ -309,11 +301,11 @@ export function useListerAdmins(groupeId: string, enabled: boolean = true) {
     return useQuery({
         queryKey: [...GROUPES_ETABLISSEMENTS_KEYS.details(), groupeId, 'admins'],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: any[] }>(
+            // Backend groupes: res.json({ success: true, data: [...] })
+            const response = await apiClient.get<any[]>(
                 `/api/groupes-etablissements/${groupeId}/admins`
             );
-            // RÉALITÉ: response = {success, data} directement
-            return (response as any)?.data || [];
+            return response.data || [];
         },
         enabled: isAuthenticated && !!groupeId && enabled,
         staleTime: 5 * 60 * 1000,
