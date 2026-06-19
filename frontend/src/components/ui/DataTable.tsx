@@ -64,6 +64,9 @@ import {
     Check,
     Rows3,
     Pin,
+    PinOff,
+    ArrowLeftToLine,
+    ArrowRightToLine,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { RowActions } from '@/components/ui/RowActions';
@@ -95,16 +98,17 @@ export interface Column<T> {
     maxSize?: number;
     /** Désactive le redimensionnement pour cette colonne */
     enableResizing?: boolean;
-    /** Épingle la colonne : `true`/`'left'` (gauche), `'right'` (droite), `false` (pas épinglé) */
-    pinned?: boolean | 'left' | 'right';
+    /** Épingle la colonne : `'left'` (gauche), `'right'` (droite), `false`/`undefined` (pas épinglé)
+     *  La première colonne visible sera automatiquement épinglée à gauche par défaut */
+    pinned?: 'left' | 'right' | false;
     /** Masque la colonne par défaut (l'utilisateur peut la ré-afficher) */
     hidden?: boolean;
     /** Empêche l'utilisateur de masquer cette colonne (ex: colonne Actions) */
     enableHiding?: boolean;
     /** Empêche le glisser-déposer sur cette colonne */
     enableReordering?: boolean;
-    /** Active l'épinglage des colonnes (défaut: false) */
-    enablePinning?: boolean;
+    /** Empêche le changement d'épinglage pour cette colonne (défaut: false) */
+    enablePinningChange?: boolean;
     /** Fonction de rendu des actions de ligne (remplace pinned: 'right') */
     renderActions?: (item: T) => ActionConfig[];
 }
@@ -136,7 +140,7 @@ interface DataTableProps<T> {
     enableResizing?: boolean;
     /** Active la réorganisation des colonnes par glisser-déposer (défaut: false) */
     enableReordering?: boolean;
-    /** Active l'épinglage des colonnes (défaut: false) */
+    /** Active l'épinglage des colonnes via le menu (défaut: true) */
     enablePinning?: boolean;
     /** Active le menu de visibilité des colonnes (défaut: true) */
     enableColumnVisibility?: boolean;
@@ -173,6 +177,8 @@ interface DataTableProps<T> {
     onColumnOrderChange?: (columnOrder: string[]) => void;
     /** Callback quand la visibilité des colonnes change */
     onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
+    /** Callback quand l'épinglage des colonnes change */
+    onColumnPinningChange?: (pinning: Record<string, 'left' | 'right' | false>) => void;
 }
 
 /* ================================================================
@@ -223,7 +229,7 @@ interface CelluleEnTeteProps {
     isSorted: boolean;
     sortDirection: 'ASC' | 'DESC' | null;
     largeur: number;
-    estPinned: boolean;
+    estPinned: 'left' | 'right' | false;
     offsetPinned: number;
     enableResize: boolean;
     enableDrag: boolean;
@@ -255,7 +261,8 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
         minWidth: col.minSize ?? 50,
         maxWidth: col.maxSize ?? 800,
         position: estPinned ? 'sticky' as const : undefined,
-        left: estPinned ? offsetPinned : undefined,
+        left: estPinned === 'left' ? offsetPinned : undefined,
+        right: estPinned === 'right' ? offsetPinned : undefined,
         zIndex: estPinned ? 6 : (isSticky ? 5 : undefined),
         backgroundColor: estPinned ? 'var(--color-surface-alt)' : undefined,
     };
@@ -265,7 +272,7 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
             style={style}
             className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
                 col.sortable ? 'cursor-pointer' : ''
-            } ${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
+            } ${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             onClick={() => col.sortable && onSort()}
         >
             <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
@@ -283,7 +290,7 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
                         )}
                     </>
                 )}
-                {col.pinned && (
+                {estPinned && (
                     <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
                 )}
             </div>
@@ -343,7 +350,8 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
         transition,
         opacity: isDragging ? 0.5 : 1,
         position: estPinned ? 'sticky' as const : undefined,
-        left: estPinned ? offsetPinned : undefined,
+        left: estPinned === 'left' ? offsetPinned : undefined,
+        right: estPinned === 'right' ? offsetPinned : undefined,
         zIndex: estPinned ? 6 : (isSticky ? 5 : undefined),
         backgroundColor: estPinned ? 'var(--color-surface-alt)' : undefined,
     };
@@ -354,7 +362,7 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
             style={style}
             className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
                 col.sortable ? 'cursor-pointer' : ''
-            } ${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
+            } ${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             onClick={() => col.sortable && onSort()}
             {...attributes}
         >
@@ -382,7 +390,7 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
                         )}
                     </>
                 )}
-                {col.pinned && (
+                {estPinned && (
                     <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
                 )}
             </div>
@@ -415,6 +423,7 @@ interface LigneTableauProps<T> {
     index: number;
     colonnesVisibles: Column<T>[];
     colonnesPinned: Set<string>;
+    pinningPositions: Map<string, 'left' | 'right' | false>;
     offsetsPinned: Map<string, number>;
     largeurs: Map<string, number>;
     rowId: string;
@@ -592,6 +601,7 @@ function LigneTableauInterne<T>({
     index,
     colonnesVisibles,
     colonnesPinned,
+    pinningPositions,
     offsetsPinned,
     largeurs,
     rowId,
@@ -664,12 +674,14 @@ function LigneTableauInterne<T>({
 
     const cellules = colonnesVisibles.map((col, cellIndex) => {
         const estPinned = colonnesPinned.has(col.key);
+        const positionEpinglage = pinningPositions.get(col.key) || false;
         const largeur = largeurs.get(col.key) ?? col.size ?? 150;
         const style: React.CSSProperties = {
             width: largeur,
             maxWidth: largeur,
             position: estPinned ? 'sticky' as const : undefined,
-            left: estPinned ? offsetsPinned.get(col.key) : undefined,
+            left: positionEpinglage === 'left' ? offsetsPinned.get(col.key) : undefined,
+            right: positionEpinglage === 'right' ? offsetsPinned.get(col.key) : undefined,
             zIndex: estPinned ? 3 : undefined,
             backgroundColor: estPinned ? 'var(--color-surface)' : undefined,
             paddingBlock: paddingVertical,
@@ -713,7 +725,7 @@ function LigneTableauInterne<T>({
             <td
                 key={col.key}
                 style={style}
-                className={`${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
+                className={`${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             >
                 <div 
                     className="min-w-0 overflow-hidden"
@@ -821,6 +833,105 @@ function MenuVisibiliteColonnes({ colonnes, visibilite, onToggle }: MenuVisibili
 }
 
 /* ================================================================
+ * SOUS-COMPOSANT : Menu d'épinglage des colonnes
+ * ================================================================ */
+
+interface MenuEpinglageProps {
+    colonnes: Column<any>[];
+    pinning: Record<string, 'left' | 'right' | false>;
+    onPin: (key: string, position: 'left' | 'right' | false) => void;
+    enablePinning?: boolean;
+}
+
+function MenuEpinglageColonnes({ colonnes, pinning, onPin, enablePinning = true }: MenuEpinglageProps) {
+    const { t } = useTranslation();
+    
+    if (!enablePinning) return null;
+    if (!colonnes || colonnes.length === 0) return null;
+    
+    return (
+        <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+                <button
+                    className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+                    title={t('tableau.epingler', { defaultValue: 'Épingler les colonnes' })}
+                >
+                    <Pin className="h-4 w-4" />
+                </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    align="end"
+                    sideOffset={4}
+                    className="z-50 min-w-[240px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-lg"
+                >
+                    <div className="px-2 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                        {t('tableau.epinglerColonnes', { defaultValue: 'Épingler les colonnes' })}
+                    </div>
+                    <DropdownMenu.Separator className="my-1 h-px bg-[var(--color-border)]" />
+                    {colonnes.map((col) => {
+                        const etatEpinglage = pinning[col.key] || false;
+                        const desactive = col.enablePinningChange === false;
+                        
+                        return (
+                            <div key={col.key} className="px-2 py-1">
+                                <div className={`flex items-center justify-between gap-2 ${desactive ? 'opacity-50' : ''}`}>
+                                    <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                                        {col.header}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            disabled={desactive}
+                                            onClick={() => !desactive && onPin(col.key, etatEpinglage === 'left' ? false : 'left')}
+                                            className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs transition-colors ${
+                                                etatEpinglage === 'left'
+                                                    ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)] dark:text-[var(--color-dominant-300)]'
+                                                    : 'hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]'
+                                            } ${desactive ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                            title={t('tableau.epinglerGauche', { defaultValue: 'Épingler à gauche' })}
+                                        >
+                                            <ArrowLeftToLine className="h-3 w-3" />
+                                            <span className="hidden sm:inline">Gauche</span>
+                                        </button>
+                                        <button
+                                            disabled={desactive}
+                                            onClick={() => !desactive && onPin(col.key, etatEpinglage === 'right' ? false : 'right')}
+                                            className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs transition-colors ${
+                                                etatEpinglage === 'right'
+                                                    ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)] dark:text-[var(--color-dominant-300)]'
+                                                    : 'hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]'
+                                            } ${desactive ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                            title={t('tableau.epinglerDroite', { defaultValue: 'Épingler à droite' })}
+                                        >
+                                            <ArrowRightToLine className="h-3 w-3" />
+                                            <span className="hidden sm:inline">Droite</span>
+                                        </button>
+                                        {etatEpinglage && (
+                                            <button
+                                                disabled={desactive}
+                                                onClick={() => !desactive && onPin(col.key, false)}
+                                                className={`flex items-center rounded px-1.5 py-1 text-xs transition-colors hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] ${desactive ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                                title={t('tableau.desepingler', { defaultValue: 'Désépingler' })}
+                                            >
+                                                <PinOff className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    <DropdownMenu.Separator className="my-1 h-px bg-[var(--color-border)]" />
+                    <div className="px-2 py-1.5 text-xs text-[var(--color-text-muted)]">
+                        {t('tableau.infoEpinglage', { defaultValue: 'Les colonnes épinglées restent visibles lors du scroll horizontal' })}
+                    </div>
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+    );
+}
+
+/* ================================================================
  * SOUS-COMPOSANT : Barre d'outils (recherche + visibilité + hauteur)
  * ================================================================ */
 
@@ -844,6 +955,9 @@ interface BarreOutilsProps {
     colonnes: Column<any>[];
     visibilite: VisibilityState;
     onToggleVisibilite: (key: string) => void;
+    enablePinning: boolean;
+    pinning: Record<string, 'left' | 'right' | false>;
+    onPin: (key: string, position: 'left' | 'right' | false) => void;
     enableRowHeight: boolean;
     hauteurLigne: number;
     onHauteurChange: (valeur: number) => void;
@@ -861,12 +975,15 @@ function BarreOutils({
     colonnes,
     visibilite,
     onToggleVisibilite,
+    enablePinning,
+    pinning,
+    onPin,
     enableRowHeight,
     hauteurLigne,
     onHauteurChange,
 }: BarreOutilsProps) {
     const { t } = useTranslation();
-    const aDesOutils = searchable || filtres?.length || enableColumnVisibility || enableRowHeight;
+    const aDesOutils = searchable || filtres?.length || enableColumnVisibility || enableRowHeight || enablePinning;
     if (!aDesOutils) return null;
 
     return (
@@ -919,6 +1036,14 @@ function BarreOutils({
                         </select>
                     </div>
                 )}
+                {enablePinning && colonnes && colonnes.length > 0 && (
+                    <MenuEpinglageColonnes
+                        colonnes={colonnes}
+                        pinning={pinning}
+                        onPin={onPin}
+                        enablePinning={enablePinning}
+                    />
+                )}
                 {enableColumnVisibility && (
                     <MenuVisibiliteColonnes
                         colonnes={colonnes}
@@ -951,6 +1076,7 @@ export function DataTable<T>({
     donnees: donneesLegacy,
     enableResizing = true,
     enableReordering = false,
+    enablePinning = true,
     enableColumnVisibility = true,
     stickyHeader = true,
     maxHeight,
@@ -964,6 +1090,7 @@ export function DataTable<T>({
     disableClientSearch = false,
     onColumnOrderChange,
     onColumnVisibilityChange,
+    onColumnPinningChange,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const { hasPermission } = usePermissions();
@@ -1059,20 +1186,48 @@ export function DataTable<T>({
     const [ordreColonnes, setOrdreColonnes] = useState<string[]>(
         () => colonnesFinales.map((c) => c.key),
     );
+    
+    // --- État d'épinglage des colonnes ---
+    const [pinningEtat, setPinningEtat] = useState<Record<string, 'left' | 'right' | false>>(() => {
+        const initial: Record<string, 'left' | 'right' | false> = {};
+        colonnesFinales.forEach((col) => {
+            if (col.pinned === 'left' || col.pinned === 'right') {
+                initial[col.key] = col.pinned;
+            }
+        });
+        // Épingler automatiquement la première colonne visible à gauche si aucune n'est épinglée
+        const hasAnyPinned = Object.values(initial).some(v => v !== false);
+        if (!hasAnyPinned && colonnesFinales.length > 0) {
+            const premiereColonne = colonnesFinales.find(c => !c.hidden);
+            if (premiereColonne && premiereColonne.enablePinningChange !== false) {
+                initial[premiereColonne.key] = 'left';
+            }
+        }
+        return initial;
+    });
 
-    // Séparer colonnes pinned et non-pinned pour l'ordre
-    // Si une colonne a renderActions, on ignore pinned (même si 'right' est défini)
-    const colonnesPinned = useMemo(
-        () => colonnesFinales
-            .filter((c) => c.pinned && !c.renderActions)
-            .map((c) => c.key),
-        [colonnesFinales],
+    // Séparer colonnes pinned (left) et non-pinned pour l'ordre d'affichage
+    // Ordre : colonnes épinglées à gauche -> colonnes non-épinglées -> colonnes épinglées à droite
+    const colonnesPinnedLeft = useMemo(
+        () => Object.entries(pinningEtat)
+            .filter(([, pos]) => pos === 'left')
+            .map(([key]) => key),
+        [pinningEtat],
     );
+    
+    const colonnesPinnedRight = useMemo(
+        () => Object.entries(pinningEtat)
+            .filter(([, pos]) => pos === 'right')
+            .map(([key]) => key),
+        [pinningEtat],
+    );
+    
     const ordreColonnesFinal = useMemo(() => {
-        const pinned = colonnesPinned;
-        const rest = ordreColonnes.filter((id) => !pinned.includes(id));
-        return [...pinned, ...rest];
-    }, [ordreColonnes, colonnesPinned]);
+        const pinnedLeftSet = new Set(colonnesPinnedLeft);
+        const pinnedRightSet = new Set(colonnesPinnedRight);
+        const rest = ordreColonnes.filter((id) => !pinnedLeftSet.has(id) && !pinnedRightSet.has(id));
+        return [...colonnesPinnedLeft, ...rest, ...colonnesPinnedRight];
+    }, [ordreColonnes, colonnesPinnedLeft, colonnesPinnedRight]);
 
     // --- Conversion Column<T> → ColumnDef<T> TanStack ---
     const colonnesTanStack = useMemo<ColumnDef<T, unknown>[]>(() => {
@@ -1130,6 +1285,15 @@ export function DataTable<T>({
             [key]: prev[key] === false ? true : false,
         }));
     }, []);
+    
+    // --- Callback épinglage ---
+    const handlePin = useCallback((key: string, position: 'left' | 'right' | false) => {
+        setPinningEtat((prev) => {
+            const next = { ...prev, [key]: position };
+            onColumnPinningChange?.(next);
+            return next;
+        });
+    }, [onColumnPinningChange]);
 
     // --- Hauteur de ligne ---
     const [hauteurLigne, setHauteurLigne] = useState(defaultRowHeight);
@@ -1235,17 +1399,38 @@ export function DataTable<T>({
         return map;
     }, [colonnesFinales, taillesColonnes]);
 
-    const setPinned = useMemo(() => new Set(colonnesPinned), [colonnesPinned]);
+    const setPinned = useMemo(() => {
+        const pinned = new Set<string>();
+        Object.entries(pinningEtat).forEach(([key, pos]) => {
+            if (pos === 'left' || pos === 'right') {
+                pinned.add(key);
+            }
+        });
+        return pinned;
+    }, [pinningEtat]);
 
     const offsetsPinned = useMemo(() => {
         const map = new Map<string, number>();
-        let offset = 0;
-        for (const key of colonnesPinned) {
-            map.set(key, offset);
-            offset += largeursColonnes.get(key) ?? 150;
+        
+        // Calculer les offsets pour les colonnes épinglées à gauche
+        let offsetLeft = 0;
+        for (const key of colonnesPinnedLeft) {
+            map.set(key, offsetLeft);
+            offsetLeft += largeursColonnes.get(key) ?? 150;
         }
+        
+        // Les offsets pour les colonnes épinglées à droite seront calculés après colonnesVisibles
         return map;
-    }, [colonnesPinned, largeursColonnes]);
+    }, [colonnesPinnedLeft, largeursColonnes]);
+    
+    // Positions d'épinglage pour chaque colonne
+    const pinningPositions = useMemo(() => {
+        const positions: Map<string, 'left' | 'right' | false> = new Map();
+        Object.entries(pinningEtat).forEach(([key, pos]) => {
+            positions.set(key, pos);
+        });
+        return positions;
+    }, [pinningEtat]);
 
     // --- Colonnes visibles dans l'ordre ---
     const colonnesVisibles = useMemo(() => {
@@ -1254,6 +1439,28 @@ export function DataTable<T>({
             .map((id) => colonnesFinales.find((c) => c.key === id)!)
             .filter(Boolean);
     }, [ordreColonnesFinal, visibiliteColonnes, colonnesFinales]);
+    
+    // Calculer les offsets pour les colonnes épinglées à droite (après colonnesVisibles)
+    const offsetsPinnedFinal = useMemo(() => {
+        const map = new Map<string, number>(offsetsPinned);
+        
+        if (colonnesPinnedRight.length === 0) return map;
+        
+        // Calculer la largeur totale du tableau
+        const largeurTotaleCalc = colonnesVisibles.reduce(
+            (sum, col) => sum + (largeursColonnes.get(col.key) ?? col.size ?? 150),
+            0
+        );
+        
+        let offsetRight = largeurTotaleCalc;
+        for (const key of [...colonnesPinnedRight].reverse()) {
+            const largeur = largeursColonnes.get(key) ?? 150;
+            offsetRight -= largeur;
+            map.set(key, offsetRight);
+        }
+        
+        return map;
+    }, [colonnesPinnedRight, largeursColonnes, colonnesVisibles, offsetsPinned]);
 
     // --- Animer seulement les petits datasets ---
     const animerLignes = donneesFiltrees.length <= 50;
@@ -1283,6 +1490,9 @@ export function DataTable<T>({
                 colonnes={colonnesFinales}
                 visibilite={visibiliteColonnes}
                 onToggleVisibilite={handleToggleVisibilite}
+                enablePinning={enablePinning}
+                pinning={pinningEtat}
+                onPin={handlePin}
                 enableRowHeight={enableRowHeight}
                 hauteurLigne={hauteurLigne}
                 onHauteurChange={setHauteurLigne}
@@ -1330,8 +1540,8 @@ export function DataTable<T>({
                                         isSorted={activeSortBy === col.key}
                                         sortDirection={activeSortBy === col.key ? activeSortOrder : null}
                                         largeur={largeursColonnes.get(col.key) ?? col.size ?? 150}
-                                        estPinned={setPinned.has(col.key)}
-                                        offsetPinned={offsetsPinned.get(col.key) ?? 0}
+                                        estPinned={(pinningPositions.get(col.key) || false) as 'left' | 'right' | false}
+                                        offsetPinned={offsetsPinnedFinal.get(col.key) ?? 0}
                                         enableResize={enableResizing}
                                         enableDrag={true}
                                         onSort={() => handleSort(col.key)}
@@ -1349,8 +1559,8 @@ export function DataTable<T>({
                                         isSorted={activeSortBy === col.key}
                                         sortDirection={activeSortBy === col.key ? activeSortOrder : null}
                                         largeur={largeursColonnes.get(col.key) ?? col.size ?? 150}
-                                        estPinned={setPinned.has(col.key)}
-                                        offsetPinned={offsetsPinned.get(col.key) ?? 0}
+                                        estPinned={(pinningPositions.get(col.key) || false) as 'left' | 'right' | false}
+                                        offsetPinned={offsetsPinnedFinal.get(col.key) ?? 0}
                                         enableResize={enableResizing}
                                         enableDrag={false}
                                         onSort={() => handleSort(col.key)}
@@ -1395,7 +1605,8 @@ export function DataTable<T>({
                                     index={index}
                                     colonnesVisibles={colonnesVisibles}
                                     colonnesPinned={setPinned}
-                                    offsetsPinned={offsetsPinned}
+                                    pinningPositions={pinningPositions}
+                                    offsetsPinned={offsetsPinnedFinal}
                                     largeurs={largeursColonnes}
                                     rowId={getRowId?.(item, index) || String(index)}
                                     animer={animerLignes}
