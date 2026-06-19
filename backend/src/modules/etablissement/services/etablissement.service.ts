@@ -13,6 +13,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { StatutPersonnel } from '@modules/personnel/entities';
 
 export interface EtablissementStats {
     totalEtablissements: number;
@@ -310,7 +311,10 @@ export class EtablissementService {
         // Compter le personnel
         const membreRepo = AppDataSource.getRepository('MembrePersonnel');
         const nombrePersonnel = await membreRepo.count({
-            where: { etablissementId, actif: true },
+            where: { 
+                etablissementId, 
+                statut: StatutPersonnel.ACTIF
+            },
         });
 
         // Compter les niveaux (via les classes)

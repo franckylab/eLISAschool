@@ -7,11 +7,12 @@
  */
 
 import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Power, PowerOff, Building2 } from 'lucide-react';
+import { Plus, Edit, Eye, Power, PowerOff, Building2 } from 'lucide-react';
 import { useEtablissements, useDesactiverEtablissement, useActiverEtablissement } from '../hooks/use-etablissements';
 import { EtablissementFormModal } from './etablissement-form-modal';
+import { EtablissementDetailModal } from './etablissement-detail-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -20,10 +21,10 @@ import type { Etablissement } from '../types/etablissement.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function EtablissementsPage() {
-    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [showFormModal, setShowFormModal] = useState(false);
-    const [etablissementToEdit, setEtablissementToEdit] = useState<Etablissement | null>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [etablissementToView, setEtablissementToView] = useState<Etablissement | null>(null);
     const [etablissementToToggle, setEtablissementToToggle] = useState<Etablissement | null>(null);
 
     const { data: etablissements = [], isLoading } = useEtablissements();
@@ -31,13 +32,12 @@ export function EtablissementsPage() {
     const activer = useActiverEtablissement();
 
     const handleCreation = () => {
-        setEtablissementToEdit(null);
         setShowFormModal(true);
     };
 
-    const handleEdition = (etablissement: Etablissement) => {
-        setEtablissementToEdit(etablissement);
-        setShowFormModal(true);
+    const handleVoirDetails = (etablissement: Etablissement) => {
+        setEtablissementToView(etablissement);
+        setShowDetailModal(true);
     };
 
     const handleToggleActif = (etablissement: Etablissement) => {
@@ -148,42 +148,34 @@ export function EtablissementsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (etab) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => navigate({ to: '/etablissements/$id', params: { id: etab.id } })}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('etablissements:edit') && (
-                        <button
-                            onClick={() => handleEdition(etab)}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('etablissements:activer') && (
-                        <button
-                            onClick={() => handleToggleActif(etab)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                                etab.actif
-                                    ? 'text-orange-600 hover:bg-orange-50'
-                                    : 'text-green-600 hover:bg-green-50'
-                            }`}
-                            title={etab.actif ? 'Désactiver' : 'Activer'}
-                        >
-                            {etab.actif ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (etab) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => handleVoirDetails(etab),
+                    permission: 'etablissements:view',
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'configurer',
+                    icon: Edit,
+                    label: 'Configurer',
+                    onClick: () => { window.location.href = `/etablissements/${etab.id}`; },
+                    permission: 'etablissements:edit',
+                    variant: 'success' as const,
+                },
+                {
+                    key: 'toggle',
+                    icon: etab.actif ? PowerOff : Power,
+                    label: etab.actif ? 'Désactiver' : 'Activer',
+                    onClick: () => handleToggleActif(etab),
+                    permission: 'etablissements:activer',
+                    variant: etab.actif ? 'warning' as const : 'success' as const,
+                },
+            ],
         },
     ];
 
@@ -225,17 +217,14 @@ export function EtablissementsPage() {
                 searchPlaceholder="Rechercher un établissement..."
             />
 
+            {/* Modal création uniquement */}
             {showFormModal && (
                 <EtablissementFormModal
-                    mode={etablissementToEdit ? 'edition' : 'creation'}
-                    etablissement={etablissementToEdit}
                     onSuccess={() => {
                         setShowFormModal(false);
-                        setEtablissementToEdit(null);
                     }}
                     onCancel={() => {
                         setShowFormModal(false);
-                        setEtablissementToEdit(null);
                     }}
                 />
             )}
@@ -259,6 +248,12 @@ export function EtablissementsPage() {
                 description={`Êtes-vous sûr de vouloir ${etablissementToToggle?.actif ? 'désactiver' : 'activer'} l'établissement "${etablissementToToggle?.nom}" ?`}
                 variant={etablissementToToggle?.actif ? 'danger' : 'warning'}
                 isLoading={desactiver.isPending || activer.isPending}
+            />
+
+            <EtablissementDetailModal
+                open={showDetailModal}
+                onOpenChange={setShowDetailModal}
+                etablissementId={etablissementToView?.id || ''}
             />
         </div>
     );

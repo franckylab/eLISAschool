@@ -49,6 +49,10 @@ export const createEtablissementSchema = z.object({
     directeurAdjointNom: z.string().max(200).optional(),
     censeurNom: z.string().max(200).optional(),
     surveillantGeneralNom: z.string().max(200).optional(),
+    
+    // Couleurs et personnalisation visuelle
+    couleurPrimaire: z.string().max(20).optional().or(z.literal('')),
+    couleurSecondaire: z.string().max(20).optional().or(z.literal('')),
 });
 
 /**

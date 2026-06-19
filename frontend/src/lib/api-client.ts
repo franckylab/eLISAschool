@@ -469,8 +469,11 @@ class ApiClient {
         });
     }
 
-    async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-        return this.request<ApiResponse<T>>(endpoint, { method: 'DELETE' });
+    async delete<T>(endpoint: string, body?: Record<string, any>): Promise<ApiResponse<T>> {
+        const options: RequestInit = body
+            ? { method: 'DELETE', body: JSON.stringify(body) }
+            : { method: 'DELETE' };
+        return this.request<ApiResponse<T>>(endpoint, options);
     }
 
     async upload<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {

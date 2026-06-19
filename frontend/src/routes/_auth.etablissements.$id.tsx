@@ -1,14 +1,14 @@
 /**
  * ==================================
- * eLISAschool - Route Détail Établissement
+ * eLISAschool - Route Édition/Configuration Établissement
  * ==================================
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { EtablissementDetailPage } from '@/features/etablissement/components/etablissement-detail-page';
+import { EtablissementEditPage } from '@/features/etablissement/components/etablissement-edit-page';
 
 export const Route = createFileRoute('/_auth/etablissements/$id')({
     beforeLoad: () => requireModulePermission('etablissements'),
-    component: EtablissementDetailPage,
+    component: EtablissementEditPage,
 });

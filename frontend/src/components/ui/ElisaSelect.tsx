@@ -54,6 +54,19 @@ export const ElisaSelect = forwardRef<HTMLButtonElement, ElisaSelectProps>(
         const generatedId = useId();
         const id = generatedId;
 
+        // Vérification en développement : alerter si des options ont des valeurs vides
+        if (process.env.NODE_ENV === 'development') {
+            const invalidOptions = options.filter(
+                (opt) => opt.value === '' || opt.value === undefined || opt.value === null,
+            );
+            if (invalidOptions.length > 0) {
+                console.warn(
+                    `[ElisaSelect] Options avec valeurs vides détectées et ignorées:`,
+                    invalidOptions.map((o) => o.label),
+                );
+            }
+        }
+
         return (
             <div className={cn('flex flex-col gap-1.5', fullWidth && 'w-full')}>
                 {label && (
@@ -92,7 +105,7 @@ export const ElisaSelect = forwardRef<HTMLButtonElement, ElisaSelectProps>(
 
                     <SelectPrimitive.Portal>
                         <SelectPrimitive.Content
-                            className="z-50 max-h-60 overflow-hidden rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg animate-in fade-in-0 zoom-in-95"
+                            className="z-[60] max-h-60 overflow-hidden rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg animate-in fade-in-0 zoom-in-95"
                             position="popper"
                             sideOffset={4}
                         >
@@ -101,28 +114,30 @@ export const ElisaSelect = forwardRef<HTMLButtonElement, ElisaSelectProps>(
                             </SelectPrimitive.ScrollUpButton>
 
                             <SelectPrimitive.Viewport className="p-1">
-                                {options.map((option) => (
-                                    <SelectPrimitive.Item
-                                        key={option.value}
-                                        value={option.value}
-                                        disabled={option.disabled}
-                                        className={cn(
-                                            'relative flex cursor-pointer select-none items-center rounded-md px-8 py-2 text-sm outline-none',
-                                            'text-[var(--color-texte)]',
-                                            'focus:bg-[var(--color-surface-hover)]',
-                                            'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-                                        )}
-                                    >
-                                        <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
-                                            <SelectPrimitive.ItemIndicator>
-                                                <Check className="h-4 w-4 text-[var(--color-dominante)]" />
-                                            </SelectPrimitive.ItemIndicator>
-                                        </span>
-                                        <SelectPrimitive.ItemText>
-                                            {option.label}
-                                        </SelectPrimitive.ItemText>
-                                    </SelectPrimitive.Item>
-                                ))}
+                                {options
+                                    .filter((option) => option.value !== '' && option.value !== undefined && option.value !== null)
+                                    .map((option) => (
+                                        <SelectPrimitive.Item
+                                            key={option.value}
+                                            value={option.value}
+                                            disabled={option.disabled}
+                                            className={cn(
+                                                'relative flex cursor-pointer select-none items-center rounded-md px-8 py-2 text-sm outline-none',
+                                                'text-[var(--color-texte)]',
+                                                'focus:bg-[var(--color-surface-hover)]',
+                                                'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                                            )}
+                                        >
+                                            <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
+                                                <SelectPrimitive.ItemIndicator>
+                                                    <Check className="h-4 w-4 text-[var(--color-dominante)]" />
+                                                </SelectPrimitive.ItemIndicator>
+                                            </span>
+                                            <SelectPrimitive.ItemText>
+                                                {option.label}
+                                            </SelectPrimitive.ItemText>
+                                        </SelectPrimitive.Item>
+                                    ))}
                             </SelectPrimitive.Viewport>
 
                             <SelectPrimitive.ScrollDownButton className="flex h-8 cursor-default items-center justify-center">

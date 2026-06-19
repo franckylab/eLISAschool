@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Edit, Trash2 } from 'lucide-react';
 import { usePeriodes, useSupprimerPeriode } from '../hooks/use-periodes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -74,30 +74,25 @@ export function PeriodesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (p) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('periodes:edit') && (
-                        <ElisaButton variant="ghost" size="sm">Modifier</ElisaButton>
-                    )}
-                    {hasPermission('periodes:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer cette période ?')) {
-                                    supprimer.mutateAsync(p.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (p) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {},
+                    permission: 'periodes:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(p.id),
+                    permission: 'periodes:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

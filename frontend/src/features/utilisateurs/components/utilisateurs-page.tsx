@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, User, Shield, Mail, Phone, Calendar, Eye } from 'lucide-react';
+import { Plus, User, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useUtilisateurs, useSupprimerUtilisateur } from '../hooks/use-utilisateurs';
 import { UtilisateurFormModal } from './utilisateur-form-modal';
@@ -44,20 +44,20 @@ export function UtilisateursPage() {
             header: 'Utilisateur',
             sortable: true,
             render: (u) => (
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-dominant-100)]">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-dominant-100)]">
                         <User className="h-5 w-5 text-[var(--color-dominant-600)]" />
                     </div>
-                    <div>
-                        <p className="font-medium text-gray-900">{u.prenom} {u.nom}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {u.email}
+                    <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">{u.prenom} {u.nom}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{u.email}</span>
                         </p>
                         {u.telephone && (
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {u.telephone}
+                            <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                                <Phone className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{u.telephone}</span>
                             </p>
                         )}
                     </div>
@@ -117,46 +117,38 @@ export function UtilisateursPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (u) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('utilisateurs:view') && (
-                        <ElisaButton
-                            variant="ghost"
-                            size="sm"
-                            icon={<Eye className="h-4 w-4" />}
-                            onClick={() => navigate({ to: `/utilisateurs/${u.id}` })}
-                        >
-                            Détails
-                        </ElisaButton>
-                    )}
-                    {hasPermission('utilisateurs:edit') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                setUtilisateurSelected(u);
-                                setModeFormulaire('edition');
-                                setModalOpen(true);
-                            }}
-                        >
-                            Modifier
-                        </ElisaButton>
-                    )}
-                    {hasPermission('utilisateurs:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => setUtilisateurToDelete(u)}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (u) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: `/utilisateurs/${u.id}` }),
+                    permission: 'utilisateurs:view',
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Pencil,
+                    label: 'Modifier',
+                    onClick: () => {
+                        setUtilisateurSelected(u);
+                        setModeFormulaire('edition');
+                        setModalOpen(true);
+                    },
+                    permission: 'utilisateurs:edit',
+                    variant: 'warning' as const,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setUtilisateurToDelete(u),
+                    permission: 'utilisateurs:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

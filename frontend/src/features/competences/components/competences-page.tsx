@@ -158,44 +158,38 @@ export function CompetencesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (c) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => {/* Voir détails */}}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('competences:edit') && (
-                        <button
-                            onClick={() => {
-                                setItemToEdit(c);
-                                setShowFormModal(true);
-                            }}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('competences:delete') && (
-                        <button
-                            onClick={() => {
-                                setItemToDelete(c);
-                                setShowDeleteConfirm(true);
-                            }}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (c) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => {/* Voir détails */},
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {
+                        setItemToEdit(c);
+                        setShowFormModal(true);
+                    },
+                    permission: 'competences:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => {
+                        setItemToDelete(c);
+                        setShowDeleteConfirm(true);
+                    },
+                    permission: 'competences:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

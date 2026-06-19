@@ -132,39 +132,35 @@ export function SondagesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
-            className: 'text-right w-48',
-            render: (s) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Résultats: ${s.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<BarChart3 className="h-3 w-3" />}
-                        onClick={() => window.alert(`Analyses: ${s.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Download className="h-3 w-3" />}
-                        isLoading={exporter.isPending}
-                        onClick={() => exporter.mutateAsync({ sondageId: s.id, format: 'csv' })}
-                    />
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(s.id)}
-                    />
-                </div>
-            ),
+            className: 'text-right',
+            renderActions: (s) => [
+                {
+                    key: 'resultats',
+                    icon: Eye,
+                    label: 'Résultats',
+                    onClick: () => window.alert(`Résultats: ${s.titre}`),
+                },
+                {
+                    key: 'analyses',
+                    icon: BarChart3,
+                    label: 'Analyses',
+                    onClick: () => window.alert(`Analyses: ${s.titre}`),
+                },
+                {
+                    key: 'exporter',
+                    icon: Download,
+                    label: 'Exporter CSV',
+                    onClick: () => exporter.mutateAsync({ sondageId: s.id, format: 'csv' }),
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(s.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

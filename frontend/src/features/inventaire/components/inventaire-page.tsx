@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Package, Plus, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, DollarSign, Trash2 } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useMateriels, useSupprimerMateriel, useStatistiquesInventaire } from '../hooks/use-inventaire';
@@ -47,8 +47,11 @@ export function InventairePage() {
         { key: 'quantite', header: 'Qté', className: 'text-center w-20', render: (m) => <span className="text-sm font-medium">{m.quantiteDisponible}/{m.quantite}</span>},
         { key: 'etat', header: 'État', className: 'text-center w-28', render: (m) => { const etat = etats[m.etat]; return (<span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-${etat?.color}-100 text-${etat?.color}-800`}>{etat?.label}</span>); }},
         { key: 'prix', header: 'Prix unit.', className: 'text-right w-24', render: (m) => <span className="text-sm text-gray-700">{m.prixUnitaire ? `${m.prixUnitaire.toLocaleString('fr-FR')} FCFA` : '-'}</span>},
-        { key: 'actions',
-            pinned: 'right' as const, header: 'Actions', className: 'text-right w-20', render: (m) => (<ElisaButton variant="danger" size="sm" isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(m.id)}>Suppr.</ElisaButton>)},
+        { key: 'actions', header: 'Actions', className: 'text-right w-20',
+            renderActions: (m) => [
+                { key: 'supprimer', icon: Trash2, label: 'Supprimer', onClick: () => supprimer.mutateAsync(m.id), variant: 'danger' as const },
+            ],
+        },
     ];
 
     return (

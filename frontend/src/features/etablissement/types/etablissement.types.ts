@@ -60,6 +60,8 @@ export interface Etablissement {
     directeurAdjointNom?: string;
     censeurNom?: string;
     surveillantGeneralNom?: string;
+    couleurPrimaire?: string;
+    couleurSecondaire?: string;
     actif: boolean;
     statut: StatutEtablissement;
     createdAt: string;
@@ -130,6 +132,8 @@ export interface CreerEtablissementDto {
     directeurAdjointNom?: string;
     censeurNom?: string;
     surveillantGeneralNom?: string;
+    couleurPrimaire?: string;
+    couleurSecondaire?: string;
 }
 
 export interface ModifierEtablissementDto extends Partial<CreerEtablissementDto> {

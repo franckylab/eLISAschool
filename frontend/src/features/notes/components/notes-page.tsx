@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, TrendingUp, ClipboardList } from 'lucide-react';
+import { Plus, TrendingUp, ClipboardList, Edit, Trash2 } from 'lucide-react';
 import { useNotes, useSupprimerNote } from '../hooks/use-notes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -112,30 +112,25 @@ export function NotesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (n) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('notes:edit') && (
-                        <ElisaButton variant="ghost" size="sm">Modifier</ElisaButton>
-                    )}
-                    {hasPermission('notes:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer cette note ?')) {
-                                    supprimer.mutateAsync(n.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (n) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {},
+                    permission: 'notes:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(n.id),
+                    permission: 'notes:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

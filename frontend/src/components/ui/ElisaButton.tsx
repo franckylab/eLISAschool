@@ -79,6 +79,7 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
             shortcut,
             type = 'button',
             disabled,
+            loading, // Extraire la prop 'loading' pour éviter qu'elle ne soit spreadée dans le DOM
             ...props
         },
         ref,

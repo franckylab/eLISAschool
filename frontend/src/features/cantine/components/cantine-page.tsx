@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, UtensilsCrossed } from 'lucide-react';
+import { Plus, UtensilsCrossed, Edit, Trash2 } from 'lucide-react';
 import { useInscriptionsCantine, useSupprimerInscriptionCantine } from '../hooks/use-cantine';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -65,30 +65,29 @@ export function CantinePage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (i) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('cantine:edit') && (
-                        <ElisaButton variant="ghost" size="sm">Modifier</ElisaButton>
-                    )}
-                    {hasPermission('cantine:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer cette inscription ?')) {
-                                    supprimer.mutateAsync(i.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (i) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {/* Modifier inscription cantine */},
+                    permission: 'cantine:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => {
+                        if (confirm('Supprimer cette inscription ?')) {
+                            supprimer.mutateAsync(i.id);
+                        }
+                    },
+                    permission: 'cantine:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

@@ -6,17 +6,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, Award } from 'lucide-react';
+import { FileText, Download, Award, Trash2 } from 'lucide-react';
 import { useBulletins, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { LoadingState, ErrorState } from '@/components/feedback';
-import { usePermissions } from '@/hooks';
 import type { Bulletin, BulletinFiltres } from '../types/bulletin.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function BulletinsPage() {
-    const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<BulletinFiltres>({ page: 1, limit: 20 });
 
     const { data, isLoading, error } = useBulletins(filtres);
@@ -98,36 +96,28 @@ export function BulletinsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (b) => (
-                <div className="flex justify-end gap-2">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Download className="h-3 w-3" />}
-                        isLoading={exporter.isPending}
-                        onClick={() => exporter.mutateAsync(b.id)}
-                    >
-                        Exporter
-                    </ElisaButton>
-                    {hasPermission('bulletins:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer ce bulletin ?')) {
-                                    supprimer.mutateAsync(b.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (b) => [
+                {
+                    key: 'exporter',
+                    icon: Download,
+                    label: 'Exporter PDF',
+                    onClick: () => exporter.mutateAsync(b.id),
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => {
+                        if (confirm('Supprimer ce bulletin ?')) {
+                            supprimer.mutateAsync(b.id);
+                        }
+                    },
+                    permission: 'bulletins:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

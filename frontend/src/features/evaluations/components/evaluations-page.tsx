@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Star, TrendingUp, Award, AlertCircle, Plus } from 'lucide-react';
+import { Star, TrendingUp, Award, AlertCircle, Plus, Eye } from 'lucide-react';
 import { useEvaluations, useStatistiquesEvaluations } from '../hooks/use-evaluations';
 import { DataTable } from '@/components/ui/DataTable';
 
@@ -28,8 +28,11 @@ export function EvaluationsPage() {
         { key: 'note', header: 'Note', className: 'w-24', render: (e: any) => <span className="text-lg font-bold">{e.noteGlobale}/20</span> },
         { key: 'statut', header: 'Statut', className: 'w-28', render: (e: any) => { const s = statuts[e.statut] || { label: e.statut, color: 'gray' }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${s.color}-100 text-${s.color}-700`}>{s.label}</span>; } },
         { key: 'criteres', header: 'Critères', className: 'w-20', render: (e: any) => <span className="text-sm text-gray-600">{e.criteres?.length || 0}</span> },
-        { key: 'actions',
-            pinned: 'right' as const, header: 'Actions', className: 'w-32', render: (_e: any) => <button className="text-blue-600 hover:underline text-sm">Voir détails</button> },
+        { key: 'actions', header: 'Actions', className: 'w-32',
+            renderActions: (_e: any) => [
+                { key: 'voir', icon: Eye, label: 'Voir détails', onClick: () => {}, variant: 'info' as const },
+            ],
+        },
     ];
 
     if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;

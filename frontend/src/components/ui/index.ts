@@ -3,3 +3,5 @@ export { ElisaButton } from './ElisaButton';
 export { ElisaInput } from './ElisaInput';
 export { ElisaSelect } from './ElisaSelect';
 export { ElisaToggle } from './ElisaToggle';
+export { RowActions } from './RowActions';
+export type { ActionConfig, ActionVariant } from './RowActions';

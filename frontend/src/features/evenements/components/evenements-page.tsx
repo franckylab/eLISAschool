@@ -134,32 +134,30 @@ export function EvenementsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
-            render: (e) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Users className="h-3 w-3" />}
-                        onClick={() => window.alert(`Participants: ${e.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Edit className="h-3 w-3" />}
-                        onClick={() => window.alert(`Modifier: ${e.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(e.id)}
-                    />
-                </div>
-            ),
+            renderActions: (e) => [
+                {
+                    key: 'participants',
+                    icon: Users,
+                    label: 'Participants',
+                    onClick: () => window.alert(`Participants: ${e.titre}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => window.alert(`Modifier: ${e.titre}`),
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(e.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

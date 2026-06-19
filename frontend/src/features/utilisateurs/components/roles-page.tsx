@@ -130,48 +130,39 @@ export function RolesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (r) => (
-                <div className="flex justify-end gap-2">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-4 w-4" />}
-                        onClick={() => {
-                            setSelectedRole(r);
-                            setShowPermissions(true);
-                        }}
-                    >
-                        Permissions
-                    </ElisaButton>
-                    {!r.estSysteme && hasPermission('roles:edit') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<Edit className="h-4 w-4" />}
-                            onClick={() => {
-                                setRoleToEdit(r);
-                                setShowFormModal(true);
-                            }}
-                        >
-                            Modifier
-                        </ElisaButton>
-                    )}
-                    {!r.estSysteme && hasPermission('roles:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            icon={<Trash2 className="h-4 w-4" />}
-                            isLoading={supprimer.isPending}
-                            onClick={() => setRoleToDelete(r)}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (r) => [
+                {
+                    key: 'permissions',
+                    icon: Eye,
+                    label: 'Permissions',
+                    onClick: () => {
+                        setSelectedRole(r);
+                        setShowPermissions(true);
+                    },
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {
+                        setRoleToEdit(r);
+                        setShowFormModal(true);
+                    },
+                    permission: 'roles:edit',
+                    hidden: r.estSysteme,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setRoleToDelete(r),
+                    permission: 'roles:delete',
+                    variant: 'danger' as const,
+                    hidden: r.estSysteme,
+                },
+            ],
         },
     ];
 

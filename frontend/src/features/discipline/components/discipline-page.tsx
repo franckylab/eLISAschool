@@ -135,37 +135,32 @@ export function DisciplinePage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-40',
-            render: (s) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Détail: ${s.eleve?.nom}`)}
-                    />
-                    {s.statut === 'active' && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<Shield className="h-3 w-3" />}
-                            isLoading={amnistier.isPending}
-                            onClick={() => amnistier.mutateAsync(s.id)}
-                        >
-                            Amnistier
-                        </ElisaButton>
-                    )}
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(s.id)}
-                    />
-                </div>
-            ),
+            renderActions: (s) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => window.alert(`Détail: ${s.eleve?.nom}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'amnistier',
+                    icon: Shield,
+                    label: 'Amnistier',
+                    onClick: () => amnistier.mutateAsync(s.id),
+                    variant: 'success' as const,
+                    hidden: s.statut !== 'active',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(s.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

@@ -105,19 +105,16 @@ export function SantePage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
-            className: 'text-right w-20',
-            render: (v) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Détail visite: ${v.eleve?.nom}`)}
-                    />
-                </div>
-            ),
+            className: 'text-right',
+            renderActions: (v) => [
+                {
+                    key: 'detail',
+                    icon: Eye,
+                    label: 'Détail visite',
+                    onClick: () => window.alert(`Détail visite: ${v.eleve?.nom}`),
+                },
+            ],
         },
     ];
 

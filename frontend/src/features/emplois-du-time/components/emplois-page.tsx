@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Plus, Clock, AlertTriangle, Users, MapPin } from 'lucide-react';
+import { Calendar, Plus, Clock, AlertTriangle, Users, MapPin, Eye, Trash2 } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreneaux, useSupprimerCreneau, useStatistiquesEmploiDuTemps, useConflitsCreneaux } from '../hooks/use-emplois';
@@ -97,26 +97,24 @@ export function EmploisDuTempsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-20',
-            render: (c) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Calendar className="h-3 w-3" />}
-                        onClick={() => window.alert(`Détail: ${c.matiere?.nom}`)}
-                    />
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Calendar className="h-3 w-3 rotate-45" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(c.id)}
-                    />
-                </div>
-            ),
+            renderActions: (c) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => window.alert(`Détail: ${c.matiere?.nom}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(c.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

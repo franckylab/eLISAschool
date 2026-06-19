@@ -118,41 +118,32 @@ export function EtablissementsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (e) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => {/* Voir détails */}}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('etablissements:edit') && (
-                        <button
-                            onClick={() => {
-                                setEtablissementToEdit(e);
-                                setShowFormModal(true);
-                            }}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('etablissements:delete') && (
-                        <button
-                            onClick={() => setEtablissementToDelete(e)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (e) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => {},
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => { setEtablissementToEdit(e); setShowFormModal(true); },
+                    permission: 'etablissements:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setEtablissementToDelete(e),
+                    permission: 'etablissements:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

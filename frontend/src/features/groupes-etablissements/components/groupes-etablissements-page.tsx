@@ -106,7 +106,7 @@ export function GroupesEtablissementsPage() {
             render: (g) => (
                 <div className="flex items-center gap-1.5">
                     <Users className="h-4 w-4 text-[var(--color-dominante)]" />
-                    <span className="text-sm font-semibold text-[var(--color-texte)]">
+                    <span className="text-sm font-bold text-[var(--color-texte)] dark:text-white tabular-nums">
                         {g.nbEtablissements || 0}
                     </span>
                 </div>
@@ -129,62 +129,47 @@ export function GroupesEtablissementsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: t('colonnes.actions'),
             className: 'text-right',
-            render: (g) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => setGroupeToView(g)}
-                        className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                        title={t('boutons.voirDetails')}
-                        aria-label={`${t('boutons.voirDetails')} - ${g.nom}`}
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('groupes-etablissements:edit') && (
-                        <>
-                            <button
-                                onClick={() => setGroupeToManageEtabs(g)}
-                                className="p-1.5 rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
-                                title="Gérer les établissements"
-                                aria-label={`Gérer les établissements - ${g.nom}`}
-                            >
-                                <Building2 className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={() => setGroupeToManageAdmins(g)}
-                                className="p-1.5 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
-                                title="Gérer les admins"
-                                aria-label={`Gérer les admins - ${g.nom}`}
-                            >
-                                <Users className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setGroupeToEdit(g);
-                                    setShowFormModal(true);
-                                }}
-                                className="p-1.5 rounded-lg text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                                title={t('boutons.modifier')}
-                                aria-label={`${t('boutons.modifier')} - ${g.nom}`}
-                            >
-                                <Edit className="h-4 w-4" />
-                            </button>
-                        </>
-                    )}
-                    {hasPermission('groupes-etablissements:delete') && (
-                        <button
-                            onClick={() => setGroupeToDelete(g)}
-                            className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                            title={t('boutons.supprimer')}
-                            aria-label={`${t('boutons.supprimer')} - ${g.nom}`}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (g) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: t('boutons.voirDetails', { defaultValue: 'Voir détails' }),
+                    onClick: () => setGroupeToView(g),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'etablissements',
+                    icon: Building2,
+                    label: 'Gérer les établissements',
+                    onClick: () => setGroupeToManageEtabs(g),
+                    permission: 'groupes-etablissements:edit',
+                    variant: 'success' as const,
+                },
+                {
+                    key: 'admins',
+                    icon: Users,
+                    label: 'Gérer les admins',
+                    onClick: () => setGroupeToManageAdmins(g),
+                    permission: 'groupes-etablissements:edit',
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: t('boutons.modifier', { defaultValue: 'Modifier' }),
+                    onClick: () => { setGroupeToEdit(g); setShowFormModal(true); },
+                    permission: 'groupes-etablissements:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: t('boutons.supprimer', { defaultValue: 'Supprimer' }),
+                    onClick: () => setGroupeToDelete(g),
+                    permission: 'groupes-etablissements:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

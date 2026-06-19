@@ -110,41 +110,35 @@ export function CyclesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (c) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => {/* Voir détails */}}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('cycles:edit') && (
-                        <button
-                            onClick={() => {
-                                setCycleToEdit(c);
-                                setShowFormModal(true);
-                            }}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('cycles:delete') && (
-                        <button
-                            onClick={() => setCycleToDelete(c)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (c) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => {/* Voir détails */},
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {
+                        setCycleToEdit(c);
+                        setShowFormModal(true);
+                    },
+                    permission: 'cycles:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setCycleToDelete(c),
+                    permission: 'cycles:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

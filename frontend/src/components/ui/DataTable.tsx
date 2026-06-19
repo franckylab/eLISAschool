@@ -66,8 +66,11 @@ import {
     Pin,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { RowActions } from '@/components/ui/RowActions';
+import { usePermissions } from '@/hooks';
 import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import type { ActionConfig } from '@/components/ui/RowActions';
 
 /* ================================================================
  * INTERFACES
@@ -102,6 +105,8 @@ export interface Column<T> {
     enableReordering?: boolean;
     /** Active l'épinglage des colonnes (défaut: false) */
     enablePinning?: boolean;
+    /** Fonction de rendu des actions de ligne (remplace pinned: 'right') */
+    renderActions?: (item: T) => ActionConfig[];
 }
 
 interface DataTableProps<T> {
@@ -417,6 +422,171 @@ interface LigneTableauProps<T> {
     paddingVertical: string;
 }
 
+/* ================================================================
+ * COMPOSANT INTERNE — BULLE DE TOOLTIP
+ * ================================================================
+ * Tooltip en position fixed pour éviter les problèmes d'overflow.
+ * Se positionne au-dessus de l'élément ancre via getBoundingClientRect.
+ */
+
+function TooltipBulle({ texte, ancreRef }: { texte: string; ancreRef: React.RefObject<HTMLElement | null> }) {
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
+    useEffect(() => {
+        if (!ancreRef.current) return;
+        const rect = ancreRef.current.getBoundingClientRect();
+        setPosition({
+            top: rect.top - 8,
+            left: rect.left + rect.width / 2,
+        });
+    }, [ancreRef]);
+
+    return (
+        <div
+            className="fixed z-[99999] px-3 py-2 rounded-lg shadow-2xl pointer-events-none animate-in fade-in duration-150"
+            style={{
+                top: `${position.top}px`,
+                left: `${position.left}px`,
+                transform: 'translate(-50%, -100%)',
+                backgroundColor: '#1f2937',
+                color: 'white',
+                fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem)',
+                maxWidth: 'min(360px, calc(100vw - 2rem))',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                lineHeight: '1.5',
+            }}
+        >
+            {texte}
+            <div
+                className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
+                style={{
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderTop: '6px solid #1f2937',
+                }}
+            />
+        </div>
+    );
+}
+
+/* ================================================================
+ * COMPOSANT INTERNE — CELLULE DE CONTENU
+ * ================================================================
+ * Gère l'affichage intelligent du contenu des cellules :
+ * - Retour à la ligne automatique pour les textes longs
+ * - Troncation avec tooltip si nécessaire
+ * - Préservation du rendu personnalisé
+ */
+
+interface CelluleContenuProps {
+    contenu: React.ReactNode;
+    colonne: { size?: number };
+}
+
+function CelluleContenu({ contenu, colonne }: CelluleContenuProps) {
+    const [afficherTooltip, setAfficherTooltip] = useState(false);
+    const refEl = useRef<HTMLDivElement>(null);
+    const texteBrut = (typeof contenu === 'string' || typeof contenu === 'number')
+        ? String(contenu)
+        : extraireTexte(contenu);
+
+    // Vérifier la troncature AU SURVOL
+    const verifierTroncature = () => {
+        if (!refEl.current) return;
+        const el = refEl.current;
+        const tronque = el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2;
+        if (tronque) setAfficherTooltip(true);
+    };
+
+    // Déterminer le style selon le type de contenu
+    const estTexte = typeof contenu === 'string' || typeof contenu === 'number';
+    const largeurColonne = colonne.size ?? 150;
+    const estColonneEtroite = largeurColonne < 100;
+
+    // Contenu JSX complexe
+    if (!estTexte) {
+        return (
+            <div className="relative">
+                <div
+                    ref={refEl}
+                    className="min-w-0 overflow-hidden"
+                    onMouseEnter={verifierTroncature}
+                    onMouseLeave={() => setAfficherTooltip(false)}
+                >
+                    {contenu}
+                </div>
+                {afficherTooltip && texteBrut && (
+                    <TooltipBulle texte={texteBrut} ancreRef={refEl} />
+                )}
+            </div>
+        );
+    }
+
+    const texte = String(contenu);
+
+    // Colonne étroite : troncation forcée
+    if (estColonneEtroite && texte.length > 15) {
+        return (
+            <div className="relative">
+                <div
+                    ref={refEl}
+                    className="truncate cursor-default"
+                    onMouseEnter={verifierTroncature}
+                    onMouseLeave={() => setAfficherTooltip(false)}
+                >
+                    {texte}
+                </div>
+                {afficherTooltip && (
+                    <TooltipBulle texte={texte} ancreRef={refEl} />
+                )}
+            </div>
+        );
+    }
+
+    // Colonne normale : retour à la ligne
+    return (
+        <div className="relative">
+            <div
+                ref={refEl}
+                className="break-words whitespace-normal leading-relaxed overflow-hidden"
+                style={{
+                    maxWidth: '100%',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                }}
+                onMouseEnter={verifierTroncature}
+                onMouseLeave={() => setAfficherTooltip(false)}
+            >
+                {texte}
+            </div>
+            {afficherTooltip && (
+                <TooltipBulle texte={texte} ancreRef={refEl} />
+            )}
+        </div>
+    );
+}
+
+/**
+ * Extrait le texte brut d'un ReactNode (pour les tooltips)
+ */
+function extraireTexte(node: React.ReactNode): string {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (!node || typeof node !== 'object') return '';
+    
+    if (Array.isArray(node)) {
+        return node.map(extraireTexte).join(' ');
+    }
+    
+    const element = node as React.ReactElement<any>;
+    if (element.props?.children) {
+        return extraireTexte(element.props.children);
+    }
+    
+    return '';
+}
+
 function LigneTableauInterne<T>({
     item,
     index,
@@ -428,16 +598,116 @@ function LigneTableauInterne<T>({
     animer,
     paddingVertical,
 }: LigneTableauProps<T>) {
-    const cellules = colonnesVisibles.map((col) => {
+    const { hasPermission } = usePermissions();
+    const [estVisible, setEstVisible] = useState(false);
+    const rowRef = useRef<HTMLTableRowElement>(null);
+    
+    // Trouver la colonne avec renderActions
+    const colonneActions = colonnesVisibles.find(col => col.renderActions);
+    const indexColonneActions = colonneActions ? colonnesVisibles.indexOf(colonneActions) : -1;
+    
+    // Index de la cellule où afficher les boutons (mis à jour au scroll/hover)
+    const [indexCellulePourBoutons, setIndexCellulePourBoutons] = useState(
+        indexColonneActions >= 0 ? indexColonneActions : colonnesVisibles.length - 1
+    );
+    
+    // Détecter les colonnes visibles au hover
+    const detecterColonneVisible = () => {
+        if (!rowRef.current || !colonneActions) return;
+        
+        const conteneur = rowRef.current.closest('.overflow-auto');
+        if (!conteneur) return;
+        
+        const rectConteneur = conteneur.getBoundingClientRect();
+        const cellules = rowRef.current.querySelectorAll('td');
+        
+        // Trouver la dernière cellule dont le centre est dans le viewport
+        let derniereVisible = colonnesVisibles.length - 1;
+        
+        cellules.forEach((cellule, index) => {
+            const rectCellule = cellule.getBoundingClientRect();
+            const centreCellule = rectCellule.left + rectCellule.width / 2;
+            
+            // Si le centre de la cellule est dans le viewport
+            if (centreCellule >= rectConteneur.left && centreCellule <= rectConteneur.right) {
+                derniereVisible = index;
+            }
+        });
+        
+        // Vérifier si la colonne Actions est visible
+        if (indexColonneActions >= 0) {
+            const celluleActions = cellules[indexColonneActions];
+            if (celluleActions) {
+                const rectActions = celluleActions.getBoundingClientRect();
+                const centreActions = rectActions.left + rectActions.width / 2;
+                
+                // Si Actions est visible, l'utiliser
+                if (centreActions >= rectConteneur.left && centreActions <= rectConteneur.right) {
+                    setIndexCellulePourBoutons(indexColonneActions);
+                    return;
+                }
+            }
+        }
+        
+        // Sinon, utiliser la dernière cellule visible
+        setIndexCellulePourBoutons(derniereVisible);
+    };
+
+    // Wrapper pour le hover sur toute la ligne
+    const handlersLigne = {
+        onMouseEnter: () => {
+            detecterColonneVisible();
+            setEstVisible(true);
+        },
+        onMouseLeave: () => setEstVisible(false),
+    };
+
+    const cellules = colonnesVisibles.map((col, cellIndex) => {
         const estPinned = colonnesPinned.has(col.key);
+        const largeur = largeurs.get(col.key) ?? col.size ?? 150;
         const style: React.CSSProperties = {
-            width: largeurs.get(col.key) ?? col.size ?? 150,
+            width: largeur,
+            maxWidth: largeur,
             position: estPinned ? 'sticky' as const : undefined,
             left: estPinned ? offsetsPinned.get(col.key) : undefined,
             zIndex: estPinned ? 3 : undefined,
             backgroundColor: estPinned ? 'var(--color-surface)' : undefined,
             paddingBlock: paddingVertical,
+            overflow: 'hidden',
         };
+
+        // Si c'est la colonne Actions, utiliser RowActions avec estVisible
+        let contenu: React.ReactNode = null;
+        
+        if (col.renderActions) {
+            const actionsBrutes = col.renderActions(item);
+            const actionsFiltrees = actionsBrutes.filter(
+                (action) => !action.permission || hasPermission(action.permission)
+            );
+            contenu = actionsFiltrees.length > 0
+                ? <RowActions actions={actionsFiltrees} estVisible={estVisible} />
+                : null;
+        } else {
+            contenu = col.render
+                ? col.render(item, index)
+                : (item as any)[col.key];
+        }
+
+        // Si cette cellule est désignée pour afficher les boutons (Actions hors viewport)
+        if (cellIndex === indexCellulePourBoutons && !col.renderActions && colonneActions) {
+            const actionsBrutes = colonneActions.renderActions!(item);
+            const actionsFiltrees = actionsBrutes.filter(
+                (action) => !action.permission || hasPermission(action.permission)
+            );
+            if (actionsFiltrees.length > 0) {
+                contenu = (
+                    <div className="flex items-center justify-between">
+                        {contenu}
+                        <RowActions actions={actionsFiltrees} estVisible={estVisible} />
+                    </div>
+                );
+            }
+        }
 
         return (
             <td
@@ -445,8 +715,11 @@ function LigneTableauInterne<T>({
                 style={style}
                 className={`${estPinned ? 'border-r border-[var(--color-border)]' : ''} ${col.className || ''}`}
             >
-                <div style={{ padding: 'var(--padding-table-cell)' }}>
-                    {col.render ? col.render(item, index) : (item as any)[col.key]}
+                <div 
+                    className="min-w-0 overflow-hidden"
+                    style={{ padding: 'var(--padding-table-cell)' }}
+                >
+                    <CelluleContenu contenu={contenu} colonne={col} />
                 </div>
             </td>
         );
@@ -455,6 +728,8 @@ function LigneTableauInterne<T>({
     if (animer) {
         return (
             <motion.tr
+                ref={rowRef as any}
+                {...handlersLigne}
                 key={rowId}
                 className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
                 initial={{ opacity: 0, y: 10 }}
@@ -468,6 +743,8 @@ function LigneTableauInterne<T>({
 
     return (
         <tr
+            ref={rowRef}
+            {...handlersLigne}
             key={rowId}
             className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
         >
@@ -689,6 +966,7 @@ export function DataTable<T>({
     onColumnVisibilityChange,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
+    const { hasPermission } = usePermissions();
 
     // --- Normalisation des props (rétro-compatibilité) ---
     const colonnesFinales = columns ?? colonnesLegacy ?? [];
@@ -783,8 +1061,11 @@ export function DataTable<T>({
     );
 
     // Séparer colonnes pinned et non-pinned pour l'ordre
+    // Si une colonne a renderActions, on ignore pinned (même si 'right' est défini)
     const colonnesPinned = useMemo(
-        () => colonnesFinales.filter((c) => c.pinned).map((c) => c.key),
+        () => colonnesFinales
+            .filter((c) => c.pinned && !c.renderActions)
+            .map((c) => c.key),
         [colonnesFinales],
     );
     const ordreColonnesFinal = useMemo(() => {
@@ -1134,16 +1415,33 @@ export function DataTable<T>({
                                 key={getRowId?.(item, index) || index}
                                 className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-[clamp(0.75rem,0.6rem+0.4vw,1rem)]"
                             >
-                                {colonnesVisibles.map((col) => (
-                                    <div key={col.key} className="flex flex-col gap-[var(--gap-xxs)] py-[var(--space-xxs)]">
-                                        <span className="text-xs font-medium text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
-                                            {col.header}
-                                        </span>
-                                        <div className="text-sm text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                            {col.render ? col.render(item, index) : (item as any)[col.key]}
+                                {colonnesVisibles.map((col) => {
+                                    // Si la colonne a renderActions, utiliser RowActions avec filtrage RBAC
+                                    const contenu = col.renderActions
+                                        ? (() => {
+                                            const actionsBrutes = col.renderActions(item);
+                                            const actionsFiltrees = actionsBrutes.filter(
+                                                (action) => !action.permission || hasPermission(action.permission)
+                                            );
+                                            return actionsFiltrees.length > 0
+                                                ? <RowActions actions={actionsFiltrees} />
+                                                : null;
+                                        })()
+                                        : col.render
+                                          ? col.render(item, index)
+                                          : (item as any)[col.key];
+
+                                    return (
+                                        <div key={col.key} className="flex flex-col gap-[var(--gap-xxs)] py-[var(--space-xxs)]">
+                                            <span className="text-xs font-medium text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
+                                                {col.header}
+                                            </span>
+                                            <div className="text-sm text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                                                {contenu}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>

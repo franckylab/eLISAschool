@@ -17,8 +17,10 @@ export interface Utilisateur {
     nom: string;
     prenom: string;
     telephone?: string;
+    matricule?: string;
     role: string;
     etablissementId: string;
+    actif?: boolean;
     statut?: StatutUtilisateur;
     derniereConnexion?: string;
     createdAt: string;
@@ -66,6 +68,7 @@ export interface UtilisateurFiltres {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     actif?: boolean;
+    etablissementId?: string;
 }
 
 // ==================== RÔLES ====================

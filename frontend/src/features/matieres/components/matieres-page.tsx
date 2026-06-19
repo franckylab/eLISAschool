@@ -100,38 +100,32 @@ export function MatieresPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: t('commun.actions'),
             className: 'text-right',
-            render: (m) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => navigate({ to: '/matieres/$id', params: { id: m.id } })}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('matieres:edit') && (
-                        <button
-                            onClick={() => handleEdition(m)}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('matieres:delete') && (
-                        <button
-                            onClick={() => setMatiereToDelete(m)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (m) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: '/matieres/$id', params: { id: m.id } }),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => handleEdition(m),
+                    permission: 'matieres:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setMatiereToDelete(m),
+                    permission: 'matieres:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

@@ -121,29 +121,24 @@ export function CourriersPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
-            className: 'text-right w-32',
-            render: (c) => (
-                <div className="flex justify-end gap-1">
-                    {c.statut === 'nouveau' && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<MailOpen className="h-3 w-3" />}
-                            isLoading={marquerLu.isPending}
-                            onClick={() => marquerLu.mutateAsync(c.id)}
-                        />
-                    )}
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(c.id)}
-                    />
-                </div>
-            ),
+            className: 'text-right',
+            renderActions: (c) => [
+                {
+                    key: 'marquer-lu',
+                    icon: MailOpen,
+                    label: 'Marquer comme lu',
+                    onClick: () => marquerLu.mutateAsync(c.id),
+                    hidden: c.statut !== 'nouveau',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(c.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

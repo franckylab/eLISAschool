@@ -69,6 +69,9 @@ router.post(
  * DELETE /api/utilisateurs/:id/etablissements/:etablissementId
  * Retirer un établissement à un utilisateur (désactivation logique)
  * 
+ * Body optionnel:
+ * - motif: string (raison du retrait)
+ * 
  * Permission: utilisateurs:manage ou SUPER_ADMIN
  */
 router.delete(
@@ -76,9 +79,13 @@ router.delete(
     checkPermission('utilisateurs:manage'),
     async (req: Request, res: Response, next) => {
         try {
+            // Lire le motif depuis les query parameters (meilleure compatibilité avec DELETE)
+            const motif = req.query.motif as string | undefined;
+            
             await utilisateurEtablissementService.retirer(
                 req.params.id,
-                req.params.etablissementId
+                req.params.etablissementId,
+                motif
             );
 
             res.status(200).json({

@@ -106,36 +106,31 @@ export function BibliothequePage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
-            className: 'text-right w-32',
-            render: (o) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Détail: ${o.titre}`)}
-                    />
-                    {o.exemplairesDisponibles > 0 && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<BookOpen className="h-3 w-3" />}
-                            onClick={() => window.alert(`Prêt: ${o.titre}`)}
-                        >
-                            Prêter
-                        </ElisaButton>
-                    )}
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(o.id)}
-                    />
-                </div>
-            ),
+            className: 'text-right',
+            renderActions: (o) => [
+                {
+                    key: 'detail',
+                    icon: Eye,
+                    label: 'Détail',
+                    onClick: () => window.alert(`Détail: ${o.titre}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'preter',
+                    icon: BookOpen,
+                    label: 'Prêter',
+                    onClick: () => window.alert(`Prêt: ${o.titre}`),
+                    hidden: o.exemplairesDisponibles <= 0,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(o.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

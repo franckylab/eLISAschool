@@ -6,26 +6,29 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Save } from 'lucide-react';
-import { useCreerEtablissement, useModifierEtablissement } from '../hooks/use-etablissements';
+import { Save, Image as ImageIcon, Upload, X } from 'lucide-react';
+import { useCreerEtablissement } from '../hooks/use-etablissements';
 import { SousSysteme, TypeEtablissement } from '../types/etablissement.types';
-import type { Etablissement, CreerEtablissementDto } from '../types/etablissement.types';
+import type { CreerEtablissementDto } from '../types/etablissement.types';
 
 interface EtablissementFormModalProps {
-    mode: 'creation' | 'edition';
-    etablissement?: Etablissement | null;
     onSuccess: () => void;
     onCancel: () => void;
 }
 
-export function EtablissementFormModal({ mode, etablissement, onSuccess, onCancel }: EtablissementFormModalProps) {
+export function EtablissementFormModal({ onSuccess, onCancel }: EtablissementFormModalProps) {
     const creer = useCreerEtablissement();
-    const modifier = useModifierEtablissement();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [logoPreview, setLogoPreview] = useState<string>('');
+    const [_logoFile, setLogoFile] = useState<File | null>(null);
+
+    const modalTitle = 'Nouvel établissement';
+    const modalDescription = 'Créez un nouvel établissement scolaire';
 
     const [formData, setFormData] = useState<CreerEtablissementDto>({
         nom: '',
@@ -52,45 +55,43 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
         surveillantGeneralNom: '',
     });
 
-    useEffect(() => {
-        if (mode === 'edition' && etablissement) {
-            setFormData({
-                nom: etablissement.nom || '',
-                codeEtablissement: etablissement.codeEtablissement || '',
-                slogan: etablissement.slogan || '',
-                logoUrl: etablissement.logoUrl || '',
-                sousSysteme: etablissement.sousSysteme,
-                type: etablissement.type,
-                numeroArrete: etablissement.numeroArrete || '',
-                numeroContribuable: etablissement.numeroContribuable || '',
-                numeroCompteBancaire: etablissement.numeroCompteBancaire || '',
-                contactEmail: etablissement.contactEmail || '',
-                contactTelephone: etablissement.contactTelephone || '',
-                adresse: etablissement.adresse || '',
-                siteWeb: etablissement.siteWeb || '',
-                facebook: etablissement.facebook || '',
-                twitter: etablissement.twitter || '',
-                heuresOuverture: etablissement.heuresOuverture || '',
-                heuresFermeture: etablissement.heuresFermeture || '',
-                effectifMax: etablissement.effectifMax,
-                directeurNom: etablissement.directeurNom || '',
-                directeurAdjointNom: etablissement.directeurAdjointNom || '',
-                censeurNom: etablissement.censeurNom || '',
-                surveillantGeneralNom: etablissement.surveillantGeneralNom || '',
-            });
-        }
-    }, [mode, etablissement]);
-
     const handleChange = (field: string, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = async () => {
-        if (mode === 'creation') {
-            await creer.mutateAsync(formData);
-        } else if (etablissement) {
-            await modifier.mutateAsync({ id: etablissement.id, ...formData });
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Veuillez sélectionner un fichier image');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Le fichier ne doit pas dépasser 2 Mo');
+                return;
+            }
+            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                setLogoPreview(result);
+                setFormData((prev) => ({ ...prev, logoUrl: result }));
+            };
+            reader.readAsDataURL(file);
         }
+    };
+
+    const handleRemoveLogo = () => {
+        setLogoFile(null);
+        setLogoPreview('');
+        setFormData((prev) => ({ ...prev, logoUrl: '' }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleSubmit = async () => {
+        await creer.mutateAsync(formData);
         onSuccess();
     };
 
@@ -98,8 +99,8 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
         <CustomModal
             open={true}
             onOpenChange={(open) => { if (!open) onCancel(); }}
-            title={mode === 'creation' ? 'Nouvel établissement' : 'Modifier l\'établissement'}
-            description="Remplissez les informations ci-dessous"
+            title={modalTitle}
+            description={modalDescription}
             size="3xl"
             footer={
                 <>
@@ -110,7 +111,7 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         variant="primary"
                         onClick={handleSubmit}
                         icon={<Save className="h-4 w-4" />}
-                        isLoading={creer.isPending || modifier.isPending}
+                        isLoading={creer.isPending}
                     >
                         Enregistrer
                     </ElisaButton>
@@ -118,6 +119,49 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
             }
         >
             <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                {/* Logo */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Logo de l'établissement</h3>
+                    <div className="flex items-start gap-6">
+                        <div className="flex-shrink-0 w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-50 dark:bg-gray-800 overflow-hidden relative">
+                            {logoPreview ? (
+                                <>
+                                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                                    <button
+                                        onClick={handleRemoveLogo}
+                                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                        title="Supprimer le logo"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </>
+                            ) : (
+                                <ImageIcon className="h-12 w-12 text-gray-400" />
+                            )}
+                        </div>
+                        <div className="flex-1 space-y-3">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoChange}
+                                className="hidden"
+                                id="logo-upload"
+                            />
+                            <label
+                                htmlFor="logo-upload"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer text-sm font-medium"
+                            >
+                                <Upload className="h-4 w-4" />
+                                Choisir un fichier
+                            </label>
+                            <p className="text-xs text-gray-500">
+                                Formats acceptés : PNG, JPG, SVG, GIF. Taille max : 2 Mo. Taille recommandée : 200x200px.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Informations de base */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Informations de base</h3>
@@ -217,6 +261,56 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('adresse', e.target.value)}
                         placeholder="Quartier, Ville"
                     />
+                </div>
+
+                {/* Couleurs et personnalisation */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Couleurs et personnalisation</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                Couleur principale
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={formData.couleurPrimaire || '#28a745'}
+                                    onChange={(e) => handleChange('couleurPrimaire', e.target.value)}
+                                    className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                                />
+                                <ElisaInput
+                                    value={formData.couleurPrimaire || ''}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('couleurPrimaire', e.target.value)}
+                                    placeholder="#28a745"
+                                    className="flex-1"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                Couleur secondaire
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={formData.couleurSecondaire || '#ffc107'}
+                                    onChange={(e) => handleChange('couleurSecondaire', e.target.value)}
+                                    className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                                />
+                                <ElisaInput
+                                    value={formData.couleurSecondaire || ''}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('couleurSecondaire', e.target.value)}
+                                    placeholder="#ffc107"
+                                    className="flex-1"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact - Réseaux sociaux */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Réseaux sociaux</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <ElisaInput
                             label="Site Web"
@@ -267,7 +361,13 @@ export function EtablissementFormModal({ mode, etablissement, onSuccess, onCance
 
                 {/* Direction */}
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Direction</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Direction & Responsables</h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <strong> Chef d'établissement :</strong> Rôle attribué via la gestion des utilisateurs. 
+                            Pour assigner un chef, créez/modifiez un utilisateur avec le rôle "Chef d'établissement".
+                        </p>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaInput
                             label="Directeur(trice)"

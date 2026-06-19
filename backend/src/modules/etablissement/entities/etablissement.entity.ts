@@ -144,6 +144,16 @@ export class Etablissement {
     @Column({ type: 'varchar', length: 200, nullable: true })
     surveillantGeneralNom?: string;
 
+    // ==================================
+    // Couleurs et personnalisation visuelle (v2.1)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    couleurPrimaire?: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    couleurSecondaire?: string;
+
     /**
      * Relation 1:1 vers la configuration de l'établissement.
      * Chargée à la demande pour éviter les requêtes inutiles.

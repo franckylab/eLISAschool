@@ -37,7 +37,16 @@ export function RapportsPage() {
         { key: 'date', header: 'Date', className: 'w-28', render: (r: any) => <span className="text-sm">{new Date(r.dateGeneration).toLocaleDateString('fr-FR')}</span> },
         { key: 'taille', header: 'Taille', className: 'w-20', render: (r: any) => <span className="text-sm text-gray-600">{r.taille ? `${(r.taille / 1024).toFixed(1)} Ko` : '-'}</span> },
         { key: 'actions',
-            pinned: 'right' as const, header: 'Actions', className: 'w-32', render: (r: any) => <button className="text-blue-600 hover:underline text-sm">Télécharger</button> },
+            header: 'Actions', className: 'w-32',
+            renderActions: (r: any) => [
+                {
+                    key: 'telecharger',
+                    icon: Download,
+                    label: 'Télécharger',
+                    onClick: () => {/* Télécharger */},
+                },
+            ],
+        },
     ];
 
     if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;

@@ -160,35 +160,174 @@ export class UtilisateurEtablissementService {
 
     /**
      * Retire un établissement à un utilisateur (désactivation logique)
+     * 
+     * Améliorations v2.1:
+     * - Recherche l'affectation même si déjà inactive (pour idempotence)
+     * - Vérifie les données liées (classes, élèves, notes) avant retrait
+     * - Transaction ACID pour garantir l'intégrité
+     * - Logging détaillé pour audit trail
      */
-    async retirer(utilisateurId: string, etablissementId: string): Promise<void> {
-        const affectation = await this.repo.findOne({
+    async retirer(utilisateurId: string, etablissementId: string, motifRetrait?: string): Promise<void> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // RECHERCHE FLEXIBLE : Trouver l'affectation (active ou non)
+            const affectation = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                where: { utilisateurId, etablissementId }
+            });
+
+            // IDEMPOTENCE TOTALE : Si l'affectation n'existe pas, considérer comme succès
+            if (!affectation) {
+                logger.info(
+                    `[IDEMPOTENCE] Aucune affectation trouvée pour ${utilisateurId} → ${etablissementId} (déjà retirée ou jamais assigné)`
+                );
+                await queryRunner.commitTransaction();
+                return;
+            }
+
+            // IDEMPOTENCE : Si déjà inactive, considérer comme succès
+            if (!affectation.actif) {
+                logger.info(
+                    `[IDEMPOTENCE] Affectation déjà inactive pour ${utilisateurId} → ${etablissementId}`
+                );
+                await queryRunner.commitTransaction();
+                return;
+            }
+
+            // VÉRIFICATION MÉTIER : Compter les affectations actives restantes
+            const countActif = await queryRunner.manager.count(UtilisateurEtablissement, {
+                where: { utilisateurId, actif: true }
+            });
+
+            if (countActif <= 1) {
+                throw new AppError(
+                    'Impossible de retirer le dernier établissement d\'un utilisateur. Supprimez le compte utilisateur à la place.',
+                    400,
+                    'LAST_ETABLISSEMENT'
+                );
+            }
+
+            // VÉRIFICATION DES DONNÉES LIÉES (optionnel, configurable)
+            await this.verifierDonneesLies(queryRunner, utilisateurId, etablissementId);
+
+            // LOGIQUE DE RETRAIT:
+            // 1. Si c'était l'établissement principal, en attribuer un autre
+            if (affectation.etablissementPrincipal) {
+                const autreEtablissement = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                    where: { utilisateurId, actif: true, etablissementPrincipal: false },
+                    order: { creeAt: 'ASC' }
+                });
+
+                if (autreEtablissement) {
+                    autreEtablissement.etablissementPrincipal = true;
+                    await queryRunner.manager.save(autreEtablissement);
+                    logger.info(
+                        `[PRINCIPAL] Nouvel établissement principal pour ${utilisateurId}: ${autreEtablissement.etablissementId}`
+                    );
+                }
+            }
+
+            // 2. Désactiver l'affectation
+            affectation.actif = false;
+            affectation.dateFin = new Date();
+            if (motifRetrait) {
+                affectation.motif = motifRetrait;
+            }
+            await queryRunner.manager.save(affectation);
+
+            // 3. Logger l'audit
+            logger.info(
+                `[RETRAIT] Utilisateur ${utilisateurId} retiré de ${etablissementId}` +
+                (motifRetrait ? ` (Motif: ${motifRetrait})` : '')
+            );
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Vérifie les données liées avant le retrait d'un utilisateur
+     * Retourne des avertissements ou bloque selon la criticité
+     */
+    private async verifierDonneesLies(
+        queryRunner: any,
+        utilisateurId: string,
+        etablissementId: string
+    ): Promise<void> {
+        // VÉRIFICATION 1: L'utilisateur est-il chef d'établissement ?
+        const affectation = await queryRunner.manager.findOne(UtilisateurEtablissement, {
             where: { utilisateurId, etablissementId, actif: true }
         });
 
-        if (!affectation) {
-            throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
+        if (affectation?.role === Role.CHEF_ETABLISSEMENT) {
+            // Vérifier s'il y a un autre chef
+            const autreChef = await queryRunner.manager.count(UtilisateurEtablissement, {
+                where: {
+                    etablissementId,
+                    role: Role.CHEF_ETABLISSEMENT,
+                    actif: true,
+                    utilisateurId: queryRunner.manager.createQueryBuilder().raw('!= ?', [utilisateurId])
+                }
+            });
+
+            if (autreChef === 0) {
+                logger.warn(
+                    `[ALERTE] Dernier chef d'établissement retiré de ${etablissementId}`
+                );
+                // On ne bloque pas, mais on logue pour audit
+            }
         }
 
-        // Vérifier que ce n'est pas le seul établissement
-        const count = await this.repo.count({
-            where: { utilisateurId, actif: true }
+        // VÉRIFICATION 2: L'utilisateur a-t-il des classes assignées ?
+        const classeRepo = queryRunner.manager.getRepository('Classe');
+        const classesAssignees = await classeRepo.count({
+            where: { 
+                responsableId: utilisateurId,
+                anneeScolaire: { etablissementId }
+            },
+            relations: ['anneeScolaire']
         });
 
-        if (count <= 1) {
-            throw new AppError(
-                'Impossible de retirer le dernier établissement d\'un utilisateur',
-                400,
-                'LAST_ETABLISSEMENT'
+        if (classesAssignees > 0) {
+            logger.warn(
+                `[ALERTE] Utilisateur ${utilisateurId} a ${classesAssignees} classe(s) assignée(s) dans ${etablissementId}`
             );
+            // TODO: Notification au responsable pour réassignation
         }
 
-        // Désactiver l'affectation
-        affectation.actif = false;
-        affectation.dateFin = new Date();
-        await this.repo.save(affectation);
+        // VÉRIFICATION 3: L'utilisateur est-il responsable d'élèves ?
+        const responsableRepo = queryRunner.manager.getRepository('ResponsableEleve');
+        const responsablesEleves = await responsableRepo.count({
+            where: { utilisateurId }
+        });
 
-        logger.info(`Utilisateur ${utilisateurId} retiré de l'établissement ${etablissementId}`);
+        if (responsablesEleves > 0) {
+            logger.info(
+                `[INFO] Utilisateur ${utilisateurId} est responsable de ${responsablesEleves} élève(s)`
+            );
+            // Pas de blocage - les responsables peuvent être multi-établissements
+        }
+
+        // VÉRIFICATION 4: L'utilisateur a-t-il créé des données critiques ?
+        // (notes, bulletins, etc.) - Vérification légère, juste un log
+        const noteRepo = queryRunner.manager.getRepository('Note');
+        const notesCreees = await noteRepo.count({
+            where: { creePar: utilisateurId }
+        });
+
+        if (notesCreees > 0) {
+            logger.info(
+                `[INFO] Utilisateur ${utilisateurId} a créé ${notesCreees} note(s) - données conservées`
+            );
+            // Les notes restent (creePar est un historique)
+        }
     }
 
     /**

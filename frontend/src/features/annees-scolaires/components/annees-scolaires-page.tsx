@@ -127,48 +127,42 @@ export function AnneesScolairesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (a) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } })}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {!a.estActuelle && hasPermission('annees-scolaires:activer') && (
-                        <button
-                            onClick={() => activer.mutateAsync(a.id)}
-                            disabled={activer.isPending}
-                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
-                            title="Activer cette année"
-                        >
-                            <Power className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('annees-scolaires:edit') && (
-                        <button
-                            onClick={() => handleEdition(a)}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('annees-scolaires:delete') && !a.estActuelle && (
-                        <button
-                            onClick={() => setAnneeToDelete(a)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (a) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } }),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'activer',
+                    icon: Power,
+                    label: 'Activer',
+                    onClick: () => activer.mutateAsync(a.id),
+                    permission: 'annees-scolaires:activer',
+                    hidden: a.estActuelle,
+                    variant: 'success' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => handleEdition(a),
+                    permission: 'annees-scolaires:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setAnneeToDelete(a),
+                    permission: 'annees-scolaires:delete',
+                    hidden: a.estActuelle,
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

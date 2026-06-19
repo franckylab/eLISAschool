@@ -118,7 +118,7 @@ export class UtilisateursService {
      * Récupérer tous les utilisateurs avec pagination et filtres
      */
     async findAll(query: QueryUtilisateursDto): Promise<PaginatedResult<UtilisateurResponseDto>> {
-        const { page, limit, search, role, statut, etablissementId, sortBy, sortOrder } = query;
+        const { page, limit, search, role, statut, etablissementId, exclureEtablissement, sortBy, sortOrder } = query;
 
         // Construction des conditions WHERE
         const where: FindOptionsWhere<Utilisateur> = {};
@@ -144,7 +144,7 @@ export class UtilisateursService {
         }
 
         // Requête avec pagination optimisée
-        const queryBuilder = this.utilisateurRepository
+        let queryBuilder = this.utilisateurRepository
             .createQueryBuilder('u')
             .where(where);
 
@@ -152,6 +152,18 @@ export class UtilisateursService {
         if (role && role.includes(',')) {
             const roles = role.split(',').map(r => r.trim());
             queryBuilder.andWhere('u.role IN (:...roles)', { roles });
+        }
+
+        // EXCLURE les utilisateurs déjà assignés à un établissement spécifique
+        if (exclureEtablissement) {
+            queryBuilder.andWhere(`
+                u.id NOT IN (
+                    SELECT ue."utilisateurId" 
+                    FROM utilisateur_etablissements ue 
+                    WHERE ue."etablissementId" = :exclureEtablissement 
+                    AND ue.actif = true
+                )
+            `, { exclureEtablissement });
         }
 
         // Recherche textuelle (uniquement sur email et matricule car profil est récupéré séparément)

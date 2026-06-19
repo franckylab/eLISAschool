@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Bus } from 'lucide-react';
+import { Plus, Bus, Edit, Trash2 } from 'lucide-react';
 import { useInscriptionsTransport, useSupprimerLigneTransport } from '../hooks/use-transport';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -67,30 +67,29 @@ export function TransportPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (i) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('transport:edit') && (
-                        <ElisaButton variant="ghost" size="sm">Modifier</ElisaButton>
-                    )}
-                    {hasPermission('transport:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer cette inscription ?')) {
-                                    supprimer.mutateAsync(i.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (i) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {/* Modifier */},
+                    permission: 'transport:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => {
+                        if (confirm('Supprimer cette inscription ?')) {
+                            supprimer.mutateAsync(i.id);
+                        }
+                    },
+                    permission: 'transport:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

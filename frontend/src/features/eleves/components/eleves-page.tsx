@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Users } from 'lucide-react';
+import { Plus, Download, Upload, Eye, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useEleves, useSupprimerEleve, useExporterEleves } from '../hooks/use-eleves';
 import { EleveFormModal } from './eleve-form-modal';
@@ -178,39 +178,32 @@ export function ElevesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: t('commun.actions', { defaultValue: 'Actions' }),
             className: 'text-right',
-            render: (eleve) => (
-                <div className="flex justify-end gap-2">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleVoir(eleve)}
-                    >
-                        {t('actions.voir')}
-                    </ElisaButton>
-                    {hasPermission('eleves:edit') && (
-                        <ElisaButton
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleModifier(eleve)}
-                        >
-                            {t('actions.modifier')}
-                        </ElisaButton>
-                    )}
-                    {hasPermission('eleves:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimerEleve.isPending}
-                            onClick={() => setEleveToDelete(eleve)}
-                        >
-                            {t('actions.supprimer')}
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (eleve) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: t('actions.voir', { defaultValue: 'Voir' }),
+                    onClick: () => handleVoir(eleve),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: t('actions.modifier', { defaultValue: 'Modifier' }),
+                    onClick: () => handleModifier(eleve),
+                    permission: 'eleves:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: t('actions.supprimer', { defaultValue: 'Supprimer' }),
+                    onClick: () => setEleveToDelete(eleve),
+                    permission: 'eleves:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

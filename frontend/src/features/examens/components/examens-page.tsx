@@ -116,28 +116,24 @@ export function ExamensPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-32',
-            render: (e) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Résultats: ${e.titre}`)}
-                    >
-                        Résultats
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(e.id)}
-                    />
-                </div>
-            ),
+            renderActions: (e) => [
+                {
+                    key: 'resultats',
+                    icon: Eye,
+                    label: 'Résultats',
+                    onClick: () => window.alert(`Résultats: ${e.titre}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(e.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

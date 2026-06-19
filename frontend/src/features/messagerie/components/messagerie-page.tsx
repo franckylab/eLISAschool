@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Mail, MailOpen } from 'lucide-react';
+import { Plus, Mail, MailOpen, Eye, Trash2 } from 'lucide-react';
 import { useMessages, useSupprimerMessage } from '../hooks/use-messagerie';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -65,28 +65,25 @@ export function MessageriePage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (m) => (
-                <div className="flex justify-end gap-2">
-                    <ElisaButton variant="ghost" size="sm">Lire</ElisaButton>
-                    {hasPermission('messagerie:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm('Supprimer ce message ?')) {
-                                    supprimer.mutateAsync(m.id);
-                                }
-                            }}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (m) => [
+                {
+                    key: 'lire',
+                    icon: Eye,
+                    label: 'Lire',
+                    onClick: () => {},
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(m.id),
+                    permission: 'messagerie:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

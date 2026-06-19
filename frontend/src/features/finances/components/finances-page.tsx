@@ -149,25 +149,24 @@ export function FinancesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-24',
-            render: (p) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Détail paiement ${p.reference}`)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Download className="h-3 w-3" />}
-                        onClick={() => window.alert('Télécharger reçu')}
-                    />
-                </div>
-            ),
+            renderActions: (p) => [
+                {
+                    key: 'detail',
+                    icon: Eye,
+                    label: 'Détail paiement',
+                    onClick: () => window.alert(`Détail paiement ${p.reference}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'recu',
+                    icon: Download,
+                    label: 'Télécharger reçu',
+                    onClick: () => window.alert('Télécharger reçu'),
+                    variant: 'success' as const,
+                },
+            ],
         },
     ];
 

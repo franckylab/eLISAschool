@@ -76,6 +76,7 @@ export const queryUtilisateursSchema = paginationWithSortSchema
         role: z.string().optional(),
         statut: z.string().optional(),
         etablissementId: z.string().uuid().optional(),
+        exclureEtablissement: z.string().uuid().optional().describe('Exclure les utilisateurs déjà assignés à cet établissement'),
     });
 
 // Types inférés

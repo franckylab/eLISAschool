@@ -95,30 +95,33 @@ export function AnnoncesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (a) => (
-                <div className="flex justify-end gap-2">
-                    <ElisaButton variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />}>
-                        Voir
-                    </ElisaButton>
-                    <ElisaButton variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />}>
-                        Modifier
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-4 w-4" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => {
-                            if (confirm('Supprimer cette annonce ?')) {
-                                supprimer.mutateAsync(a.id);
-                            }
-                        }}
-                    />
-                </div>
-            ),
+            renderActions: (a) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir',
+                    onClick: () => {/* Voir annonce */},
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => {/* Modifier annonce */},
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => {
+                        if (confirm('Supprimer cette annonce ?')) {
+                            supprimer.mutateAsync(a.id);
+                        }
+                    },
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

@@ -47,7 +47,12 @@ export function ArchivesPage() {
         { key: 'archivePar', header: 'Archivé par', className: 'w-40', render: (a) => (a.archivePar ? <p className="text-sm text-gray-700">{a.archivePar.prenom} {a.archivePar.nom}</p> : <span className="text-gray-400">-</span>)},
         { key: 'date', header: 'Date', className: 'w-28', render: (a) => <span className="text-sm text-gray-700">{new Date(a.createdAt).toLocaleDateString('fr-FR')}</span>},
         { key: 'actions',
-            pinned: 'right' as const, header: 'Actions', className: 'text-right w-24', render: (a) => (<div className="flex justify-end gap-1"><ElisaButton variant="outline" size="sm" icon={<Download className="h-3 w-3" />} isLoading={telecharger.isPending} onClick={() => telecharger.mutateAsync(a.id)} /><ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-3 w-3" />} isLoading={supprimer.isPending} onClick={() => supprimer.mutateAsync(a.id)} /></div>)},
+            header: 'Actions', className: 'text-right',
+            renderActions: (a) => [
+                { key: 'telecharger', icon: Download, label: 'Télécharger', onClick: () => telecharger.mutateAsync(a.id) },
+                { key: 'supprimer', icon: Trash2, label: 'Supprimer', onClick: () => supprimer.mutateAsync(a.id), variant: 'danger' as const },
+            ],
+        },
     ];
 
     return (

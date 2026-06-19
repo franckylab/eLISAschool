@@ -69,41 +69,32 @@ export function NiveauxPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right',
-            render: (n) => (
-                <div className="flex justify-end gap-1">
-                    <button
-                        onClick={() => {/* Voir détails */}}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Voir détails"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </button>
-                    {hasPermission('niveaux:edit') && (
-                        <button
-                            onClick={() => {
-                                setNiveauToEdit(n);
-                                setShowFormModal(true);
-                            }}
-                            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                            title="Modifier"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </button>
-                    )}
-                    {hasPermission('niveaux:delete') && (
-                        <button
-                            onClick={() => setNiveauToDelete(n)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
-                </div>
-            ),
+            renderActions: (n) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => {},
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => { setNiveauToEdit(n); setShowFormModal(true); },
+                    permission: 'niveaux:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setNiveauToDelete(n),
+                    permission: 'niveaux:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

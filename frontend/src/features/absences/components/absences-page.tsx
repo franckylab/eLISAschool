@@ -121,35 +121,30 @@ export function AbsencesPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
-            className: 'text-right w-32',
-            render: (a) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-4 w-4" />}
-                        onClick={() => window.alert(`Détail: ${a.eleve?.nom}`)}
-                    />
-                    {a.statut !== 'justifiee' && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<CheckCircle className="h-4 w-4" />}
-                            isLoading={justifier.isPending}
-                            onClick={() => {
-                                const motif = prompt('Motif de justification:');
-                                if (motif) {
-                                    justifier.mutateAsync({ id: a.id, dto: { motif } });
-                                }
-                            }}
-                        >
-                            Justifier
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            className: 'text-right',
+            renderActions: (a) => [
+                {
+                    key: 'detail',
+                    icon: Eye,
+                    label: 'Détail',
+                    onClick: () => window.alert(`Détail: ${a.eleve?.nom}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'justifier',
+                    icon: CheckCircle,
+                    label: 'Justifier',
+                    onClick: () => {
+                        const motif = prompt('Motif de justification:');
+                        if (motif) {
+                            justifier.mutateAsync({ id: a.id, dto: { motif } });
+                        }
+                    },
+                    hidden: a.statut === 'justifiee',
+                    variant: 'success' as const,
+                },
+            ],
         },
     ];
 

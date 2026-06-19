@@ -15,6 +15,36 @@ import {
     COULEURS_DOMINANTES,
 } from '@/lib/theme-utils';
 
+/**
+ * Met à jour le favicon dynamique selon la couleur dominante
+ */
+function mettreAJourFavicon(couleur: string): void {
+    try {
+        const r = parseInt(couleur.slice(1, 3), 16);
+        const g = parseInt(couleur.slice(3, 5), 16);
+        const b = parseInt(couleur.slice(5, 7), 16);
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const couleurIcone = luminance > 0.5 ? '#000000' : '#ffffff';
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+            <circle cx="32" cy="32" r="30" fill="${couleur}"/>
+            <g fill="${couleurIcone}" opacity="0.95">
+                <path d="M18 20 C18 20, 24 18, 32 20 L32 44 C24 42, 18 44, 18 44 Z"/>
+                <path d="M46 20 C46 20, 40 18, 32 20 L32 44 C40 42, 46 44, 46 44 Z"/>
+            </g>
+            <line x1="32" y1="20" x2="32" y2="44" stroke="${couleur}" stroke-width="1.5" opacity="0.3"/>
+        </svg>`;
+
+        const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        const link = document.querySelector('link[rel="icon"]:not([sizes])') as HTMLLinkElement | null;
+        if (link) {
+            link.href = dataUrl;
+        }
+    } catch {
+        // Silencieux — favicon statique en fallback
+    }
+}
+
 export type ModeTheme = 'light' | 'dark' | 'auto';
 
 interface ThemeState {
@@ -50,6 +80,7 @@ export const useThemeStore = create<ThemeState>()(
                     couleurAccent: accent,
                 });
                 appliquerThemeCSS(couleur, secondaire, accent);
+                mettreAJourFavicon(couleur);
             },
 
             setMode: (mode: ModeTheme) => {
@@ -72,6 +103,7 @@ export const useThemeStore = create<ThemeState>()(
                     mode: 'light',
                 });
                 appliquerThemeCSS(COULEUR_DEFAUT, secondaire, accent);
+                mettreAJourFavicon(COULEUR_DEFAUT);
                 document.documentElement.setAttribute('data-theme', 'light');
             },
 
@@ -100,6 +132,7 @@ export const useThemeStore = create<ThemeState>()(
                             mode,
                         });
                         appliquerThemeCSS(dominante, secondaire, accent);
+                        mettreAJourFavicon(dominante);
 
                         if (mode === 'auto') {
                             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

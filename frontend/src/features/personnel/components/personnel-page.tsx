@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
 import { PersonnelFormModal } from './personnel-form-modal';
@@ -117,26 +117,25 @@ export function PersonnelPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: t('commun.actions'),
             className: 'text-right',
-            render: (p) => (
-                <div className="flex justify-end gap-2">
-                    {hasPermission('personnel:edit') && (
-                        <ElisaButton variant="ghost" size="sm" onClick={() => handleEdition(p)}>{t('boutons.modifier')}</ElisaButton>
-                    )}
-                    {hasPermission('personnel:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            isLoading={supprimer.isPending}
-                            onClick={() => setMembreToDelete(p)}
-                        >
-                            {t('boutons.supprimer')}
-                        </ElisaButton>
-                    )}
-                </div>
-            ),
+            renderActions: (p) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: t('boutons.modifier'),
+                    onClick: () => handleEdition(p),
+                    permission: 'personnel:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: t('boutons.supprimer'),
+                    onClick: () => setMembreToDelete(p),
+                    permission: 'personnel:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

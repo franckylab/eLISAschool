@@ -123,39 +123,37 @@ export function DocumentsPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-40',
-            render: (d) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Eye className="h-3 w-3" />}
-                        onClick={() => window.alert(`Aperçu: ${d.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Download className="h-3 w-3" />}
-                        isLoading={telecharger.isPending}
-                        onClick={() => telecharger.mutateAsync(d.id)}
-                    />
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Edit className="h-3 w-3" />}
-                        onClick={() => window.alert(`Modifier: ${d.titre}`)}
-                    />
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(d.id)}
-                    />
-                </div>
-            ),
+            renderActions: (d) => [
+                {
+                    key: 'apercu',
+                    icon: Eye,
+                    label: 'Aperçu',
+                    onClick: () => window.alert(`Aperçu: ${d.titre}`),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'telecharger',
+                    icon: Download,
+                    label: 'Télécharger',
+                    onClick: () => telecharger.mutateAsync(d.id),
+                    variant: 'success' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => window.alert(`Modifier: ${d.titre}`),
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(d.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

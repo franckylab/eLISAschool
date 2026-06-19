@@ -99,34 +99,30 @@ export function OrganisationPage() {
         },
         {
             key: 'actions',
-            pinned: 'right' as const,
             header: 'Actions',
             className: 'text-right w-40',
-            render: (g) => (
-                <div className="flex justify-end gap-1">
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<UserPlus className="h-3 w-3" />}
-                        onClick={() => window.alert(`Ajouter membre: ${g.nom}`)}
-                    >
-                        Membre
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Edit className="h-3 w-3" />}
-                        onClick={() => window.alert(`Modifier: ${g.nom}`)}
-                    />
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-3 w-3" />}
-                        isLoading={supprimer.isPending}
-                        onClick={() => supprimer.mutateAsync(g.id)}
-                    />
-                </div>
-            ),
+            renderActions: (g) => [
+                {
+                    key: 'membre',
+                    icon: UserPlus,
+                    label: 'Ajouter membre',
+                    onClick: () => window.alert(`Ajouter membre: ${g.nom}`),
+                    variant: 'success' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => window.alert(`Modifier: ${g.nom}`),
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => supprimer.mutateAsync(g.id),
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 
