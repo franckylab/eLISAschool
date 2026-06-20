@@ -120,38 +120,48 @@ export class UtilisateursService {
     async findAll(query: QueryUtilisateursDto): Promise<PaginatedResult<UtilisateurResponseDto>> {
         const { page, limit, search, role, statut, etablissementId, exclureEtablissement, sortBy, sortOrder } = query;
 
-        // Construction des conditions WHERE
-        const where: FindOptionsWhere<Utilisateur> = {};
-
-        if (role) {
-            // Supporter les rôles multiples (séparés par virgule)
-            const roles = role.split(',').map(r => r.trim()) as Role[];
-            if (roles.length === 1) {
-                where.role = roles[0];
-            } else {
-                // Pour plusieurs rôles, utiliser IN
-                // Note: TypeORM ne supporte pas directement IN dans FindOptionsWhere
-                // On va gérer ça via le queryBuilder plus bas
-            }
-        }
-
-        if (statut) {
-            where.statut = statut as StatutUtilisateur;
-        }
-
-        if (etablissementId) {
-            where.etablissementId = etablissementId;
-        }
-
-        // Requête avec pagination optimisée
+        // Construction de la requête avec JOIN sur utilisateur_etablissements
         let queryBuilder = this.utilisateurRepository
-            .createQueryBuilder('u')
-            .where(where);
+            .createQueryBuilder('u');
 
-        // Gérer les rôles multiples (IN clause)
-        if (role && role.includes(',')) {
-            const roles = role.split(',').map(r => r.trim());
-            queryBuilder.andWhere('u.role IN (:...roles)', { roles });
+        // Si filtrage par établissement, utiliser la table de jointure
+        if (etablissementId) {
+            queryBuilder
+                .innerJoin('u.utilisateurEtablissements', 'ue')
+                .where('ue.etablissementId = :etablissementId', { etablissementId })
+                .andWhere('ue.actif = :actif', { actif: true });
+
+            // Filtre par rôle dans l'établissement (pas le rôle global)
+            if (role) {
+                const roles = role.split(',').map(r => r.trim());
+                if (roles.length === 1) {
+                    queryBuilder.andWhere('ue.role = :role', { role: roles[0] });
+                } else {
+                    queryBuilder.andWhere('ue.role IN (:...roles)', { roles });
+                }
+            }
+        } else {
+            // Pas de filtrage par établissement → requête simple
+            const where: FindOptionsWhere<Utilisateur> = {};
+
+            if (role && !exclureEtablissement) {
+                const roles = role.split(',').map(r => r.trim()) as Role[];
+                if (roles.length === 1) {
+                    where.role = roles[0];
+                }
+            }
+
+            if (statut) {
+                where.statut = statut as StatutUtilisateur;
+            }
+
+            queryBuilder.where(where);
+
+            // Gérer les rôles multiples (IN clause)
+            if (role && role.includes(',')) {
+                const roles = role.split(',').map(r => r.trim());
+                queryBuilder.andWhere('u.role IN (:...roles)', { roles });
+            }
         }
 
         // EXCLURE les utilisateurs déjà assignés à un établissement spécifique
@@ -172,6 +182,11 @@ export class UtilisateursService {
                 '(u.email ILIKE :search OR u.matricule ILIKE :search)',
                 { search: `%${search}%` }
             );
+        }
+
+        // Statut (si pas déjà appliqué dans le WHERE initial)
+        if (statut && !etablissementId) {
+            queryBuilder.andWhere('u.statut = :statut', { statut });
         }
 
         // Tri - validation du champ de tri
@@ -195,7 +210,17 @@ export class UtilisateursService {
                 const profil = await this.profilRepository.findOne({
                     where: { utilisateurId: u.id },
                 });
-                return this.formatUtilisateurResponse(u, profil || undefined);
+
+                // Si filtrage par établissement, récupérer le rôle dans cet établissement
+                let roleEtablissement: string | undefined;
+                if (etablissementId) {
+                    const affectation = await AppDataSource.getRepository('UtilisateurEtablissement').findOne({
+                        where: { utilisateurId: u.id, etablissementId, actif: true }
+                    });
+                    roleEtablissement = affectation?.role;
+                }
+
+                return this.formatUtilisateurResponse(u, profil || undefined, roleEtablissement);
             })
         );
 
@@ -323,19 +348,75 @@ export class UtilisateursService {
 
     /**
      * Supprimer un utilisateur
+     * 
+     * Stratégie : Soft delete via statut INACTIF + désactivation des affectations
+     * pour préserver l'historique d'audit et l'intégrité des données.
      */
     async remove(id: string): Promise<void> {
-        const utilisateur = await this.utilisateurRepository.findOne({
-            where: { id },
-        });
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        if (!utilisateur) {
-            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        try {
+            const utilisateur = await queryRunner.manager.findOne(Utilisateur, {
+                where: { id },
+            });
+
+            if (!utilisateur) {
+                throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+            }
+
+            // VÉRIFICATION : Empêcher la suppression du dernier SUPER_ADMIN
+            if (utilisateur.role === Role.SUPER_ADMIN) {
+                const superAdminCount = await queryRunner.manager.count(Utilisateur, {
+                    where: { role: Role.SUPER_ADMIN, statut: StatutUtilisateur.ACTIF }
+                });
+                
+                if (superAdminCount <= 1) {
+                    throw new AppError(
+                        'Impossible de supprimer le dernier Super Admin',
+                        400,
+                        'LAST_SUPER_ADMIN'
+                    );
+                }
+            }
+
+            // ÉTAPE 1 : Désactiver toutes les affectations établissement
+            await queryRunner.manager.query(
+                `UPDATE utilisateur_etablissements 
+                 SET actif = false, dateFin = NOW() 
+                 WHERE "utilisateurId" = $1 AND actif = true`,
+                [id]
+            );
+
+            // ÉTAPE 2 : Soft delete via changement de statut
+            utilisateur.statut = StatutUtilisateur.INACTIF;
+            await queryRunner.manager.save(utilisateur);
+
+            // ÉTAPE 3 : Invalider les tokens de session (refresh tokens)
+            await queryRunner.manager.query(
+                `DELETE FROM refresh_tokens WHERE "utilisateurId" = $1`,
+                [id]
+            );
+
+            // ÉTAPE 4 : Supprimer le profil (données personnelles)
+            await queryRunner.manager.query(
+                `DELETE FROM profils_utilisateurs WHERE "utilisateurId" = $1`,
+                [id]
+            );
+
+            // NOTE : Les audit_logs sont préservés pour traçabilité
+            // utilisateurId reste dans les logs mais l'utilisateur est marqué INACTIF
+
+            await queryRunner.commitTransaction();
+
+            logger.info(`Utilisateur supprimé (soft delete): ${utilisateur.email} (${id})`);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
-
-        await this.utilisateurRepository.remove(utilisateur);
-
-        logger.info(`Utilisateur supprimé: ${utilisateur.email}`);
     }
 
     /**
@@ -367,7 +448,8 @@ export class UtilisateursService {
      */
     private formatUtilisateurResponse(
         utilisateur: Utilisateur,
-        profil?: ProfilUtilisateur
+        profil?: ProfilUtilisateur,
+        roleEtablissement?: string
     ): UtilisateurResponseDto {
         return {
             id: utilisateur.id,
@@ -389,6 +471,8 @@ export class UtilisateursService {
                 dateNaissance: profil.dateNaissance,
                 photo: profil.photo,
             } : undefined,
+            // Rôle dans l'établissement (si fourni)
+            roleEtablissement,
         };
     }
 }

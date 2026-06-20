@@ -650,7 +650,7 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
             className: 'text-center',
             render: (user) => (
                 <select
-                    value={user.role}
+                    value={user.roleEtablissement || user.role}
                     onChange={(e) => {
                         if (confirm(`Changer le rôle de ${user.nom} ${user.prenom} vers ${e.target.value} ?`)) {
                             // TODO: Implémenter le changement de rôle avec useChangerRoleEtablissement

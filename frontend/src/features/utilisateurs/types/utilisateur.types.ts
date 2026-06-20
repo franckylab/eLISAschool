@@ -32,6 +32,11 @@ export interface Utilisateur {
         dateNaissance?: string;
         sexe?: SexeUtilisateur;
     };
+    /**
+     * Rôle de l'utilisateur dans l'établissement courant
+     * (peut être différent du rôle global)
+     */
+    roleEtablissement?: string;
     // Métadonnées
     nomComplet?: string;
     nbConnexions?: number;

@@ -108,6 +108,11 @@ export interface UtilisateurResponseDto {
         dateNaissance?: Date;
         photo?: string;
     };
+    /**
+     * Rôle de l'utilisateur dans l'établissement courant
+     * (peut être différent du rôle global)
+     */
+    roleEtablissement?: string;
 }
 
 export default {
