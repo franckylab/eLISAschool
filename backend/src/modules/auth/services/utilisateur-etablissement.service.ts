@@ -484,13 +484,30 @@ export class UtilisateurEtablissementService {
         }
 
         // VÉRIFICATION 3: L'utilisateur est-il responsable d'élèves dans CET établissement ?
+        // NOTE: ResponsableEleve n'a pas d'etablissementId, il faut passer par Eleve
+        // ResponsableEleve.enfantId = Utilisateur.id → Eleve.utilisateurId → Eleve.etablissementId
         const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
-        const elevesResponsables = await responsableRepo.count({
-            where: { 
-                utilisateurId,
-                etablissementId 
-            }
+        const eleveRepo = AppDataSource.getRepository('Eleve');
+        
+        // Trouver tous les enfants dont cet utilisateur est responsable
+        const responsabilites = await responsableRepo.find({
+            where: { utilisateurId, actif: true },
+            select: ['enfantId']
         });
+
+        let elevesResponsables = 0;
+        if (responsabilites.length > 0) {
+            const enfantIds = responsabilites.map(r => r.enfantId);
+            // Compter combien de ces enfants sont élèves dans cet établissement
+            elevesResponsables = await eleveRepo.count({
+                where: {
+                    utilisateurId: {
+                        in: enfantIds
+                    },
+                    etablissementId
+                }
+            });
+        }
 
         if (elevesResponsables > 0) {
             avertissements.push({
