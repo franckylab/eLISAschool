@@ -19,7 +19,8 @@ export interface Utilisateur {
     telephone?: string;
     matricule?: string;
     role: string;
-    etablissementId: string;
+    // NOTE v4.0: etablissementId SUPPRIMÉ - géré via utilisateur_etablissements
+    // Pour connaître les établissements, utiliser le endpoint dédié
     actif?: boolean;
     statut?: StatutUtilisateur;
     derniereConnexion?: string;
@@ -37,7 +38,7 @@ export interface Utilisateur {
      * (peut être différent du rôle global)
      */
     roleEtablissement?: string;
-    // Métadonnées
+    // Méta donné es
     nomComplet?: string;
     nbConnexions?: number;
     motDePasseExpire?: boolean;

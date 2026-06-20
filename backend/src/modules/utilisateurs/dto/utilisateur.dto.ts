@@ -87,6 +87,11 @@ export type QueryUtilisateursDto = z.infer<typeof queryUtilisateursSchema>;
 
 /**
  * DTO de réponse utilisateur
+ * 
+ * NOTE v4.0 : etablissementId SUPPRIMÉ de l'entité Utilisateur
+ * Pour connaître les établissements d'un utilisateur, utiliser:
+ * - GET /api/utilisateur-etablissements/:utilisateurId
+ * - Le JWT contient etablissementId (établissement courant)
  */
 export interface UtilisateurResponseDto {
     id: string;
@@ -96,7 +101,14 @@ export interface UtilisateurResponseDto {
     statut: string;
     emailVerifie: boolean;
     langue: string;
-    etablissementId?: string;
+    // NOTE: etablissementId supprimé - géré via utilisateur_etablissements
+    etablissements?: Array<{
+        etablissementId: string;
+        nom: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        actif: boolean;
+    }>;
     derniereConnexion?: Date;
     createdAt: Date;
     updatedAt: Date;

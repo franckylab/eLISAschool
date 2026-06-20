@@ -1,23 +1,28 @@
 /**
  * ==================================
- * eLISAschool - Middleware Multi-Tenancy v2.0
+ * eLISAschool - Middleware Multi-Tenancy v4.0
  * ==================================
- * Version: 2.0.0
+ * Version: 4.0.0
  * 
  * Filtre automatiquement les requêtes par établissement.
- * Supporte désormais les utilisateurs multi-établissements.
+ * Supporte les utilisateurs multi-établissements.
+ * 
+ * NOUVEAU v4.0 :
+ * - utilisateurs.etablissementId SUPPRIMÉ
+ * - Résolution via utilisateur_etablissements uniquement
  * 
  * Comportement :
  * - SUPER_ADMIN : accès à tous les établissements (etablissementId optionnel dans le query)
- * - Utilisateurs multi-établissements : utilise le query param ou l'établissement principal
- * - Utilisateurs single-établissement (legacy) : utilise l'etablissementId du JWT
- * - Autres rôles : utilise l'etablissementId du JWT (obligatoire)
+ * - Autres rôles : utilise la table utilisateur_etablissements
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { Role } from '@modules/auth/entities';
+import { AppDataSource } from '@database/data-source';
+import { UtilisateurEtablissement } from '@modules/auth/entities';
+import { utilisateurEtablissementService } from '@modules/auth/services';
 
 /**
  * Interface pour les établissements dans le JWT
@@ -32,13 +37,16 @@ interface JwtEtablissement {
 /**
  * Middleware multi-tenancy : attache l'etablissementId à la requête
  * 
+ * NOUVEAU v4.0 :
+ * - utilisateurs.etablissementId SUPPRIMÉ
+ * - Résolution via utilisateur_etablissements uniquement
+ * 
  * Algorithme de sélection :
  * 1. SUPER_ADMIN → query param ou undefined
  * 2. Multi-établissements → query param (si autorisé) OU établissement principal
- * 3. Single-établissement (legacy) → etablissementId du JWT
- * 4. Erreur si aucun établissement trouvé
+ * 3. Fallback : requête DB si JWT non mis à jour
  */
-export function tenantMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export async function tenantMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
         if (!req.utilisateur) {
             // Pas d'authentification → pas de filtrage
@@ -100,18 +108,29 @@ export function tenantMiddleware(req: Request, _res: Response, next: NextFunctio
             return;
         }
 
-        // 3. Legacy : single-établissement (compatibilité ascendante)
-        const userEtablissementId = req.utilisateur.etablissementId;
-        
-        if (!userEtablissementId) {
+        // 3. Fallback : récupérer depuis la table de jointure (si JWT non mis à jour)
+        try {
+            const affectations = await utilisateurEtablissementService.findByUtilisateur(req.utilisateur.id);
+            
+            if (affectations.length === 0) {
+                throw new AppError(
+                    'Aucun établissement associé à votre compte',
+                    403,
+                    'NO_ETABLISSEMENT'
+                );
+            }
+
+            // Priorité : établissement principal, sinon premier actif
+            const principal = affectations.find(a => a.etablissementPrincipal);
+            req.etablissementId = principal?.etablissementId || affectations[0].etablissementId;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
             throw new AppError(
-                'Aucun établissement associé à votre compte',
-                403,
-                'NO_ETABLISSEMENT'
+                'Erreur lors de la résolution de l\'établissement',
+                500,
+                'TENANT_RESOLUTION_ERROR'
             );
         }
-
-        req.etablissementId = userEtablissementId;
         next();
     } catch (error) {
         next(error);

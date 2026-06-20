@@ -14,6 +14,7 @@ import { UtilisateurEtablissement, RoleLimitationEtablissement } from '../entiti
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { VerificationRetraitResponse, BlocageRetrait, AvertissementRetrait } from '../dto';
 
 export interface AffecterUtilisateurDto {
     utilisateurId: string;
@@ -161,13 +162,18 @@ export class UtilisateurEtablissementService {
     /**
      * Retire un établissement à un utilisateur (désactivation logique)
      * 
-     * Améliorations v2.1:
-     * - Recherche l'affectation même si déjà inactive (pour idempotence)
-     * - Vérifie les données liées (classes, élèves, notes) avant retrait
+     * Améliorations v5.0:
+     * - Suppression du blocage du dernier établissement (retrait total autorisé)
+     * - Support du paramètre nouveauPrincipalId pour choisir le nouvel établissement principal
      * - Transaction ACID pour garantir l'intégrité
      * - Logging détaillé pour audit trail
      */
-    async retirer(utilisateurId: string, etablissementId: string, motifRetrait?: string): Promise<void> {
+    async retirer(
+        utilisateurId: string,
+        etablissementId: string,
+        motifRetrait?: string,
+        nouveauPrincipalId?: string
+    ): Promise<void> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -196,35 +202,41 @@ export class UtilisateurEtablissementService {
                 return;
             }
 
-            // VÉRIFICATION MÉTIER : Compter les affectations actives restantes
-            const countActif = await queryRunner.manager.count(UtilisateurEtablissement, {
-                where: { utilisateurId, actif: true }
-            });
-
-            if (countActif <= 1) {
-                throw new AppError(
-                    'Impossible de retirer le dernier établissement d\'un utilisateur. Supprimez le compte utilisateur à la place.',
-                    400,
-                    'LAST_ETABLISSEMENT'
-                );
-            }
-
-            // VÉRIFICATION DES DONNÉES LIÉES (optionnel, configurable)
-            await this.verifierDonneesLies(queryRunner, utilisateurId, etablissementId);
-
-            // LOGIQUE DE RETRAIT:
+            // LOGIQUE DE RETRAIT (v5.0):
             // 1. Si c'était l'établissement principal, en attribuer un autre
             if (affectation.etablissementPrincipal) {
-                const autreEtablissement = await queryRunner.manager.findOne(UtilisateurEtablissement, {
-                    where: { utilisateurId, actif: true, etablissementPrincipal: false },
-                    order: { creeAt: 'ASC' }
-                });
+                let nouvelEtablissementPrincipal: UtilisateurEtablissement | null = null;
 
-                if (autreEtablissement) {
-                    autreEtablissement.etablissementPrincipal = true;
-                    await queryRunner.manager.save(autreEtablissement);
+                // Si nouveauPrincipalId est spécifié, l'utiliser
+                if (nouveauPrincipalId) {
+                    nouvelEtablissementPrincipal = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                        where: { utilisateurId, etablissementId: nouveauPrincipalId, actif: true }
+                    });
+
+                    if (!nouvelEtablissementPrincipal) {
+                        throw new AppError(
+                            'L\'établissement principal spécifié n\'est pas valide ou n\'est pas affecté à cet utilisateur',
+                            400,
+                            'NOUVEAU_PRINCIPAL_INVALIDE'
+                        );
+                    }
+                } else {
+                    // Sinon, choisir le plus ancien établissement actif
+                    nouvelEtablissementPrincipal = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                        where: { utilisateurId, actif: true, etablissementPrincipal: false },
+                        order: { creeAt: 'ASC' }
+                    });
+                }
+
+                if (nouvelEtablissementPrincipal) {
+                    nouvelEtablissementPrincipal.etablissementPrincipal = true;
+                    await queryRunner.manager.save(nouvelEtablissementPrincipal);
                     logger.info(
-                        `[PRINCIPAL] Nouvel établissement principal pour ${utilisateurId}: ${autreEtablissement.etablissementId}`
+                        `[PRINCIPAL] Nouvel établissement principal pour ${utilisateurId}: ${nouvelEtablissementPrincipal.etablissementId}`
+                    );
+                } else {
+                    logger.info(
+                        `[PRINCIPAL] Aucun autre établissement pour ${utilisateurId} - etablissementPrincipal sera null`
                     );
                 }
             }
@@ -398,6 +410,117 @@ export class UtilisateurEtablissementService {
             where: { utilisateurId, etablissementPrincipal: true, actif: true },
             relations: ['etablissement']
         });
+    }
+
+    /**
+     * Vérifie les impacts avant le retrait d'un utilisateur d'un établissement (v5.0)
+     * 
+     * Retourne une structure détaillée avec blocages et avertissements.
+     * Toutes les vérifications sont filtrées par etablissementId.
+     */
+    async verifierRetrait(
+        utilisateurId: string,
+        etablissementId: string
+    ): Promise<VerificationRetraitResponse> {
+        const blocages: BlocageRetrait[] = [];
+        const avertissements: AvertissementRetrait[] = [];
+
+        // VÉRIFICATION 1: L'utilisateur est-il chef d'établissement ?
+        const affectation = await this.repo.findOne({
+            where: { utilisateurId, etablissementId, actif: true }
+        });
+
+        let estDernierChef = false;
+        if (affectation?.role === Role.CHEF_ETABLISSEMENT) {
+            // Compter les autres chefs (exclure l'utilisateur actuel)
+            const tousLesChefs = await this.repo.find({
+                where: {
+                    etablissementId,
+                    role: Role.CHEF_ETABLISSEMENT,
+                    actif: true
+                }
+            });
+            
+            const autreChef = tousLesChefs.filter(chef => chef.utilisateurId !== utilisateurId).length;
+
+            if (autreChef === 0) {
+                estDernierChef = true;
+                blocages.push({
+                    code: 'DERNIER_CHEF_ETABLISSEMENT',
+                    message: 'Cet utilisateur est le dernier chef d\'établissement dans cet établissement',
+                    severite: 'bloquant',
+                    actionRequise: 'Désignez un autre chef d\'établissement avant de retirer cet utilisateur'
+                });
+            }
+        }
+
+        // VÉRIFICATION 2: L'utilisateur a-t-il des classes assignées dans CET établissement ?
+        const classeRepo = AppDataSource.getRepository('Classe');
+        const classesAssignees = await classeRepo.count({
+            where: { 
+                responsableId: utilisateurId,
+                anneeScolaire: { etablissementId }
+            },
+            relations: ['anneeScolaire']
+        });
+
+        if (classesAssignees > 0) {
+            avertissements.push({
+                code: 'CLASSES_ASSIGNEES',
+                message: `${classesAssignees} classe(s) sont assignées à cet utilisateur dans cet établissement`,
+                severite: 'avertissement',
+                nombre: classesAssignees,
+                actionRecommandee: 'Réassignez les classes à un autre utilisateur avant le retrait'
+            });
+        }
+
+        // VÉRIFICATION 3: L'utilisateur est-il responsable d'élèves dans CET établissement ?
+        const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+        const elevesResponsables = await responsableRepo.count({
+            where: { 
+                utilisateurId,
+                etablissementId 
+            }
+        });
+
+        if (elevesResponsables > 0) {
+            avertissements.push({
+                code: 'RESPONSABLE_ELEVES',
+                message: `Cet utilisateur est responsable de ${elevesResponsables} élève(s) dans cet établissement`,
+                severite: 'avertissement',
+                nombre: elevesResponsables,
+                actionRecommandee: 'Les liens de responsabilité seront rompus dans cet établissement'
+            });
+        }
+
+        // VÉRIFICATION 4: L'utilisateur a-t-il créé des données critiques dans CET établissement ?
+        const noteRepo = AppDataSource.getRepository('Note');
+        const notesCreees = await noteRepo.count({
+            where: { 
+                creePar: utilisateurId,
+                etablissementId 
+            }
+        });
+
+        // Notes créées = log uniquement (pas d'impact bloquant)
+        if (notesCreees > 0) {
+            logger.info(
+                `[INFO] Utilisateur ${utilisateurId} a créé ${notesCreees} note(s) dans ${etablissementId} - données conservées`
+            );
+        }
+
+        return {
+            peutRetirer: blocages.length === 0,
+            blocages,
+            avertissements,
+            resume: {
+                nombreBlocages: blocages.length,
+                nombreAvertissements: avertissements.length,
+                classesAssignees: classesAssignees,
+                elevesResponsables: elevesResponsables,
+                estDernierChef
+            }
+        };
     }
 
     /**

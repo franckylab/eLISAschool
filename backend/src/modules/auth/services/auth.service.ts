@@ -504,13 +504,18 @@ export class AuthService {
         const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id);
         const userRoles = await permissionResolverService.getUserRoles(utilisateur.id);
 
+        // Récupérer l'établissement principal pour le JWT
+        const affectationPrincipale = await this.utilisateurEtablissementRepo.findOne({
+            where: { utilisateurId: utilisateur.id, etablissementPrincipal: true, actif: true }
+        });
+
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
             role: utilisateur.role,
             roles: userRoles.map(r => r.code),
             permissions: Array.from(resolvedPermissions),
-            etablissementId: utilisateur.etablissementId,
+            etablissementId: affectationPrincipale?.etablissementId, // v4.0: via utilisateur_etablissements
         };
 
         const newAccessToken = this.tokenService.generateAccessToken(payload);

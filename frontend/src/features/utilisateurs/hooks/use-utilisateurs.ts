@@ -221,6 +221,30 @@ export function useAffecterUtilisateurEtablissement(etablissementId: string) {
 }
 
 /**
+ * Hook pour vérifier les impacts avant le retrait d'un utilisateur (v5.0)
+ * 
+ * Retourne:
+ * - peutRetirer: boolean
+ * - blocages: array (empêchent le retrait)
+ * - avertissements: array (confirmation requise)
+ * - resume: object (statistiques)
+ */
+export function useVerifierRetraitUtilisateurEtablissement(etablissementId: string) {
+    return useMutation({
+        mutationFn: async ({ utilisateurId }: { utilisateurId: string }) => {
+            const response = await apiClient.post(
+                `/api/utilisateurs/${utilisateurId}/etablissements/${etablissementId}/verifier-retrait`
+            );
+            return response.data;
+        },
+        onError: (error: any) => {
+            const message = error.response?.data?.error?.message;
+            toast.error(message || 'Erreur lors de la vérification');
+        },
+    });
+}
+
+/**
  * Hook pour retirer un utilisateur d'un établissement
  * 
  * Supporte maintenant:
@@ -231,10 +255,22 @@ export function useRetirerUtilisateurEtablissement(etablissementId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ utilisateurId, motif }: { utilisateurId: string; motif?: string }) => {
-            // Utiliser les query parameters au lieu du body pour DELETE (meilleure compatibilité)
-            const url = motif
-                ? `/api/utilisateurs/${utilisateurId}/etablissements/${etablissementId}?motif=${encodeURIComponent(motif)}`
+        mutationFn: async ({ 
+            utilisateurId, 
+            motif, 
+            nouveauPrincipalId 
+        }: { 
+            utilisateurId: string; 
+            motif?: string;
+            nouveauPrincipalId?: string;
+        }) => {
+            // Construire l'URL avec les query parameters
+            const params = new URLSearchParams();
+            if (motif) params.set('motif', motif);
+            if (nouveauPrincipalId) params.set('nouveauPrincipalId', nouveauPrincipalId);
+            
+            const url = params.toString()
+                ? `/api/utilisateurs/${utilisateurId}/etablissements/${etablissementId}?${params.toString()}`
                 : `/api/utilisateurs/${utilisateurId}/etablissements/${etablissementId}`;
             
             await apiClient.delete(url);
@@ -247,18 +283,8 @@ export function useRetirerUtilisateurEtablissement(etablissementId: string) {
             toast.success('Utilisateur retiré avec succès');
         },
         onError: (error: any) => {
-            const code = error.response?.data?.error?.code;
             const message = error.response?.data?.error?.message;
-            
-            // Messages spécifiques selon le code d'erreur
-            if (code === 'LAST_ETABLISSEMENT') {
-                toast.error('Impossible de retirer le dernier établissement. Supprimez le compte utilisateur à la place.');
-            } else if (code === 'AFFECTATION_NOT_FOUND') {
-                // Ce cas ne devrait plus arriver avec l'idempotence backend
-                toast.info('Cet utilisateur n\'est pas assigné à cet établissement');
-            } else {
-                toast.error(message || 'Erreur lors du retrait');
-            }
+            toast.error(message || 'Erreur lors du retrait');
         },
     });
 }

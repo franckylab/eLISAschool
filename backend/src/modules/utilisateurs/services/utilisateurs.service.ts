@@ -288,7 +288,8 @@ export class UtilisateursService {
         }
 
         if (updateDto.etablissementId !== undefined) {
-            utilisateur.etablissementId = updateDto.etablissementId || undefined;
+            // NOTE: etablissementId supprimé - géré via utilisateur_etablissements
+            // if (updateDto.etablissementId) {
         }
 
         await this.utilisateurRepository.save(utilisateur);
@@ -459,7 +460,7 @@ export class UtilisateursService {
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
             langue: utilisateur.langue,
-            etablissementId: utilisateur.etablissementId,
+            // NOTE: etablissementId supprimé - géré via utilisateur_etablissements
             derniereConnexion: utilisateur.derniereConnexion,
             createdAt: utilisateur.createdAt,
             updatedAt: utilisateur.updatedAt,

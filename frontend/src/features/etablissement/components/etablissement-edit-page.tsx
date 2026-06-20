@@ -11,7 +11,7 @@ import { useParams, useNavigate, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Building2, Settings, Users, BookOpen, GraduationCap, Layers, BarChart3, Save, Plus, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { useEtablissement, useEtablissementDetailStats, useEtablissementConfig, useModifierEtablissement } from '../hooks/use-etablissements';
-import { useUtilisateurs, useRetirerUtilisateurEtablissement, useUtilisateursDisponibles, useRoles } from '@/features/utilisateurs/hooks/use-utilisateurs';
+import { useUtilisateurs, useRetirerUtilisateurEtablissement, useUtilisateursDisponibles, useRoles, useVerifierRetraitUtilisateurEtablissement } from '@/features/utilisateurs/hooks/use-utilisateurs';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
@@ -548,13 +548,16 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
     const [roleFilter, setRoleFilter] = useState<string>('');
     const [currentPage, setCurrentPage] = useState(1);
     
-    // État pour le modal de retrait d'utilisateur
+    // État pour le modal de retrait d'utilisateur (v5.0)
     const [retraitModal, setRetraitModal] = useState<{
         ouvert: boolean;
         utilisateurId: string;
         utilisateurNom: string;
         motif: string;
-    }>({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '' });
+        verification?: any; // Résultats de la vérification des impacts
+        nouvelEtablissementPrincipalId?: string; // Sélection du nouvel établissement principal
+        comprendImpacts: boolean; // Checkbox de confirmation
+    }>({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '', comprendImpacts: false });
     
     const limit = 20;
     
@@ -568,6 +571,7 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
         sortOrder: 'ASC',
     });
     const retirer = useRetirerUtilisateurEtablissement(etablissementId);
+    const verifier = useVerifierRetraitUtilisateurEtablissement(etablissementId);
     const { data: stats } = useEtablissementDetailStats(etablissementId);
     
     const utilisateurs = utilisateursResponse?.items || [];
@@ -581,42 +585,64 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
             user.prenom || ''
         ].filter(Boolean).join(' ') || user.email || 'Utilisateur inconnu';
         
-        // Ouvrir le modal de confirmation
-        setRetraitModal({
-            ouvert: true,
-            utilisateurId: user.id,
-            utilisateurNom: nomComplet,
-            motif: '',
-        });
+        // ÉTAPE 1 : Vérifier les impacts avant d'ouvrir le modal
+        try {
+            const verification = await verifier.mutateAsync({ utilisateurId: user.id });
+            
+            // Ouvrir le modal avec les résultats de vérification
+            setRetraitModal({
+                ouvert: true,
+                utilisateurId: user.id,
+                utilisateurNom: nomComplet,
+                motif: '',
+                verification,
+                nouvelEtablissementPrincipalId: undefined,
+                comprendImpacts: false,
+            });
+        } catch (error) {
+            toast.error('Erreur lors de la vérification des impacts');
+            console.error('[Vérification retrait] Erreur:', error);
+        }
     };
     
     const confirmRetrait = async () => {
+        // Vérifier que l'utilisateur a coché la checkbox s'il y a des avertissements
+        if (retraitModal.verification?.avertissements?.length > 0 && !retraitModal.comprendImpacts) {
+            toast.warning('Veuillez confirmer que vous comprenez les impacts avant de continuer');
+            return;
+        }
+        
         try {
             await retirer.mutateAsync({ 
                 utilisateurId: retraitModal.utilisateurId,
-                motif: retraitModal.motif || undefined
+                motif: retraitModal.motif || undefined,
+                nouveauPrincipalId: retraitModal.nouvelEtablissementPrincipalId,
             });
             
             // Fermer le modal
-            setRetraitModal({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '' });
+            setRetraitModal({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '', comprendImpacts: false });
             
             // Recharger les données
             await refetch();
-            
-            // Notification de succès (déjà gérée par le hook, mais on peut ajouter un log)
-            console.log(`[Retrait] Utilisateur ${retraitModal.utilisateurNom} retiré avec succès`);
         } catch (error: any) {
-            // L'erreur est déjà gérée dans le hook (toast), mais on log pour debug
             console.error('[Retrait] Erreur:', error?.response?.data?.error || error);
         }
     };
     
     const cancelRetrait = () => {
-        setRetraitModal({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '' });
+        setRetraitModal({ ouvert: false, utilisateurId: '', utilisateurNom: '', motif: '', comprendImpacts: false });
     };
     
     const updateRetraitMotif = (v: string) => {
         setRetraitModal(prev => ({ ...prev, motif: v }));
+    };
+    
+    const toggleComprendImpacts = () => {
+        setRetraitModal(prev => ({ ...prev, comprendImpacts: !prev.comprendImpacts }));
+    };
+    
+    const setNouvelEtablissementPrincipal = (id: string) => {
+        setRetraitModal(prev => ({ ...prev, nouvelEtablissementPrincipalId: id }));
     };
 
     const colonnes: Column<Utilisateur>[] = [
@@ -831,19 +857,19 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
                 />
             )}
             
-            {/* Modal de confirmation de retrait d'utilisateur */}
+            {/* Modal de confirmation de retrait d'utilisateur (v5.0) */}
             <CustomModal
                 open={retraitModal.ouvert}
                 onOpenChange={(open) => { if (!open) cancelRetrait(); }}
                 title="Retirer l'utilisateur de l'établissement"
-                description="Cette action désactivera l'accès de l'utilisateur à cet établissement."
-                size="md"
+                description="Vérification des impacts avant le retrait"
+                size="2xl"
                 footer={
                     <div className="flex items-center justify-end gap-3">
                         <ElisaButton
                             variant="outline"
                             onClick={cancelRetrait}
-                            disabled={retirer.isPending}
+                            disabled={retirer.isPending || verifier.isPending}
                         >
                             Annuler
                         </ElisaButton>
@@ -852,98 +878,193 @@ function UtilisateursTab({ etablissementId, canAssign }: { etablissementId: stri
                             onClick={confirmRetrait}
                             icon={<Trash2 className="h-4 w-4" />}
                             loading={retirer.isPending}
-                            disabled={!retraitModal.utilisateurId}
+                            disabled={
+                                !retraitModal.utilisateurId ||
+                                verifier.isPending ||
+                                retraitModal.verification?.blocages?.length > 0 ||
+                                (retraitModal.verification?.avertissements?.length > 0 && !retraitModal.comprendImpacts)
+                            }
                         >
                             {retirer.isPending ? 'Retrait en cours...' : 'Confirmer le retrait'}
                         </ElisaButton>
                     </div>
                 }
             >
-                <div className="space-y-4">
-                    {/* Alerte visuelle */}
-                    <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm">
-                            <p className="font-medium text-amber-800 dark:text-amber-200">
-                                Attention : Action irréversible
-                            </p>
-                            <p className="text-amber-700 dark:text-amber-300 mt-1">
-                                L'utilisateur <strong>{retraitModal.utilisateurNom}</strong> perdra l'accès à 
-                                cet établissement. Ses données historiques seront conservées.
-                            </p>
+                {verifier.isPending ? (
+                    <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Vérification des impacts en cours...</p>
                         </div>
                     </div>
-                    
-                    {/* Information utilisateur */}
-                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-start gap-3">
-                            {/* Avatar */}
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                                <span className="text-blue-600 dark:text-blue-300 font-semibold text-lg">
-                                    {retraitModal.utilisateurNom.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                                </span>
-                            </div>
-                            
-                            {/* Détails */}
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                    {retraitModal.utilisateurNom}
-                                </h4>
-                                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                                    <p className="flex items-center gap-2">
-                                        <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        <span className="truncate">Utilisateur de l'établissement</span>
-                                    </p>
-                                    <p className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
-                                        <svg className="h-3 w-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>ID: {retraitModal.utilisateurId.substring(0, 8)}...</span>
-                                    </p>
+                ) : retraitModal.verification ? (
+                    <div className="space-y-4">
+                        {/* Information utilisateur */}
+                        <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-300 font-semibold text-lg">
+                                        {retraitModal.utilisateurNom.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                        {retraitModal.utilisateurNom}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">ID: {retraitModal.utilisateurId.substring(0, 8)}...</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    {/* Champ motif */}
-                    <div className="space-y-2">
-                        <ElisaInput
-                            label="Motif du retrait (optionnel)"
-                            type="text"
-                            value={retraitModal.motif}
-                            onChange={updateRetraitMotif}
-                            placeholder="Saisissez un motif ou choisissez ci-dessous..."
-                        />
-                        
-                        {/* Suggestions rapides */}
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { label: 'Mutation', icon: '🔄' },
-                                { label: 'Fin de contrat', icon: '📅' },
-                                { label: 'Démission', icon: '📝' },
-                                { label: 'Retraite', icon: '🏖️' },
-                                { label: 'Transfert', icon: '🔀' },
-                            ].map((suggestion) => (
-                                <button
-                                    key={suggestion.label}
-                                    type="button"
-                                    onClick={() => updateRetraitMotif(suggestion.label)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                                >
-                                    <span>{suggestion.icon}</span>
-                                    <span>{suggestion.label}</span>
-                                </button>
-                            ))}
+
+                        {/* BLOCAGES (empêchent le retrait) */}
+                        {retraitModal.verification.blocages && retraitModal.verification.blocages.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-red-700 dark:text-red-300 font-semibold">
+                                    <span className="text-lg">🚫</span>
+                                    <span>Blocages ({retraitModal.verification.blocages.length})</span>
+                                </div>
+                                {retraitModal.verification.blocages.map((blocage: any, index: number) => (
+                                    <div key={index} className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-red-800 dark:text-red-200 text-sm">
+                                                    {blocage.message}
+                                                </p>
+                                                {blocage.actionRequise && (
+                                                    <p className="text-xs text-red-700 dark:text-red-300 mt-2">
+                                                        → {blocage.actionRequise}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <p className="text-xs text-red-600 dark:text-red-400 italic">
+                                    ⚠️ Le retrait est impossible tant que ces blocages ne sont pas résolus.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* AVERTISSEMENTS (confirmation requise) */}
+                        {retraitModal.verification.avertissements && retraitModal.verification.avertissements.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold">
+                                    <span className="text-lg">⚠️</span>
+                                    <span>Avertissements ({retraitModal.verification.avertissements.length})</span>
+                                </div>
+                                {retraitModal.verification.avertissements.map((avertissement: any, index: number) => (
+                                    <div key={index} className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-amber-800 dark:text-amber-200 text-sm">
+                                                    {avertissement.message}
+                                                </p>
+                                                {avertissement.actionRecommandee && (
+                                                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                                                        → {avertissement.actionRecommandee}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* SÉLECTION DU NOUVEL ÉTABLISSEMENT PRINCIPAL */}
+                        {retraitModal.verification.resume?.estEtablissementPrincipal && (
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    🏫 Nouvel établissement principal (optionnel)
+                                </label>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Cet établissement est actuellement l'établissement principal de l'utilisateur.
+                                    Choisissez un autre établissement principal ou laissez vide pour attribuer automatiquement le plus ancien.
+                                </p>
+                                <ElisaInput
+                                    type="text"
+                                    placeholder="ID de l'établissement (optionnel)"
+                                    value={retraitModal.nouvelEtablissementPrincipalId || ''}
+                                    onChange={setNouvelEtablissementPrincipal}
+                                />
+                            </div>
+                        )}
+
+                        {/* RÉSUMÉ */}
+                        {retraitModal.verification.resume && (
+                            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                <h5 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">Résumé des impacts</h5>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-blue-700 dark:text-blue-300">
+                                    <p>📚 Classes assignées : <strong>{retraitModal.verification.resume.classesAssignees || 0}</strong></p>
+                                    <p>👨‍🎓 Élèves responsables : <strong>{retraitModal.verification.resume.elevesResponsables || 0}</strong></p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CHECKBOX DE CONFIRMATION */}
+                        {retraitModal.verification.avertissements && retraitModal.verification.avertissements.length > 0 && (
+                            <label className="flex items-start gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={retraitModal.comprendImpacts}
+                                    onChange={toggleComprendImpacts}
+                                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <div className="text-sm">
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                                        Je comprends les impacts et souhaite continuer
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        En cochant cette case, vous confirmez avoir pris connaissance des avertissements ci-dessus et souhaitez procéder au retrait.
+                                    </p>
+                                </div>
+                            </label>
+                        )}
+
+                        {/* CHAMP MOTIF */}
+                        <div className="space-y-2">
+                            <ElisaInput
+                                label="Motif du retrait (optionnel)"
+                                type="text"
+                                value={retraitModal.motif}
+                                onChange={updateRetraitMotif}
+                                placeholder="Saisissez un motif ou choisissez ci-dessous..."
+                            />
+                            
+                            {/* Suggestions rapides */}
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { label: 'Mutation', icon: '🔄' },
+                                    { label: 'Fin de contrat', icon: '📅' },
+                                    { label: 'Démission', icon: '📝' },
+                                    { label: 'Retraite', icon: '🏖️' },
+                                    { label: 'Transfert', icon: '🔀' },
+                                ].map((suggestion) => (
+                                    <button
+                                        key={suggestion.label}
+                                        type="button"
+                                        onClick={() => updateRetraitMotif(suggestion.label)}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                                    >
+                                        <span>{suggestion.icon}</span>
+                                        <span>{suggestion.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* NOTE INFORMATIVE */}
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <p>ℹ️ Le motif sera enregistré dans l'historique pour traçabilité.</p>
                         </div>
                     </div>
-                    
-                    {/* Note informative */}
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <p>ℹ️ Le motif sera enregistré dans l'historique pour traçabilité.</p>
+                ) : (
+                    <div className="flex items-center justify-center py-8">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Aucune donnée de vérification disponible.</p>
                     </div>
-                </div>
+                )}
             </CustomModal>
         </div>
     );

@@ -153,12 +153,12 @@ export function filterByEtablissement(options: FilterOptions = {}) {
             // 6. Vérifier que l'utilisateur a bien accès à cet établissement
             if (user.etablissements && user.etablissements.length > 0) {
                 const hasAccess = user.etablissements.some(
-                    e => e.etablissementId === user.etablissementId && e.actif
+                    e => e.etablissementId === etablissementId && e.actif
                 );
 
                 if (!hasAccess) {
                     logger.error(
-                        `[MultiTenant] Utilisateur ${user.email} n'a pas accès à l'établissement ${user.etablissementId}`
+                        `[MultiTenant] Utilisateur ${user.email} n'a pas accès à l'établissement ${etablissementId}`
                     );
                     
                     throw new AppError(

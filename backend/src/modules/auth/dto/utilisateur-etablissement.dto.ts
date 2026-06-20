@@ -40,3 +40,59 @@ export const switchEtablissementSchema = z.object({
 export type AffecterEtablissementDto = z.infer<typeof affecterEtablissementSchema>;
 export type UpdateRoleEtablissementDto = z.infer<typeof updateRoleEtablissementSchema>;
 export type SwitchEtablissementDto = z.infer<typeof switchEtablissementSchema>;
+
+/**
+ * ==================================
+ * DTOs pour la vérification de retrait (v5.0)
+ * ==================================
+ */
+
+/**
+ * Schéma de réponse pour un blocage (empêche le retrait)
+ */
+export const blocageSchema = z.object({
+    code: z.string(),
+    message: z.string(),
+    severite: z.literal('bloquant'),
+    actionRequise: z.string().optional(),
+});
+
+/**
+ * Schéma de réponse pour un avertissement (confirmation requise)
+ */
+export const avertissementSchema = z.object({
+    code: z.string(),
+    message: z.string(),
+    severite: z.literal('avertissement'),
+    nombre: z.number().int().nonnegative(),
+    actionRecommandee: z.string().optional(),
+});
+
+/**
+ * Schéma du résumé chiffré des impacts
+ */
+export const resumeRetraitSchema = z.object({
+    nombreBlocages: z.number().int().nonnegative(),
+    nombreAvertissements: z.number().int().nonnegative(),
+    classesAssignees: z.number().int().nonnegative(),
+    elevesResponsables: z.number().int().nonnegative(),
+    estDernierChef: z.boolean(),
+});
+
+/**
+ * Schéma complet de réponse pour la vérification de retrait
+ */
+export const verificationRetraitSchema = z.object({
+    peutRetirer: z.boolean(),
+    blocages: z.array(blocageSchema),
+    avertissements: z.array(avertissementSchema),
+    resume: resumeRetraitSchema,
+});
+
+/**
+ * Types TypeScript inférés
+ */
+export type BlocageRetrait = z.infer<typeof blocageSchema>;
+export type AvertissementRetrait = z.infer<typeof avertissementSchema>;
+export type ResumeRetrait = z.infer<typeof resumeRetraitSchema>;
+export type VerificationRetraitResponse = z.infer<typeof verificationRetraitSchema>;

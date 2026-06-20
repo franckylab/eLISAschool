@@ -107,16 +107,8 @@ export class Utilisateur {
     @Column({ type: 'int', default: 1 })
     maxEtablissementsPersonnel!: number;
 
-    @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
-
-    /**
-     * Relation vers l'établissement de l'utilisateur.
-     * Nullable car le SUPER_ADMIN peut ne pas être rattaché à un établissement.
-     */
-    @ManyToOne(() => Etablissement, { nullable: true })
-    @JoinColumn({ name: 'etablissementId' })
-    etablissement?: Etablissement;
+    // NOTE: etablissementId SUPPRIMÉ en v4.0
+    // Multi-établissements géré exclusivement via utilisateur_etablissements
 
     /**
      * Relations RBAC (multi-rôles et permissions personnalisées)

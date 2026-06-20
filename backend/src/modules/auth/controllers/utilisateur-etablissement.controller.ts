@@ -2,7 +2,7 @@
  * ==================================
  * eLISAschool - Controller Gestion Multi-Établissements
  * ==================================
- * Version: 2.0.0
+ * Version: 5.0.0
  * 
  * Endpoints pour gérer les affectations d'utilisateurs à plusieurs établissements.
  * 
@@ -12,6 +12,7 @@
  * - PATCH  /api/utilisateurs/:id/etablissements/:eid/principal - Définir principal
  * - GET    /api/utilisateurs/:id/etablissements         - Lister les établissements
  * - GET    /api/utilisateurs/:id/etablissements/verify/:eid - Vérifier accès
+ * - POST   /api/utilisateurs/:id/etablissements/:eid/verifier-retrait - Vérifier impacts retrait (v5.0)
  */
 
 import { Request, Response, Router } from 'express';
@@ -32,11 +33,11 @@ router.use(authMiddleware);
  * POST /api/utilisateurs/:id/etablissements
  * Ajouter un établissement à un utilisateur
  * 
- * Permission: utilisateurs:manage ou SUPER_ADMIN
+ * Permission: utilisateurs:etablissements:manage ou SUPER_ADMIN
  */
 router.post(
     '/:id/etablissements',
-    checkPermission('utilisateurs:manage'),
+    checkPermission('utilisateurs:etablissements:manage'),
     async (req: Request, res: Response, next) => {
         try {
             const dto = validateDto(affecterEtablissementSchema, req.body);
@@ -66,26 +67,61 @@ router.post(
 );
 
 /**
+ * POST /api/utilisateurs/:id/etablissements/:etablissementId/verifier-retrait
+ * Vérifier les impacts avant le retrait d'un utilisateur d'un établissement
+ * 
+ * Retourne:
+ * - peutRetirer: boolean
+ * - blocages: array (empêchent le retrait)
+ * - avertissements: array (confirmation requise)
+ * - resume: object (statistiques)
+ * 
+ * Permission: utilisateurs:etablissements:manage ou SUPER_ADMIN
+ */
+router.post(
+    '/:id/etablissements/:etablissementId/verifier-retrait',
+    checkPermission('utilisateurs:etablissements:manage'),
+    async (req: Request, res: Response, next) => {
+        try {
+            const verification = await utilisateurEtablissementService.verifierRetrait(
+                req.params.id,
+                req.params.etablissementId
+            );
+
+            res.status(200).json({
+                success: true,
+                data: verification,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
  * DELETE /api/utilisateurs/:id/etablissements/:etablissementId
  * Retirer un établissement à un utilisateur (désactivation logique)
  * 
- * Body optionnel:
+ * Query parameters optionnels:
  * - motif: string (raison du retrait)
+ * - nouveauPrincipalId: string (ID du nouvel établissement principal)
  * 
- * Permission: utilisateurs:manage ou SUPER_ADMIN
+ * Permission: utilisateurs:etablissements:manage ou SUPER_ADMIN
  */
 router.delete(
     '/:id/etablissements/:etablissementId',
-    checkPermission('utilisateurs:manage'),
+    checkPermission('utilisateurs:etablissements:manage'),
     async (req: Request, res: Response, next) => {
         try {
-            // Lire le motif depuis les query parameters (meilleure compatibilité avec DELETE)
+            // Lire les paramètres depuis les query parameters
             const motif = req.query.motif as string | undefined;
+            const nouveauPrincipalId = req.query.nouveauPrincipalId as string | undefined;
             
             await utilisateurEtablissementService.retirer(
                 req.params.id,
                 req.params.etablissementId,
-                motif
+                motif,
+                nouveauPrincipalId
             );
 
             res.status(200).json({
@@ -102,11 +138,11 @@ router.delete(
  * PATCH /api/utilisateurs/:id/etablissements/:etablissementId/principal
  * Définir l'établissement principal
  * 
- * Permission: utilisateurs:manage ou SUPER_ADMIN
+ * Permission: utilisateurs:etablissements:manage ou SUPER_ADMIN
  */
 router.patch(
     '/:id/etablissements/:etablissementId/principal',
-    checkPermission('utilisateurs:manage'),
+    checkPermission('utilisateurs:etablissements:manage'),
     async (req: Request, res: Response, next) => {
         try {
             await utilisateurEtablissementService.definirPrincipal(
@@ -195,11 +231,11 @@ router.get(
  * PATCH /api/utilisateurs/:id/etablissements/:etablissementId/role
  * Mettre à jour le rôle d'un utilisateur dans un établissement
  * 
- * Permission: utilisateurs:manage ou SUPER_ADMIN
+ * Permission: utilisateurs:etablissements:manage ou SUPER_ADMIN
  */
 router.patch(
     '/:id/etablissements/:etablissementId/role',
-    checkPermission('utilisateurs:manage'),
+    checkPermission('utilisateurs:etablissements:manage'),
     async (req: Request, res: Response, next) => {
         try {
             const { role } = validateDto(updateRoleEtablissementSchema, req.body);

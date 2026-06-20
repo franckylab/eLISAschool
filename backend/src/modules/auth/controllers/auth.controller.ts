@@ -299,7 +299,6 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
         // Vérifier si le rôle permet le changement d'établissement
         const utilisateur = req.utilisateur! as any;
         const etablissements = utilisateur.etablissements || [];
-        const currentEtablissement = utilisateur.etablissementId;
         const etablissementData = etablissements.find((e: any) => e.etablissementId === etablissementId);
 
         if (!etablissementData) {
