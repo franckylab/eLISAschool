@@ -455,14 +455,23 @@ export class UtilisateurEtablissementService {
         }
 
         // VÉRIFICATION 2: L'utilisateur a-t-il des classes assignées dans CET établissement ?
-        const classeRepo = AppDataSource.getRepository('Classe');
-        const classesAssignees = await classeRepo.count({
-            where: { 
-                responsableId: utilisateurId,
-                anneeScolaire: { etablissementId }
-            },
-            relations: ['anneeScolaire']
+        // NOTE: Classe utilise professeurPrincipalId (MembrePersonnel), pas responsableId directement
+        // On doit donc trouver le MembrePersonnel lié à cet utilisateur d'abord
+        const membrePersonnelRepo = AppDataSource.getRepository('MembrePersonnel');
+        const membrePersonnel = await membrePersonnelRepo.findOne({
+            where: { utilisateurId }
         });
+
+        let classesAssignees = 0;
+        if (membrePersonnel) {
+            const classeRepo = AppDataSource.getRepository('Classe');
+            classesAssignees = await classeRepo.count({
+                where: { 
+                    professeurPrincipalId: membrePersonnel.id,
+                    etablissementId
+                }
+            });
+        }
 
         if (classesAssignees > 0) {
             avertissements.push({
