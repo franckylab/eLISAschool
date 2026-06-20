@@ -785,6 +785,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.ADMIN]: [
         Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.UTILISATEURS_MANAGE, Permission.UTILISATEURS_ETABLISSEMENTS_MANAGE, Permission.UTILISATEURS_IMPORT, Permission.UTILISATEURS_EXPORT,
         Permission.ROLES_VIEW, Permission.ROLES_MANAGE,
         Permission.CONFIG_VIEW, Permission.CONFIG_EDIT,
         Permission.MONITORING_VIEW,
