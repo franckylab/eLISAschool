@@ -520,13 +520,18 @@ export class UtilisateurEtablissementService {
         }
 
         // VÉRIFICATION 4: L'utilisateur a-t-il créé des données critiques dans CET établissement ?
-        const noteRepo = AppDataSource.getRepository('Note');
-        const notesCreees = await noteRepo.count({
-            where: { 
-                creePar: utilisateurId,
-                etablissementId 
-            }
-        });
+        // NOTE: Note utilise enseignantId (MembrePersonnel), pas creePar directement
+        // On utilise le membrePersonnel déjà récupéré plus haut
+        let notesCreees = 0;
+        if (membrePersonnel) {
+            const noteRepo = AppDataSource.getRepository('Note');
+            notesCreees = await noteRepo.count({
+                where: { 
+                    enseignantId: membrePersonnel.id,
+                    etablissementId
+                }
+            });
+        }
 
         // Notes créées = log uniquement (pas d'impact bloquant)
         if (notesCreees > 0) {
