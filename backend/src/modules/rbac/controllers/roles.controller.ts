@@ -10,8 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { rolesService } from '../services/roles.service';
-import { requireRoles } from '@modules/auth/middlewares/role.middleware';
-import { authMiddleware } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 import { createRoleSchema, assignPermissionsToRoleSchema } from '../dto/create-role.dto';
 import { successResponse } from '@common/utils/api-response.util';
@@ -27,7 +26,7 @@ router.use(authMiddleware);
  * @desc    Récupérer tous les rôles
  * @access  ADMIN
  */
-router.get('/roles', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/roles', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { estSysteme, etablissementId } = req.query;
 
@@ -48,7 +47,7 @@ router.get('/roles', requireRoles('ADMIN'), async (req: Request, res: Response, 
  * @desc    Obtenir les statistiques des rôles
  * @access  ADMIN
  */
-router.get('/roles/stats', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/roles/stats', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         const stats = await rolesService.getRoleStats(etablissementId);
@@ -64,7 +63,7 @@ router.get('/roles/stats', requireRoles('ADMIN'), async (req: Request, res: Resp
  * @desc    Récupérer un rôle par ID
  * @access  ADMIN
  */
-router.get('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/roles/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const role = await rolesService.findRoleById(req.params.id);
         successResponse(res, role, 'Rôle récupéré avec succès');
@@ -78,7 +77,7 @@ router.get('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Respon
  * @desc    Créer un nouveau rôle
  * @access  ADMIN
  */
-router.post('/roles', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/roles', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createRoleSchema, req.body);
 
@@ -95,7 +94,7 @@ router.post('/roles', requireRoles('ADMIN'), async (req: Request, res: Response,
  * @desc    Mettre à jour un rôle
  * @access  ADMIN
  */
-router.patch('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/roles/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createRoleSchema.partial(), req.body);
 
@@ -112,7 +111,7 @@ router.patch('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Resp
  * @desc    Supprimer un rôle
  * @access  ADMIN
  */
-router.delete('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/roles/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await rolesService.deleteRole(req.params.id, req.utilisateur?.id);
 
@@ -127,7 +126,7 @@ router.delete('/roles/:id', requireRoles('ADMIN'), async (req: Request, res: Res
  * @desc    Assigner des permissions à un rôle
  * @access  ADMIN
  */
-router.post('/roles/:id/permissions', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/roles/:id/permissions', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(assignPermissionsToRoleSchema, req.body);
 
@@ -144,7 +143,7 @@ router.post('/roles/:id/permissions', requireRoles('ADMIN'), async (req: Request
  * @desc    Récupérer les permissions d'un rôle
  * @access  ADMIN
  */
-router.get('/roles/:id/permissions', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/roles/:id/permissions', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const permissions = await rolesService.getRolePermissions(req.params.id);
 
@@ -159,7 +158,7 @@ router.get('/roles/:id/permissions', requireRoles('ADMIN'), async (req: Request,
  * @desc    Lister les utilisateurs ayant un rôle
  * @access  ADMIN
  */
-router.get('/roles/:id/users', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/roles/:id/users', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const users = await rolesService.getUsersWithRole(req.params.id);
 

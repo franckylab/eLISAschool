@@ -11,32 +11,44 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, User, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, User, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2, UserMinus, UserCheck, Filter } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { useUtilisateurs, useSupprimerUtilisateur } from '../hooks/use-utilisateurs';
+import { useUtilisateurs, useToggleStatutUtilisateur } from '../hooks/use-utilisateurs';
 import { UtilisateurFormModal } from './utilisateur-form-modal';
+import { SuppressionUtilisateurModal } from './suppression-utilisateur-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
+import { useAuthStore } from '@/stores';
 import type { Utilisateur, UtilisateurFiltres } from '../types/utilisateur.types';
 import type { Column } from '@/components/ui/DataTable';
+import { CustomModal } from '@/components/modals/CustomModal';
 
 export function UtilisateursPage() {
     useTranslation();
     const { hasPermission } = usePermissions();
+    const { etablissementId } = useAuthStore();
     const navigate = useNavigate();
     
-    const [filtres, setFiltres] = useState<UtilisateurFiltres>({ page: 1, limit: 20 });
+    const [filtres, setFiltres] = useState<UtilisateurFiltres>({ 
+        page: 1, 
+        limit: 20,
+        etablissementId: etablissementId || undefined,
+        actifFiltre: 'actif' // Par défaut: utilisateurs actifs
+    });
     const [modalOpen, setModalOpen] = useState(false);
     const [utilisateurSelected, setUtilisateurSelected] = useState<Utilisateur | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
     const [utilisateurToDelete, setUtilisateurToDelete] = useState<Utilisateur | null>(null);
-
+    
+    // States pour le toggle statut
+    const [utilisateurToToggle, setUtilisateurToToggle] = useState<Utilisateur | null>(null);
+    const [motifToggle, setMotifToggle] = useState('');
+    
     const { data, isLoading, error, refetch } = useUtilisateurs(filtres);
-    const supprimer = useSupprimerUtilisateur();
+    const toggleStatut = useToggleStatutUtilisateur(etablissementId || '');
 
     const colonnes: Column<Utilisateur>[] = [
         {
@@ -81,17 +93,15 @@ export function UtilisateursPage() {
             sortable: true,
             className: 'text-center',
             render: (u) => {
-                const statuts = {
-                    actif: { couleur: 'bg-green-100 text-green-800', libelle: 'Actif' },
-                    inactif: { couleur: 'bg-gray-100 text-gray-800', libelle: 'Inactif' },
-                    suspendu: { couleur: 'bg-red-100 text-red-800', libelle: 'Suspendu' },
-                    EN_ATTENTE_VALIDATION: { couleur: 'bg-yellow-100 text-yellow-800', libelle: 'En attente' },
-                    SUPPRIME: { couleur: 'bg-gray-100 text-gray-500', libelle: 'Supprimé' },
-                };
-                const statut = statuts[u.statut as keyof typeof statuts] || statuts.inactif;
+                // Utiliser le statut d'affectation (pas le statut global)
+                const actif = u.actifDansEtablissement ?? true;
                 return (
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statut.couleur}`}>
-                        {statut.libelle}
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                        actif 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                        {actif ? 'Actif dans l\'établissement' : 'Inactif dans l\'établissement'}
                     </span>
                 );
             },
@@ -119,43 +129,49 @@ export function UtilisateursPage() {
             key: 'actions',
             header: 'Actions',
             className: 'text-right',
-            renderActions: (u) => [
-                {
-                    key: 'voir',
-                    icon: Eye,
-                    label: 'Voir détails',
-                    onClick: () => navigate({ to: `/utilisateurs/${u.id}` }),
-                    permission: 'utilisateurs:view',
-                    variant: 'info' as const,
-                },
-                {
-                    key: 'modifier',
-                    icon: Pencil,
-                    label: 'Modifier',
-                    onClick: () => {
-                        setUtilisateurSelected(u);
-                        setModeFormulaire('edition');
-                        setModalOpen(true);
+            renderActions: (u) => {
+                const actif = u.actifDansEtablissement ?? true;
+                return [
+                    {
+                        key: 'voir',
+                        icon: Eye,
+                        label: 'Voir détails',
+                        onClick: () => navigate({ to: `/utilisateurs/${u.id}` }),
+                        permission: 'utilisateurs:view',
+                        variant: 'info' as const,
                     },
-                    permission: 'utilisateurs:edit',
-                    variant: 'warning' as const,
-                },
-                {
-                    key: 'supprimer',
-                    icon: Trash2,
-                    label: 'Supprimer',
-                    onClick: () => setUtilisateurToDelete(u),
-                    permission: 'utilisateurs:delete',
-                    variant: 'danger' as const,
-                },
-            ],
+                    {
+                        key: 'modifier',
+                        icon: Pencil,
+                        label: 'Modifier',
+                        onClick: () => {
+                            setUtilisateurSelected(u);
+                            setModeFormulaire('edition');
+                            setModalOpen(true);
+                        },
+                        permission: 'utilisateurs:edit',
+                        variant: 'warning' as const,
+                    },
+                    {
+                        key: 'toggleStatut',
+                        icon: actif ? UserMinus : UserCheck,
+                        label: actif ? 'Désactiver' : 'Réactiver',
+                        onClick: () => setUtilisateurToToggle(u),
+                        permission: 'utilisateurs:statut:change',
+                        variant: actif ? 'danger' as const : 'success' as const,
+                    },
+                    {
+                        key: 'supprimer',
+                        icon: Trash2,
+                        label: 'Supprimer',
+                        onClick: () => setUtilisateurToDelete(u),
+                        permission: 'utilisateurs:delete',
+                        variant: 'danger' as const,
+                    },
+                ];
+            },
         },
     ];
-
-    const handleSuccess = () => {
-        setModalOpen(false);
-        setUtilisateurSelected(undefined);
-    };
 
     // Affichage skeleton pendant le chargement
     if (isLoading) {
@@ -204,7 +220,22 @@ export function UtilisateursPage() {
                 )}
             </motion.div>
 
-            {/* Barre de recherche */}
+            {/* Barre de recherche et filtres */}
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <select
+                        value={filtres.actifFiltre || 'actif'}
+                        onChange={(e) => setFiltres((prev) => ({ ...prev, actifFiltre: e.target.value as 'tous' | 'actif' | 'inactif', page: 1 }))}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
+                    >
+                        <option value="tous">Tous les statuts</option>
+                        <option value="actif">Actifs uniquement</option>
+                        <option value="inactif">Inactifs uniquement</option>
+                    </select>
+                </div>
+            </div>
+
             {/* Tableau */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -247,22 +278,133 @@ export function UtilisateursPage() {
                 />
             )}
 
-            {/* Modal Confirmation Suppression */}
-            <ConfirmationModal
-                isOpen={!!utilisateurToDelete}
-                title="Supprimer cet utilisateur"
-                message={`Êtes-vous sûr de vouloir supprimer l'utilisateur ${utilisateurToDelete?.prenom} ${utilisateurToDelete?.nom} ?`}
-                details="Cette action est irréversible et désactivera tous les accès associés à ce compte."
-                variant="danger"
-                onConfirm={async () => {
-                    if (utilisateurToDelete) {
-                        await supprimer.mutateAsync(utilisateurToDelete.id);
+            {/* Modal Suppression avec vérification des impacts */}
+            {utilisateurToDelete && (
+                <SuppressionUtilisateurModal
+                    ouvert={!!utilisateurToDelete}
+                    utilisateurId={utilisateurToDelete.id}
+                    utilisateurNom={`${utilisateurToDelete.prenom} ${utilisateurToDelete.nom}`}
+                    etablissementId={etablissementId || undefined}
+                    onSuccess={() => {
                         setUtilisateurToDelete(null);
+                        refetch();
+                    }}
+                    onClose={() => setUtilisateurToDelete(null)}
+                />
+            )}
+
+            {/* Modal Confirmation Toggle Statut (Désactiver/Réactiver) */}
+            <CustomModal
+                open={!!utilisateurToToggle}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setUtilisateurToToggle(null);
+                        setMotifToggle('');
                     }
                 }}
-                onCancel={() => setUtilisateurToDelete(null)}
-                isLoading={supprimer.isPending}
-            />
+                title={utilisateurToToggle?.actifDansEtablissement ? 'Désactiver cet utilisateur' : 'Réactiver cet utilisateur'}
+                description={
+                    utilisateurToToggle?.actifDansEtablissement
+                        ? 'L\'utilisateur n\'aura plus accès à cet établissement'
+                        : 'L\'utilisateur retrouvera ses accès à cet établissement'
+                }
+                size="md"
+                footer={
+                    <>
+                        <ElisaButton
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                setUtilisateurToToggle(null);
+                                setMotifToggle('');
+                            }}
+                        >
+                            Annuler
+                        </ElisaButton>
+                        <ElisaButton
+                            variant={utilisateurToToggle?.actifDansEtablissement ? 'danger' : 'primary'}
+                            size="sm"
+                            onClick={async () => {
+                                if (utilisateurToToggle && motifToggle.trim().length >= 10) {
+                                    await toggleStatut.mutateAsync({
+                                        utilisateurId: utilisateurToToggle.id,
+                                        actif: !utilisateurToToggle.actifDansEtablissement,
+                                        motif: motifToggle.trim(),
+                                    });
+                                    setUtilisateurToToggle(null);
+                                    setMotifToggle('');
+                                }
+                            }}
+                            disabled={motifToggle.trim().length < 10 || toggleStatut.isPending}
+                        >
+                            {toggleStatut.isPending
+                                ? 'Traitement en cours...'
+                                : utilisateurToToggle?.actifDansEtablissement
+                                    ? 'Confirmer la désactivation'
+                                    : 'Confirmer la réactivation'}
+                        </ElisaButton>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    {/* Informations utilisateur */}
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-dominant-100)]">
+                                <User className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-gray-900">
+                                    {utilisateurToToggle?.prenom} {utilisateurToToggle?.nom}
+                                </p>
+                                <p className="text-sm text-gray-600">{utilisateurToToggle?.email}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Champ motif obligatoire */}
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Motif {utilisateurToToggle?.actifDansEtablissement ? 'de la désactivation' : 'de la réactivation'}
+                            <span className="text-red-500"> *</span>
+                        </label>
+                        <textarea
+                            value={motifToggle}
+                            onChange={(e) => setMotifToggle(e.target.value)}
+                            placeholder={
+                                utilisateurToToggle?.actifDansEtablissement
+                                    ? 'Ex: Fin de contrat, Mutation, Absence prolongée...'
+                                    : 'Ex: Retour de mission, Nouveau contrat, Réintégration...'
+                            }
+                            rows={4}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
+                            required
+                            minLength={10}
+                            maxLength={500}
+                        />
+                        <div className="mt-1 flex items-center justify-between">
+                            <p className="text-xs text-gray-500">
+                                {motifToggle.trim().length < 10
+                                    ? `Minimum 10 caractères requis (${motifToggle.trim().length}/10)`
+                                    : '✓ Motif valide'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                {motifToggle.length}/500
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Avertissement */}
+                    {utilisateurToToggle?.actifDansEtablissement && (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-sm text-amber-800">
+                                <strong>⚠️ Attention :</strong> Cette action désactivera tous les accès de l'utilisateur à cet établissement.
+                                L'utilisateur ne pourra plus se connecter ni accéder aux données.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </CustomModal>
         </div>
     );
 }

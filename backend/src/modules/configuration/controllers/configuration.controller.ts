@@ -27,7 +27,7 @@ import {
     toggleModuleSchema,
 } from '../dto';
 import { CategorieParametre } from '../entities/parametre-systeme.entity';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
@@ -135,7 +135,7 @@ router.patch('/', authMiddleware, canEditConfigApp, async (req: Request, res: Re
     } catch (error) { next(error); }
 });
 
-router.post('/licence', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/licence', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(activerLicenceSchema, req.body);
         const result = await configurationService.activerLicence(dto);
@@ -481,7 +481,7 @@ router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req
     } catch (error) { next(error); }
 });
 
-router.post('/parametres/reset-all', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/parametres/reset-all', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { etablissementId } = req.body || {};
         
@@ -565,14 +565,14 @@ router.post('/sauvegardes/:id/restore', authMiddleware, canRestoreBackup, async 
 // SEED, CACHE, EXPORT
 // =============================================
 
-router.post('/seed', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/seed', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await seedService.runAllSeeds(false); // force = false par défaut
         res.json({ success: true, data: result, message: 'Seeds exécutés' });
     } catch (error) { next(error); }
 });
 
-router.post('/seed/force', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/seed/force', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await seedService.runAllSeeds(true); // force = true
         res.json({ 

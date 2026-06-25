@@ -63,6 +63,10 @@ export async function seedEtablissementsParDefaut(): Promise<EtablissementsDefau
             heuresFermeture: '18:00',
             effectifMax: 1000,
             effectifActuel: 0,
+            // Paramètres régionaux (v3.0)
+            langueDefaut: 'fr',
+            devise: 'XAF',
+            fuseauHoraire: 'Africa/Douala',
         });
 
         await etablissementRepo.save(etablissementPrincipal);
@@ -129,6 +133,10 @@ export async function seedEtablissementsParDefaut(): Promise<EtablissementsDefau
             heuresFermeture: '17:30',
             effectifMax: 500,
             effectifActuel: 0,
+            // Paramètres régionaux (v3.0)
+            langueDefaut: 'fr',
+            devise: 'XAF',
+            fuseauHoraire: 'Africa/Douala',
         });
 
         await etablissementRepo.save(etablissementSecondaire);

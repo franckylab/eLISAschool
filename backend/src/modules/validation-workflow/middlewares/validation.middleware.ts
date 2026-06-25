@@ -42,8 +42,8 @@ export function requireValidationLevel(module: string, niveau: number) {
             // 1. Construire le code de permission pour ce niveau
             const permissionCode = `validation:${module}:level${niveau}`;
 
-            // 2. Résoudre les permissions effectives de l'utilisateur (avec cache)
-            const permissions = await permissionResolverService.resolvePermissions(utilisateur.id);
+            // 2. Résoudre les permissions effectives de l'utilisateur (avec cache et contexte établissement)
+            const permissions = await permissionResolverService.resolvePermissions(utilisateur.id, utilisateur?.etablissementId);
 
             // 3. Vérifier si la permission est présente dans les permissions effectives
             if (permissions.has(permissionCode)) {

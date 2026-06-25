@@ -12,7 +12,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { typeEnumService } from '../services';
 import { createTypeEnumSchema, updateTypeEnumSchema, queryTypeEnumSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils/validate-dto.util';
@@ -73,7 +73,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
  * POST /api/types-enum
  * Créer un nouveau type enum personnalisé
  */
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createTypeEnumSchema, req.body);
         const created = await typeEnumService.create(dto, req.etablissementId);
@@ -87,7 +87,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
  * - Types système : seul le libellé est modifiable
  * - Types personnalisés : tous les champs sauf code/categorie
  */
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateTypeEnumSchema, req.body);
         const updated = await typeEnumService.update(req.params.id, dto, req.etablissementId);
@@ -99,7 +99,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
  * POST /api/types-enum/:id/toggle
  * Activer/désactiver un type enum personnalisé
  */
-router.post('/:id/toggle', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/toggle', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const toggled = await typeEnumService.toggleActif(req.params.id, req.etablissementId);
         res.json({ success: true, data: toggled });
@@ -111,7 +111,7 @@ router.post('/:id/toggle', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
  * Supprimer un type enum personnalisé
  * - Interdit pour les types système
  */
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await typeEnumService.delete(req.params.id, req.etablissementId);
         res.json({ success: true, message: 'Type enum supprimé' });
@@ -127,7 +127,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * Initialiser les types enum système (seed)
  * - Réservé au SUPER_ADMIN
  */
-router.post('/initialize', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/initialize', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await typeEnumService.initializeSystemTypes();
         res.json({ success: true, message: 'Types système initialisés' });

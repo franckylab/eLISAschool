@@ -13,7 +13,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { FilieresService } from '../services';
 import { createFiliereSchema, updateFiliereSchema, queryFilieresSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
@@ -50,7 +50,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 });
 
 // POST /api/filieres - Créer une filière
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createFiliereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -60,7 +60,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 });
 
 // PATCH /api/filieres/:id - Modifier une filière
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateFiliereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -70,7 +70,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
 });
 
 // DELETE /api/filieres/:id - Supprimer une filière
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         await filieresService.delete(req.params.id, etablissementId);

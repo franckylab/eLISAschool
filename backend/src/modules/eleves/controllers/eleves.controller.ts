@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ElevesService } from '../services';
 import { createEleveSchema, updateEleveSchema, preinscriptionSchema, convertirPreinscriptionSchema, queryInscriptionsSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { Etablissement } from '@modules/etablissement/entities';
@@ -17,7 +17,7 @@ import { AppError } from '@common/filters/error.filter';
 const router = Router();
 const service = new ElevesService();
 
-router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -34,7 +34,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createEleveSchema, req.body);
         const eleve = await service.create(dto, req.etablissementId);
@@ -42,14 +42,14 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role
     } catch (error) { next(error); }
 });
 
-router.get('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const eleve = await service.findOne(req.params.id);
         res.json({ success: true, data: eleve });
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateEleveSchema, req.body);
         const eleve = await service.update(req.params.id, dto);
@@ -57,7 +57,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, 
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await service.delete(req.params.id);
         res.json({ success: true, message: 'Dossier élève supprimé' });
@@ -95,7 +95,7 @@ router.post('/preinscription', async (req: Request, res: Response, next: NextFun
 // GESTION DES PRÉINSCRIPTIONS (Auth requis)
 // ==================================
 
-router.get('/preinscriptions/en-attente', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/preinscriptions/en-attente', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -109,7 +109,7 @@ router.get('/preinscriptions/en-attente', authMiddleware, requireRoles(Role.ADMI
     } catch (error) { next(error); }
 });
 
-router.post('/preinscription/:id/convertir', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/preinscription/:id/convertir', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(convertirPreinscriptionSchema, req.body);
         const personnelId = req.utilisateur?.id;
@@ -127,7 +127,7 @@ router.post('/preinscription/:id/convertir', authMiddleware, requireRoles(Role.A
     } catch (error) { next(error); }
 });
 
-router.post('/preinscription/:id/refuser', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/preinscription/:id/refuser', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { motif } = req.body;
         if (!motif || motif.trim().length === 0) {
@@ -152,7 +152,7 @@ router.post('/preinscription/:id/refuser', authMiddleware, requireRoles(Role.ADM
 // DOCUMENTS JUSTIFICATIFS
 // ==================================
 
-router.post('/:id/documents', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/documents', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { documentUrl, type } = req.body;
         if (!documentUrl || !type) {
@@ -172,7 +172,7 @@ router.post('/:id/documents', authMiddleware, requireRoles(Role.ADMIN, Role.SUPE
 // LISTE DES INSCRIPTIONS (avec filtres)
 // ==================================
 
-router.get('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/inscriptions', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -197,7 +197,7 @@ router.get('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
 // EXPORT CSV
 // ==================================
 
-router.get('/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const filtres = {
             search: req.query.search as string,
@@ -218,7 +218,7 @@ router.get('/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN,
 // IMPORT CSV
 // ==================================
 
-router.post('/import', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/import', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { csvContent, anneeScolaireId, classeId } = req.body;
         

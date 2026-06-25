@@ -14,7 +14,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { annoncesService } from '../services';
 import { createAnnonceSchema, updateAnnonceSchema, annonceConfigurationSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 
@@ -105,7 +105,7 @@ router.get(
 router.put(
   '/configuration',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const utilisateurId = req.utilisateur?.id;
@@ -140,7 +140,7 @@ router.put(
 router.get(
   '/criteres-ciblage',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const etablissementId = req.utilisateur?.etablissementId;
@@ -168,7 +168,7 @@ router.get(
 router.post(
   '/reset-configuration',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const utilisateurId = req.utilisateur?.id;
@@ -204,7 +204,7 @@ router.post(
 router.get(
   '/export-configuration',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const etablissementId = req.utilisateur?.etablissementId;
@@ -232,7 +232,7 @@ router.get(
 router.post(
   '/import-configuration',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const utilisateurId = req.utilisateur?.id;
@@ -266,7 +266,7 @@ router.post(
 router.get(
   '/statistiques',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const etablissementId = req.utilisateur?.etablissementId;
@@ -294,7 +294,7 @@ router.get(
 router.post(
   '/mettre-a-jour-statuts',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const resultat = await annoncesService.mettreAJourStatutsAutomatiquement();
@@ -319,7 +319,7 @@ router.post(
 router.get(
   '/',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const etablissementId = req.utilisateur?.etablissementId;
@@ -384,7 +384,7 @@ router.get(
 router.post(
   '/',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const utilisateurId = req.utilisateur?.id;
@@ -415,7 +415,7 @@ router.post(
 router.patch(
   '/:id',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -447,7 +447,7 @@ router.patch(
 router.delete(
   '/:id',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -513,7 +513,7 @@ router.post(
 router.post(
   '/:id/valider',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -544,7 +544,7 @@ router.post(
 router.post(
   '/:id/rejeter',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -587,7 +587,7 @@ router.post(
 router.post(
   '/:id/activer',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -624,7 +624,7 @@ router.post(
 router.post(
   '/:id/desactiver',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -655,7 +655,7 @@ router.post(
 router.post(
   '/:id/archiver',
   authMiddleware,
-  requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+  requirePermission('config:edit'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;

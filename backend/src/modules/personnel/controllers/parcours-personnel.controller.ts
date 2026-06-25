@@ -8,7 +8,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { parcoursPersonnelService } from '../services/parcours-personnel.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -20,7 +20,7 @@ const router = Router();
 router.get(
     '/membres/:id/parcours-complet',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const parcours = await parcoursPersonnelService.getParcoursComplet(

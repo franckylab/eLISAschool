@@ -206,18 +206,10 @@ export async function paginateWithQueryBuilder<T>(
         const countQueryBuilder = queryBuilder.clone();
         
         // Supprimer ORDER BY pour le COUNT (inutile et coûteux)
-        const orderByPart = countQueryBuilder.expressionMap.orderBys;
         countQueryBuilder.expressionMap.orderBys = {};
         
         // Exécuter COUNT séparé
         total = await countQueryBuilder.getCount();
-        
-        // Réappliquer ORDER BY si nécessaire
-        if (Object.keys(orderByPart).length > 0) {
-            for (const [field, direction] of Object.entries(orderByPart)) {
-                queryBuilder.addOrderBy(field, direction as 'ASC' | 'DESC');
-            }
-        }
 
         // Récupérer les données
         items = await queryBuilder.getMany();

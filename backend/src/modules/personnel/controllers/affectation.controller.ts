@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { affectationService } from '../services/affectation.service';
 import { createAffectationSchema, updateAffectationSchema, queryAffectationSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -22,7 +22,7 @@ const router = Router();
 router.post(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createAffectationSchema, req.body);
@@ -127,7 +127,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateAffectationSchema, req.body);
@@ -152,7 +152,7 @@ router.patch(
 router.post(
     '/:id/terminer',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const affectation = await affectationService.terminer(

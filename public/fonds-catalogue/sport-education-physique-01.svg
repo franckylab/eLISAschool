@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Ballons -->
+    <circle cx="300" cy="250" r="70" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <path d="M300,180 Q350,250 300,320 Q250,250 300,180" stroke-width="3" fill="none"/>
+    <circle cx="800" cy="400" r="60" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <circle cx="1300" cy="300" r="70" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <path d="M1300,230 Q1350,300 1300,370 Q1250,300 1300,230" stroke-width="3" fill="none"/>
+
+  </g>
+</svg>

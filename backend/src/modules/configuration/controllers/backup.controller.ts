@@ -11,7 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { configBackupService } from '../services/backup/config-backup.service';
 import { databaseBackupService } from '../services/backup/database-backup.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
@@ -36,7 +36,7 @@ const router = Router();
  * POST /api/backups/config
  * Créer un backup de configuration
  */
-router.post('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/config', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createBackupSchema, req.body);
         
@@ -72,7 +72,7 @@ router.post('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
  * POST /api/backups/database/:etablissementId
  * Créer un backup database d'un établissement
  */
-router.post('/database/:etablissementId', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/database/:etablissementId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createDatabaseBackupSchema, req.body);
 
@@ -102,7 +102,7 @@ router.post('/database/:etablissementId', authMiddleware, requireRoles(Role.ADMI
  * POST /api/backups/full/:etablissementId
  * Créer un backup complet (config + database)
  */
-router.post('/full/:etablissementId', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/full/:etablissementId', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createFullBackupSchema, req.body);
 
@@ -219,7 +219,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
  * POST /api/backups/:id/restore
  * Restaurer un backup
  */
-router.post('/:id/restore', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/restore', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(restoreBackupSchema, req.body);
         const { force = false } = dto;
@@ -274,7 +274,7 @@ router.post('/:id/verify', authMiddleware, async (req: Request, res: Response, n
  * DELETE /api/backups/:id
  * Supprimer un backup
  */
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await configBackupService['storageProvider'].delete(req.params.id);
 
@@ -295,7 +295,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * POST /api/configuration/clone
  * Cloner la configuration entre établissements
  */
-router.post('/clone', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/clone', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(cloneConfigSchema, req.body);
 
@@ -330,7 +330,7 @@ router.post('/clone', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * POST /api/configuration/import
  * Importer une configuration
  */
-router.post('/import', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/import', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(importBackupConfigSchema, req.body);
         const { dryRun = false } = dto.options;
@@ -379,7 +379,7 @@ router.post('/export', authMiddleware, async (req: Request, res: Response, next:
  * GET /api/backups/metrics/summary
  * Métriques globales des backups
  */
-router.get('/metrics/summary', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/metrics/summary', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const usage = await configBackupService['storageProvider'].getStorageUsage();
 
@@ -432,7 +432,7 @@ router.get('/metrics/:etablissementId', authMiddleware, async (req: Request, res
  * GET /api/backups/storage-usage
  * Usage du stockage
  */
-router.get('/storage-usage', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/storage-usage', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const usage = await configBackupService['storageProvider'].getStorageUsage();
 

@@ -17,8 +17,7 @@ import {
     addEtablissementSchema,
     addAdminSchema,
 } from '../dto';
-import { authMiddleware } from '@modules/auth/middlewares';
-import { requireRoles } from '@modules/auth/middlewares/role.middleware';
+import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
 import { requireGroupeAccess } from '../guards/groupe-access.guard';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
@@ -133,7 +132,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.post(
     '/',
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR, Role.DIRECTEUR_ADJOINT),
+    requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createGroupeSchema, req.body);
@@ -188,7 +187,7 @@ router.get('/:id/etablissements', requireGroupeAccess, async (req: Request, res:
 router.post(
     '/:id/etablissements',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR),
+    requirePermission('chef:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(addEtablissementSchema, req.body);
@@ -220,7 +219,7 @@ router.post(
 router.delete(
     '/:id/etablissements/:etablissementId',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR),
+    requirePermission('chef:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await groupesService.removeEtablissement(req.params.id, req.params.etablissementId);
@@ -277,7 +276,7 @@ router.get('/:id/admins', requireGroupeAccess, async (req: Request, res: Respons
 router.post(
     '/:id/admins',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR),
+    requirePermission('chef:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(addAdminSchema, req.body);
@@ -297,7 +296,7 @@ router.post(
 router.delete(
     '/:id/admins/:utilisateurId',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR),
+    requirePermission('chef:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await groupesService.removeAdmin(req.params.id, req.params.utilisateurId);
@@ -418,7 +417,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.post(
     '/',
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR, Role.DIRECTEUR_ADJOINT),
+    requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createGroupeSchema, req.body);
@@ -457,7 +456,7 @@ router.get('/:id', requireGroupeAccess, async (req: Request, res: Response, next
 router.patch(
     '/:id',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR, Role.DIRECTEUR_ADJOINT),
+    requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateGroupeSchema, req.body);
@@ -476,7 +475,7 @@ router.patch(
 router.delete(
     '/:id',
     requireGroupeAccess,
-    requireRoles(Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR),
+    requirePermission('chef:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await groupesService.deleteGroupe(req.params.id, req.utilisateur!.id);

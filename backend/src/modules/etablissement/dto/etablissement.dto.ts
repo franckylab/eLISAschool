@@ -16,7 +16,11 @@ export const createEtablissementSchema = z.object({
     nom: z.string().min(3).max(255),
     codeEtablissement: z.string().max(50).optional(),
     slogan: z.string().max(500).optional(),
-    logoUrl: z.string().url().optional().or(z.literal('')),
+    
+    // Logo établissement (v3.0)
+    logoBase64: z.string().regex(/^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/).max(1500000).optional().or(z.literal('')), // Max ~1MB base64
+    logoType: z.enum(['png', 'jpg', 'jpeg', 'svg', 'webp']).optional(),
+    logoTaille: z.number().int().positive().max(1048576).optional(), // Max 1MB en octets
     
     // Classification
     sousSysteme: z.nativeEnum(SousSysteme).default(SousSysteme.FRANCOPHONE),
@@ -53,6 +57,11 @@ export const createEtablissementSchema = z.object({
     // Couleurs et personnalisation visuelle
     couleurPrimaire: z.string().max(20).optional().or(z.literal('')),
     couleurSecondaire: z.string().max(20).optional().or(z.literal('')),
+    
+    // Paramètres régionaux (v3.0)
+    langueDefaut: z.enum(['fr', 'en', 'pt']).default('fr').optional(),
+    devise: z.enum(['XAF', 'XOF', 'EUR', 'USD', 'NGN']).default('XAF').optional(),
+    fuseauHoraire: z.string().max(50).default('Africa/Douala').optional(), // Format IANA timezone
 });
 
 /**

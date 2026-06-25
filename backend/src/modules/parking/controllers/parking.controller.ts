@@ -8,7 +8,7 @@ import {
     createAbonnementSchema,
     updateAbonnementSchema,
 } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -39,7 +39,7 @@ router.get('/places/:id', authMiddleware, async (req: Request, res: Response, ne
     } catch (error) { next(error); }
 });
 
-router.post('/places', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/places', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPlaceParkingSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -49,7 +49,7 @@ router.post('/places', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
     } catch (error) { next(error); }
 });
 
-router.patch('/places/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/places/:id', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePlaceParkingSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -59,7 +59,7 @@ router.patch('/places/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
     } catch (error) { next(error); }
 });
 
-router.delete('/places/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/places/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).utilisateur?.id;
         const etablissementId = (req as any).utilisateur?.etablissementId;
@@ -88,7 +88,7 @@ router.get('/vehicules/:id', authMiddleware, async (req: Request, res: Response,
     } catch (error) { next(error); }
 });
 
-router.post('/vehicules', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/vehicules', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createVehiculeSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -98,7 +98,7 @@ router.post('/vehicules', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
     } catch (error) { next(error); }
 });
 
-router.patch('/vehicules/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/vehicules/:id', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateVehiculeSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -108,7 +108,7 @@ router.patch('/vehicules/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUP
     } catch (error) { next(error); }
 });
 
-router.delete('/vehicules/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/vehicules/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).utilisateur?.id;
         const etablissementId = (req as any).utilisateur?.etablissementId;
@@ -141,7 +141,7 @@ router.get('/abonnements/:id', authMiddleware, async (req: Request, res: Respons
     } catch (error) { next(error); }
 });
 
-router.post('/abonnements', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/abonnements', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createAbonnementSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -151,7 +151,7 @@ router.post('/abonnements', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
     } catch (error) { next(error); }
 });
 
-router.patch('/abonnements/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_INFRASTRUCTURE), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/abonnements/:id', authMiddleware, requirePermission('infrastructure:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateAbonnementSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -177,7 +177,7 @@ router.get('/statistiques', authMiddleware, async (req: Request, res: Response, 
 // TÂCHES AUTOMATISÉES
 // ==================================
 
-router.post('/expire-abonnements', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/expire-abonnements', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const count = await parkingService.expireAbonnements();
         res.json({ 

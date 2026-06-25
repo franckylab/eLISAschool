@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { TransportService } from '../services/transport.service';
 import { createLigneSchema, createInscriptionTransportSchema, enregistrerPresenceSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { TRANSPORT_DEFAULT_CONFIG } from '../config/transport.config';
@@ -39,7 +39,7 @@ router.get('/lignes/:id', authMiddleware, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/lignes', authMiddleware, requireRoles(Role.RESPONSABLE_TRANSPORT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res, next) => {
+router.post('/lignes', authMiddleware, requirePermission('transport:manage'), async (req, res, next) => {
     try {
         const dto = validateDto(createLigneSchema, req.body);
         const etablissementId = (req as any).utilisateur?.etablissementId;
@@ -48,7 +48,7 @@ router.post('/lignes', authMiddleware, requireRoles(Role.RESPONSABLE_TRANSPORT, 
     } catch (error) { next(error); }
 });
 
-router.get('/lignes/:id/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_TRANSPORT), async (req, res, next) => {
+router.get('/lignes/:id/inscriptions', authMiddleware, requirePermission('transport:manage'), async (req, res, next) => {
     try {
         const etablissementId = (req as any).utilisateur?.etablissementId;
         const inscriptions = await transportService.getInscriptionsByLigne(req.params.id, etablissementId);
@@ -56,7 +56,7 @@ router.get('/lignes/:id/inscriptions', authMiddleware, requireRoles(Role.ADMIN, 
     } catch (error) { next(error); }
 });
 
-router.post('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_TRANSPORT), async (req, res, next) => {
+router.post('/inscriptions', authMiddleware, requirePermission('transport:manage'), async (req, res, next) => {
     try {
         const dto = validateDto(createInscriptionTransportSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -66,7 +66,7 @@ router.post('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER
     } catch (error) { next(error); }
 });
 
-router.post('/presences', authMiddleware, requireRoles(Role.RESPONSABLE_TRANSPORT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res, next) => {
+router.post('/presences', authMiddleware, requirePermission('transport:manage'), async (req, res, next) => {
     try {
         const dto = validateDto(enregistrerPresenceSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -76,7 +76,7 @@ router.post('/presences', authMiddleware, requireRoles(Role.RESPONSABLE_TRANSPOR
     } catch (error) { next(error); }
 });
 
-router.get('/lignes/:id/presences/aujourd-hui', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_TRANSPORT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/lignes/:id/presences/aujourd-hui', authMiddleware, requirePermission('transport:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = (req as any).utilisateur?.etablissementId;
         const presences = await transportService.getPresencesDuJour(req.params.id, etablissementId);
@@ -88,7 +88,7 @@ router.get('/lignes/:id/presences/aujourd-hui', authMiddleware, requireRoles(Rol
 // CONFIGURATION
 // ==================================
 
-router.get('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/config', authMiddleware, requirePermission('transport:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ 
             success: true, 
@@ -99,7 +99,7 @@ router.get('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
     } catch (error) { next(error); }
 });
 
-router.post('/config/reset', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/config/reset', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ 
             success: true, 

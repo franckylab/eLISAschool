@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Agrafeuses et trombones -->
+    <rect x="300" y="200" width="120" height="60" rx="10" fill="currentColor" opacity="0.08"/>
+    <rect x="320" y="180" width="80" height="20" rx="5" fill="currentColor" opacity="0.10"/>
+    <path d="M600,300 L650,300 L650,350 L600,350 L600,320 L640,320" stroke-width="4" fill="none"/>
+    <rect x="1100" y="400" width="120" height="60" rx="10" fill="currentColor" opacity="0.08"/>
+    <path d="M1400,500 L1450,500 L1450,550 L1400,550 L1400,520 L1440,520" stroke-width="4" fill="none"/>
+
+  </g>
+</svg>

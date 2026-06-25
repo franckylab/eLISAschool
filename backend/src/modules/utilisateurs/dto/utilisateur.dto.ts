@@ -77,6 +77,7 @@ export const queryUtilisateursSchema = paginationWithSortSchema
         statut: z.string().optional(),
         etablissementId: z.string().uuid().optional(),
         exclureEtablissement: z.string().uuid().optional().describe('Exclure les utilisateurs déjà assignés à cet établissement'),
+        actifFiltre: z.enum(['tous', 'actif', 'inactif']).default('actif').optional().describe('Filtre par statut d\'affectation (tous/actif/inactif)'),
     });
 
 // Types inférés
@@ -84,6 +85,20 @@ export type CreateUtilisateurDto = z.infer<typeof createUtilisateurSchema>;
 export type UpdateUtilisateurDto = z.infer<typeof updateUtilisateurSchema>;
 export type UpdateProfilDto = z.infer<typeof updateProfilSchema>;
 export type QueryUtilisateursDto = z.infer<typeof queryUtilisateursSchema>;
+
+/**
+ * Schéma de changement de statut d'affectation (désactiver/réactiver)
+ */
+export const toggleStatutSchema = z.object({
+    actif: z.boolean({
+        required_error: 'Le statut (actif/inactif) est requis',
+    }),
+    motif: z.string()
+        .min(10, 'Le motif doit contenir au moins 10 caractères')
+        .max(500, 'Le motif ne doit pas dépasser 500 caractères'),
+});
+
+export type ToggleStatutDto = z.infer<typeof toggleStatutSchema>;
 
 /**
  * DTO de réponse utilisateur
@@ -97,6 +112,10 @@ export interface UtilisateurResponseDto {
     id: string;
     email: string;
     matricule: string;
+    /** Nom aplati depuis le profil pour accès direct */
+    nom: string;
+    /** Prénom aplati depuis le profil pour accès direct */
+    prenom: string;
     role: string;
     statut: string;
     emailVerifie: boolean;
@@ -125,6 +144,11 @@ export interface UtilisateurResponseDto {
      * (peut être différent du rôle global)
      */
     roleEtablissement?: string;
+    /**
+     * Statut d'affectation dans l'établissement courant
+     * (true = actif dans cet établissement, false = inactif/désactivé)
+     */
+    actifDansEtablissement?: boolean;
 }
 
 export default {

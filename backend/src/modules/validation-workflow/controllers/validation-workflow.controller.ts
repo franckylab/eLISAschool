@@ -11,7 +11,7 @@ import { ValidationWorkflowService } from '../services';
 import { validationRapportService } from '../services/validation-rapport.service';
 import { createWorkflowSchema, traiterValidationSchema, queryWorkflowsSchema, configRolesSchema } from '../dto';
 import { generateRapportSchema } from '../dto/validation-rapport.dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -24,7 +24,7 @@ router.use(authMiddleware);
  * GET /api/validation-workflows
  * Liste tous les workflows avec filtres
  */
-router.get('/', requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryWorkflowsSchema, req.query);
         const result = await workflowService.findAll(query, req.etablissementId);
@@ -47,7 +47,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  * GET /api/validation-workflows/stats/:module
  * Statistiques pour un module
  */
-router.get('/stats/:module', requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/stats/:module', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await workflowService.getStatistiques(req.params.module, req.etablissementId);
         res.json({ success: true, data: stats });
@@ -58,7 +58,7 @@ router.get('/stats/:module', requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHE
  * POST /api/validation-workflows
  * Crée un nouveau workflow
  */
-router.post('/', requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createWorkflowSchema, req.body);
         const workflow = await workflowService.createWorkflow(dto, req.utilisateur!.id);
@@ -100,7 +100,7 @@ router.post('/:id/annuler', async (req: Request, res: Response, next: NextFuncti
  * PUT /api/validation-workflows/config/:module
  * Configure les rôles pour un module
  */
-router.put('/config/:module', requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.put('/config/:module', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(configRolesSchema, { ...req.body, module: req.params.module });
         await workflowService.updateConfigRoles(dto);
@@ -132,7 +132,7 @@ router.get('/check/:module/:entiteId', async (req: Request, res: Response, next:
  * Génère un rapport synthétique de validation
  */
 router.get('/rapports/summary',
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(generateRapportSchema, req.query);
@@ -151,7 +151,7 @@ router.get('/rapports/summary',
  * Exporte un rapport en format CSV
  */
 router.get('/rapports/export/csv',
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(generateRapportSchema, req.query);

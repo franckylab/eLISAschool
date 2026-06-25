@@ -6,7 +6,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { MonitoringService } from '../services';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { maintenanceSchema, queryLogsSchema } from '../dto';
@@ -26,7 +26,7 @@ router.get('/health', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 // Métriques système (admin)
-router.get('/metrics', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/metrics', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const metrics = await monitoringService.getSystemMetrics();
         res.json({ success: true, data: metrics });
@@ -34,7 +34,7 @@ router.get('/metrics', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
 });
 
 // Statistiques app (admin)
-router.get('/stats', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/stats', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await monitoringService.getAppStats();
         res.json({ success: true, data: stats });
@@ -42,14 +42,14 @@ router.get('/stats', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
 });
 
 // Mode maintenance
-router.get('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/maintenance', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const maintenance = await monitoringService.isMaintenanceMode();
         res.json({ success: true, data: { maintenance } });
     } catch (error) { next(error); }
 });
 
-router.post('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/maintenance', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { enabled } = validateDto(maintenanceSchema, req.body);
         await monitoringService.setMaintenanceMode(enabled);
@@ -58,7 +58,7 @@ router.post('/maintenance', authMiddleware, requireRoles(Role.SUPER_ADMIN), asyn
 });
 
 // Logs (admin)
-router.get('/logs', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { limit } = validateDto(queryLogsSchema, req.query);
         const logs = await monitoringService.getRecentLogs(limit);

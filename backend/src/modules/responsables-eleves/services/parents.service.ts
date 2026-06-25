@@ -45,9 +45,8 @@ export class ParentsService {
             throw new AppError('Parent non trouvé', 404, 'PARENT_NOT_FOUND');
         }
 
-        // Vérifier le rôle (peut être dans utilisateurRoles ou role principal)
-        const estParent = parent.role === Role.PARENT || 
-            (parent.utilisateurRoles?.some(ur => ur.role?.code === Role.PARENT) ?? false);
+        // Vérifier le rôle (via le champ role principal de l'utilisateur)
+        const estParent = parent.role === Role.PARENT;
         
         // On permet aussi aux ADMIN de créer des relations
         if (!estParent && parent.role !== Role.ADMIN && parent.role !== Role.SUPER_ADMIN) {

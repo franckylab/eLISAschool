@@ -11,12 +11,12 @@ RUN apk add --no-cache libc6-compat
 # Étape de dépendances
 FROM base AS deps
 COPY frontend/package*.json ./
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Étape de build
 FROM base AS builder
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm install
 COPY frontend/ .
 COPY shared/ /shared
 RUN npm run build

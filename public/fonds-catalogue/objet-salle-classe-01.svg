@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Tableau noir avec formules -->
+    <rect x="200" y="150" width="600" height="350" rx="5" fill="currentColor" opacity="0.06"/>
+    <rect x="210" y="160" width="580" height="330" fill="currentColor" opacity="0.04"/>
+    <text x="250" y="250" font-size="32" fill="currentColor" opacity="0.10" font-family="serif">2 + 2 = 4</text>
+    <text x="250" y="320" font-size="32" fill="currentColor" opacity="0.10" font-family="serif">E = mc²</text>
+    <text x="250" y="390" font-size="32" fill="currentColor" opacity="0.10" font-family="serif">a² + b² = c²</text>
+    <rect x="1100" y="200" width="500" height="300" rx="5" fill="currentColor" opacity="0.06"/>
+
+  </g>
+</svg>

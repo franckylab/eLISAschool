@@ -8,7 +8,7 @@
  * Types complets pour la gestion des utilisateurs, rôles et permissions
  */
 
-export type StatutUtilisateur = 'actif' | 'inactif' | 'suspendu';
+export type StatutUtilisateur = 'ACTIF' | 'INACTIF' | 'SUSPENDU' | 'EN_ATTENTE_VALIDATION';
 export type SexeUtilisateur = 'M' | 'F';
 
 export interface Utilisateur {
@@ -38,6 +38,11 @@ export interface Utilisateur {
      * (peut être différent du rôle global)
      */
     roleEtablissement?: string;
+    /**
+     * Statut d'affectation dans l'établissement courant
+     * (true = actif dans cet établissement, false = inactif/désactivé)
+     */
+    actifDansEtablissement?: boolean;
     // Méta donné es
     nomComplet?: string;
     nbConnexions?: number;
@@ -75,6 +80,7 @@ export interface UtilisateurFiltres {
     sortOrder?: 'ASC' | 'DESC';
     actif?: boolean;
     etablissementId?: string;
+    actifFiltre?: 'tous' | 'actif' | 'inactif';
 }
 
 // ==================== RÔLES ====================

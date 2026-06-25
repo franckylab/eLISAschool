@@ -13,10 +13,10 @@ export { Genre } from '@shared/enums/statuts.enum';
 export { RefreshToken } from './refresh-token.entity';
 export { AuditLog, AuditAction, AuditSeverity } from './audit-log.entity';
 
-// RBAC v2.0
+// RBAC v3.0 (Multi-tenant strict)
 export { Role } from './role.entity';  // Entité Role (TypeORM)
 export { Permission } from './permission.entity';
-export { UtilisateurRole } from './utilisateur-role.entity';
+// DEPRECATED: UtilisateurRole supprimé - rôles gérés exclusivement via UtilisateurEtablissement
 export { UtilisateurPermission, TypePermission } from './utilisateur-permission.entity';
 export { UtilisateurEtablissement } from './utilisateur-etablissement.entity';
 export { RoleLimitationEtablissement } from './role-limitation-etablissement.entity';

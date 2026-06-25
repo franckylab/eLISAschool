@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { useThemeStore } from '@/stores/theme.store';
+import { useAuthStore } from '@/stores/auth.store';
 import { routeTree } from '@/routeTree.gen';
 import { DebugPermissions } from '@/components/debug/DebugPermissions';
 import { AlertTriangle, Home } from 'lucide-react';
@@ -74,10 +75,16 @@ declare module '@tanstack/react-router' {
 
 export function App() {
     const appliquerTheme = useThemeStore((state) => state.appliquerTheme);
+    const initialize = useAuthStore((state) => state.initialize);
 
     useEffect(() => {
         appliquerTheme();
-    }, [appliquerTheme]);
+        // Call async initialize
+        const init = async () => {
+            await initialize();
+        };
+        init();
+    }, [appliquerTheme, initialize]);
 
     return (
         <ErrorBoundary>

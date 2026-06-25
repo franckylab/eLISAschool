@@ -14,6 +14,7 @@ import { logger } from '@common/utils/logger.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { StatutPersonnel } from '@modules/personnel/entities';
+import { redimensionnerLogo } from '@common/utils/image-processor.util';
 
 export interface EtablissementStats {
     totalEtablissements: number;
@@ -117,7 +118,7 @@ export class EtablissementService {
     /**
      * Retourne un établissement par son ID
      */
-    async findOne(id: string): Promise<Etablissement> {
+    async findOne(id: string, includeLogo: boolean = false): Promise<Etablissement & { logoUrl?: string }> {
         const etablissement = await this.etablissementRepo.findOne({
             where: { id },
             relations: ['configuration'],
@@ -125,7 +126,20 @@ export class EtablissementService {
         if (!etablissement) {
             throw new AppError('Établissement non trouvé', 404, 'ETABLISSEMENT_NOT_FOUND');
         }
-        return etablissement;
+        
+        // Si includeLogo est true, charger le logoBase64 séparément
+        const result = etablissement as any;
+        if (includeLogo) {
+            const withLogo = await this.etablissementRepo.findOne({
+                where: { id },
+                select: ['id', 'logoBase64'],
+            });
+            if (withLogo?.logoBase64) {
+                result.logoUrl = withLogo.logoBase64;
+            }
+        }
+        
+        return result;
     }
 
     /**
@@ -349,6 +363,143 @@ export class EtablissementService {
                 planAbonnement: config?.planAbonnement,
             },
         };
+    }
+
+    // ==================================
+    // Upload et traitement du logo (v3.0)
+    // ==================================
+
+    /**
+     * Récupère le logo d'un établissement (avec base64)
+     * 
+     * @param etablissementId ID de l'établissement
+     * @returns { base64, type, taille } ou null si pas de logo
+     */
+    async getLogo(etablissementId: string): Promise<{
+        base64: string;
+        type: string;
+        taille: number;
+    } | null> {
+        // Overrider select: false avec select explicite
+        const etablissement = await this.etablissementRepo.findOne({
+            where: { id: etablissementId },
+            select: ['logoBase64', 'logoType', 'logoTaille'],
+        });
+
+        if (!etablissement || !etablissement.logoBase64) {
+            return null;
+        }
+
+        return {
+            base64: etablissement.logoBase64,
+            type: etablissement.logoType || '',
+            taille: etablissement.logoTaille || 0,
+        };
+    }
+
+    /**
+     * Upload et traite le logo d'un établissement
+     * 
+     * @param etablissementId ID de l'établissement
+     * @param logoBase64 Data URI base64 du logo
+     * @returns Établissement mis à jour avec logo (sans le base64 pour performance)
+     */
+    async uploadLogo(etablissementId: string, logoBase64: string): Promise<Etablissement> {
+        const etablissement = await this.findOne(etablissementId);
+
+        try {
+            // 1. Redimensionnement et validation via utilitaire sharp
+            const imageTraitee = await redimensionnerLogo(logoBase64);
+
+            // 2. Mettre à jour l'établissement avec le logo traité
+            etablissement.logoBase64 = imageTraitee.base64;
+            etablissement.logoType = imageTraitee.type;
+            etablissement.logoTaille = imageTraitee.taille;
+
+            await this.etablissementRepo.save(etablissement);
+
+            logger.info(`Logo uploadé pour établissement: ${etablissement.nom} (${etablissementId})`);
+
+            // 3. Retourner sans le base64 (select: false)
+            return this.findOne(etablissementId);
+        } catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error(`Erreur upload logo: ${error.message || error}`);
+            throw new AppError(
+                'Erreur lors de l\'upload du logo',
+                500,
+                'UPLOAD_LOGO_ERREUR'
+            );
+        }
+    }
+
+    /**
+     * Supprime le logo d'un établissement
+     * 
+     * @param etablissementId ID de l'établissement
+     * @returns Établissement mis à jour sans logo
+     */
+    async supprimerLogo(etablissementId: string): Promise<Etablissement> {
+        const etablissement = await this.findOne(etablissementId);
+
+        if (!etablissement.logoBase64) {
+            throw new AppError('Aucun logo à supprimer', 400, 'LOGO_ABSENT');
+        }
+
+        etablissement.logoBase64 = null;
+        etablissement.logoType = null;
+        etablissement.logoTaille = null;
+
+        await this.etablissementRepo.save(etablissement);
+
+        logger.info(`Logo supprimé pour établissement: ${etablissement.nom} (${etablissementId})`);
+        return etablissement;
+    }
+
+    // ==================================
+    // Paramètres régionaux avec fallback 4 niveaux (v3.0)
+    // ==================================
+
+    /**
+     * Récupère les paramètres régionaux d'un établissement avec fallback en cascade
+     * 
+     * Priorité (décroissante) :
+     * 1. Valeur sur l'établissement
+     * 2. ParametreSysteme (scope etablissementId)
+     * 3. ParametreSysteme (global)
+     * 4. ConfigurationApp (défaut système)
+     * 5. Valeur par défaut codée en dur
+     */
+    async getParametresRegionaux(etablissementId: string): Promise<{
+        langueDefaut: string;
+        devise: string;
+        fuseauHoraire: string;
+    }> {
+        const { getParam } = await import('@modules/configuration/utils/config.helper');
+        const { ConfigurationApp } = await import('@modules/configuration/entities/configuration-app.entity');
+
+        // Récupérer l'établissement
+        const etablissement = await this.etablissementRepo.findOne({
+            where: { id: etablissementId },
+            select: ['langueDefaut', 'devise', 'fuseauHoraire'],
+        });
+
+        // Fallback 4 niveaux pour chaque paramètre
+        const langueDefaut = etablissement?.langueDefaut
+            || await getParam('app.langue_defaut', { etablissementId, defaultValue: 'fr' })
+            || 'fr';
+
+        const devise = etablissement?.devise
+            || await getParam('app.devise', { etablissementId, defaultValue: 'XAF' })
+            || 'XAF';
+
+        const fuseauHoraire = etablissement?.fuseauHoraire
+            || await getParam('app.fuseau_horaire', { etablissementId, defaultValue: 'Africa/Douala' })
+            || 'Africa/Douala';
+
+        return { langueDefaut, devise, fuseauHoraire };
     }
 }
 

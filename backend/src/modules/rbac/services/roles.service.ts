@@ -12,7 +12,7 @@ import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Role } from '@modules/auth/entities';
 import { Permission } from '@modules/auth/entities';
-import { UtilisateurRole } from '@modules/auth/entities';
+import { UtilisateurEtablissement } from '@modules/auth/entities';
 import { Utilisateur } from '@modules/auth/entities';
 import { CreateRoleDto, AssignPermissionsToRoleDto } from '../dto/create-role.dto';
 import { AppError } from '@common/filters/error.filter';
@@ -22,17 +22,18 @@ import { Role as RoleEnum } from '@shared/enums/roles.enum';
 
 /**
  * Service de gestion des rôles
+ * RBAC v3.0 — Multi-Tenant Strict : comptage via utilisateur_etablissements
  */
 export class RolesService {
     private roleRepo: Repository<Role>;
     private permissionRepo: Repository<Permission>;
-    private utilisateurRoleRepo: Repository<UtilisateurRole>;
+    private utilisateurEtablissementRepo: Repository<UtilisateurEtablissement>;
     private utilisateurRepo: Repository<Utilisateur>;
 
     constructor() {
         this.roleRepo = AppDataSource.getRepository(Role);
         this.permissionRepo = AppDataSource.getRepository(Permission);
-        this.utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
+        this.utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     }
 
@@ -105,11 +106,11 @@ export class RolesService {
             order: { libelle: 'ASC' },
         });
 
-        // Compter le nombre d'utilisateurs pour chaque rôle
+        // Compter le nombre d'utilisateurs pour chaque rôle (via utilisateur_etablissements)
         const rolesWithCount = await Promise.all(
             roles.map(async (role) => {
-                const count = await this.utilisateurRoleRepo.count({
-                    where: { roleId: role.id },
+                const count = await this.utilisateurEtablissementRepo.count({
+                    where: { roleId: role.id, actif: true },
                 });
                 return {
                     ...role,
@@ -199,14 +200,14 @@ export class RolesService {
             throw new AppError('Les rôles système ne peuvent pas être supprimés', 400, 'SYSTEM_ROLE_IMMUTABLE');
         }
 
-        // Vérifier si des utilisateurs ont ce rôle
-        const utilisateurRoles = await this.utilisateurRoleRepo.find({
-            where: { roleId: id },
+        // Vérifier si des utilisateurs ont ce rôle (via utilisateur_etablissements)
+        const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
+            where: { roleId: id, actif: true },
         });
 
-        if (utilisateurRoles.length > 0) {
+        if (utilisateurEtablissements.length > 0) {
             throw new AppError(
-                `Impossible de supprimer ce rôle : ${utilisateurRoles.length} utilisateur(s) l'ont assigné`,
+                `Impossible de supprimer ce rôle : ${utilisateurEtablissements.length} utilisateur(s) l'ont assigné`,
                 400,
                 'ROLE_IN_USE'
             );
@@ -263,6 +264,7 @@ export class RolesService {
 
     /**
      * Lister les utilisateurs ayant un rôle spécifique
+     * MULTI-TENANT STRICT : Via utilisateur_etablissements
      */
     async getUsersWithRole(roleId: string): Promise<Array<{
         id: string;
@@ -273,19 +275,20 @@ export class RolesService {
         telephone?: string;
         statut: string;
         derniereConnexion?: Date;
+        etablissementId?: string;
     }>> {
-        const utilisateurRoles = await this.utilisateurRoleRepo.find({
-            where: { roleId },
+        const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
+            where: { roleId, actif: true },
             relations: ['utilisateur'],
         });
 
         // Si aucun utilisateur n'a ce rôle, retourner un tableau vide
-        if (utilisateurRoles.length === 0) {
+        if (utilisateurEtablissements.length === 0) {
             return [];
         }
 
         // Récupérer les IDs des utilisateurs
-        const utilisateurIds = utilisateurRoles.map(ur => ur.utilisateurId);
+        const utilisateurIds = utilisateurEtablissements.map(ue => ue.utilisateurId);
 
         // Charger les profils séparément
         const profils = await AppDataSource
@@ -301,9 +304,9 @@ export class RolesService {
             profilMap.set((p as any).utilisateurId, p);
         });
 
-        // Mapper pour inclure les informations du profil
-        return utilisateurRoles.map(ur => {
-            const user = ur.utilisateur;
+        // Mapper pour inclure les informations du profil et l'établissement
+        return utilisateurEtablissements.map(ue => {
+            const user = ue.utilisateur;
             const profil = profilMap.get(user.id);
             
             return {
@@ -315,6 +318,7 @@ export class RolesService {
                 telephone: profil?.telephone || '',
                 statut: user.statut,
                 derniereConnexion: user.derniereConnexion,
+                etablissementId: ue.etablissementId,
             };
         });
     }

@@ -6,12 +6,13 @@
  * Responsive : sidebar overlay mobile, collapsible desktop
  */
 
-import { type ReactNode, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { type ReactNode, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { FondRotator } from './FondRotator';
 import { cn } from '@/lib/cn';
 
 interface PageLayoutProps {
@@ -20,7 +21,8 @@ interface PageLayoutProps {
 
 export function PageLayout({ children }: PageLayoutProps) {
     const { isCollapsed, isMobileOpen, setMobileOpen, toggle } = useSidebarStore();
-    const [sidebarHovered, setSidebarHovered] = useState(false);
+
+    console.log('[PageLayout] Rendu du layout principal');
 
     // Fermer le sidebar mobile lors du resize
     useEffect(() => {
@@ -34,7 +36,10 @@ export function PageLayout({ children }: PageLayoutProps) {
     }, [setMobileOpen]);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-[var(--color-fond)]">
+        <div className="relative flex h-screen overflow-hidden bg-[var(--color-fond)]">
+            {/* Fond d'écran rotatif (derrière tout le contenu) */}
+            <FondRotator />
+
             {/* Overlay mobile */}
             {isMobileOpen && (
                 <div
@@ -46,8 +51,6 @@ export function PageLayout({ children }: PageLayoutProps) {
             {/* Sidebar + bouton toggle sur la bordure */}
             <div
                 className="relative hidden lg:block"
-                onMouseEnter={() => setSidebarHovered(true)}
-                onMouseLeave={() => setSidebarHovered(false)}
             >
                 <aside
                     className={cn(
@@ -58,38 +61,33 @@ export function PageLayout({ children }: PageLayoutProps) {
                     <Sidebar />
                 </aside>
 
-                {/* Bouton toggle sur la bordure — apparaît au hover */}
-                <AnimatePresence>
-                    {sidebarHovered && (
-                        <motion.button
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            onClick={toggle}
-                            className={cn(
-                                'absolute top-1/2 -translate-y-1/2 z-50',
-                                'flex h-6 w-6 items-center justify-center',
-                                'rounded-full border border-[var(--color-bordure)]',
-                                'bg-[var(--color-surface)] shadow-sm',
-                                'text-[var(--color-texte-secondaire)]',
-                                'hover:bg-[var(--color-dominante)] hover:text-white hover:border-[var(--color-dominante)]',
-                                'hover:shadow-md',
-                                'transition-colors duration-150',
-                                '-right-3',
-                            )}
-                            aria-label={isCollapsed ? 'Déplier le menu' : 'Replier le menu'}
-                            title={isCollapsed ? 'Déplier le menu' : 'Replier le menu'}
-                        >
-                            <ChevronLeft
-                                className={cn(
-                                    'h-3.5 w-3.5 transition-transform duration-300',
-                                    isCollapsed && 'rotate-180',
-                                )}
-                            />
-                        </motion.button>
+                {/* Bouton toggle sur la bordure — toujours visible et persistant */}
+                <motion.button
+                    initial={{ opacity: 1, scale: 1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    onClick={toggle}
+                    className={cn(
+                        'absolute top-1/2 -translate-y-1/2 z-50',
+                        'flex h-8 w-8 items-center justify-center',
+                        'rounded-full border-2 border-[var(--color-bordure)]',
+                        'bg-[var(--color-surface)] shadow-lg',
+                        'text-[var(--color-texte-secondaire)]',
+                        'hover:bg-[var(--color-dominante)] hover:text-white hover:border-[var(--color-dominante)]',
+                        'hover:shadow-xl',
+                        'active:scale-95',
+                        'transition-all duration-200',
+                        '-right-4',
                     )}
-                </AnimatePresence>
+                    aria-label={isCollapsed ? 'Déplier le menu' : 'Replier le menu'}
+                    title={isCollapsed ? 'Déplier le menu' : 'Replier le menu'}
+                >
+                    <ChevronLeft
+                        className={cn(
+                            'h-5 w-5 transition-transform duration-300',
+                            isCollapsed && 'rotate-180',
+                        )}
+                    />
+                </motion.button>
             </div>
 
             {/* Sidebar mobile */}

@@ -40,3 +40,13 @@ export { useSessionExpired } from './use-session-expired';
 export { useMediaQuery } from './use-media-query';
 export { useBreakpoint } from './use-breakpoint';
 export type { BreakpointName, BreakpointResult } from './use-breakpoint';
+
+// Optimisation performance
+export { useDebounce } from './use-debounce';
+
+// Persistance des préférences DataTable
+export { useDataTablePreferences } from './use-datatable-preferences';
+export type { DataTablePreferences, DataTablePreferencesPartial } from '@/types/datatable-preferences.types';
+
+// Contrôle rotation des fonds d'écran
+export { useRotationControle } from './use-rotation-controle';

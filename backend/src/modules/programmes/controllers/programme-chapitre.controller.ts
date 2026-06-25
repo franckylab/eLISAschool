@@ -8,7 +8,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { programmeChapitreService } from '../services/programme-chapitre.service';
 import { createProgrammeChapitreSchema, updateProgrammeChapitreSchema, queryProgrammeChapitreSchema } from '../dto/programme-chapitre.dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 
@@ -29,7 +29,7 @@ function validateDto(schema: any, data: unknown): any {
 router.post(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createProgrammeChapitreSchema, req.body);
@@ -79,7 +79,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateProgrammeChapitreSchema, req.body);
@@ -101,7 +101,7 @@ router.patch(
 router.delete(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const result = await programmeChapitreService.delete(

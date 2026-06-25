@@ -18,7 +18,7 @@ import {
     createMatiereNiveauSchema, updateMatiereNiveauSchema,
     affecterEnseignantSchema
 } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -40,7 +40,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMatiereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -49,7 +49,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateMatiereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -58,7 +58,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         await service.delete(req.params.id, etablissementId);
@@ -74,7 +74,7 @@ router.get('/groupes', authMiddleware, async (req: Request, res: Response, next:
     } catch (error) { next(error); }
 });
 
-router.post('/groupes', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/groupes', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createGroupeMatiereSchema, req.body);
         const groupe = await service.createGroupe(dto);
@@ -90,7 +90,7 @@ router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Res
     } catch (error) { next(error); }
 });
 
-router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/programme', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMatiereNiveauSchema, req.body);
         const prog = await service.addMatiereToNiveau(dto, req.utilisateur?.id!, req.etablissementId);
@@ -98,7 +98,7 @@ router.post('/programme', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
     } catch (error) { next(error); }
 });
 
-router.patch('/programme/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/programme/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateMatiereNiveauSchema, req.body);
         const prog = await service.updateProgramme(req.params.id, dto, req.utilisateur?.id!, req.etablissementId);
@@ -107,7 +107,7 @@ router.patch('/programme/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUP
 });
 
 // Affectation Enseignant
-router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/affectations', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(affecterEnseignantSchema, req.body);
         const affectation = await service.affecterEnseignant(dto, req.utilisateur?.id!, req.etablissementId);

@@ -185,8 +185,8 @@ export class ValidationWorkflowService {
                 // 1. Construire le code de permission
                 const permissionCode = `validation:${workflow.module}:level${niveauSuivant}`;
 
-                // 2. Résoudre les permissions effectives
-                const permissions = await permissionResolverService.resolvePermissions(validateurId);
+                // 2. Résoudre les permissions effectives (avec contexte établissement)
+                const permissions = await permissionResolverService.resolvePermissions(validateurId, workflow.etablissementId);
 
                 // 3. Vérifier si la permission est présente
                 if (!permissions.has(permissionCode)) {

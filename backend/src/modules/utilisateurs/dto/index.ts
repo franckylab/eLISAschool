@@ -5,3 +5,4 @@
  */
 
 export * from './utilisateur.dto';
+export * from './verification-suppression.dto';

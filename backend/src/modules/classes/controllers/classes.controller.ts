@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ClassesService } from '../services';
 import { createClasseSchema, updateClasseSchema, affecterEleveSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -17,9 +17,9 @@ const service = new ClassesService();
 /**
  * @route   GET /api/classes
  * @desc    Récupérer les classes avec pagination
- * @access  Authentifié
+ * @access  Authentifié avec permission classes:view
  */
-router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('classes:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
@@ -31,9 +31,9 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 /**
  * @route   GET /api/classes/all
  * @desc    Récupérer toutes les classes (sans pagination, pour dropdowns)
- * @access  Authentifié
+ * @access  Authentifié avec permission classes:view
  */
-router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/all', authMiddleware, requirePermission('classes:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
@@ -43,7 +43,7 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('classes:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createClasseSchema, req.body);
         const classe = await service.create(dto, req.etablissementId);
@@ -51,7 +51,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateClasseSchema, req.body);
         const classe = await service.update(req.params.id, dto);
@@ -59,14 +59,14 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('classes:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await service.delete(req.params.id);
         res.json({ success: true, message: 'Classe supprimée' });
     } catch (error) { next(error); }
 });
 
-router.post('/affectations', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.PERSONNEL, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/affectations', authMiddleware, requirePermission('classes:affecter'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(affecterEleveSchema, req.body);
         const affectation = await service.affecterEleve(dto, req.utilisateur?.id!, req.etablissementId);

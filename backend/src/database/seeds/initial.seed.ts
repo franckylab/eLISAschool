@@ -2,29 +2,34 @@
  * ==================================
  * eLISAschool - Seed des données initiales
  * ==================================
- * Version: 4.0.0
+ * Version: 5.0.0
  * Auteur: franck arlos chendjou
  * 
- * Inclut: Établissement par défaut, Paramètres système, Modules, RBAC, Super admin
+ * Inclut: Établissements, Structure académique, Années scolaires, Classes,
+ *         Matières, Matières-Niveaux, Configuration, RBAC, Utilisateurs, Élèves
  */
 
 import { AppDataSource } from '../data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, UtilisateurRole } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, Role as RoleEntity } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { ConfigurationSeedService } from '@modules/configuration/services/configuration-seed.service';
 import { RBACSeedService } from './rbac.seed';
 import { seedEtablissementsParDefaut, EtablissementsDefaut } from './seed-etablissement-par-defaut';
-import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { seedStructureAcademique } from './seed-structure-academique';
+import { seedAnneesScolaires } from './seed-annees-scolaires';
 import { seedClassesParDefaut } from './seed-classes-par-defaut';
+import { seedMatieres } from './seed-matieres';
+import { seedMatieresNiveaux } from './seed-matieres-niveaux';
+import { seedElevesExemples } from './seed-eleves-exemples';
 import { seedGroupesEtablissements } from './seed-groupes-etablissements';
+import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { logger } from '@common/utils/logger.util';
 
 /**
  * Exécute tous les seeds de données initiales
  */
 export async function runSeeds(): Promise<void> {
-    logger.info('🌱 Exécution des seeds...');
+    logger.info('🌱 Exécution des seeds (v5.0)...');
 
     // 1. Établissements par défaut (2 établissements)
     const etablissements = await seedEtablissementsParDefaut();
@@ -38,30 +43,52 @@ export async function runSeeds(): Promise<void> {
     await seedStructureAcademique(etablissementPrincipalId);
     await seedStructureAcademique(etablissementSecondaireId);
 
-    // 3. Classes par défaut pour les 2 établissements
-    await seedClassesParDefaut(etablissementPrincipalId);
-    await seedClassesParDefaut(etablissementSecondaireId);
+    // 3. Années scolaires pour les 2 établissements
+    const anneeActivePrincipal = await seedAnneesScolaires(etablissementPrincipalId);
+    const anneeActiveSecondaire = await seedAnneesScolaires(etablissementSecondaireId);
 
-    // 4. Configuration (modules, paramètres système) - scopé au principal
+    // 4. Classes par défaut pour les 2 établissements
+    if (anneeActivePrincipal) {
+        await seedClassesParDefaut(etablissementPrincipalId, anneeActivePrincipal);
+    }
+    if (anneeActiveSecondaire) {
+        await seedClassesParDefaut(etablissementSecondaireId, anneeActiveSecondaire);
+    }
+
+    // 5. Matières pour les 2 établissements
+    await seedMatieres(etablissementPrincipalId);
+    await seedMatieres(etablissementSecondaireId);
+
+    // 6. Matières-Niveaux (coefficients et horaires) pour les 2 établissements
+    await seedMatieresNiveaux(etablissementPrincipalId);
+    await seedMatieresNiveaux(etablissementSecondaireId);
+
+    // 7. Configuration (modules, paramètres système) - scopé aux 2 établissements
     await seedConfiguration(etablissementPrincipalId);
+    await seedConfiguration(etablissementSecondaireId);
 
-    // 5. RBAC (rôles, permissions, mappings)
+    // 8. RBAC (rôles, permissions, mappings)
     await seedRBAC();
 
-    // 6. Super admin (lié aux 2 établissements)
+    // 9. Super admin (lié aux 2 établissements)
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
 
-    // 7. Groupes d'établissements (après super admin pour l'admin du groupe)
+    // 10. Groupes d'établissements (après super admin pour l'admin du groupe)
     const superAdmin = await getSuperAdmin();
     if (superAdmin) {
         await seedGroupesEtablissements(etablissementPrincipalId, superAdmin.id);
     }
 
-    // 8. Chef établissement pour le 2ème établissement
+    // 11. Chef établissement pour le 2ème établissement
     await seedChefEtablissementSecondaire(etablissementSecondaireId);
 
-    // 9. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
+    // 12. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
     await seedUtilisateursParRole(etablissementPrincipalId, etablissementSecondaireId);
+
+    // 13. Élèves exemples (uniquement pour l'établissement principal)
+    if (anneeActivePrincipal) {
+        await seedElevesExemples(etablissementPrincipalId, anneeActivePrincipal);
+    }
 
     logger.info('✅ Seeds exécutés avec succès');
     logger.info(`🏫 Établissement principal: ${etablissementPrincipalId}`);
@@ -96,7 +123,7 @@ async function seedRBAC(): Promise<void> {
     const rbacSeedService = new RBACSeedService();
     const result = await rbacSeedService.runAllSeeds();
 
-    logger.info(`RBAC seeds: ${result.roles} rôles, ${result.permissions} permissions, ${result.mappings} mappings, ${result.userRoles} user-roles`);
+    logger.info(`RBAC seeds: ${result.roles} rôles, ${result.permissions} permissions, ${result.mappings} mappings`);
 }
 
 /**
@@ -108,6 +135,7 @@ async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSec
     const userRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
     const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
+    const roleRepo = AppDataSource.getRepository(RoleEntity);
 
     const existant = await userRepo.findOne({
         where: { email: 'admin@elisaschool.cm' },
@@ -126,7 +154,6 @@ async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSec
         statut: StatutUtilisateur.ACTIF,
         emailVerifie: true,
         langue: 'fr',
-        etablissementId: etablissementPrincipalId, // Établissement principal (legacy)
         maxEtablissementsPersonnel: 0, // 0 = illimité pour super_admin
     });
 
@@ -143,12 +170,19 @@ async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSec
 
     // CRITIQUE: Lier le Super Admin aux 2 établissements
     
+    // Récupérer le rôle SUPER_ADMIN depuis la base
+    const roleSuperAdmin = await roleRepo.findOne({ where: { code: Role.SUPER_ADMIN } });
+    if (!roleSuperAdmin) {
+        logger.error('❌ Rôle SUPER_ADMIN non trouvé en base');
+        return;
+    }
+
     // Lien avec l'établissement principal
     const superAdminPrincipal = utilisateurEtablissementRepo.create({
         utilisateurId: superAdmin.id,
         etablissementId: etablissementPrincipalId,
-        role: Role.SUPER_ADMIN,
-        etablissementPrincipal: true, // Principal par défaut
+        roleId: roleSuperAdmin.id,
+        etablissementPrincipal: true,
         actif: true,
         dateDebut: new Date(),
     });
@@ -159,7 +193,7 @@ async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSec
     const superAdminSecondaire = utilisateurEtablissementRepo.create({
         utilisateurId: superAdmin.id,
         etablissementId: etablissementSecondaireId,
-        role: Role.SUPER_ADMIN,
+        roleId: roleSuperAdmin.id,
         etablissementPrincipal: false,
         actif: true,
         dateDebut: new Date(),
@@ -180,9 +214,8 @@ async function seedSuperAdmin(etablissementPrincipalId: string, etablissementSec
 async function seedChefEtablissementSecondaire(etablissementSecondaireId: string): Promise<void> {
     const userRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
-    const utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
     const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
-    const roleRepo = AppDataSource.getRepository('Role');
+    const roleRepo = AppDataSource.getRepository(RoleEntity);
 
     // Vérifier si l'utilisateur existe déjà
     const existant = await userRepo.findOne({
@@ -213,7 +246,6 @@ async function seedChefEtablissementSecondaire(etablissementSecondaireId: string
         statut: StatutUtilisateur.ACTIF,
         emailVerifie: true,
         langue: 'fr',
-        etablissementId: etablissementSecondaireId,
         maxEtablissementsPersonnel: 1, // Mono-établissement
     });
 
@@ -229,21 +261,17 @@ async function seedChefEtablissementSecondaire(etablissementSecondaireId: string
 
     await profilRepo.save(profil);
 
-    // Créer le lien utilisateur-rôle
-    const utilisateurRole = utilisateurRoleRepo.create({
-        utilisateurId: chefEtablissement.id,
-        roleId: (role as any).id,
-        estPrincipal: true,
-        dateAttribution: new Date(),
-    });
+    // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement (SEULE source de vérité pour les rôles)
+    const roleChef = await roleRepo.findOne({ where: { code: Role.CHEF_ETABLISSEMENT } });
+    if (!roleChef) {
+        logger.error('❌ Rôle CHEF_ETABLISSEMENT non trouvé en base');
+        return;
+    }
 
-    await utilisateurRoleRepo.save(utilisateurRole);
-
-    // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement
     const utilisateurEtablissement = utilisateurEtablissementRepo.create({
         utilisateurId: chefEtablissement.id,
         etablissementId: etablissementSecondaireId,
-        role: Role.CHEF_ETABLISSEMENT,
+        roleId: roleChef.id,
         etablissementPrincipal: true,
         actif: true,
         dateDebut: new Date(),

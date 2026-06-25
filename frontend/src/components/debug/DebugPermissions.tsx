@@ -20,7 +20,7 @@ interface DebugPermissionsProps {
 }
 
 export function DebugPermissions({ devOnly = true }: DebugPermissionsProps) {
-    const { utilisateur } = useAuthStore();
+    const { utilisateur, etablissementId, etablissementsDisponibles } = useAuthStore();
     const { hasPermission, permissions, role, isAdmin, isSuperAdmin } = usePermissions();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterModule, setFilterModule] = useState<string>('all');
@@ -112,6 +112,20 @@ export function DebugPermissions({ devOnly = true }: DebugPermissionsProps) {
                             <p><strong>Admin :</strong> {isAdmin ? '✅' : '❌'}</p>
                             <p><strong>Super Admin :</strong> {isSuperAdmin ? '✅' : '❌'}</p>
                             <p><strong>Total permissions :</strong> {permissions?.length || 0}</p>
+                            <hr className="border-white/30 my-2" />
+                            <p><strong>Établissement actif (store) :</strong> {etablissementId || 'Non défini'} - Nom: {etablissementsDisponibles?.find(e => e.id === etablissementId)?.nom || 'Non trouvé'}</p>
+                            <p><strong>Établissement actif (utilisateur) :</strong> {utilisateur?.etablissementActif || 'Non défini'}</p>
+                            <p><strong>Nombre d'établissements :</strong> {etablissementsDisponibles?.length || 0}</p>
+                            <details className="mt-1">
+                                <summary className="cursor-pointer text-xs font-semibold">Voir la liste des établissements</summary>
+                                <ul className="mt-1 ml-2 text-xs space-y-1">
+                                    {(etablissementsDisponibles || []).map((etab, idx) => (
+                                        <li key={idx} className={etab.id === etablissementId ? 'text-green-300 font-semibold' : 'text-gray-300'}>
+                                            • {etab.nom} (ID: {etab.id}) | Rôle: {etab.role} | Principal: {etab.etablissementPrincipal ? 'Oui' : 'Non'}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </details>
                         </div>
                     </>
                 )}

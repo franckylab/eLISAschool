@@ -19,7 +19,7 @@ import {
     updateElementSalaireSchema,
 } from '../dto';
 import { calculPaieService } from '../services/calcul-paie.service';
-import { staffOnly, requireRoles } from '@modules/auth/middlewares';
+import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -34,7 +34,7 @@ function validate(schema: any, data: unknown): any {
 }
 
 // ==================== COTISATIONS ====================
-router.get('/cotisations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/cotisations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const cotisations = await AppDataSource.getRepository(Cotisation).find({
             where: { etablissementId: req.utilisateur?.etablissementId },
@@ -46,7 +46,7 @@ router.get('/cotisations', staffOnly, async (req: Request, res: Response, next: 
     }
 });
 
-router.post('/cotisations', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/cotisations', requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createCotisationSchema, req.body);
         const cotisation = AppDataSource.getRepository(Cotisation).create({
@@ -60,7 +60,7 @@ router.post('/cotisations', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
     }
 });
 
-router.patch('/cotisations/:id', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/cotisations/:id', requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateCotisationSchema, req.body);
         const cotisation = await AppDataSource.getRepository(Cotisation).findOne({
@@ -76,7 +76,7 @@ router.patch('/cotisations/:id', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_
 });
 
 // ==================== PRIMES ====================
-router.get('/primes', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/primes', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const primes = await AppDataSource.getRepository(TypePrime).find({
             where: { etablissementId: req.utilisateur?.etablissementId },
@@ -88,7 +88,7 @@ router.get('/primes', staffOnly, async (req: Request, res: Response, next: NextF
     }
 });
 
-router.post('/primes', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/primes', requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createTypePrimeSchema, req.body);
         const prime = AppDataSource.getRepository(TypePrime).create({
@@ -103,7 +103,7 @@ router.post('/primes', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), as
 });
 
 // ==================== RETENUES ====================
-router.get('/retenues', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/retenues', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const retenues = await AppDataSource.getRepository(TypeRetenue).find({
             where: { etablissementId: req.utilisateur?.etablissementId },
@@ -116,7 +116,7 @@ router.get('/retenues', staffOnly, async (req: Request, res: Response, next: Nex
 });
 
 // ==================== CALCUL PAIE ====================
-router.post('/calculer/:membrePersonnelId', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/calculer/:membrePersonnelId', requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { mois, annee } = req.body;
         const bulletin = await calculPaieService.calculerBulletin(
@@ -131,7 +131,7 @@ router.post('/calculer/:membrePersonnelId', staffOnly, requireRoles(Role.ADMIN, 
     }
 });
 
-router.post('/simuler/:membrePersonnelId', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/simuler/:membrePersonnelId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const simulation = await calculPaieService.simulerPaie(
             req.params.membrePersonnelId,

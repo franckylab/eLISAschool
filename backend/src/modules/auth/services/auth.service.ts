@@ -215,7 +215,7 @@ export class AuthService {
 
         const utilisateur = await this.utilisateurRepository.findOne({
             where: whereConditions,
-            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut', 'etablissementId'],
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut'],
         });
 
         if (!utilisateur) {
@@ -288,13 +288,10 @@ export class AuthService {
             where: { utilisateurId: utilisateur.id },
         });
 
-        // Résolution des permissions (nouveau système RBAC)
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id);
-        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id);
-
         // Chargement des établissements de l'utilisateur (multi-tenancy v2.0)
         const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
             where: { utilisateurId: utilisateur.id, actif: true },
+            relations: ['role'],
             order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
         });
 
@@ -310,7 +307,7 @@ export class AuthService {
 
         const etablissementsPayload = utilisateurEtablissements.map(ue => ({
             etablissementId: ue.etablissementId,
-            role: ue.role,
+            role: ue.role.code,
             etablissementPrincipal: ue.etablissementPrincipal,
             actif: ue.actif
         }));
@@ -321,11 +318,20 @@ export class AuthService {
             ? utilisateurEtablissements[0].etablissementId
             : undefined; // Sera défini après sélection si multi-établissements
 
+        // Résolution des permissions (nouveau système RBAC)
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id, etablissementActifId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id, etablissementActifId);
+
         // Génération des tokens
+        const primaryEtablissement = utilisateurEtablissements.find(ue => ue.etablissementPrincipal) || utilisateurEtablissements[0];
+        const roleToUse = etablissementActifId 
+            ? (utilisateurEtablissements.find(ue => ue.etablissementId === etablissementActifId)?.role.code || utilisateur.role) 
+            : utilisateur.role;
+            
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
-            role: utilisateur.role, // backward compat
+            role: roleToUse, // Use establishment-specific role if available
             roles: userRoles.map(r => r.code), // NOUVEAU : tous les rôles
             permissions: Array.from(resolvedPermissions), // NOUVEAU : permissions résolues
             etablissementId: etablissementActifId, // Défini si mono-établissement
@@ -353,15 +359,22 @@ export class AuthService {
             utilisateurEtablissements.map(async (ue) => {
                 const etab = await etablissementRepo.findOne({
                     where: { id: ue.etablissementId },
-                    select: ['id', 'nom', 'codeEtablissement', 'logoUrl']
+                    select: ['id', 'nom', 'codeEtablissement', 'logoBase64', 'logoType']
                 }) as any;
+                
+                // Convertir logoBase64 en format URL si disponible
+                let logoUrl: string | undefined = undefined;
+                if (etab?.logoBase64) {
+                    logoUrl = etab.logoBase64;
+                }
+                
                 return {
                     id: ue.etablissementId,
                     nom: etab?.nom || 'Établissement',
                     code: etab?.codeEtablissement,
-                    role: ue.role,
+                    role: ue.role.code,
                     etablissementPrincipal: ue.etablissementPrincipal,
-                    logoUrl: etab?.logoUrl,
+                    logoUrl,
                 };
             })
         );
@@ -376,11 +389,12 @@ export class AuthService {
                 id: utilisateur.id,
                 email: utilisateur.email,
                 matricule: utilisateur.matricule,
-                role: utilisateur.role,
+                role: roleToUse,
                 nom: profil?.nom || '',
                 prenom: profil?.prenom || '',
                 etablissementActif: etablissementActifId,
                 etablissements: etablissementsPayload,
+                permissions: Array.from(resolvedPermissions),
             },
             etablissementsDisponibles: etablissementsDetails,
         };
@@ -500,19 +514,20 @@ export class AuthService {
 
         await this.tokenService.revokeRefreshToken(refreshToken);
 
-        // Re-résolution des permissions (pour prendre en compte les changements)
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id);
-        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id);
-
         // Récupérer l'établissement principal pour le JWT
         const affectationPrincipale = await this.utilisateurEtablissementRepo.findOne({
-            where: { utilisateurId: utilisateur.id, etablissementPrincipal: true, actif: true }
+            where: { utilisateurId: utilisateur.id, etablissementPrincipal: true, actif: true },
+            relations: ['role'],
         });
+
+        // Re-résolution des permissions (pour prendre en compte les changements)
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id, affectationPrincipale?.etablissementId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id, affectationPrincipale?.etablissementId);
 
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
-            role: utilisateur.role,
+            role: affectationPrincipale?.role.code || utilisateur.role,
             roles: userRoles.map(r => r.code),
             permissions: Array.from(resolvedPermissions),
             etablissementId: affectationPrincipale?.etablissementId, // v4.0: via utilisateur_etablissements
@@ -702,7 +717,7 @@ export class AuthService {
     /**
      * Récupère l'utilisateur courant
      */
-    async getCurrentUser(utilisateurId: string): Promise<any> {
+    async getCurrentUser(utilisateurId: string, activeEtablissementId?: string): Promise<any> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id: utilisateurId },
         });
@@ -715,25 +730,52 @@ export class AuthService {
             where: { utilisateurId },
         });
 
-        // Résoudre les permissions de l'utilisateur
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId);
-        const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
-
         // NOUVEAU: Charger les établissements de l'utilisateur
         const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
             where: { utilisateurId, actif: true },
+            relations: ['role'],
             order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
         });
 
-        // Déterminer l'établissement actif (principal ou premier)
-        const etablissementActifId = utilisateurEtablissements.find(ue => ue.etablissementPrincipal)?.etablissementId 
-            || utilisateurEtablissements[0]?.etablissementId;
+        // Déterminer l'établissement actif (spécifié, principal ou premier)
+        let etablissementActifId = activeEtablissementId;
+        logger.info(`[getCurrentUser] Détermination de l'établissement actif pour l'utilisateur ${utilisateur.email}. Spécifié: ${activeEtablissementId}`);
+
+        if (etablissementActifId && !utilisateurEtablissements.some(ue => ue.etablissementId === etablissementActifId)) {
+            logger.warn(`[getCurrentUser] L'établissement spécifié ${etablissementActifId} n'est pas valide ou n'est pas actif pour l'utilisateur ${utilisateur.email}`);
+            etablissementActifId = undefined;
+        }
+
+        if (!etablissementActifId) {
+            const principal = utilisateurEtablissements.find(ue => ue.etablissementPrincipal);
+            if (principal) {
+                etablissementActifId = principal.etablissementId;
+                logger.info(`[getCurrentUser] Utilisation de l'établissement principal par défaut: ${etablissementActifId}`);
+            } else if (utilisateurEtablissements.length > 0) {
+                etablissementActifId = utilisateurEtablissements[0].etablissementId;
+                logger.info(`[getCurrentUser] Aucun établissement principal trouvé. Utilisation du premier établissement disponible: ${etablissementActifId}`);
+            } else {
+                logger.warn(`[getCurrentUser] Aucun établissement actif trouvé pour l'utilisateur ${utilisateur.email}`);
+            }
+        } else {
+            logger.info(`[getCurrentUser] L'établissement spécifié ${etablissementActifId} est valide et a été sélectionné`);
+        }
+
+        // Résoudre les permissions de l'utilisateur avec l'établissement actif
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId, etablissementActifId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateurId, etablissementActifId);
+
+        // Get the establishment-specific role to use
+        const currentEtablissement = etablissementActifId 
+            ? utilisateurEtablissements.find(ue => ue.etablissementId === etablissementActifId)
+            : null;
+        const roleToUse = currentEtablissement?.role.code || utilisateur.role;
 
         return {
             id: utilisateur.id,
             email: utilisateur.email,
             matricule: utilisateur.matricule,
-            role: utilisateur.role,
+            role: roleToUse,
             roles: userRoles.map(r => ({ code: r.code, libelle: r.libelle, estPrincipal: r.estPrincipal })),
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
@@ -743,7 +785,7 @@ export class AuthService {
             etablissementActif: etablissementActifId || null,
             etablissements: utilisateurEtablissements.map(ue => ({
                 etablissementId: ue.etablissementId,
-                role: ue.role,
+                role: ue.role.code,
                 etablissementPrincipal: ue.etablissementPrincipal,
                 actif: ue.actif
             })),

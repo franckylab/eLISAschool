@@ -13,7 +13,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CompetencesService } from '../services';
 import { createCompetenceSchema, updateCompetenceSchema, queryCompetencesSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
@@ -85,7 +85,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
  * POST /api/competences
  * Créer une compétence
  */
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createCompetenceSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -98,7 +98,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
  * PATCH /api/competences/:id
  * Modifier une compétence
  */
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateCompetenceSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -111,7 +111,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
  * DELETE /api/competences/:id
  * Supprimer une compétence
  */
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         await competencesService.delete(req.params.id, etablissementId);

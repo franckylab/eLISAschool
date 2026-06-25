@@ -8,7 +8,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { correlationProgrammeService } from '../services/correlation-programme.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -38,7 +38,7 @@ router.get(
 router.post(
     '/evaluer/:enseignantId',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { periodeId } = req.query;
@@ -58,7 +58,7 @@ router.post(
 router.get(
     '/dashboard',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { periodeId } = req.query;

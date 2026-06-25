@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { preferenceGlobaleService } from '../services/preference-globale.service';
 import { CategoriePreference } from '@modules/auth/entities/preference-utilisateur.entity';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -70,7 +70,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
  * GET /api/preferences-globales/statistiques
  * Obtenir les statistiques des préférences globales
  */
-router.get('/statistiques', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/statistiques', authMiddleware, requirePermission('config:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId;
 
@@ -111,7 +111,7 @@ router.get('/:cle/valeur', authMiddleware, async (req: Request, res: Response, n
  * POST /api/preferences-globales
  * Définir ou mettre à jour une préférence globale
  */
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId;
         const utilisateurId = req.utilisateur!.id;
@@ -140,7 +140,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
  * POST /api/preferences-globales/reset
  * Réinitialiser toutes les préférences globales
  */
-router.post('/reset', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/reset', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId;
         const utilisateurId = req.utilisateur!.id;
@@ -166,7 +166,7 @@ router.post('/reset', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * POST /api/preferences-globales/reset/:cle
  * Réinitialiser une préférence spécifique
  */
-router.post('/reset/:cle', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/reset/:cle', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { cle } = req.params;
         const etablissementId = req.utilisateur!.etablissementId;
@@ -188,7 +188,7 @@ router.post('/reset/:cle', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
  * POST /api/preferences-globales/reset-categorie/:categorie
  * Réinitialiser toutes les préférences d'une catégorie
  */
-router.post('/reset-categorie/:categorie', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/reset-categorie/:categorie', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { categorie } = req.params;
         const etablissementId = req.utilisateur!.etablissementId;
@@ -215,7 +215,7 @@ router.post('/reset-categorie/:categorie', authMiddleware, requireRoles(Role.ADM
  * POST /api/preferences-globales/init
  * Initialiser les préférences par défaut (utile après création d'établissement)
  */
-router.post('/init', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/init', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { etablissementId } = req.body;
         const utilisateurId = req.utilisateur!.id;
@@ -236,7 +236,7 @@ router.post('/init', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req:
  * GET /api/preferences-globales/export
  * Exporter toutes les préférences en JSON
  */
-router.get('/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export', authMiddleware, requirePermission('config:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId;
 
@@ -254,7 +254,7 @@ router.get('/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
  * POST /api/preferences-globales/import
  * Importer des préférences depuis un fichier JSON
  */
-router.post('/import', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/import', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId;
         const utilisateurId = req.utilisateur!.id;

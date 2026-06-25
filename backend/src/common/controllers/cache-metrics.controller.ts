@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { cacheMetricsService } from '@common/services/cache-metrics.service';
 import { redisService } from '@common/services/redis.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { logger } from '@common/utils/logger.util';
 
@@ -23,7 +23,7 @@ const router = Router();
  * GET /api/cache/metrics
  * Obtenir les métriques complètes du cache
  */
-router.get('/metrics', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/metrics', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const metrics = await cacheMetricsService.getMetrics();
         res.json({ success: true, data: metrics });
@@ -56,7 +56,7 @@ router.get('/health', authMiddleware, async (req: Request, res: Response, next: 
  * GET /api/cache/rapport
  * Générer un rapport de performance texte
  */
-router.get('/rapport', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/rapport', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const rapport = cacheMetricsService.genererRapport();
         
@@ -73,7 +73,7 @@ router.get('/rapport', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
  * POST /api/cache/reset-stats
  * Réinitialiser les statistiques de performance
  */
-router.post('/reset-stats', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/reset-stats', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         cacheMetricsService.resetStats();
 
@@ -94,7 +94,7 @@ router.post('/reset-stats', authMiddleware, requireRoles(Role.SUPER_ADMIN), asyn
  * GET /api/cache/keys
  * Lister les clés de cache (pour debug)
  */
-router.get('/keys', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/keys', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { pattern = '*' } = req.query;
         const cles = await redisService.keys(pattern as string);
@@ -115,7 +115,7 @@ router.get('/keys', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: 
  * DELETE /api/cache/flush
  * Vider le cache Redis (DANGEREUX)
  */
-router.delete('/flush', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/flush', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await redisService.flush();
 

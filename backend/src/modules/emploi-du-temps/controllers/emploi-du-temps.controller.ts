@@ -15,7 +15,7 @@ import {
     genererEmploiDuTempsSchema,
     preferenceEmploiDuTempsSchema,
 } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 import { CreerTemplateDto } from '../services/template.service';
@@ -36,7 +36,7 @@ function validate(schema: any, data: unknown): any {
 // ==========================================
 
 // Créer un créneau manuel
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(creerCreneauSchema, req.body);
         const anneeScolaireId = req.body.anneeScolaireId;
@@ -77,7 +77,7 @@ router.get('/enseignant/:enseignantId', authMiddleware, async (req: Request, res
 });
 
 // Supprimer un créneau
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         await emploiDuTempsService.supprimerCreneau(id);
@@ -89,7 +89,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 // Génération automatique
 // ==========================================
 
-router.post('/generer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/generer', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(genererEmploiDuTempsSchema, req.body);
         const result = await emploiDuTempsService.genererEmploiDuTemps(dto);
@@ -130,7 +130,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response, n
 });
 
 // Mettre à jour les préférences
-router.put('/preferences', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.put('/preferences', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(preferenceEmploiDuTempsSchema, req.body);
         const etablissementId = req.utilisateur?.etablissementId;
@@ -206,7 +206,7 @@ router.get('/templates', authMiddleware, async (req: Request, res: Response, nex
 });
 
 // Créer un template
-router.post('/templates', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/templates', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto: CreerTemplateDto = req.body;
         const etablissementId = req.utilisateur?.etablissementId;
@@ -234,7 +234,7 @@ router.get('/templates/:id', authMiddleware, async (req: Request, res: Response,
 });
 
 // Modifier un template
-router.patch('/templates/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/templates/:id', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const etablissementId = req.utilisateur?.etablissementId;
@@ -247,7 +247,7 @@ router.patch('/templates/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUP
 });
 
 // Supprimer un template
-router.delete('/templates/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/templates/:id', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const etablissementId = req.utilisateur?.etablissementId;
@@ -260,7 +260,7 @@ router.delete('/templates/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SU
 });
 
 // Dupliquer un template
-router.post('/templates/:id/dupliquer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/templates/:id/dupliquer', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const etablissementId = req.utilisateur?.etablissementId;

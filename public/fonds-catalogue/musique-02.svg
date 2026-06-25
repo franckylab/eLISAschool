@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Guitares et violons stylisés -->
+    <ellipse cx="300" cy="300" rx="50" ry="70" fill="currentColor" opacity="0.06"/>
+    <circle cx="300" cy="300" r="20" stroke-width="3" fill="currentColor" opacity="0.08"/>
+    <rect x="290" y="200" width="20" height="60" fill="currentColor" opacity="0.08"/>
+    <ellipse cx="1200" cy="450" rx="50" ry="70" fill="currentColor" opacity="0.06"/>
+    <circle cx="1200" cy="450" r="20" stroke-width="3" fill="currentColor" opacity="0.08"/>
+
+  </g>
+</svg>

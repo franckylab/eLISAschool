@@ -18,8 +18,8 @@ import {
     filtreUtilisateursSchema,
     programmerSondageSchema,
 } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { authMiddleware } from '@modules/auth/middlewares';
 import { AppError } from '@common/filters/error.filter';
 import { StatutSondage } from '../entities';
 import { sondagePdfService } from '../services/sondage.pdf';

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    <!-- Rapporteurs (demi-cercles) -->
+    <path d="M300,500 A150,150 0 0,1 600,500" stroke-width="3"/>
+    <path d="M320,500 A130,130 0 0,1 580,500"/>
+    <line x1="300" y1="500" x2="600" y2="500"/>
+    <path d="M1200,300 A100,100 0 0,1 1400,300" stroke-width="3"/>
+    <line x1="1200" y1="300" x2="1400" y2="300"/>
+    <!-- Compas stylisés -->
+    <path d="M800,200 L750,400 M800,200 L850,400" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="800" cy="200" r="8" fill="currentColor"/>
+    <path d="M1500,600 L1450,800 M1500,600 L1550,800" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="1500" cy="600" r="8" fill="currentColor"/>
+  </g>
+</svg>

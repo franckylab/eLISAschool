@@ -10,8 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { permissionsService } from '../services/permissions.service';
-import { requireRoles } from '@modules/auth/middlewares/role.middleware';
-import { authMiddleware } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 import { successResponse } from '@common/utils/api-response.util';
 import { z } from 'zod';
@@ -26,7 +25,7 @@ router.use(authMiddleware);
  * @desc    Récupérer toutes les permissions
  * @access  ADMIN
  */
-router.get('/permissions', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/permissions', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { module, actif } = req.query;
 
@@ -47,7 +46,7 @@ router.get('/permissions', requireRoles('ADMIN'), async (req: Request, res: Resp
  * @desc    Regrouper les permissions par module
  * @access  ADMIN
  */
-router.get('/permissions/modules', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/permissions/modules', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const grouped = await permissionsService.groupByModule();
 
@@ -62,7 +61,7 @@ router.get('/permissions/modules', requireRoles('ADMIN'), async (req: Request, r
  * @desc    Récupérer une permission par ID
  * @access  ADMIN
  */
-router.get('/permissions/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/permissions/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const permission = await permissionsService.findById(req.params.id);
         successResponse(res, permission, 'Permission récupérée avec succès');
@@ -76,7 +75,7 @@ router.get('/permissions/:id', requireRoles('ADMIN'), async (req: Request, res: 
  * @desc    Créer une nouvelle permission
  * @access  ADMIN
  */
-router.post('/permissions', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/permissions', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(
             z.object({
@@ -102,7 +101,7 @@ router.post('/permissions', requireRoles('ADMIN'), async (req: Request, res: Res
  * @desc    Mettre à jour une permission
  * @access  ADMIN
  */
-router.patch('/permissions/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/permissions/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const updateDto: any = {};
 
@@ -124,7 +123,7 @@ router.patch('/permissions/:id', requireRoles('ADMIN'), async (req: Request, res
  * @desc    Supprimer une permission
  * @access  ADMIN
  */
-router.delete('/permissions/:id', requireRoles('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/permissions/:id', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await permissionsService.deletePermission(req.params.id);
 

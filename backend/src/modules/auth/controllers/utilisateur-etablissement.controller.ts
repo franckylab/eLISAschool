@@ -117,18 +117,29 @@ router.delete(
             const motif = req.query.motif as string | undefined;
             const nouveauPrincipalId = req.query.nouveauPrincipalId as string | undefined;
             
+            console.log('[RETRAIT][CONTROLLER] Requête DELETE reçue:', {
+                utilisateurId: req.params.id,
+                etablissementId: req.params.etablissementId,
+                motif,
+                nouveauPrincipalId,
+                query: req.query
+            });
+            
             await utilisateurEtablissementService.retirer(
                 req.params.id,
                 req.params.etablissementId,
                 motif,
                 nouveauPrincipalId
             );
+            
+            console.log('[RETRAIT][CONTROLLER] Service retiré exécuté avec succès, envoi de la réponse');
 
             res.status(200).json({
                 success: true,
                 message: 'Établissement retiré avec succès',
             });
         } catch (error) {
+            console.error('[RETRAIT][CONTROLLER] ERREUR:', error instanceof Error ? error.message : String(error));
             next(error);
         }
     }

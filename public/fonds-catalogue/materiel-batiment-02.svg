@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Outils de construction -->
+    <rect x="300" y="200" width="20" height="200" fill="currentColor" opacity="0.08"/>
+    <rect x="280" y="180" width="60" height="30" rx="5" fill="currentColor" opacity="0.10"/>
+    <polygon points="600,300 650,250 700,300 650,350" fill="currentColor" opacity="0.08"/>
+    <rect x="1200" y="400" width="20" height="200" fill="currentColor" opacity="0.08"/>
+    <polygon points="1400,500 1450,450 1500,500 1450,550" fill="currentColor" opacity="0.08"/>
+
+  </g>
+</svg>

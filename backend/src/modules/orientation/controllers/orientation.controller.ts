@@ -8,7 +8,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { OrientationService } from '../services';
 import { createProfilOrientationSchema, updateProfilOrientationSchema, createFicheMetierSchema, createRdvSchema, updateRdvSchema } from '../dto';
 import { TypeFiliere } from '../entities';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -23,7 +23,7 @@ router.get('/profils/:eleveId', authMiddleware, async (req: Request, res: Respon
     } catch (error) { next(error); }
 });
 
-router.post('/profils', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/profils', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createProfilOrientationSchema, req.body);
         const profil = await orientationService.createProfil(dto);
@@ -31,7 +31,7 @@ router.post('/profils', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN
     } catch (error) { next(error); }
 });
 
-router.patch('/profils/:eleveId', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/profils/:eleveId', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateProfilOrientationSchema, req.body);
         const profil = await orientationService.updateProfil(req.params.eleveId, dto);
@@ -70,7 +70,7 @@ router.get('/fiches/:id', async (req: Request, res: Response, next: NextFunction
     } catch (error) { next(error); }
 });
 
-router.post('/fiches', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/fiches', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createFicheMetierSchema, req.body);
         const fiche = await orientationService.createFiche(dto);
@@ -86,14 +86,14 @@ router.get('/rdv/eleve/:eleveId', authMiddleware, async (req: Request, res: Resp
     } catch (error) { next(error); }
 });
 
-router.get('/rdv/conseiller/:conseillerId', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/rdv/conseiller/:conseillerId', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const rdvs = await orientationService.getRdvsByConseiller(req.params.conseillerId);
         res.json({ success: true, data: rdvs });
     } catch (error) { next(error); }
 });
 
-router.post('/rdv', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/rdv', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createRdvSchema, req.body);
         const rdv = await orientationService.createRdv(dto);
@@ -101,7 +101,7 @@ router.post('/rdv', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), a
     } catch (error) { next(error); }
 });
 
-router.patch('/rdv/:id', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/rdv/:id', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateRdvSchema, req.body);
         const rdv = await orientationService.updateRdv(req.params.id, dto);
@@ -109,7 +109,7 @@ router.patch('/rdv/:id', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMI
     } catch (error) { next(error); }
 });
 
-router.post('/rdv/:id/annuler', authMiddleware, requireRoles(Role.ENSEIGNANT, Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/rdv/:id/annuler', authMiddleware, requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const rdv = await orientationService.annulerRdv(req.params.id);
         res.json({ success: true, data: rdv });

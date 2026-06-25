@@ -7,12 +7,11 @@
  */
 
 import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Eye, Power, PowerOff, Building2 } from 'lucide-react';
 import { useEtablissements, useDesactiverEtablissement, useActiverEtablissement } from '../hooks/use-etablissements';
 import { EtablissementFormModal } from './etablissement-form-modal';
-import { EtablissementDetailModal } from './etablissement-detail-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -21,10 +20,9 @@ import type { Etablissement } from '../types/etablissement.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function EtablissementsPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [showFormModal, setShowFormModal] = useState(false);
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [etablissementToView, setEtablissementToView] = useState<Etablissement | null>(null);
     const [etablissementToToggle, setEtablissementToToggle] = useState<Etablissement | null>(null);
 
     const { data: etablissements = [], isLoading } = useEtablissements();
@@ -36,8 +34,7 @@ export function EtablissementsPage() {
     };
 
     const handleVoirDetails = (etablissement: Etablissement) => {
-        setEtablissementToView(etablissement);
-        setShowDetailModal(true);
+        window.location.href = `/etablissements/${etablissement.id}?mode=view`;
     };
 
     const handleToggleActif = (etablissement: Etablissement) => {
@@ -249,12 +246,7 @@ export function EtablissementsPage() {
                 variant={etablissementToToggle?.actif ? 'danger' : 'warning'}
                 isLoading={desactiver.isPending || activer.isPending}
             />
-
-            <EtablissementDetailModal
-                open={showDetailModal}
-                onOpenChange={setShowDetailModal}
-                etablissementId={etablissementToView?.id || ''}
-            />
+            
         </div>
     );
 }

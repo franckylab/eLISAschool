@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { typeContratService } from '../services/type-contrat.service';
 import { createTypeContratSchema, updateTypeContratSchema, queryTypeContratSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -22,7 +22,7 @@ const router = Router();
 router.post(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createTypeContratSchema, req.body);
@@ -93,7 +93,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateTypeContratSchema, req.body);
@@ -118,7 +118,7 @@ router.patch(
 router.delete(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await typeContratService.delete(req.params.id, req.utilisateur?.id!, req.etablissementId!, req);
@@ -136,7 +136,7 @@ router.delete(
 router.post(
     '/:id/toggle',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const typeContrat = await typeContratService.toggleActif(

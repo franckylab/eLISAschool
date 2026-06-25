@@ -8,7 +8,6 @@
 
 export { EtablissementsPage } from './components/etablissements-page';
 export { EtablissementEditPage } from './components/etablissement-edit-page';
-export { EtablissementDetailModal } from './components/etablissement-detail-modal';
 export { EtablissementFormModal } from './components/etablissement-form-modal';
 export * from './hooks/use-etablissements';
 export * from './types/etablissement.types';

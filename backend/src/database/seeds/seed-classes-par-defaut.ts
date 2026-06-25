@@ -2,11 +2,15 @@
  * ==================================
  * eLISAschool - Seed Classes Par Défaut
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
  * Crée exactement 1 classe par niveau pour un établissement.
  * Architecture simplifiée et optimisée pour le multi-tenant.
+ * 
+ * Changements v3.0:
+ * - Correction de l'import de AnneeScolaire
+ * - Utilisation correcte des enums
  * 
  * Changements v2.0:
  * - 1 classe par niveau (au lieu de multiples sections)
@@ -17,7 +21,7 @@
  * - Transactions pour atomicité
  * 
  * Usage:
- * - Automatique après seed-structure-academique.ts
+ * - Automatique après seed-structure-academique.ts et seed-annees-scolaires.ts
  * - Ou exécution manuelle via script
  * 
  * Exemple d'exécution:
@@ -261,7 +265,9 @@ if (require.main === module) {
 
             // Importer Etablissement dynamiquement
             const { Etablissement } = await import('@modules/etablissement/entities');
+            const { AnneeScolaire } = await import('@modules/annees-scolaires/entities');
             const etablissementRepo = AppDataSource.getRepository(Etablissement);
+            const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
 
             // Récupérer l'établissement par défaut
             const etablissement = await etablissementRepo.findOne({

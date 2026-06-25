@@ -10,7 +10,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import type { PaginatedResult } from '@shared/types/api.types';
 import type {
     Etablissement,
     EtablissementConfig,
@@ -32,6 +31,9 @@ const ETABLISSEMENTS_KEYS = {
     config: (id: string) => [...ETABLISSEMENTS_KEYS.configs(), id] as const,
     stats: () => [...ETABLISSEMENTS_KEYS.all, 'stats'] as const,
     stat: (id: string) => [...ETABLISSEMENTS_KEYS.stats(), id] as const,
+    // Logo établissement (v3.0)
+    logos: () => [...ETABLISSEMENTS_KEYS.all, 'logo'] as const,
+    logo: (id: string) => [...ETABLISSEMENTS_KEYS.logos(), id] as const,
 };
 
 // =============================================
@@ -270,5 +272,90 @@ export function useDesactiverEtablissement() {
         onError: (error: any) => {
             toast.error(error.response?.data?.error?.message || 'Erreur lors de la désactivation');
         },
+    });
+}
+
+// =============================================
+// MUTATIONS - Logo (v3.0)
+// =============================================
+
+export interface UploadLogoResponse {
+    logoType?: string;
+    logoTaille?: number;
+    // Note: Le backend ne retourne pas logoBase64 (select: false)
+    // Le frontend doit gérer le preview localement
+}
+
+export function useUploadLogo() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ etablissementId, logoBase64 }: { etablissementId: string; logoBase64: string }) => {
+            const response = await apiClient.post<UploadLogoResponse>(
+                `/api/etablissements/${etablissementId}/logo`,
+                { logoBase64 }
+            );
+            
+            if (!response.data) {
+                throw new Error('Erreur lors de l\'upload du logo');
+            }
+            
+            return response.data;
+        },
+        onSuccess: (_, variables) => {
+            // Invalider le détail pour récupérer les métadonnées du logo
+            queryClient.invalidateQueries({ queryKey: ETABLISSEMENTS_KEYS.detail(variables.etablissementId) });
+            toast.success('Logo uploadé avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'upload du logo');
+        },
+    });
+}
+
+export function useSupprimerLogo() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (etablissementId: string) => {
+            const response = await apiClient.delete(`/api/etablissements/${etablissementId}/logo`);
+            
+            if (!response.success) {
+                throw new Error('Erreur lors de la suppression du logo');
+            }
+            
+            return response;
+        },
+        onSuccess: (_, etablissementId) => {
+            queryClient.invalidateQueries({ queryKey: ETABLISSEMENTS_KEYS.detail(etablissementId) });
+            queryClient.invalidateQueries({ queryKey: ETABLISSEMENTS_KEYS.logo(etablissementId) });
+            toast.success('Logo supprimé avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression du logo');
+        },
+    });
+}
+
+export function useGetLogo(etablissementId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: ETABLISSEMENTS_KEYS.logo(etablissementId),
+        queryFn: async () => {
+            const response = await apiClient.get<{
+                base64: string;
+                type: string;
+                taille: number;
+            }>(`/api/etablissements/${etablissementId}/logo`);
+            
+            if (!response.data) {
+                return null;
+            }
+            
+            return response.data;
+        },
+        enabled: !!etablissementId && isAuthenticated,
+        staleTime: 10 * 60 * 1000, // 10 minutes
     });
 }

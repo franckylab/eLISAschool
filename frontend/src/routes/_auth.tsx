@@ -17,6 +17,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useCallback } from 'react';
 
 function AuthLayout() {
+    console.log('[AuthLayout] Rendu du layout authentifié');
+    
     // NOUVEAU: Écouter l'événement 'auth:etablissement-required'
     const {
         showEtablissementModal,
@@ -24,6 +26,12 @@ function AuthLayout() {
         expiresIn,
         handleSelectEtablissement,
     } = useEtablissementRequired();
+
+    console.log('[AuthLayout] État sélection établissement:', {
+        showEtablissementModal,
+        etablissementsCount: etablissements?.length ?? 0,
+        expiresIn,
+    });
 
     // NOUVEAU: Gérer l'expiration de session et la déconnexion
     useSessionExpired();

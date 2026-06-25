@@ -61,8 +61,8 @@ export class WidgetResolverService {
         }
 
         try {
-            // 1. Récupérer les permissions de l'utilisateur
-            const userPermissions = await this.permissionResolver.resolvePermissions(utilisateurId);
+            // 1. Récupérer les permissions de l'utilisateur (avec contexte établissement)
+            const userPermissions = await this.permissionResolver.resolvePermissions(utilisateurId, etablissementId);
             const permissionArray = Array.from(userPermissions);
 
             // 2. Récupérer le rôle de l'utilisateur (colonne enum, pas de relation)
@@ -145,7 +145,8 @@ export class WidgetResolverService {
      */
     async checkWidgetAccess(
         widgetId: string,
-        utilisateurId: string
+        utilisateurId: string,
+        etablissementId?: string
     ): Promise<boolean> {
         const widgetDef = getWidgetById(widgetId);
         if (!widgetDef) {
@@ -154,7 +155,7 @@ export class WidgetResolverService {
         }
 
         try {
-            const userPermissions = await this.permissionResolver.resolvePermissions(utilisateurId);
+            const userPermissions = await this.permissionResolver.resolvePermissions(utilisateurId, etablissementId);
             const utilisateur = await this.utilisateurRepo.findOne({
                 where: { id: utilisateurId },
             });

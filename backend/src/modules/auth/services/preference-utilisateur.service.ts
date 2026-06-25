@@ -226,10 +226,14 @@ export class PreferenceUtilisateurService {
     async getPreference<T = any>(
         utilisateurId: string,
         cle: string,
-        defaultValue?: T
+        defaultValue?: T,
+        etablissementId?: string
     ): Promise<T> {
+        // Clé de cache avec contexte multi-tenant
+        const keyEtab = etablissementId ? `:${etablissementId}` : '';
+        const cacheKey = `preferences:${utilisateurId}:${cle}${keyEtab}`;
+        
         // Vérifier cache L1
-        const cacheKey = `preferences:${utilisateurId}:${cle}`;
         const memoryCached = memoryCache.get(cacheKey);
         if (memoryCached && Date.now() < memoryCached.expiry) {
             return memoryCached.value;
@@ -246,9 +250,21 @@ export class PreferenceUtilisateurService {
             // Ignorer
         }
 
-        // Chercher en DB avec requête optimisée
+        // Chercher en DB avec requête optimisée (multi-tenant)
+        const whereClause: any = { 
+            utilisateurId, 
+            cle,
+        };
+        
+        // Ajouter etablissementId uniquement si fourni (éviter null)
+        if (etablissementId) {
+            whereClause.etablissementId = etablissementId;
+        } else {
+            whereClause.etablissementId = null;
+        }
+        
         const pref = await this.preferenceRepo.findOne({
-            where: { utilisateurId, cle },
+            where: whereClause,
             select: ['valeur', 'typeValeur', 'heriteGlobal'],
         });
 
@@ -283,28 +299,40 @@ export class PreferenceUtilisateurService {
     }
 
     /**
-     * Définir une préférence
+     * Définir une préférence (avec support multi-tenant)
      */
     async setPreference(
         utilisateurId: string,
         cle: string,
         valeur: any,
-        typeValeur?: string
+        typeValeur?: string,
+        etablissementId?: string
     ): Promise<PreferenceUtilisateur> {
         // Déterminer le type
         const defaultPref = DEFAULT_PREFERENCES[cle];
         const type = typeValeur || defaultPref?.typeValeur || this.inferType(valeur);
 
-        // Chercher existant
+        // Chercher existant avec logique améliorée :
+        // Essayer d'abord avec etablissementId, puis sans (NULL)
         let pref = await this.preferenceRepo.findOne({
-            where: { utilisateurId, cle },
+            where: { utilisateurId, cle, etablissementId },
         });
+
+        if (!pref && etablissementId) {
+            // Si pas trouvé avec etablissementId, chercher sans (préférence globale)
+            pref = await this.preferenceRepo.findOne({
+                where: { utilisateurId, cle, etablissementId: null },
+            });
+        }
 
         if (pref) {
             // Update
             pref.valeur = this.serializeValue(valeur, type);
             pref.typeValeur = type;
             pref.heriteGlobal = false;
+            if (etablissementId) {
+                pref.etablissementId = etablissementId;
+            }
         } else {
             // Create
             pref = this.preferenceRepo.create({
@@ -316,15 +344,16 @@ export class PreferenceUtilisateurService {
                 valeurDefaut: defaultPref?.valeur,
                 heriteGlobal: false,
                 description: defaultPref?.description,
+                etablissementId,
             });
         }
 
         await this.preferenceRepo.save(pref);
 
-        // Invalider cache
-        await this.invalidateCache(utilisateurId, cle);
+        // Invalider cache (avec contexte établissement)
+        await this.invalidateCache(utilisateurId, cle, etablissementId);
 
-        logger.info(`[Preferences] Préférence ${cle} mise à jour pour utilisateur ${utilisateurId}`);
+        logger.info(`[Preferences] Préférence ${cle} mise à jour pour utilisateur ${utilisateurId}${etablissementId ? ` (établissement: ${etablissementId})` : ''}`);
 
         return pref;
     }
@@ -551,17 +580,19 @@ export class PreferenceUtilisateurService {
     /**
      * Helper: Invalider le cache L1 et L2
      */
-    private async invalidateCache(utilisateurId: string, cle?: string): Promise<void> {
+    private async invalidateCache(utilisateurId: string, cle?: string, etablissementId?: string): Promise<void> {
         try {
             // Invalider cache L1
             if (cle) {
-                memoryCache.delete(`preferences:${utilisateurId}:${cle}`);
+                const keyEtab = etablissementId ? `:${etablissementId}` : '';
+                memoryCache.delete(`preferences:${utilisateurId}:${cle}${keyEtab}`);
             }
             memoryCache.delete(`preferences:${utilisateurId}`);
 
             // Invalider cache L2
             if (cle) {
-                await redisService.del(`preferences:${utilisateurId}:${cle}`);
+                const keyEtab = etablissementId ? `:${etablissementId}` : '';
+                await redisService.del(`preferences:${utilisateurId}:${cle}${keyEtab}`);
             }
             await redisService.del(`preferences:${utilisateurId}`);
         } catch (error) {

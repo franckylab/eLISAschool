@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { PersonnelService } from '../services';
 import { createPersonnelSchema, updatePersonnelSchema, createTypePersonnelSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -22,7 +22,7 @@ router.get('/types', authMiddleware, async (req: Request, res: Response, next: N
     } catch (error) { next(error); }
 });
 
-router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/types', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createTypePersonnelSchema, req.body);
         const type = await service.createType(dto);
@@ -31,7 +31,7 @@ router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
 });
 
 // Membres
-router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const typeId = req.query.typeId as string;
         const membres = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC', typePersonnelId: typeId }, req.etablissementId);
@@ -39,7 +39,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPersonnelSchema, req.body);
         const membre = await service.createMembre(dto, req.etablissementId, req.utilisateur?.id);
@@ -47,7 +47,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePersonnelSchema, req.body);
         const membre = await service.update(req.params.id, dto);
@@ -55,7 +55,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await service.delete(req.params.id);
         res.json({ success: true, message: 'Membre supprimé' });

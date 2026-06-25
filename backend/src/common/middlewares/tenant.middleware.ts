@@ -22,7 +22,6 @@ import { logger } from '@common/utils/logger.util';
 import { Role } from '@modules/auth/entities';
 import { AppDataSource } from '@database/data-source';
 import { UtilisateurEtablissement } from '@modules/auth/entities';
-import { utilisateurEtablissementService } from '@modules/auth/services';
 
 /**
  * Interface pour les établissements dans le JWT
@@ -54,10 +53,10 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
             return;
         }
 
-        const userRole = req.utilisateur.role as Role;
+        const userRole = req.utilisateur.role as unknown as Role;
 
         // 1. SUPER_ADMIN peut accéder à tous les établissements
-        if (userRole === Role.SUPER_ADMIN) {
+        if (userRole === 'SUPER_ADMIN' as unknown as Role) {
             const queryEtablissementId = req.query.etablissementId as string | undefined;
             req.etablissementId = queryEtablissementId || undefined;
             next();
@@ -110,7 +109,11 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
 
         // 3. Fallback : récupérer depuis la table de jointure (si JWT non mis à jour)
         try {
-            const affectations = await utilisateurEtablissementService.findByUtilisateur(req.utilisateur.id);
+            const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
+            const affectations = await ueRepo.find({
+                where: { utilisateurId: req.utilisateur.id, actif: true },
+                order: { etablissementPrincipal: 'DESC' },
+            });
             
             if (affectations.length === 0) {
                 throw new AppError(
@@ -121,8 +124,7 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
             }
 
             // Priorité : établissement principal, sinon premier actif
-            const principal = affectations.find(a => a.etablissementPrincipal);
-            req.etablissementId = principal?.etablissementId || affectations[0].etablissementId;
+            req.etablissementId = affectations[0].etablissementId;
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError(

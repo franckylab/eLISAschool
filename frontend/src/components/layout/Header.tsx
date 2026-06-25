@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, Link } from '@tanstack/react-router';
 import {
     Menu,
     Search,
@@ -21,17 +21,23 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useEtablissement } from '@/features/etablissement';
 import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
 import { EtablissementSwitcher } from '@/components/auth/EtablissementSwitcher';
+import { ElisaLogo } from '@/components/branding';
 
 export function Header() {
     const { t } = useTranslation('common');
     const router = useRouter();
     const { toggleMobile } = useSidebarStore();
-    const { utilisateur } = useAuthStore();
+    const { utilisateur, etablissementId } = useAuthStore();
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Charger le logo de l'établissement
+    const { data: etablissement } = useEtablissement(etablissementId || '');
+    const logoEtablissement = etablissement?.logoUrl;
 
     const handleLogout = async () => {
         // Utiliser le service de déconnexion sécurisée
@@ -41,7 +47,7 @@ export function Header() {
 
     return (
         <header className="flex h-12 items-center justify-between border-b border-[var(--color-bordure)] bg-[var(--color-surface)] px-2 xs:h-14 xs:px-3 sm:h-16 sm:px-4 md:px-6">
-            {/* Gauche : Burger + Search */}
+            {/* Gauche : Burger + Logo eLISAschool + Search */}
             <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
                 {/* Mobile burger */}
                 <button
@@ -51,6 +57,13 @@ export function Header() {
                 >
                     <Menu className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                 </button>
+
+                {/* Logo eLISAschool - visible sur desktop */}
+                <div className="hidden lg:flex items-center justify-center flex-shrink-0">
+                    <Link to="/dashboard" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                        <ElisaLogo variant="horizontal" size="sm" />
+                    </Link>
+                </div>
 
                 {/* Search - visible sur toutes les tailles */}
                 <div className="relative">
@@ -99,11 +112,12 @@ export function Header() {
 
             {/* Droite : Actions */}
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
+
+                {/* NOUVEAU v3.0 : Sélecteur d'établissement (déplacé avant langue) */}
+                <EtablissementSwitcher />
+
                 <LanguageSwitcher />
                 <ThemeSwitcher />
-
-                {/* NOUVEAU v3.0 : Sélecteur d'établissement */}
-                <EtablissementSwitcher />
 
                 {/* Notifications */}
                 <motion.button

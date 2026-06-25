@@ -11,7 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CyclesService } from '../services';
 import { createCycleSchema, updateCycleSchema, queryCyclesSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
@@ -41,7 +41,7 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createCycleSchema, req.body);
         const cycle = await cyclesService.create(dto, req.etablissementId!);
@@ -49,7 +49,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateCycleSchema, req.body);
         const cycle = await cyclesService.update(req.params.id, dto, req.etablissementId!);
@@ -57,7 +57,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await cyclesService.delete(req.params.id, req.etablissementId!);
         res.json({ success: true, message: 'Cycle supprimé' });

@@ -65,7 +65,16 @@ export interface CompleteLoginResponse {
             etablissementPrincipal: boolean;
             actif: boolean;
         }>;
+        permissions?: string[];
     };
+    etablissementsDisponibles?: Array<{
+        id: string;
+        nom: string;
+        code?: string;
+        role: string;
+        etablissementPrincipal: boolean;
+        logoUrl?: string;
+    }>;
 }
 
 export class EtablissementSelectionService {
@@ -95,17 +104,21 @@ export class EtablissementSelectionService {
         // Charger les établissements actifs avec détails
         const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
             where: { utilisateurId, actif: true },
-            relations: ['etablissement'],
-            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+            relations: ['etablissement', 'role'],
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' },
+            select: {
+                etablissement: {
+                    id: true,
+                    nom: true,
+                    codeEtablissement: true,
+                    logoBase64: true,
+                } as any,
+            } as any,
         });
 
         // Cas 0 : Aucun établissement (legacy ou SUPER_ADMIN global)
         if (utilisateurEtablissements.length === 0) {
-            const utilisateur = await this.utilisateurRepo.findOne({
-                where: { id: utilisateurId },
-                select: ['etablissementId']
-            });
-
+            // Pas d'établissementId anymore, simply return
             return {
                 requiereSelection: false,
                 // Pas de liste - connexion directe avec fallback legacy
@@ -120,14 +133,22 @@ export class EtablissementSelectionService {
         }
 
         // Cas 2+ : Plusieurs établissements → sélection requise
-        const etablissementsDisponibles = utilisateurEtablissements.map(ue => ({
-            id: ue.etablissementId,
-            nom: ue.etablissement?.nom || 'Établissement',
-            code: (ue.etablissement as any)?.code,
-            role: ue.role,
-            etablissementPrincipal: ue.etablissementPrincipal,
-            logoUrl: ue.etablissement?.logoUrl,
-        }));
+        const etablissementsDisponibles = utilisateurEtablissements.map(ue => {
+            // Convertir logoBase64 en format URL si disponible
+            let logoUrl: string | undefined = undefined;
+            if ((ue.etablissement as any)?.logoBase64) {
+                logoUrl = (ue.etablissement as any).logoBase64;
+            }
+            
+            return {
+                id: ue.etablissementId,
+                nom: ue.etablissement?.nom || 'Établissement',
+                code: (ue.etablissement as any)?.code,
+                role: ue.role.code,
+                etablissementPrincipal: ue.etablissementPrincipal,
+                logoUrl,
+            };
+        });
 
         // Générer un token TEMPORAIRE avec expiration courte (5 min)
         const utilisateur = await this.utilisateurRepo.findOne({
@@ -139,7 +160,13 @@ export class EtablissementSelectionService {
             throw new AppError('Utilisateur non trouvé', 404, 'NOT_FOUND');
         }
 
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId);
+        // Permissions globales (sans contexte établissement) pour le token temporaire
+        // Si l'utilisateur a un établissement principal, utiliser ses permissions
+        const etablissementPrincipal = utilisateurEtablissements.find(ue => ue.etablissementPrincipal);
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(
+            utilisateurId, 
+            etablissementPrincipal?.etablissementId
+        );
         const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
 
         const payloadTemporaire: JwtPayload = {
@@ -150,11 +177,11 @@ export class EtablissementSelectionService {
             permissions: Array.from(resolvedPermissions),
             etablissementId: undefined, // ← Token incomplet - sélection requise
             etablissements: utilisateurEtablissements.map(ue => ({
-                etablissementId: ue.etablissementId,
-                role: ue.role,
-                etablissementPrincipal: ue.etablissementPrincipal,
-                actif: ue.actif
-            })),
+                                etablissementId: ue.etablissementId,
+                                role: ue.role.code,
+                                etablissementPrincipal: ue.etablissementPrincipal,
+                                actif: ue.actif
+                            })),
         };
 
         // Token temporaire avec expiration courte (5 minutes = 300 secondes)
@@ -190,7 +217,7 @@ export class EtablissementSelectionService {
         // Vérifier que l'utilisateur a accès à cet établissement
         const affectation = await this.utilisateurEtablissementRepo.findOne({
             where: { utilisateurId, etablissementId, actif: true },
-            relations: ['etablissement']
+            relations: ['etablissement', 'role']
         });
 
         if (!affectation) {
@@ -204,7 +231,16 @@ export class EtablissementSelectionService {
         // Charger tous les établissements de l'utilisateur
         const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
             where: { utilisateurId, actif: true },
-            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+            relations: ['etablissement', 'role'],
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' },
+            select: {
+                etablissement: {
+                    id: true,
+                    nom: true,
+                    codeEtablissement: true,
+                    logoBase64: true,
+                } as any,
+            } as any,
         });
 
         // Charger l'utilisateur
@@ -222,15 +258,14 @@ export class EtablissementSelectionService {
             where: { utilisateurId }
         }) as any;
 
-        // Résoudre les permissions (version actuelle - sera améliorée avec contexte établissement)
-        // TODO v3.1 : Implémenter resolvePermissionsForEtablissement dans permissionResolverService
-        const permissionsEtablissement = await permissionResolverService.resolvePermissions(utilisateurId);
+        // Résoudre les permissions avec le contexte de l'établissement
+        const permissionsEtablissement = await permissionResolverService.resolvePermissions(utilisateurId, etablissementId);
 
-        const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateurId, etablissementId);
 
         const etablissementsPayload = utilisateurEtablissements.map(ue => ({
             etablissementId: ue.etablissementId,
-            role: ue.role,
+            role: ue.role.code,
             etablissementPrincipal: ue.etablissementPrincipal,
             actif: ue.actif
         }));
@@ -239,11 +274,11 @@ export class EtablissementSelectionService {
         const payload: JwtPayload = {
             sub: utilisateur.id,
             email: utilisateur.email,
-            role: utilisateur.role,
+            role: affectation.role.code,
             roles: userRoles.map(r => r.code),
             permissions: Array.from(permissionsEtablissement), // Permissions contextuelles
             etablissementId: etablissementId,
-            roleDansEtablissement: affectation.role, // NOUVEAU v3.0
+            roleDansEtablissement: affectation.role.code, // NOUVEAU v3.0
             etablissements: etablissementsPayload,
         };
 
@@ -255,7 +290,7 @@ export class EtablissementSelectionService {
         );
 
         logger.info(
-            `[EtablissementSelection] Connexion complète: ${utilisateur.email} → Établissement ${etablissementId} (${affectation.role})`
+            `[EtablissementSelection] Connexion complète: ${utilisateur.email} → Établissement ${etablissementId} (${affectation.role.code})`
         );
 
         return {
@@ -266,12 +301,29 @@ export class EtablissementSelectionService {
                 id: utilisateur.id,
                 email: utilisateur.email,
                 matricule: utilisateur.matricule,
-                role: utilisateur.role,
+                role: affectation.role.code,
                 nom: profil?.nom || '',
                 prenom: profil?.prenom || '',
                 etablissementActif: etablissementId,
                 etablissements: etablissementsPayload,
+                permissions: Array.from(permissionsEtablissement),
             },
+            etablissementsDisponibles: utilisateurEtablissements.map(ue => {
+                // Convertir logoBase64 en format URL si disponible
+                let logoUrl: string | undefined = undefined;
+                if ((ue.etablissement as any)?.logoBase64) {
+                    logoUrl = (ue.etablissement as any).logoBase64;
+                }
+                
+                return {
+                    id: ue.etablissementId,
+                    nom: ue.etablissement?.nom || 'Établissement',
+                    code: (ue.etablissement as any)?.code,
+                    role: ue.role.code,
+                    etablissementPrincipal: ue.etablissementPrincipal,
+                    logoUrl,
+                };
+            }),
         };
     }
 
@@ -292,19 +344,35 @@ export class EtablissementSelectionService {
     }>> {
         const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
             where: { utilisateurId, actif: true },
-            relations: ['etablissement'],
-            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+            relations: ['etablissement', 'role'],
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' },
+            select: {
+                etablissement: {
+                    id: true,
+                    nom: true,
+                    codeEtablissement: true,
+                    logoBase64: true,
+                } as any,
+            } as any,
         });
 
-        return utilisateurEtablissements.map(ue => ({
-            id: ue.etablissementId,
-            nom: ue.etablissement?.nom || 'Établissement',
-            code: (ue.etablissement as any)?.code,
-            role: ue.role,
-            etablissementPrincipal: ue.etablissementPrincipal,
-            logoUrl: ue.etablissement?.logoUrl,
-            actif: ue.actif,
-        }));
+        return utilisateurEtablissements.map(ue => {
+            // Convertir logoBase64 en format URL si disponible
+            let logoUrl: string | undefined = undefined;
+            if ((ue.etablissement as any)?.logoBase64) {
+                logoUrl = (ue.etablissement as any).logoBase64;
+            }
+            
+            return {
+                id: ue.etablissementId,
+                nom: ue.etablissement?.nom || 'Établissement',
+                code: (ue.etablissement as any)?.code,
+                role: ue.role.code,
+                etablissementPrincipal: ue.etablissementPrincipal,
+                logoUrl,
+                actif: ue.actif,
+            };
+        });
     }
 }
 

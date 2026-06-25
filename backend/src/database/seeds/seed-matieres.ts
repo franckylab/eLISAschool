@@ -2,11 +2,16 @@
  * ==================================
  * eLISAschool - Seed Matières Multi-Tenant
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
  * Crée les matières de base liées à un établissement
  * Support multi-tenant avec etablissementId
+ * 
+ * Changements v2.0:
+ * - Ajout de nouvelles matières
+ * - Amélioration des couleurs
+ * - Logging détaillé
  */
 
 import { AppDataSource } from '@database/data-source';
@@ -37,6 +42,10 @@ export async function seedMatieres(etablissementId: string): Promise<void> {
         { nom: 'Éducation Artistique', code: 'ART', couleur: '#F8C471' },
         { nom: 'Musique', code: 'MUS', couleur: '#85C1E9' },
         { nom: 'Éducation Morale et Civique', code: 'EMC', couleur: '#D7BDE2' },
+        
+        // Matières techniques
+        { nom: 'Technologie', code: 'TECH', couleur: '#AED6F1' },
+        { nom: 'Sciences Économiques', code: 'SE', couleur: '#F9E79F' },
     ];
 
     let created = 0;

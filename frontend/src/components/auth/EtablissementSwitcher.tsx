@@ -56,6 +56,7 @@ export function EtablissementSwitcher() {
     useEffect(() => {
         const loadEtablissements = async () => {
             if (!etablissementId) return;
+            console.log('[EtablissementSwitcher] Établissement actif détecté par le composant:', etablissementId);
 
             try {
                 const etablissementsDisponibles = await apiClient.getEtablissementsDisponibles();
@@ -66,6 +67,7 @@ export function EtablissementSwitcher() {
                     code: e.code,
                     role: e.role,
                     etablissementPrincipal: e.etablissementPrincipal,
+                    logoUrl: e.logoUrl, // ← Inclure le logo
                 }));
                 
                 setEtablissements(transformed);
@@ -179,9 +181,6 @@ export function EtablissementSwitcher() {
                 ) : (
                     <Building2 className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.75} />
                 )}
-
-                {/* Pastille indicatrice */}
-                <span className="absolute -bottom-0.5 -right-0.5 h-1 w-1 rounded-full bg-[var(--color-dominante)] ring-1 ring-[var(--color-surface)] xs:h-1.5 xs:w-1.5 sm:h-2 sm:w-2 sm:ring-2" />
             </motion.button>
 
             {/* ─── Dropdown Menu ─── */}

@@ -11,7 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { inscriptionOptionService } from '../services';
 import { createInscriptionOptionSchema, updateInscriptionOptionSchema, queryInscriptionOptionsSchema, validerInscriptionOptionSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 
@@ -52,7 +52,7 @@ router.get('/inscriptions/:id', authMiddleware, async (req: Request, res: Respon
 });
 
 // POST /api/options/inscriptions - Créer une inscription
-router.post('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CONSEILLER_ORIENTEUR), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/inscriptions', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createInscriptionOptionSchema, req.body);
         const created = await inscriptionOptionService.create(dto, req.utilisateur?.etablissementId);
@@ -63,7 +63,7 @@ router.post('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER
 });
 
 // PATCH /api/options/inscriptions/:id - Mettre à jour
-router.patch('/inscriptions/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/inscriptions/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateInscriptionOptionSchema, req.body);
         const updated = await inscriptionOptionService.update(req.params.id, dto, req.utilisateur?.etablissementId);
@@ -74,7 +74,7 @@ router.patch('/inscriptions/:id', authMiddleware, requireRoles(Role.ADMIN, Role.
 });
 
 // DELETE /api/options/inscriptions/:id - Supprimer (abandonner)
-router.delete('/inscriptions/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/inscriptions/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await inscriptionOptionService.delete(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Option abandonnée' });
@@ -109,7 +109,7 @@ router.get('/inscriptions/eleve/:eleveId', authMiddleware, async (req: Request, 
 });
 
 // POST /api/options/inscriptions/:id/valider - Valider une inscription
-router.post('/inscriptions/:id/valider', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CONSEILLER_ORIENTEUR), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/inscriptions/:id/valider', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(validerInscriptionOptionSchema, req.body);
         const updated = await inscriptionOptionService.valider(
@@ -125,7 +125,7 @@ router.post('/inscriptions/:id/valider', authMiddleware, requireRoles(Role.ADMIN
 });
 
 // GET /api/options/inscriptions/statistiques - Statistiques
-router.get('/inscriptions/statistiques', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/inscriptions/statistiques', authMiddleware, requirePermission('config:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         const etablissementId = req.utilisateur?.etablissementId;

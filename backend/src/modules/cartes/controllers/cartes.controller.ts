@@ -3,7 +3,7 @@ import { CartesService } from '../services/cartes.service';
 import { modeleCarteService } from '../services/modele-carte.service';
 import { generationBatchService } from '../services/generation-batch.service';
 import { createCarteSchema, updateCarteSchema, createModeleCarteSchema, updateModeleCarteSchema } from '../dto';
-import { authMiddleware, staffOnly } from '@modules/auth/middlewares';
+import { authMiddleware } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -18,7 +18,7 @@ router.get('/utilisateur/:utilisateurId', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.get('/numero/:numeroCarte', staffOnly, async (req, res, next) => {
+router.get('/numero/:numeroCarte', async (req, res, next) => {
     try {
         const carte = await cartesService.findByNumero(req.params.numeroCarte);
         res.json({ success: true, data: carte, timestamp: new Date().toISOString() });
@@ -32,7 +32,7 @@ router.get('/:id', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/', staffOnly, async (req, res, next) => {
+router.post('/', async (req, res, next) => {
     try {
         const dto = validateDto(createCarteSchema, req.body);
         const carte = await cartesService.create(dto, req.etablissementId, req.utilisateur?.id);
@@ -40,7 +40,7 @@ router.post('/', staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', staffOnly, async (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
     try {
         const dto = validateDto(updateCarteSchema, req.body);
         const carte = await cartesService.update(req.params.id, dto);
@@ -48,14 +48,14 @@ router.patch('/:id', staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/:id/desactiver', staffOnly, async (req, res, next) => {
+router.post('/:id/desactiver', async (req, res, next) => {
     try {
         const carte = await cartesService.desactiver(req.params.id);
         res.json({ success: true, data: carte, message: 'Carte désactivée', timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
 
-router.post('/:id/renouveler', staffOnly, async (req, res, next) => {
+router.post('/:id/renouveler', async (req, res, next) => {
     try {
         const carte = await cartesService.renouveler(req.params.id, req.utilisateur?.id, req.etablissementId);
         res.json({ success: true, data: carte, timestamp: new Date().toISOString() });
@@ -73,7 +73,7 @@ router.post('/:id/perte', async (req, res, next) => {
 // Routes Modèles de Cartes (v2.0)
 // ==================================
 
-router.get('/modeles', staffOnly, async (req, res, next) => {
+router.get('/modeles', async (req, res, next) => {
     try {
         const type = req.query.type as string;
         const modeles = await modeleCarteService.findAll(req.etablissementId, type);
@@ -81,7 +81,7 @@ router.get('/modeles', staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/modeles', staffOnly, async (req, res, next) => {
+router.post('/modeles', async (req, res, next) => {
     try {
         const dto = validateDto(createModeleCarteSchema, req.body);
         const modele = await modeleCarteService.create(dto, req.etablissementId);
@@ -96,7 +96,7 @@ router.get('/modeles/:id', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.patch('/modeles/:id', staffOnly, async (req, res, next) => {
+router.patch('/modeles/:id', async (req, res, next) => {
     try {
         const dto = validateDto(updateModeleCarteSchema, req.body);
         const modele = await modeleCarteService.update(req.params.id, dto, req.etablissementId);
@@ -104,7 +104,7 @@ router.patch('/modeles/:id', staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.delete('/modeles/:id', staffOnly, async (req, res, next) => {
+router.delete('/modeles/:id', async (req, res, next) => {
     try {
         await modeleCarteService.delete(req.params.id, req.etablissementId);
         res.json({ success: true, message: 'Modèle supprimé', timestamp: new Date().toISOString() });
@@ -115,7 +115,7 @@ router.delete('/modeles/:id', staffOnly, async (req, res, next) => {
 // Routes Génération Batch (v2.0)
 // ==================================
 
-router.post('/batch/classe/:classeId', staffOnly, async (req, res, next) => {
+router.post('/batch/classe/:classeId', async (req, res, next) => {
     try {
         const { type, modeleId } = req.body;
         if (!type) {
@@ -132,7 +132,7 @@ router.post('/batch/classe/:classeId', staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/batch/personnel', staffOnly, async (req, res, next) => {
+router.post('/batch/personnel', async (req, res, next) => {
     try {
         const { type, modeleId } = req.body;
         if (!type) {

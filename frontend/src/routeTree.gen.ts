@@ -41,6 +41,7 @@ import { Route as AuthCompetencesRouteImport } from './routes/_auth.competences'
 import { Route as AuthClassesRouteImport } from './routes/_auth.classes'
 import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
 import { Route as AuthBulletinsRouteImport } from './routes/_auth.bulletins'
+import { Route as AuthApparenceRouteImport } from './routes/_auth.apparence'
 import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
 import { Route as AuthEtablissementsIndexRouteImport } from './routes/_auth.etablissements.index'
 import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
@@ -220,6 +221,11 @@ const AuthBulletinsRoute = AuthBulletinsRouteImport.update({
   path: '/bulletins',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthApparenceRoute = AuthApparenceRouteImport.update({
+  id: '/apparence',
+  path: '/apparence',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthAnneesScolairesRoute = AuthAnneesScolairesRouteImport.update({
   id: '/annees-scolaires',
   path: '/annees-scolaires',
@@ -324,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
+  '/apparence': typeof AuthApparenceRoute
   '/bulletins': typeof AuthBulletinsRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/classes': typeof AuthClassesRouteWithChildren
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
+  '/apparence': typeof AuthApparenceRoute
   '/bulletins': typeof AuthBulletinsRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/classes': typeof AuthClassesRouteWithChildren
@@ -427,6 +435,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_auth/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
+  '/_auth/apparence': typeof AuthApparenceRoute
   '/_auth/bulletins': typeof AuthBulletinsRoute
   '/_auth/change-password': typeof AuthChangePasswordRoute
   '/_auth/classes': typeof AuthClassesRouteWithChildren
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/annees-scolaires'
+    | '/apparence'
     | '/bulletins'
     | '/change-password'
     | '/classes'
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/annees-scolaires'
+    | '/apparence'
     | '/bulletins'
     | '/change-password'
     | '/classes'
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/_auth/annees-scolaires'
+    | '/_auth/apparence'
     | '/_auth/bulletins'
     | '/_auth/change-password'
     | '/_auth/classes'
@@ -863,6 +875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthBulletinsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/apparence': {
+      id: '/_auth/apparence'
+      path: '/apparence'
+      fullPath: '/apparence'
+      preLoaderRoute: typeof AuthApparenceRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/annees-scolaires': {
       id: '/_auth/annees-scolaires'
       path: '/annees-scolaires'
@@ -1089,6 +1108,7 @@ const AuthUtilisateursRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthAnneesScolairesRoute: typeof AuthAnneesScolairesRouteWithChildren
+  AuthApparenceRoute: typeof AuthApparenceRoute
   AuthBulletinsRoute: typeof AuthBulletinsRoute
   AuthChangePasswordRoute: typeof AuthChangePasswordRoute
   AuthClassesRoute: typeof AuthClassesRouteWithChildren
@@ -1121,6 +1141,7 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAnneesScolairesRoute: AuthAnneesScolairesRouteWithChildren,
+  AuthApparenceRoute: AuthApparenceRoute,
   AuthBulletinsRoute: AuthBulletinsRoute,
   AuthChangePasswordRoute: AuthChangePasswordRoute,
   AuthClassesRoute: AuthClassesRouteWithChildren,

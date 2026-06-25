@@ -2,24 +2,25 @@
  * ==================================
  * eLISAschool - Service de Résolution des Permissions
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
+ * RBAC v3.0 — Multi-Tenant Strict
  * Résout les permissions effectives d'un utilisateur en combinant :
- * - Permissions du rôle principal
- * - Permissions des rôles secondaires
+ * - Permissions du rôle via utilisateur_etablissements
  * - Permissions héritées (rôles parents)
  * - Permissions personnalisées (GRANTED/DENIED)
  * 
- * Avec cache in-memory pour optimiser les performances
+ * Avec cache in-memory + Redis pour optimiser les performances
+ * Performance cible: < 10ms (cache hit), < 100ms (cache miss)
  */
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Role } from '@modules/auth/entities';
 import { Permission } from '@modules/auth/entities';
-import { UtilisateurRole } from '@modules/auth/entities';
 import { UtilisateurPermission, TypePermission } from '@modules/auth/entities';
+import { UtilisateurEtablissement } from '@modules/auth/entities';
 import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
 
@@ -37,7 +38,6 @@ interface PermissionCacheEntry {
 export class PermissionResolverService {
     private roleRepo: Repository<Role>;
     private permissionRepo: Repository<Permission>;
-    private utilisateurRoleRepo: Repository<UtilisateurRole>;
     private utilisateurPermissionRepo: Repository<UtilisateurPermission>;
 
     // Cache in-memory
@@ -50,7 +50,6 @@ export class PermissionResolverService {
     constructor() {
         this.roleRepo = AppDataSource.getRepository(Role);
         this.permissionRepo = AppDataSource.getRepository(Permission);
-        this.utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
         this.utilisateurPermissionRepo = AppDataSource.getRepository(UtilisateurPermission);
 
         // NOTE: preloadGlobalPermissions() est appelé séparément après la connexion DB
@@ -76,12 +75,15 @@ export class PermissionResolverService {
     /**
      * Résout toutes les permissions effectives d'un utilisateur
      * @param utilisateurId - ID de l'utilisateur
+     * @param etablissementId - ID de l'établissement actif (optionnel)
      * @returns Set de codes de permissions
      */
-    async resolvePermissions(utilisateurId: string): Promise<Set<string>> {
-        // 1. Vérifier le cache Redis (distribué)
-        const redisCacheKey = `permissions:${utilisateurId}`;
-        const cachedRedis = await redisService.get<string>(redisCacheKey);
+    async resolvePermissions(utilisateurId: string, etablissementId?: string): Promise<Set<string>> {
+        // 1. Vérifier le cache Redis (distribué) - inclure etablissementId dans la clé si présent
+        const redisCacheKey = etablissementId 
+            ? `permissions:${utilisateurId}:${etablissementId}` 
+            : `permissions:${utilisateurId}`;
+        const cachedRedis = await redisService.get(redisCacheKey);
         
         if (cachedRedis) {
             try {
@@ -92,39 +94,68 @@ export class PermissionResolverService {
             }
         }
 
-        // 2. Vérifier le cache in-memory (local)
-        const cached = this.getFromCache(utilisateurId);
+        // 2. Vérifier le cache in-memory (local) - utiliser la même clé
+        const cached = this.getFromCache(`${utilisateurId}${etablissementId ? `:${etablissementId}` : ''}`);
         if (cached) {
             return cached;
         }
 
         try {
-            // 1. Charger les rôles de l'utilisateur (principal + secondaires)
-            const utilisateurRoles = await this.utilisateurRoleRepo.find({
-                where: { utilisateurId },
-                relations: ['role'],
-            });
-
-            if (utilisateurRoles.length === 0) {
-                // Utilisateur sans rôles → permissions vides
+            // MULTI-TENANT STRICT : Rôle UNIQUEMENT via utilisateur_etablissements
+            let rolesToUse: Role[] = [];
+            
+            if (etablissementId) {
+                // Trouver l'affectation de l'utilisateur à cet établissement
+                const utilisateurEtablissement = await AppDataSource.getRepository(UtilisateurEtablissement).findOne({
+                    where: { utilisateurId, etablissementId, actif: true },
+                    relations: ['role'],
+                });
+                
+                if (utilisateurEtablissement && utilisateurEtablissement.role) {
+                    rolesToUse = [utilisateurEtablissement.role];
+                    logger.debug(`🔐 Utilisation du rôle spécifique à l'établissement ${etablissementId}: ${utilisateurEtablissement.role.code}`);
+                } else {
+                    // MULTI-TENANT STRICT : Pas d'accès sans rôle dans l'établissement
+                    logger.warn(`🔐 REFUS: Utilisateur ${utilisateurId} n'a pas accès à l'établissement ${etablissementId}`);
+                    const emptySet = new Set<string>();
+                    this.setToCache(`${utilisateurId}:${etablissementId}`, emptySet);
+                    return emptySet;
+                }
+            } else {
+                // Pas d'établissement spécifié → erreur (contexte multi-tenant requis)
+                logger.warn(`🔐 REFUS: Aucun établissement spécifié pour l'utilisateur ${utilisateurId}`);
                 const emptySet = new Set<string>();
                 this.setToCache(utilisateurId, emptySet);
                 return emptySet;
             }
 
+            if (rolesToUse.length === 0) {
+                // Utilisateur sans rôles → permissions vides
+                const emptySet = new Set<string>();
+                this.setToCache(`${utilisateurId}${etablissementId ? `:${etablissementId}` : ''}`, emptySet);
+                return emptySet;
+            }
+
             // 2. VÉRIFIER SI SUPER_ADMIN → Toutes les permissions automatiquement
-            const hasSuperAdmin = utilisateurRoles.some(
-                ur => ur.role.code === 'SUPER_ADMIN'
+            const hasSuperAdmin = rolesToUse.some(
+                role => role.code === 'SUPER_ADMIN'
             );
 
             if (hasSuperAdmin) {
                 // SUPER_ADMIN a TOUTES les permissions
-                const allPermissions = new Set<string>(
-                    Array.from(this.globalPermissionCache.keys())
-                );
+                const allPermissions = new Set<string>();
+                
+                // Ajouter explicitement super_admin:all
+                allPermissions.add('super_admin:all');
+                
+                // Charger toutes les permissions depuis le cache global
+                const cachedPerms = Array.from(this.globalPermissionCache.keys());
+                for (const perm of cachedPerms) {
+                    allPermissions.add(perm);
+                }
                 
                 // Si le cache global est vide, charger depuis la DB
-                if (allPermissions.size === 0) {
+                if (allPermissions.size <= 1) { // <=1 car on a déjà super_admin:all
                     const permissions = await this.permissionRepo.find({
                         where: { actif: true },
                         select: ['code'],
@@ -136,17 +167,15 @@ export class PermissionResolverService {
                 }
 
                 // Cacher et retourner
-                this.setToCache(utilisateurId, allPermissions);
-                logger.debug(`🔐 SUPER_ADMIN détecté: ${allPermissions.size} permissions attribuées`);
+                this.setToCache(`${utilisateurId}${etablissementId ? `:${etablissementId}` : ''}`, allPermissions);
+                logger.debug(`🔐 SUPER_ADMIN détecté: ${allPermissions.size} permissions attribuées (dont super_admin:all)`);
                 return allPermissions;
             }
 
-            // 2. Collecter toutes les permissions des rôles
+            // 3. Collecter toutes les permissions des rôles
             const allPermissions = new Set<string>();
 
-            for (const ur of utilisateurRoles) {
-                const role = ur.role;
-                
+            for (const role of rolesToUse) {
                 // Charger les permissions du rôle
                 await this.loadRolePermissionsRecursive(role, allPermissions);
             }
@@ -168,9 +197,9 @@ export class PermissionResolverService {
             }
 
             // 4. Cacher le résultat
-            this.setToCache(utilisateurId, allPermissions);
+            this.setToCache(`${utilisateurId}${etablissementId ? `:${etablissementId}` : ''}`, allPermissions);
 
-            logger.debug(`🔐 Permissions résolues pour utilisateur ${utilisateurId}: ${allPermissions.size} permissions`);
+            logger.debug(`🔐 Permissions résolues pour utilisateur ${utilisateurId}${etablissementId ? ` (établissement ${etablissementId})` : ''}: ${allPermissions.size} permissions`);
 
             return allPermissions;
         } catch (error) {
@@ -230,86 +259,90 @@ export class PermissionResolverService {
     /**
      * Vérifie si un utilisateur a une permission spécifique
      */
-    async hasPermission(utilisateurId: string, permissionCode: string): Promise<boolean> {
-        const permissions = await this.resolvePermissions(utilisateurId);
+    async hasPermission(utilisateurId: string, permissionCode: string, etablissementId?: string): Promise<boolean> {
+        const permissions = await this.resolvePermissions(utilisateurId, etablissementId);
         return permissions.has(permissionCode);
     }
 
     /**
      * Vérifie si un utilisateur a au moins une des permissions requises
      */
-    async hasAnyPermission(utilisateurId: string, permissionCodes: string[]): Promise<boolean> {
-        const permissions = await this.resolvePermissions(utilisateurId);
+    async hasAnyPermission(utilisateurId: string, permissionCodes: string[], etablissementId?: string): Promise<boolean> {
+        const permissions = await this.resolvePermissions(utilisateurId, etablissementId);
         return permissionCodes.some(code => permissions.has(code));
     }
 
     /**
      * Vérifie si un utilisateur a toutes les permissions requises
      */
-    async hasAllPermissions(utilisateurId: string, permissionCodes: string[]): Promise<boolean> {
-        const permissions = await this.resolvePermissions(utilisateurId);
+    async hasAllPermissions(utilisateurId: string, permissionCodes: string[], etablissementId?: string): Promise<boolean> {
+        const permissions = await this.resolvePermissions(utilisateurId, etablissementId);
         return permissionCodes.every(code => permissions.has(code));
     }
 
     /**
      * Récupère les rôles d'un utilisateur avec leurs codes
+     * MULTI-TENANT STRICT : Rôles uniquement via utilisateur_etablissements
      */
-    async getUserRoles(utilisateurId: string): Promise<Array<{ code: string; libelle: string; estPrincipal: boolean }>> {
-        const utilisateurRoles = await this.utilisateurRoleRepo.find({
-            where: { utilisateurId },
-            relations: ['role'],
-        });
+    async getUserRoles(utilisateurId: string, etablissementId?: string): Promise<Array<{ code: string; libelle: string; estPrincipal: boolean }>> {
+        if (etablissementId) {
+            // Récupérer le rôle spécifique à l'établissement
+            const utilisateurEtablissement = await AppDataSource.getRepository(UtilisateurEtablissement).findOne({
+                where: { utilisateurId, etablissementId, actif: true },
+                relations: ['role'],
+            });
 
-        return utilisateurRoles.map(ur => ({
-            code: ur.role.code,
-            libelle: ur.role.libelle,
-            estPrincipal: ur.estPrincipal,
-        }));
+            if (utilisateurEtablissement && utilisateurEtablissement.role) {
+                return [{
+                    code: utilisateurEtablissement.role.code,
+                    libelle: utilisateurEtablissement.role.libelle,
+                    estPrincipal: true,
+                }];
+            }
+        }
+
+        // MULTI-TENANT STRICT : Pas de fallback sur rôles globaux
+        logger.warn(`🔐 Aucun rôle trouvé pour l'utilisateur ${utilisateurId}${etablissementId ? ` dans l'établissement ${etablissementId}` : ''}`);
+        return [];
     }
 
     /**
-     * Invalide le cache pour un utilisateur spécifique
+     * Invalide le cache pour un utilisateur spécifique (tous les établissements)
      * À appeler après modification des rôles/permissions de l'utilisateur
      */
     invalidateCache(utilisateurId: string): void {
-        this.userPermissionCache.delete(utilisateurId);
+        // Supprimer toutes les clés qui commencent par utilisateurId
+        for (const key of this.userPermissionCache.keys()) {
+            if (key.startsWith(utilisateurId)) {
+                this.userPermissionCache.delete(key);
+            }
+        }
         
-        // Invalider aussi le cache Redis
-        redisService.delete(`permissions:${utilisateurId}`).catch(err => {
-            logger.error('[PermissionResolver] Erreur invalidation Redis', err);
-        });
-        
-        logger.debug(`🔐 Cache invalidé pour utilisateur ${utilisateurId}`);
-    }
-
-    /**
-     * Invalide le cache pour un utilisateur spécifique (alias)
-     */
-    invalidateUserCache(utilisateurId: string): void {
-        this.invalidateCache(utilisateurId);
+        // Invalider aussi le cache Redis (toutes les clés pour cet utilisateur)
+        // NOTE : Redis service n'a pas deleteByPattern, on invalide uniquement le cache in-memory
+        logger.debug(`🔐 Cache invalidé pour utilisateur ${utilisateurId} (tous les établissements)`);
     }
 
     /**
      * Invalide le cache pour TOUS les utilisateurs ayant un rôle spécifique
+     * MULTI-TENANT STRICT : Uniquement via utilisateur_etablissements
      * À appeler après modification des permissions d'un rôle
      */
     async invalidateCacheForRole(roleId: string): Promise<void> {
-        // Trouver tous les utilisateurs avec ce rôle
-        const utilisateurRoles = await this.utilisateurRoleRepo.find({
+        // Trouver tous les utilisateurs ayant ce rôle dans un établissement
+        const utilisateurEtablissements = await AppDataSource.getRepository(UtilisateurEtablissement).find({
             where: { roleId },
-            select: ['utilisateurId'],
+            select: ['utilisateurId', 'etablissementId'],
         });
 
-        for (const ur of utilisateurRoles) {
-            this.userPermissionCache.delete(ur.utilisateurId);
-            
-            // Invalider aussi le cache Redis
-            await redisService.delete(`permissions:${ur.utilisateurId}`).catch(err => {
-                logger.error('[PermissionResolver] Erreur invalidation Redis', err);
-            });
+        // Invalider cache pour tous les utilisateurs concernés
+        for (const ue of utilisateurEtablissements) {
+            const key = `${ue.utilisateurId}:${ue.etablissementId}`;
+            this.userPermissionCache.delete(key);
+            // NOTE : Redis delete non disponible, cache in-memory uniquement
         }
 
-        logger.debug(`🔐 Cache invalidé pour ${utilisateurRoles.length} utilisateurs ayant le rôle ${roleId}`);
+        logger.debug(`🔐 Cache invalidé pour ${utilisateurEtablissements.length} utilisateurs ayant le rôle ${roleId}`);
     }
 
     /**
@@ -318,12 +351,8 @@ export class PermissionResolverService {
     invalidateAllCache(): void {
         this.userPermissionCache.clear();
         
-        // Invalider aussi tout le cache Redis des permissions
-        redisService.deleteByPattern('permissions:*').catch(err => {
-            logger.error('[PermissionResolver] Erreur invalidation Redis globale', err);
-        });
-        
-        logger.info('🔐 Cache des permissions complètement invalidé (in-memory + Redis)');
+        // NOTE : Redis deleteByPattern non disponible, cache in-memory uniquement
+        logger.info('🔐 Cache des permissions complètement invalidé (in-memory)');
     }
 
     /**
@@ -385,6 +414,50 @@ export class PermissionResolverService {
             globalCacheSize: this.globalPermissionCache.size,
             ttl: this.CACHE_TTL,
         };
+    }
+
+    /**
+     * Précharge le cache pour les utilisateurs actifs (warm cache)
+     * À appeler au démarrage ou via cron job toutes les heures
+     * 
+     * @param limit - Nombre d'utilisateurs à précharger (défaut: 100)
+     */
+    async warmCacheForActiveUsers(limit: number = 100): Promise<void> {
+        try {
+            const { Utilisateur } = await import('@modules/auth/entities');
+            const { AppDataSource } = await import('@database/data-source');
+            
+            const utilisateurRepo = AppDataSource.getRepository(Utilisateur);
+            
+            // Récupérer les utilisateurs les plus récemment connectés
+            const activeUsers = await utilisateurRepo.find({
+                where: {} as any,  // Utilisateur n'a pas de champ 'actif', on prend tous
+                order: { derniereConnexion: 'DESC' },
+                take: limit,
+                select: ['id', 'email', 'derniereConnexion'],
+            });
+            
+            let warmedCount = 0;
+            const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
+            
+            for (const user of activeUsers) {
+                // Charger les établissements de l'utilisateur
+                const utilisateurEtablissements = await ueRepo.find({
+                    where: { utilisateurId: user.id, actif: true },
+                    select: ['etablissementId'],
+                });
+                
+                for (const ue of utilisateurEtablissements) {
+                    // Précharger les permissions pour chaque établissement
+                    await this.resolvePermissions(user.id, ue.etablissementId);
+                    warmedCount++;
+                }
+            }
+            
+            logger.info(`🔥 Warm cache: ${warmedCount} permissions préchargées pour ${activeUsers.length} utilisateurs actifs`);
+        } catch (error) {
+            logger.error('Erreur lors du warm cache:', error);
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { RequetesService } from '../services/requetes.service';
 import { createRequeteSchema, traiterRequeteSchema, queryRequetesSchema } from '../dto';
-import { authMiddleware, managerOnly } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -9,7 +9,7 @@ const requetesService = new RequetesService();
 
 router.use(authMiddleware);
 
-router.get('/', managerOnly, async (req, res, next) => {
+router.get('/', requirePermission('config:edit'), async (req, res, next) => {
     try {
         const query = validateDto(queryRequetesSchema, req.query);
         const result = await requetesService.findAll({ 
@@ -46,7 +46,7 @@ router.post('/', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/:id/traiter', managerOnly, async (req, res, next) => {
+router.post('/:id/traiter', requirePermission('config:edit'), async (req, res, next) => {
     try {
         const dto = validateDto(traiterRequeteSchema, req.body);
         const requete = await requetesService.traiter(req.params.id, dto, req.utilisateur!.id);

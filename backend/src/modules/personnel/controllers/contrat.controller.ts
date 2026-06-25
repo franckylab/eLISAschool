@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ContratService } from '../services';
 import { createContratSchema, updateContratSchema, queryContratSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -23,7 +23,7 @@ const service = new ContratService();
 router.post(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createContratSchema, req.body);
@@ -42,7 +42,7 @@ router.post(
 router.get(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryContratSchema, req.query);
@@ -112,7 +112,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateContratSchema, req.body);
@@ -137,7 +137,7 @@ router.patch(
 router.delete(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await service.delete(req.params.id, req.utilisateur?.id!, req.etablissementId!, req);

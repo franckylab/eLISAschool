@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Notes de musique -->
+    <ellipse cx="250" cy="300" rx="20" ry="15" fill="currentColor" opacity="0.10"/>
+    <line x1="270" y1="300" x2="270" y2="200" stroke-width="4"/>
+    <ellipse cx="350" cy="280" rx="20" ry="15" fill="currentColor" opacity="0.10"/>
+    <line x1="370" y1="280" x2="370" y2="180" stroke-width="4"/>
+    <ellipse cx="800" cy="400" rx="20" ry="15" fill="currentColor" opacity="0.10"/>
+    <line x1="820" y1="400" x2="820" y2="300" stroke-width="4"/>
+    <ellipse cx="1200" cy="350" rx="20" ry="15" fill="currentColor" opacity="0.10"/>
+    <line x1="1220" y1="350" x2="1220" y2="250" stroke-width="4"/>
+
+  </g>
+</svg>

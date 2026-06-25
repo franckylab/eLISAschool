@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { DiplomesElevesService } from '../services';
 import { createDiplomeEleveSchema, updateDiplomeEleveSchema, queryDiplomesElevesSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
@@ -51,7 +51,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 });
 
 // POST /api/diplomes-eleves - Enregistrer un diplôme
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createDiplomeEleveSchema, req.body);
         const diplome = await diplomesElevesService.create(dto);
@@ -60,7 +60,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role
 });
 
 // PATCH /api/diplomes-eleves/:id - Modifier un diplôme
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateDiplomeEleveSchema, req.body);
         const diplome = await diplomesElevesService.update(req.params.id, dto);
@@ -69,7 +69,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
 });
 
 // DELETE /api/diplomes-eleves/:id - Supprimer un diplôme
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await diplomesElevesService.delete(req.params.id);
         res.json({ success: true, message: 'Diplôme supprimé' });

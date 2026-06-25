@@ -10,7 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { preferenceUtilisateurService, DEFAULT_PREFERENCES, CategoriePreference } from '../services/preference-utilisateur.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { z } from 'zod';
 import { AppError } from '@common/filters/error.filter';
@@ -74,8 +74,9 @@ router.get('/my/grouped', authMiddleware, async (req: Request, res: Response, ne
 router.get('/my/:cle', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.utilisateur!.id;
+        const etablissementId = req.utilisateur!.etablissementId;
         const cle = req.params.cle;
-        const valeur = await preferenceUtilisateurService.getPreference(userId, cle);
+        const valeur = await preferenceUtilisateurService.getPreference(userId, cle, undefined, etablissementId);
         res.json({ 
             success: true, 
             data: { cle, valeur },
@@ -88,13 +89,15 @@ router.get('/my/:cle', authMiddleware, async (req: Request, res: Response, next:
 router.post('/set', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.utilisateur!.id;
+        const etablissementId = req.utilisateur!.etablissementId;
         const dto = validateDto(setPreferenceSchema, req.body);
         
         const pref = await preferenceUtilisateurService.setPreference(
             userId,
             dto.cle,
             dto.valeur,
-            dto.typeValeur
+            dto.typeValeur,
+            etablissementId
         );
         
         res.json({ 
@@ -197,7 +200,7 @@ router.post('/inheritance', authMiddleware, async (req: Request, res: Response, 
 // ============================================
 
 // Obtenir les valeurs par défaut du système
-router.get('/defaults', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/defaults', authMiddleware, requirePermission('config:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ 
             success: true, 
@@ -208,7 +211,7 @@ router.get('/defaults', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMI
 });
 
 // Obtenir les préférences d'un utilisateur (admin)
-router.get('/user/:userId', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/user/:userId', authMiddleware, requirePermission('utilisateurs:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.params.userId;
         const preferences = await preferenceUtilisateurService.getAllPreferences(userId);
@@ -221,7 +224,7 @@ router.get('/user/:userId', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
 });
 
 // Réinitialiser les préférences d'un utilisateur (admin)
-router.post('/user/:userId/reset-all', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/user/:userId/reset-all', authMiddleware, requirePermission('utilisateurs:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.params.userId;
         const count = await preferenceUtilisateurService.resetAllPreferences(userId);

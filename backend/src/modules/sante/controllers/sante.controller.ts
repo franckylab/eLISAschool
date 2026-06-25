@@ -8,7 +8,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { santeService } from '../services';
 import { createDossierMedicalSchema, createConsultationMedicaleSchema, createIncidentSanteSchema } from '../dto';
-import { staffOnly, requireRoles, requirePermission } from '@modules/auth/middlewares';
+import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -22,7 +22,7 @@ function validate(schema: any, data: unknown): any {
 }
 
 // ==================== DOSSIERS MÉDICAUX ====================
-router.post('/dossiers', staffOnly, requirePermission('sante:dossier:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/dossiers', requirePermission('sante:dossier:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createDossierMedicalSchema, req.body);
         const dossier = await santeService.createOrUpdateDossier(
@@ -36,7 +36,7 @@ router.post('/dossiers', staffOnly, requirePermission('sante:dossier:write'), as
     }
 });
 
-router.get('/dossiers/:patientId', staffOnly, requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/dossiers/:patientId', requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const typePatient = req.query.typePatient as 'ELEVE' | 'PERSONNEL' | undefined;
         const dossier = await santeService.getDossierByPatient(
@@ -51,7 +51,7 @@ router.get('/dossiers/:patientId', staffOnly, requirePermission('sante:dossier:r
 });
 
 // ==================== CONSULTATIONS ====================
-router.post('/consultations', staffOnly, requirePermission('sante:consultation:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/consultations', requirePermission('sante:consultation:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createConsultationMedicaleSchema, req.body);
         const consultation = await santeService.createConsultation(
@@ -66,7 +66,7 @@ router.post('/consultations', staffOnly, requirePermission('sante:consultation:w
     }
 });
 
-router.get('/patients/:patientId/consultations', staffOnly, requirePermission('sante:consultation:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/patients/:patientId/consultations', requirePermission('sante:consultation:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -95,7 +95,7 @@ router.get('/patients/:patientId/consultations', staffOnly, requirePermission('s
 });
 
 // ==================== INCIDENTS SANTÉ ====================
-router.post('/incidents', staffOnly, requirePermission('sante:incident:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/incidents', requirePermission('sante:incident:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createIncidentSanteSchema, req.body);
         const incident = await santeService.createIncidentSante(
@@ -110,7 +110,7 @@ router.post('/incidents', staffOnly, requirePermission('sante:incident:write'), 
     }
 });
 
-router.get('/patients/:patientId/incidents', staffOnly, requirePermission('sante:incident:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/patients/:patientId/incidents', requirePermission('sante:incident:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -135,7 +135,7 @@ router.get('/patients/:patientId/incidents', staffOnly, requirePermission('sante
 });
 
 // ==================== DASHBOARD ====================
-router.get('/patients/:patientId/dashboard', staffOnly, requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/patients/:patientId/dashboard', requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dashboard = await santeService.getDashboardSante(
             req.params.patientId,
@@ -148,7 +148,7 @@ router.get('/patients/:patientId/dashboard', staffOnly, requirePermission('sante
 });
 
 // ==================== STATISTIQUES ====================
-router.get('/statistiques', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/statistiques', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const annee = parseInt(req.query.annee as string) || new Date().getFullYear();
         const stats = await santeService.getStatistiquesEtablissement(

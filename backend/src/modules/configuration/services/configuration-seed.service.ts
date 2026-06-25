@@ -46,13 +46,14 @@ export class ConfigurationSeedService {
 
     /**
      * Exécute tous les seeds de configuration
+     * @param etablissementId ID de l'établissement pour scopage (optionnel)
      * @param force Si true, force la réinitialisation des valeurs existantes vers les valeurs par défaut
      */
-    async runAllSeeds(force: boolean = false): Promise<{ modules: number; parametres: number }> {
-        logger.info(`🌱 Démarrage du seed de configuration${force ? ' (FORCÉ)' : ''}...`);
+    async runAllSeeds(etablissementId?: string, force: boolean = false): Promise<{ modules: number; parametres: number }> {
+        logger.info(`🌱 Démarrage du seed de configuration${etablissementId ? ` (Étab: ${etablissementId.substring(0, 8)})` : ''}${force ? ' (FORCÉ)' : ''}...`);
 
-        const modulesCreated = await this.seedConfigurationModules(force);
-        const parametresCreated = await this.seedParametresSysteme(force);
+        const modulesCreated = await this.seedConfigurationModules(etablissementId, force);
+        const parametresCreated = await this.seedParametresSysteme(etablissementId, force);
 
         logger.info(`✅ Seed terminé: Modules=${modulesCreated}, Paramètres=${parametresCreated}`);
 
@@ -64,14 +65,20 @@ export class ConfigurationSeedService {
 
     /**
      * Seed des configurations de modules
+     * @param etablissementId ID de l'établissement pour scopage (optionnel)
      * @param force Si true, force la réinitialisation même si la config existe
      */
-    async seedConfigurationModules(force: boolean = false): Promise<number> {
+    async seedConfigurationModules(etablissementId?: string, force: boolean = false): Promise<number> {
         let created = 0;
         let updated = 0;
 
         for (const moduleName of Object.values(ModuleName)) {
-            const existing = await this.configModuleRepo.findOne({ where: { moduleNom: moduleName } });
+            const existing = await this.configModuleRepo.findOne({ 
+                where: { 
+                    moduleNom: moduleName,
+                    ...(etablissementId ? { etablissementId } : { etablissementId: null as any })
+                } 
+            });
             
             if (existing && force) {
                 // Forcer la réinitialisation
@@ -109,7 +116,8 @@ export class ConfigurationSeedService {
             const config = this.configModuleRepo.create({
                 moduleNom: moduleName,
                 ...defaultValues,
-                valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
+                valeurDefaut: defaultValues,
+                ...(etablissementId ? { etablissementId } : {}),
             });
 
             await this.configModuleRepo.save(config);
@@ -124,13 +132,18 @@ export class ConfigurationSeedService {
      * Seed des paramètres système
      * @param force Si true, force la réinitialisation même si le paramètre existe
      */
-    async seedParametresSysteme(force: boolean = false): Promise<number> {
+    async seedParametresSysteme(etablissementId?: string, force: boolean = false): Promise<number> {
         const defaults = this.getAllDefaultParametres();
         let created = 0;
         let updated = 0;
 
         for (const param of defaults) {
-            const existing = await this.parametreRepo.findOne({ where: { cle: param.cle } });
+            const existing = await this.parametreRepo.findOne({ 
+                where: { 
+                    cle: param.cle,
+                    ...(etablissementId ? { etablissementId } : { etablissementId: null as any })
+                } 
+            });
             
             if (existing && force) {
                 // Forcer la réinitialisation vers la valeur par défaut
@@ -164,6 +177,7 @@ export class ConfigurationSeedService {
                 visible: param.visible,
                 ordre: param.ordre,
                 options: param.options,
+                ...(etablissementId ? { etablissementId } : {}),
             });
 
             await this.parametreRepo.save(entity);

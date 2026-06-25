@@ -15,5 +15,11 @@ export {
     etablissementSelectionService 
 } from './etablissement-selection.service';
 
+// Gestion des affectations multi-établissements
+export {
+    UtilisateurEtablissementService,
+    utilisateurEtablissementService
+} from './utilisateur-etablissement.service';
+
 // Préférences utilisateur
 export { preferenceUtilisateurService, DEFAULT_PREFERENCES } from './preference-utilisateur.service';

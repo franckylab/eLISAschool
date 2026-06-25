@@ -58,6 +58,8 @@ interface ElisaButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'>, 
     leftIcon?: ReactNode; // Alias pour icon (compatibilité)
     iconRight?: ReactNode;
     isLoading?: boolean;
+    chargement?: boolean; // Alias français de isLoading
+    loading?: boolean; // Alias alternatif
     loadingText?: string;
     shortcut?: string;
     type?: ButtonHTMLAttributes<HTMLButtonElement>['type'];
@@ -80,10 +82,13 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
             type = 'button',
             disabled,
             loading, // Extraire la prop 'loading' pour éviter qu'elle ne soit spreadée dans le DOM
+            chargement, // Extraire la prop 'chargement' (alias français de isLoading)
             ...props
         },
         ref,
     ) => {
+        // Utiliser soit isLoading, soit chargement, soit loading
+        const isLoadingFinal = isLoading || chargement || loading;
         const iconSize = {
             xs: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)',
             sm: 'clamp(0.875rem, 0.75rem + 0.4vw, 1rem)',
@@ -107,13 +112,13 @@ export const ElisaButton = forwardRef<HTMLButtonElement, ElisaButtonProps>(
                 type={type}
                 className={cn(buttonVariants({ variant, size, fullWidth, className }))}
                 style={{ gap: 'var(--gap-sm)', borderRadius: 'var(--radius-md)', fontSize: textSize }}
-                disabled={disabled || isLoading}
-                whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-                whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
+                disabled={disabled || isLoadingFinal}
+                whileHover={{ scale: disabled || isLoadingFinal ? 1 : 1.02 }}
+                whileTap={{ scale: disabled || isLoadingFinal ? 1 : 0.98 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 {...(props as HTMLMotionProps<'button'>)}
             >
-                {isLoading ? (
+                {isLoadingFinal ? (
                     <>
                         <Loader2 className="animate-spin" style={{ width: iconSize, height: iconSize }} />
                         {loadingText || children}

@@ -9,7 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ExamensNationauxService } from '../services';
 import { createExamenNationalSchema, updateExamenNationalSchema, queryExamensNationauxSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 
@@ -43,7 +43,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 });
 
 // POST /api/examens-nationaux - Créer un examen
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createExamenNationalSchema, req.body);
         const examen = await examensNationauxService.create(dto);
@@ -52,7 +52,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
 });
 
 // PATCH /api/examens-nationaux/:id - Modifier un examen
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateExamenNationalSchema, req.body);
         const examen = await examensNationauxService.update(req.params.id, dto);
@@ -61,7 +61,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
 });
 
 // DELETE /api/examens-nationaux/:id - Supprimer un examen
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await examensNationauxService.delete(req.params.id);
         res.json({ success: true, message: 'Examen national supprimé' });

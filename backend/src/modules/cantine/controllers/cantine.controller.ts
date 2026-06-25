@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CantineService } from '../services/cantine.service';
 import { createMenuSchema, createInscriptionSchema, rechargerSoldeSchema, enregistrerConsommationSchema, queryMenusSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { CANTINE_DEFAULT_CONFIG } from '../config/cantine.config';
@@ -40,7 +40,7 @@ router.get('/menus/aujourd-hui', authMiddleware, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/menus', authMiddleware, requireRoles(Role.RESPONSABLE_CANTINE, Role.ADMIN, Role.SUPER_ADMIN), async (req, res, next) => {
+router.post('/menus', authMiddleware, requirePermission('cantine:manage'), async (req, res, next) => {
     try {
         const dto = validateDto(createMenuSchema, req.body);
         const etablissementId = (req as any).utilisateur?.etablissementId;
@@ -49,7 +49,7 @@ router.post('/menus', authMiddleware, requireRoles(Role.RESPONSABLE_CANTINE, Rol
     } catch (error) { next(error); }
 });
 
-router.post('/inscriptions', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_CANTINE), async (req, res, next) => {
+router.post('/inscriptions', authMiddleware, requirePermission('config:edit'), async (req, res, next) => {
     try {
         const dto = validateDto(createInscriptionSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -67,7 +67,7 @@ router.get('/inscriptions/:eleveId', authMiddleware, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/inscriptions/:id/recharger', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE_CANTINE), async (req, res, next) => {
+router.post('/inscriptions/:id/recharger', authMiddleware, requirePermission('config:edit'), async (req, res, next) => {
     try {
         const dto = validateDto(rechargerSoldeSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -77,7 +77,7 @@ router.post('/inscriptions/:id/recharger', authMiddleware, requireRoles(Role.ADM
     } catch (error) { next(error); }
 });
 
-router.post('/consommations', authMiddleware, requireRoles(Role.RESPONSABLE_CANTINE, Role.ADMIN, Role.SUPER_ADMIN), async (req, res, next) => {
+router.post('/consommations', authMiddleware, requirePermission('cantine:manage'), async (req, res, next) => {
     try {
         const dto = validateDto(enregistrerConsommationSchema, req.body);
         const userId = (req as any).utilisateur?.id;
@@ -91,7 +91,7 @@ router.post('/consommations', authMiddleware, requireRoles(Role.RESPONSABLE_CANT
 // CONFIGURATION
 // ==================================
 
-router.get('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/config', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ 
             success: true, 
@@ -102,7 +102,7 @@ router.get('/config', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN)
     } catch (error) { next(error); }
 });
 
-router.post('/config/reset', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/config/reset', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         // Ici, on pourrait ajouter une logique pour reset les paramètres en DB
         // Pour l'instant, on retourne la config par défaut

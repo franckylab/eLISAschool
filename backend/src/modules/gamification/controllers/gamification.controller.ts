@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { GamificationService } from '../services/gamification.service';
 import { createBadgeSchema, attribuerPointsSchema, attribuerBadgeSchema } from '../dto';
-import { authMiddleware, adminOnly } from '@modules/auth/middlewares';
+import { authMiddleware } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/badges', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/badges', authMiddleware, adminOnly, async (req, res, next) => {
+router.post('/badges', authMiddleware, async (req, res, next) => {
   try {
     const dto = validateDto(createBadgeSchema, req.body);
     const badge = await gamificationService.createBadge(dto);
@@ -51,7 +51,7 @@ router.get('/utilisateurs/:id/historique', authMiddleware, async (req, res, next
   } catch (error) { next(error); }
 });
 
-router.post('/points', authMiddleware, adminOnly, async (req, res, next) => {
+router.post('/points', authMiddleware, async (req, res, next) => {
   try {
     const dto = validateDto(attribuerPointsSchema, req.body);
     const points = await gamificationService.attribuerPoints(dto);
@@ -59,7 +59,7 @@ router.post('/points', authMiddleware, adminOnly, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/attribuer-badge', authMiddleware, adminOnly, async (req, res, next) => {
+router.post('/attribuer-badge', authMiddleware, async (req, res, next) => {
   try {
     const dto = validateDto(attribuerBadgeSchema, req.body);
     const badge = await gamificationService.attribuerBadge(dto);

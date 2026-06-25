@@ -8,7 +8,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { ImpressionsService } from '../services';
 import { createModeleSchema, updateModeleSchema, createImpressionSchema } from '../dto';
 import { TypeDocument } from '../entities';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -31,7 +31,7 @@ router.get('/modeles/:id', authMiddleware, async (req: Request, res: Response, n
     } catch (error) { next(error); }
 });
 
-router.post('/modeles', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/modeles', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createModeleSchema, req.body);
         const modele = await impressionsService.createModele(dto);
@@ -39,7 +39,7 @@ router.post('/modeles', authMiddleware, requireRoles(Role.ADMIN), async (req: Re
     } catch (error) { next(error); }
 });
 
-router.patch('/modeles/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/modeles/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateModeleSchema, req.body);
         const modele = await impressionsService.updateModele(req.params.id, dto);
@@ -47,7 +47,7 @@ router.patch('/modeles/:id', authMiddleware, requireRoles(Role.ADMIN), async (re
     } catch (error) { next(error); }
 });
 
-router.delete('/modeles/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/modeles/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await impressionsService.deleteModele(req.params.id);
         res.json({ success: true, message: 'Modèle supprimé' });
@@ -92,7 +92,7 @@ router.post('/file/:id/generer', authMiddleware, async (req: Request, res: Respo
 });
 
 // Traitement batch
-router.post('/traiter', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/traiter', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const count = await impressionsService.traiterFileImpression();
         res.json({ success: true, data: { traites: count } });

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
+import { useEtablissement } from '@/features/etablissement';
 import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { cn } from '@/lib/cn';
 import { CustomModal } from '@/components/modals';
@@ -304,6 +305,13 @@ export function LoginPage() {
     const { login, isLoading, completeLogin, preLoginData, showEtablissementModal, setShowEtablissementModal, reset } = useAuthStore();
     const router = useRouter();
     const search = useSearch({ from: '/login' }) as { redirect?: string };
+
+    // Charger le logo de l'établissement (si disponible via config publique)
+    const { data: etablissement } = useEtablissement(
+        useAuthStore.getState().etablissementId || '',
+        { enabled: false } // Désactivé par défaut sur login (pas d'ID encore)
+    );
+    const logoEtablissement = etablissement?.logoUrl;
 
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -614,6 +622,26 @@ export function LoginPage() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5 }}
                     >
+                        {/* Logo de l'établissement (si disponible) ou ElisaLogo */}
+                        <motion.div
+                            className="mb-6 flex justify-center"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.05 }}
+                        >
+                            {logoEtablissement ? (
+                                <img
+                                    src={logoEtablissement}
+                                    alt={etablissement?.nom || 'Logo établissement'}
+                                    className="h-16 w-16 rounded-2xl object-contain shadow-lg"
+                                />
+                            ) : (
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-dominante)]/10 to-[var(--color-dominante)]/5">
+                                    <ElisaLogo variant="icon" size="lg" />
+                                </div>
+                            )}
+                        </motion.div>
+
                         {/* Titre */}
                         <motion.div
                             initial={{ opacity: 0, y: -10 }}

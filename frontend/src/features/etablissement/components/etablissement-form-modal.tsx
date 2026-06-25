@@ -11,6 +11,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { useCreerEtablissement } from '../hooks/use-etablissements';
 import { SousSysteme, TypeEtablissement } from '../types/etablissement.types';
@@ -267,44 +268,18 @@ export function EtablissementFormModal({ onSuccess, onCancel }: EtablissementFor
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Couleurs et personnalisation</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                Couleur principale
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="color"
-                                    value={formData.couleurPrimaire || '#28a745'}
-                                    onChange={(e) => handleChange('couleurPrimaire', e.target.value)}
-                                    className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                                />
-                                <ElisaInput
-                                    value={formData.couleurPrimaire || ''}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('couleurPrimaire', e.target.value)}
-                                    placeholder="#28a745"
-                                    className="flex-1"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                Couleur secondaire
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="color"
-                                    value={formData.couleurSecondaire || '#ffc107'}
-                                    onChange={(e) => handleChange('couleurSecondaire', e.target.value)}
-                                    className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                                />
-                                <ElisaInput
-                                    value={formData.couleurSecondaire || ''}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('couleurSecondaire', e.target.value)}
-                                    placeholder="#ffc107"
-                                    className="flex-1"
-                                />
-                            </div>
-                        </div>
+                        <ColorPicker
+                            label="Couleur principale (dominante 60%)"
+                            value={formData.couleurPrimaire || '#28a745'}
+                            onChange={(v) => handleChange('couleurPrimaire', v)}
+                            hint="Couleur principale de l'établissement"
+                        />
+                        <ColorPicker
+                            label="Couleur secondaire (accent 30%)"
+                            value={formData.couleurSecondaire || '#ffc107'}
+                            onChange={(v) => handleChange('couleurSecondaire', v)}
+                            hint="Couleur d'accentuation"
+                        />
                     </div>
                 </div>
 

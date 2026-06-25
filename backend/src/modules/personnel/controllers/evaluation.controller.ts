@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { evaluationService } from '../services/evaluation.service';
@@ -20,7 +20,7 @@ const router = Router();
 router.post(
     '/',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createEvaluationSchema, req.body);
@@ -116,7 +116,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateEvaluationSchema, req.body);
@@ -138,7 +138,7 @@ router.patch(
 router.delete(
     '/:id',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
+    requirePermission('personnel:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const result = await evaluationService.delete(

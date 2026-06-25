@@ -11,8 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
-import { authMiddleware } from '@modules/auth';
-import { requireRoles } from '@modules/auth/middlewares/role.middleware';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils/validate-dto.util';
 import { auditFiltersSchema, auditExportSchema } from '../dto/audit-filters.dto';
@@ -24,7 +23,7 @@ const router = Router();
  * Récupère les logs d'audit avec filtres et pagination
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const filters = validateDto(auditFiltersSchema, req.query);
 
@@ -83,7 +82,7 @@ router.get('/logs', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), 
  * Récupère le détail d'un log d'audit
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs/:id', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const logs = await auditService.getLogs({ limit: 1 });
         const log = logs.items.find(l => l.id === req.params.id);
@@ -142,7 +141,7 @@ router.get('/logs/me', authMiddleware, async (req: Request, res: Response, next:
  * Export les logs d'audit en CSV ou JSON
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs/export', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const exportParams = validateDto(auditExportSchema, req.query);
 
@@ -182,7 +181,7 @@ router.get('/logs/export', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
  * Statistiques sur les logs d'audit
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs/statistics', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs/statistics', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         // Récupérer tous les logs (on pourrait optimiser avec des requêtes agrégées)
         const result = await auditService.getLogs({ limit: 10000, offset: 0 });

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Ciseaux artistiques -->
+    <line x1="250" y1="200" x2="400" y2="350" stroke-width="8" stroke-linecap="round" opacity="0.10"/>
+    <line x1="400" y1="200" x2="250" y2="350" stroke-width="8" stroke-linecap="round" opacity="0.10"/>
+    <circle cx="250" cy="200" r="20" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <circle cx="400" cy="200" r="20" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <line x1="1100" y1="400" x2="1250" y2="550" stroke-width="8" stroke-linecap="round" opacity="0.10"/>
+    <line x1="1250" y1="400" x2="1100" y2="550" stroke-width="8" stroke-linecap="round" opacity="0.10"/>
+
+  </g>
+</svg>

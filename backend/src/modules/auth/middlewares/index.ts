@@ -5,7 +5,8 @@
  */
 
 export { authMiddleware, optionalAuthMiddleware, UtilisateurAuth } from './auth.middleware';
-export { requireRoles, adminOnly, managerOnly, staffOnly } from './role.middleware';
+// ⚠️  requireRoles, adminOnly, managerOnly, staffOnly sont SUPPRIMÉS (voir role.middleware.ts)
+// Utiliser requirePermission() à la place
 export {
     requirePermission,
     requireAnyPermission,

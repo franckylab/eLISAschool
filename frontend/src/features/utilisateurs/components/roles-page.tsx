@@ -491,13 +491,13 @@ function RolePermissionsModal({ role, onClose }: { role: Role; onClose: () => vo
                                             </div>
                                             <div className="flex-shrink-0">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    user.statut === 'actif'
+                                                    user.statut === 'ACTIF'
                                                         ? 'bg-green-100 text-green-800'
-                                                        : user.statut === 'suspendu'
+                                                        : user.statut === 'SUSPENDU'
                                                         ? 'bg-red-100 text-red-800'
                                                         : 'bg-[var(--color-surface-hover)] text-[var(--color-texte-secondaire)]'
                                                 }`}>
-                                                    {user.statut === 'actif' ? 'Actif' : user.statut === 'suspendu' ? 'Suspendu' : user.statut || 'Inactif'}
+                                                    {user.statut === 'ACTIF' ? 'Actif' : user.statut === 'SUSPENDU' ? 'Suspendu' : user.statut || 'Inactif'}
                                                 </span>
                                             </div>
                                         </div>

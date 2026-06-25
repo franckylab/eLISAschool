@@ -15,7 +15,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { salleService } from '../services';
 import { createSalleSchema, updateSalleSchema, querySallesSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 
@@ -123,7 +123,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 /**
  * POST /api/salles - Créer une salle
  */
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createSalleSchema, req.body);
         const created = await salleService.create(dto, req.utilisateur?.etablissementId!);
@@ -136,7 +136,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role
 /**
  * PATCH /api/salles/:id - Modifier une salle
  */
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateSalleSchema, req.body);
         const updated = await salleService.update(req.params.id, dto, req.utilisateur?.etablissementId!);
@@ -149,7 +149,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, 
 /**
  * DELETE /api/salles/:id - Supprimer une salle
  */
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await salleService.delete(req.params.id, req.utilisateur?.etablissementId!);
         res.json({ success: true, message: 'Salle supprimée avec succès' });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { MaterielService } from '../services/materiel.service';
 import { createMaterielSchema, pretMaterielSchema, retourMaterielSchema } from '../dto';
-import { authMiddleware, staffOnly } from '@modules/auth/middlewares';
+import { authMiddleware } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.get('/prets', authMiddleware, staffOnly, async (req, res, next) => {
+router.get('/prets', authMiddleware, async (req, res, next) => {
     try {
         const prets = await materielService.getPretsEnCours();
         res.json({ success: true, data: prets, timestamp: new Date().toISOString() });
@@ -28,7 +28,7 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, staffOnly, async (req, res, next) => {
+router.post('/', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(createMaterielSchema, req.body);
         const materiel = await materielService.create(dto, undefined, req.utilisateur?.id);
@@ -36,7 +36,7 @@ router.post('/', authMiddleware, staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/prets', authMiddleware, staffOnly, async (req, res, next) => {
+router.post('/prets', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(pretMaterielSchema, req.body);
         const pret = await materielService.preter(dto, undefined, req.utilisateur?.id);
@@ -44,7 +44,7 @@ router.post('/prets', authMiddleware, staffOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/prets/:id/retour', authMiddleware, staffOnly, async (req, res, next) => {
+router.post('/prets/:id/retour', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(retourMaterielSchema, req.body);
         const pret = await materielService.retourner(req.params.id, dto);

@@ -117,15 +117,15 @@ export function UtilisateurDetailPage() {
                 transition={{ delay: 0.1 }}
             >
                 <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${
-                    utilisateur.statut === 'actif' ? 'bg-green-100 text-green-800' :
-                    utilisateur.statut === 'suspendu' ? 'bg-red-100 text-red-800' :
+                    utilisateur.statut === 'ACTIF' ? 'bg-green-100 text-green-800' :
+                    utilisateur.statut === 'SUSPENDU' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
                 }`}>
-                    {utilisateur.statut === 'actif' ? <CheckCircle className="h-4 w-4" /> :
-                     utilisateur.statut === 'suspendu' ? <XCircle className="h-4 w-4" /> :
+                    {utilisateur.statut === 'ACTIF' ? <CheckCircle className="h-4 w-4" /> :
+                     utilisateur.statut === 'SUSPENDU' ? <XCircle className="h-4 w-4" /> :
                      <AlertCircle className="h-4 w-4" />}
-                    {utilisateur.statut === 'actif' ? 'Actif' :
-                     utilisateur.statut === 'suspendu' ? 'Suspendu' : 'Inactif'}
+                    {utilisateur.statut === 'ACTIF' ? 'Actif' :
+                     utilisateur.statut === 'SUSPENDU' ? 'Suspendu' : 'Inactif'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-dominant-100)] px-4 py-2 text-sm font-medium text-[var(--color-dominant-800)]">
                     <Shield className="h-4 w-4" />
@@ -371,13 +371,13 @@ function OngletParametres({ utilisateur }: { utilisateur: any }) {
                     />
                     <ParametreItem
                         titre="Suspendre le compte"
-                        description={utilisateur.statut === 'suspendu' ? 'Compte actuellement suspendu' : 'Compte actuellement actif'}
+                        description={utilisateur.statut === 'SUSPENDU' ? 'Compte actuellement suspendu' : 'Compte actuellement actif'}
                         action={
                             <ElisaButton 
-                                variant={utilisateur.statut === 'suspendu' ? 'primary' : 'warning'} 
+                                variant={utilisateur.statut === 'SUSPENDU' ? 'primary' : 'warning'} 
                                 size="sm"
                             >
-                                {utilisateur.statut === 'suspendu' ? 'Réactiver' : 'Suspendre'}
+                                {utilisateur.statut === 'SUSPENDU' ? 'Réactiver' : 'Suspendre'}
                             </ElisaButton>
                         }
                     />

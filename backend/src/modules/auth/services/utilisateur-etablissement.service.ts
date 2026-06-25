@@ -15,6 +15,7 @@ import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { VerificationRetraitResponse, BlocageRetrait, AvertissementRetrait } from '../dto';
+import { auditService, AuditAction, AuditSeverity } from './audit.service';
 
 export interface AffecterUtilisateurDto {
     utilisateurId: string;
@@ -174,6 +175,27 @@ export class UtilisateurEtablissementService {
         motifRetrait?: string,
         nouveauPrincipalId?: string
     ): Promise<void> {
+        logger.info(
+            `[RETRAIT][BACKEND] Début du retrait: utilisateurId=${utilisateurId}, etablissementId=${etablissementId}` +
+            (motifRetrait ? `, motif="${motifRetrait}"` : '') +
+            (nouveauPrincipalId ? `, nouveauPrincipalId=${nouveauPrincipalId}` : '')
+        );
+        
+        // DIAGNOSTIC: Vérifier TOUTES les affectations pour cet utilisateur + établissement
+        const toutesAffectations = await AppDataSource.getRepository('UtilisateurEtablissement').find({
+            where: { utilisateurId, etablissementId }
+        });
+        logger.info(
+            `[DIAGNOSTIC] Nombre total d'affectations trouvées: ${toutesAffectations.length}`,
+            toutesAffectations.map(a => ({
+                id: a.id,
+                actif: a.actif,
+                role: a.role,
+                etablissementPrincipal: a.etablissementPrincipal,
+                dateFin: a.dateFin
+            }))
+        );
+        
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -183,6 +205,16 @@ export class UtilisateurEtablissementService {
             const affectation = await queryRunner.manager.findOne(UtilisateurEtablissement, {
                 where: { utilisateurId, etablissementId }
             });
+
+            logger.info(
+                `[RETRAIT][BACKEND] Affectation trouvée:`,
+                affectation ? {
+                    id: affectation.id,
+                    actif: affectation.actif,
+                    role: affectation.role,
+                    etablissementPrincipal: affectation.etablissementPrincipal
+                } : 'AUCUNE'
+            );
 
             // IDEMPOTENCE TOTALE : Si l'affectation n'existe pas, considérer comme succès
             if (!affectation) {
@@ -205,6 +237,10 @@ export class UtilisateurEtablissementService {
             // LOGIQUE DE RETRAIT (v5.0):
             // 1. Si c'était l'établissement principal, en attribuer un autre
             if (affectation.etablissementPrincipal) {
+                logger.info(
+                    `[RETRAIT][BACKEND] L'établissement à retirer est PRINCIPAL, recherche d'un remplacement...`
+                );
+                
                 let nouvelEtablissementPrincipal: UtilisateurEtablissement | null = null;
 
                 // Si nouveauPrincipalId est spécifié, l'utiliser
@@ -242,6 +278,10 @@ export class UtilisateurEtablissementService {
             }
 
             // 2. Désactiver l'affectation
+            logger.info(
+                `[RETRAIT][BACKEND] Désactivation de l'affectation: ${affectation.id}`
+            );
+            
             affectation.actif = false;
             affectation.dateFin = new Date();
             if (motifRetrait) {
@@ -249,15 +289,32 @@ export class UtilisateurEtablissementService {
             }
             await queryRunner.manager.save(affectation);
 
-            // 3. Logger l'audit
+            // 3. Vérifier l'état après sauvegarde
+            const verification = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                where: { id: affectation.id }
+            });
+            
+            logger.info(
+                `[RETRAIT][BACKEND] Après sauvegarde - actif=${verification?.actif}, dateFin=${verification?.dateFin}`
+            );
+
+            // 4. Logger l'audit
             logger.info(
                 `[RETRAIT] Utilisateur ${utilisateurId} retiré de ${etablissementId}` +
                 (motifRetrait ? ` (Motif: ${motifRetrait})` : '')
             );
 
             await queryRunner.commitTransaction();
+            
+            logger.info(
+                `[RETRAIT][BACKEND] Transaction commitée avec succès pour ${utilisateurId} → ${etablissementId}`
+            );
         } catch (error) {
             await queryRunner.rollbackTransaction();
+            logger.error(
+                `[RETRAIT][BACKEND] ERREUR - Transaction rollbackée:`,
+                error instanceof Error ? error.message : String(error)
+            );
             throw error;
         } finally {
             await queryRunner.release();
@@ -410,6 +467,119 @@ export class UtilisateurEtablissementService {
             where: { utilisateurId, etablissementPrincipal: true, actif: true },
             relations: ['etablissement']
         });
+    }
+
+    /**
+     * Active ou désactive un utilisateur dans un établissement
+     * Avec motif obligatoire et traçabilité audit
+     */
+    async toggleStatut(
+        utilisateurId: string,
+        etablissementId: string,
+        actif: boolean,
+        motif: string,
+        effectueParId: string,
+        req?: any
+    ): Promise<UtilisateurEtablissement> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // 1. Trouver l'affectation
+            const affectation = await queryRunner.manager.findOne(UtilisateurEtablissement, {
+                where: { utilisateurId, etablissementId },
+                relations: ['utilisateur']
+            });
+
+            if (!affectation) {
+                throw new AppError(
+                    'Affectation non trouvée pour cet utilisateur dans cet établissement',
+                    404,
+                    'AFFECTATION_NOT_FOUND'
+                );
+            }
+
+            // 2. Vérifier que le statut change vraiment
+            if (affectation.actif === actif) {
+                throw new AppError(
+                    `L'utilisateur est déjà ${actif ? 'actif' : 'inactif'} dans cet établissement`,
+                    400,
+                    'STATUT_DEJA_APPLIQUE'
+                );
+            }
+
+            // 3. Si désactivation, vérifier les dépendances
+            if (!actif) {
+                const verification = await this.verifierRetrait(utilisateurId, etablissementId);
+                if (verification.blocages && verification.blocages.length > 0) {
+                    throw new AppError(
+                        `Impossible de désactiver : ${verification.blocages.map(b => b.message).join(', ')}`,
+                        400,
+                        'BLOCAGE_DEPENDANCE',
+                        false,
+                        { blocages: verification.blocages }
+                    );
+                }
+            }
+
+            // 4. Mettre à jour le statut
+            const ancienStatut = affectation.actif;
+            affectation.actif = actif;
+            
+            if (!actif) {
+                affectation.dateFin = new Date();
+            } else {
+                affectation.dateFin = null;
+                affectation.dateDebut = affectation.dateDebut || new Date();
+            }
+            
+            affectation.motif = motif;
+
+            await queryRunner.manager.save(affectation);
+
+            // 5. Audit trail avec nom/prenom/pseudonyme
+            const utilisateur = affectation.utilisateur;
+            
+            // Charger le profil séparément (pas de relation directe)
+            const ProfilUtilisateur = await queryRunner.manager.query(
+                `SELECT nom, prenom FROM profils_utilisateurs WHERE "utilisateurId" = $1 LIMIT 1`,
+                [utilisateurId]
+            );
+            const profil = ProfilUtilisateur.length > 0 ? ProfilUtilisateur[0] : null;
+            
+            const nomComplet = profil 
+                ? `${profil.prenom || ''} ${profil.nom || ''}`.trim()
+                : utilisateur?.email || utilisateurId;
+            const pseudonyme = utilisateur?.pseudonyme || '';
+            
+            const description = `${nomComplet}${pseudonyme ? ` (${pseudonyme})` : ''} <${utilisateur?.email || 'N/A'}> — ${actif ? 'Réactivé' : 'Désactivé'} — Motif: ${motif}`;
+
+            await auditService.log({
+                utilisateurId: effectueParId,
+                action: actif ? AuditAction.USER_ACTIVATE : AuditAction.USER_SUSPEND,
+                severity: AuditSeverity.WARNING,
+                cible: 'UtilisateurEtablissement',
+                cibleId: affectation.id,
+                description,
+                anciennesValeurs: { actif: ancienStatut },
+                nouvellesValeurs: { actif, motif },
+                module: 'utilisateurs',
+            }, req);
+
+            await queryRunner.commitTransaction();
+
+            logger.info(
+                `[TOGGLE_STATUT] Utilisateur ${utilisateurId} ${actif ? 'réactivé' : 'désactivé'} dans ${etablissementId} par ${effectueParId} — Motif: ${motif}`
+            );
+
+            return affectation;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**

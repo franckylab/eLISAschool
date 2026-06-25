@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { NotesService } from '../services/notes.service';
 import { createNoteSchema, updateNoteSchema, createBulkNotesSchema, queryNotesSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
@@ -31,7 +31,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     } catch (error) { next(error); }
 });
 
-router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createNoteSchema, req.body);
         const note = await notesService.create(dto, req.utilisateur!.id, req.etablissementId);
@@ -39,7 +39,7 @@ router.post('/', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEME
     } catch (error) { next(error); }
 });
 
-router.post('/bulk', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/bulk', requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createBulkNotesSchema, req.body);
         const count = await notesService.createBulk(dto, req.utilisateur!.id, req.etablissementId);
@@ -47,7 +47,7 @@ router.post('/bulk', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLIS
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateNoteSchema, req.body);
         const note = await notesService.update(req.params.id, dto, req.utilisateur!.id);
@@ -55,7 +55,7 @@ router.patch('/:id', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLIS
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', requireRoles(Role.ENSEIGNANT, Role.ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requirePermission('enseignant:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await notesService.remove(req.params.id, req.utilisateur!.id);
         res.json({ success: true, message: 'Note supprimée' });

@@ -10,8 +10,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { utilisateurEtablissementService } from '../services/utilisateur-etablissement.service';
 import { etablissementSelectionService } from '../services/etablissement-selection.service';
+import { permissionResolverService } from '../services/permission-resolver.service';
 import { tokenService } from '../services/token.service';
 import { auditService, AuditAction, AuditSeverity } from '../services/audit.service';
+import { AppDataSource } from '@database/data-source';
 import {
     loginSchema,
     registerSchema,
@@ -258,7 +260,7 @@ router.get('/blocage-status/:identifiant', async (req: Request, res: Response, n
  */
 router.get('/me', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const utilisateur = await authService.getCurrentUser(req.utilisateur!.id);
+        const utilisateur = await authService.getCurrentUser(req.utilisateur!.id, req.utilisateur?.etablissementId);
 
         res.status(200).json({
             success: true,
@@ -281,6 +283,7 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
     try {
         const { etablissementId } = validateDto(switchEtablissementSchema, req.body);
         const utilisateurId = req.utilisateur!.id;
+        const currentEtablissement = req.utilisateur?.etablissementId;
 
         // Vérifier que l'utilisateur a accès à cet établissement
         const hasAccess = await utilisateurEtablissementService.hasAccess(
@@ -296,14 +299,19 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
             );
         }
 
-        // Vérifier si le rôle permet le changement d'établissement
-        const utilisateur = req.utilisateur! as any;
-        const etablissements = utilisateur.etablissements || [];
-        const etablissementData = etablissements.find((e: any) => e.etablissementId === etablissementId);
+        // Charger l'établissement et son rôle
+        const utilisateurEtablissement = await AppDataSource.getRepository('UtilisateurEtablissement').findOne({
+            where: { utilisateurId, etablissementId, actif: true },
+            relations: ['role'],
+        });
 
-        if (!etablissementData) {
+        if (!utilisateurEtablissement) {
             throw new AppError('Établissement non trouvé dans vos affectations', 404, 'NOT_FOUND');
         }
+
+        // Re-résoudre les permissions pour le nouvel établissement
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId, etablissementId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateurId, etablissementId);
 
         // Logger le changement pour audit
         await auditService.log(
@@ -324,12 +332,12 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
         // Générer un nouveau JWT avec le nouvel établissement
         const payload = {
             sub: utilisateurId,
-            email: utilisateur.email,
-            role: utilisateur.role,
-            roles: utilisateur.roles,
-            permissions: utilisateur.permissions,
+            email: req.utilisateur?.email,
+            role: utilisateurEtablissement.role.code,
+            roles: userRoles.map(r => r.code),
+            permissions: Array.from(resolvedPermissions),
             etablissementId: etablissementId,
-            etablissements: utilisateur.etablissements,
+            etablissements: req.utilisateur?.etablissements || [],
         };
 
         const newAccessToken = tokenService.generateAccessToken(payload as any);
@@ -343,7 +351,7 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
                 accessToken: newAccessToken,
                 etablissementActif: {
                     id: etablissementId,
-                    role: etablissementData.role,
+                    role: utilisateurEtablissement.role.code,
                 },
             },
         });

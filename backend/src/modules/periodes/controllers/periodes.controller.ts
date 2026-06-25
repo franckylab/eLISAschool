@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { PeriodesService } from '../services';
 import { createPeriodeSchema, updatePeriodeSchema, createTypePeriodeSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
@@ -23,7 +23,7 @@ router.get('/types', authMiddleware, async (req: Request, res: Response, next: N
     } catch (error) { next(error); }
 });
 
-router.post('/types', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/types', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createTypePeriodeSchema, req.body);
         const type = await service.createType(dto);
@@ -42,7 +42,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPeriodeSchema, req.body);
         const periode = await service.create(dto);
@@ -50,7 +50,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), asy
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePeriodeSchema, req.body);
         const periode = await service.update(req.params.id, dto, req.utilisateur?.id, req.etablissementId);
@@ -58,7 +58,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN),
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await service.delete(req.params.id);
         res.json({ success: true, message: 'Période supprimée' });

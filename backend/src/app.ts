@@ -13,6 +13,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import { envConfig } from '@config/env.config';
 import { logger } from '@common/utils/logger.util';
@@ -81,6 +82,7 @@ import { typesEnumController } from '@modules/types-enum';
 import { organisationController } from '@modules/organisation';
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
+import { apparenceController } from '@modules/apparence';
 
 /**
  * Crée et configure l'application Express
@@ -166,6 +168,35 @@ export function createApp(): Application {
 
     // Parsing des données URL-encoded
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // ==================================
+    // Fichiers statiques (uploads)
+    // ==================================
+
+    // Servir les fichiers uploadés (fonds d'écran, logos, documents, etc.)
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    app.use('/uploads', express.static(uploadsDir, {
+        maxAge: '7d', // Cache 7 jours pour les fichiers statiques
+        setHeaders: (res, filePath) => {
+            // Headers CORS pour les fichiers SVG
+            if (filePath.endsWith('.svg')) {
+                res.setHeader('Content-Type', 'image/svg+xml');
+                res.setHeader('Cache-Control', 'public, max-age=604800');
+            }
+        },
+    }));
+
+    // Servir les fonds d'écran du catalogue (fichiers système)
+    const fondsCatalogueDir = path.join(process.cwd(), '..', 'public', 'fonds-catalogue');
+    app.use('/fonds-catalogue', express.static(fondsCatalogueDir, {
+        maxAge: '30d', // Cache 30 jours pour les fichiers système (rarement modifiés)
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.svg')) {
+                res.setHeader('Content-Type', 'image/svg+xml');
+                res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+            }
+        },
+    }));
 
     // ==================================
     // Middlewares de logging
@@ -318,6 +349,7 @@ export function createApp(): Application {
     app.use('/api/monitoring', authMiddleware, requireModuleActive('monitoring'), monitoringController); // Monitoring peut être global
     app.use('/api/dashboard', authMiddleware, requireModuleActive('dashboard'), filterByEtablissement(), dashboardController);
     app.use('/api/validation-workflows', authMiddleware, filterByEtablissement(), validationWorkflowController);
+    app.use('/api/apparence', authMiddleware, filterByEtablissement(), apparenceController);
     app.use('/api/groupes-etablissements', authMiddleware, filterByEtablissement(), groupesController);
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     

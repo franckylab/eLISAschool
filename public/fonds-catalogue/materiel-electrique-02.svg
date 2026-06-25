@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Oscilloscopes -->
+    <rect x="200" y="150" width="350" height="250" rx="10" fill="currentColor" opacity="0.05"/>
+    <rect x="220" y="170" width="200" height="150" rx="5" fill="currentColor" opacity="0.08"/>
+    <path d="M220,245 Q270,200 320,245 T420,245" stroke-width="3" fill="none"/>
+    <rect x="1100" y="300" width="350" height="250" rx="10" fill="currentColor" opacity="0.05"/>
+    <path d="M1120,425 Q1170,380 1220,425 T1320,425" stroke-width="3" fill="none"/>
+
+  </g>
+</svg>

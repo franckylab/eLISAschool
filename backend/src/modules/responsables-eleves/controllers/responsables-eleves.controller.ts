@@ -11,7 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ParentsService, PortalParentService } from '../services';
 import { lierParentSchema, updateResponsableSchema } from '../dto';
-import { authMiddleware, requireRoles, requirePermission } from '@modules/auth/middlewares';
+import { requirePermission, authMiddleware } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 
@@ -41,7 +41,7 @@ function validateDto(schema: any, data: unknown): any {
 router.post(
     '/lier',
     authMiddleware,
-    requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL),
+    requirePermission('eleves:manage'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(lierParentSchema, req.body);

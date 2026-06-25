@@ -22,7 +22,7 @@ import {
 } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { Etablissement } from '@modules/etablissement/entities';
-import { UtilisateurRole } from './utilisateur-role.entity';
+// DEPRECATED: UtilisateurRole supprimé - rôles gérés exclusivement via UtilisateurEtablissement
 import { UtilisateurPermission } from './utilisateur-permission.entity';
 import { UtilisateurEtablissement } from './utilisateur-etablissement.entity';
 import { Role } from '@shared/enums/roles.enum';
@@ -111,11 +111,9 @@ export class Utilisateur {
     // Multi-établissements géré exclusivement via utilisateur_etablissements
 
     /**
-     * Relations RBAC (multi-rôles et permissions personnalisées)
+     * Relations RBAC v3.0 (Multi-tenant strict)
+     * DEPRECATED: utilisateurRoles supprimé - rôles gérés exclusivement via utilisateurEtablissements
      */
-    @OneToMany(() => UtilisateurRole, ur => ur.utilisateur)
-    utilisateurRoles!: UtilisateurRole[];
-
     @OneToMany(() => UtilisateurPermission, up => up.utilisateur)
     utilisateurPermissions!: UtilisateurPermission[];
 

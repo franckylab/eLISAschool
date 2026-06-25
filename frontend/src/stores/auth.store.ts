@@ -49,12 +49,21 @@ export interface EtablissementDisponible {
     logoUrl?: string;
 }
 
+interface EtablissementStore {
+    id: string;
+    nom?: string;
+    role: string;
+    etablissementPrincipal: boolean;
+    actif: boolean;
+}
+
 interface AuthState {
     accessToken: string | null;
     refreshToken: string | null;
     utilisateur: UtilisateurConnecte | null;
     etablissementId: string | null;
     etablissements: Etablissement[];
+    etablissementsDisponibles: EtablissementDisponible[]; // Nouveau: avec noms
     isLoading: boolean;
     isAuthenticated: boolean;
     _initialized: boolean; // Pour l'initialisation unique
@@ -70,6 +79,8 @@ interface AuthState {
     setTokens: (accessToken: string, refreshToken: string) => void;
     setUtilisateur: (utilisateur: UtilisateurConnecte) => void;
     setEtablissements: (etablissements: Etablissement[]) => void;
+    setEtablissementsDisponibles: (etablissements: EtablissementDisponible[]) => void; // Nouveau
+    fetchEtablissementsDisponibles: () => Promise<void>; // Nouveau
     switchEtablissement: (etablissementId: string) => Promise<void>;
     verifierSession: () => Promise<boolean>;
     reset: () => void;
@@ -83,6 +94,7 @@ const initialState = {
     utilisateur: null,
     etablissementId: null,
     etablissements: [],
+    etablissementsDisponibles: [], // Nouveau
     isLoading: false,
     isAuthenticated: false,
     preLoginData: null,
@@ -95,6 +107,21 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             ...initialState,
 
+            setEtablissementsDisponibles: (etablissements: EtablissementDisponible[]) => {
+                console.log('[Auth Store] setEtablissementsDisponibles:', etablissements);
+                set({ etablissementsDisponibles: etablissements });
+            },
+
+            fetchEtablissementsDisponibles: async () => {
+                try {
+                    const etablissements = await apiClient.getEtablissementsDisponibles();
+                    console.log('[Auth Store] fetchEtablissementsDisponibles:', etablissements);
+                    set({ etablissementsDisponibles: etablissements });
+                } catch (error) {
+                    console.warn('[Auth Store] Erreur chargement etablissementsDisponibles:', error);
+                }
+            },
+
             login: async (identifiant: string, motDePasse: string) => {
                 set({ isLoading: true });
                 try {
@@ -102,7 +129,7 @@ export const useAuthStore = create<AuthState>()(
                     const data = await apiClient.login(identifiant, motDePasse);
                     
                     // Étape 2 : Stocker les infos utilisateur SANS token complet si multi-établissements
-                    set({
+                    const newState = {
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
                         utilisateur: {
@@ -114,10 +141,16 @@ export const useAuthStore = create<AuthState>()(
                             prenom: data.utilisateur.prenom,
                         },
                         etablissements: data.utilisateur.etablissements || [],
+                        etablissementsDisponibles: data.etablissementsDisponibles || [], // Nouveau
                         etablissementId: data.utilisateur.etablissementActif || null,
                         isAuthenticated: true,
                         isLoading: false,
-                    });
+                    };
+                    
+                    const etabNom = data.etablissementsDisponibles?.find(e => e.id === newState.etablissementId)?.nom || 'Non trouvé';
+                    console.log('[Auth Store] Login initialisé. Établissement actif:', newState.etablissementId, '- Nom:', etabNom);
+                    
+                    set(newState);
 
                     // Étape 3 : Synchroniser avec api-client
                     apiClient.setTokens({
@@ -144,6 +177,9 @@ export const useAuthStore = create<AuthState>()(
                             if (meResponse.data) {
                                 const currentUtilisateur = get().utilisateur;
                                 const currentEtablissementId = get().etablissementId; // ✅ Préserver
+                                const resolvedEtablissementId = meResponse.data.etablissementActif || currentEtablissementId;
+                                
+                                console.log('[Auth Store] login/me - Établissement actif résolu par le backend:', meResponse.data.etablissementActif, 'conservé localement:', resolvedEtablissementId);
                                 
                                 set({ 
                                     utilisateur: {
@@ -152,13 +188,13 @@ export const useAuthStore = create<AuthState>()(
                                         permissions: meResponse.data.permissions || [],
                                     },
                                     // ✅ Utiliser etablissementActif du /me OU préserver l'existant
-                                    etablissementId: meResponse.data.etablissementActif || currentEtablissementId,
+                                    etablissementId: resolvedEtablissementId,
                                     // ✅ Mettre à jour la liste des établissements
                                     etablissements: meResponse.data.etablissements || get().etablissements,
                                 });
                             }
-                        } catch {
-                            // Non-bloquant - préserver l'état existant
+                        } catch (error) {
+                            console.warn('[Auth Store] Échec chargement profil dans login (non bloquant):', error);
                         }
                     }
                 } catch (error) {
@@ -190,9 +226,11 @@ export const useAuthStore = create<AuthState>()(
 
             setEtablissements: (etablissements: Etablissement[]) => {
                 const actif = etablissements.find(e => e.actif);
+                const resolvedId = actif?.etablissementId || etablissements[0]?.etablissementId || null;
+                console.log('[Auth Store] setEtablissements - Établissement actif détecté:', resolvedId, 'depuis les établissements:', etablissements);
                 set({
                     etablissements,
-                    etablissementId: actif?.etablissementId || etablissements[0]?.etablissementId || null,
+                    etablissementId: resolvedId,
                 });
             },
 
@@ -202,6 +240,8 @@ export const useAuthStore = create<AuthState>()(
                     const data = await apiClient.switchEtablissement(etablissementId);
                     
                     // ÉTAPE 1: Mettre à jour accessToken et etablissementId
+                    const etabNom = get().etablissementsDisponibles?.find(e => e.id === etablissementId)?.nom || 'Non trouvé';
+                    console.log('[Auth Store] switchEtablissement - Nouveau token reçu. Établissement actif:', data.etablissementActif.id, '- Nom:', etabNom);
                     set({
                         accessToken: data.accessToken,
                         etablissementId: data.etablissementActif.id,
@@ -219,6 +259,7 @@ export const useAuthStore = create<AuthState>()(
                         const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
                         if (meResponse.data) {
                             const currentUtilisateur = get().utilisateur;
+                            console.log('[Auth Store] switchEtablissement/me - Profil rechargé. Établissement actif du profil:', meResponse.data.etablissementActif);
                             
                             set({ 
                                 utilisateur: {
@@ -250,17 +291,22 @@ export const useAuthStore = create<AuthState>()(
                     const response = await apiClient.get('/api/auth/me');
                     if (response.success && response.data) {
                         const userData = response.data as UtilisateurConnecte;
+                        console.log('[Auth Store] verifierSession - Session active valide. Établissement actif dans le profil:', userData.etablissementActif, 'Établissement actif actuel du store:', get().etablissementId);
+                        
                         set({ 
                             utilisateur: {
                                 ...userData,
                                 permissions: userData.permissions || [],
                             },
+                            // S'assurer de synchroniser l'établissement actif du /me
+                            etablissementId: userData.etablissementActif || get().etablissementId,
                             isAuthenticated: true 
                         });
                         return true;
                     }
                     return false;
-                } catch {
+                } catch (error) {
+                    console.warn('[Auth Store] verifierSession - Échec vérification session (non bloquant):', error);
                     apiClient.clearTokens();
                     set(initialState);
                     return false;
@@ -291,10 +337,12 @@ export const useAuthStore = create<AuthState>()(
                     if (response.data) {
                         const data = response.data;
                         
+                        const etabNom = data.etablissementsDisponibles?.find((e: any) => e.id === data.utilisateur.etablissementActif)?.nom || 'Non trouvé';
                         console.log('[Auth Store] completeLogin - Données reçues:', {
                             userId: data.utilisateur.id,
                             role: data.utilisateur.role,
                             etablissementId: data.utilisateur.etablissementActif,
+                            etablissementNom: etabNom,
                             hasRefreshToken: !!data.refreshToken,
                         });
                         
@@ -304,6 +352,7 @@ export const useAuthStore = create<AuthState>()(
                             refreshToken: data.refreshToken,
                             etablissementId: data.utilisateur.etablissementActif,
                             etablissements: data.utilisateur.etablissements,
+                            etablissementsDisponibles: data.etablissementsDisponibles || [], // Nouveau
                             utilisateur: {
                                 id: data.utilisateur.id,
                                 email: data.utilisateur.email,
@@ -390,9 +439,16 @@ export const useAuthStore = create<AuthState>()(
             },
 
             // NOUVEAU: Initialisation unique au démarrage
-            initialize: () => {
+            initialize: async () => {
                 const state = get();
                 if (state._initialized) return;
+                
+                console.log('[Auth Store] Initialisation du store... État actuel:', {
+                    isAuthenticated: state.isAuthenticated,
+                    etablissementId: state.etablissementId,
+                    etablissements: state.etablissements,
+                    utilisateur: state.utilisateur ? { id: state.utilisateur.id, role: state.utilisateur.role } : null
+                });
                 
                 // Synchroniser les tokens stockés avec api-client
                 if (state.accessToken && state.refreshToken) {
@@ -400,10 +456,18 @@ export const useAuthStore = create<AuthState>()(
                         accessToken: state.accessToken,
                         refreshToken: state.refreshToken,
                     });
-                    console.log('[Auth Store] Tokens synchronisés avec API Client');
+                    const etabNom = state.etablissementsDisponibles?.find(e => e.id === state.etablissementId)?.nom || 'Non trouvé';
+                    console.log('[Auth Store] Tokens synchronisés avec API Client. Établissement actif initialisé au démarrage:', state.etablissementId, '- Nom:', etabNom);
+                    
+                    // Fetch etablissementsDisponibles if not already present
+                    if (state.isAuthenticated && state.etablissementsDisponibles.length === 0) {
+                        console.log('[Auth Store] Chargement des etablissementsDisponibles...');
+                        await get().fetchEtablissementsDisponibles();
+                    }
                 }
                 
                 set({ _initialized: true });
+                console.log('[Auth Store] Initialisation terminée');
             },
         }),
         {
@@ -415,8 +479,34 @@ export const useAuthStore = create<AuthState>()(
                 utilisateur: state.utilisateur,
                 etablissementId: state.etablissementId,
                 etablissements: state.etablissements,
+                etablissementsDisponibles: state.etablissementsDisponibles, // Ajouté pour persister les noms d'établissements
                 isAuthenticated: state.isAuthenticated,
             }),
         },
     ),
 );
+
+// Subscribe to store changes to log establishment state
+useAuthStore.subscribe((state, prevState) => {
+    if (state.etablissementId !== prevState.etablissementId) {
+        const ancienNom = state.etablissementsDisponibles?.find(e => e.id === prevState.etablissementId)?.nom || 'Non trouvé';
+        const nouveauNom = state.etablissementsDisponibles?.find(e => e.id === state.etablissementId)?.nom || 'Non trouvé';
+        console.log('[Auth Store] ÉTAT CHANGÉ - Établissement actif:', {
+            ancien: { id: prevState.etablissementId, nom: ancienNom },
+            nouveau: { id: state.etablissementId, nom: nouveauNom },
+            moment: new Date().toISOString()
+        });
+    }
+    if (state.etablissementsDisponibles !== prevState.etablissementsDisponibles) {
+        console.log('[Auth Store] ÉTAT CHANGÉ - Liste des établissements (disponibles):', {
+            ancienne: prevState.etablissementsDisponibles,
+            nouvelle: state.etablissementsDisponibles,
+            moment: new Date().toISOString()
+        });
+    }
+    // Log initial state on first subscription
+    if (!prevState._initialized) {
+        const initialEtabNom = state.etablissementsDisponibles?.find(e => e.id === state.etablissementId)?.nom || 'Non trouvé';
+        console.log('[Auth Store] ÉTAT INITIAL - Établissement actif:', { id: state.etablissementId, nom: initialEtabNom }, 'Liste des établissements:', state.etablissementsDisponibles);
+    }
+});

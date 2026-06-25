@@ -243,6 +243,16 @@ export enum Role {
  */
 export enum Permission {
     // ==================================
+    // SUPER ADMIN (Permission spéciale)
+    // ==================================
+    SUPER_ADMIN_ALL = 'super_admin:all',
+
+    // ==================================
+    // ADMINISTRATION GÉNÉRIQUE
+    // ==================================
+    ADMIN_MANAGE = 'admin:manage',
+
+    // ==================================
     // UTILISATEURS & AUTH
     // ==================================
     USERS_VIEW = 'users:view',
@@ -250,6 +260,7 @@ export enum Permission {
     USERS_EDIT = 'users:edit',
     USERS_DELETE = 'users:delete',
     UTILISATEURS_MANAGE = 'utilisateurs:manage',
+    UTILISATEURS_DELETE = 'utilisateurs:delete',
     UTILISATEURS_IMPORT = 'utilisateurs:import',
     UTILISATEURS_EXPORT = 'utilisateurs:export',
     UTILISATEURS_RESET_PASSWORD = 'utilisateurs:reset-password',
@@ -317,6 +328,7 @@ export enum Permission {
     ENSEIGNANTS_EDIT = 'enseignants:edit',
     ENSEIGNANTS_DELETE = 'enseignants:delete',
     ENSEIGNANTS_ASSIGN = 'enseignants:assign',
+    ENSEIGNANT_MANAGE = 'enseignant:manage',
 
     PERSONNEL_VIEW = 'personnel:view',
     PERSONNEL_CREATE = 'personnel:create',
@@ -324,6 +336,7 @@ export enum Permission {
     PERSONNEL_DELETE = 'personnel:delete',
     PERSONNEL_TYPES_VIEW = 'personnel:types:view',
     PERSONNEL_TYPES_CREATE = 'personnel:types:create',
+    PERSONNEL_MANAGE = 'personnel:manage',
 
     // ==================================
     // CLASSES & MATIÈRES
@@ -421,6 +434,9 @@ export enum Permission {
     PARKING_ABONNEMENTS_CREATE = 'parking:abonnements:create',
     PARKING_ABONNEMENTS_EDIT = 'parking:abonnements:edit',
     PARKING_STATISTIQUES_VIEW = 'parking:statistiques:view',
+
+    // Infrastructure
+    INFRASTRUCTURE_MANAGE = 'infrastructure:manage',
 
     // ==================================
     // MATÉRIEL & CARTES
@@ -601,6 +617,12 @@ export enum Permission {
     CONFIG_EDIT = 'config:edit',
     CONFIGURATION_SEED = 'configuration:seed',
     CONFIGURATION_LICENCE_ACTIVER = 'configuration:licence:activer',
+
+    // ==================================
+    // APPARENCE (Fonds d'écran, Thème, Logo)
+    // ==================================
+    APPARENCE_FONDS_VIEW = 'apparence:fonds:view',
+    APPARENCE_FONDS_MANAGE = 'apparence:fonds:manage',
 
     // ==================================
     // MONITORING
@@ -784,14 +806,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     [Role.SUPER_ADMIN]: Object.values(Permission), // Toutes les permissions
 
     [Role.ADMIN]: [
+        Permission.ADMIN_MANAGE,
         Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
-        Permission.UTILISATEURS_MANAGE, Permission.UTILISATEURS_ETABLISSEMENTS_MANAGE, Permission.UTILISATEURS_IMPORT, Permission.UTILISATEURS_EXPORT,
+        Permission.UTILISATEURS_MANAGE, Permission.UTILISATEURS_DELETE, Permission.UTILISATEURS_ETABLISSEMENTS_MANAGE, Permission.UTILISATEURS_IMPORT, Permission.UTILISATEURS_EXPORT, Permission.UTILISATEURS_STATUT_CHANGE,
         Permission.ROLES_VIEW, Permission.ROLES_MANAGE,
         Permission.CONFIG_VIEW, Permission.CONFIG_EDIT,
         Permission.MONITORING_VIEW,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.NOTIFICATIONS_MANAGE,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT, Permission.CLASSES_DELETE,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW, Permission.CLASSES_EXPORT,
+        Permission.MATIERES_VIEW, Permission.MATIERES_CREATE, Permission.MATIERES_EDIT, Permission.MATIERES_DELETE,
+        Permission.MATIERES_ASSIGN,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
+        Permission.ANNEES_VIEW, Permission.PERIODES_VIEW,
         // Validation permissions
         Permission.VALIDATION_NOTES_LEVEL1, Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
         Permission.VALIDATION_BULLETINS_LEVEL1, Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
@@ -832,6 +862,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Organisation
+        Permission.ORGANISATION_VIEW,
+        Permission.ORGANISATION_CREATE,
+        Permission.ORGANISATION_EDIT,
+        Permission.ORGANISATION_DELETE,
+        // Apparence
+        Permission.APPARENCE_FONDS_VIEW,
+        Permission.APPARENCE_FONDS_MANAGE,
     ],
 
     [Role.COMPTABLE]: [
@@ -885,7 +923,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
-        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT, Permission.UTILISATEURS_DELETE, Permission.UTILISATEURS_STATUT_CHANGE,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT, Permission.CLASSES_DELETE,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW, Permission.CLASSES_EXPORT,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT, Permission.MATIERES_ASSIGN,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
+        Permission.ANNEES_VIEW, Permission.PERIODES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
@@ -958,9 +1002,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Apparence
+        Permission.APPARENCE_FONDS_VIEW,
+        Permission.APPARENCE_FONDS_MANAGE,
     ],
 
     [Role.ENSEIGNANT]: [
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
         Permission.BULLETINS_VIEW,
         Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
@@ -1039,7 +1088,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PROVISEUR]: [
         // Permissions CHEF_ETABLISSEMENT (héritage)
-        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT, Permission.UTILISATEURS_STATUT_CHANGE,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT, Permission.CLASSES_DELETE,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
@@ -1068,7 +1122,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PRINCIPAL]: [
         // Similaire à PROVISEUR (collège au lieu de lycée)
-        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT, Permission.UTILISATEURS_STATUT_CHANGE,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT, Permission.CLASSES_DELETE,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
@@ -1090,7 +1149,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.DIRECTEUR]: [
         // École primaire - permissions simplifiées
-        Permission.USERS_VIEW, Permission.USERS_CREATE,
+        Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.UTILISATEURS_STATUT_CHANGE,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT, Permission.CLASSES_DELETE,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
@@ -1136,6 +1200,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     [Role.DIRECTEUR_ADJOINT]: [
         // Similaire à CHEF_ETABLISSEMENT mais en lecture pour finances
         Permission.USERS_VIEW, Permission.USERS_CREATE, Permission.USERS_EDIT,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
@@ -1154,10 +1223,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     [Role.RESPONSABLE_PEDAGOGIQUE]: [
         // Conseil pédagogique
         Permission.USERS_VIEW,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW,
-        Permission.CLASSES_VIEW,
-        Permission.MATIERES_VIEW,
         Permission.MESSAGES_SEND,
         // Programmes Pédagogiques (complet)
         Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_CREATE,
@@ -1178,6 +1250,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PROFESSEUR_CERTIFIE]: [
         // Hérite ENSEIGNANT + programmes
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
         Permission.BULLETINS_VIEW,
         Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
@@ -1194,6 +1267,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PROFESSEUR_AGREGE]: [
         // Similaire à PROFESSEUR_CERTIFIE (lycée)
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
         Permission.BULLETINS_VIEW,
         Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
@@ -1210,6 +1284,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.INSTITUTEUR]: [
         // Primaire - simplifié
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
         Permission.BULLETINS_VIEW,
         Permission.MESSAGES_SEND,
@@ -1221,6 +1296,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.MAITRE_AUXILIAIRE]: [
         // Contractuel - permissions limitées
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE,
         Permission.BULLETINS_VIEW,
         Permission.MESSAGES_SEND,
@@ -1229,6 +1305,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PROFESSEUR_TECHNIQUE]: [
         // Enseignement technique
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
         Permission.BULLETINS_VIEW,
         Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
@@ -1245,6 +1322,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.EDUCATEUR_MATERNELLE]: [
         // Maternelle - très simplifié
+        Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_CREATE,
         Permission.MESSAGES_SEND,
         Permission.GAMIFICATION_VIEW,
@@ -1292,6 +1370,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.CONSEILLER_ORIENTEUR]: [
         // Orientation scolaire
+        Permission.CLASSES_VIEW,
         Permission.ELEVES_VIEW,
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW,
@@ -1311,6 +1390,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.PSYCHOLOGUE_SCOLAIRE]: [
         // Psychologue
+        Permission.CLASSES_VIEW,
         Permission.ELEVES_VIEW,
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW,
@@ -1326,6 +1406,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
 
     [Role.ASSISTANT_SOCIAL]: [
         // Assistant social
+        Permission.CLASSES_VIEW,
         Permission.ELEVES_VIEW,
         Permission.MESSAGES_SEND,
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
@@ -1344,6 +1425,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Secrétaire
         Permission.USERS_VIEW, Permission.USERS_CREATE,
         Permission.ELEVES_VIEW, Permission.ELEVES_CREATE, Permission.ELEVES_EDIT,
+        // Classes & Structure académique
+        Permission.CLASSES_VIEW, Permission.CLASSES_CREATE, Permission.CLASSES_EDIT,
+        Permission.CLASSES_AFFECTER, Permission.CLASSES_DESAFFECTER, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.MATIERES_VIEW,
+        Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.MESSAGES_SEND,
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,

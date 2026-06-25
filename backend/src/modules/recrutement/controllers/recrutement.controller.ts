@@ -23,7 +23,7 @@ import {
     createOnboardingSchema,
     updateChecklistSchema,
 } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 
@@ -42,7 +42,7 @@ function validate(schema: any, data: unknown): any {
 // OFFRES D'EMPLOI
 // =====================================================
 
-router.get('/offres', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/offres', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -66,7 +66,7 @@ router.get('/offres/:id', authMiddleware, async (req: Request, res: Response, ne
     } catch (error) { next(error); }
 });
 
-router.post('/offres', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/offres', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createOffreEmploiSchema, req.body);
         const offre = await recrutementService.createOffre(dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -74,7 +74,7 @@ router.post('/offres', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
     } catch (error) { next(error); }
 });
 
-router.patch('/offres/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/offres/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateOffreEmploiSchema, req.body);
         const offre = await recrutementService.updateOffre(req.params.id, dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -82,21 +82,21 @@ router.patch('/offres/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
     } catch (error) { next(error); }
 });
 
-router.post('/offres/:id/publier', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/offres/:id/publier', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const offre = await recrutementService.publierOffre(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: offre, message: 'Offre publiée' });
     } catch (error) { next(error); }
 });
 
-router.post('/offres/:id/cloturer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/offres/:id/cloturer', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const offre = await recrutementService.clôturerOffre(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: offre, message: 'Offre clôturée' });
     } catch (error) { next(error); }
 });
 
-router.get('/offres/statistiques', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/offres/statistiques', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await recrutementService.getStatistiquesOffres(req.etablissementId!);
         res.json({ success: true, data: stats });
@@ -107,7 +107,7 @@ router.get('/offres/statistiques', authMiddleware, requireRoles(Role.ADMIN, Role
 // CANDIDATURES
 // =====================================================
 
-router.get('/candidatures', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/candidatures', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -124,7 +124,7 @@ router.get('/candidatures', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_
     } catch (error) { next(error); }
 });
 
-router.get('/candidatures/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/candidatures/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const candidature = await recrutementService.findCandidatureById(req.params.id, req.etablissementId!);
         res.json({ success: true, data: candidature });
@@ -139,7 +139,7 @@ router.post('/candidatures', authMiddleware, async (req: Request, res: Response,
     } catch (error) { next(error); }
 });
 
-router.post('/candidatures/:id/evaluer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/candidatures/:id/evaluer', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(evaluerCandidatureSchema, req.body);
         const candidature = await recrutementService.evaluerCandidature(req.params.id, dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -147,35 +147,35 @@ router.post('/candidatures/:id/evaluer', authMiddleware, requireRoles(Role.ADMIN
     } catch (error) { next(error); }
 });
 
-router.post('/candidatures/:id/shortlist', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/candidatures/:id/shortlist', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const candidature = await recrutementService.shortlistCandidature(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: candidature, message: 'Candidat présélectionné' });
     } catch (error) { next(error); }
 });
 
-router.post('/candidatures/:id/convoquer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/candidatures/:id/convoquer', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const candidature = await recrutementService.convoquerCandidature(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: candidature, message: 'Candidat convoqué pour entretien' });
     } catch (error) { next(error); }
 });
 
-router.post('/candidatures/:id/retenir', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/candidatures/:id/retenir', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const candidature = await recrutementService.retenirCandidature(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: candidature, message: 'Candidat retenu - Prêt pour onboarding' });
     } catch (error) { next(error); }
 });
 
-router.post('/candidatures/:id/refuser', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/candidatures/:id/refuser', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const candidature = await recrutementService.refuserCandidature(req.params.id, req.utilisateur!.id, req.etablissementId!, req);
         res.json({ success: true, data: candidature, message: 'Candidature refusée' });
     } catch (error) { next(error); }
 });
 
-router.get('/candidatures/offres/:offreId/pipeline', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/candidatures/offres/:offreId/pipeline', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const pipeline = await recrutementService.getPipelineStats(req.params.offreId, req.etablissementId!);
         res.json({ success: true, data: pipeline });
@@ -186,7 +186,7 @@ router.get('/candidatures/offres/:offreId/pipeline', authMiddleware, requireRole
 // ENTRETIENS
 // =====================================================
 
-router.get('/entretiens', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/entretiens', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -205,14 +205,14 @@ router.get('/entretiens', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
     } catch (error) { next(error); }
 });
 
-router.get('/entretiens/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/entretiens/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const entretien = await recrutementService.findEntretienById(req.params.id, req.etablissementId!);
         res.json({ success: true, data: entretien });
     } catch (error) { next(error); }
 });
 
-router.post('/entretiens', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/entretiens', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createEntretienSchema, req.body);
         const entretien = await recrutementService.createEntretien(dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -220,7 +220,7 @@ router.post('/entretiens', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
     } catch (error) { next(error); }
 });
 
-router.post('/entretiens/:id/evaluer', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/entretiens/:id/evaluer', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(evaluerEntretienSchema, req.body);
         const entretien = await recrutementService.evaluerEntretien(req.params.id, dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -232,7 +232,7 @@ router.post('/entretiens/:id/evaluer', authMiddleware, requireRoles(Role.ADMIN, 
 // ONBOARDING
 // =====================================================
 
-router.get('/onboarding', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/onboarding', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = {
             page: parseInt(req.query.page as string) || 1,
@@ -249,14 +249,14 @@ router.get('/onboarding', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_AD
     } catch (error) { next(error); }
 });
 
-router.get('/onboarding/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/onboarding/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const onboarding = await recrutementService.findOnboardingById(req.params.id, req.etablissementId!);
         res.json({ success: true, data: onboarding });
     } catch (error) { next(error); }
 });
 
-router.post('/onboarding', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/onboarding', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createOnboardingSchema, req.body);
         const onboarding = await recrutementService.createOnboarding(dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -264,7 +264,7 @@ router.post('/onboarding', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_A
     } catch (error) { next(error); }
 });
 
-router.patch('/onboarding/:id/checklist', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/onboarding/:id/checklist', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateChecklistSchema, req.body);
         const onboarding = await recrutementService.updateChecklist(req.params.id, dto, req.utilisateur!.id, req.etablissementId!, req);
@@ -272,7 +272,7 @@ router.patch('/onboarding/:id/checklist', authMiddleware, requireRoles(Role.ADMI
     } catch (error) { next(error); }
 });
 
-router.get('/onboarding/statistiques', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/onboarding/statistiques', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await recrutementService.getOnboardingStats(req.etablissementId!);
         res.json({ success: true, data: stats });

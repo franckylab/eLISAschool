@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Horloges murales -->
+    <circle cx="300" cy="250" r="80" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <line x1="300" y1="250" x2="300" y2="190" stroke-width="4" stroke-linecap="round"/>
+    <line x1="300" y1="250" x2="350" y2="250" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="1200" cy="400" r="80" stroke-width="4" fill="currentColor" opacity="0.06"/>
+    <line x1="1200" y1="400" x2="1200" y2="340" stroke-width="4" stroke-linecap="round"/>
+
+  </g>
+</svg>

@@ -8,7 +8,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { auditRotationService } from '../services/audit-rotation.service';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -44,7 +44,7 @@ const rotationSchema = z.object({
  * GET /api/audit/statistiques-stockage
  * Obtenir les statistiques de stockage des logs
  */
-router.get('/statistiques-stockage', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/statistiques-stockage', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await auditRotationService.getStatistiquesStockage();
         res.json({ success: true, data: stats });
@@ -57,7 +57,7 @@ router.get('/statistiques-stockage', authMiddleware, requireRoles(Role.ADMIN, Ro
  * GET /api/audit/archives
  * Lister les archives disponibles
  */
-router.get('/archives', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/archives', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const archives = auditRotationService.listerArchives();
         res.json({ success: true, data: archives });
@@ -70,7 +70,7 @@ router.get('/archives', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMI
  * POST /api/audit/rotation
  * Exécuter manuellement la rotation des logs
  */
-router.post('/rotation', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/rotation', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(rotationSchema, req.body);
 
@@ -91,7 +91,7 @@ router.post('/rotation', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (
  * POST /api/audit/archiver
  * Archiver manuellement les anciens logs
  */
-router.post('/archiver', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/archiver', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const jours = parseInt(req.body.jours || '30', 10);
 
@@ -113,7 +113,7 @@ router.post('/archiver', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (
  * POST /api/audit/nettoyer
  * Nettoyer manuellement les logs obsolètes
  */
-router.post('/nettoyer', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/nettoyer', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const jours = parseInt(req.body.jours || '180', 10);
 
@@ -135,7 +135,7 @@ router.post('/nettoyer', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (
  * DELETE /api/audit/archives/:nom
  * Supprimer une archive spécifique
  */
-router.delete('/archives/:nom', authMiddleware, requireRoles(Role.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/archives/:nom', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { nom } = req.params;
         const fs = require('fs');

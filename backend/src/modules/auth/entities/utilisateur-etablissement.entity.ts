@@ -25,12 +25,14 @@ import {
 } from 'typeorm';
 import { Utilisateur } from '@modules/auth/entities/utilisateur.entity';
 import { Etablissement } from '@modules/etablissement/entities';
-import { Role } from '@shared/enums/roles.enum';
+import { Role } from './role.entity';
 
 @Entity('utilisateur_etablissements')
 @Index(['utilisateurId', 'etablissementId'], { unique: true })
 @Index(['utilisateurId', 'actif'])
 @Index(['etablissementId', 'actif'])
+@Index(['roleId', 'actif'])  // Pour comptage des utilisateurs par rôle
+@Index(['utilisateurId', 'etablissementId', 'actif'])  // Pour résolution des permissions
 export class UtilisateurEtablissement {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -53,7 +55,11 @@ export class UtilisateurEtablissement {
      * Rôle de l'utilisateur dans CET établissement
      * Peut être différent du rôle global
      */
-    @Column({ type: 'enum', enum: Role })
+    @Column({ type: 'uuid' })
+    roleId!: string;
+
+    @ManyToOne(() => Role, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'roleId' })
     role!: Role;
 
     /**

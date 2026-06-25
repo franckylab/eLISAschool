@@ -9,7 +9,8 @@
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, Role as RoleEntity, StatutUtilisateur } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 import {
     CreateUtilisateurDto,
     UpdateUtilisateurDto,
@@ -75,7 +76,7 @@ export class UtilisateursService {
             email: createDto.email.toLowerCase(),
             matricule: matricule!,
             motDePasse: createDto.motDePasse,
-            role: createDto.role as Role,
+            role: createDto.role as unknown as RoleEntity,
             statut: StatutUtilisateur.ACTIF,
             langue: createDto.langue || 'fr',
             etablissementId: createDto.etablissementId,
@@ -118,18 +119,30 @@ export class UtilisateursService {
      * Récupérer tous les utilisateurs avec pagination et filtres
      */
     async findAll(query: QueryUtilisateursDto): Promise<PaginatedResult<UtilisateurResponseDto>> {
-        const { page, limit, search, role, statut, etablissementId, exclureEtablissement, sortBy, sortOrder } = query;
+        const { page, limit, search, role, statut, etablissementId, exclureEtablissement, sortBy, sortOrder, actifFiltre } = query;
 
         // Construction de la requête avec JOIN sur utilisateur_etablissements
         let queryBuilder = this.utilisateurRepository
             .createQueryBuilder('u');
 
+        // LEFT JOIN sur profils_utilisateurs pour recherche et tri par nom/prenom
+        queryBuilder.leftJoin('profils_utilisateurs', 'p', 'p."utilisateurId" = u.id')
+            .addSelect('p.nom', 'p_nom')
+            .addSelect('p.prenom', 'p_prenom');
+
         // Si filtrage par établissement, utiliser la table de jointure
         if (etablissementId) {
             queryBuilder
                 .innerJoin('u.utilisateurEtablissements', 'ue')
-                .where('ue.etablissementId = :etablissementId', { etablissementId })
-                .andWhere('ue.actif = :actif', { actif: true });
+                .where('ue.etablissementId = :etablissementId', { etablissementId });
+
+            // Filtre par statut d'affectation (par défaut: uniquement actifs)
+            if (actifFiltre === 'actif') {
+                queryBuilder.andWhere('ue.actif = :actif', { actif: true });
+            } else if (actifFiltre === 'inactif') {
+                queryBuilder.andWhere('ue.actif = :actif', { actif: false });
+            }
+            // Si 'tous', pas de filtre sur ue.actif
 
             // Filtre par rôle dans l'établissement (pas le rôle global)
             if (role) {
@@ -145,7 +158,7 @@ export class UtilisateursService {
             const where: FindOptionsWhere<Utilisateur> = {};
 
             if (role && !exclureEtablissement) {
-                const roles = role.split(',').map(r => r.trim()) as Role[];
+                const roles = role.split(',').map(r => r.trim()) as unknown as RoleEntity[];
                 if (roles.length === 1) {
                     where.role = roles[0];
                 }
@@ -176,10 +189,10 @@ export class UtilisateursService {
             `, { exclureEtablissement });
         }
 
-        // Recherche textuelle (uniquement sur email et matricule car profil est récupéré séparément)
+        // Recherche textuelle (email, matricule, nom, prenom via JOIN profil)
         if (search) {
             queryBuilder.andWhere(
-                '(u.email ILIKE :search OR u.matricule ILIKE :search)',
+                '(u.email ILIKE :search OR u.matricule ILIKE :search OR p.nom ILIKE :search OR p.prenom ILIKE :search)',
                 { search: `%${search}%` }
             );
         }
@@ -189,10 +202,15 @@ export class UtilisateursService {
             queryBuilder.andWhere('u.statut = :statut', { statut });
         }
 
-        // Tri - validation du champ de tri
-        const allowedSortFields = ['createdAt', 'updatedAt', 'email', 'matricule', 'role', 'statut'];
-        const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
-        queryBuilder.orderBy(`u.${orderField}`, sortOrder);
+        // Tri - validation du champ de tri (inclut 'nom' via profil)
+        const allowedSortFields = ['createdAt', 'updatedAt', 'email', 'matricule', 'role', 'statut', 'nom'];
+        if (sortBy === 'nom') {
+            // Tri par nom du profil (NULLS LAST pour les profils manquants)
+            queryBuilder.orderBy('p.nom', sortOrder, 'NULLS LAST');
+        } else {
+            const orderField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+            queryBuilder.orderBy(`u.${orderField}`, sortOrder);
+        }
 
         // Utiliser le système de pagination optimisé
         const { createPaginatedResult, paginateWithQueryBuilder } = await import('@common/utils/pagination.util');
@@ -211,16 +229,18 @@ export class UtilisateursService {
                     where: { utilisateurId: u.id },
                 });
 
-                // Si filtrage par établissement, récupérer le rôle dans cet établissement
+                // Si filtrage par établissement, récupérer le rôle et le statut d'affectation
                 let roleEtablissement: string | undefined;
+                let actifDansEtablissement: boolean | undefined;
                 if (etablissementId) {
                     const affectation = await AppDataSource.getRepository('UtilisateurEtablissement').findOne({
-                        where: { utilisateurId: u.id, etablissementId, actif: true }
+                        where: { utilisateurId: u.id, etablissementId }
                     });
                     roleEtablissement = affectation?.role;
+                    actifDansEtablissement = affectation?.actif;
                 }
 
-                return this.formatUtilisateurResponse(u, profil || undefined, roleEtablissement);
+                return this.formatUtilisateurResponse(u, profil || undefined, roleEtablissement, actifDansEtablissement);
             })
         );
 
@@ -276,7 +296,7 @@ export class UtilisateursService {
         }
 
         if (updateDto.role) {
-            utilisateur.role = updateDto.role as Role;
+            utilisateur.role = updateDto.role as unknown as RoleEntity;
         }
 
         if (updateDto.statut) {
@@ -348,12 +368,15 @@ export class UtilisateursService {
     }
 
     /**
-     * Supprimer un utilisateur
+     * Supprimer un utilisateur (soft delete)
      * 
      * Stratégie : Soft delete via statut INACTIF + désactivation des affectations
      * pour préserver l'historique d'audit et l'intégrité des données.
+     * 
+     * @param id ID de l'utilisateur
+     * @param motif Motif de la suppression (obligatoire)
      */
-    async remove(id: string): Promise<void> {
+    async remove(id: string, motif?: string): Promise<void> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -368,9 +391,9 @@ export class UtilisateursService {
             }
 
             // VÉRIFICATION : Empêcher la suppression du dernier SUPER_ADMIN
-            if (utilisateur.role === Role.SUPER_ADMIN) {
+            if (utilisateur.role === ('SUPER_ADMIN' as unknown as RoleEntity)) {
                 const superAdminCount = await queryRunner.manager.count(Utilisateur, {
-                    where: { role: Role.SUPER_ADMIN, statut: StatutUtilisateur.ACTIF }
+                    where: { role: 'SUPER_ADMIN' as unknown as RoleEntity, statut: StatutUtilisateur.ACTIF }
                 });
                 
                 if (superAdminCount <= 1) {
@@ -385,9 +408,9 @@ export class UtilisateursService {
             // ÉTAPE 1 : Désactiver toutes les affectations établissement
             await queryRunner.manager.query(
                 `UPDATE utilisateur_etablissements 
-                 SET actif = false, dateFin = NOW() 
+                 SET actif = false, "dateFin" = NOW(), motif = COALESCE($2, motif, 'Suppression soft delete')
                  WHERE "utilisateurId" = $1 AND actif = true`,
-                [id]
+                [id, motif]
             );
 
             // ÉTAPE 2 : Soft delete via changement de statut
@@ -406,14 +429,131 @@ export class UtilisateursService {
                 [id]
             );
 
+            // ÉTAPE 5 : Logger le motif dans les audit logs
+            logger.info(`Utilisateur supprimé (soft delete): ${utilisateur.email} (${id}) - Motif: ${motif || 'Non spécifié'}`);
+
             // NOTE : Les audit_logs sont préservés pour traçabilité
             // utilisateurId reste dans les logs mais l'utilisateur est marqué INACTIF
 
             await queryRunner.commitTransaction();
-
-            logger.info(`Utilisateur supprimé (soft delete): ${utilisateur.email} (${id})`);
         } catch (error) {
             await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    /**
+     * Supprimer un utilisateur en cascade (hard delete)
+     * 
+     * ATTENTION : Cette méthode supprime DÉFINITIVEMENT l'utilisateur et toutes ses données liées.
+     * Réservée aux super admins uniquement.
+     * 
+     * Stratégie de suppression :
+     * - Données CASCADE (FK ON DELETE CASCADE) : supprimées automatiquement
+     * - Données NON-CASCADE directes (FK vers utilisateurId) : supprimées manuellement
+     * - Données métier (via MembrePersonnel) : CONSERVÉES pour l'historique académique
+     * 
+     * @param id ID de l'utilisateur
+     * @param motif Motif de la suppression (obligatoire)
+     * @param etablissementId Optionnel - contexte établissement
+     */
+    async removeCascade(id: string, motif: string, etablissementId?: string): Promise<void> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const utilisateur = await queryRunner.manager.findOne(Utilisateur, {
+                where: { id },
+            });
+
+            if (!utilisateur) {
+                throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+            }
+
+            // VÉRIFICATION CRITIQUE : Empêcher la suppression du dernier SUPER_ADMIN
+            if (utilisateur.role === ('SUPER_ADMIN' as unknown as RoleEntity)) {
+                const superAdminCount = await queryRunner.manager.count(Utilisateur, {
+                    where: { role: 'SUPER_ADMIN' as unknown as RoleEntity, statut: StatutUtilisateur.ACTIF }
+                });
+                
+                if (superAdminCount <= 1) {
+                    throw new AppError(
+                        'Impossible de supprimer le dernier Super Admin',
+                        400,
+                        'LAST_SUPER_ADMIN'
+                    );
+                }
+            }
+
+            logger.warn(`[CASCADE DELETE] Début suppression définitive de ${utilisateur.email} (${id}) - Motif: ${motif}`);
+
+            // =========================================================================
+            // ÉTAPE 1 : Supprimer les données avec CASCADE automatique (FK ON DELETE CASCADE)
+            // Ces tables seront automatiquement supprimées par PostgreSQL :
+            // - profils_utilisateurs
+            // - utilisateur_permissions
+            // - refresh_tokens
+            // - preferences_utilisateur
+            // - dashboard_layouts
+            // - badges_utilisateurs
+            // =========================================================================
+
+            // =========================================================================
+            // ÉTAPE 2 : Supprimer les données NON-CASCADE directes (FK vers utilisateurId)
+            // =========================================================================
+            
+            // 2a. MembrePersonnel (lié par utilisateurId)
+            await queryRunner.manager.query(
+                `DELETE FROM membres_personnel WHERE "utilisateurId" = $1`,
+                [id]
+            );
+
+            // 2b. ResponsableEleve (lié par utilisateurId)
+            await queryRunner.manager.query(
+                `DELETE FROM responsables_eleves WHERE "utilisateurId" = $1`,
+                [id]
+            );
+
+            // 2c. UtilisateurEtablissement (désactiver pour historique, pas supprimer)
+            await queryRunner.manager.query(
+                `UPDATE utilisateur_etablissements 
+                 SET actif = false, "dateFin" = NOW(), motif = $2
+                 WHERE "utilisateurId" = $1`,
+                [id, motif]
+            );
+
+            // =========================================================================
+            // NOTE : Données métier CONSERVÉES (historique académique)
+            // =========================================================================
+            // Les données suivantes sont CONSERVÉES car elles font partie de l'historique
+            // académique et ne doivent PAS être supprimées :
+            // - Notes, Bulletins, Présences, Absences, Retards
+            // - Paiements, Transactions cantine/transport
+            // - Messages, Conversations, Annonces, Sondages
+            // - Requêtes, Tâches, Évaluations
+            // - Sanctions, Observations, Félicitations
+            // - Consultations médicales, Incidents
+            // - Emploi du temps, Classes, Matières
+            // =========================================================================
+
+            // =========================================================================
+            // ÉTAPE 3 : Supprimer l'utilisateur (hard delete)
+            // Les données en CASCADE seront supprimées automatiquement par PostgreSQL
+            // =========================================================================
+            await queryRunner.manager.query(
+                `DELETE FROM utilisateurs WHERE id = $1`,
+                [id]
+            );
+
+            logger.warn(`[CASCADE DELETE] Suppression définitive terminée: ${utilisateur.email} (${id})`);
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`[CASCADE DELETE] Erreur lors de la suppression de ${id}:`, error);
             throw error;
         } finally {
             await queryRunner.release();
@@ -450,12 +590,16 @@ export class UtilisateursService {
     private formatUtilisateurResponse(
         utilisateur: Utilisateur,
         profil?: ProfilUtilisateur,
-        roleEtablissement?: string
+        roleEtablissement?: string,
+        actifDansEtablissement?: boolean
     ): UtilisateurResponseDto {
         return {
             id: utilisateur.id,
             email: utilisateur.email,
             matricule: utilisateur.matricule,
+            // Nom/prénom à la racine pour accès direct par le frontend
+            nom: profil?.nom || '',
+            prenom: profil?.prenom || '',
             role: utilisateur.role,
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
@@ -474,6 +618,8 @@ export class UtilisateursService {
             } : undefined,
             // Rôle dans l'établissement (si fourni)
             roleEtablissement,
+            // Statut d'affectation dans l'établissement (si fourni)
+            actifDansEtablissement,
         };
     }
 }

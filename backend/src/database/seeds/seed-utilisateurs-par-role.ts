@@ -10,7 +10,7 @@
  */
 
 import { AppDataSource } from '../data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurRole, UtilisateurEtablissement } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, Role as RoleEntity } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 
@@ -99,9 +99,8 @@ export async function seedUtilisateursParRole(
 ): Promise<number> {
     const utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
-    const utilisateurRoleRepo = AppDataSource.getRepository(UtilisateurRole);
     const utilisateurEtablissementRepo = AppDataSource.getRepository(UtilisateurEtablissement);
-    const roleRepo = AppDataSource.getRepository('Role');
+    const roleRepo = AppDataSource.getRepository(RoleEntity);
 
     let count = 0;
 
@@ -118,16 +117,6 @@ export async function seedUtilisateursParRole(
             continue;
         }
 
-        // Trouver le rôle
-        const role = await roleRepo.findOne({
-            where: { code: config.role },
-        });
-
-        if (!role) {
-            logger.warn(`  ⚠ Rôle non trouvé: ${config.role}`);
-            continue;
-        }
-
         // Créer l'utilisateur
         const utilisateur = utilisateurRepo.create({
             email: config.email,
@@ -137,7 +126,6 @@ export async function seedUtilisateursParRole(
             statut: StatutUtilisateur.ACTIF,
             emailVerifie: true,
             langue: 'fr',
-            etablissementId: etablissementPrincipalId, // Établissement principal (compatibilité legacy)
         });
 
         await utilisateurRepo.save(utilisateur);
@@ -152,50 +140,37 @@ export async function seedUtilisateursParRole(
 
         await profilRepo.save(profil);
 
-        // Créer le lien utilisateur-rôle (nouveau système multi-rôles)
-        const utilisateurRole = utilisateurRoleRepo.create({
-            utilisateurId: utilisateur.id,
-            roleId: (role as any).id,
-            estPrincipal: true,
-            dateAttribution: new Date(),
-        });
-
-        await utilisateurRoleRepo.save(utilisateurRole);
-
-        // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement pour le multi-tenant
+        // CRITIQUE: Créer l'entrée dans UtilisateurEtablissement (SEULE source de vérité pour les rôles)
         
-        // Pour le CHEF_ETABLISSEMENT : lier aux 2 établissements si etablissementSecondaireId est fourni
-        if (config.role === Role.CHEF_ETABLISSEMENT && etablissementSecondaireId) {
-            // Lien avec l'établissement principal
+        // Récupérer le rôle depuis la base
+        const roleEntity = await roleRepo.findOne({ where: { code: config.role } });
+        if (!roleEntity) {
+            logger.warn(`  ⚠ Rôle non trouvé en base: ${config.role}`);
+            continue;
+        }
+
+        // Pour le CHEF_ETABLISSEMENT : lier UNIQUEMENT à l'établissement principal (ETAB-001)
+        // ETAB-002 a son propre chef dédié (seedChefEtablissementSecondaire)
+        if (config.role === Role.CHEF_ETABLISSEMENT) {
+            // Lien avec l'établissement principal uniquement
             const utilisateurEtablissementPrincipal = utilisateurEtablissementRepo.create({
                 utilisateurId: utilisateur.id,
                 etablissementId: etablissementPrincipalId,
-                role: config.role,
-                etablissementPrincipal: true, // Principal par défaut
+                roleId: roleEntity.id,
+                etablissementPrincipal: true,
                 actif: true,
                 dateDebut: new Date(),
             });
             await utilisateurEtablissementRepo.save(utilisateurEtablissementPrincipal);
 
-            // Lien avec l'établissement secondaire
-            const utilisateurEtablissementSecondaire = utilisateurEtablissementRepo.create({
-                utilisateurId: utilisateur.id,
-                etablissementId: etablissementSecondaireId,
-                role: config.role,
-                etablissementPrincipal: false,
-                actif: true,
-                dateDebut: new Date(),
-            });
-            await utilisateurEtablissementRepo.save(utilisateurEtablissementSecondaire);
-
             count++;
-            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissements: ${etablissementPrincipalId}, ${etablissementSecondaireId})`);
+            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissement: ${etablissementPrincipalId})`);
         } else {
             // Pour les autres rôles : un seul établissement (le principal)
             const utilisateurEtablissement = utilisateurEtablissementRepo.create({
                 utilisateurId: utilisateur.id,
                 etablissementId: etablissementPrincipalId,
-                role: config.role,
+                roleId: roleEntity.id,
                 etablissementPrincipal: true,
                 actif: true,
                 dateDebut: new Date(),

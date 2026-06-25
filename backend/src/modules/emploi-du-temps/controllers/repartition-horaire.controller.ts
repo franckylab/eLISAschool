@@ -11,7 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { emploiDuTempsService } from '../services';
 import { createRepartitionHoraireSchema, updateRepartitionHoraireSchema } from '../dto';
-import { authMiddleware, requireRoles } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 
@@ -32,7 +32,7 @@ function validate(schema: any, data: unknown): any {
  * GET /api/emploi-du-temps/repartitions
  * Lister toutes les répartitions horaires d'un établissement
  */
-router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { affectationId, jourSemaine } = req.query;
         
@@ -52,7 +52,7 @@ router.get('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.
  * POST /api/emploi-du-temps/repartitions
  * Créer une nouvelle répartition horaire
  */
-router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('emploi-du-temps:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createRepartitionHoraireSchema, req.body);
         
@@ -65,7 +65,7 @@ router.post('/', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role
  * GET /api/emploi-du-temps/repartitions/:id
  * Détail d'une répartition horaire
  */
-router.get('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const repartition = await emploiDuTempsService.getRepartition(req.params.id);
         res.json({ success: true, data: repartition });
@@ -76,7 +76,7 @@ router.get('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Ro
  * PATCH /api/emploi-du-temps/repartitions/:id
  * Modifier une répartition horaire
  */
-router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('emploi-du-temps:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateRepartitionHoraireSchema, req.body);
         
@@ -89,7 +89,7 @@ router.patch('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, 
  * DELETE /api/emploi-du-temps/repartitions/:id
  * Supprimer une répartition horaire
  */
-router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('emploi-du-temps:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await emploiDuTempsService.deleteRepartition(req.params.id);
         res.json({ success: true, message: 'Répartition horaire supprimée' });
@@ -100,7 +100,7 @@ router.delete('/:id', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN,
  * POST /api/emploi-du-temps/repartitions/batch
  * Créer plusieurs répartitions en batch (pour génération automatique)
  */
-router.post('/batch', authMiddleware, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/batch', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { repartitions } = validate(
             require('zod').z.object({

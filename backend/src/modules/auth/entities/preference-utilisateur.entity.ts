@@ -40,10 +40,11 @@ export enum CategoriePreference {
  * Stocke les préférences individuelles avec override de la config globale
  */
 @Entity('preferences_utilisateur')
-@Index(['utilisateurId', 'cle'], { unique: true })
+@Index(['utilisateurId', 'cle', 'etablissementId'], { unique: true }) // Contrainte unique composite (supporte NULL et non-NULL)
 @Index(['utilisateurId', 'categorie'])
 @Index(['categorie', 'updatedAt']) // Pour tri par catégorie récent
 @Index(['heriteGlobal', 'utilisateurId']) // Pour filtre héritage
+@Index(['etablissementId']) // Pour filtrage par établissement
 export class PreferenceUtilisateur {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -54,6 +55,10 @@ export class PreferenceUtilisateur {
     @ManyToOne(() => Utilisateur, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur!: Utilisateur;
+
+    /** Établissement associé (NULL = préférence globale utilisateur) */
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string;
 
     /** Clé de la préférence (ex: 'theme', 'langue', 'notifications.email') */
     @Column({ type: 'varchar', length: 100 })

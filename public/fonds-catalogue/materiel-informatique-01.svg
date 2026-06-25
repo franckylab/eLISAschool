@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
+    
+    <!-- Circuits imprimés -->
+    <rect x="100" y="100" width="300" height="200" fill="currentColor" opacity="0.04"/>
+    <line x1="150" y1="100" x2="150" y2="300" stroke-dasharray="10,5"/>
+    <line x1="200" y1="100" x2="200" y2="300" stroke-dasharray="10,5"/>
+    <line x1="250" y1="100" x2="250" y2="300" stroke-dasharray="10,5"/>
+    <circle cx="150" cy="150" r="8" fill="currentColor" opacity="0.12"/>
+    <circle cx="200" cy="200" r="8" fill="currentColor" opacity="0.12"/>
+    <circle cx="250" cy="250" r="8" fill="currentColor" opacity="0.12"/>
+    <rect x="1200" y="400" width="300" height="200" fill="currentColor" opacity="0.04"/>
+    <circle cx="1250" cy="450" r="8" fill="currentColor" opacity="0.12"/>
+    <circle cx="1350" cy="500" r="8" fill="currentColor" opacity="0.12"/>
+
+  </g>
+</svg>

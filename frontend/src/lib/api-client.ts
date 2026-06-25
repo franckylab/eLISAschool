@@ -33,6 +33,7 @@ interface LoginResponseData {
             etablissementPrincipal: boolean;
             actif: boolean;
         }>;
+        permissions?: string[];
     };
     // NOUVEAU v3.0
     etablissementsDisponibles?: Array<{
@@ -563,6 +564,7 @@ class ApiClient {
         code?: string;
         role: string;
         etablissementPrincipal: boolean;
+        logoUrl?: string;
     }>> {
         const response = await this.request<ApiResponse<Array<{
             id: string;
@@ -570,6 +572,7 @@ class ApiClient {
             code?: string;
             role: string;
             etablissementPrincipal: boolean;
+            logoUrl?: string;
         }>>>('/api/auth/etablissements-disponibles');
         return response.data || [];
     }

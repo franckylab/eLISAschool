@@ -43,6 +43,7 @@ import {
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModulePermissions } from '@/hooks';
+import { useEtablissement } from '@/features/etablissement';
 import { cn } from '@/lib/cn';
 import { ElisaLogo } from '@/components/branding';
 import { useState } from 'react';
@@ -108,7 +109,7 @@ function NavItemWithChildren({
                     }}
                 >
                     <Icon className="h-5 w-5 shrink-0" />
-                    {!isCollapsed && <span className="flex-1">{item.label}</span>}
+                    <span className={cn("flex-1", isCollapsed && "hidden")}>{item.label}</span>
                 </Link>
                 
                 {/* Bouton pour expand/collapse (seulement si pas collapsé) */}
@@ -249,8 +250,12 @@ const NAV_SECTIONS: NavSection[] = [
 export function Sidebar() {
     const { t } = useTranslation('common');
     const { isCollapsed } = useSidebarStore();
-    const utilisateur = useAuthStore((s) => s.utilisateur);
+    const { utilisateur, etablissementId } = useAuthStore();
     const matchRoute = useMatchRoute();
+
+    // Charger le logo de l'établissement
+    const { data: etablissement } = useEtablissement(etablissementId || '');
+    const logoEtablissement = etablissement?.logoUrl;
 
     // Vérifier les permissions pour chaque module
     const etablissementsPerms = useModulePermissions('etablissements');
@@ -345,7 +350,7 @@ export function Sidebar() {
 
     return (
         <div className="flex h-full flex-col">
-            {/* Logo / Titre */}
+            {/* Logo eLISAschool (marque de la plateforme - toujours visible en haut) */}
             <div className="flex h-16 items-center justify-center border-b border-[var(--color-bordure)] px-4">
                 <AnimatePresence mode="wait">
                     {!isCollapsed ? (
@@ -419,7 +424,7 @@ export function Sidebar() {
                                     title={isCollapsed ? item.label : undefined}
                                 >
                                     <Icon className="h-5 w-5 shrink-0" />
-                                    {!isCollapsed && <span>{item.label}</span>}
+                                    <span className={cn("flex-1", isCollapsed && "hidden")}>{item.label}</span>
                                 </Link>
                             );
                         })}
@@ -427,21 +432,35 @@ export function Sidebar() {
                 ))}
             </nav>
 
-            {/* User info */}
-            {utilisateur && !isCollapsed && (
-                <div className="border-t border-[var(--color-bordure)] p-3">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-dominante)] text-xs font-bold text-white">
-                            {utilisateur.prenom?.[0]}{utilisateur.nom?.[0]}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-[var(--color-texte)]">
-                                {utilisateur.prenom} {utilisateur.nom}
-                            </p>
-                            <p className="truncate text-xs text-[var(--color-texte-secondaire)]">
-                                {t(`roles.${utilisateur.role}` as any, utilisateur.role)}
-                            </p>
-                        </div>
+            {/* Logo et slogan de l'établissement (en bas de la sidebar) */}
+            {!isCollapsed && etablissement && (
+                <div className="border-t border-[var(--color-bordure)] p-2">
+                    <div className="flex flex-col items-center gap-1">
+                        {logoEtablissement ? (
+                            <img
+                                src={logoEtablissement}
+                                alt={etablissement?.nom || 'Logo établissement'}
+                                className="w-full max-w-[160px] h-auto object-contain transition-all duration-300"
+                                style={{
+                                    maxHeight: 'clamp(40px, 8vh, 64px)',
+                                }}
+                            />
+                        ) : (
+                            <div className="w-full flex justify-center">
+                                <ElisaLogo variant="horizontal" size="sm" />
+                            </div>
+                        )}
+                        {etablissement?.slogan && (
+                            <span 
+                                className="text-center italic text-[var(--color-texte-secondaire)] leading-tight px-1"
+                                style={{ 
+                                    fontSize: 'clamp(9px, 1.2vw, 11px)',
+                                    lineHeight: '1.3',
+                                }}
+                            >
+                                {etablissement.slogan}
+                            </span>
+                        )}
                     </div>
                 </div>
             )}

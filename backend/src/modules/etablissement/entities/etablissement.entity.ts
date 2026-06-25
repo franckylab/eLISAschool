@@ -71,8 +71,28 @@ export class Etablissement {
     @Column({ type: 'varchar', length: 500, nullable: true })
     slogan?: string;
 
-    @Column({ type: 'varchar', length: 500, nullable: true })
-    logoUrl?: string;
+    // ==================================
+    // Logo de l'établissement (v3.0)
+    // ==================================
+
+    /**
+     * Logo encodé en base64 (data:image/xxx;base64,...)
+     * Non chargé par défaut pour éviter d'alourdir les requêtes
+     */
+    @Column({ type: 'text', nullable: true, select: false })
+    logoBase64?: string;
+
+    /**
+     * Type MIME du logo : 'png', 'jpg', 'svg', 'webp'
+     */
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    logoType?: string;
+
+    /**
+     * Taille du fichier original en octets
+     */
+    @Column({ type: 'integer', nullable: true })
+    logoTaille?: number;
 
     @Column({ type: 'enum', enum: SousSysteme, default: SousSysteme.FRANCOPHONE })
     sousSysteme!: SousSysteme;
@@ -153,6 +173,31 @@ export class Etablissement {
 
     @Column({ type: 'varchar', length: 20, nullable: true })
     couleurSecondaire?: string;
+
+    // ==================================
+    // Paramètres régionaux (v3.0)
+    // ==================================
+
+    /**
+     * Langue par défaut de l'établissement
+     * Fallback: ParametreSysteme → ConfigurationApp → 'fr'
+     */
+    @Column({ type: 'varchar', length: 10, default: 'fr' })
+    langueDefaut!: string;
+
+    /**
+     * Devise monétaire de l'établissement
+     * Fallback: ParametreSysteme → ConfigurationApp → 'XAF'
+     */
+    @Column({ type: 'varchar', length: 10, default: 'XAF' })
+    devise!: string;
+
+    /**
+     * Fuseau horaire de l'établissement (format IANA)
+     * Fallback: ParametreSysteme → ConfigurationApp → 'Africa/Douala'
+     */
+    @Column({ type: 'varchar', length: 50, default: 'Africa/Douala' })
+    fuseauHoraire!: string;
 
     /**
      * Relation 1:1 vers la configuration de l'établissement.

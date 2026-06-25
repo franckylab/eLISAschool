@@ -8,7 +8,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { suiviPersonnelService } from '../services';
 import { createIncidentPersonnelSchema, createEvaluationPersonnelSchema } from '../dto';
-import { staffOnly, requireRoles } from '@modules/auth/middlewares';
+import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -21,7 +21,7 @@ function validate(schema: any, data: unknown): any {
     return result.data;
 }
 
-router.post('/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/incidents', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createIncidentPersonnelSchema, req.body);
         const incident = await suiviPersonnelService.createIncident(
@@ -36,7 +36,7 @@ router.post('/incidents', staffOnly, async (req: Request, res: Response, next: N
     }
 });
 
-router.get('/personnel/:membrePersonnelId/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/personnel/:membrePersonnelId/incidents', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -74,7 +74,7 @@ router.get('/personnel/:membrePersonnelId/incidents', staffOnly, async (req: Req
     }
 });
 
-router.post('/evaluations', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/evaluations', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createEvaluationPersonnelSchema, req.body);
         const evaluation = await suiviPersonnelService.createEvaluation(
@@ -89,7 +89,7 @@ router.post('/evaluations', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN
     }
 });
 
-router.get('/personnel/:membrePersonnelId/evaluations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/personnel/:membrePersonnelId/evaluations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -127,7 +127,7 @@ router.get('/personnel/:membrePersonnelId/evaluations', staffOnly, async (req: R
     }
 });
 
-router.get('/personnel/:membrePersonnelId/dashboard', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/personnel/:membrePersonnelId/dashboard', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dashboard = await suiviPersonnelService.getDashboardPersonnel(
             req.params.membrePersonnelId,

@@ -61,6 +61,7 @@ import {
     GripVertical,
     Settings2,
     Search,
+    X,
     Check,
     Rows3,
     Pin,
@@ -70,9 +71,10 @@ import {
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { RowActions } from '@/components/ui/RowActions';
-import { usePermissions } from '@/hooks';
+import { usePermissions, useDataTablePreferences } from '@/hooks';
 import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { ActionConfig } from '@/components/ui/RowActions';
 
 /* ================================================================
@@ -114,6 +116,8 @@ export interface Column<T> {
 }
 
 interface DataTableProps<T> {
+    /** Identifiant unique pour la persistance des préférences (OBLIGATOIRE) */
+    tableId: string;
     data: T[];
     columns: Column<T>[];
     isLoading?: boolean;
@@ -228,6 +232,7 @@ interface CelluleEnTeteProps {
     isResizing: boolean;
     isSorted: boolean;
     sortDirection: 'ASC' | 'DESC' | null;
+    sortIndex?: number; // Index dans le tableau de multi-tri (0 = premier tri)
     largeur: number;
     estPinned: 'left' | 'right' | false;
     offsetPinned: number;
@@ -238,6 +243,7 @@ interface CelluleEnTeteProps {
     onResizeMove: (e: React.MouseEvent | React.TouchEvent) => void;
     onResizeEnd: () => void;
     isSticky: boolean;
+    estDerniereColonne: boolean; // Pour le séparateur de colonne
 }
 
 /** En-tête simple — sans @dnd-kit, rendu propre sans attributs ARIA superflus */
@@ -246,6 +252,7 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
     isResizing,
     isSorted,
     sortDirection,
+    sortIndex = 0,
     largeur,
     estPinned,
     offsetPinned,
@@ -255,47 +262,86 @@ const CelluleEnTeteSimple = memo(function CelluleEnTeteSimple({
     onResizeMove,
     onResizeEnd,
     isSticky,
+    estDerniereColonne,
 }: CelluleEnTeteProps) {
+    const estActions = col.renderActions !== undefined;
+    
+    // Pour la colonne Actions : largeur minimale
+    const largeurCellule = estActions ? 48 : largeur;
+    
     const style: React.CSSProperties = {
-        width: largeur,
-        minWidth: col.minSize ?? 50,
-        maxWidth: col.maxSize ?? 800,
-        position: estPinned ? 'sticky' as const : undefined,
+        width: largeurCellule,
+        minWidth: estActions ? 48 : col.minSize ?? 50,
+        maxWidth: estActions ? 48 : col.maxSize ?? 800,
+        position: estPinned || estActions ? 'sticky' as const : undefined,
         left: estPinned === 'left' ? offsetPinned : undefined,
-        right: estPinned === 'right' ? offsetPinned : undefined,
-        zIndex: estPinned ? 6 : (isSticky ? 5 : undefined),
-        backgroundColor: estPinned ? 'var(--color-surface-alt)' : undefined,
+        right: estPinned === 'right' || estActions ? 0 : undefined,
+        zIndex: estActions ? 25 : estPinned ? 6 : (isSticky ? 5 : undefined),
+        backgroundColor: estActions || estPinned ? 'var(--color-surface-alt)' : undefined,
+        boxShadow: estActions ? '-4px 0 8px -2px rgba(0, 0, 0, 0.1)' : undefined,
     };
 
     return (
         <th
             style={style}
             className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
-                col.sortable ? 'cursor-pointer' : ''
-            } ${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
-            onClick={() => col.sortable && onSort()}
+                estPinned || estActions ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
         >
-            <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
-                <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
-                {col.sortable && (
-                    <>
-                        {isSorted ? (
-                            sortDirection === 'ASC' ? (
-                                <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
+            {/* Séparateur de colonne discret */}
+            {!estDerniereColonne && !estActions && (
+                <div className="absolute right-0 top-1/4 bottom-1/4 w-px bg-[var(--color-bordure)] opacity-90" />
+            )}
+            
+            {/* Pour la colonne Actions : ne pas afficher le header */}
+            {!estActions && (
+                <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
+                    <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
+                    {col.sortable && (
+                        <>
+                            {isSorted ? (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onSort(); }}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label={`Trier par ${col.header}`}
+                                >
+                                    <div className="flex items-center gap-0.5">
+                                        {sortDirection === 'ASC' ? (
+                                            <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-600)]" />
+                                        ) : (
+                                            <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-600)]" />
+                                        )}
+                                        {/* Badge de multi-tri */}
+                                        {sortIndex > 0 && (
+                                            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-dominant-600)] text-[0.625rem] font-bold text-white">
+                                                {sortIndex + 1}
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
                             ) : (
-                                <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
-                            )
-                        ) : (
-                            <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
-                        )}
-                    </>
-                )}
-                {estPinned && (
-                    <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
-                )}
-            </div>
-            {/* Poignée de redimensionnement */}
-            {enableResize && col.enableResizing !== false && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onSort(); }}
+                                    className="cursor-pointer hover:opacity-60 transition-opacity"
+                                    aria-label={`Trier par ${col.header}`}
+                                >
+                                    <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
+                                </button>
+                            )}
+                        </>
+                    )}
+                    {estPinned && (
+                        <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
+                    )}
+                </div>
+            )}
+            {/* Pour la colonne Actions : afficher juste une icône */}
+            {estActions && (
+                <div className="flex items-center justify-center" style={{ padding: 'var(--padding-table-cell)' }}>
+                    <span className="text-xs font-medium text-[var(--color-text-muted)]">Actions</span>
+                </div>
+            )}
+            {/* Poignée de redimensionnement (pas pour Actions) */}
+            {enableResize && col.enableResizing !== false && !estActions && (
                 <div
                     className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none transition-colors ${
                         isResizing
@@ -320,6 +366,7 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
     isResizing,
     isSorted,
     sortDirection,
+    sortIndex = 0,
     largeur,
     estPinned,
     offsetPinned,
@@ -329,6 +376,7 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
     onResizeMove,
     onResizeEnd,
     isSticky,
+    estDerniereColonne,
 }: CelluleEnTeteProps) {
     const {
         attributes,
@@ -342,18 +390,24 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
         disabled: col.enableReordering === false,
     });
 
+    const estActions = col.renderActions !== undefined;
+    
+    // Pour la colonne Actions : largeur minimale
+    const largeurCellule = estActions ? 48 : largeur;
+    
     const style: React.CSSProperties = {
-        width: largeur,
-        minWidth: col.minSize ?? 50,
-        maxWidth: col.maxSize ?? 800,
+        width: largeurCellule,
+        minWidth: estActions ? 48 : col.minSize ?? 50,
+        maxWidth: estActions ? 48 : col.maxSize ?? 800,
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        position: estPinned ? 'sticky' as const : undefined,
+        position: estPinned || estActions ? 'sticky' as const : undefined,
         left: estPinned === 'left' ? offsetPinned : undefined,
-        right: estPinned === 'right' ? offsetPinned : undefined,
-        zIndex: estPinned ? 6 : (isSticky ? 5 : undefined),
-        backgroundColor: estPinned ? 'var(--color-surface-alt)' : undefined,
+        right: estPinned === 'right' || estActions ? 0 : undefined,
+        zIndex: estActions ? 25 : estPinned ? 6 : (isSticky ? 5 : undefined),
+        backgroundColor: estActions || estPinned ? 'var(--color-surface-alt)' : undefined,
+        boxShadow: estActions ? '-4px 0 8px -2px rgba(0, 0, 0, 0.1)' : undefined,
     };
 
     return (
@@ -361,13 +415,17 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
             ref={setNodeRef}
             style={style}
             className={`relative font-medium text-[var(--color-text-secondary)] select-none ${
-                col.sortable ? 'cursor-pointer' : ''
-            } ${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
-            onClick={() => col.sortable && onSort()}
+                estPinned || estActions ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             {...attributes}
         >
+            {/* Séparateur de colonne discret */}
+            {!estDerniereColonne && !estActions && (
+                <div className="absolute right-0 top-1/4 bottom-1/4 w-px bg-[var(--color-bordure)] opacity-90" />
+            )}
+            
             <div className="flex items-center gap-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)]" style={{ padding: 'var(--padding-table-cell)' }}>
-                {col.enableReordering !== false && (
+                {/* Grip de drag (pas pour Actions) */}
+                {col.enableReordering !== false && !estActions && (
                     <button
                         className="cursor-grab touch-none text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] active:cursor-grabbing"
                         {...listeners}
@@ -376,26 +434,55 @@ const CelluleEnTeteSortable = memo(function CelluleEnTeteSortable({
                         <GripVertical className="h-[clamp(0.75rem,0.65rem+0.3vw,0.875rem)] w-[clamp(0.75rem,0.65rem+0.3vw,0.875rem)]" />
                     </button>
                 )}
-                <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
-                {col.sortable && (
+                {/* Pour la colonne Actions : ne pas afficher le header */}
+                {!estActions && (
                     <>
-                        {isSorted ? (
-                            sortDirection === 'ASC' ? (
-                                <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
-                            ) : (
-                                <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0" />
-                            )
-                        ) : (
-                            <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
+                        <span className="truncate" style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}>{col.header}</span>
+                        {col.sortable && (
+                            <>
+                                {isSorted ? (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onSort(); }}
+                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                        aria-label={`Trier par ${col.header}`}
+                                    >
+                                        <div className="flex items-center gap-0.5">
+                                            {sortDirection === 'ASC' ? (
+                                                <ArrowUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-600)]" />
+                                            ) : (
+                                                <ArrowDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-600)]" />
+                                            )}
+                                            {/* Badge de multi-tri */}
+                                            {sortIndex > 0 && (
+                                                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-dominant-600)] text-[0.625rem] font-bold text-white">
+                                                    {sortIndex + 1}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onSort(); }}
+                                        className="cursor-pointer hover:opacity-60 transition-opacity"
+                                        aria-label={`Trier par ${col.header}`}
+                                    >
+                                        <ArrowUpDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 opacity-40" />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        {estPinned && (
+                            <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
                         )}
                     </>
                 )}
-                {estPinned && (
-                    <Pin className="h-[var(--icon-xs)] w-[var(--icon-xs)] shrink-0 text-[var(--color-dominant-500)]" />
+                {/* Pour la colonne Actions : afficher juste une icône */}
+                {estActions && (
+                    <span className="text-xs font-medium text-[var(--color-text-muted)]">Actions</span>
                 )}
             </div>
-            {/* Poignée de redimensionnement */}
-            {enableResize && col.enableResizing !== false && (
+            {/* Poignée de redimensionnement (pas pour Actions) */}
+            {enableResize && col.enableResizing !== false && !estActions && (
                 <div
                     className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none transition-colors ${
                         isResizing
@@ -609,86 +696,34 @@ function LigneTableauInterne<T>({
     paddingVertical,
 }: LigneTableauProps<T>) {
     const { hasPermission } = usePermissions();
-    const [estVisible, setEstVisible] = useState(false);
     const rowRef = useRef<HTMLTableRowElement>(null);
     
-    // Trouver la colonne avec renderActions
-    const colonneActions = colonnesVisibles.find(col => col.renderActions);
-    const indexColonneActions = colonneActions ? colonnesVisibles.indexOf(colonneActions) : -1;
-    
-    // Index de la cellule où afficher les boutons (mis à jour au scroll/hover)
-    const [indexCellulePourBoutons, setIndexCellulePourBoutons] = useState(
-        indexColonneActions >= 0 ? indexColonneActions : colonnesVisibles.length - 1
-    );
-    
-    // Détecter les colonnes visibles au hover
-    const detecterColonneVisible = () => {
-        if (!rowRef.current || !colonneActions) return;
-        
-        const conteneur = rowRef.current.closest('.overflow-auto');
-        if (!conteneur) return;
-        
-        const rectConteneur = conteneur.getBoundingClientRect();
-        const cellules = rowRef.current.querySelectorAll('td');
-        
-        // Trouver la dernière cellule dont le centre est dans le viewport
-        let derniereVisible = colonnesVisibles.length - 1;
-        
-        cellules.forEach((cellule, index) => {
-            const rectCellule = cellule.getBoundingClientRect();
-            const centreCellule = rectCellule.left + rectCellule.width / 2;
-            
-            // Si le centre de la cellule est dans le viewport
-            if (centreCellule >= rectConteneur.left && centreCellule <= rectConteneur.right) {
-                derniereVisible = index;
-            }
-        });
-        
-        // Vérifier si la colonne Actions est visible
-        if (indexColonneActions >= 0) {
-            const celluleActions = cellules[indexColonneActions];
-            if (celluleActions) {
-                const rectActions = celluleActions.getBoundingClientRect();
-                const centreActions = rectActions.left + rectActions.width / 2;
-                
-                // Si Actions est visible, l'utiliser
-                if (centreActions >= rectConteneur.left && centreActions <= rectConteneur.right) {
-                    setIndexCellulePourBoutons(indexColonneActions);
-                    return;
-                }
-            }
-        }
-        
-        // Sinon, utiliser la dernière cellule visible
-        setIndexCellulePourBoutons(derniereVisible);
-    };
+    // Trouver la colonne avec renderActions (pas utilisé)
 
-    // Wrapper pour le hover sur toute la ligne
-    const handlersLigne = {
-        onMouseEnter: () => {
-            detecterColonneVisible();
-            setEstVisible(true);
-        },
-        onMouseLeave: () => setEstVisible(false),
-    };
-
-    const cellules = colonnesVisibles.map((col, cellIndex) => {
+    const cellules = colonnesVisibles.map((col) => {
         const estPinned = colonnesPinned.has(col.key);
+        const estActions = col.renderActions !== undefined;
         const positionEpinglage = pinningPositions.get(col.key) || false;
         const largeur = largeurs.get(col.key) ?? col.size ?? 150;
+        
+        // Pour la colonne Actions : largeur minimale (juste le bouton)
+        const largeurCellule = estActions ? 48 : largeur;
+        
         const style: React.CSSProperties = {
-            width: largeur,
-            maxWidth: largeur,
-            position: estPinned ? 'sticky' as const : undefined,
+            width: largeurCellule,
+            maxWidth: largeurCellule,
+            minWidth: estActions ? 48 : undefined,
+            position: estPinned || estActions ? 'sticky' as const : undefined,
             left: positionEpinglage === 'left' ? offsetsPinned.get(col.key) : undefined,
-            right: positionEpinglage === 'right' ? offsetsPinned.get(col.key) : undefined,
-            zIndex: estPinned ? 3 : undefined,
-            backgroundColor: estPinned ? 'var(--color-surface)' : undefined,
+            right: positionEpinglage === 'right' || estActions ? 0 : undefined,
+            zIndex: estActions ? 20 : estPinned ? 3 : undefined,
+            backgroundColor: estActions || estPinned ? 'var(--color-surface)' : undefined,
             paddingBlock: paddingVertical,
-            overflow: 'hidden',
+            overflow: estActions ? 'visible' : 'hidden',
+            boxShadow: estActions ? '-4px 0 8px -2px rgba(0, 0, 0, 0.1)' : undefined,
         };
 
-        // Si c'est la colonne Actions, utiliser RowActions avec estVisible
+        // Si c'est la colonne Actions, utiliser RowActions
         let contenu: React.ReactNode = null;
         
         if (col.renderActions) {
@@ -697,7 +732,11 @@ function LigneTableauInterne<T>({
                 (action) => !action.permission || hasPermission(action.permission)
             );
             contenu = actionsFiltrees.length > 0
-                ? <RowActions actions={actionsFiltrees} estVisible={estVisible} />
+                ? (
+                    <div className="flex items-center justify-center w-full h-full">
+                        <RowActions actions={actionsFiltrees} />
+                    </div>
+                )
                 : null;
         } else {
             contenu = col.render
@@ -705,27 +744,11 @@ function LigneTableauInterne<T>({
                 : (item as any)[col.key];
         }
 
-        // Si cette cellule est désignée pour afficher les boutons (Actions hors viewport)
-        if (cellIndex === indexCellulePourBoutons && !col.renderActions && colonneActions) {
-            const actionsBrutes = colonneActions.renderActions!(item);
-            const actionsFiltrees = actionsBrutes.filter(
-                (action) => !action.permission || hasPermission(action.permission)
-            );
-            if (actionsFiltrees.length > 0) {
-                contenu = (
-                    <div className="flex items-center justify-between">
-                        {contenu}
-                        <RowActions actions={actionsFiltrees} estVisible={estVisible} />
-                    </div>
-                );
-            }
-        }
-
         return (
             <td
                 key={col.key}
                 style={style}
-                className={`${estPinned ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
+                className={`${estPinned || estActions ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             >
                 <div 
                     className="min-w-0 overflow-hidden"
@@ -741,7 +764,6 @@ function LigneTableauInterne<T>({
         return (
             <motion.tr
                 ref={rowRef as any}
-                {...handlersLigne}
                 key={rowId}
                 className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
                 initial={{ opacity: 0, y: 10 }}
@@ -756,7 +778,6 @@ function LigneTableauInterne<T>({
     return (
         <tr
             ref={rowRef}
-            {...handlersLigne}
             key={rowId}
             className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
         >
@@ -996,9 +1017,18 @@ function BarreOutils({
                         placeholder={searchPlaceholder || t('tableau.rechercher', { defaultValue: 'Rechercher...' })}
                         value={recherche}
                         onChange={(e) => onRechercheChange(e.target.value)}
-                        className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] pl-9 pr-3 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                        className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] pl-9 pr-[clamp(1.5rem,1.2rem+0.5vw,2rem)] text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
                         style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                     />
+                    {recherche && (
+                        <button
+                            onClick={() => onRechercheChange('')}
+                            className="absolute right-[clamp(0.5rem,0.4rem+0.2vw,0.625rem)] top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                            aria-label="Effacer la recherche"
+                        >
+                            <X className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+                        </button>
+                    )}
                 </div>
             )}
             {/* Filtres rapides */}
@@ -1061,6 +1091,7 @@ function BarreOutils({
  * ================================================================ */
 
 export function DataTable<T>({
+    tableId,
     data,
     columns,
     isLoading = false,
@@ -1095,57 +1126,116 @@ export function DataTable<T>({
     const { t } = useTranslation();
     const { hasPermission } = usePermissions();
 
-    // --- Normalisation des props (rétro-compatibilité) ---
+    // --- Persistance des préférences DataTable ---
+    const {
+        preferences,
+        updatePreferences,
+    } = useDataTablePreferences(tableId);
+
+    // --- Normalisation des props (rétro-compatibilité + persistance) ---
     const colonnesFinales = columns ?? colonnesLegacy ?? [];
     const donneesFinales = data ?? donneesLegacy ?? [];
+    
+    // Wrapper onLimitChange pour sauvegarder la préférence
+    const handleLimitChange = useCallback((limit: number) => {
+        onLimitChange?.(limit);
+        updatePreferences({ pageSize: limit });
+    }, [onLimitChange, updatePreferences]);
+    
     const paginationNormalisee = useMemo(
-        () => normaliserPagination(pagination, onPageChange, onLimitChange),
-        [pagination, onPageChange, onLimitChange],
+        () => normaliserPagination(pagination, onPageChange, handleLimitChange),
+        [pagination, onPageChange, handleLimitChange],
     );
 
-    // --- État de tri ---
-    const [localSortBy, setLocalSortBy] = useState<string | null>(null);
-    const [localSortOrder, setLocalSortOrder] = useState<'ASC' | 'DESC'>('ASC');
+    // --- État de tri MULTI-COLONNES (avec persistance) ---
+    // Tableau de { key, order } pour supporter le multi-tri
+    const [localSortState, setLocalSortState] = useState<Array<{ key: string; order: 'ASC' | 'DESC' }>>(
+        () => preferences.sortBy || []
+    );
     const isControlled = sortBy !== undefined && onSortChange !== undefined;
-    const activeSortBy = isControlled ? sortBy : localSortBy;
-    const activeSortOrder = isControlled ? (sortOrder ?? 'ASC') : localSortOrder;
+    
+    // Pour compatibilité arrière, on utilise le premier tri comme "tri principal" (variables pas utilisées)
 
     const handleSort = useCallback((key: string) => {
         if (!isControlled) {
-            setLocalSortBy((prev) => {
-                if (prev === key) {
-                    setLocalSortOrder((o) => (o === 'ASC' ? 'DESC' : 'ASC'));
-                    return key;
+            setLocalSortState((prev) => {
+                // Trouver si cette colonne est déjà dans le tri
+                const existingIndex = prev.findIndex(s => s.key === key);
+                
+                let newState: Array<{ key: string; order: 'ASC' | 'DESC' }>;
+                if (existingIndex >= 0) {
+                    // Colonne déjà triée : cycle ASC → DESC → suppression
+                    const currentOrder = prev[existingIndex].order;
+                    if (currentOrder === 'ASC') {
+                        // ASC → DESC
+                        newState = [...prev];
+                        newState[existingIndex] = { key, order: 'DESC' };
+                    } else {
+                        // DESC → supprimer du tri
+                        newState = prev.filter((_, i) => i !== existingIndex);
+                    }
+                } else {
+                    // Nouvelle colonne : ajouter en ASC
+                    newState = [...prev, { key, order: 'ASC' }];
                 }
-                setLocalSortOrder('ASC');
-                return key;
+                
+                // Sauvegarder le tri dans les préférences
+                updatePreferences({ sortBy: newState });
+                return newState;
             });
         } else if (onSortChange) {
+            // Mode contrôlé : comportement simple (mono-tri)
             const newOrder = sortBy === key && sortOrder === 'ASC' ? 'DESC' : 'ASC';
             onSortChange(key, newOrder);
         }
     }, [isControlled, sortBy, sortOrder, onSortChange]);
+    
+    // Réinitialiser le tri local si les props contrôlées changent
+    useEffect(() => {
+        if (isControlled) {
+            setLocalSortState([]);
+        }
+    }, [isControlled]);
 
-    // --- Tri local des données ---
+    // --- Tri local des données (support multi-tri) ---
     const donneesTriees = useMemo(() => {
-        if (!activeSortBy || donneesFinales.length === 0) return donneesFinales;
+        if (localSortState.length === 0 || donneesFinales.length === 0) return donneesFinales;
+        
         return [...donneesFinales].sort((a: any, b: any) => {
-            const aVal = a[activeSortBy];
-            const bVal = b[activeSortBy];
-            if (aVal < bVal) return activeSortOrder === 'ASC' ? -1 : 1;
-            if (aVal > bVal) return activeSortOrder === 'ASC' ? 1 : -1;
+            // Appliquer chaque critère de tri dans l'ordre
+            for (const { key, order } of localSortState) {
+                const aVal = a[key];
+                const bVal = b[key];
+                
+                // Gérer les valeurs nulles/undefined
+                if (aVal == null && bVal == null) continue;
+                if (aVal == null) return 1; // null à la fin
+                if (bVal == null) return -1;
+                
+                // Comparer
+                let cmp = 0;
+                if (aVal < bVal) cmp = -1;
+                else if (aVal > bVal) cmp = 1;
+                
+                if (cmp !== 0) {
+                    return order === 'ASC' ? cmp : -cmp;
+                }
+                // Si égal, passer au critère suivant
+            }
             return 0;
         });
-    }, [donneesFinales, activeSortBy, activeSortOrder]);
+    }, [donneesFinales, localSortState]);
 
     const donneesAffichees = isControlled ? donneesFinales : donneesTriees;
 
-    // --- Recherche ---
+    // --- Recherche optimisée avec debounce ---
     const [recherche, setRechercheInterne] = useState('');
+    const rechercheDebounce = useDebounce(recherche, 300); // 300ms de délai
 
     // Wrapper pour la recherche — émet le callback serveur + filtre client
     const setRecherche = useCallback((valeur: string) => {
         setRechercheInterne(valeur);
+        // Callback serveur immédiat (pour API backend)
         onSearchChange?.(valeur);
     }, [onSearchChange]);
 
@@ -1163,38 +1253,74 @@ export function DataTable<T>({
     }, [onFilterChange]);
 
     // Filtrage côté client (Fuse.js) — uniquement si disableClientSearch n'est pas activé
+    // Utilise la valeur debounced pour éviter les recalculs excessifs
     const donneesFiltrees = useMemo(() => {
         let resultats = donneesAffichees;
 
-        // Recherche Fuse.js
-        if (searchable && recherche.trim() && !disableClientSearch) {
+        // Recherche Fuse.js optimisée
+        if (searchable && rechercheDebounce.trim() && !disableClientSearch) {
             const fuse = new Fuse(resultats as any[], {
                 keys: colonnesFinales.map((c) => c.key),
                 threshold: 0.3,
+                includeScore: true, // Pour score de pertinence
             });
-            resultats = fuse.search(recherche).map((r) => r.item) as T[];
+            resultats = fuse.search(rechercheDebounce).map((r) => r.item) as T[];
         }
 
         return resultats;
-    }, [donneesAffichees, recherche, searchable, colonnesFinales, disableClientSearch]);
+    }, [donneesAffichees, rechercheDebounce, searchable, colonnesFinales, disableClientSearch]);
 
-    // --- État colonnes TanStack ---
+    // --- État colonnes TanStack (avec persistance) ---
     const [taillesColonnes, setTaillesColonnes] = useState<ColumnSizingState>({});
+    
+    // Synchroniser les tailles depuis les préférences (quand elles sont chargées)
+    useEffect(() => {
+        if (preferences.columnWidths && Object.keys(preferences.columnWidths).length > 0) {
+            setTaillesColonnes(preferences.columnWidths);
+        }
+    }, [preferences.columnWidths]);
+    
     const [visibiliteColonnes, setVisibiliteColonnes] = useState<VisibilityState>(
-        () => buildInitialVisibility(colonnesFinales),
+        () => {
+            const initial = buildInitialVisibility(colonnesFinales);
+            // Appliquer les colonnes masquées persistées
+            if (preferences.hiddenColumns?.length > 0) {
+                preferences.hiddenColumns.forEach(key => {
+                    initial[key] = false;
+                });
+            }
+            return initial;
+        }
     );
     const [ordreColonnes, setOrdreColonnes] = useState<string[]>(
-        () => colonnesFinales.map((c) => c.key),
+        () => preferences.columnOrder?.length > 0 
+            ? preferences.columnOrder 
+            : colonnesFinales.map((c) => c.key)
     );
     
-    // --- État d'épinglage des colonnes ---
+    // --- État d'épinglage des colonnes (avec persistance) ---
     const [pinningEtat, setPinningEtat] = useState<Record<string, 'left' | 'right' | false>>(() => {
         const initial: Record<string, 'left' | 'right' | false> = {};
-        colonnesFinales.forEach((col) => {
-            if (col.pinned === 'left' || col.pinned === 'right') {
-                initial[col.key] = col.pinned;
-            }
-        });
+        
+        // Appliquer l'épinglage persisté
+        if (preferences.pinnedColumns) {
+            preferences.pinnedColumns.left.forEach(key => {
+                initial[key] = 'left';
+            });
+            preferences.pinnedColumns.right.forEach(key => {
+                initial[key] = 'right';
+            });
+        }
+        
+        // Fallback sur la config des colonnes
+        if (Object.keys(initial).length === 0) {
+            colonnesFinales.forEach((col) => {
+                if (col.pinned === 'left' || col.pinned === 'right') {
+                    initial[col.key] = col.pinned;
+                }
+            });
+        }
+        
         // Épingler automatiquement la première colonne visible à gauche si aucune n'est épinglée
         const hasAnyPinned = Object.values(initial).some(v => v !== false);
         if (!hasAnyPinned && colonnesFinales.length > 0) {
@@ -1260,7 +1386,14 @@ export function DataTable<T>({
             columnVisibility: visibiliteColonnes,
             columnSizing: taillesColonnes,
         },
-        onColumnSizingChange: setTaillesColonnes,
+        onColumnSizingChange: (updater) => {
+            setTaillesColonnes((prev) => {
+                const next = typeof updater === 'function' ? updater(prev) : updater;
+                // Sauvegarder les largeurs de colonnes
+                updatePreferences({ columnWidths: next });
+                return next;
+            });
+        },
         onColumnVisibilityChange: (updater) => {
             setVisibiliteColonnes((prev) => {
                 const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -1273,27 +1406,43 @@ export function DataTable<T>({
         getCoreRowModel: getCoreRowModel(),
     });
 
-    // --- Callbacks ordre colonnes ---
+    // --- Callbacks ordre colonnes (avec persistance) ---
     const handleOrdreChange = useCallback((nouvelOrdre: string[]) => {
         setOrdreColonnes(nouvelOrdre);
         onColumnOrderChange?.(nouvelOrdre);
-    }, [onColumnOrderChange]);
+        // Sauvegarder la préférence
+        updatePreferences({ columnOrder: nouvelOrdre });
+    }, [onColumnOrderChange, updatePreferences]);
 
     const handleToggleVisibilite = useCallback((key: string) => {
-        setVisibiliteColonnes((prev) => ({
-            ...prev,
-            [key]: prev[key] === false ? true : false,
-        }));
-    }, []);
+        setVisibiliteColonnes((prev) => {
+            const next = {
+                ...prev,
+                [key]: prev[key] === false ? true : false,
+            };
+            // Sauvegarder les colonnes masquées
+            const hiddenColumns = Object.entries(next)
+                .filter(([_, visible]) => !visible)
+                .map(([key]) => key);
+            updatePreferences({ hiddenColumns });
+            return next;
+        });
+    }, [updatePreferences]);
     
-    // --- Callback épinglage ---
+    // --- Callback épinglage (avec persistance) ---
     const handlePin = useCallback((key: string, position: 'left' | 'right' | false) => {
         setPinningEtat((prev) => {
             const next = { ...prev, [key]: position };
             onColumnPinningChange?.(next);
+            // Sauvegarder l'épinglage
+            const pinnedColumns = {
+                left: Object.entries(next).filter(([, pos]) => pos === 'left').map(([key]) => key),
+                right: Object.entries(next).filter(([, pos]) => pos === 'right').map(([key]) => key),
+            };
+            updatePreferences({ pinnedColumns });
             return next;
         });
-    }, [onColumnPinningChange]);
+    }, [onColumnPinningChange, updatePreferences]);
 
     // --- Hauteur de ligne ---
     const [hauteurLigne, setHauteurLigne] = useState(defaultRowHeight);
@@ -1315,15 +1464,21 @@ export function DataTable<T>({
     }, [colonnesFinales, taillesColonnes]);
 
     const handleResizeMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-        if (!resizeRef.current) return;
+        const ref = resizeRef.current;
+        if (!ref) return;
+        
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const delta = clientX - resizeRef.current.startX;
-        const col = colonnesFinales.find((c) => c.key === resizeRef.current!.key);
+        const delta = clientX - ref.startX;
+        const col = colonnesFinales.find((c) => c.key === ref.key);
         const minW = col?.minSize ?? 50;
         const maxW = col?.maxSize ?? 800;
-        const newWidth = Math.max(minW, Math.min(maxW, resizeRef.current.startWidth + delta));
-        setTaillesColonnes((prev) => ({ ...prev, [resizeRef.current!.key]: newWidth }));
-    }, [colonnesFinales]);
+        const newWidth = Math.max(minW, Math.min(maxW, ref.startWidth + delta));
+        setTaillesColonnes((prev) => {
+            const next = { ...prev, [ref.key]: newWidth };
+            updatePreferences({ columnWidths: next });
+            return next;
+        });
+    }, [colonnesFinales, updatePreferences]);
 
     const handleResizeEnd = useCallback(() => {
         resizeRef.current = null;
@@ -1342,7 +1497,11 @@ export function DataTable<T>({
             const minW = col?.minSize ?? 50;
             const maxW = col?.maxSize ?? 800;
             const newWidth = Math.max(minW, Math.min(maxW, ref.startWidth + delta));
-            setTaillesColonnes((prev) => ({ ...prev, [ref.key]: newWidth }));
+            setTaillesColonnes((prev) => {
+                const next = { ...prev, [ref.key]: newWidth };
+                updatePreferences({ columnWidths: next });
+                return next;
+            });
         };
         const handleGlobalUp = () => {
             resizeRef.current = null;
@@ -1358,7 +1517,7 @@ export function DataTable<T>({
             window.removeEventListener('touchmove', handleGlobalMove);
             window.removeEventListener('touchend', handleGlobalUp);
         };
-    }, [resizeKey, colonnesFinales]);
+    }, [resizeKey, colonnesFinales, updatePreferences]);
 
     // --- DnD sensors ---
     const sensors = useSensors(
@@ -1468,9 +1627,13 @@ export function DataTable<T>({
     // --- Détection petit écran pour vue carte ---
     const estPetitEcran = useMediaQuery('(max-width: 479px)');
 
-    // --- Largeur totale du tableau ---
+    // --- Largeur totale du tableau (exclut la colonne Actions) ---
     const largeurTotale = useMemo(() => {
-        return colonnesVisibles.reduce((sum, col) => sum + (largeursColonnes.get(col.key) ?? col.size ?? 150), 0);
+        return colonnesVisibles.reduce((sum, col) => {
+            // Exclure la colonne Actions du calcul de largeur
+            if (col.renderActions) return sum;
+            return sum + (largeursColonnes.get(col.key) ?? col.size ?? 150);
+        }, 0);
     }, [colonnesVisibles, largeursColonnes]);
 
     const limits = [10, 20, 50, 100];
@@ -1530,15 +1693,20 @@ export function DataTable<T>({
                         }`}
                     >
                         <tr>
-                            {colonnesVisibles.map((col, index) => (
-                                enableReordering ? (
+                            {colonnesVisibles.map((col, index) => {
+                                // Calculer l'index de tri pour le badge multi-tri
+                                const sortIndexInMulti = localSortState.findIndex(s => s.key === col.key);
+                                const estDansMultiTri = sortIndexInMulti >= 0;
+                                
+                                return enableReordering ? (
                                     <CelluleEnTeteSortable
                                         key={col.key}
                                         col={col}
                                         index={index}
                                         isResizing={resizeKey === col.key}
-                                        isSorted={activeSortBy === col.key}
-                                        sortDirection={activeSortBy === col.key ? activeSortOrder : null}
+                                        isSorted={estDansMultiTri}
+                                        sortDirection={estDansMultiTri ? localSortState[sortIndexInMulti].order : null}
+                                        sortIndex={sortIndexInMulti}
                                         largeur={largeursColonnes.get(col.key) ?? col.size ?? 150}
                                         estPinned={(pinningPositions.get(col.key) || false) as 'left' | 'right' | false}
                                         offsetPinned={offsetsPinnedFinal.get(col.key) ?? 0}
@@ -1549,6 +1717,7 @@ export function DataTable<T>({
                                         onResizeMove={handleResizeMove}
                                         onResizeEnd={handleResizeEnd}
                                         isSticky={stickyHeader}
+                                        estDerniereColonne={index === colonnesVisibles.length - 1}
                                     />
                                 ) : (
                                     <CelluleEnTeteSimple
@@ -1556,8 +1725,9 @@ export function DataTable<T>({
                                         col={col}
                                         index={index}
                                         isResizing={resizeKey === col.key}
-                                        isSorted={activeSortBy === col.key}
-                                        sortDirection={activeSortBy === col.key ? activeSortOrder : null}
+                                        isSorted={estDansMultiTri}
+                                        sortDirection={estDansMultiTri ? localSortState[sortIndexInMulti].order : null}
+                                        sortIndex={sortIndexInMulti}
                                         largeur={largeursColonnes.get(col.key) ?? col.size ?? 150}
                                         estPinned={(pinningPositions.get(col.key) || false) as 'left' | 'right' | false}
                                         offsetPinned={offsetsPinnedFinal.get(col.key) ?? 0}
@@ -1568,9 +1738,10 @@ export function DataTable<T>({
                                         onResizeMove={handleResizeMove}
                                         onResizeEnd={handleResizeEnd}
                                         isSticky={stickyHeader}
+                                        estDerniereColonne={index === colonnesVisibles.length - 1}
                                     />
-                                )
-                            ))}
+                                );
+                            })}
                         </tr>
                     </thead>
 

@@ -32,9 +32,10 @@ export function requirePermission(permission: string) {
                 throw new AppError('Non authentifié', 401, 'UNAUTHORIZED');
             }
 
-            // Résoudre les permissions de l'utilisateur (avec cache)
+            // Résoudre les permissions de l'utilisateur (avec cache et contexte établissement)
             const userPermissions = await permissionResolverService.resolvePermissions(
-                req.utilisateur.id
+                req.utilisateur.id,
+                req.utilisateur?.etablissementId
             );
 
             // Vérifier si la permission est présente
@@ -69,7 +70,8 @@ export function requireAnyPermission(permissions: string[]) {
             }
 
             const userPermissions = await permissionResolverService.resolvePermissions(
-                req.utilisateur.id
+                req.utilisateur.id,
+                req.utilisateur?.etablissementId
             );
 
             // Vérifier si l'utilisateur a AU MOINS UNE des permissions
@@ -104,7 +106,8 @@ export function requireAllPermissions(permissions: string[]) {
             }
 
             const userPermissions = await permissionResolverService.resolvePermissions(
-                req.utilisateur.id
+                req.utilisateur.id,
+                req.utilisateur?.etablissementId
             );
 
             // Vérifier si l'utilisateur a TOUTES les permissions
@@ -134,10 +137,12 @@ export function requireAllPermissions(permissions: string[]) {
  */
 export async function checkPermission(
     utilisateurId: string,
-    permission: string
+    permission: string,
+    etablissementId?: string
 ): Promise<boolean> {
     const userPermissions = await permissionResolverService.resolvePermissions(
-        utilisateurId
+        utilisateurId,
+        etablissementId
     );
     return userPermissions.has(permission);
 }
@@ -167,7 +172,8 @@ export function requirePermissionWithContext(
             // Vérifier la permission avec contexte
             const hasPermission = await permissionResolverService.hasPermission(
                 req.utilisateur.id,
-                permission
+                permission,
+                req.utilisateur?.etablissementId
             );
 
             if (!hasPermission) {

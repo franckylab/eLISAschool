@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ClubsService } from '../services/clubs.service';
 import { createClubSchema, inscrireClubSchema, createEvenementSchema } from '../dto';
-import { authMiddleware, adminOnly, staffOnly } from '@modules/auth/middlewares';
+import { authMiddleware } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, adminOnly, async (req, res, next) => {
+router.post('/', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(createClubSchema, req.body);
         const club = await clubsService.createClub(dto, undefined, req.utilisateur?.id);
@@ -29,14 +29,14 @@ router.post('/', authMiddleware, adminOnly, async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.get('/:id/inscrits', authMiddleware, staffOnly, async (req, res, next) => {
+router.get('/:id/inscrits', authMiddleware, async (req, res, next) => {
     try {
         const inscrits = await clubsService.getInscrits(req.params.id);
         res.json({ success: true, data: inscrits, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
 
-router.post('/inscriptions', authMiddleware, staffOnly, async (req, res, next) => {
+router.post('/inscriptions', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(inscrireClubSchema, req.body);
         const inscription = await clubsService.inscrire(dto, undefined, req.utilisateur?.id);
@@ -51,7 +51,7 @@ router.get('/:id/evenements', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
-router.post('/:id/evenements', authMiddleware, staffOnly, async (req, res, next) => {
+router.post('/:id/evenements', authMiddleware, async (req, res, next) => {
     try {
         const dto = validateDto(createEvenementSchema, req.body);
         const evenement = await clubsService.createEvenement(req.params.id, dto);

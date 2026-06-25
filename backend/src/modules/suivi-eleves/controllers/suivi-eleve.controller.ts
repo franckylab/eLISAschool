@@ -15,7 +15,7 @@ import {
     createSanctionEleveSchema,
     createFelicitationEleveSchema,
 } from '../dto';
-import { staffOnly, requireRoles } from '@modules/auth/middlewares';
+import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 
 const router = Router();
@@ -29,7 +29,7 @@ function validate(schema: any, data: unknown): any {
 }
 
 // ==================== INCIDENTS ====================
-router.post('/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/incidents', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createIncidentEleveSchema, req.body);
         const incident = await suiviEleveService.createIncident(
@@ -44,7 +44,7 @@ router.post('/incidents', staffOnly, async (req: Request, res: Response, next: N
     }
 });
 
-router.get('/eleve/:eleveId/incidents', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId/incidents', async (req: Request, res: Response, next: NextFunction) => {
     try {
         // ← NOUVEAU: Validation année scolaire obligatoire
         const anneeScolaireId = req.query.anneeScolaireId as string;
@@ -84,7 +84,7 @@ router.get('/eleve/:eleveId/incidents', staffOnly, async (req: Request, res: Res
 });
 
 // ==================== OBSERVATIONS ====================
-router.post('/observations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/observations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createObservationEleveSchema, req.body);
         const observation = await suiviEleveService.createObservation(
@@ -99,7 +99,7 @@ router.post('/observations', staffOnly, async (req: Request, res: Response, next
     }
 });
 
-router.get('/eleve/:eleveId/observations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId/observations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         // ← NOUVEAU: Validation année scolaire obligatoire
         const anneeScolaireId = req.query.anneeScolaireId as string;
@@ -139,7 +139,7 @@ router.get('/eleve/:eleveId/observations', staffOnly, async (req: Request, res: 
 });
 
 // ==================== SANCTIONS ====================
-router.post('/sanctions', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, Role.CHEF_ETABLISSEMENT), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/sanctions', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createSanctionEleveSchema, req.body);
         const sanction = await suiviEleveService.createSanction(
@@ -155,7 +155,7 @@ router.post('/sanctions', staffOnly, requireRoles(Role.ADMIN, Role.SUPER_ADMIN, 
 });
 
 // ==================== FELICITATIONS ====================
-router.post('/felicitations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/felicitations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createFelicitationEleveSchema, req.body);
         const felicitation = await suiviEleveService.createFelicitation(
@@ -170,7 +170,7 @@ router.post('/felicitations', staffOnly, async (req: Request, res: Response, nex
     }
 });
 
-router.get('/eleve/:eleveId/felicitations', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId/felicitations', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -209,7 +209,7 @@ router.get('/eleve/:eleveId/felicitations', staffOnly, async (req: Request, res:
 });
 
 // ==================== SANCTIONS LISTE ====================
-router.get('/eleve/:eleveId/sanctions', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId/sanctions', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
         if (!anneeScolaireId) {
@@ -248,7 +248,7 @@ router.get('/eleve/:eleveId/sanctions', staffOnly, async (req: Request, res: Res
 });
 
 // ==================== DASHBOARD ====================
-router.get('/eleve/:eleveId/dashboard', staffOnly, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId/dashboard', async (req: Request, res: Response, next: NextFunction) => {
     try {
         // ← NOUVEAU: Validation année scolaire obligatoire
         const anneeScolaireId = req.query.anneeScolaireId as string;
