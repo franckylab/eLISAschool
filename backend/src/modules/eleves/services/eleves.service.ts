@@ -18,6 +18,9 @@ import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { notificationsService } from '@modules/notifications/services/notifications.service';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 import { parentsService } from '@modules/responsables-eleves/services';
+import { Classe } from '@modules/classes/entities';
+import { AffectationEleve } from '@modules/classes/entities';
+import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -778,6 +781,49 @@ export class ElevesService {
 
         logger.info(`Import CSV: ${importe} importés, ${erreurs} erreurs`);
         return { importe, erreurs, details };
+    }
+
+    /**
+     * NOUVEAU: Récupère la classe actuelle d'un élève via AffectationEleve
+     * 
+     * @param eleveId - ID de l'élève
+     * @param anneeScolaireId - ID de l'année scolaire (optionnel, défaut: année en cours)
+     * @returns La classe de l'élève ou null si aucune affectation active
+     */
+    async getClasseActuelle(
+        eleveId: string,
+        anneeScolaireId?: string
+    ): Promise<Classe | null> {
+        const affectationRepo = AppDataSource.getRepository(AffectationEleve);
+        
+        let anneeId = anneeScolaireId;
+        
+        // Si pas d'année spécifiée, trouver l'année en cours de l'établissement
+        if (!anneeId) {
+            const eleve = await this.findOne(eleveId);
+            const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
+            const anneeEnCours = await anneeRepo.findOne({
+                where: {
+                    etablissementId: eleve.etablissementId,
+                    enCours: true
+                }
+            });
+            anneeId = anneeEnCours?.id;
+        }
+
+        if (!anneeId) return null;
+
+        // Chercher l'affectation active
+        const affectation = await affectationRepo.findOne({
+            where: {
+                eleveId,
+                anneeScolaireId: anneeId,
+                actif: true
+            },
+            relations: ['classe', 'classe.niveau', 'classe.filiere']
+        });
+
+        return affectation?.classe || null;
     }
 }
 

@@ -7,6 +7,7 @@
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Note, TypeEvaluation, StatutNote } from '../entities';
+import { AffectationEleve } from '@modules/classes/entities';
 import { CreateNoteDto, UpdateNoteDto, CreateBulkNotesDto, QueryNotesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -14,7 +15,7 @@ import { parentsService } from '@modules/responsables-eleves/services';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
-import { AffectationEleve } from '@modules/classes/entities';
+import { StatutPeriode } from '@modules/periodes/entities';
 import { notificationTemplates } from '@modules/notifications/services';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
@@ -44,32 +45,42 @@ export class NotesService {
     async create(createDto: CreateNoteDto, enseignantId: string, etablissementId?: string): Promise<Note> {
         const params = await this.getNotesParams();
 
+        // 1. Récupérer l'année scolaire via la période
         let anneeId = createDto.anneeScolaireId;
+        const periode = await periodesService.findOne(createDto.periodeId);
         if (!anneeId) {
-            const periode = await periodesService.findOne(createDto.periodeId);
             anneeId = periode.anneeScolaireId;
         }
 
-        // Validation : vérifier que l'élève est bien dans la classe
-        if (createDto.eleveId && createDto.classeId && anneeId) {
-            const affectationRepo = AppDataSource.getRepository(AffectationEleve);
-            const affectation = await affectationRepo.findOne({
-                where: {
-                    eleveId: createDto.eleveId,
-                    classeId: createDto.classeId,
-                    anneeScolaireId: anneeId,
-                    actif: true
-                }
-            });
-            if (!affectation) {
-                throw new AppError(
-                    `L'élève ${createDto.eleveId} n'est pas affecté à la classe ${createDto.classeId} pour cette année`,
-                    400,
-                    'ELEVE_NOT_IN_CLASS'
-                );
-            }
+        // 2. NOUVEAU: Guard de clôture - empêcher les notes dans période clôturée
+        if (periode.statut === StatutPeriode.CLOTUREE) {
+            throw new AppError(
+                'Impossible d\'ajouter une note dans une période clôturée',
+                400,
+                'PERIODE_CLOTUREE'
+            );
         }
 
+        // 3. NOUVEAU: Déduire et vérifier l'affectation active de l'élève
+        const affectationRepo = AppDataSource.getRepository(AffectationEleve);
+        const affectation = await affectationRepo.findOne({
+            where: {
+                eleveId: createDto.eleveId,
+                anneeScolaireId: anneeId,
+                actif: true
+            },
+            relations: ['classe']
+        });
+
+        if (!affectation) {
+            throw new AppError(
+                `L'élève n'est affecté à aucune classe active pour cette année scolaire`,
+                400,
+                'ELEVE_SANS_CLASSE'
+            );
+        }
+
+        // 4. Créer la note (classeId déduit via AffectationEleve, plus stocké dans Note)
         const note = this.noteRepository.create({
             ...createDto,
             anneeScolaireId: anneeId,

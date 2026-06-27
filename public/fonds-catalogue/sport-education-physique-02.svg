@@ -1,266 +1,1231 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <rect width="100%" height="100%" fill="transparent"/>
-  <g stroke="currentColor" fill="none">
-
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg117"
+   sodipodi:docname="sport-education-physique-02.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs117" />
+  <sodipodi:namedview
+     id="namedview117"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.69444444"
+     inkscape:cx="960.48"
+     inkscape:cy="540"
+     inkscape:window-width="1920"
+     inkscape:window-height="958"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg117" />
+  <g
+     stroke="currentColor"
+     fill="none"
+     id="g117"
+     transform="matrix(1.0835664,0,0,1.1075405,-122.2778,-58.569855)">
     <!-- BALLONS DE FOOT (6) -->
-    <g transform="translate(190, 160) rotate(0)" opacity="0.33">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(190,160)"
+       opacity="0.33"
+       id="g1">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle1" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path1" />
     </g>
-
-    <g transform="translate(670, 230) rotate(0)" opacity="0.36">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(670,230)"
+       opacity="0.36"
+       id="g2">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle2" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path2" />
     </g>
-
-    <g transform="translate(1150, 180) rotate(0)" opacity="0.35">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(1150,180)"
+       opacity="0.35"
+       id="g3">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle3" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path3" />
     </g>
-
-    <g transform="translate(1610, 250) rotate(0)" opacity="0.32">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(1610,250)"
+       opacity="0.32"
+       id="g4">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle4" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path4" />
     </g>
-
-    <g transform="translate(430, 570) rotate(0)" opacity="0.38">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(430,570)"
+       opacity="0.38"
+       id="g5">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle5" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path5" />
     </g>
-
-    <g transform="translate(1050, 630) rotate(0)" opacity="0.34">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    <g
+       transform="translate(1050,630)"
+       opacity="0.34"
+       id="g6">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle6" />
+      <path
+         d="m 0,-35 8,20 H 28 L 12,0 18,20 0,10 -18,20 -12,0 -28,-15 h 20 z"
+         stroke-width="1.5"
+         id="path6" />
     </g>
-
     <!-- BALLONS DE BASKET (6) -->
-    <g transform="translate(570, 150) rotate(0)" opacity="0.33">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(570,150)"
+       opacity="0.33"
+       id="g9">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle7" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line7" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line8" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path8" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path9" />
     </g>
-
-    <g transform="translate(1050, 240) rotate(0)" opacity="0.36">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(1050,240)"
+       opacity="0.36"
+       id="g11">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle9" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line9" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line10" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path10" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path11" />
     </g>
-
-    <g transform="translate(1510, 330) rotate(0)" opacity="0.35">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(1510,330)"
+       opacity="0.35"
+       id="g13">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle11" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line11" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line12" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path12" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path13" />
     </g>
-
-    <g transform="translate(340, 670) rotate(0)" opacity="0.32">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(340,670)"
+       opacity="0.32"
+       id="g15">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle13" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line13" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line14" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path14" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path15" />
     </g>
-
-    <g transform="translate(820, 750) rotate(0)" opacity="0.38">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(820,750)"
+       opacity="0.38"
+       id="g17">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle15" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line15" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line16" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path16" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path17" />
     </g>
-
-    <g transform="translate(1380, 830) rotate(0)" opacity="0.34">
-      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
-      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
-      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
-      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
-      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    <g
+       transform="translate(1380,830)"
+       opacity="0.34"
+       id="g19">
+      <circle
+         cx="0"
+         cy="0"
+         r="35"
+         stroke-width="2.5"
+         id="circle17" />
+      <line
+         x1="-35"
+         y1="0"
+         x2="35"
+         y2="0"
+         stroke-width="2"
+         id="line17" />
+      <line
+         x1="0"
+         y1="-35"
+         x2="0"
+         y2="35"
+         stroke-width="2"
+         id="line18" />
+      <path
+         d="m -25,-25 q 25,10 50,0"
+         stroke-width="1.5"
+         id="path18" />
+      <path
+         d="M -25,25 Q 0,15 25,25"
+         stroke-width="1.5"
+         id="path19" />
     </g>
-
     <!-- RAQUETTES DE TENNIS (5) -->
-    <g transform="translate(460, 140) rotate(-10)" opacity="0.33">
-      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
-      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
-      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="rotate(-10,1030.1037,-2558.912)"
+       opacity="0.33"
+       id="g22">
+      <ellipse
+         cx="0"
+         cy="-20"
+         rx="22"
+         ry="30"
+         stroke-width="2.5"
+         id="ellipse19" />
+      <line
+         x1="0"
+         y1="10"
+         x2="0"
+         y2="45"
+         stroke-width="2.5"
+         id="line19" />
+      <line
+         x1="-15"
+         y1="-20"
+         x2="15"
+         y2="-20"
+         stroke-width="1"
+         opacity="0.4"
+         id="line20" />
+      <line
+         x1="-15"
+         y1="-10"
+         x2="15"
+         y2="-10"
+         stroke-width="1"
+         opacity="0.4"
+         id="line21" />
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="1"
+         opacity="0.4"
+         id="line22" />
     </g>
-
-    <g transform="translate(920, 260) rotate(-18)" opacity="0.36">
-      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
-      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
-      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="rotate(-18,1280.7877,-2774.3257)"
+       opacity="0.36"
+       id="g26">
+      <ellipse
+         cx="0"
+         cy="-20"
+         rx="22"
+         ry="30"
+         stroke-width="2.5"
+         id="ellipse22" />
+      <line
+         x1="0"
+         y1="10"
+         x2="0"
+         y2="45"
+         stroke-width="2.5"
+         id="line23" />
+      <line
+         x1="-15"
+         y1="-20"
+         x2="15"
+         y2="-20"
+         stroke-width="1"
+         opacity="0.4"
+         id="line24" />
+      <line
+         x1="-15"
+         y1="-10"
+         x2="15"
+         y2="-10"
+         stroke-width="1"
+         opacity="0.4"
+         id="line25" />
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="1"
+         opacity="0.4"
+         id="line26" />
     </g>
-
-    <g transform="translate(1400, 370) rotate(-22)" opacity="0.35">
-      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
-      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
-      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="rotate(-22,1651.7425,-3416.1878)"
+       opacity="0.35"
+       id="g30">
+      <ellipse
+         cx="0"
+         cy="-20"
+         rx="22"
+         ry="30"
+         stroke-width="2.5"
+         id="ellipse26" />
+      <line
+         x1="0"
+         y1="10"
+         x2="0"
+         y2="45"
+         stroke-width="2.5"
+         id="line27" />
+      <line
+         x1="-15"
+         y1="-20"
+         x2="15"
+         y2="-20"
+         stroke-width="1"
+         opacity="0.4"
+         id="line28" />
+      <line
+         x1="-15"
+         y1="-10"
+         x2="15"
+         y2="-10"
+         stroke-width="1"
+         opacity="0.4"
+         id="line29" />
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="1"
+         opacity="0.4"
+         id="line30" />
     </g>
-
-    <g transform="translate(560, 790) rotate(-12)" opacity="0.32">
-      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
-      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
-      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="rotate(-12,4038.174,-2269.022)"
+       opacity="0.32"
+       id="g34">
+      <ellipse
+         cx="0"
+         cy="-20"
+         rx="22"
+         ry="30"
+         stroke-width="2.5"
+         id="ellipse30" />
+      <line
+         x1="0"
+         y1="10"
+         x2="0"
+         y2="45"
+         stroke-width="2.5"
+         id="line31" />
+      <line
+         x1="-15"
+         y1="-20"
+         x2="15"
+         y2="-20"
+         stroke-width="1"
+         opacity="0.4"
+         id="line32" />
+      <line
+         x1="-15"
+         y1="-10"
+         x2="15"
+         y2="-10"
+         stroke-width="1"
+         opacity="0.4"
+         id="line33" />
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="1"
+         opacity="0.4"
+         id="line34" />
     </g>
-
-    <g transform="translate(1160, 890) rotate(-15)" opacity="0.38">
-      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
-      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
-      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
-      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="rotate(-15,3960.1106,-3960.5374)"
+       opacity="0.38"
+       id="g38">
+      <ellipse
+         cx="0"
+         cy="-20"
+         rx="22"
+         ry="30"
+         stroke-width="2.5"
+         id="ellipse34" />
+      <line
+         x1="0"
+         y1="10"
+         x2="0"
+         y2="45"
+         stroke-width="2.5"
+         id="line35" />
+      <line
+         x1="-15"
+         y1="-20"
+         x2="15"
+         y2="-20"
+         stroke-width="1"
+         opacity="0.4"
+         id="line36" />
+      <line
+         x1="-15"
+         y1="-10"
+         x2="15"
+         y2="-10"
+         stroke-width="1"
+         opacity="0.4"
+         id="line37" />
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="1"
+         opacity="0.4"
+         id="line38" />
     </g>
-
     <!-- FILETS DE VOLLEY (5) -->
-    <g transform="translate(720, 380) rotate(0)" opacity="0.33">
-      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
-      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
-      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
-      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="translate(720,380)"
+       opacity="0.33"
+       id="g50">
+      <line
+         x1="-50"
+         y1="-30"
+         x2="-50"
+         y2="30"
+         stroke-width="2.5"
+         id="line39" />
+      <line
+         x1="50"
+         y1="-30"
+         x2="50"
+         y2="30"
+         stroke-width="2.5"
+         id="line40" />
+      <line
+         x1="-50"
+         y1="-30"
+         x2="50"
+         y2="-30"
+         stroke-width="2.5"
+         id="line41" />
+      <line
+         x1="-40"
+         y1="-30"
+         x2="-40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line42" />
+      <line
+         x1="-30"
+         y1="-30"
+         x2="-30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line43" />
+      <line
+         x1="-20"
+         y1="-30"
+         x2="-20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line44" />
+      <line
+         x1="-10"
+         y1="-30"
+         x2="-10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line45" />
+      <line
+         x1="0"
+         y1="-30"
+         x2="0"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line46" />
+      <line
+         x1="10"
+         y1="-30"
+         x2="10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line47" />
+      <line
+         x1="20"
+         y1="-30"
+         x2="20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line48" />
+      <line
+         x1="30"
+         y1="-30"
+         x2="30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line49" />
+      <line
+         x1="40"
+         y1="-30"
+         x2="40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line50" />
     </g>
-
-    <g transform="translate(1160, 450) rotate(0)" opacity="0.36">
-      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
-      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
-      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
-      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="translate(1160,450)"
+       opacity="0.36"
+       id="g62">
+      <line
+         x1="-50"
+         y1="-30"
+         x2="-50"
+         y2="30"
+         stroke-width="2.5"
+         id="line51" />
+      <line
+         x1="50"
+         y1="-30"
+         x2="50"
+         y2="30"
+         stroke-width="2.5"
+         id="line52" />
+      <line
+         x1="-50"
+         y1="-30"
+         x2="50"
+         y2="-30"
+         stroke-width="2.5"
+         id="line53" />
+      <line
+         x1="-40"
+         y1="-30"
+         x2="-40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line54" />
+      <line
+         x1="-30"
+         y1="-30"
+         x2="-30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line55" />
+      <line
+         x1="-20"
+         y1="-30"
+         x2="-20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line56" />
+      <line
+         x1="-10"
+         y1="-30"
+         x2="-10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line57" />
+      <line
+         x1="0"
+         y1="-30"
+         x2="0"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line58" />
+      <line
+         x1="10"
+         y1="-30"
+         x2="10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line59" />
+      <line
+         x1="20"
+         y1="-30"
+         x2="20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line60" />
+      <line
+         x1="30"
+         y1="-30"
+         x2="30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line61" />
+      <line
+         x1="40"
+         y1="-30"
+         x2="40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line62" />
     </g>
-
-    <g transform="translate(1620, 550) rotate(0)" opacity="0.35">
-      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
-      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
-      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
-      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="translate(1620,550)"
+       opacity="0.35"
+       id="g74">
+      <line
+         x1="-50"
+         y1="-30"
+         x2="-50"
+         y2="30"
+         stroke-width="2.5"
+         id="line63" />
+      <line
+         x1="50"
+         y1="-30"
+         x2="50"
+         y2="30"
+         stroke-width="2.5"
+         id="line64" />
+      <line
+         x1="-50"
+         y1="-30"
+         x2="50"
+         y2="-30"
+         stroke-width="2.5"
+         id="line65" />
+      <line
+         x1="-40"
+         y1="-30"
+         x2="-40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line66" />
+      <line
+         x1="-30"
+         y1="-30"
+         x2="-30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line67" />
+      <line
+         x1="-20"
+         y1="-30"
+         x2="-20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line68" />
+      <line
+         x1="-10"
+         y1="-30"
+         x2="-10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line69" />
+      <line
+         x1="0"
+         y1="-30"
+         x2="0"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line70" />
+      <line
+         x1="10"
+         y1="-30"
+         x2="10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line71" />
+      <line
+         x1="20"
+         y1="-30"
+         x2="20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line72" />
+      <line
+         x1="30"
+         y1="-30"
+         x2="30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line73" />
+      <line
+         x1="40"
+         y1="-30"
+         x2="40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line74" />
     </g>
-
-    <g transform="translate(460, 920) rotate(0)" opacity="0.32">
-      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
-      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
-      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
-      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="translate(460,920)"
+       opacity="0.32"
+       id="g86">
+      <line
+         x1="-50"
+         y1="-30"
+         x2="-50"
+         y2="30"
+         stroke-width="2.5"
+         id="line75" />
+      <line
+         x1="50"
+         y1="-30"
+         x2="50"
+         y2="30"
+         stroke-width="2.5"
+         id="line76" />
+      <line
+         x1="-50"
+         y1="-30"
+         x2="50"
+         y2="-30"
+         stroke-width="2.5"
+         id="line77" />
+      <line
+         x1="-40"
+         y1="-30"
+         x2="-40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line78" />
+      <line
+         x1="-30"
+         y1="-30"
+         x2="-30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line79" />
+      <line
+         x1="-20"
+         y1="-30"
+         x2="-20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line80" />
+      <line
+         x1="-10"
+         y1="-30"
+         x2="-10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line81" />
+      <line
+         x1="0"
+         y1="-30"
+         x2="0"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line82" />
+      <line
+         x1="10"
+         y1="-30"
+         x2="10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line83" />
+      <line
+         x1="20"
+         y1="-30"
+         x2="20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line84" />
+      <line
+         x1="30"
+         y1="-30"
+         x2="30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line85" />
+      <line
+         x1="40"
+         y1="-30"
+         x2="40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line86" />
     </g>
-
-    <g transform="translate(960, 970) rotate(0)" opacity="0.38">
-      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
-      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
-      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
-      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
-      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    <g
+       transform="translate(960,970)"
+       opacity="0.38"
+       id="g98">
+      <line
+         x1="-50"
+         y1="-30"
+         x2="-50"
+         y2="30"
+         stroke-width="2.5"
+         id="line87" />
+      <line
+         x1="50"
+         y1="-30"
+         x2="50"
+         y2="30"
+         stroke-width="2.5"
+         id="line88" />
+      <line
+         x1="-50"
+         y1="-30"
+         x2="50"
+         y2="-30"
+         stroke-width="2.5"
+         id="line89" />
+      <line
+         x1="-40"
+         y1="-30"
+         x2="-40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line90" />
+      <line
+         x1="-30"
+         y1="-30"
+         x2="-30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line91" />
+      <line
+         x1="-20"
+         y1="-30"
+         x2="-20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line92" />
+      <line
+         x1="-10"
+         y1="-30"
+         x2="-10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line93" />
+      <line
+         x1="0"
+         y1="-30"
+         x2="0"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line94" />
+      <line
+         x1="10"
+         y1="-30"
+         x2="10"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line95" />
+      <line
+         x1="20"
+         y1="-30"
+         x2="20"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line96" />
+      <line
+         x1="30"
+         y1="-30"
+         x2="30"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line97" />
+      <line
+         x1="40"
+         y1="-30"
+         x2="40"
+         y2="30"
+         stroke-width="1"
+         opacity="0.4"
+         id="line98" />
     </g>
-
     <!-- HALTÈRES (4) -->
-    <g transform="translate(1030, 330) rotate(-15)" opacity="0.33">
-      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
-      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
-      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    <g
+       transform="rotate(-15,1768.2994,-3746.8134)"
+       opacity="0.33"
+       id="g100">
+      <rect
+         x="-30"
+         y="-8"
+         width="60"
+         height="16"
+         rx="2"
+         stroke-width="2.5"
+         id="rect98" />
+      <rect
+         x="-38"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect99" />
+      <rect
+         x="26"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect100" />
     </g>
-
-    <g transform="translate(1460, 460) rotate(-22)" opacity="0.36">
-      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
-      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
-      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    <g
+       transform="rotate(-22,1913.2474,-3525.5244)"
+       opacity="0.36"
+       id="g103">
+      <rect
+         x="-30"
+         y="-8"
+         width="60"
+         height="16"
+         rx="2"
+         stroke-width="2.5"
+         id="rect101" />
+      <rect
+         x="-38"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect102" />
+      <rect
+         x="26"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect103" />
     </g>
-
-    <g transform="translate(660, 940) rotate(-10)" opacity="0.35">
-      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
-      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
-      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    <g
+       transform="rotate(-10,5702.1246,-3301.9173)"
+       opacity="0.35"
+       id="g106">
+      <rect
+         x="-30"
+         y="-8"
+         width="60"
+         height="16"
+         rx="2"
+         stroke-width="2.5"
+         id="rect104" />
+      <rect
+         x="-38"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect105" />
+      <rect
+         x="26"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect106" />
     </g>
-
-    <g transform="translate(1690, 870) rotate(-18)" opacity="0.32">
-      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
-      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
-      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    <g
+       transform="rotate(-18,3591.4819,-4900.12)"
+       opacity="0.32"
+       id="g109">
+      <rect
+         x="-30"
+         y="-8"
+         width="60"
+         height="16"
+         rx="2"
+         stroke-width="2.5"
+         id="rect107" />
+      <rect
+         x="-38"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect108" />
+      <rect
+         x="26"
+         y="-15"
+         width="12"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect109" />
     </g>
-
     <!-- SIFFLETS (4) -->
-    <g transform="translate(1200, 550) rotate(-10)" opacity="0.33">
-      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
-      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
-      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    <g
+       transform="rotate(-10,3743.2644,-6583.0314)"
+       opacity="0.33"
+       id="g110">
+      <path
+         d="m -20,-10 q 0,-10 10,-10 h 20 q 10,0 10,10 V 5 Q 20,15 10,15 H -10 Q -20,15 -20,5 Z"
+         stroke-width="2.5"
+         id="path109" />
+      <circle
+         cx="-25"
+         cy="-5"
+         r="8"
+         stroke-width="2"
+         id="circle109" />
+      <path
+         d="m -20,-5 h -5"
+         stroke-width="2"
+         id="path110" />
     </g>
-
-    <g transform="translate(1600, 680) rotate(-18)" opacity="0.36">
-      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
-      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
-      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    <g
+       transform="rotate(-18,2946.6755,-4711.0012)"
+       opacity="0.36"
+       id="g112">
+      <path
+         d="m -20,-10 q 0,-10 10,-10 h 20 q 10,0 10,10 V 5 Q 20,15 10,15 H -10 Q -20,15 -20,5 Z"
+         stroke-width="2.5"
+         id="path111" />
+      <circle
+         cx="-25"
+         cy="-5"
+         r="8"
+         stroke-width="2"
+         id="circle111" />
+      <path
+         d="m -20,-5 h -5"
+         stroke-width="2"
+         id="path112" />
     </g>
-
-    <g transform="translate(360, 980) rotate(-22)" opacity="0.35">
-      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
-      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
-      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    <g
+       transform="rotate(-22,2700.8315,-436.01972)"
+       opacity="0.35"
+       id="g114">
+      <path
+         d="m -20,-10 q 0,-10 10,-10 h 20 q 10,0 10,10 V 5 Q 20,15 10,15 H -10 Q -20,15 -20,5 Z"
+         stroke-width="2.5"
+         id="path113" />
+      <circle
+         cx="-25"
+         cy="-5"
+         r="8"
+         stroke-width="2"
+         id="circle113" />
+      <path
+         d="m -20,-5 h -5"
+         stroke-width="2"
+         id="path114" />
     </g>
-
-    <g transform="translate(1820, 770) rotate(-12)" opacity="0.38">
-      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
-      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
-      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    <g
+       transform="rotate(-12,4573.0303,-8273.0717)"
+       opacity="0.38"
+       id="g116">
+      <path
+         d="m -20,-10 q 0,-10 10,-10 h 20 q 10,0 10,10 V 5 Q 20,15 10,15 H -10 Q -20,15 -20,5 Z"
+         stroke-width="2.5"
+         id="path115" />
+      <circle
+         cx="-25"
+         cy="-5"
+         r="8"
+         stroke-width="2"
+         id="circle115" />
+      <path
+         d="m -20,-5 h -5"
+         stroke-width="2"
+         id="path116" />
     </g>
-
-  </g>
-</svg><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <rect width="100%" height="100%" fill="transparent"/>
-  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
-    
-    <!-- Chronomètres et sifflets -->
-    <circle cx="300" cy="250" r="60" stroke-width="4" fill="currentColor" opacity="0.06"/>
-    <circle cx="300" cy="250" r="45" fill="currentColor" opacity="0.04"/>
-    <line x1="300" y1="250" x2="300" y2="220" stroke-width="4"/>
-    <rect x="290" y="180" width="20" height="15" rx="3" fill="currentColor" opacity="0.10"/>
-    <ellipse cx="1200" cy="400" rx="40" ry="15" fill="currentColor" opacity="0.08"/>
-    <circle cx="1200" cy="380" r="8" fill="currentColor" opacity="0.10"/>
-
   </g>
 </svg>

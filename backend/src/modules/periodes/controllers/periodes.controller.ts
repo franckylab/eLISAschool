@@ -37,7 +37,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     try {
         const anneeId = req.query.anneeId as string;
         if (!anneeId) throw new AppError('anneeId requis', 400, 'MISSING_PARAM');
-        const periodes = await service.findAll(anneeId);
+        const periodes = await service.findAll(anneeId, req.etablissementId);
         res.json({ success: true, data: periodes });
     } catch (error) { next(error); }
 });
@@ -45,7 +45,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPeriodeSchema, req.body);
-        const periode = await service.create(dto);
+        const periode = await service.create(dto, req.etablissementId);
         res.status(201).json({ success: true, data: periode });
     } catch (error) { next(error); }
 });

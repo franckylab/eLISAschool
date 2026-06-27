@@ -18,6 +18,7 @@ import { Matiere } from './matiere.entity';
 import { Classe } from '@modules/classes/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Statut de l'affectation matière (support workflow de validation)
@@ -31,6 +32,9 @@ export enum StatutAffectationMatiere {
 @Entity('affectations_matieres')
 @Index(['classeId'])
 @Index(['enseignantId'])
+@Index(['etablissementId'])
+@Index(['classeId', 'etablissementId'])  // Index composite pour requêtes multi-tenant
+@Index(['enseignantId', 'etablissementId'])  // Index composite pour enseignants par établissement
 export class AffectationMatiere {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -62,6 +66,17 @@ export class AffectationMatiere {
     @ManyToOne(() => AnneeScolaire)
     @JoinColumn({ name: 'anneeScolaireId' })
     anneeScolaire?: AnneeScolaire;
+
+    /**
+     * Établissement de l'affectation (multi-tenant)
+     * Doit correspondre à classe.etablissementId
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @Column({ type: 'int', nullable: true })
     volumeHoraireHebdo?: number;

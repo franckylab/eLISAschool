@@ -133,7 +133,13 @@ export function FondRotator({
                 setPreloadedImages(new Map(newPreloaded));
             };
             img.onerror = () => {
-                console.error('[FondRotator] Échec chargement image:', fond.nom, imageUrl);
+                console.error('[FondRotator] Échec chargement image:', {
+                    fondNom: fond.nom,
+                    fondId: fond.id,
+                    url: imageUrl,
+                    mode: import.meta.env.DEV ? 'dev (vite public)' : 'prod (backend)',
+                    cheminFichier: fond.cheminFichier,
+                });
                 newPreloaded.set(fond.id, false);
                 setPreloadedImages(new Map(newPreloaded));
             };

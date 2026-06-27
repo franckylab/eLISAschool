@@ -101,7 +101,8 @@ export function createApp(): Application {
                 defaultSrc: ["'self'"],
                 styleSrc: ["'self'", "'unsafe-inline'"],
                 scriptSrc: ["'self'"],
-                imgSrc: ["'self'", "data:", "blob:"],
+                // Autoriser chargement des images SVG du catalogue (cross-origin backend)
+                imgSrc: ["'self'", "data:", "blob:", "http://localhost:*", "https://*"],
             },
         },
         crossOriginEmbedderPolicy: false,

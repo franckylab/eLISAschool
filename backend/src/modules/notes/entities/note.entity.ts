@@ -46,10 +46,10 @@ export enum StatutNote {
 @Entity('notes')
 @Index(['eleveId'])
 @Index(['matiereId'])
-@Index(['classeId'])
 @Index(['periodeId'])
 @Index(['enseignantId'])
 @Index(['etablissementId'])
+@Index(['etablissementId', 'periodeId'])  // Index composite pour requêtes multi-tenant
 export class Note {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -75,13 +75,6 @@ export class Note {
     @ManyToOne(() => Matiere)
     @JoinColumn({ name: 'matiereId' })
     matiere!: Matiere;
-
-    @Column({ type: 'uuid' })
-    classeId!: string;
-
-    @ManyToOne(() => Classe)
-    @JoinColumn({ name: 'classeId' })
-    classe?: Classe;
 
     @Column({ type: 'uuid' })
     periodeId!: string;
@@ -136,8 +129,6 @@ export class Note {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
-
-    @Index(['etablissementId', 'classeId', 'periodeId'])
 
     @CreateDateColumn()
     createdAt!: Date;

@@ -38,19 +38,40 @@ export class PeriodesService {
 
     // ==== PERIODES ====
 
-    async create(dto: CreatePeriodeDto): Promise<Periode> {
+    async create(dto: CreatePeriodeDto, etablissementId: string): Promise<Periode> {
+        // 1. NOUVEAU: Vérifier la cohérence multi-tenant
+        const anneesService = (await import('@modules/annees-scolaires/services')).anneesService;
+        const annee = await anneesService.findOne(dto.anneeScolaireId);
+        
+        if (annee.etablissementId !== etablissementId) {
+            throw new AppError(
+                'L\'année scolaire n\'appartient pas à cet établissement',
+                400,
+                'ANNEE_ETABLISSEMENT_MISMATCH'
+            );
+        }
+
+        // 2. Créer la période avec etablissementId
         const periode = this.periodeRepo.create({
             ...dto,
             dateDebut: new Date(dto.dateDebut),
             dateFin: new Date(dto.dateFin),
+            etablissementId,  // ← NOUVEAU: isolation multi-tenant
         });
         await this.periodeRepo.save(periode);
         return periode;
     }
 
-    async findAll(anneeId: string): Promise<Periode[]> {
+    async findAll(anneeId: string, etablissementId?: string): Promise<Periode[]> {
+        const where: any = { anneeScolaireId: anneeId };
+        
+        // NOUVEAU: Filtrage multi-tenant si etablissementId fourni
+        if (etablissementId) {
+            where.etablissementId = etablissementId;
+        }
+
         return this.periodeRepo.find({
-            where: { anneeScolaireId: anneeId },
+            where,
             relations: ['type'],
             order: { dateDebut: 'ASC', ordre: 'ASC' }
         });

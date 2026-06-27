@@ -15,6 +15,7 @@ import {
     Index
 } from 'typeorm';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Statut de la période (support workflow de clôture)
@@ -43,6 +44,8 @@ export class TypePeriode {
 @Entity('periodes')
 @Index(['anneeScolaireId'])
 @Index(['typeId'])
+@Index(['etablissementId'])
+@Index(['anneeScolaireId', 'etablissementId'])  // Index composite pour requêtes multi-tenant
 export class Periode {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -63,6 +66,17 @@ export class Periode {
     @ManyToOne(() => AnneeScolaire)
     @JoinColumn({ name: 'anneeScolaireId' })
     anneeScolaire?: AnneeScolaire;
+
+    /**
+     * Établissement de la période (multi-tenant)
+     * Doit correspondre à anneeScolaire.etablissementId
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @Column({ type: 'date' })
     dateDebut!: Date;
