@@ -1,16 +1,1257 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <rect width="100%" height="100%" fill="transparent"/>
-  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
-    
-    <!-- Échelles géométriques -->
-    <line x1="300" y1="100" x2="300" y2="500" stroke-width="6"/>
-    <line x1="400" y1="100" x2="400" y2="500" stroke-width="6"/>
-    <line x1="300" y1="150" x2="400" y2="150" stroke-width="4"/>
-    <line x1="300" y1="200" x2="400" y2="200" stroke-width="4"/>
-    <line x1="300" y1="250" x2="400" y2="250" stroke-width="4"/>
-    <line x1="300" y1="300" x2="400" y2="300" stroke-width="4"/>
-    <line x1="1200" y1="200" x2="1200" y2="600" stroke-width="6"/>
-    <line x1="1300" y1="200" x2="1300" y2="600" stroke-width="6"/>
-
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg92"
+   sodipodi:docname="materiel-batiment-03.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs92" />
+  <sodipodi:namedview
+     id="namedview92"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.69444444"
+     inkscape:cx="960.48"
+     inkscape:cy="540"
+     inkscape:window-width="1920"
+     inkscape:window-height="958"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg92" />
+  <g
+     stroke="currentColor"
+     fill="none"
+     id="g92"
+     transform="matrix(1.0717125,0,0,1.1372776,-59.008534,-42.759845)">
+    <!-- TRUELLES (6) -->
+    <g
+       transform="rotate(-15,611.70279,-537.66033)"
+       opacity="0.35"
+       id="g2">
+      <path
+         d="m -15,-30 h 30 l 5,70 Q 0,55 -20,40 Z"
+         stroke-width="2.5"
+         id="path1" />
+      <line
+         x1="0"
+         y1="-25"
+         x2="0"
+         y2="35"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="line1" />
+      <rect
+         x="-4"
+         y="-60"
+         width="8"
+         height="35"
+         rx="2"
+         stroke-width="2"
+         id="rect2" />
+    </g>
+    <g
+       transform="rotate(25,-256.17794,1192.57)"
+       opacity="0.33"
+       id="g3">
+      <path
+         d="m -12,-28 h 24 l 6,66 Q 0,50 -18,38 Z"
+         stroke-width="2.5"
+         id="path2" />
+      <line
+         x1="0"
+         y1="-23"
+         x2="0"
+         y2="33"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="line2" />
+      <rect
+         x="-3"
+         y="-55"
+         width="6"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect3" />
+    </g>
+    <g
+       transform="rotate(-35,663.72758,-1220.3539)"
+       opacity="0.36"
+       id="g4">
+      <path
+         d="m -18,-32 h 36 l 4,74 Q 0,58 -22,42 Z"
+         stroke-width="2.5"
+         id="path3" />
+      <line
+         x1="0"
+         y1="-27"
+         x2="0"
+         y2="37"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="line3" />
+      <rect
+         x="-5"
+         y="-65"
+         width="10"
+         height="38"
+         rx="2"
+         stroke-width="2"
+         id="rect4" />
+    </g>
+    <g
+       transform="rotate(18,-293.92521,3865.1134)"
+       opacity="0.34"
+       id="g5">
+      <path
+         d="m -14,-26 h 28 l 2,62 Q 0,48 -16,36 Z"
+         stroke-width="2"
+         id="path4" />
+      <line
+         x1="0"
+         y1="-21"
+         x2="0"
+         y2="31"
+         stroke-width="1"
+         opacity="0.4"
+         id="line4" />
+      <rect
+         x="-3"
+         y="-50"
+         width="6"
+         height="28"
+         rx="2"
+         stroke-width="2"
+         id="rect5" />
+    </g>
+    <g
+       transform="rotate(-28,1141.0242,-2953.1935)"
+       opacity="0.37"
+       id="g6">
+      <path
+         d="m -16,-30 h 32 l 4,70 Q 0,52 -20,40 Z"
+         stroke-width="2.5"
+         id="path5" />
+      <line
+         x1="0"
+         y1="-25"
+         x2="0"
+         y2="35"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="line5" />
+      <rect
+         x="-4"
+         y="-58"
+         width="8"
+         height="32"
+         rx="2"
+         stroke-width="2"
+         id="rect6" />
+    </g>
+    <g
+       transform="rotate(42,-527.32316,650.76336)"
+       opacity="0.32"
+       id="g7">
+      <path
+         d="m -13,-27 h 26 l 4,64 Q 0,49 -17,37 Z"
+         stroke-width="2"
+         id="path6" />
+      <line
+         x1="0"
+         y1="-22"
+         x2="0"
+         y2="32"
+         stroke-width="1"
+         opacity="0.4"
+         id="line6" />
+      <rect
+         x="-3"
+         y="-52"
+         width="6"
+         height="28"
+         rx="2"
+         stroke-width="2"
+         id="rect7" />
+    </g>
+    <!-- MARTEAUX (6) -->
+    <g
+       transform="rotate(-22,685.11878,-1601.9801)"
+       opacity="0.35"
+       id="g9">
+      <rect
+         x="-4"
+         y="-45"
+         width="8"
+         height="80"
+         rx="2"
+         stroke-width="2"
+         id="rect8" />
+      <rect
+         x="-18"
+         y="-55"
+         width="36"
+         height="18"
+         rx="3"
+         stroke-width="2.5"
+         id="rect9" />
+      <path
+         d="m 18,-55 q 7,0 7,9 v 0"
+         stroke-width="2"
+         id="path9" />
+    </g>
+    <g
+       transform="rotate(12,-346.2928,4942.3259)"
+       opacity="0.34"
+       id="g11">
+      <rect
+         x="-3"
+         y="-40"
+         width="6"
+         height="70"
+         rx="2"
+         stroke-width="2"
+         id="rect10" />
+      <rect
+         x="-15"
+         y="-50"
+         width="30"
+         height="15"
+         rx="3"
+         stroke-width="2.5"
+         id="rect11" />
+      <path
+         d="m 15,-50 q 5,0 5,7 v 0"
+         stroke-width="2"
+         id="path11" />
+    </g>
+    <g
+       transform="rotate(-38,1038.5053,-1883.9055)"
+       opacity="0.36"
+       id="g13">
+      <rect
+         x="-5"
+         y="-50"
+         width="10"
+         height="90"
+         rx="2"
+         stroke-width="2"
+         id="rect12" />
+      <rect
+         x="-20"
+         y="-60"
+         width="40"
+         height="20"
+         rx="3"
+         stroke-width="2.5"
+         id="rect13" />
+      <path
+         d="m 20,-60 q 8,0 8,10 v 0"
+         stroke-width="2"
+         id="path13" />
+    </g>
+    <g
+       transform="rotate(28,-702.15619,601.07809)"
+       opacity="0.33"
+       id="g15">
+      <rect
+         x="-3"
+         y="-38"
+         width="6"
+         height="65"
+         rx="2"
+         stroke-width="2"
+         id="rect14" />
+      <rect
+         x="-14"
+         y="-46"
+         width="28"
+         height="14"
+         rx="2"
+         stroke-width="2"
+         id="rect15" />
+      <path
+         d="m 14,-46 q 4,0 4,6 v 0"
+         stroke-width="1.5"
+         id="path15" />
+    </g>
+    <g
+       transform="rotate(-18,1742.1628,-1600.9879)"
+       opacity="0.37"
+       id="g17">
+      <rect
+         x="-4"
+         y="-42"
+         width="8"
+         height="75"
+         rx="2"
+         stroke-width="2"
+         id="rect16" />
+      <rect
+         x="-16"
+         y="-52"
+         width="32"
+         height="16"
+         rx="3"
+         stroke-width="2.5"
+         id="rect17" />
+      <path
+         d="m 16,-52 q 6,0 6,8 v 0"
+         stroke-width="2"
+         id="path17" />
+    </g>
+    <g
+       transform="rotate(45,-167.69553,1370.5382)"
+       opacity="0.32"
+       id="g19">
+      <rect
+         x="-3"
+         y="-35"
+         width="6"
+         height="60"
+         rx="2"
+         stroke-width="2"
+         id="rect18" />
+      <rect
+         x="-13"
+         y="-42"
+         width="26"
+         height="13"
+         rx="2"
+         stroke-width="2"
+         id="rect19" />
+      <path
+         d="m 13,-42 q 4,0 4,5 v 0"
+         stroke-width="1.5"
+         id="path19" />
+    </g>
+    <!-- SCIES (5) -->
+    <g
+       transform="rotate(-12,1712.2983,-1647.7292)"
+       opacity="0.35"
+       id="g21">
+      <path
+         d="M -60,-8 H 60 V 8 H -60 Z"
+         stroke-width="2"
+         id="path20" />
+      <path
+         d="m -60,8 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4"
+         stroke-width="1.5"
+         id="path21" />
+      <rect
+         x="-80"
+         y="-12"
+         width="25"
+         height="24"
+         rx="3"
+         stroke-width="2"
+         id="rect21" />
+    </g>
+    <g
+       transform="rotate(22,-308.79202,1982.0394)"
+       opacity="0.34"
+       id="g23">
+      <path
+         d="M -55,-7 H 55 V 7 H -55 Z"
+         stroke-width="2"
+         id="path22" />
+      <path
+         d="m -55,7 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4"
+         stroke-width="1.5"
+         id="path23" />
+      <rect
+         x="-72"
+         y="-10"
+         width="22"
+         height="20"
+         rx="3"
+         stroke-width="2"
+         id="rect23" />
+    </g>
+    <g
+       transform="rotate(-28,1312.0484,-2015.9295)"
+       opacity="0.36"
+       id="g25">
+      <path
+         d="M -65,-9 H 65 V 9 H -65 Z"
+         stroke-width="2"
+         id="path24" />
+      <path
+         d="m -65,9 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 4,-4"
+         stroke-width="1.5"
+         id="path25" />
+      <rect
+         x="-85"
+         y="-14"
+         width="28"
+         height="26"
+         rx="3"
+         stroke-width="2"
+         id="rect25" />
+    </g>
+    <g
+       transform="rotate(35,-36.182753,2539.4062)"
+       opacity="0.33"
+       id="g27">
+      <path
+         d="M -50,-6 H 50 V 6 H -50 Z"
+         stroke-width="2"
+         id="path26" />
+      <path
+         d="m -50,6 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4 5,4 5,-4"
+         stroke-width="1.5"
+         id="path27" />
+      <rect
+         x="-68"
+         y="-9"
+         width="20"
+         height="18"
+         rx="3"
+         stroke-width="2"
+         id="rect27" />
+    </g>
+    <g
+       transform="rotate(-42,1001.7812,115.54198)"
+       opacity="0.37"
+       id="g29">
+      <path
+         d="M -58,-8 H 58 V 8 H -58 Z"
+         stroke-width="2"
+         id="path28" />
+      <path
+         d="m -58,8 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 6,-4 6,4 2,-4"
+         stroke-width="1.5"
+         id="path29" />
+      <rect
+         x="-78"
+         y="-12"
+         width="24"
+         height="22"
+         rx="3"
+         stroke-width="2"
+         id="rect29" />
+    </g>
+    <!-- CLÉS À MOLETTE (5) -->
+    <g
+       transform="rotate(-18,2217.263,-1331.5754)"
+       opacity="0.35"
+       id="g31">
+      <rect
+         x="-5"
+         y="-45"
+         width="10"
+         height="90"
+         rx="3"
+         stroke-width="2.5"
+         id="rect30" />
+      <circle
+         cx="0"
+         cy="-50"
+         r="18"
+         stroke-width="2.5"
+         id="circle30" />
+      <path
+         d="m -12,-50 v 12"
+         stroke-width="3"
+         id="path30" />
+      <path
+         d="m 12,-50 v 12"
+         stroke-width="3"
+         id="path31" />
+      <circle
+         cx="0"
+         cy="50"
+         r="8"
+         stroke-width="2"
+         id="circle31" />
+    </g>
+    <g
+       transform="rotate(28,-733.12647,2014.6358)"
+       opacity="0.34"
+       id="g33">
+      <rect
+         x="-4"
+         y="-40"
+         width="8"
+         height="80"
+         rx="3"
+         stroke-width="2"
+         id="rect31" />
+      <circle
+         cx="0"
+         cy="-45"
+         r="15"
+         stroke-width="2"
+         id="circle32" />
+      <path
+         d="m -10,-45 v 10"
+         stroke-width="2.5"
+         id="path32" />
+      <path
+         d="m 10,-45 v 10"
+         stroke-width="2.5"
+         id="path33" />
+      <circle
+         cx="0"
+         cy="45"
+         r="7"
+         stroke-width="2"
+         id="circle33" />
+    </g>
+    <g
+       transform="rotate(-32,1725.9726,-1807.3228)"
+       opacity="0.36"
+       id="g35">
+      <rect
+         x="-6"
+         y="-50"
+         width="12"
+         height="100"
+         rx="3"
+         stroke-width="2.5"
+         id="rect33" />
+      <circle
+         cx="0"
+         cy="-55"
+         r="20"
+         stroke-width="2.5"
+         id="circle34" />
+      <path
+         d="m -14,-55 v 13"
+         stroke-width="3"
+         id="path34" />
+      <path
+         d="m 14,-55 v 13"
+         stroke-width="3"
+         id="path35" />
+      <circle
+         cx="0"
+         cy="55"
+         r="9"
+         stroke-width="2"
+         id="circle35" />
+    </g>
+    <g
+       transform="rotate(15,-1260.8536,6270.6457)"
+       opacity="0.33"
+       id="g37">
+      <rect
+         x="-4"
+         y="-38"
+         width="8"
+         height="75"
+         rx="3"
+         stroke-width="2"
+         id="rect35" />
+      <circle
+         cx="0"
+         cy="-42"
+         r="14"
+         stroke-width="2"
+         id="circle36" />
+      <path
+         d="m -9,-42 v 9"
+         stroke-width="2"
+         id="path36" />
+      <path
+         d="m 9,-42 v 9"
+         stroke-width="2"
+         id="path37" />
+      <circle
+         cx="0"
+         cy="42"
+         r="6"
+         stroke-width="2"
+         id="circle37" />
+    </g>
+    <g
+       transform="rotate(-45,1159.8276,-0.4163056)"
+       opacity="0.37"
+       id="g39">
+      <rect
+         x="-5"
+         y="-42"
+         width="10"
+         height="85"
+         rx="3"
+         stroke-width="2.5"
+         id="rect37" />
+      <circle
+         cx="0"
+         cy="-47"
+         r="17"
+         stroke-width="2.5"
+         id="circle38" />
+      <path
+         d="m -11,-47 v 11"
+         stroke-width="2.5"
+         id="path38" />
+      <path
+         d="m 11,-47 v 11"
+         stroke-width="2.5"
+         id="path39" />
+      <circle
+         cx="0"
+         cy="47"
+         r="8"
+         stroke-width="2"
+         id="circle39" />
+    </g>
+    <!-- CASQUES DE CHANTIER (5) -->
+    <g
+       transform="rotate(-8,5488.2399,-4502.2265)"
+       opacity="0.35"
+       id="g41">
+      <path
+         d="m -40,0 q 0,-35 40,-40 40,5 40,40 V 8 Q 0,12 -40,8 Z"
+         stroke-width="2.5"
+         id="path40" />
+      <path
+         d="M -35,-5 Q 0,-30 35,-5"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="path41" />
+      <rect
+         x="-45"
+         y="5"
+         width="90"
+         height="6"
+         rx="2"
+         stroke-width="2"
+         id="rect41" />
+    </g>
+    <g
+       transform="rotate(22,-1229.1484,3015.1681)"
+       opacity="0.34"
+       id="g43">
+      <path
+         d="m -35,0 q 0,-30 35,-35 35,5 35,35 V 7 Q 0,10 -35,7 Z"
+         stroke-width="2"
+         id="path42" />
+      <path
+         d="M -30,-4 Q 0,-25 30,-4"
+         stroke-width="1"
+         opacity="0.4"
+         id="path43" />
+      <rect
+         x="-40"
+         y="4"
+         width="80"
+         height="5"
+         rx="2"
+         stroke-width="2"
+         id="rect43" />
+    </g>
+    <g
+       transform="rotate(-18,3099.2256,-4039.6261)"
+       opacity="0.36"
+       id="g45">
+      <path
+         d="m -42,0 q 0,-38 42,-42 42,4 42,42 V 9 Q 0,13 -42,9 Z"
+         stroke-width="2.5"
+         id="path44" />
+      <path
+         d="M -37,-6 Q 0,-32 37,-6"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="path45" />
+      <rect
+         x="-48"
+         y="6"
+         width="96"
+         height="7"
+         rx="2"
+         stroke-width="2"
+         id="rect45" />
+    </g>
+    <g
+       transform="rotate(32,-614.71407,3384.3023)"
+       opacity="0.33"
+       id="g47">
+      <path
+         d="m -32,0 q 0,-28 32,-32 32,4 32,32 V 6 Q 0,9 -32,6 Z"
+         stroke-width="2"
+         id="path46" />
+      <path
+         d="M -28,-4 Q 0,-22 28,-4"
+         stroke-width="1"
+         opacity="0.4"
+         id="path47" />
+      <rect
+         x="-36"
+         y="3"
+         width="72"
+         height="5"
+         rx="2"
+         stroke-width="2"
+         id="rect47" />
+    </g>
+    <g
+       transform="rotate(-25,2044.7117,169.35749)"
+       opacity="0.37"
+       id="g49">
+      <path
+         d="m -38,0 q 0,-32 38,-37 38,5 38,37 V 7 Q 0,11 -38,7 Z"
+         stroke-width="2.5"
+         id="path48" />
+      <path
+         d="M -33,-5 Q 0,-28 33,-5"
+         stroke-width="1.5"
+         opacity="0.4"
+         id="path49" />
+      <rect
+         x="-42"
+         y="5"
+         width="84"
+         height="6"
+         rx="2"
+         stroke-width="2"
+         id="rect49" />
+    </g>
+    <!-- PERCEUSES (4) -->
+    <g
+       transform="rotate(-22,2442.1582,-753.24742)"
+       opacity="0.35"
+       id="g52">
+      <rect
+         x="-20"
+         y="-15"
+         width="40"
+         height="30"
+         rx="5"
+         stroke-width="2.5"
+         id="rect50" />
+      <rect
+         x="20"
+         y="-8"
+         width="35"
+         height="16"
+         rx="2"
+         stroke-width="2"
+         id="rect51" />
+      <path
+         d="M 55,-4 70,0 55,4 Z"
+         fill="currentColor"
+         opacity="0.35"
+         id="path51" />
+      <rect
+         x="-30"
+         y="-5"
+         width="15"
+         height="10"
+         rx="2"
+         stroke-width="2"
+         id="rect52" />
+      <circle
+         cx="-10"
+         cy="0"
+         r="6"
+         stroke-width="1.5"
+         id="circle52" />
+    </g>
+    <g
+       transform="rotate(18,-2494.3257,3048.6381)"
+       opacity="0.34"
+       id="g55">
+      <rect
+         x="-18"
+         y="-13"
+         width="36"
+         height="26"
+         rx="4"
+         stroke-width="2"
+         id="rect53" />
+      <rect
+         x="18"
+         y="-7"
+         width="32"
+         height="14"
+         rx="2"
+         stroke-width="2"
+         id="rect54" />
+      <path
+         d="M 50,-3 65,0 50,3 Z"
+         fill="currentColor"
+         opacity="0.34"
+         id="path54" />
+      <rect
+         x="-28"
+         y="-4"
+         width="13"
+         height="8"
+         rx="2"
+         stroke-width="2"
+         id="rect55" />
+      <circle
+         cx="-8"
+         cy="0"
+         r="5"
+         stroke-width="1.5"
+         id="circle55" />
+    </g>
+    <g
+       transform="rotate(-28,2314.6358,-1936.3608)"
+       opacity="0.36"
+       id="g58">
+      <rect
+         x="-22"
+         y="-17"
+         width="44"
+         height="34"
+         rx="5"
+         stroke-width="2.5"
+         id="rect56" />
+      <rect
+         x="22"
+         y="-9"
+         width="38"
+         height="18"
+         rx="2"
+         stroke-width="2"
+         id="rect57" />
+      <path
+         d="M 60,-5 75,0 60,5 Z"
+         fill="currentColor"
+         opacity="0.36"
+         id="path57" />
+      <rect
+         x="-32"
+         y="-6"
+         width="16"
+         height="12"
+         rx="2"
+         stroke-width="2"
+         id="rect58" />
+      <circle
+         cx="-12"
+         cy="0"
+         r="7"
+         stroke-width="1.5"
+         id="circle58" />
+    </g>
+    <g
+       transform="rotate(35,-710.64956,2943.8439)"
+       opacity="0.33"
+       id="g61">
+      <rect
+         x="-16"
+         y="-12"
+         width="32"
+         height="24"
+         rx="4"
+         stroke-width="2"
+         id="rect59" />
+      <rect
+         x="16"
+         y="-6"
+         width="28"
+         height="12"
+         rx="2"
+         stroke-width="2"
+         id="rect60" />
+      <path
+         d="M 44,-3 56,0 44,3 Z"
+         fill="currentColor"
+         opacity="0.33"
+         id="path60" />
+      <rect
+         x="-24"
+         y="-4"
+         width="11"
+         height="8"
+         rx="2"
+         stroke-width="2"
+         id="rect61" />
+      <circle
+         cx="-6"
+         cy="0"
+         r="5"
+         stroke-width="1.5"
+         id="circle61" />
+    </g>
+    <!-- ÉTAUX (4) -->
+    <g
+       transform="rotate(-15,2798.5139,-713.40558)"
+       opacity="0.35"
+       id="g66">
+      <rect
+         x="-30"
+         y="-20"
+         width="60"
+         height="12"
+         rx="2"
+         stroke-width="2.5"
+         id="rect62" />
+      <rect
+         x="-25"
+         y="12"
+         width="50"
+         height="8"
+         rx="2"
+         stroke-width="2"
+         id="rect63" />
+      <rect
+         x="-8"
+         y="-35"
+         width="16"
+         height="40"
+         rx="2"
+         stroke-width="2.5"
+         id="rect64" />
+      <circle
+         cx="0"
+         cy="-40"
+         r="8"
+         stroke-width="2"
+         id="circle64" />
+      <rect
+         x="-35"
+         y="-25"
+         width="8"
+         height="20"
+         rx="1"
+         stroke-width="2"
+         id="rect65" />
+      <rect
+         x="27"
+         y="-25"
+         width="8"
+         height="20"
+         rx="1"
+         stroke-width="2"
+         id="rect66" />
+    </g>
+    <g
+       transform="rotate(25,-1484.2834,1843.4267)"
+       opacity="0.34"
+       id="g71">
+      <rect
+         x="-26"
+         y="-18"
+         width="52"
+         height="10"
+         rx="2"
+         stroke-width="2"
+         id="rect67" />
+      <rect
+         x="-22"
+         y="10"
+         width="44"
+         height="7"
+         rx="2"
+         stroke-width="2"
+         id="rect68" />
+      <rect
+         x="-7"
+         y="-30"
+         width="14"
+         height="35"
+         rx="2"
+         stroke-width="2"
+         id="rect69" />
+      <circle
+         cx="0"
+         cy="-35"
+         r="7"
+         stroke-width="2"
+         id="circle69" />
+      <rect
+         x="-30"
+         y="-22"
+         width="7"
+         height="18"
+         rx="1"
+         stroke-width="2"
+         id="rect70" />
+      <rect
+         x="23"
+         y="-22"
+         width="7"
+         height="18"
+         rx="1"
+         stroke-width="2"
+         id="rect71" />
+    </g>
+    <g
+       transform="rotate(-32,1790.3433,-1373.7072)"
+       opacity="0.36"
+       id="g76">
+      <rect
+         x="-34"
+         y="-22"
+         width="68"
+         height="14"
+         rx="2"
+         stroke-width="2.5"
+         id="rect72" />
+      <rect
+         x="-28"
+         y="14"
+         width="56"
+         height="9"
+         rx="2"
+         stroke-width="2"
+         id="rect73" />
+      <rect
+         x="-9"
+         y="-40"
+         width="18"
+         height="45"
+         rx="2"
+         stroke-width="2.5"
+         id="rect74" />
+      <circle
+         cx="0"
+         cy="-45"
+         r="9"
+         stroke-width="2"
+         id="circle74" />
+      <rect
+         x="-40"
+         y="-28"
+         width="9"
+         height="22"
+         rx="1"
+         stroke-width="2"
+         id="rect75" />
+      <rect
+         x="31"
+         y="-28"
+         width="9"
+         height="22"
+         rx="1"
+         stroke-width="2"
+         id="rect76" />
+    </g>
+    <g
+       transform="rotate(18,-2088.0507,4796.4885)"
+       opacity="0.33"
+       id="g81">
+      <rect
+         x="-24"
+         y="-16"
+         width="48"
+         height="9"
+         rx="2"
+         stroke-width="2"
+         id="rect77" />
+      <rect
+         x="-20"
+         y="9"
+         width="40"
+         height="6"
+         rx="2"
+         stroke-width="2"
+         id="rect78" />
+      <rect
+         x="-6"
+         y="-28"
+         width="12"
+         height="32"
+         rx="2"
+         stroke-width="2"
+         id="rect79" />
+      <circle
+         cx="0"
+         cy="-32"
+         r="6"
+         stroke-width="2"
+         id="circle79" />
+      <rect
+         x="-28"
+         y="-20"
+         width="6"
+         height="16"
+         rx="1"
+         stroke-width="2"
+         id="rect80" />
+      <rect
+         x="22"
+         y="-20"
+         width="6"
+         height="16"
+         rx="1"
+         stroke-width="2"
+         id="rect81" />
+    </g>
+    <!-- PINCEAUX DE MAÇON (5) -->
+    <g
+       transform="rotate(-12,3234.3093,-3315.4585)"
+       opacity="0.35"
+       id="g83">
+      <rect
+         x="-6"
+         y="-40"
+         width="12"
+         height="60"
+         rx="2"
+         stroke-width="2"
+         id="rect82" />
+      <path
+         d="m -15,-40 h 30 l 3,-15 h -36 z"
+         stroke-width="2"
+         id="path82" />
+      <line
+         x1="-10"
+         y1="-48"
+         x2="10"
+         y2="-48"
+         stroke-width="1"
+         opacity="0.4"
+         id="line82" />
+      <line
+         x1="-12"
+         y1="-44"
+         x2="12"
+         y2="-44"
+         stroke-width="1"
+         opacity="0.4"
+         id="line83" />
+    </g>
+    <g
+       transform="rotate(28,-482.80304,2506.0373)"
+       opacity="0.34"
+       id="g85">
+      <rect
+         x="-5"
+         y="-35"
+         width="10"
+         height="55"
+         rx="2"
+         stroke-width="2"
+         id="rect83" />
+      <path
+         d="m -12,-35 h 24 l 3,-13 h -30 z"
+         stroke-width="2"
+         id="path83" />
+      <line
+         x1="-8"
+         y1="-42"
+         x2="8"
+         y2="-42"
+         stroke-width="1"
+         opacity="0.4"
+         id="line84" />
+      <line
+         x1="-10"
+         y1="-38"
+         x2="10"
+         y2="-38"
+         stroke-width="1"
+         opacity="0.4"
+         id="line85" />
+    </g>
+    <g
+       transform="rotate(-22,2437.7028,-3476.97)"
+       opacity="0.36"
+       id="g87">
+      <rect
+         x="-7"
+         y="-45"
+         width="14"
+         height="65"
+         rx="2"
+         stroke-width="2"
+         id="rect85" />
+      <path
+         d="m -18,-45 h 36 l 2,-13 h -40 z"
+         stroke-width="2.5"
+         id="path85" />
+      <line
+         x1="-12"
+         y1="-52"
+         x2="12"
+         y2="-52"
+         stroke-width="1"
+         opacity="0.4"
+         id="line86" />
+      <line
+         x1="-14"
+         y1="-48"
+         x2="14"
+         y2="-48"
+         stroke-width="1"
+         opacity="0.4"
+         id="line87" />
+    </g>
+    <g
+       transform="rotate(15,-1834.4715,7196.1787)"
+       opacity="0.33"
+       id="g89">
+      <rect
+         x="-5"
+         y="-32"
+         width="10"
+         height="50"
+         rx="2"
+         stroke-width="2"
+         id="rect87" />
+      <path
+         d="m -11,-32 h 22 l 3,-12 h -28 z"
+         stroke-width="2"
+         id="path87" />
+      <line
+         x1="-7"
+         y1="-38"
+         x2="7"
+         y2="-38"
+         stroke-width="1"
+         opacity="0.4"
+         id="line88" />
+      <line
+         x1="-9"
+         y1="-35"
+         x2="9"
+         y2="-35"
+         stroke-width="1"
+         opacity="0.4"
+         id="line89" />
+    </g>
+    <g
+       transform="rotate(-38,1454.5002,257.18418)"
+       opacity="0.37"
+       id="g91">
+      <rect
+         x="-6"
+         y="-38"
+         width="12"
+         height="58"
+         rx="2"
+         stroke-width="2"
+         id="rect89" />
+      <path
+         d="m -14,-38 h 28 l 2,-14 h -32 z"
+         stroke-width="2"
+         id="path89" />
+      <line
+         x1="-9"
+         y1="-45"
+         x2="9"
+         y2="-45"
+         stroke-width="1"
+         opacity="0.4"
+         id="line90" />
+      <line
+         x1="-11"
+         y1="-41"
+         x2="11"
+         y2="-41"
+         stroke-width="1"
+         opacity="0.4"
+         id="line91" />
+    </g>
   </g>
 </svg>

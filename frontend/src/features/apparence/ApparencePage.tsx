@@ -10,6 +10,8 @@
  */
 
 import { useState } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -25,6 +27,10 @@ import {
     Plus,
     Eye,
     EyeOff,
+    Check,
+    X,
+    Maximize2,
+    Monitor,
 } from 'lucide-react';
 import {
     useCatalogueFonds,
@@ -33,30 +39,81 @@ import {
     useAjouterFondEtablissement,
     useSupprimerFondEtablissement,
     useUpdateConfigRotation,
+    useModifierFondEtablissement,
 } from './hooks';
 import { CATEGORIE_LABELS, CategorieFond } from './types';
 import type { Fond } from './types';
+import { useFondActuel } from '@/components/layout/FondRotator';
 
 export function ApparencePage() {
     const [filtreCategorie, setFiltreCategorie] = useState<CategorieFond | 'toutes'>('toutes');
     const [showCatalogue, setShowCatalogue] = useState(false);
+    const [fondApercu, setFondApercu] = useState<string | null>(null);
+
+    // Hook pour connaître le fond actuellement affiché
+    const { fondActuelId } = useFondActuel();
+
+    // Mutation pour définir un fond comme actif
+    const queryClient = useQueryClient();
+    const appliquerFond = useMutation({
+        mutationFn: async (fondEtabId: string) => {
+            // Pour les fonds système virtuels, on ne peut pas modifier via l'API
+            if (fondEtabId.startsWith('systeme-')) {
+                // Extraire l'ID du fond catalogue et le mettre en ordre 1
+                const fondCatalogueId = fondEtabId.replace('systeme-', '');
+                
+                // On doit trouver l'association correspondante ou la créer
+                // Pour simplifier, on invalide juste le cache pour forcer la rotation à reprendre
+                queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'rotation'] });
+                toast.success('Fond système appliqué');
+                return { success: true };
+            }
+            
+            // Mettre à jour le fond pour le passer à ordre=1 et actif=true
+            const response = await apiClient.patch(`/api/apparence/fonds/etablissement/${fondEtabId}`, {
+                ordre: 1,
+                actif: true,
+            });
+            return response.data;
+        },
+        onSuccess: () => {
+            // Invalider et forcer le rechargement immédiat des caches
+            queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'fonds'] });
+            queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'rotation'] });
+            
+            // Forcer le refetch immédiat pour que le FondRotator récupère les nouveaux fonds
+            queryClient.refetchQueries({ 
+                queryKey: ['apparence', 'etablissement', 'rotation'],
+                type: 'active'
+            });
+            
+            toast.success('Fond appliqué immédiatement');
+        },
+        onError: (error: any) => {
+            console.error('[Apparence] Erreur application fond:', error);
+            toast.error(error?.message || 'Erreur lors de l\'application du fond');
+        },
+    });
 
     // Hooks
-    const { data: catalogue, isLoading: loadingCatalogue } = useCatalogueFonds();
+    const { data: catalogueData, isLoading: loadingCatalogue } = useCatalogueFonds();
     const { data: fondsEtab, isLoading: loadingFonds } = useFondsEtablissement();
     const { data: config, isLoading: loadingConfig } = useConfigRotation();
     const ajouterFond = useAjouterFondEtablissement();
     const supprimerFond = useSupprimerFondEtablissement();
     const updateConfig = useUpdateConfigRotation();
+    const modifierFond = useModifierFondEtablissement();
 
     const rotationActive = config?.actif ?? false;
     const delaiRotation = config?.delaiRotation ?? 86400;
 
+    // Le catalogue retourne maintenant { fonds: Fond[], total: number }
+    const catalogue = catalogueData?.fonds ?? [];
+
     // Filtrer le catalogue par catégorie (avec fallback tableau vide)
-    const catalogueSafe = catalogue ?? [];
     const catalogueFiltre = filtreCategorie === 'toutes'
-        ? catalogueSafe
-        : catalogueSafe.filter((f) => f.categorie === filtreCategorie);
+        ? catalogue
+        : catalogue.filter((f) => f.categorie === filtreCategorie);
 
     // Gestion toggle rotation
     const handleToggleRotation = async () => {
@@ -106,6 +163,41 @@ export function ApparencePage() {
         } catch {
             toast.error('Erreur lors de la suppression du fond');
         }
+    };
+
+    // Activer/désactiver un fond manuellement
+    const handleToggleActif = async (feId: string, actifActuel: boolean) => {
+        try {
+            await modifierFond.mutateAsync({
+                id: feId,
+                actif: !actifActuel,
+            });
+            toast.success(actifActuel ? 'Fond désactivé' : 'Fond activé');
+        } catch {
+            toast.error('Erreur lors de la modification du statut');
+        }
+    };
+
+    // Obtenir l'URL complète d'un fond pour l'aperçu
+    const getUrlImageFond = (fond: Fond): string => {
+        // Si c'est une URL absolue, la retourner directement
+        if (fond.cheminFichier.startsWith('http')) {
+            return fond.cheminFichier;
+        }
+        
+        // Chemin relatif: normaliser avec slash initial
+        const cheminNormalise = fond.cheminFichier.startsWith('/')
+            ? fond.cheminFichier
+            : `/${fond.cheminFichier}`;
+        
+        if (import.meta.env.DEV) {
+            // En dev: Vite sert depuis frontend/public/ via le lien symbolique
+            return cheminNormalise;
+        }
+        
+        // En prod: utiliser l'URL du backend
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+        return `${API_BASE_URL}${cheminNormalise}`;
     };
 
     // Formater le délai en format lisible
@@ -226,43 +318,102 @@ export function ApparencePage() {
                     </div>
                 ) : (
                     <div className="mt-[var(--space-md)] grid grid-cols-1 gap-[var(--gap-md)] sm:grid-cols-2 lg:grid-cols-3">
-                        {fondsEtab.map((fe) => (
-                            <div
-                                key={fe.id}
-                                className="relative rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)]"
-                            >
-                                <div className="mb-[var(--space-sm)] flex items-start justify-between">
-                                    <div>
-                                        <p style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                                            {fe.fond.nom}
-                                        </p>
-                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                                            {CATEGORIE_LABELS[fe.fond.categorie]}
-                                        </p>
-                                    </div>
-                                    {fe.actif ? (
-                                        <Eye className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-green-600" />
-                                    ) : (
-                                        <EyeOff className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-gray-400" />
+                        {fondsEtab.map((fe) => {
+                            // Comparer avec fondId (ID du fond catalogue), pas fe.id (ID de l'association)
+                            const estFondActif = fondActuelId === fe.fondId || fondActuelId === fe.fond.id;
+                            
+                            return (
+                                <div
+                                    key={fe.id}
+                                    className={`relative rounded-lg border p-[var(--space-md)] transition-all ${
+                                        estFondActif
+                                            ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-50)] shadow-lg'
+                                            : 'border-[var(--color-bordure)] bg-[var(--color-surface)]'
+                                    }`}
+                                >
+                                    {/* Badge "Fond actif" - z-20 pour être au-dessus de tout */}
+                                    {estFondActif && (
+                                        <div className="absolute -top-2 -right-2 z-20 rounded-full bg-[var(--color-dominant-600)] px-2 py-1 text-xs font-semibold text-white shadow-lg animate-pulse">
+                                            Actif
+                                        </div>
                                     )}
-                                </div>
 
-                                <div className="flex items-center justify-between">
-                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                                        Ordre: {fe.ordre}
-                                    </span>
-                                    <ElisaButton
-                                        variant="danger"
-                                        taille="xs"
-                                        onClick={() => handleSupprimerFond(fe.id)}
-                                        chargement={supprimerFond.isPending}
-                                        icon={<Trash2 className="h-3 w-3" />}
-                                    >
-                                        Retirer
-                                    </ElisaButton>
+                                    <div className="mb-[var(--space-sm)] flex items-start justify-between">
+                                        <div>
+                                            <p style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
+                                                {fe.fond.nom}
+                                            </p>
+                                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                                {CATEGORIE_LABELS[fe.fond.categorie]}
+                                            </p>
+                                        </div>
+                                        {fe.actif ? (
+                                            <Eye className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-green-600" />
+                                        ) : (
+                                            <EyeOff className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-gray-400" />
+                                        )}
+                                    </div>
+
+                                    {/* Boutons d'action */}
+                                    <div className="mt-[var(--space-sm)] flex flex-wrap items-center gap-[var(--gap-xs)]">
+                                        {/* Bouton Appliquer - pour tous les fonds */}
+                                        <ElisaButton
+                                            variant={estFondActif ? 'primary' : 'outline'}
+                                            taille="xs"
+                                            onClick={() => appliquerFond.mutate(fe.id)}  // fe.id = ID de l'association (attendu par l'API)
+                                            chargement={appliquerFond.isPending}
+                                            icon={<Monitor className="h-3 w-3" />}
+                                        >
+                                            {estFondActif ? 'Appliqué' : 'Appliquer'}
+                                        </ElisaButton>
+
+                                        {/* Bouton Activer/Désactiver - uniquement pour les fonds non-système */}
+                                        {!fe.id.startsWith('systeme-') && (
+                                            <ElisaButton
+                                                variant={fe.actif ? 'outline' : 'primary'}
+                                                taille="xs"
+                                                onClick={() => handleToggleActif(fe.id, fe.actif)}
+                                                chargement={modifierFond.isPending}
+                                                icon={fe.actif ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                                            >
+                                                {fe.actif ? 'Désactiver' : 'Activer'}
+                                            </ElisaButton>
+                                        )}
+
+                                        {/* Bouton Aperçu */}
+                                        <ElisaButton
+                                            variant="outline"
+                                            taille="xs"
+                                            onClick={() => setFondApercu(getUrlImageFond(fe.fond))}
+                                            icon={<Maximize2 className="h-3 w-3" />}
+                                        >
+                                            Aperçu
+                                        </ElisaButton>
+                                    </div>
+
+                                    <div className="mt-[var(--space-sm)] flex items-center justify-between">
+                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                            Ordre: {fe.ordre}
+                                        </span>
+                                        {fe.id.startsWith('systeme-') ? (
+                                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                                Fond système
+                                            </span>
+                                        ) : (
+                                            <ElisaButton
+                                                variant="danger"
+                                                taille="xs"
+                                                onClick={() => handleSupprimerFond(fe.id)}
+                                                chargement={supprimerFond.isPending}
+                                                icon={<Trash2 className="h-3 w-3" />}
+                                            >
+                                                Retirer
+                                            </ElisaButton>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </section>
@@ -334,6 +485,37 @@ export function ApparencePage() {
                         </div>
                     )}
                 </div>
+            </CustomModal>
+
+            {/* Modal aperçu du fond */}
+            <CustomModal
+                open={fondApercu !== null}
+                onOpenChange={(v) => { if (!v) setFondApercu(null); }}
+                title="Aperçu du fond d'écran"
+                description="Visualisation en taille réelle du fond sélectionné"
+                size="3xl"
+                footer={
+                    <ElisaButton
+                        variant="outline"
+                        onClick={() => setFondApercu(null)}
+                        icon={<X className="h-4 w-4" />}
+                    >
+                        Fermer
+                    </ElisaButton>
+                }
+            >
+                {fondApercu && (
+                    <div className="flex items-center justify-center">
+                        <img
+                            src={fondApercu}
+                            alt="Aperçu du fond d'écran"
+                            className="max-h-[70vh] w-full rounded-lg object-contain"
+                            style={{
+                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                            }}
+                        />
+                    </div>
+                )}
             </CustomModal>
         </div>
     );

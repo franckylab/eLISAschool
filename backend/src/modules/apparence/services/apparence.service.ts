@@ -87,12 +87,39 @@ export class ApparenceService {
 
     /**
      * Obtenir les fonds sélectionnés par un établissement
+     * Si aucun fond sélectionné, retourne tous les fonds système actifs
      */
     async getFondsEtablissement(etablissementId: string): Promise<FondEtablissement[]> {
-        return this.fondEtabRepo.find({
+        // Chercher les fonds sélectionnés par l'établissement
+        const fondsSelectionnes = await this.fondEtabRepo.find({
             where: { etablissementId },
             relations: ['fond'],
             order: { ordre: 'ASC', dateAjout: 'DESC' },
+        });
+
+        // Si des fonds sont sélectionnés, les retourner
+        if (fondsSelectionnes.length > 0) {
+            return fondsSelectionnes;
+        }
+
+        // Sinon, retourner tous les fonds système actifs (fallback automatique)
+        logger.info(`[Apparence] Aucun fond sélectionné pour l'établissement ${etablissementId}, utilisant les fonds système`);
+        const fondsSysteme = await this.fondRepo.find({
+            where: { estActif: true, estSysteme: true },
+            order: { categorie: 'ASC', nom: 'ASC' },
+        });
+
+        // Retourner sous forme de FondEtablissement virtuel (sans persister)
+        return fondsSysteme.map((fond) => {
+            const fondEtab = new FondEtablissement();
+            fondEtab.id = `systeme-${fond.id}`;
+            fondEtab.etablissementId = etablissementId;
+            fondEtab.fondId = fond.id;
+            fondEtab.fond = fond;
+            fondEtab.actif = true;
+            fondEtab.ordre = 0;
+            fondEtab.dateAjout = new Date();
+            return fondEtab;
         });
     }
 
@@ -137,12 +164,20 @@ export class ApparenceService {
 
     /**
      * Modifier un fond d'un établissement (actif/ordre)
+     * Ignore silencieusement les fonds système virtuels (non persistés)
      */
     async modifierFondEtablissement(
         etablissementId: string,
         fondEtabId: string,
         dto: ModifierFondEtablissementDto
     ): Promise<FondEtablissement> {
+        // Ignorer silencieusement les fonds système virtuels (ID commence par "systeme-")
+        if (fondEtabId.startsWith('systeme-')) {
+            logger.info(`[Apparence] Modification d'un fond système virtuel ignorée: ${fondEtabId}`);
+            // Retourner un objet factice pour éviter l'erreur
+            throw new AppError('Les fonds système ne peuvent pas être modifiés', 400, 'SYSTEME_FOND_IMMUTABLE');
+        }
+
         const fondEtab = await this.fondEtabRepo.findOne({
             where: { id: fondEtabId, etablissementId },
             relations: ['fond'],
@@ -161,11 +196,18 @@ export class ApparenceService {
 
     /**
      * Retirer un fond de la sélection d'un établissement
+     * Ignore silencieusement les fonds système virtuels (non persistés)
      */
     async retirerFondEtablissement(
         etablissementId: string,
         fondEtabId: string
     ): Promise<void> {
+        // Ignorer silencieusement les fonds système virtuels (ID commence par "systeme-")
+        if (fondEtabId.startsWith('systeme-')) {
+            logger.info(`[Apparence] Tentative de retrait d'un fond système virtuel ignorée: ${fondEtabId}`);
+            return; // Pas d'erreur, on ignore simplement
+        }
+
         const fondEtab = await this.fondEtabRepo.findOne({
             where: { id: fondEtabId, etablissementId },
             relations: ['fond'],
@@ -306,38 +348,46 @@ export class ApparenceService {
     // ============================================
 
     /**
-     * Créer ou mettre à jour un paramètre système
+     * Créer ou mettre à jour un paramètre système (upsert atomique)
      */
     private async upsertParametre(cle: string, valeur: string, etablissementId: string): Promise<void> {
-        let param = await this.parametreRepo.findOne({ where: { cle, etablissementId } });
-
-        if (param) {
-            param.valeur = valeur;
-            param.updatedAt = new Date();
-        } else {
-            param = this.parametreRepo.create({
+        await this.parametreRepo.upsert(
+            {
                 cle,
                 valeur,
                 etablissementId,
                 typeValeur: 'JSON' as any,
                 categorie: 'THEME' as any,
-            });
-        }
-
-        await this.parametreRepo.save(param);
+            },
+            ['cle', 'etablissementId'], // Contrainte unique pour conflit
+        );
+        
+        logger.debug(`[Apparence] Paramètre ${cle} upserté pour l'établissement ${etablissementId}`);
     }
 
     /**
      * Obtenir les fonds actifs pour la rotation d'un établissement
+     * Si aucun fond sélectionné, retourne tous les fonds système actifs
      */
     async getFondsRotation(etablissementId: string): Promise<Fond[]> {
+        // Chercher les fonds sélectionnés et actifs
         const fondsEtab = await this.fondEtabRepo.find({
             where: { etablissementId, actif: true },
             relations: ['fond'],
             order: { ordre: 'ASC' },
         });
 
-        return fondsEtab.map((fe) => fe.fond);
+        // Si des fonds sont sélectionnés, les retourner
+        if (fondsEtab.length > 0) {
+            return fondsEtab.map((fe) => fe.fond);
+        }
+
+        // Sinon, retourner tous les fonds système actifs (fallback automatique)
+        logger.info(`[Apparence] Rotation: aucun fond sélectionné pour ${etablissementId}, utilisant les fonds système`);
+        return this.fondRepo.find({
+            where: { estActif: true, estSysteme: true },
+            order: { categorie: 'ASC', nom: 'ASC' },
+        });
     }
 }
 

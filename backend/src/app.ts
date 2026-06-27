@@ -108,8 +108,13 @@ export function createApp(): Application {
     }));
 
     // Configuration CORS
+    const allowedOrigins = envConfig.app.allowedOrigins
+        ? envConfig.app.allowedOrigins.split(',').map(o => o.trim()).filter(Boolean)
+        : [];
+    const origins = [envConfig.app.frontendUrl, ...allowedOrigins].filter(Boolean);
+
     app.use(cors({
-        origin: envConfig.app.frontendUrl,
+        origin: origins.length > 1 ? origins : origins[0],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -194,6 +199,10 @@ export function createApp(): Application {
             if (filePath.endsWith('.svg')) {
                 res.setHeader('Content-Type', 'image/svg+xml');
                 res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+                // Headers CORS pour permettre le chargement cross-origin des SVG
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
             }
         },
     }));
@@ -349,7 +358,7 @@ export function createApp(): Application {
     app.use('/api/monitoring', authMiddleware, requireModuleActive('monitoring'), monitoringController); // Monitoring peut être global
     app.use('/api/dashboard', authMiddleware, requireModuleActive('dashboard'), filterByEtablissement(), dashboardController);
     app.use('/api/validation-workflows', authMiddleware, filterByEtablissement(), validationWorkflowController);
-    app.use('/api/apparence', authMiddleware, filterByEtablissement(), apparenceController);
+    app.use('/api/apparence/fonds', authMiddleware, filterByEtablissement(), apparenceController);
     app.use('/api/groupes-etablissements', authMiddleware, filterByEtablissement(), groupesController);
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     
@@ -366,24 +375,24 @@ export function createApp(): Application {
     app.use('/api/examens-nationaux', authMiddleware, filterByEtablissement(), examensNationauxController);
     app.use('/api/diplomes-eleves', authMiddleware, filterByEtablissement(), diplomesElevesController);
     app.use('/api/annees-scolaires', authMiddleware, filterByEtablissement(), anneesScolairesController);
-    app.use('/api/personnel', requireModuleActive('personnel'), filterByEtablissement(), personnelController);
-    app.use('/api/personnel/contrats', requireModuleActive('personnel'), filterByEtablissement(), contratController);
-    app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), filterByEtablissement(), typeContratController);
-    app.use('/api/personnel/affectations', requireModuleActive('personnel'), filterByEtablissement(), affectationController);
-    app.use('/api/personnel/parcours', requireModuleActive('personnel'), filterByEtablissement(), parcoursPersonnelController);
-    app.use('/api/personnel/heures-cours', requireModuleActive('personnel'), filterByEtablissement(), heureCoursController);
-    app.use('/api/personnel/absences', requireModuleActive('personnel'), filterByEtablissement(), absencePersonnelController);
-    app.use('/api/personnel/evaluations', requireModuleActive('personnel'), filterByEtablissement(), evaluationController);
-    app.use('/api/personnel/progressions', requireModuleActive('personnel'), filterByEtablissement(), progressionProgrammeController);
-    app.use('/api/personnel/bulletins', requireModuleActive('personnel'), filterByEtablissement(), bulletinPaieController);
-    app.use('/api/personnel/dashboard', requireModuleActive('personnel'), filterByEtablissement(), personnelDashboardController);
-    app.use('/api/classes', filterByEtablissement(), classesController);
-    app.use('/api/matieres', filterByEtablissement(), matieresController);
-    app.use('/api/periodes', filterByEtablissement(), periodesController);
-    app.use('/api/programmes', requireModuleActive('programmes'), filterByEtablissement(), programmesController);
-    app.use('/api/eleves', filterByEtablissement(), elevesController);
-    app.use('/api/bulletins', filterByEtablissement(), bulletinsController);
-    app.use('/api/responsables-eleves', filterByEtablissement(), responsablesElevesController);
+    app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
+    app.use('/api/personnel/contrats', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), contratController);
+    app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typeContratController);
+    app.use('/api/personnel/affectations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), affectationController);
+    app.use('/api/personnel/parcours', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), parcoursPersonnelController);
+    app.use('/api/personnel/heures-cours', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), heureCoursController);
+    app.use('/api/personnel/absences', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), absencePersonnelController);
+    app.use('/api/personnel/evaluations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), evaluationController);
+    app.use('/api/personnel/progressions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), progressionProgrammeController);
+    app.use('/api/personnel/bulletins', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), bulletinPaieController);
+    app.use('/api/personnel/dashboard', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelDashboardController);
+    app.use('/api/classes', authMiddleware, filterByEtablissement(), classesController);
+    app.use('/api/matieres', authMiddleware, filterByEtablissement(), matieresController);
+    app.use('/api/periodes', authMiddleware, filterByEtablissement(), periodesController);
+    app.use('/api/programmes', requireModuleActive('programmes'), authMiddleware, filterByEtablissement(), programmesController);
+    app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
+    app.use('/api/bulletins', authMiddleware, filterByEtablissement(), bulletinsController);
+    app.use('/api/responsables-eleves', authMiddleware, filterByEtablissement(), responsablesElevesController);
 
     // Module audit (doit être après tenantMiddleware)
     app.use('/api/audit', auditController);

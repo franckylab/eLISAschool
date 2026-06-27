@@ -1,20 +1,1738 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <rect width="100%" height="100%" fill="transparent"/>
-  <g opacity="0.08" fill="currentColor">
-    <!-- Calculatrices en grille -->
-    <rect x="100" y="100" width="120" height="200" rx="10" opacity="0.06"/>
-    <rect x="110" y="110" width="100" height="50" rx="3" opacity="0.10"/>
-    <rect x="110" y="170" width="22" height="22" rx="2" opacity="0.08"/>
-    <rect x="138" y="170" width="22" height="22" rx="2" opacity="0.08"/>
-    <rect x="166" y="170" width="22" height="22" rx="2" opacity="0.08"/>
-    <rect x="110" y="198" width="22" height="22" rx="2" opacity="0.08"/>
-    <rect x="138" y="198" width="22" height="22" rx="2" opacity="0.08"/>
-    <rect x="166" y="198" width="22" height="22" rx="2" opacity="0.08"/>
-    
-    <rect x="300" y="300" width="120" height="200" rx="10" opacity="0.06"/>
-    <rect x="310" y="310" width="100" height="50" rx="3" opacity="0.10"/>
-    
-    <rect x="1400" y="500" width="120" height="200" rx="10" opacity="0.06"/>
-    <rect x="1410" y="510" width="100" height="50" rx="3" opacity="0.10"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg172"
+   sodipodi:docname="instrument-calcul-01.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs172" />
+  <sodipodi:namedview
+     id="namedview172"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.69444444"
+     inkscape:cx="960.48"
+     inkscape:cy="540"
+     inkscape:window-width="1920"
+     inkscape:window-height="958"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg172" />
+  <g
+     stroke="currentColor"
+     fill="none"
+     id="g172">
+    <!-- CALCULATRICES (6) -->
+    <g
+       transform="translate(200, 150) rotate(-15)"
+       opacity="0.35"
+       id="g14">
+      <rect
+         x="-30"
+         y="-45"
+         width="60"
+         height="90"
+         rx="4"
+         stroke-width="2.5"
+         id="rect2" />
+      <rect
+         x="-24"
+         y="-38"
+         width="48"
+         height="18"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect3" />
+      <circle
+         cx="-12"
+         cy="-8"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle3" />
+      <circle
+         cx="0"
+         cy="-8"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle4" />
+      <circle
+         cx="12"
+         cy="-8"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle5" />
+      <circle
+         cx="-12"
+         cy="4"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle6" />
+      <circle
+         cx="0"
+         cy="4"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle7" />
+      <circle
+         cx="12"
+         cy="4"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle8" />
+      <circle
+         cx="-12"
+         cy="16"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle9" />
+      <circle
+         cx="0"
+         cy="16"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle10" />
+      <circle
+         cx="12"
+         cy="16"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle11" />
+      <circle
+         cx="-12"
+         cy="28"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle12" />
+      <circle
+         cx="0"
+         cy="28"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle13" />
+      <circle
+         cx="12"
+         cy="28"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle14" />
+    </g>
+    <g
+       transform="translate(900, 200) rotate(20)"
+       opacity="0.32"
+       id="g23">
+      <rect
+         x="-26"
+         y="-40"
+         width="52"
+         height="80"
+         rx="3"
+         stroke-width="2"
+         id="rect14" />
+      <rect
+         x="-20"
+         y="-34"
+         width="40"
+         height="15"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect15" />
+      <circle
+         cx="-10"
+         cy="-8"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle15" />
+      <circle
+         cx="0"
+         cy="-8"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle16" />
+      <circle
+         cx="10"
+         cy="-8"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle17" />
+      <circle
+         cx="-10"
+         cy="4"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle18" />
+      <circle
+         cx="0"
+         cy="4"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle19" />
+      <circle
+         cx="10"
+         cy="4"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle20" />
+      <circle
+         cx="-10"
+         cy="16"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle21" />
+      <circle
+         cx="0"
+         cy="16"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle22" />
+      <circle
+         cx="10"
+         cy="16"
+         r="2.5"
+         fill="currentColor"
+         opacity="0.32"
+         id="circle23" />
+    </g>
+    <g
+       transform="translate(1550, 300) rotate(-25)"
+       opacity="0.38"
+       id="g35">
+      <rect
+         x="-34"
+         y="-50"
+         width="68"
+         height="100"
+         rx="4"
+         stroke-width="2.5"
+         id="rect23" />
+      <rect
+         x="-27"
+         y="-42"
+         width="54"
+         height="20"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect24" />
+      <circle
+         cx="-14"
+         cy="-10"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle24" />
+      <circle
+         cx="0"
+         cy="-10"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle25" />
+      <circle
+         cx="14"
+         cy="-10"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle26" />
+      <circle
+         cx="-14"
+         cy="4"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle27" />
+      <circle
+         cx="0"
+         cy="4"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle28" />
+      <circle
+         cx="14"
+         cy="4"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle29" />
+      <circle
+         cx="-14"
+         cy="18"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle30" />
+      <circle
+         cx="0"
+         cy="18"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle31" />
+      <circle
+         cx="14"
+         cy="18"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle32" />
+      <circle
+         cx="-14"
+         cy="32"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle33" />
+      <circle
+         cx="0"
+         cy="32"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle34" />
+      <circle
+         cx="14"
+         cy="32"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.38"
+         id="circle35" />
+    </g>
+    <g
+       transform="translate(350, 750) rotate(30)"
+       opacity="0.31"
+       id="g44">
+      <rect
+         x="-24"
+         y="-36"
+         width="48"
+         height="72"
+         rx="3"
+         stroke-width="2"
+         id="rect35" />
+      <rect
+         x="-18"
+         y="-30"
+         width="36"
+         height="13"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect36" />
+      <circle
+         cx="-9"
+         cy="-6"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle36" />
+      <circle
+         cx="0"
+         cy="-6"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle37" />
+      <circle
+         cx="9"
+         cy="-6"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle38" />
+      <circle
+         cx="-9"
+         cy="5"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle39" />
+      <circle
+         cx="0"
+         cy="5"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle40" />
+      <circle
+         cx="9"
+         cy="5"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle41" />
+      <circle
+         cx="-9"
+         cy="16"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle42" />
+      <circle
+         cx="0"
+         cy="16"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle43" />
+      <circle
+         cx="9"
+         cy="16"
+         r="2"
+         fill="currentColor"
+         opacity="0.31"
+         id="circle44" />
+    </g>
+    <g
+       transform="translate(1250, 850) rotate(-35)"
+       opacity="0.36"
+       id="g53">
+      <rect
+         x="-28"
+         y="-42"
+         width="56"
+         height="84"
+         rx="3"
+         stroke-width="2.5"
+         id="rect44" />
+      <rect
+         x="-22"
+         y="-35"
+         width="44"
+         height="16"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect45" />
+      <circle
+         cx="-11"
+         cy="-7"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle45" />
+      <circle
+         cx="0"
+         cy="-7"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle46" />
+      <circle
+         cx="11"
+         cy="-7"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle47" />
+      <circle
+         cx="-11"
+         cy="5"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle48" />
+      <circle
+         cx="0"
+         cy="5"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle49" />
+      <circle
+         cx="11"
+         cy="5"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle50" />
+      <circle
+         cx="-11"
+         cy="17"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle51" />
+      <circle
+         cx="0"
+         cy="17"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle52" />
+      <circle
+         cx="11"
+         cy="17"
+         r="3"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle53" />
+    </g>
+    <g
+       transform="translate(1700, 650) rotate(18)"
+       opacity="0.33"
+       id="g62">
+      <rect
+         x="-22"
+         y="-34"
+         width="44"
+         height="68"
+         rx="3"
+         stroke-width="2"
+         id="rect53" />
+      <rect
+         x="-17"
+         y="-28"
+         width="34"
+         height="12"
+         rx="2"
+         fill="currentColor"
+         opacity="0.10"
+         id="rect54" />
+      <circle
+         cx="-8"
+         cy="-5"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle54" />
+      <circle
+         cx="0"
+         cy="-5"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle55" />
+      <circle
+         cx="8"
+         cy="-5"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle56" />
+      <circle
+         cx="-8"
+         cy="6"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle57" />
+      <circle
+         cx="0"
+         cy="6"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle58" />
+      <circle
+         cx="8"
+         cy="6"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle59" />
+      <circle
+         cx="-8"
+         cy="17"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle60" />
+      <circle
+         cx="0"
+         cy="17"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle61" />
+      <circle
+         cx="8"
+         cy="17"
+         r="2"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle62" />
+    </g>
+    <!-- BOULIERS (5) -->
+    <g
+       transform="translate(600, 100) rotate(10)"
+       opacity="0.34"
+       id="g73">
+      <rect
+         x="-40"
+         y="-50"
+         width="80"
+         height="100"
+         rx="3"
+         stroke-width="2.5"
+         id="rect62" />
+      <line
+         x1="-40"
+         y1="-20"
+         x2="40"
+         y2="-20"
+         stroke-width="2"
+         id="line62" />
+      <line
+         x1="-40"
+         y1="0"
+         x2="40"
+         y2="0"
+         stroke-width="2"
+         id="line63" />
+      <line
+         x1="-40"
+         y1="20"
+         x2="40"
+         y2="20"
+         stroke-width="2"
+         id="line64" />
+      <line
+         x1="-40"
+         y1="40"
+         x2="40"
+         y2="40"
+         stroke-width="2"
+         id="line65" />
+      <circle
+         cx="-20"
+         cy="-10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle65" />
+      <circle
+         cx="0"
+         cy="-10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle66" />
+      <circle
+         cx="20"
+         cy="-10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle67" />
+      <circle
+         cx="-20"
+         cy="10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle68" />
+      <circle
+         cx="0"
+         cy="10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle69" />
+      <circle
+         cx="20"
+         cy="10"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle70" />
+      <circle
+         cx="-20"
+         cy="30"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle71" />
+      <circle
+         cx="0"
+         cy="30"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle72" />
+      <circle
+         cx="20"
+         cy="30"
+         r="4"
+         fill="currentColor"
+         opacity="0.34"
+         id="circle73" />
+    </g>
+    <g
+       transform="translate(1100, 400) rotate(-20)"
+       opacity="0.37"
+       id="g80">
+      <rect
+         x="-35"
+         y="-45"
+         width="70"
+         height="90"
+         rx="3"
+         stroke-width="2"
+         id="rect73" />
+      <line
+         x1="-35"
+         y1="-15"
+         x2="35"
+         y2="-15"
+         stroke-width="1.5"
+         id="line73" />
+      <line
+         x1="-35"
+         y1="5"
+         x2="35"
+         y2="5"
+         stroke-width="1.5"
+         id="line74" />
+      <line
+         x1="-35"
+         y1="25"
+         x2="35"
+         y2="25"
+         stroke-width="1.5"
+         id="line75" />
+      <circle
+         cx="-15"
+         cy="-5"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle75" />
+      <circle
+         cx="5"
+         cy="-5"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle76" />
+      <circle
+         cx="15"
+         cy="-5"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle77" />
+      <circle
+         cx="-15"
+         cy="15"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle78" />
+      <circle
+         cx="5"
+         cy="15"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle79" />
+      <circle
+         cx="15"
+         cy="15"
+         r="3.5"
+         fill="currentColor"
+         opacity="0.37"
+         id="circle80" />
+    </g>
+    <g
+       transform="translate(1500, 700) rotate(25)"
+       opacity="0.30"
+       id="g87">
+      <rect
+         x="-32"
+         y="-40"
+         width="64"
+         height="80"
+         rx="3"
+         stroke-width="2"
+         id="rect80" />
+      <line
+         x1="-32"
+         y1="-12"
+         x2="32"
+         y2="-12"
+         stroke-width="1.5"
+         id="line80" />
+      <line
+         x1="-32"
+         y1="8"
+         x2="32"
+         y2="8"
+         stroke-width="1.5"
+         id="line81" />
+      <line
+         x1="-32"
+         y1="28"
+         x2="32"
+         y2="28"
+         stroke-width="1.5"
+         id="line82" />
+      <circle
+         cx="-12"
+         cy="-2"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle82" />
+      <circle
+         cx="4"
+         cy="-2"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle83" />
+      <circle
+         cx="12"
+         cy="-2"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle84" />
+      <circle
+         cx="-12"
+         cy="18"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle85" />
+      <circle
+         cx="4"
+         cy="18"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle86" />
+      <circle
+         cx="12"
+         cy="18"
+         r="3"
+         fill="currentColor"
+         opacity="0.30"
+         id="circle87" />
+    </g>
+    <g
+       transform="translate(400, 500) rotate(-30)"
+       opacity="0.36"
+       id="g95">
+      <rect
+         x="-38"
+         y="-48"
+         width="76"
+         height="96"
+         rx="3"
+         stroke-width="2.5"
+         id="rect87" />
+      <line
+         x1="-38"
+         y1="-18"
+         x2="38"
+         y2="-18"
+         stroke-width="2"
+         id="line87" />
+      <line
+         x1="-38"
+         y1="2"
+         x2="38"
+         y2="2"
+         stroke-width="2"
+         id="line88" />
+      <line
+         x1="-38"
+         y1="22"
+         x2="38"
+         y2="22"
+         stroke-width="2"
+         id="line89" />
+      <line
+         x1="-38"
+         y1="42"
+         x2="38"
+         y2="42"
+         stroke-width="2"
+         id="line90" />
+      <circle
+         cx="-18"
+         cy="-8"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle90" />
+      <circle
+         cx="0"
+         cy="-8"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle91" />
+      <circle
+         cx="18"
+         cy="-8"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle92" />
+      <circle
+         cx="-18"
+         cy="12"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle93" />
+      <circle
+         cx="0"
+         cy="12"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle94" />
+      <circle
+         cx="18"
+         cy="12"
+         r="4"
+         fill="currentColor"
+         opacity="0.36"
+         id="circle95" />
+    </g>
+    <g
+       transform="translate(800, 900) rotate(15)"
+       opacity="0.33"
+       id="g102">
+      <rect
+         x="-30"
+         y="-38"
+         width="60"
+         height="76"
+         rx="3"
+         stroke-width="2"
+         id="rect95" />
+      <line
+         x1="-30"
+         y1="-10"
+         x2="30"
+         y2="-10"
+         stroke-width="1.5"
+         id="line95" />
+      <line
+         x1="-30"
+         y1="10"
+         x2="30"
+         y2="10"
+         stroke-width="1.5"
+         id="line96" />
+      <line
+         x1="-30"
+         y1="30"
+         x2="30"
+         y2="30"
+         stroke-width="1.5"
+         id="line97" />
+      <circle
+         cx="-10"
+         cy="0"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle97" />
+      <circle
+         cx="5"
+         cy="0"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle98" />
+      <circle
+         cx="10"
+         cy="0"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle99" />
+      <circle
+         cx="-10"
+         cy="20"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle100" />
+      <circle
+         cx="5"
+         cy="20"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle101" />
+      <circle
+         cx="10"
+         cy="20"
+         r="3"
+         fill="currentColor"
+         opacity="0.33"
+         id="circle102" />
+    </g>
+    <!-- RÈGLES À CALCUL (4) -->
+    <g
+       transform="translate(750, 300) rotate(-12)"
+       opacity="0.35"
+       id="g107">
+      <rect
+         x="-60"
+         y="-15"
+         width="120"
+         height="30"
+         rx="2"
+         stroke-width="2"
+         id="rect102" />
+      <line
+         x1="-50"
+         y1="-15"
+         x2="-50"
+         y2="15"
+         stroke-width="1.5"
+         id="line102" />
+      <line
+         x1="-30"
+         y1="-15"
+         x2="-30"
+         y2="15"
+         stroke-width="1"
+         id="line103" />
+      <line
+         x1="-10"
+         y1="-15"
+         x2="-10"
+         y2="15"
+         stroke-width="1.5"
+         id="line104" />
+      <line
+         x1="10"
+         y1="-15"
+         x2="10"
+         y2="15"
+         stroke-width="1"
+         id="line105" />
+      <line
+         x1="30"
+         y1="-15"
+         x2="30"
+         y2="15"
+         stroke-width="1.5"
+         id="line106" />
+      <line
+         x1="50"
+         y1="-15"
+         x2="50"
+         y2="15"
+         stroke-width="1"
+         id="line107" />
+      <rect
+         x="-45"
+         y="-8"
+         width="90"
+         height="16"
+         rx="1"
+         fill="currentColor"
+         opacity="0.08"
+         id="rect107" />
+    </g>
+    <g
+       transform="translate(1400, 150) rotate(22)"
+       opacity="0.31"
+       id="g112">
+      <rect
+         x="-55"
+         y="-13"
+         width="110"
+         height="26"
+         rx="2"
+         stroke-width="1.5"
+         id="rect108" />
+      <line
+         x1="-45"
+         y1="-13"
+         x2="-45"
+         y2="13"
+         stroke-width="1"
+         id="line108" />
+      <line
+         x1="-25"
+         y1="-13"
+         x2="-25"
+         y2="13"
+         stroke-width="1"
+         id="line109" />
+      <line
+         x1="-5"
+         y1="-13"
+         x2="-5"
+         y2="13"
+         stroke-width="1"
+         id="line110" />
+      <line
+         x1="15"
+         y1="-13"
+         x2="15"
+         y2="13"
+         stroke-width="1"
+         id="line111" />
+      <line
+         x1="35"
+         y1="-13"
+         x2="35"
+         y2="13"
+         stroke-width="1"
+         id="line112" />
+      <rect
+         x="-40"
+         y="-6"
+         width="80"
+         height="12"
+         rx="1"
+         fill="currentColor"
+         opacity="0.08"
+         id="rect112" />
+    </g>
+    <g
+       transform="translate(250, 950) rotate(-28)"
+       opacity="0.38"
+       id="g118">
+      <rect
+         x="-65"
+         y="-17"
+         width="130"
+         height="34"
+         rx="2"
+         stroke-width="2.5"
+         id="rect113" />
+      <line
+         x1="-55"
+         y1="-17"
+         x2="-55"
+         y2="17"
+         stroke-width="1.5"
+         id="line113" />
+      <line
+         x1="-35"
+         y1="-17"
+         x2="-35"
+         y2="17"
+         stroke-width="1.5"
+         id="line114" />
+      <line
+         x1="-15"
+         y1="-17"
+         x2="-15"
+         y2="17"
+         stroke-width="1.5"
+         id="line115" />
+      <line
+         x1="5"
+         y1="-17"
+         x2="5"
+         y2="17"
+         stroke-width="1.5"
+         id="line116" />
+      <line
+         x1="25"
+         y1="-17"
+         x2="25"
+         y2="17"
+         stroke-width="1.5"
+         id="line117" />
+      <line
+         x1="45"
+         y1="-17"
+         x2="45"
+         y2="17"
+         stroke-width="1.5"
+         id="line118" />
+      <rect
+         x="-50"
+         y="-10"
+         width="100"
+         height="20"
+         rx="1"
+         fill="currentColor"
+         opacity="0.08"
+         id="rect118" />
+    </g>
+    <g
+       transform="translate(1650, 500) rotate(35)"
+       opacity="0.32"
+       id="g123">
+      <rect
+         x="-50"
+         y="-12"
+         width="100"
+         height="24"
+         rx="2"
+         stroke-width="2"
+         id="rect119" />
+      <line
+         x1="-40"
+         y1="-12"
+         x2="-40"
+         y2="12"
+         stroke-width="1"
+         id="line119" />
+      <line
+         x1="-20"
+         y1="-12"
+         x2="-20"
+         y2="12"
+         stroke-width="1"
+         id="line120" />
+      <line
+         x1="0"
+         y1="-12"
+         x2="0"
+         y2="12"
+         stroke-width="1"
+         id="line121" />
+      <line
+         x1="20"
+         y1="-12"
+         x2="20"
+         y2="12"
+         stroke-width="1"
+         id="line122" />
+      <line
+         x1="40"
+         y1="-12"
+         x2="40"
+         y2="12"
+         stroke-width="1"
+         id="line123" />
+      <rect
+         x="-35"
+         y="-5"
+         width="70"
+         height="10"
+         rx="1"
+         fill="currentColor"
+         opacity="0.08"
+         id="rect123" />
+    </g>
+    <!-- SIGNES MATHÉMATIQUES (8) -->
+    <g
+       transform="translate(500, 350)"
+       opacity="0.36"
+       id="g125">
+      <line
+         x1="-15"
+         y1="0"
+         x2="15"
+         y2="0"
+         stroke-width="3"
+         id="line124" />
+      <line
+         x1="0"
+         y1="-15"
+         x2="0"
+         y2="15"
+         stroke-width="3"
+         id="line125" />
+    </g>
+    <g
+       transform="translate(1050, 250)"
+       opacity="0.33"
+       id="g127">
+      <line
+         x1="-12"
+         y1="-12"
+         x2="12"
+         y2="12"
+         stroke-width="2.5"
+         id="line126" />
+      <line
+         x1="12"
+         y1="-12"
+         x2="-12"
+         y2="12"
+         stroke-width="2.5"
+         id="line127" />
+    </g>
+    <g
+       transform="translate(1350, 600)"
+       opacity="0.37"
+       id="g128">
+      <path
+         d="M-12,-8 L12,0 L-12,8 Z"
+         stroke-width="2.5"
+         id="path127" />
+    </g>
+    <g
+       transform="translate(300, 650)"
+       opacity="0.30"
+       id="g129">
+      <line
+         x1="-14"
+         y1="0"
+         x2="14"
+         y2="0"
+         stroke-width="3"
+         id="line128" />
+    </g>
+    <g
+       transform="translate(1800, 350)"
+       opacity="0.35"
+       id="g130">
+      <path
+         d="M-10,-10 Q0,-15 10,-10 Q15,0 10,10 Q0,15 -10,10 Q-15,0 -10,-10"
+         stroke-width="2.5"
+         id="path129" />
+      <circle
+         cx="0"
+         cy="0"
+         r="3"
+         fill="currentColor"
+         opacity="0.35"
+         id="circle129" />
+    </g>
+    <g
+       transform="translate(700, 700)"
+       opacity="0.38"
+       id="g132">
+      <line
+         x1="-10"
+         y1="-10"
+         x2="10"
+         y2="10"
+         stroke-width="3"
+         id="line130" />
+      <line
+         x1="10"
+         y1="-10"
+         x2="-10"
+         y2="10"
+         stroke-width="3"
+         id="line131" />
+      <line
+         x1="-14"
+         y1="0"
+         x2="14"
+         y2="0"
+         stroke-width="3"
+         id="line132" />
+    </g>
+    <g
+       transform="translate(1200, 1000)"
+       opacity="0.31"
+       id="g133">
+      <path
+         d="M-15,-5 L15,-5 M-15,5 L15,5"
+         stroke-width="2.5"
+         id="path132" />
+    </g>
+    <g
+       transform="translate(150, 500)"
+       opacity="0.34"
+       id="g134">
+      <circle
+         cx="0"
+         cy="0"
+         r="12"
+         stroke-width="2"
+         id="circle133" />
+      <line
+         x1="-8"
+         y1="-8"
+         x2="8"
+         y2="8"
+         stroke-width="2"
+         id="line133" />
+    </g>
+    <!-- NOMBRES FLOTTANTS (6) -->
+    <text
+       x="450"
+       y="250"
+       font-family="monospace"
+       font-size="48"
+       font-weight="bold"
+       opacity="0.32"
+       fill="currentColor"
+       stroke="none"
+       id="text134">7</text>
+    <text
+       x="950"
+       y="500"
+       font-family="monospace"
+       font-size="56"
+       font-weight="bold"
+       opacity="0.36"
+       fill="currentColor"
+       stroke="none"
+       id="text135">π</text>
+    <text
+       x="1450"
+       y="450"
+       font-family="monospace"
+       font-size="44"
+       font-weight="bold"
+       opacity="0.30"
+       fill="currentColor"
+       stroke="none"
+       id="text136">∑</text>
+    <text
+       x="200"
+       y="800"
+       font-family="monospace"
+       font-size="52"
+       font-weight="bold"
+       opacity="0.38"
+       fill="currentColor"
+       stroke="none"
+       id="text137">∞</text>
+    <text
+       x="1100"
+       y="750"
+       font-family="monospace"
+       font-size="46"
+       font-weight="bold"
+       opacity="0.33"
+       fill="currentColor"
+       stroke="none"
+       id="text138">√</text>
+    <text
+       x="1600"
+       y="950"
+       font-family="monospace"
+       font-size="50"
+       font-weight="bold"
+       opacity="0.35"
+       fill="currentColor"
+       stroke="none"
+       id="text139">∫</text>
+    <!-- ENGRENAGES (4) -->
+    <g
+       transform="translate(600, 600) rotate(0)"
+       opacity="0.34"
+       id="g147">
+      <circle
+         cx="0"
+         cy="0"
+         r="20"
+         stroke-width="2.5"
+         id="circle139" />
+      <circle
+         cx="0"
+         cy="0"
+         r="8"
+         fill="currentColor"
+         opacity="0.15"
+         id="circle140" />
+      <line
+         x1="0"
+         y1="-20"
+         x2="0"
+         y2="-28"
+         stroke-width="3"
+         id="line140" />
+      <line
+         x1="0"
+         y1="20"
+         x2="0"
+         y2="28"
+         stroke-width="3"
+         id="line141" />
+      <line
+         x1="-20"
+         y1="0"
+         x2="-28"
+         y2="0"
+         stroke-width="3"
+         id="line142" />
+      <line
+         x1="20"
+         y1="0"
+         x2="28"
+         y2="0"
+         stroke-width="3"
+         id="line143" />
+      <line
+         x1="-14"
+         y1="-14"
+         x2="-20"
+         y2="-20"
+         stroke-width="3"
+         id="line144" />
+      <line
+         x1="14"
+         y1="14"
+         x2="20"
+         y2="20"
+         stroke-width="3"
+         id="line145" />
+      <line
+         x1="-14"
+         y1="14"
+         x2="-20"
+         y2="20"
+         stroke-width="3"
+         id="line146" />
+      <line
+         x1="14"
+         y1="-14"
+         x2="20"
+         y2="-20"
+         stroke-width="3"
+         id="line147" />
+    </g>
+    <g
+       transform="translate(1300, 350) rotate(20)"
+       opacity="0.37"
+       id="g155">
+      <circle
+         cx="0"
+         cy="0"
+         r="18"
+         stroke-width="2"
+         id="circle147" />
+      <circle
+         cx="0"
+         cy="0"
+         r="7"
+         fill="currentColor"
+         opacity="0.15"
+         id="circle148" />
+      <line
+         x1="0"
+         y1="-18"
+         x2="0"
+         y2="-25"
+         stroke-width="2.5"
+         id="line148" />
+      <line
+         x1="0"
+         y1="18"
+         x2="0"
+         y2="25"
+         stroke-width="2.5"
+         id="line149" />
+      <line
+         x1="-18"
+         y1="0"
+         x2="-25"
+         y2="0"
+         stroke-width="2.5"
+         id="line150" />
+      <line
+         x1="18"
+         y1="0"
+         x2="25"
+         y2="0"
+         stroke-width="2.5"
+         id="line151" />
+      <line
+         x1="-13"
+         y1="-13"
+         x2="-18"
+         y2="-18"
+         stroke-width="2.5"
+         id="line152" />
+      <line
+         x1="13"
+         y1="13"
+         x2="18"
+         y2="18"
+         stroke-width="2.5"
+         id="line153" />
+      <line
+         x1="-13"
+         y1="13"
+         x2="-18"
+         y2="18"
+         stroke-width="2.5"
+         id="line154" />
+      <line
+         x1="13"
+         y1="-13"
+         x2="18"
+         y2="-18"
+         stroke-width="2.5"
+         id="line155" />
+    </g>
+    <g
+       transform="translate(850, 1000) rotate(-15)"
+       opacity="0.31"
+       id="g163">
+      <circle
+         cx="0"
+         cy="0"
+         r="16"
+         stroke-width="2"
+         id="circle155" />
+      <circle
+         cx="0"
+         cy="0"
+         r="6"
+         fill="currentColor"
+         opacity="0.15"
+         id="circle156" />
+      <line
+         x1="0"
+         y1="-16"
+         x2="0"
+         y2="-22"
+         stroke-width="2"
+         id="line156" />
+      <line
+         x1="0"
+         y1="16"
+         x2="0"
+         y2="22"
+         stroke-width="2"
+         id="line157" />
+      <line
+         x1="-16"
+         y1="0"
+         x2="-22"
+         y2="0"
+         stroke-width="2"
+         id="line158" />
+      <line
+         x1="16"
+         y1="0"
+         x2="22"
+         y2="0"
+         stroke-width="2"
+         id="line159" />
+      <line
+         x1="-11"
+         y1="-11"
+         x2="-16"
+         y2="-16"
+         stroke-width="2"
+         id="line160" />
+      <line
+         x1="11"
+         y1="11"
+         x2="16"
+         y2="16"
+         stroke-width="2"
+         id="line161" />
+      <line
+         x1="-11"
+         y1="11"
+         x2="-16"
+         y2="16"
+         stroke-width="2"
+         id="line162" />
+      <line
+         x1="11"
+         y1="-11"
+         x2="16"
+         y2="-16"
+         stroke-width="2"
+         id="line163" />
+    </g>
+    <g
+       transform="translate(1750, 150) rotate(30)"
+       opacity="0.36"
+       id="g171">
+      <circle
+         cx="0"
+         cy="0"
+         r="22"
+         stroke-width="2.5"
+         id="circle163" />
+      <circle
+         cx="0"
+         cy="0"
+         r="9"
+         fill="currentColor"
+         opacity="0.15"
+         id="circle164" />
+      <line
+         x1="0"
+         y1="-22"
+         x2="0"
+         y2="-30"
+         stroke-width="3"
+         id="line164" />
+      <line
+         x1="0"
+         y1="22"
+         x2="0"
+         y2="30"
+         stroke-width="3"
+         id="line165" />
+      <line
+         x1="-22"
+         y1="0"
+         x2="-30"
+         y2="0"
+         stroke-width="3"
+         id="line166" />
+      <line
+         x1="22"
+         y1="0"
+         x2="30"
+         y2="0"
+         stroke-width="3"
+         id="line167" />
+      <line
+         x1="-15"
+         y1="-15"
+         x2="-22"
+         y2="-22"
+         stroke-width="3"
+         id="line168" />
+      <line
+         x1="15"
+         y1="15"
+         x2="22"
+         y2="22"
+         stroke-width="3"
+         id="line169" />
+      <line
+         x1="-15"
+         y1="15"
+         x2="-22"
+         y2="22"
+         stroke-width="3"
+         id="line170" />
+      <line
+         x1="15"
+         y1="-15"
+         x2="22"
+         y2="-22"
+         stroke-width="3"
+         id="line171" />
+    </g>
   </g>
 </svg>

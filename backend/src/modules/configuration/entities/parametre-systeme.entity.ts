@@ -56,7 +56,7 @@ export enum TypeValeurParametre {
  * Stocke les paramètres de configuration en base de données
  */
 @Entity('parametres_systeme')
-@Index(['cle', 'etablissementId'], { unique: true })
+@Index(['cle', 'etablissementId'], { unique: true }) // Contrainte composite pour multi-tenant
 @Index(['categorie'])
 @Index(['module'])
 @Index(['etablissementId'])
@@ -64,8 +64,8 @@ export class ParametreSysteme {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    /** Clé unique du paramètre (ex: 'auth.session_duration') */
-    @Column({ type: 'varchar', length: 255, unique: true })
+    /** Clé du paramètre (ex: 'auth.session_duration'). Unique par établissement. */
+    @Column({ type: 'varchar', length: 255 })
     cle!: string;
 
     /** Valeur du paramètre (stockée en JSON string) */

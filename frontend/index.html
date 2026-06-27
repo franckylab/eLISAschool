@@ -64,46 +64,58 @@
             })();
         </script>
         <script>
-            // Préchargement intelligent des images de fond
-            const bgImages = [
-                '/images/login-background.png',
-                '/images/login-background-2.png',
-                '/images/login-background-3.png',
-                '/images/login-background-4.png',
-                '/images/login-background-5.png',
-            ];
-            // Charger les 5 premières images en priorité
-            bgImages.forEach(src => {
-                const link = document.createElement('link');
-                link.rel = 'preload';
-                link.as = 'image';
-                link.href = src;
-                document.head.appendChild(link);
-            });
-            // Charger les autres en arrière-plan
-            window.addEventListener('load', () => {
-                const remainingImages = [
-                    '/images/login-background-6.png',
-                    '/images/login-background-7.png',
-                    '/images/login-background-8.png',
-                    '/images/login-background-9.png',
-                    '/images/login-background-10.png',
-                    '/images/login-background-11.png',
-                    '/images/login-background-12.png',
-                    '/images/login-background-13.png',
-                    '/images/login-background-14.png',
-                    '/images/login-background-15.png',
-                    '/images/login-background-16.png',
-                    '/images/login-background-17.png',
-                    '/images/login-background-18.png',
-                    '/images/login-background-19.png',
-                    '/images/login-background-20.png',
+            // Préchargement intelligent des images de fond - UNIQUEMENT sur la page de login
+            // Ce script vérifie si nous sommes sur la page de login avant de précharger
+            (function() {
+                const isLoginPage = window.location.pathname === '/login' || window.location.pathname === '/';
+                
+                if (!isLoginPage) {
+                    // Ne pas précharger les images de fond sur les autres pages
+                    return;
+                }
+                
+                const bgImages = [
+                    '/images/login-background.png',
+                    '/images/login-background-2.png',
+                    '/images/login-background-3.png',
+                    '/images/login-background-4.png',
+                    '/images/login-background-5.png',
                 ];
-                remainingImages.forEach(src => {
-                    const img = new Image();
-                    img.src = src;
+                
+                // Charger les 5 premières images en priorité
+                bgImages.forEach(src => {
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = 'image';
+                    link.href = src;
+                    document.head.appendChild(link);
                 });
-            });
+                
+                // Charger les autres en arrière-plan après le load
+                window.addEventListener('load', () => {
+                    const remainingImages = [
+                        '/images/login-background-6.png',
+                        '/images/login-background-7.png',
+                        '/images/login-background-8.png',
+                        '/images/login-background-9.png',
+                        '/images/login-background-10.png',
+                        '/images/login-background-11.png',
+                        '/images/login-background-12.png',
+                        '/images/login-background-13.png',
+                        '/images/login-background-14.png',
+                        '/images/login-background-15.png',
+                        '/images/login-background-16.png',
+                        '/images/login-background-17.png',
+                        '/images/login-background-18.png',
+                        '/images/login-background-19.png',
+                        '/images/login-background-20.png',
+                    ];
+                    remainingImages.forEach(src => {
+                        const img = new Image();
+                        img.src = src;
+                    });
+                });
+            })();
         </script>
         <title>eLISAschool - Gestion Scolaire</title>
     </head>

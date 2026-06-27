@@ -90,8 +90,23 @@ export default defineConfig({
     },
     server: {
         port: 7001,
+        host: '0.0.0.0',
         proxy: {
             '/api': {
+                target: process.env.VITE_API_URL || 'http://localhost:7000',
+                changeOrigin: true,
+                // Forward les requêtes preflight CORS au backend
+                configure: (proxy, _options) => {
+                    proxy.on('proxyReq', (proxyReq, req, _res) => {
+                        // Préserver les en-têtes CORS originaux
+                        if (req.headers.origin) {
+                            proxyReq.setHeader('Origin', req.headers.origin);
+                        }
+                    });
+                },
+            },
+            // Proxy pour les fichiers SVG du catalogue (évite les erreurs CORS)
+            '/fonds-catalogue': {
                 target: process.env.VITE_API_URL || 'http://localhost:7000',
                 changeOrigin: true,
             },

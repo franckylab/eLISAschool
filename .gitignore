@@ -54,3 +54,5 @@ temp/
 # Uploads
 uploads/
 !uploads/.gitkeep
+# Liens symboliques (recréés automatiquement)
+frontend/public/fonds-catalogue

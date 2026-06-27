@@ -56,6 +56,7 @@ const envSchema = z.object({
 
     // Frontend
     FRONTEND_URL: z.string().url().default('http://localhost:7001'),
+    ALLOWED_ORIGINS: z.string().optional().default(''),
 
     // Licence
     LICENSE_KEY: z.string().optional().default(''),
@@ -122,6 +123,7 @@ function loadEnvConfig(): EnvConfig {
                 SMTP_PASSWORD: '',
                 SMTP_FROM: 'noreply@elisaschool.cm',
                 FRONTEND_URL: 'http://localhost:7001',
+                ALLOWED_ORIGINS: '',
                 LICENSE_KEY: '',
                 LOG_LEVEL: 'debug',
                 LOG_FILE: 'logs/app.log',
@@ -154,6 +156,7 @@ export const envConfig = {
         port: env.APP_PORT,
         url: env.APP_URL,
         frontendUrl: env.FRONTEND_URL,
+        allowedOrigins: env.ALLOWED_ORIGINS,
         isProduction: env.NODE_ENV === 'production',
         isDevelopment: env.NODE_ENV === 'development',
     },

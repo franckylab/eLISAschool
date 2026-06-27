@@ -8,7 +8,10 @@
 
 import type { ApiResponse, PaginatedResult, PaginationOptions } from '@shared/types/api.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// URL de l'API backend
+// En dev : vide pour utiliser le proxy Vite (requêtes relatives /api)
+// En prod : définir VITE_API_URL dans .env (ex: http://10.0.0.1:7000)
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface TokenPair {
     accessToken: string;
@@ -307,6 +310,13 @@ class ApiClient {
         };
 
         // Ajouter le Bearer token
+        console.log('[API Client] Tentative requête:', {
+            endpoint,
+            hasAccessToken: !!this.accessToken,
+            accessTokenPreview: this.accessToken ? this.accessToken.substring(0, 30) + '...' : 'NULL',
+            isAuthRoute: authRoutes.some(route => endpoint.startsWith(route)),
+        });
+        
         if (this.accessToken) {
             config.headers = {
                 ...config.headers,

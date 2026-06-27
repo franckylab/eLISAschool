@@ -1,5 +1,319 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
   <rect width="100%" height="100%" fill="transparent"/>
+  <g stroke="currentColor" fill="none">
+    
+    <!-- AMPÈLEMÈTRES (6) -->
+    <g transform="translate(160, 180) rotate(-15)" opacity="0.35">
+      <circle cx="0" cy="0" r="40" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="30" stroke-width="1.5"/>
+      <path d="M-25,0 Q0,-25 25,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-25" stroke-width="2"/>
+      <circle cx="0" cy="0" r="4" fill="currentColor" opacity="0.35"/>
+      <text x="0" y="35" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+    <g transform="translate(480, 240) rotate(22)" opacity="0.34">
+      <circle cx="0" cy="0" r="35" stroke-width="2"/>
+      <circle cx="0" cy="0" r="26" stroke-width="1.5"/>
+      <path d="M-22,0 Q0,-22 22,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-22" stroke-width="2"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.34"/>
+      <text x="0" y="30" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+    <g transform="translate(820, 160) rotate(-28)" opacity="0.36">
+      <circle cx="0" cy="0" r="45" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="34" stroke-width="1.5"/>
+      <path d="M-28,0 Q0,-28 28,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-28" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="5" fill="currentColor" opacity="0.36"/>
+      <text x="0" y="40" text-anchor="middle" font-size="14" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+    <g transform="translate(1180, 300) rotate(18)" opacity="0.33">
+      <circle cx="0" cy="0" r="32" stroke-width="2"/>
+      <circle cx="0" cy="0" r="24" stroke-width="1"/>
+      <path d="M-20,0 Q0,-20 20,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-20" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.33"/>
+      <text x="0" y="28" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+    <g transform="translate(1520, 220) rotate(-32)" opacity="0.37">
+      <circle cx="0" cy="0" r="38" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="28" stroke-width="1.5"/>
+      <path d="M-24,0 Q0,-24 24,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-24" stroke-width="2"/>
+      <circle cx="0" cy="0" r="4" fill="currentColor" opacity="0.37"/>
+      <text x="0" y="33" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+    <g transform="translate(300, 500) rotate(25)" opacity="0.32">
+      <circle cx="0" cy="0" r="36" stroke-width="2"/>
+      <circle cx="0" cy="0" r="27" stroke-width="1"/>
+      <path d="M-23,0 Q0,-23 23,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-23" stroke-width="2"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.32"/>
+      <text x="0" y="31" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.5" stroke="none">A</text>
+    </g>
+
+    <!-- VOLTMÈTRES (6) -->
+    <g transform="translate(640, 200) rotate(-22)" opacity="0.35">
+      <circle cx="0" cy="0" r="38" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="28" stroke-width="1.5"/>
+      <path d="M-24,0 Q0,-24 24,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-24" stroke-width="2"/>
+      <circle cx="0" cy="0" r="4" fill="currentColor" opacity="0.35"/>
+      <text x="0" y="33" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+    <g transform="translate(980, 260) rotate(15)" opacity="0.34">
+      <circle cx="0" cy="0" r="34" stroke-width="2"/>
+      <circle cx="0" cy="0" r="25" stroke-width="1.5"/>
+      <path d="M-21,0 Q0,-21 21,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-21" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.34"/>
+      <text x="0" y="29" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+    <g transform="translate(1340, 180) rotate(-25)" opacity="0.36">
+      <circle cx="0" cy="0" r="42" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="32" stroke-width="1.5"/>
+      <path d="M-26,0 Q0,-26 26,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-26" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="5" fill="currentColor" opacity="0.36"/>
+      <text x="0" y="37" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+    <g transform="translate(1680, 340) rotate(28)" opacity="0.33">
+      <circle cx="0" cy="0" r="30" stroke-width="2"/>
+      <circle cx="0" cy="0" r="22" stroke-width="1"/>
+      <path d="M-18,0 Q0,-18 18,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-18" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.33"/>
+      <text x="0" y="26" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+    <g transform="translate(180, 440) rotate(-18)" opacity="0.37">
+      <circle cx="0" cy="0" r="36" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="27" stroke-width="1.5"/>
+      <path d="M-22,0 Q0,-22 22,0" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="-22" stroke-width="2"/>
+      <circle cx="0" cy="0" r="4" fill="currentColor" opacity="0.37"/>
+      <text x="0" y="31" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+    <g transform="translate(520, 560) rotate(22)" opacity="0.32">
+      <circle cx="0" cy="0" r="33" stroke-width="2"/>
+      <circle cx="0" cy="0" r="24" stroke-width="1"/>
+      <path d="M-20,0 Q0,-20 20,0" stroke-width="1.5"/>
+      <line x1="0" y1="0" x2="0" y2="-20" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="3" fill="currentColor" opacity="0.32"/>
+      <text x="0" y="28" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" stroke="none">V</text>
+    </g>
+
+    <!-- RÉSISTANCES (6) -->
+    <g transform="translate(400, 140) rotate(-12)" opacity="0.35">
+      <path d="M-40,0 L-30,0 L-25,-12 L-15,12 L-5,-12 L5,12 L15,-12 L25,12 L30,0 L40,0" stroke-width="2.5"/>
+      <circle cx="-45" cy="0" r="4" fill="currentColor" opacity="0.35"/>
+      <circle cx="45" cy="0" r="4" fill="currentColor" opacity="0.35"/>
+    </g>
+    <g transform="translate(740, 200) rotate(28)" opacity="0.34">
+      <path d="M-35,0 L-26,0 L-22,-10 L-13,10 L-4,-10 L4,10 L13,-10 L22,10 L26,0 L35,0" stroke-width="2"/>
+      <circle cx="-40" cy="0" r="3" fill="currentColor" opacity="0.34"/>
+      <circle cx="40" cy="0" r="3" fill="currentColor" opacity="0.34"/>
+    </g>
+    <g transform="translate(1080, 160) rotate(-22)" opacity="0.36">
+      <path d="M-45,0 L-34,0 L-28,-14 L-17,14 L-6,-14 L6,14 L17,-14 L28,14 L34,0 L45,0" stroke-width="2.5"/>
+      <circle cx="-50" cy="0" r="5" fill="currentColor" opacity="0.36"/>
+      <circle cx="50" cy="0" r="5" fill="currentColor" opacity="0.36"/>
+    </g>
+    <g transform="translate(1420, 280) rotate(18)" opacity="0.33">
+      <path d="M-32,0 L-24,0 L-20,-9 L-12,9 L-4,-9 L4,9 L12,-9 L20,9 L24,0 L32,0" stroke-width="2"/>
+      <circle cx="-37" cy="0" r="3" fill="currentColor" opacity="0.33"/>
+      <circle cx="37" cy="0" r="3" fill="currentColor" opacity="0.33"/>
+    </g>
+    <g transform="translate(1760, 220) rotate(-32)" opacity="0.37">
+      <path d="M-38,0 L-28,0 L-24,-11 L-14,11 L-4,-11 L4,11 L14,-11 L24,11 L28,0 L38,0" stroke-width="2.5"/>
+      <circle cx="-43" cy="0" r="4" fill="currentColor" opacity="0.37"/>
+      <circle cx="43" cy="0" r="4" fill="currentColor" opacity="0.37"/>
+    </g>
+    <g transform="translate(260, 400) rotate(25)" opacity="0.32">
+      <path d="M-34,0 L-25,0 L-21,-10 L-13,10 L-4,-10 L4,10 L13,-10 L21,10 L25,0 L34,0" stroke-width="2"/>
+      <circle cx="-39" cy="0" r="3" fill="currentColor" opacity="0.32"/>
+      <circle cx="39" cy="0" r="3" fill="currentColor" opacity="0.32"/>
+    </g>
+
+    <!-- CONDENSATEURS (5) -->
+    <g transform="translate(580, 360) rotate(-18)" opacity="0.35">
+      <line x1="-40" y1="0" x2="-8" y2="0" stroke-width="2.5"/>
+      <line x1="8" y1="0" x2="40" y2="0" stroke-width="2.5"/>
+      <line x1="-8" y1="-20" x2="-8" y2="20" stroke-width="3"/>
+      <path d="M8,-20 Q15,0 8,20" stroke-width="3"/>
+    </g>
+    <g transform="translate(920, 420) rotate(22)" opacity="0.34">
+      <line x1="-35" y1="0" x2="-7" y2="0" stroke-width="2"/>
+      <line x1="7" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="-7" y1="-18" x2="-7" y2="18" stroke-width="2.5"/>
+      <path d="M7,-18 Q13,0 7,18" stroke-width="2.5"/>
+    </g>
+    <g transform="translate(1260, 340) rotate(-28)" opacity="0.36">
+      <line x1="-45" y1="0" x2="-9" y2="0" stroke-width="2.5"/>
+      <line x1="9" y1="0" x2="45" y2="0" stroke-width="2.5"/>
+      <line x1="-9" y1="-22" x2="-9" y2="22" stroke-width="3"/>
+      <path d="M9,-22 Q16,0 9,22" stroke-width="3"/>
+    </g>
+    <g transform="translate(1600, 480) rotate(15)" opacity="0.33">
+      <line x1="-32" y1="0" x2="-6" y2="0" stroke-width="2"/>
+      <line x1="6" y1="0" x2="32" y2="0" stroke-width="2"/>
+      <line x1="-6" y1="-16" x2="-6" y2="16" stroke-width="2.5"/>
+      <path d="M6,-16 Q12,0 6,16" stroke-width="2.5"/>
+    </g>
+    <g transform="translate(140, 620) rotate(-32)" opacity="0.37">
+      <line x1="-38" y1="0" x2="-8" y2="0" stroke-width="2.5"/>
+      <line x1="8" y1="0" x2="38" y2="0" stroke-width="2.5"/>
+      <line x1="-8" y1="-19" x2="-8" y2="19" stroke-width="3"/>
+      <path d="M8,-19 Q14,0 8,19" stroke-width="3"/>
+    </g>
+
+    <!-- DIODES (5) -->
+    <g transform="translate(460, 640) rotate(-22)" opacity="0.35">
+      <line x1="-40" y1="0" x2="-12" y2="0" stroke-width="2.5"/>
+      <path d="M-12,-15 L12,0 L-12,15 Z" fill="currentColor" opacity="0.35" stroke-width="2"/>
+      <line x1="12" y1="-15" x2="12" y2="15" stroke-width="3"/>
+      <line x1="12" y1="0" x2="40" y2="0" stroke-width="2.5"/>
+    </g>
+    <g transform="translate(800, 580) rotate(18)" opacity="0.34">
+      <line x1="-35" y1="0" x2="-10" y2="0" stroke-width="2"/>
+      <path d="M-10,-13 L10,0 L-10,13 Z" fill="currentColor" opacity="0.34" stroke-width="2"/>
+      <line x1="10" y1="-13" x2="10" y2="13" stroke-width="2.5"/>
+      <line x1="10" y1="0" x2="35" y2="0" stroke-width="2"/>
+    </g>
+    <g transform="translate(1140, 660) rotate(-28)" opacity="0.36">
+      <line x1="-45" y1="0" x2="-14" y2="0" stroke-width="2.5"/>
+      <path d="M-14,-17 L14,0 L-14,17 Z" fill="currentColor" opacity="0.36" stroke-width="2"/>
+      <line x1="14" y1="-17" x2="14" y2="17" stroke-width="3"/>
+      <line x1="14" y1="0" x2="45" y2="0" stroke-width="2.5"/>
+    </g>
+    <g transform="translate(1480, 600) rotate(25)" opacity="0.33">
+      <line x1="-32" y1="0" x2="-9" y2="0" stroke-width="2"/>
+      <path d="M-9,-12 L9,0 L-9,12 Z" fill="currentColor" opacity="0.33" stroke-width="2"/>
+      <line x1="9" y1="-12" x2="9" y2="12" stroke-width="2.5"/>
+      <line x1="9" y1="0" x2="32" y2="0" stroke-width="2"/>
+    </g>
+    <g transform="translate(280, 760) rotate(-18)" opacity="0.37">
+      <line x1="-38" y1="0" x2="-11" y2="0" stroke-width="2.5"/>
+      <path d="M-11,-14 L11,0 L-11,14 Z" fill="currentColor" opacity="0.37" stroke-width="2"/>
+      <line x1="11" y1="-14" x2="11" y2="14" stroke-width="3"/>
+      <line x1="11" y1="0" x2="38" y2="0" stroke-width="2.5"/>
+    </g>
+
+    <!-- TRANSISTORS (5) -->
+    <g transform="translate(660, 740) rotate(-15)" opacity="0.35">
+      <circle cx="0" cy="0" r="25" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="-10" y2="0" stroke-width="2"/>
+      <line x1="-10" y1="-15" x2="-10" y2="15" stroke-width="3"/>
+      <line x1="-10" y1="-5" x2="15" y2="-15" stroke-width="2"/>
+      <line x1="-10" y1="5" x2="15" y2="15" stroke-width="2"/>
+      <line x1="15" y1="-15" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="15" y1="15" x2="35" y2="15" stroke-width="2"/>
+      <path d="M12,12 L15,15 L10,15 Z" fill="currentColor" opacity="0.35"/>
+    </g>
+    <g transform="translate(1000, 700) rotate(22)" opacity="0.34">
+      <circle cx="0" cy="0" r="22" stroke-width="2"/>
+      <line x1="-30" y1="0" x2="-8" y2="0" stroke-width="1.5"/>
+      <line x1="-8" y1="-13" x2="-8" y2="13" stroke-width="2.5"/>
+      <line x1="-8" y1="-4" x2="13" y2="-13" stroke-width="1.5"/>
+      <line x1="-8" y1="4" x2="13" y2="13" stroke-width="1.5"/>
+      <line x1="13" y1="-13" x2="30" y2="-13" stroke-width="1.5"/>
+      <line x1="13" y1="13" x2="30" y2="13" stroke-width="1.5"/>
+      <path d="M10,10 L13,13 L9,13 Z" fill="currentColor" opacity="0.34"/>
+    </g>
+    <g transform="translate(1340, 780) rotate(-25)" opacity="0.36">
+      <circle cx="0" cy="0" r="28" stroke-width="2.5"/>
+      <line x1="-38" y1="0" x2="-12" y2="0" stroke-width="2"/>
+      <line x1="-12" y1="-17" x2="-12" y2="17" stroke-width="3"/>
+      <line x1="-12" y1="-6" x2="17" y2="-17" stroke-width="2"/>
+      <line x1="-12" y1="6" x2="17" y2="17" stroke-width="2"/>
+      <line x1="17" y1="-17" x2="38" y2="-17" stroke-width="2"/>
+      <line x1="17" y1="17" x2="38" y2="17" stroke-width="2"/>
+      <path d="M14,14 L17,17 L12,17 Z" fill="currentColor" opacity="0.36"/>
+    </g>
+    <g transform="translate(1680, 860) rotate(18)" opacity="0.33">
+      <circle cx="0" cy="0" r="20" stroke-width="2"/>
+      <line x1="-28" y1="0" x2="-7" y2="0" stroke-width="1.5"/>
+      <line x1="-7" y1="-12" x2="-7" y2="12" stroke-width="2.5"/>
+      <line x1="-7" y1="-3" x2="11" y2="-12" stroke-width="1.5"/>
+      <line x1="-7" y1="3" x2="11" y2="12" stroke-width="1.5"/>
+      <line x1="11" y1="-12" x2="28" y2="-12" stroke-width="1.5"/>
+      <line x1="11" y1="12" x2="28" y2="12" stroke-width="1.5"/>
+      <path d="M8,9 L11,12 L7,12 Z" fill="currentColor" opacity="0.33"/>
+    </g>
+    <g transform="translate(80, 900) rotate(-28)" opacity="0.37">
+      <circle cx="0" cy="0" r="24" stroke-width="2.5"/>
+      <line x1="-32" y1="0" x2="-9" y2="0" stroke-width="2"/>
+      <line x1="-9" y1="-14" x2="-9" y2="14" stroke-width="2.5"/>
+      <line x1="-9" y1="-5" x2="14" y2="-14" stroke-width="2"/>
+      <line x1="-9" y1="5" x2="14" y2="14" stroke-width="2"/>
+      <line x1="14" y1="-14" x2="32" y2="-14" stroke-width="2"/>
+      <line x1="14" y1="14" x2="32" y2="14" stroke-width="2"/>
+      <path d="M11,11 L14,14 L10,14 Z" fill="currentColor" opacity="0.37"/>
+    </g>
+
+    <!-- PRISES ÉLECTRIQUES (4) -->
+    <g transform="translate(400, 880) rotate(-22)" opacity="0.35">
+      <rect x="-25" y="-35" width="50" height="70" rx="4" stroke-width="2.5"/>
+      <circle cx="-10" cy="-15" r="6" stroke-width="2"/>
+      <circle cx="10" cy="-15" r="6" stroke-width="2"/>
+      <rect x="-8" y="5" width="16" height="20" rx="3" stroke-width="2"/>
+      <line x1="-15" y1="-30" x2="15" y2="-30" stroke-width="1.5" opacity="0.4"/>
+    </g>
+    <g transform="translate(740, 940) rotate(18)" opacity="0.34">
+      <rect x="-22" y="-30" width="44" height="60" rx="4" stroke-width="2"/>
+      <circle cx="-9" cy="-13" r="5" stroke-width="2"/>
+      <circle cx="9" cy="-13" r="5" stroke-width="2"/>
+      <rect x="-7" y="4" width="14" height="18" rx="3" stroke-width="2"/>
+      <line x1="-13" y1="-26" x2="13" y2="-26" stroke-width="1" opacity="0.4"/>
+    </g>
+    <g transform="translate(1080, 860) rotate(-28)" opacity="0.36">
+      <rect x="-28" y="-38" width="56" height="76" rx="4" stroke-width="2.5"/>
+      <circle cx="-11" cy="-17" r="7" stroke-width="2"/>
+      <circle cx="11" cy="-17" r="7" stroke-width="2"/>
+      <rect x="-9" y="6" width="18" height="22" rx="3" stroke-width="2"/>
+      <line x1="-17" y1="-33" x2="17" y2="-33" stroke-width="1.5" opacity="0.4"/>
+    </g>
+    <g transform="translate(1440, 980) rotate(25)" opacity="0.33">
+      <rect x="-20" y="-28" width="40" height="56" rx="4" stroke-width="2"/>
+      <circle cx="-8" cy="-12" r="4" stroke-width="1.5"/>
+      <circle cx="8" cy="-12" r="4" stroke-width="1.5"/>
+      <rect x="-6" y="3" width="12" height="16" rx="2" stroke-width="2"/>
+      <line x1="-11" y1="-24" x2="11" y2="-24" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <!-- AMPÈLES (4) -->
+    <g transform="translate(220, 720) rotate(-18)" opacity="0.35">
+      <path d="M0,-40 Q-20,-20 -20,0 Q-20,20 0,40 Q20,20 20,0 Q20,-20 0,-40 Z" stroke-width="2.5"/>
+      <path d="M-15,0 L15,0" stroke-width="2"/>
+      <path d="M-8,-15 L8,15" stroke-width="1.5" opacity="0.4"/>
+      <path d="M8,-15 L-8,15" stroke-width="1.5" opacity="0.4"/>
+      <rect x="-5" y="38" width="10" height="15" rx="2" stroke-width="2"/>
+    </g>
+    <g transform="translate(580, 820) rotate(25)" opacity="0.34">
+      <path d="M0,-35 Q-17,-17 -17,0 Q-17,17 0,35 Q17,17 17,0 Q17,-17 0,-35 Z" stroke-width="2"/>
+      <path d="M-13,0 L13,0" stroke-width="1.5"/>
+      <path d="M-7,-13 L7,13" stroke-width="1" opacity="0.4"/>
+      <path d="M7,-13 L-7,13" stroke-width="1" opacity="0.4"/>
+      <rect x="-4" y="33" width="8" height="13" rx="2" stroke-width="2"/>
+    </g>
+    <g transform="translate(920, 740) rotate(-32)" opacity="0.36">
+      <path d="M0,-45 Q-22,-22 -22,0 Q-22,22 0,45 Q22,22 22,0 Q22,-22 0,-45 Z" stroke-width="2.5"/>
+      <path d="M-17,0 L17,0" stroke-width="2"/>
+      <path d="M-9,-17 L9,17" stroke-width="1.5" opacity="0.4"/>
+      <path d="M9,-17 L-9,17" stroke-width="1.5" opacity="0.4"/>
+      <rect x="-6" y="43" width="12" height="17" rx="2" stroke-width="2"/>
+    </g>
+    <g transform="translate(1280, 900) rotate(22)" opacity="0.33">
+      <path d="M0,-32 Q-15,-15 -15,0 Q-15,15 0,32 Q15,15 15,0 Q15,-15 0,-32 Z" stroke-width="2"/>
+      <path d="M-11,0 L11,0" stroke-width="1.5"/>
+      <path d="M-6,-12 L6,12" stroke-width="1" opacity="0.4"/>
+      <path d="M6,-12 L-6,12" stroke-width="1" opacity="0.4"/>
+      <rect x="-3" y="30" width="6" height="12" rx="2" stroke-width="2"/>
+    </g>
+
+  </g>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
   <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
     
     <!-- Symboles électriques -->

@@ -36,7 +36,7 @@ export function PageLayout({ children }: PageLayoutProps) {
     }, [setMobileOpen]);
 
     return (
-        <div className="relative flex h-screen overflow-hidden bg-[var(--color-fond)]">
+        <div className="relative flex h-screen overflow-hidden">
             {/* Fond d'écran rotatif (derrière tout le contenu) */}
             <FondRotator />
 

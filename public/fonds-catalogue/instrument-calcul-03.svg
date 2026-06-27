@@ -1,15 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <rect width="100%" height="100%" fill="transparent"/>
-  <g opacity="0.07" fill="currentColor" font-family="serif" font-size="48" font-style="italic">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg9"
+   sodipodi:docname="instrument-calcul-03.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs9" />
+  <sodipodi:namedview
+     id="namedview9"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.69444444"
+     inkscape:cx="960.48"
+     inkscape:cy="540"
+     inkscape:window-width="1920"
+     inkscape:window-height="958"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg9" />
+  <g
+     opacity="0.07"
+     fill="currentColor"
+     font-family="serif"
+     font-size="48"
+     font-style="italic"
+     id="g9">
     <!-- Formules dispersées -->
-    <text x="100" y="200">E = mc²</text>
-    <text x="500" y="350">a² + b² = c²</text>
-    <text x="1200" y="150">∫f(x)dx</text>
-    <text x="300" y="600">∑(i=1→n)</text>
-    <text x="900" y="450">πr²</text>
-    <text x="1400" y="550">√(x+y)</text>
-    <text x="200" y="850">Δ = b²-4ac</text>
-    <text x="800" y="750">∂f/∂x</text>
-    <text x="1300" y="800">lim(x→∞)</text>
+    <text
+       x="100"
+       y="200"
+       id="text1">E = mc²</text>
+    <text
+       x="500"
+       y="350"
+       id="text2">a² + b² = c²</text>
+    <text
+       x="1200"
+       y="150"
+       id="text3">∫f(x)dx</text>
+    <text
+       x="300"
+       y="600"
+       id="text4">∑(i=1→n)</text>
+    <text
+       x="900"
+       y="450"
+       id="text5">πr²</text>
+    <text
+       x="1400"
+       y="550"
+       id="text6">√(x+y)</text>
+    <text
+       x="200"
+       y="850"
+       id="text7">Δ = b²-4ac</text>
+    <text
+       x="800"
+       y="750"
+       id="text8">∂f/∂x</text>
+    <text
+       x="1300"
+       y="800"
+       id="text9">lim(x→∞)</text>
   </g>
 </svg>
