@@ -36,10 +36,10 @@ export class ValidationWorkflowService {
         niveauxRequis: number;
         configRoles: Record<string, string>;
     }> {
-        const niveauxRequis = await getParamNumber(`${module}.validation_levels`, 1);
+        const niveauxRequis = await getParamNumber(`${module}.validation_levels`, { defaultValue: 1, etablissementId });
         
         // Récupérer la config des rôles
-        const configStr = await getParam<string>(`${module}.validation_roles`, '{}');
+        const configStr = await getParam<string>(`${module}.validation_roles`, { defaultValue: '{}', etablissementId });
         let configRoles: Record<string, string> = {};
         
         try {

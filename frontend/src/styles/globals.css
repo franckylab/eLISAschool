@@ -11,6 +11,15 @@
 
 @import 'tailwindcss';
 
+/* ===== Utilitaires pour masquer les scrollbars ===== */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+}
+
 /* ===== Breakpoints personnalisés (10 niveaux: 100px → 2560px) ===== */
 @theme {
     --breakpoint-xxs: 100px;

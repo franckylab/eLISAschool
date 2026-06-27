@@ -9,7 +9,7 @@
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, Role as RoleEntity, StatutUtilisateur } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import {
     CreateUtilisateurDto,
@@ -76,10 +76,9 @@ export class UtilisateursService {
             email: createDto.email.toLowerCase(),
             matricule: matricule!,
             motDePasse: createDto.motDePasse,
-            role: createDto.role as unknown as RoleEntity,
+            role: createDto.role as Role,
             statut: StatutUtilisateur.ACTIF,
             langue: createDto.langue || 'fr',
-            etablissementId: createDto.etablissementId,
         });
 
         await this.utilisateurRepository.save(utilisateur);
@@ -158,7 +157,7 @@ export class UtilisateursService {
             const where: FindOptionsWhere<Utilisateur> = {};
 
             if (role && !exclureEtablissement) {
-                const roles = role.split(',').map(r => r.trim()) as unknown as RoleEntity[];
+                const roles = role.split(',').map(r => r.trim()) as Role[];
                 if (roles.length === 1) {
                     where.role = roles[0];
                 }
@@ -296,7 +295,7 @@ export class UtilisateursService {
         }
 
         if (updateDto.role) {
-            utilisateur.role = updateDto.role as unknown as RoleEntity;
+            utilisateur.role = updateDto.role as Role;
         }
 
         if (updateDto.statut) {
@@ -391,9 +390,9 @@ export class UtilisateursService {
             }
 
             // VÉRIFICATION : Empêcher la suppression du dernier SUPER_ADMIN
-            if (utilisateur.role === ('SUPER_ADMIN' as unknown as RoleEntity)) {
+            if (utilisateur.role === Role.SUPER_ADMIN) {
                 const superAdminCount = await queryRunner.manager.count(Utilisateur, {
-                    where: { role: 'SUPER_ADMIN' as unknown as RoleEntity, statut: StatutUtilisateur.ACTIF }
+                    where: { role: Role.SUPER_ADMIN, statut: StatutUtilisateur.ACTIF }
                 });
                 
                 if (superAdminCount <= 1) {
@@ -474,9 +473,9 @@ export class UtilisateursService {
             }
 
             // VÉRIFICATION CRITIQUE : Empêcher la suppression du dernier SUPER_ADMIN
-            if (utilisateur.role === ('SUPER_ADMIN' as unknown as RoleEntity)) {
+            if (utilisateur.role === Role.SUPER_ADMIN) {
                 const superAdminCount = await queryRunner.manager.count(Utilisateur, {
-                    where: { role: 'SUPER_ADMIN' as unknown as RoleEntity, statut: StatutUtilisateur.ACTIF }
+                    where: { role: Role.SUPER_ADMIN, statut: StatutUtilisateur.ACTIF }
                 });
                 
                 if (superAdminCount <= 1) {

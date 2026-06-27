@@ -14,7 +14,7 @@ services:
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-7002}:5432"
+      - "${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -38,13 +38,13 @@ services:
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
     ports:
-      - "${REDIS_PORT:-7003}:6379"
+      - "${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
       - elisaschool_network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-elisaschool_password}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "7003", "-a", "${REDIS_PASSWORD:-elisaschool_password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,20 +53,22 @@ services:
   backend:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.backend
+      dockerfile: docker/Dockerfile.backend.dev
     container_name: elisaschool_backend
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: 7002
       DB_NAME: ${DB_NAME:-elisaschool}
       DB_USER: ${DB_USER:-elisaschool_user}
       DB_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
       REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_PORT: 7003
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev_encryption_key_32chars}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:7001}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:7001}
       
       # Email (SMTP)
       SMTP_HOST: ${SMTP_HOST:-}
@@ -85,11 +87,13 @@ services:
       FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
       FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
     ports:
-      - "${APP_PORT:-7000}:3000"
+      - "${APP_PORT:-7000}:7000"
     volumes:
-      - ../backend:/app
+      - ../backend:/app/backend
+      - ../shared:/app/shared
+      - /app/backend/node_modules
+      - /app/shared/node_modules
       - /app/node_modules
-      - ../shared:/shared
     networks:
       - elisaschool_network
     depends_on:
@@ -97,19 +101,20 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: npm run dev
+    # Commande de développement avec nodemon (hot-reload)
+    command: >
+      sh -c "cd /app/backend && \
+      npx nodemon --config nodemon.json"
 
   # Frontend React/Vite
   frontend:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.frontend
+    image: node:20-alpine
     container_name: elisaschool_frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:${APP_PORT:-7000}/api
     ports:
-      - "${FRONTEND_PORT:-7001}:5173"
+      - "${FRONTEND_PORT:-7001}:7001"
     volumes:
       - ../frontend:/app
       - /app/node_modules
@@ -128,10 +133,10 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@elisaschool.cm}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
-      PGADMIN_LISTEN_PORT: 80
+      PGADMIN_LISTEN_PORT: 7004
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
-      - "${PGADMIN_PORT:-7004}:80"
+      - "${PGADMIN_PORT:-7004}:7004"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin-servers.json:/pgadmin4/servers.json

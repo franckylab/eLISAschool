@@ -7,7 +7,8 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { DossierMedical, ConsultationMedicale, IncidentSante, TypePatient } from '../entities';
-import { CreateDossierMedicalSchema, CreateConsultationMedicaleSchema, CreateIncidentSanteSchema } from '../dto';
+import { createDossierMedicalSchema, createConsultationMedicaleSchema, createIncidentSanteSchema } from '../dto';
+import { z } from 'zod';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService, AuditAction } from '@modules/auth';

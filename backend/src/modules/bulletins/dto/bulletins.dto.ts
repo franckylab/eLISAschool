@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { paginationSchema } from '@common/dto/pagination.dto';
 
 export const generateBulletinSchema = z.object({
-    classeId: z.string().uuid(),
+    classeAnneeId: z.string().uuid(),
     periodeId: z.string().uuid(),
     eleveId: z.string().uuid().optional(), // Si null, génère pour toute la classe
 });
@@ -27,9 +27,8 @@ export type UpdateBulletinDto = z.infer<typeof updateBulletinSchema>;
  */
 export const queryBulletinsSchema = paginationSchema.extend({
     eleveId: z.string().uuid().optional(),
-    classeId: z.string().uuid().optional(),
+    classeAnneeId: z.string().uuid().optional(),
     periodeId: z.string().uuid().optional(),
-    anneeScolaireId: z.string().uuid().optional(),
     publie: z.string().transform((v) => v === 'true').optional(),
 });
 

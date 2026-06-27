@@ -39,10 +39,30 @@ export const updateMatiereNiveauSchema = createMatiereNiveauSchema.partial();
 
 export const affecterEnseignantSchema = z.object({
   matiereId: z.string().uuid(),
-  classeId: z.string().uuid(),
+  classeAnneeId: z.string().uuid(),
   enseignantId: z.string().uuid(),
   volumeHoraireHebdo: z.number().int().optional(),
 });
+
+/**
+ * DTOs pour ConfigurationMatiereClasse
+ */
+export const createConfigurationMatiereClasseSchema = z.object({
+  matiereId: z.string().uuid(),
+  classeAnneeId: z.string().uuid(),
+  etablissementId: z.string().uuid(),
+  coefficient: z.number().min(0).optional(),
+  bareme: z.number().int().min(1).optional(),
+  volumeHoraireHebdo: z.number().int().min(0).optional(),
+  credits: z.number().min(0).optional(),
+  obligatoire: z.boolean().default(true),
+  notes: z.string().optional(),
+});
+
+export const updateConfigurationMatiereClasseSchema = createConfigurationMatiereClasseSchema.partial();
+
+export type CreateConfigurationMatiereClasseDto = z.infer<typeof createConfigurationMatiereClasseSchema>;
+export type UpdateConfigurationMatiereClasseDto = z.infer<typeof updateConfigurationMatiereClasseSchema>;
 
 export type CreateMatiereDto = z.infer<typeof createMatiereSchema>;
 export type UpdateMatiereDto = z.infer<typeof updateMatiereSchema>;

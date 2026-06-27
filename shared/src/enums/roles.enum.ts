@@ -291,6 +291,7 @@ export enum Permission {
     NOTES_IMPORT = 'notes:import',
     NOTES_EXPORT = 'notes:export',
     NOTES_STATISTIQUES_VIEW = 'notes:statistiques:view',
+    NOTES_EDITER_APRES_CLOTURE = 'notes:modifier_apres_cloture',
 
     BULLETINS_VIEW = 'bulletins:view',
     BULLETINS_GENERATE = 'bulletins:generate',

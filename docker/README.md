@@ -6,11 +6,11 @@ Tous les services eLISAschool tournent dans un seul groupe de conteneurs Docker 
 
 | Service | Conteneur | Port externe | Port interne | Status |
 |---------|-----------|--------------|--------------|--------|
-| **PostgreSQL** | `elisaschool_postgres` | 7002 | 5432 | ✅ Healthy |
-| **Redis** | `elisaschool_redis` | 7003 | 6379 | ✅ Healthy |
+| **PostgreSQL** | `elisaschool_postgres` | 7002 | 7002 | ✅ Healthy |
+| **Redis** | `elisaschool_redis` | 7003 | 7003 | ✅ Healthy |
 | **pgAdmin** | `elisaschool_pgadmin` | 7004 | 80 | ✅ Running |
-| **Backend** | `elisaschool_backend` | 7000 | 3000 | ⏸️ Optionnel |
-| **Frontend** | `elisaschool_frontend` | 7001 | 5173 | ⏸️ Optionnel |
+| **Backend** | `elisaschool_backend` | 7000 | 7000 | ⏸️ Optionnel |
+| **Frontend** | `elisaschool_frontend` | 7001 | 7001 | ⏸️ Optionnel |
 
 **Réseau Docker unique** : `docker_elisaschool_network`
 

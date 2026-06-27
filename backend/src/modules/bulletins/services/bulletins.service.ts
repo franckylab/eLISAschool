@@ -49,11 +49,21 @@ export class BulletinsService {
         await queryRunner.startTransaction();
 
         try {
-            const classe = await classesService.findOne(dto.classeId, etablissementId);
+            // Récupérer la classe/année et vérifier la cohérence
+            const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
+            const classeAnnee = await classeAnneeRepo.findOne({
+                where: { id: dto.classeAnneeId },
+                relations: ['classe', 'anneeScolaire']
+            }) as any;
+
+            if (!classeAnnee) {
+                throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
+            }
+
             const periode = await periodesService.findOne(dto.periodeId);
 
-            // Vérifier que la période appartient à la même année scolaire que la classe
-            if (periode.anneeScolaireId !== classe.anneeScolaireId) {
+            // Vérifier que la période appartient à la même année scolaire
+            if (periode.anneeScolaireId !== classeAnnee.anneeScolaireId) {
                 throw new AppError('La période ne correspond pas à l\'année scolaire de la classe', 400, 'PERIODE_MISMATCH');
             }
 
@@ -67,7 +77,7 @@ export class BulletinsService {
                 // Find eleves in class via affectations
                 const affectationRepo = AppDataSource.getRepository('AffectationEleve');
                 const affectations = await affectationRepo.find({
-                    where: { classeId: dto.classeId, actif: true },
+                    where: { classeAnneeId: dto.classeAnneeId, actif: true },
                 }) as any[];
 
                 const eleveIds = affectations.map((a: any) => a.eleveId);
@@ -83,14 +93,13 @@ export class BulletinsService {
             const bulletins: Bulletin[] = [];
 
             // OPTIMISATION : Charger toutes les moyennes en UNE requête batch
-            const programme = await matieresService.getProgrammeNiveau(classe.niveauId);
+            const programme = await matieresService.getProgrammeNiveau(classeAnnee.classe.niveauId);
             
             // CHARGEMENT des affectations matières de la classe pour les coefficients spécifiques
             const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
             const affectationsClasse = await affectationRepo.find({
                 where: { 
-                    classeId: classe.id,
-                    anneeScolaireId: classe.anneeScolaireId,
+                    classeAnneeId: dto.classeAnneeId,
                     statut: 'ACTIVE'
                 }
             });
@@ -204,9 +213,9 @@ export class BulletinsService {
     /**
      * Calcule les rangs de tous les élèves d'une classe pour une période donnée
      */
-    private async calculerRangs(classeId: string, periodeId: string, etablissementId?: string, queryRunner?: any): Promise<void> {
+    private async calculerRangs(classeAnneeId: string, periodeId: string, etablissementId?: string, queryRunner?: any): Promise<void> {
         // Récupérer tous les bulletins de la classe pour cette période
-        const where: any = { classeId, periodeId };
+        const where: any = { classeAnneeId, periodeId };
         if (etablissementId) where.etablissementId = etablissementId;
         
         const bulletins = await (queryRunner?.manager || this.repo).find(Bulletin, {

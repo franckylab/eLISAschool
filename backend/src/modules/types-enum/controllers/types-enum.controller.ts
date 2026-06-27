@@ -32,7 +32,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     try {
         const dto = validateDto(queryTypeEnumSchema, req.query);
         const result = await typeEnumService.findAll(dto, req.etablissementId);
-        res.json({ success: true, data: result.data, pagination: result.pagination });
+        res.json({ success: true, data: result.items, pagination: result.meta });
     } catch (error) { next(error); }
 });
 

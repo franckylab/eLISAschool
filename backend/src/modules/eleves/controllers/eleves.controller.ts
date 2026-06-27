@@ -220,13 +220,13 @@ router.get('/export', authMiddleware, requirePermission('personnel:manage'), asy
 
 router.post('/import', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { csvContent, anneeScolaireId, classeId } = req.body;
+        const { csvContent, classeAnneeId } = req.body;
         
-        if (!csvContent || !anneeScolaireId || !classeId) {
-            throw new AppError('csvContent, anneeScolaireId et classeId sont obligatoires', 400, 'MISSING_FIELDS');
+        if (!csvContent || !classeAnneeId) {
+            throw new AppError('csvContent et classeAnneeId sont obligatoires', 400, 'MISSING_FIELDS');
         }
         
-        const result = await service.importElevesCSV(csvContent, req.etablissementId!, anneeScolaireId, classeId);
+        const result = await service.importElevesCSV(csvContent, req.etablissementId!, classeAnneeId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
 });

@@ -1,9 +1,8 @@
 # ==================================
 # eLISAschool Backend - Dockerfile
 # ==================================
-# Utilisé pour la production ET le développement
-# En dev: docker-compose.dev.yml override la commande et monte les volumes
-# En prod: build multi-stage, exécution du JS compilé
+# Utilisé pour la PRODUCTION uniquement
+# Pour le développement : utiliser docker/Dockerfile.backend.dev
 
 # ==================================
 # Étape 1: Base commune
@@ -57,31 +56,9 @@ COPY --from=builder /app/backend/dist ./backend/dist
 
 # Configuration
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=7000
 USER expressjs
-EXPOSE 3000
+EXPOSE 7000
 
 # Commande par défaut (production)
 CMD ["node", "backend/dist/index.js"]
-
-# ==================================
-# Étape 5: Image de développement
-# ==================================
-FROM base AS development
-WORKDIR /app
-
-# Copie de TOUT node_modules depuis deps (npm workspaces hoist tout à la racine)
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copie du code source (sera remplacé par le volume monté en dev)
-COPY package.json package-lock.json ./
-COPY backend/ ./backend/
-COPY shared/ ./shared/
-
-# Nodemon est installé via les devDependencies
-ENV NODE_ENV=development
-ENV PORT=3000
-EXPOSE 3000
-
-# Commande par défaut (développement avec hot-reload)
-CMD ["npx", "nodemon", "--config", "backend/nodemon.json"]

@@ -1,0 +1,31 @@
+# ==================================
+# eLISAschool Backend - Dockerfile Development
+# ==================================
+# Utilisé uniquement pour le développement avec hot-reload (nodemon)
+
+FROM node:20-alpine
+WORKDIR /app
+
+# Installation des dépendances système
+RUN apk add --no-cache libc6-compat
+
+# Copie des fichiers de dépendances (monorepo workspaces)
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY shared/package.json ./shared/
+RUN mkdir -p backend shared
+
+# Installation de TOUTES les dépendances (dev + prod)
+RUN npm install
+
+# Copie du code source (sera override par les volumes montés)
+COPY backend/ ./backend/
+COPY shared/ ./shared/
+
+# Configuration développement
+ENV NODE_ENV=development
+ENV PORT=7000
+EXPOSE 7000
+
+# Commande de développement avec nodemon (hot-reload)
+CMD ["npx", "nodemon", "--config", "backend/nodemon.json"]

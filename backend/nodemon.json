@@ -10,6 +10,10 @@
         "**/*.test.ts",
         "**/*.spec.ts"
     ],
-    "exec": "TS_NODE_TRANSPILE_ONLY=true npx ts-node -r tsconfig-paths/register src/index.ts",
-    "delay": 1000
+    "exec": "TS_NODE_TRANSPILE_ONLY=true npx ts-node -r tsconfig-paths/register ./src/index.ts",
+    "delay": 1000,
+    "cwd": ".",
+    "events": {
+        "restart": "echo '[Nodemon] Redémarrage suite à une modification...'"
+    }
 }

@@ -22,7 +22,7 @@ export class AnneesScolairesService {
 
     async create(dto: CreateAnneeScolaireDto, createurId?: string, etablissementId?: string): Promise<AnneeScolaire> {
         // Vérifier si le workflow de validation est requis
-        const requireValidation = await getParamBoolean('annees_scolaires.require_validation', false);
+        const requireValidation = await getParamBoolean('annees_scolaires.require_validation', { defaultValue: false });
 
         // Si nouvelle année active, désactiver les autres
         if (dto.enCours && !requireValidation) {
@@ -75,7 +75,7 @@ export class AnneesScolairesService {
         const demandeCloture = dto.cloturee === true && !annee.cloturee;
 
         if (demandeCloture) {
-            const requireValidation = await getParamBoolean('annees_scolaires.require_validation', false);
+            const requireValidation = await getParamBoolean('annees_scolaires.require_validation', { defaultValue: false });
             if (requireValidation && createurId) {
                 // Ne PAS clôturer, mettre en attente
                 annee.statut = StatutAnneeScolaire.EN_ATTENTE_CLOTURE;

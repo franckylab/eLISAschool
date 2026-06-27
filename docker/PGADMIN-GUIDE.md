@@ -23,7 +23,7 @@ pgAdmin est pré-configuré pour se connecter à la base de données PostgreSQL 
 
 - **Serveur** : eLISAschool DB (Dev)
 - **Host** : `elisaschool_postgres_dev` (nom du conteneur existant)
-- **Port** : 5432 (port interne Docker)
+- **Port** : 7002 (port interne Docker)
 - **Base de données** : elisaschool
 - **Utilisateur** : elisaschool_user
 - **Mot de passe** : elisaschool_dev_2024
@@ -67,7 +67,7 @@ Si la configuration automatique ne fonctionne pas :
    - Name : `eLISAschool DB`
 5. Onglet **Connection** :
    - Host : `postgres` (si dans Docker) ou `host.docker.internal` (si accès externe)
-   - Port : `5432`
+   - Port : `7002`
    - Maintenance database : `elisaschool`
    - Username : `elisaschool_user`
    - Password : `elisaschool_dev_2024`

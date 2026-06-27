@@ -246,21 +246,20 @@ export class NotesService {
     }
 
     async findAll(query: QueryNotesDto, etablissementId?: string): Promise<{ items: Note[]; total: number }> {
-        const { page, limit, eleveId, matiereId, classeId, periodeId, anneeScolaireId, typeEvaluation, statut } = query;
+        const { page, limit, eleveId, matiereId, classeAnneeId, periodeId, typeEvaluation, statut } = query;
 
         const where: FindOptionsWhere<Note> = {};
         if (eleveId) where.eleveId = eleveId;
         if (matiereId) where.matiereId = matiereId;
-        if (classeId) where.classeId = classeId;
+        if (classeAnneeId) where.classeAnneeId = classeAnneeId;
         if (periodeId) where.periodeId = periodeId;
-        if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
         if (typeEvaluation) where.typeEvaluation = typeEvaluation;
         if (statut) where.statut = statut;
         if (etablissementId) where.etablissementId = etablissementId;
 
         const [items, total] = await this.noteRepository.findAndCount({
             where,
-            relations: ['eleve', 'enseignant', 'matiere', 'classe', 'periode', 'anneeScolaire'],
+            relations: ['eleve', 'enseignant', 'matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'periode'],
             order: { createdAt: 'DESC' },
             skip: (page - 1) * limit,
             take: limit,

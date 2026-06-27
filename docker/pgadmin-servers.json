@@ -4,7 +4,7 @@
       "Name": "eLISAschool DB",
       "Group": "Development",
       "Host": "postgres",
-      "Port": 5432,
+      "Port": 7002,
       "MaintenanceDB": "elisaschool",
       "Username": "elisaschool_user",
       "Password": "elisaschool_password",

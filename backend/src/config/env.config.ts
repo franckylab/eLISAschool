@@ -8,6 +8,27 @@
 
 import { z } from 'zod';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+
+/**
+ * Charger .env AVANT toute validation
+ * Chercher dans l'ordre : processus.cwd()/../../.env, processus.cwd()/.env, __dirname/../../.env
+ */
+const envSearchPaths = [
+    path.resolve(process.cwd(), '../../.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(process.cwd(), 'backend/.env'),
+];
+
+const envFile = envSearchPaths.find(p => fs.existsSync(p));
+if (envFile) {
+    dotenv.config({ path: envFile });
+} else {
+    dotenv.config(); // Fallback
+}
 
 /**
  * Génère un secret aléatoire pour le développement
@@ -103,10 +124,10 @@ function loadEnvConfig(): EnvConfig {
                 NODE_ENV: 'development',
                 APP_NAME: 'eLISAschool',
                 APP_VERSION: '1.0.0',
-                APP_PORT: 3000,
-                APP_URL: 'http://localhost:3000',
+                APP_PORT: 7000,
+                APP_URL: 'http://localhost:7000',
                 DB_HOST: 'localhost',
-                DB_PORT: 5432,
+                DB_PORT: 7002,
                 DB_NAME: 'elisaschool',
                 DB_USER: 'elisaschool_user',
                 DB_PASSWORD: 'dev_password',
@@ -115,7 +136,7 @@ function loadEnvConfig(): EnvConfig {
                 JWT_REFRESH_EXPIRES_IN: '30d',
                 ENCRYPTION_KEY: encryptionKey, // ← Utiliser depuis process.env si valide
                 REDIS_HOST: 'localhost',
-                REDIS_PORT: 6379,
+                REDIS_PORT: 7003,
                 REDIS_PASSWORD: '',
                 SMTP_HOST: '',
                 SMTP_PORT: 587,

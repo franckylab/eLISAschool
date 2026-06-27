@@ -46,17 +46,12 @@ router.post('/', authMiddleware, requirePermission('emploi-du-temps:generer'), a
     } catch (error) { next(error); }
 });
 
-// Lister les créneaux d'une classe
-router.get('/classe/:classeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+// Lister les créneaux d'une classe/année
+router.get('/classe-annee/:classeAnneeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { classeId } = req.params;
-        const anneeScolaireId = req.query.anneeScolaireId as string;
+        const { classeAnneeId } = req.params;
 
-        if (!anneeScolaireId) {
-            throw new AppError('Paramètre anneeScolaireId requis', 400, 'MISSING_PARAM');
-        }
-
-        const creneaux = await emploiDuTempsService.findByClasse(classeId, anneeScolaireId);
+        const creneaux = await emploiDuTempsService.findByClasseAnnee(classeAnneeId);
         res.json({ success: true, data: creneaux });
     } catch (error) { next(error); }
 });
@@ -147,17 +142,12 @@ router.put('/preferences', authMiddleware, requirePermission('emploi-du-temps:ge
 // ==========================================
 
 // Export HTML
-router.get('/export/html/:classeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export/html/:classeAnneeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { classeId } = req.params;
-        const anneeScolaireId = req.query.anneeScolaireId as string;
+        const { classeAnneeId } = req.params;
         const colorBy = (req.query.colorBy as any) || 'matiere';
 
-        if (!anneeScolaireId) {
-            throw new AppError('Paramètre anneeScolaireId requis', 400, 'MISSING_PARAM');
-        }
-
-        const html = await emploiDuTempsPdfService.generateHTML(classeId, anneeScolaireId, {
+        const html = await emploiDuTempsPdfService.generateHTML(classeAnneeId, {
             format: 'html',
             colorBy,
         });
@@ -168,17 +158,12 @@ router.get('/export/html/:classeId', authMiddleware, async (req: Request, res: R
 });
 
 // Export PDF (HTML prêt pour impression)
-router.get('/export/pdf/:classeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export/pdf/:classeAnneeId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { classeId } = req.params;
-        const anneeScolaireId = req.query.anneeScolaireId as string;
+        const { classeAnneeId } = req.params;
         const colorBy = (req.query.colorBy as any) || 'matiere';
 
-        if (!anneeScolaireId) {
-            throw new AppError('Paramètre anneeScolaireId requis', 400, 'MISSING_PARAM');
-        }
-
-        const pdfBuffer = await emploiDuTempsPdfService.generatePDF(classeId, anneeScolaireId, {
+        const pdfBuffer = await emploiDuTempsPdfService.generatePDF(classeAnneeId, {
             format: 'pdf',
             colorBy,
         });

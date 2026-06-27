@@ -15,7 +15,7 @@ import { ResponsableEleve, LienParente } from '../entities';
 import { LierParentDto, UpdateResponsableDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { Role } from '@modules/auth/entities';
+import { Role } from '@shared/enums/roles.enum';
 import { Utilisateur } from '@modules/auth/entities/utilisateur.entity';
 import { auditService, AuditAction } from '@modules/auth';
 import { Request } from 'express';

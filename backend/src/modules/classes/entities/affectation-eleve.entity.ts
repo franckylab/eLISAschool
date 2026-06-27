@@ -15,6 +15,7 @@ import {
     Index
 } from 'typeorm';
 import { Classe } from './classe.entity';
+import { ClasseAnnee } from './classe-annee.entity';
 import { Eleve } from '@modules/eleves/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
@@ -30,6 +31,7 @@ export enum StatutAffectationEleve {
 @Entity('affectations_eleves')
 @Index(['eleveId'])
 @Index(['classeId'])
+@Index(['classeAnneeId'])
 @Index(['anneeScolaireId'])
 @Index(['etablissementId'])
 @Index(['statut'])
@@ -51,6 +53,17 @@ export class AffectationEleve {
     @ManyToOne(() => Classe)
     @JoinColumn({ name: 'classeId' })
     classe?: Classe;
+
+    /**
+     * Référence vers la classe-année (nouveau champ recommandé)
+     * Remplace progressivement classeId + anneeScolaireId séparés
+     */
+    @Column({ type: 'uuid', nullable: true })
+    classeAnneeId?: string;
+
+    @ManyToOne(() => ClasseAnnee, { nullable: true })
+    @JoinColumn({ name: 'classeAnneeId' })
+    classeAnnee?: ClasseAnnee;
 
     @Column({ type: 'uuid' })
     anneeScolaireId!: string;

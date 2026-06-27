@@ -57,14 +57,13 @@ export class EmploiDuTempsService {
         return creneau;
     }
 
-    async findByClasse(classeId: string, anneeScolaireId: string): Promise<EmploiDuTemps[]> {
+    async findByClasseAnnee(classeAnneeId: string): Promise<EmploiDuTemps[]> {
         return this.repo.find({
             where: {
-                classeId,
-                anneeScolaireId,
+                classeAnneeId,
                 actif: true,
             },
-            relations: ['matiere', 'enseignant', 'classe'],
+            relations: ['matiere', 'enseignant', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'salle'],
             order: {
                 jour: 'ASC',
                 heureDebut: 'ASC',
@@ -76,15 +75,17 @@ export class EmploiDuTempsService {
         return this.repo.find({
             where: {
                 enseignantId,
-                anneeScolaireId,
                 actif: true,
             },
-            relations: ['classe', 'matiere'],
+            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'matiere', 'salle'],
             order: {
                 jour: 'ASC',
                 heureDebut: 'ASC',
             },
-        });
+        }).then(creneaux => 
+            // Filtrer par année scolaire côté JS (car pas de filtre direct)
+            creneaux.filter(c => c.classeAnnee?.anneeScolaireId === anneeScolaireId)
+        );
     }
 
     async genererEmploiDuTemps(dto: GenererEmploiDuTempsDto): Promise<{
@@ -93,14 +94,14 @@ export class EmploiDuTempsService {
         nombreCreneaux: number;
         conflits: string[];
     }> {
-        const { classeId, anneeScolaireId, etablissementId, options } = dto;
+        const { classeAnneeId, etablissementId, options } = dto;
 
         // 1. Charger les préférences
         const preferences = await this.getPreferences(etablissementId);
 
         // 2. Si régénération, supprimer l'ancien emploi du temps
         if (options?.regenerer) {
-            const deleted = await this.repo.delete({ classeId, anneeScolaireId });
+            const deleted = await this.repo.delete({ classeAnneeId });
             logger.info(`[EmploiDuTemps] ${deleted.affected} créneaux supprimés pour régénération`);
         }
 

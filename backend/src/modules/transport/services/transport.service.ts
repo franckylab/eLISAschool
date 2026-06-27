@@ -51,9 +51,9 @@ export class TransportService {
         }
 
         const params = {
-            enableGPS: await getParamBoolean('transport.enable_gps', false),
-            enableQRCheckin: await getParamBoolean('transport.enable_qr_checkin', true),
-            alertDelayMinutes: await getParamNumber('transport.alert_delay_minutes', 10),
+            enableGPS: await getParamBoolean('transport.enable_gps', { defaultValue: false }),
+            enableQRCheckin: await getParamBoolean('transport.enable_qr_checkin', { defaultValue: true }),
+            alertDelayMinutes: await getParamNumber('transport.alert_delay_minutes', { defaultValue: 10 }),
         };
 
         this.paramsCache.set(cacheKey, { value: params, timestamp: Date.now() });
@@ -81,7 +81,6 @@ export class TransportService {
                 cibleId: ligne.id,
                 description: `Ligne de transport créée: ${dto.nom}`,
                 module: 'transport',
-                etablissementId,
             });
         } catch (error) {
             logger.warn('[Transport] Erreur audit createLigne', error);
@@ -122,7 +121,7 @@ export class TransportService {
         if (existant) throw new AppError('Élève déjà inscrit au transport', 409, 'ALREADY_ENROLLED');
 
         // Vérifier si la validation est requise
-        const requireValidation = await getParamBoolean('transport.require_validation', false);
+        const requireValidation = await getParamBoolean('transport.require_validation', { defaultValue: false });
 
         const inscription = this.inscriptionRepo.create({
             ...dto,
@@ -195,7 +194,7 @@ export class TransportService {
             throw new AppError('Le pointage QR n\'est pas activé', 400, 'QR_CHECKIN_DISABLED');
         }
 
-        const presence = this.presenceRepo.create({ ...dto, date: new Date(dto.date), etablissementId });
+        const presence = this.presenceRepo.create({ ...dto, date: new Date(dto.date) });
         await this.presenceRepo.save(presence);
 
         // Audit trail
@@ -207,7 +206,6 @@ export class TransportService {
                 cibleId: presence.id,
                 description: `Présence enregistrée pour inscription ${dto.inscriptionId}`,
                 module: 'transport',
-                etablissementId,
             });
         } catch (error) {
             logger.warn('[Transport] Erreur audit enregistrerPresence', error);

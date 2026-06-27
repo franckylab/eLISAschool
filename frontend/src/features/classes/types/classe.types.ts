@@ -36,16 +36,6 @@ export interface Classe {
         nom: string;
         code: string;
     };
-    anneeScolaireId: string;
-    professeurPrincipalId?: string;
-    professeurPrincipal?: {
-        id: string;
-        nom: string;
-        prenom: string;
-    };
-    sallePrincipale?: string;
-    effectifMax: number;
-    effectifActuel: number;
     typeClasse: TypeClasse;
     creneauHoraire: CreneauHoraire;
     description?: string;
@@ -60,10 +50,6 @@ export interface CreerClasseDto {
     code?: string;
     niveauId: string;
     filiereId?: string | null;
-    anneeScolaireId?: string;
-    professeurPrincipalId?: string | null;
-    sallePrincipale?: string;
-    effectifMax?: number;
     typeClasse?: TypeClasse;
     creneauHoraire?: CreneauHoraire;
     description?: string;

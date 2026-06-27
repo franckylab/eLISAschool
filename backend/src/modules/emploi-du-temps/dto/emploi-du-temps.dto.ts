@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { JourSemaine, TypeCreneau } from '../entities';
 
 export const creerCreneauSchema = z.object({
-    classeId: z.string().uuid('ID de la classe invalide'),
+    classeAnneeId: z.string().uuid('ID de la classe/année invalide'),
     matiereId: z.string().uuid('ID de la matière invalide'),
     enseignantId: z.string().uuid('ID de l\'enseignant invalide'),
     salleId: z.string().uuid('ID de la salle invalide').optional(),
@@ -50,8 +50,7 @@ export const modifierCreneauSchema = z.object({
 });
 
 export const genererEmploiDuTempsSchema = z.object({
-    classeId: z.string().uuid('ID de la classe invalide'),
-    anneeScolaireId: z.string().uuid('ID de l\'année scolaire invalide'),
+    classeAnneeId: z.string().uuid('ID de la classe/année invalide'),
     etablissementId: z.string().uuid('ID de l\'établissement invalide'),
     options: z.object({
         regenerer: z.boolean().default(false),

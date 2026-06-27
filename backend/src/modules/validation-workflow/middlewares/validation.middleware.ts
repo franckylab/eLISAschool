@@ -52,7 +52,7 @@ export function requireValidationLevel(module: string, niveau: number) {
             }
 
             // 4. Fallback : vérifier la configuration des rôles pour ce module
-            const configStr = await getParam<string>(`${module}.validation_roles`, '{}');
+            const configStr = await getParam<string>(`${module}.validation_roles`, { defaultValue: '{}' });
             let configRoles: Record<string, string> = {};
             
             try {

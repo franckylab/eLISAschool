@@ -1,9 +1,10 @@
 # ==================================
-# eLISAschool - Docker Compose Production
+# eLISAschool - Docker Compose Development
 # ==================================
 # Démarrage: docker compose up -d
 # Arrêt: docker compose down
 # Logs: docker compose logs -f
+# Ports: Backend=7000, Frontend=7001, PostgreSQL=7002, Redis=7003
 
 services:
   # ==================================
@@ -11,20 +12,23 @@ services:
   # ==================================
   postgres:
     image: postgres:16-alpine
-    container_name: elisaschool_postgres
+    container_name: elisaschool_db
     restart: unless-stopped
+    command: >
+      postgres
+      -p 7002
     environment:
       POSTGRES_DB: ${DB_NAME:-elisaschool}
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - elisaschool_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool} -p 7002"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,60 +44,89 @@ services:
     command: >
       sh -c '
         if [ -n "$REDIS_PASSWORD" ]; then
-          redis-server --requirepass "$REDIS_PASSWORD"
+          redis-server --port 7003 --requirepass "$REDIS_PASSWORD"
         else
-          redis-server
+          redis-server --port 7003
         fi
       '
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
       - elisaschool_network
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+--pass $REDIS_PASSWORD} ping | grep PONG"]
+      test: ["CMD-SHELL", "redis-cli -p 7003 --pass $REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ==================================
-  # Backend API Express (Production)
+  # pgAdmin 4 (Administration PostgreSQL)
+  # ==================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: elisaschool_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@elisaschool.cm}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_LISTEN_PORT: 7004
+    ports:
+      - "${PGADMIN_PORT:-7004}:7004"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - elisaschool_network
+    depends_on:
+      - postgres
+
+  # ==================================
+  # Backend API Express (Development)
   # ==================================
   backend:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend
-      target: production
+      dockerfile: docker/Dockerfile.backend.dev
     container_name: elisaschool_backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      APP_PORT: ${APP_PORT:-3000}
-      APP_URL: ${APP_URL:-http://localhost:3000}
+      NODE_ENV: ${NODE_ENV:-development}
+      # Activer les cron jobs même en développement
+      ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
+      # APP_PORT interne = 7000 (même port que l'externe)
+      # Le port externe 7000 est mappé via 'ports' ci-dessous
+      APP_URL: ${APP_URL:-http://localhost:7000}
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: 7002
       DB_NAME: ${DB_NAME:-elisaschool}
       DB_USER: ${DB_USER:-elisaschool_user}
-      DB_PASSWORD: ${DB_PASSWORD:-dev_password}
+      DB_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_32chars}
+      REDIS_PORT: 7003
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_256bits}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev_encryption_key_32chars_xx}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:7001}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:7001}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@elisaschool.cm}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-7000}:7000"
+    volumes:
+      - ./backend:/app/backend
+      - ./shared:/app/shared
+      - /app/backend/node_modules
+      - /app/shared/node_modules
+      - /app/node_modules
     networks:
       - elisaschool_network
     depends_on:
@@ -101,6 +134,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # Commande de développement avec nodemon (hot-reload)
+    command: >
+      sh -c "cd /app/backend && \
+      npx nodemon --config nodemon.json"
+
+  # ==================================
+  # Frontend React/Vite (Development)
+  # ==================================
+  frontend:
+    image: node:20-alpine
+    container_name: elisaschool_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:7000/api
+    ports:
+      - "${FRONTEND_PORT:-7001}:7001"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./shared:/shared
+    networks:
+      - elisaschool_network
+    depends_on:
+      - backend
+    command: sh -c "cd /app && npm install && npm run dev -- --host 0.0.0.0 --port 7001"
 
 networks:
   elisaschool_network:
@@ -110,4 +168,6 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  pgadmin_data:
     driver: local

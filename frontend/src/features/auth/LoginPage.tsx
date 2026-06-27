@@ -124,22 +124,24 @@ function IllustrationScolaire() {
 
             {/* Contenu principal : Logo + Slogan + Diaporama */}
             <motion.div
-                className="relative z-10 flex flex-col w-full h-full max-w-4xl py-8"
+                className="relative z-10 flex flex-col w-full h-full max-w-4xl"
+                style={{ padding: 'clamp(0.5rem, 1vh, 2rem)' }}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
             >
-                {/* Section supérieure : Logo et Slogan */}
-                <div className="flex flex-col items-center gap-4 mb-6">
+                {/* Section supérieure : Logo et Slogan - Compact en haut */}
+                <div className="flex flex-col items-center flex-shrink-0" style={{ gap: 'clamp(0.375rem, 0.8vh, 0.75rem)', marginBottom: 'clamp(0.375rem, 1vh, 1rem)' }}>
                     {/* Icônes scolaires animées en cercle */}
-                    <div className="relative h-40 w-40">
+                    <div className="relative" style={{ height: 'clamp(80px, 14vh, 120px)', width: 'clamp(80px, 14vh, 120px)' }}>
                         {/* Centre - Logo eLISAschool */}
                         <motion.div
                             className="absolute inset-0 flex items-center justify-center"
                             animate={{ rotate: [0, 3, -3, 0] }}
                             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur-sm ring-1 ring-white/20">
+                            <div className="flex items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur-sm ring-1 ring-white/20"
+                                 style={{ height: 'clamp(48px, 8vh, 72px)', width: 'clamp(48px, 8vh, 72px)' }}>
                                 <ElisaLogo variant="icon" size="lg" theme="white" />
                             </div>
                         </motion.div>
@@ -150,8 +152,10 @@ function IllustrationScolaire() {
                             animate={{ y: [0, -5, 0] }}
                             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
-                                <BookOpen className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            <div className="flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg"
+                                 style={{ height: 'clamp(28px, 4vh, 36px)', width: 'clamp(28px, 4vh, 36px)' }}>
+                                <BookOpen className="text-white" strokeWidth={1.5}
+                                          style={{ height: 'clamp(14px, 2vh, 18px)', width: 'clamp(14px, 2vh, 18px)' }} />
                             </div>
                         </motion.div>
                         <motion.div
@@ -159,8 +163,10 @@ function IllustrationScolaire() {
                             animate={{ y: [0, 5, 0] }}
                             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
-                                <Users className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            <div className="flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg"
+                                 style={{ height: 'clamp(28px, 4vh, 36px)', width: 'clamp(28px, 4vh, 36px)' }}>
+                                <Users className="text-white" strokeWidth={1.5}
+                                       style={{ height: 'clamp(14px, 2vh, 18px)', width: 'clamp(14px, 2vh, 18px)' }} />
                             </div>
                         </motion.div>
                         <motion.div
@@ -168,8 +174,10 @@ function IllustrationScolaire() {
                             animate={{ x: [0, -5, 0] }}
                             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
-                                <Award className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            <div className="flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg"
+                                 style={{ height: 'clamp(28px, 4vh, 36px)', width: 'clamp(28px, 4vh, 36px)' }}>
+                                <Award className="text-white" strokeWidth={1.5}
+                                       style={{ height: 'clamp(14px, 2vh, 18px)', width: 'clamp(14px, 2vh, 18px)' }} />
                             </div>
                         </motion.div>
                         <motion.div
@@ -177,8 +185,10 @@ function IllustrationScolaire() {
                             animate={{ x: [0, 5, 0] }}
                             transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg">
-                                <Mail className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            <div className="flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shadow-lg"
+                                 style={{ height: 'clamp(28px, 4vh, 36px)', width: 'clamp(28px, 4vh, 36px)' }}>
+                                <Mail className="text-white" strokeWidth={1.5}
+                                      style={{ height: 'clamp(14px, 2vh, 18px)', width: 'clamp(14px, 2vh, 18px)' }} />
                             </div>
                         </motion.div>
                     </div>
@@ -186,7 +196,8 @@ function IllustrationScolaire() {
                     {/* Texte descriptif / Slogan */}
                     <div className="text-center">
                         <motion.p
-                            className="text-xl font-bold text-white"
+                            className="font-bold text-white"
+                            style={{ fontSize: 'clamp(1.125rem, 2vh + 0.6rem, 1.5rem)' }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.6 }}
@@ -194,7 +205,8 @@ function IllustrationScolaire() {
                             École Intelligente
                         </motion.p>
                         <motion.p
-                            className="mt-1 max-w-sm text-sm leading-relaxed text-white/70"
+                            className="mt-1 leading-relaxed text-white/70"
+                            style={{ fontSize: 'clamp(0.75rem, 1.4vh + 0.3rem, 1rem)', maxWidth: 'clamp(200px, 40vw, 320px)' }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.8 }}
@@ -205,8 +217,8 @@ function IllustrationScolaire() {
                     </div>
                 </div>
 
-                {/* Section inférieure : Diaporama de présentation - Prend tout l'espace restant */}
-                <div className="flex-1 min-h-0">
+                {/* Section inférieure : Diaporama de présentation - S'étend jusqu'au bas */}
+                <div className="flex-1 min-h-0 w-full" style={{ minHeight: 'clamp(150px, 40vh, 500px)' }}>
                     <LoginSlideshow />
                 </div>
             </motion.div>
@@ -604,7 +616,7 @@ export function LoginPage() {
             {/* ─── Panneau droit : Formulaire ──────────────── */}
             <div className="flex w-full flex-col lg:w-1/2 xl:w-[45%]">
                 {/* Barre supérieure */}
-                <div className="flex items-center justify-between px-6 py-4 sm:px-8">
+                <div className="flex items-center justify-between" style={{ padding: 'clamp(0.5rem, 1vh, 1rem) clamp(1rem, 2vw, 2rem)' }}>
                     {/* Logo mobile */}
                     <Link to="/" className="block lg:hidden">
                         <ElisaLogo variant="horizontal" size="xs" />
@@ -615,7 +627,7 @@ export function LoginPage() {
                 </div>
 
                 {/* Contenu centré */}
-                <div className="flex flex-1 items-center justify-center px-6 pb-8 sm:px-8 lg:px-12">
+                <div className="flex flex-1 items-center justify-center" style={{ padding: '0 clamp(0.75rem, 2vw, 3rem) clamp(0.75rem, 1.5vh, 2rem)' }}>
                     <motion.div
                         className="w-full max-w-[420px]"
                         initial={{ opacity: 0, x: 20 }}
@@ -624,7 +636,8 @@ export function LoginPage() {
                     >
                         {/* Logo de l'établissement (si disponible) ou ElisaLogo */}
                         <motion.div
-                            className="mb-6 flex justify-center"
+                            className="flex justify-center"
+                            style={{ marginBottom: 'clamp(0.75rem, 1.5vh, 1.5rem)' }}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.05 }}
@@ -633,10 +646,12 @@ export function LoginPage() {
                                 <img
                                     src={logoEtablissement}
                                     alt={etablissement?.nom || 'Logo établissement'}
-                                    className="h-16 w-16 rounded-2xl object-contain shadow-lg"
+                                    className="rounded-2xl object-contain shadow-lg"
+                                    style={{ height: 'clamp(48px, 6vh, 64px)', width: 'clamp(48px, 6vh, 64px)' }}
                                 />
                             ) : (
-                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-dominante)]/10 to-[var(--color-dominante)]/5">
+                                <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-dominante)]/10 to-[var(--color-dominante)]/5"
+                                     style={{ height: 'clamp(48px, 6vh, 64px)', width: 'clamp(48px, 6vh, 64px)' }}>
                                     <ElisaLogo variant="icon" size="lg" />
                                 </div>
                             )}
@@ -648,10 +663,12 @@ export function LoginPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
                         >
-                            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-texte)]">
+                            <h1 className="font-bold tracking-tight text-[var(--color-texte)]"
+                                style={{ fontSize: 'clamp(1.25rem, 3vh + 0.5rem, 1.875rem)' }}>
                                 {t('login.titre')}
                             </h1>
-                            <p className="mt-2 text-sm text-[var(--color-texte-secondaire)]">
+                            <p className="mt-1 text-[var(--color-texte-secondaire)]"
+                               style={{ fontSize: 'clamp(0.6875rem, 1.2vh + 0.25rem, 0.875rem)' }}>
                                 {t('login.sousTitre')}
                             </p>
                         </motion.div>
@@ -659,14 +676,16 @@ export function LoginPage() {
                         {/* Formulaire */}
                         <motion.form
                             onSubmit={handleSubmit(onSubmit)}
-                            className="mt-8 space-y-5"
+                            className="space-y-4"
+                            style={{ marginTop: 'clamp(1rem, 2.5vh, 2rem)' }}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
                         >
                             {/* Champ identifiant */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                            <div className="space-y-1" style={{ gap: 'clamp(0.25rem, 0.5vh, 0.375rem)' }}>
+                                <label className="font-medium text-[var(--color-texte)]"
+                                       style={{ fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}>
                                     {t('login.identifiant')}
                                 </label>
                                 <div className="relative">
@@ -678,20 +697,22 @@ export function LoginPage() {
                                         autoComplete="username"
                                         placeholder={t('login.identifiantPlaceholder')}
                                         className={cn(
-                                            'h-12 w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-4 text-sm text-[var(--color-texte)] transition-all',
+                                            'w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-4 text-[var(--color-texte)] transition-all',
                                             'placeholder:text-[var(--color-texte-secondaire)]/50',
                                             'focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20',
                                             errors.identifiant
                                                 ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]/20'
                                                 : 'border-[var(--color-bordure)]',
                                         )}
+                                        style={{ height: 'clamp(40px, 5vh, 48px)', fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}
                                         {...register('identifiant', {
                                             required: t('erreurs.identifiantRequis'),
                                         })}
                                     />
                                 </div>
                                 {errors.identifiant && (
-                                    <p className="flex items-center gap-1 text-xs text-[var(--color-error)]">
+                                    <p className="flex items-center gap-1 text-[var(--color-error)]"
+                                       style={{ fontSize: 'clamp(0.625rem, 1vh, 0.75rem)' }}>
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.identifiant.message}
                                     </p>
@@ -699,8 +720,9 @@ export function LoginPage() {
                             </div>
 
                             {/* Champ mot de passe avec toggle */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                            <div className="space-y-1" style={{ gap: 'clamp(0.25rem, 0.5vh, 0.375rem)' }}>
+                                <label className="font-medium text-[var(--color-texte)]"
+                                       style={{ fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}>
                                     {t('login.motDePasse')}
                                 </label>
                                 <div className="relative">
@@ -712,13 +734,14 @@ export function LoginPage() {
                                         autoComplete="current-password"
                                         placeholder={t('login.motDePassePlaceholder')}
                                         className={cn(
-                                            'h-12 w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-12 text-sm text-[var(--color-texte)] transition-all',
+                                            'w-full rounded-xl border bg-[var(--color-surface)] pl-11 pr-12 text-[var(--color-texte)] transition-all',
                                             'placeholder:text-[var(--color-texte-secondaire)]/50',
                                             'focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20',
                                             errors.motDePasse
                                                 ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]/20'
                                                 : 'border-[var(--color-bordure)]',
                                         )}
+                                        style={{ height: 'clamp(40px, 5vh, 48px)', fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}
                                         {...register('motDePasse', {
                                             required: t('erreurs.motDePasseRequis'),
                                         })}
@@ -734,7 +757,8 @@ export function LoginPage() {
                                     </button>
                                 </div>
                                 {errors.motDePasse && (
-                                    <p className="flex items-center gap-1 text-xs text-[var(--color-error)]">
+                                    <p className="flex items-center gap-1 text-[var(--color-error)]"
+                                       style={{ fontSize: 'clamp(0.625rem, 1vh, 0.75rem)' }}>
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.motDePasse.message}
                                     </p>
@@ -750,9 +774,11 @@ export function LoginPage() {
                                         exit={{ opacity: 0, y: -5, height: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="flex items-start gap-2.5 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 px-4 py-3">
-                                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-error)]" />
-                                            <p className="text-sm text-[var(--color-error)]">{error}</p>
+                                        <div className="flex items-start gap-2.5 rounded-xl border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 px-3 py-2">
+                                            <AlertCircle className="shrink-0 text-[var(--color-error)]"
+                                                         style={{ height: 'clamp(14px, 1.8vh, 16px)', width: 'clamp(14px, 1.8vh, 16px)', marginTop: 'clamp(1px, 0.2vh, 2px)' }} />
+                                            <p className="text-[var(--color-error)]"
+                                               style={{ fontSize: 'clamp(0.6875rem, 1.2vh, 0.875rem)' }}>{error}</p>
                                         </div>
                                     </motion.div>
                                 )}
@@ -764,27 +790,32 @@ export function LoginPage() {
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="flex items-center gap-2.5 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3"
+                                        className="flex items-center gap-2.5 rounded-xl border border-green-500/20 bg-green-500/5 px-3 py-2"
                                     >
-                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                        <p className="text-sm font-medium text-green-700">{t('login.bienvenue')}</p>
+                                        <CheckCircle2 className="text-green-600"
+                                                      style={{ height: 'clamp(14px, 1.8vh, 16px)', width: 'clamp(14px, 1.8vh, 16px)' }} />
+                                        <p className="font-medium text-green-700"
+                                           style={{ fontSize: 'clamp(0.6875rem, 1.2vh, 0.875rem)' }}>{t('login.bienvenue')}</p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
                             {/* Options : se souvenir + mot de passe oublié */}
                             <div className="flex items-center justify-between">
-                                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[var(--color-texte-secondaire)]">
+                                <label className="flex cursor-pointer items-center gap-2 text-[var(--color-texte-secondaire)]"
+                                       style={{ fontSize: 'clamp(0.6875rem, 1.2vh, 0.875rem)' }}>
                                     <input
                                         type="checkbox"
-                                        className="h-4 w-4 rounded border-[var(--color-bordure)] accent-[var(--color-dominante)]"
+                                        className="rounded border-[var(--color-bordure)] accent-[var(--color-dominante)]"
+                                        style={{ height: 'clamp(14px, 1.8vh, 16px)', width: 'clamp(14px, 1.8vh, 16px)' }}
                                         {...register('seSouvenir')}
                                     />
                                     {t('login.seSouvenir')}
                                 </label>
                                 <Link
                                     to="/forgot-password"
-                                    className="text-sm font-medium text-[var(--color-dominante)] transition-colors hover:text-[var(--color-dominante-hover)] hover:underline underline-offset-2"
+                                    className="font-medium text-[var(--color-dominante)] transition-colors hover:text-[var(--color-dominante-hover)] hover:underline underline-offset-2"
+                                    style={{ fontSize: 'clamp(0.6875rem, 1.2vh, 0.875rem)' }}
                                 >
                                     {t('login.motDePasseOublie')}
                                 </Link>
@@ -795,7 +826,7 @@ export function LoginPage() {
                                 type="submit"
                                 disabled={isLoading || successPulse || bloqueJusqua !== null}
                                 className={cn(
-                                    'relative flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all',
+                                    'relative flex w-full items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all',
                                     bloqueJusqua
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : tentativesRestantes <= 5 && tentativesRestantes > 0
@@ -806,13 +837,15 @@ export function LoginPage() {
                                     'disabled:cursor-not-allowed disabled:opacity-70',
                                     'focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/40 focus:ring-offset-2',
                                 )}
+                                style={{ height: 'clamp(40px, 5vh, 48px)', fontSize: 'clamp(0.8125rem, 1.3vh, 0.9375rem)' }}
                                 whileHover={!isLoading && !bloqueJusqua ? { scale: 1.01 } : {}}
                                 whileTap={!isLoading && !bloqueJusqua ? { scale: 0.98 } : {}}
                             >
                                 {isLoading ? (
                                     <>
                                         <motion.div
-                                            className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+                                            className="rounded-full border-2 border-white/30 border-t-white"
+                                            style={{ height: 'clamp(16px, 2vh, 20px)', width: 'clamp(16px, 2vh, 20px)' }}
                                             animate={{ rotate: 360 }}
                                             transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                                         />
@@ -820,19 +853,22 @@ export function LoginPage() {
                                     </>
                                 ) : successPulse ? (
                                     <>
-                                        <CheckCircle2 className="h-5 w-5" />
+                                        <CheckCircle2 className="text-green-600"
+                                                      style={{ height: 'clamp(16px, 2vh, 20px)', width: 'clamp(16px, 2vh, 20px)' }} />
                                         <span>{t('login.bienvenue')}</span>
                                     </>
                                 ) : bloqueJusqua ? (
                                     <>
-                                        <Lock className="h-5 w-5" />
+                                        <Lock className="text-white"
+                                              style={{ height: 'clamp(16px, 2vh, 20px)', width: 'clamp(16px, 2vh, 20px)' }} />
                                         <span>
                                             Déblocage dans {String(Math.floor(tempsRestant / 60)).padStart(2, '0')}:{String(tempsRestant % 60).padStart(2, '0')}
                                         </span>
                                     </>
                                 ) : (
                                     <>
-                                        <LogIn className="h-4 w-4" />
+                                        <LogIn className="text-white"
+                                               style={{ height: 'clamp(14px, 1.8vh, 16px)', width: 'clamp(14px, 1.8vh, 16px)' }} />
                                         <span>{t('login.boutonConnexion')}</span>
                                         {/* Badge compteur de tentatives - visible uniquement si < 20 */}
                                         {tentativesRestantes < 20 && tentativesRestantes > 0 && (
@@ -840,13 +876,14 @@ export function LoginPage() {
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 className={cn(
-                                                    'absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shadow-lg border-2 border-white',
+                                                    'absolute -top-2 -right-2 flex items-center justify-center rounded-full font-bold shadow-lg border-2 border-white',
                                                     tentativesRestantes <= 5
                                                         ? 'bg-red-600 text-white animate-pulse'
                                                         : tentativesRestantes <= 10
                                                         ? 'bg-amber-500 text-white'
                                                         : 'bg-blue-500 text-white'
                                                 )}
+                                                style={{ height: 'clamp(20px, 2.5vh, 24px)', width: 'clamp(20px, 2.5vh, 24px)', fontSize: 'clamp(0.625rem, 1vh, 0.75rem)' }}
                                             >
                                                 {tentativesRestantes}
                                             </motion.span>
@@ -856,9 +893,10 @@ export function LoginPage() {
                             </motion.button>
 
                             {/* Séparateur */}
-                            <div className="relative flex items-center gap-4 py-1">
+                            <div className="relative flex items-center gap-3 py-0.5">
                                 <div className="h-px flex-1 bg-[var(--color-bordure)]" />
-                                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-texte-secondaire)]">
+                                <span className="font-medium uppercase tracking-wider text-[var(--color-texte-secondaire)]"
+                                      style={{ fontSize: 'clamp(0.5625rem, 0.9vh, 0.6875rem)' }}>
                                     {t('login.ou')}
                                 </span>
                                 <div className="h-px flex-1 bg-[var(--color-bordure)]" />
@@ -869,21 +907,24 @@ export function LoginPage() {
                                 type="button"
                                 onClick={() => setQrOpen(true)}
                                 className={cn(
-                                    'flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border-2 border-dashed',
+                                    'flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed',
                                     'border-[var(--color-bordure)] text-[var(--color-texte-secondaire)]',
                                     'transition-all hover:border-[var(--color-dominante)]/40 hover:text-[var(--color-dominante)] hover:bg-[var(--color-dominante)]/5',
                                 )}
+                                style={{ height: 'clamp(40px, 5vh, 48px)', fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                <QrCode className="h-5 w-5" />
-                                <span className="text-sm font-medium">{t('login.scannerQR')}</span>
+                                <QrCode className="text-[var(--color-texte-secondaire)]"
+                                        style={{ height: 'clamp(16px, 2vh, 20px)', width: 'clamp(16px, 2vh, 20px)' }} />
+                                <span className="font-medium" style={{ fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}>{t('login.scannerQR')}</span>
                             </motion.button>
                         </motion.form>
 
                         {/* Pied de page */}
                         <motion.p
-                            className="mt-8 text-center text-sm text-[var(--color-texte-secondaire)]"
+                            className="text-center text-[var(--color-texte-secondaire)]"
+                            style={{ marginTop: 'clamp(1rem, 2vh, 2rem)', fontSize: 'clamp(0.6875rem, 1.2vh, 0.875rem)' }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.4 }}

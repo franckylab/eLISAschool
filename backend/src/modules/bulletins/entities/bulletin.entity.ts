@@ -16,14 +16,13 @@ import {
     OneToMany
 } from 'typeorm';
 import { Eleve } from '@modules/eleves/entities';
-import { Classe } from '@modules/classes/entities';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { ClasseAnnee } from '@modules/classes/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('bulletins')
 @Index(['eleveId'])
-@Index(['classeId'])
+@Index(['classeAnneeId'])
 @Index(['periodeId'])
 @Index(['etablissementId'])
 export class Bulletin {
@@ -38,11 +37,11 @@ export class Bulletin {
     eleve!: Eleve;
 
     @Column({ type: 'uuid' })
-    classeId!: string;
+    classeAnneeId!: string;
 
-    @ManyToOne(() => Classe)
-    @JoinColumn({ name: 'classeId' })
-    classe!: Classe;
+    @ManyToOne(() => ClasseAnnee)
+    @JoinColumn({ name: 'classeAnneeId' })
+    classeAnnee!: ClasseAnnee;
 
     @Column({ type: 'uuid' })
     periodeId!: string;
@@ -50,13 +49,6 @@ export class Bulletin {
     @ManyToOne(() => Periode)
     @JoinColumn({ name: 'periodeId' })
     periode!: Periode;
-
-    @Column({ type: 'uuid' })
-    anneeScolaireId!: string;
-
-    @ManyToOne(() => AnneeScolaire)
-    @JoinColumn({ name: 'anneeScolaireId' })
-    anneeScolaire!: AnneeScolaire;
 
     // Données calculées (Stockées pour éviter recalcul complexe historique)
     @Column({ type: 'float', default: 0 })

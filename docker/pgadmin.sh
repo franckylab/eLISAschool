@@ -17,7 +17,7 @@ case "$1" in
         echo ""
         echo "🌐 Accès :"
         echo "  - PostgreSQL: localhost:5433"
-        echo "  - Redis: localhost:6379"
+        echo "  - Redis: localhost:7003"
         echo "  - pgAdmin: http://localhost:5050"
         echo "  - Backend: http://localhost:3000 (si démarré)"
         echo "  - Frontend: http://localhost:5173 (si démarré)"

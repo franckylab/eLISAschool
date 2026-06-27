@@ -31,12 +31,18 @@ export class TypeEnumService {
      */
     async create(dto: CreateTypeEnumDto, etablissementId?: string): Promise<TypeEnum> {
         // Vérifier l'unicité du code dans cette catégorie
+        const whereClause: any = {
+            categorie: dto.categorie,
+            code: dto.code,
+        };
+        if (etablissementId) {
+            whereClause.etablissementId = etablissementId;
+        } else {
+            whereClause.etablissementId = null;
+        }
+        
         const existing = await this.repo.findOne({
-            where: {
-                categorie: dto.categorie,
-                code: dto.code,
-                etablissementId: etablissementId || null,
-            },
+            where: whereClause,
         });
 
         if (existing) {
@@ -287,7 +293,7 @@ export class TypeEnumService {
                 where: {
                     categorie: typeData.categorie,
                     code: typeData.code,
-                    etablissementId: null, // Types système = globaux
+                    estSysteme: true,
                 },
             });
 
@@ -296,7 +302,6 @@ export class TypeEnumService {
                     ...typeData,
                     estSysteme: true,
                     estActif: true,
-                    etablissementId: null,
                 });
                 await this.repo.save(typeEnum);
                 created++;

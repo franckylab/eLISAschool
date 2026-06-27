@@ -8,8 +8,7 @@ export interface Bulletin {
     id: string;
     eleveId: string;
     periodeId: string;
-    classeId: string;
-    anneeScolaireId: string;
+    classeAnneeId: string;
     etablissementId: string;
     moyenneGenerale: number;
     rang: number;
@@ -25,10 +24,10 @@ export interface Bulletin {
         prenom: string;
         matricule: string;
     };
-    classe?: {
+    classeAnnee?: {
         id: string;
-        nom: string;
-        code: string;
+        classe: { id: string; nom: string; code: string };
+        anneeScolaire: { id: string; nom: string; anneeDebut: number };
     };
     periode?: {
         id: string;

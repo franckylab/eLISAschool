@@ -8,16 +8,13 @@
 import { z } from 'zod';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 import { TypeClasse, CreneauHoraire } from '../entities/classe.entity';
+import { StatutClasseAnnee } from '../entities/classe-annee.entity';
 
 export const createClasseSchema = z.object({
     nom: z.string().min(2).max(100),
     code: z.string().max(50).optional(),
     niveauId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid().optional(), // Si non fourni, utilise l'année active
     filiereId: z.string().uuid().nullable().optional(),
-    professeurPrincipalId: z.string().uuid().nullable().optional(),
-    sallePrincipale: z.string().max(100).optional(),
-    effectifMax: z.number().int().min(1).default(50),
     typeClasse: z.nativeEnum(TypeClasse).default(TypeClasse.NORMALE),
     creneauHoraire: z.nativeEnum(CreneauHoraire).default(CreneauHoraire.MATIN),
     description: z.string().optional(),
@@ -35,6 +32,23 @@ export const affecterEleveSchema = z.object({
 export type CreateClasseDto = z.infer<typeof createClasseSchema>;
 export type UpdateClasseDto = z.infer<typeof updateClasseSchema>;
 export type AffecterEleveDto = z.infer<typeof affecterEleveSchema>;
+
+/**
+ * DTOs pour ClasseAnnee
+ */
+export const createClasseAnneeSchema = z.object({
+    classeId: z.string().uuid(),
+    anneeScolaireId: z.string().uuid(),
+    etablissementId: z.string().uuid(),
+    professeurPrincipalId: z.string().uuid().nullable().optional(),
+    effectifMax: z.number().int().min(1).default(50),
+    notes: z.string().optional(),
+});
+
+export const updateClasseAnneeSchema = createClasseAnneeSchema.partial();
+
+export type CreateClasseAnneeDto = z.infer<typeof createClasseAnneeSchema>;
+export type UpdateClasseAnneeDto = z.infer<typeof updateClasseAnneeSchema>;
 
 /**
  * Schéma de requête pour la liste des classes

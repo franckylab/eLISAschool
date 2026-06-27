@@ -29,7 +29,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     cron.schedule('30 23 * * *', async () => {
         try {
-            const enabled = await getParamBoolean('scoring-personnel.auto_recalcul_quotidien', true);
+            const enabled = await getParamBoolean('scoring-personnel.auto_recalcul_quotidien', { defaultValue: true });
             if (!enabled) {
                 logger.debug('[Scoring-Personnel] Recalcul quotidien désactivé');
                 return;
@@ -79,7 +79,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     cron.schedule('0 0 * * *', async () => {
         try {
-            const enabled = await getParamBoolean('scoring-personnel.auto_classement', true);
+            const enabled = await getParamBoolean('scoring-personnel.auto_classement', { defaultValue: true });
             if (!enabled) {
                 logger.debug('[Scoring-Personnel] Mise à jour des classements désactivée');
                 return;
@@ -103,7 +103,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     cron.schedule('30 0 1 * *', async () => {
         try {
-            const enabled = await getParamBoolean('scoring-personnel.reset_mensuel', false);
+            const enabled = await getParamBoolean('scoring-personnel.reset_mensuel', { defaultValue: false });
             if (!enabled) {
                 logger.debug('[Scoring-Personnel] Reset mensuel désactivé');
                 return;
@@ -129,7 +129,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     cron.schedule('0 1 * * 0', async () => {
         try {
-            const enabled = await getParamBoolean('scoring-personnel.nettoyage_historique', false);
+            const enabled = await getParamBoolean('scoring-personnel.nettoyage_historique', { defaultValue: false });
             if (!enabled) {
                 logger.debug('[Scoring-Personnel] Nettoyage historique désactivé');
                 return;

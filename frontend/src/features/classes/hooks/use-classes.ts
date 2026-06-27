@@ -39,7 +39,7 @@ export function useClasses(filtres: ClasseFiltres = {}) {
             // Ajouter uniquement les filtres non vides
             if (filtres.recherche) params.search = filtres.recherche;
             if (filtres.niveauId) params.niveauId = filtres.niveauId;
-            if (filtres.anneeScolaireId) params.anneeScolaireId = filtres.anneeScolaireId;
+            if (filtres.anneeScolaireId) params.classeAnneeId = filtres.anneeScolaireId; // Ancien nom -> nouveau
             if (filtres.actif !== undefined) params.actif = filtres.actif;
 
             const response = await apiClient.get<PaginatedResult<Classe>>('/api/classes', params);

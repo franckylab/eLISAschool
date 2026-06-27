@@ -360,35 +360,45 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
     return (
         <motion.div
-            className="flex h-full w-full flex-col items-center justify-center px-6 py-4"
+            className="flex h-full w-full flex-col items-center justify-between overflow-y-auto scrollbar-hide"
+            style={{ padding: 'clamp(0.5rem, 1.5vh, 1.5rem) clamp(0.5rem, 1.5vw, 1rem)' }}
             initial={{ opacity: 0, x: 50 }}
             animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
-            {/* Illustration */}
-            <motion.div
-                className="mb-4 h-36 w-36"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={isActive ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-            >
-                <IllustrationComponent />
-            </motion.div>
+            {/* Section supérieure : Illustration + Icône */}
+            <div className="flex flex-col items-center flex-shrink-0" style={{ gap: 'clamp(0.375rem, 0.8vh, 0.75rem)' }}>
+                {/* Illustration */}
+                <motion.div
+                    className="flex-shrink-0"
+                    style={{ height: 'clamp(60px, 12vh, 100px)', width: 'clamp(60px, 12vh, 100px)' }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={isActive ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                    <IllustrationComponent />
+                </motion.div>
 
-            {/* Icône */}
-            <motion.div
-                className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl shadow-lg"
-                style={{ backgroundColor: `${slide.couleur}30`, border: `2px solid ${slide.couleur}50` }}
-                initial={{ rotate: -180, scale: 0 }}
-                animate={isActive ? { rotate: 0, scale: 1 } : { rotate: -180, scale: 0 }}
-                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-            >
-                <IconComponent className="h-7 w-7" style={{ color: slide.couleur }} strokeWidth={2} />
-            </motion.div>
+                {/* Icône */}
+                <motion.div
+                    className="flex items-center justify-center rounded-xl shadow-lg flex-shrink-0"
+                    style={{ height: 'clamp(28px, 4vh, 40px)', width: 'clamp(28px, 4vh, 40px)', backgroundColor: `${slide.couleur}30`, border: `2px solid ${slide.couleur}50` }}
+                    initial={{ rotate: -180, scale: 0 }}
+                    animate={isActive ? { rotate: 0, scale: 1 } : { rotate: -180, scale: 0 }}
+                    transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+                >
+                    <IconComponent strokeWidth={2}
+                                   style={{ height: 'clamp(14px, 2vh, 20px)', width: 'clamp(14px, 2vh, 20px)', color: slide.couleur }} />
+                </motion.div>
+            </div>
+
+            {/* Section centrale : Titre + Texte + Points */}
+            <div className="flex flex-col items-center w-full flex-1 min-h-0 justify-center" style={{ gap: 'clamp(0.375rem, 0.8vh, 0.75rem)' }}>
 
             {/* Titre */}
             <motion.h2
-                className="mb-3 text-center text-2xl font-bold text-white"
+                className="text-center font-bold text-white"
+                style={{ fontSize: 'clamp(1rem, 2vh + 0.5rem, 1.75rem)', marginBottom: 'clamp(0.375rem, 0.8vh, 0.625rem)' }}
                 initial={{ y: -10, opacity: 0 }}
                 animate={isActive ? { y: 0, opacity: 1 } : { y: -10, opacity: 0 }}
                 transition={{ delay: 0.4 }}
@@ -398,7 +408,8 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
             {/* Texte descriptif */}
             <motion.p
-                className="mb-4 max-w-lg text-center text-sm leading-relaxed text-white/85"
+                className="text-center leading-relaxed text-white/85"
+                style={{ fontSize: 'clamp(0.75rem, 1.5vh + 0.3rem, 1rem)', maxWidth: 'clamp(200px, 50vw, 512px)', marginBottom: 'clamp(0.5rem, 1vh, 0.875rem)' }}
                 initial={{ y: 10, opacity: 0 }}
                 animate={isActive ? { y: 0, opacity: 1 } : { y: 10, opacity: 0 }}
                 transition={{ delay: 0.8 }}
@@ -408,33 +419,36 @@ function SlideContent({ slide, isActive }: { slide: SlideData; isActive: boolean
 
             {/* Points clés */}
             {slide.points && (
-                <div className="w-full max-w-lg space-y-2">
-                    {slide.points.map((point, index) => (
-                        <motion.div
-                            key={index}
-                            className="flex items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 backdrop-blur-sm"
-                            initial={{ x: -30, opacity: 0 }}
-                            animate={isActive ? { x: 0, opacity: 1 } : { x: -30, opacity: 0 }}
-                            transition={{ delay: 2 + index * 0.15 }}
-                        >
+                <div className="w-full" style={{ maxWidth: 'clamp(200px, 50vw, 512px)' }}>
+                    <div className="space-y-1.5" style={{ gap: 'clamp(0.375rem, 0.6vh, 0.5rem)' }}>
+                        {slide.points.map((point, index) => (
                             <motion.div
-                                className="h-2 w-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: slide.couleur }}
-                                animate={isActive ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                                transition={{ delay: 2.2 + index * 0.15, duration: 0.5 }}
-                            />
-                            <span className="text-xs text-white/90 leading-relaxed">
+                                key={index}
+                                className="flex items-center rounded-lg bg-white/10 backdrop-blur-sm"
+                                style={{ padding: 'clamp(0.375rem, 0.6vh, 0.5rem) clamp(0.625rem, 1vw, 0.875rem)', gap: 'clamp(0.375rem, 0.8vw, 0.625rem)' }}
+                                initial={{ x: -30, opacity: 0 }}
+                                animate={isActive ? { x: 0, opacity: 1 } : { x: -30, opacity: 0 }}
+                                transition={{ delay: 2 + index * 0.15 }}
+                            >
+                                <motion.div
+                                    className="rounded-full flex-shrink-0"
+                                    style={{ height: 'clamp(6px, 0.8vh, 8px)', width: 'clamp(6px, 0.8vh, 8px)', backgroundColor: slide.couleur }}
+                                    animate={isActive ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                                    transition={{ delay: 2.2 + index * 0.15, duration: 0.5 }}
+                                />
+                                <span className="text-white/90 leading-relaxed"
+                                      style={{ fontSize: 'clamp(0.6875rem, 1.3vh + 0.15rem, 0.875rem)' }}>
                                 <TypewriterText text={point} delay={2200 + index * 150} speed={20} />
-                            </span>
-                        </motion.div>
-                    ))}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
             )}
+            </div>
         </motion.div>
     );
 }
-
-
 
 /* ─── Composant principal ─────────────────────────── */
 
@@ -457,7 +471,7 @@ export function LoginSlideshow() {
     return (
         <div className="relative flex w-full h-full flex-col">
             {/* Slides - Utilise tout l'espace disponible */}
-            <div className="relative flex-1 overflow-hidden">
+            <div className="relative flex-1 min-h-0 overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentSlide}
@@ -473,15 +487,17 @@ export function LoginSlideshow() {
             </div>
 
             {/* Indicateurs de navigation - En dessous des slides */}
-            <div className="flex items-center justify-center gap-2 py-4">
+            <div className="flex items-center justify-center gap-1 flex-shrink-0"
+                 style={{ padding: 'clamp(0.25rem, 0.5vh, 0.5rem) 0' }}>
                 {Array.from({ length: SLIDES.length }).map((_, index) => (
                     <motion.button
                         key={index}
                         onClick={() => handleNavigate(index)}
-                        className="h-2 rounded-full transition-all"
+                        className="rounded-full transition-all"
                         style={{
                             backgroundColor: index === currentSlide ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
-                            width: index === currentSlide ? '32px' : '8px',
+                            height: 'clamp(5px, 0.6vh, 7px)',
+                            width: index === currentSlide ? 'clamp(16px, 2.5vw, 28px)' : 'clamp(5px, 0.6vh, 7px)',
                         }}
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.9 }}

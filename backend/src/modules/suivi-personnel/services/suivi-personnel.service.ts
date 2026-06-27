@@ -51,7 +51,7 @@ export class SuiviPersonnelService {
         
         // SCORING: Attribution automatique de points négatifs pour incident
         try {
-            const scoringActif = await getParamBoolean('scoring-personnel.actif', false);
+            const scoringActif = await getParamBoolean('scoring-personnel.actif', { defaultValue: false });
             
             if (scoringActif) {
                 const pointsParGravite: Record<string, number> = {
@@ -118,11 +118,11 @@ export class SuiviPersonnelService {
         
         // GAMIFICATION : Attribution automatique de points pour évaluation positive
         try {
-            const gamificationActive = await getParamBoolean('suivi-personnel.gamification.actif', false);
+            const gamificationActive = await getParamBoolean('suivi-personnel.gamification.actif', { defaultValue: false });
             
             if (gamificationActive && dto.noteGlobale !== null && dto.noteGlobale !== undefined) {
-                const seuil = await getParamNumber('suivi-personnel.gamification.seuil_evaluation_positive', 15);
-                const points = await getParamNumber('suivi-personnel.gamification.points_evaluation_positive', 20);
+                const seuil = await getParamNumber('suivi-personnel.gamification.seuil_evaluation_positive', { defaultValue: 15 });
+                const points = await getParamNumber('suivi-personnel.gamification.points_evaluation_positive', { defaultValue: 20 });
                 
                 if (dto.noteGlobale >= seuil) {
                     await gamificationService.attribuerPoints({
@@ -159,7 +159,7 @@ export class SuiviPersonnelService {
         
         // SCORING: Attribution automatique de points pour évaluation
         try {
-            const scoringActif = await getParamBoolean('scoring-personnel.actif', false);
+            const scoringActif = await getParamBoolean('scoring-personnel.actif', { defaultValue: false });
             
             if (scoringActif && dto.noteGlobale !== null && dto.noteGlobale !== undefined) {
                 // Points basés sur la note (sur 20)
@@ -188,7 +188,7 @@ export class SuiviPersonnelService {
                         sourceId: evaluation.id,
                         declencheurAutomatique: true,
                         categorieScore: 'performance',
-                    }, dto.etablissementId, dto.anneeScolaireId, evaluateurId);
+                    }, dto.etablissementId, dto.anneeScolaireId);
                     
                     logger.info(`[Suivi-Personnel] Scoring appliqué: ${points} points pour évaluation ${dto.noteGlobale}/20`);
                 }
@@ -198,6 +198,29 @@ export class SuiviPersonnelService {
         }
         
         return evaluation;
+    }
+
+    async getDashboardPersonnel(membrePersonnelId: string, etablissementId: string, anneeScolaireId: string) {
+        const [incidentsResult, evaluationsResult] = await Promise.all([
+            this.getIncidentsByPersonnel(membrePersonnelId, etablissementId, anneeScolaireId),
+            this.getEvaluationsByPersonnel(membrePersonnelId, etablissementId, anneeScolaireId),
+        ]);
+
+        const incidents = incidentsResult.data;
+        const evaluations = evaluationsResult.data;
+
+        const evaluationsWithNotes = evaluations.filter(e => e.noteGlobale !== null && e.noteGlobale !== undefined);
+        const moyenneNotes = evaluationsWithNotes.length > 0
+            ? evaluationsWithNotes.reduce((sum, e) => sum + (e.noteGlobale || 0), 0) / evaluationsWithNotes.length
+            : 0;
+
+        return {
+            incidents: incidents.length,
+            incidentsGraves: incidents.filter(i => i.gravite === 'GRAVE' || i.gravite === 'TRES_GRAVE').length,
+            evaluations: evaluations.length,
+            moyenneEvaluations: moyenneNotes,
+            derniereEvaluation: evaluations.length > 0 ? evaluations[0] : null,
+        };
     }
 
     async getEvaluationsByPersonnel(
@@ -212,7 +235,7 @@ export class SuiviPersonnelService {
         
         const where: any = { membrePersonnelId, etablissementId, anneeScolaireId };
         if (options?.periodeId) {
-            where.periodeId = options.periodeId; // ← NOUVEAU: filtre par trimestre
+            where.periodeId = options.periodeId;
         }
         
         const [data, total] = await this.evaluationRepo.findAndCount({
@@ -223,25 +246,6 @@ export class SuiviPersonnelService {
             skip,
         });
         return { data, total };
-    }
-
-    async getDashboardPersonnel(membrePersonnelId: string, etablissementId: string) {
-        const [incidents, evaluations] = await Promise.all([
-            this.getIncidentsByPersonnel(membrePersonnelId, etablissementId),
-            this.getEvaluationsByPersonnel(membrePersonnelId, etablissementId),
-        ]);
-
-        const moyenneNotes = evaluations
-            .filter(e => e.noteGlobale !== null)
-            .reduce((sum, e) => sum + (e.noteGlobale || 0), 0) / (evaluations.filter(e => e.noteGlobale !== null).length || 1);
-
-        return {
-            incidents: incidents.length,
-            incidentsGraves: incidents.filter(i => i.gravite === 'GRAVE' || i.gravite === 'TRES_GRAVE').length,
-            evaluations: evaluations.length,
-            moyenneEvaluations: moyenneNotes,
-            derniereEvaluation: evaluations[0] || null,
-        };
     }
 }
 

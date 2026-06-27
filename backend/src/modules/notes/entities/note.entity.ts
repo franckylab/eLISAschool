@@ -17,8 +17,7 @@ import {
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
-import { Classe } from '@modules/classes/entities';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { ClasseAnnee } from '@modules/classes/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
@@ -77,18 +76,18 @@ export class Note {
     matiere!: Matiere;
 
     @Column({ type: 'uuid' })
+    classeAnneeId!: string;
+
+    @ManyToOne(() => ClasseAnnee)
+    @JoinColumn({ name: 'classeAnneeId' })
+    classeAnnee!: ClasseAnnee;
+
+    @Column({ type: 'uuid' })
     periodeId!: string;
 
     @ManyToOne(() => Periode)
     @JoinColumn({ name: 'periodeId' })
     periode!: Periode;
-
-    @Column({ type: 'uuid' })
-    anneeScolaireId!: string;
-
-    @ManyToOne(() => AnneeScolaire)
-    @JoinColumn({ name: 'anneeScolaireId' })
-    anneeScolaire!: AnneeScolaire;
 
     @Column({ type: 'enum', enum: TypeEvaluation, default: TypeEvaluation.DEVOIR })
     typeEvaluation!: TypeEvaluation;

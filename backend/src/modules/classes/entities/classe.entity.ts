@@ -16,8 +16,6 @@ import {
 } from 'typeorm';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
-import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -41,9 +39,7 @@ export enum CreneauHoraire {
 
 @Entity('classes')
 @Index(['niveauId'])
-@Index(['anneeScolaireId'])
 @Index(['etablissementId'])
-@Index(['etablissementId', 'anneeScolaireId'])
 @Index(['etablissementId', 'niveauId'])
 @Index(['filiereId'])
 @Index(['typeClasse'])
@@ -64,32 +60,12 @@ export class Classe {
     @JoinColumn({ name: 'niveauId' })
     niveau?: Niveau;
 
-    @Column({ type: 'uuid' })
-    anneeScolaireId!: string;
-
-    @ManyToOne(() => AnneeScolaire)
-    @JoinColumn({ name: 'anneeScolaireId' })
-    anneeScolaire?: AnneeScolaire;
-
-    @Column({ type: 'uuid', nullable: true })
-    professeurPrincipalId?: string;
-
-    @ManyToOne(() => MembrePersonnel)
-    @JoinColumn({ name: 'professeurPrincipalId' })
-    professeurPrincipal?: MembrePersonnel;
-
     @Column({ type: 'uuid', nullable: true })
     filiereId?: string;
 
     @ManyToOne(() => Filiere, { nullable: true })
     @JoinColumn({ name: 'filiereId' })
     filiere?: Filiere;
-
-    @Column({ type: 'int', default: 50 })
-    effectifMax!: number;
-
-    @Column({ type: 'int', default: 0 })
-    effectifActuel!: number;
 
     @Column({ type: 'varchar', length: 20, default: TypeClasse.NORMALE })
     typeClasse!: TypeClasse;

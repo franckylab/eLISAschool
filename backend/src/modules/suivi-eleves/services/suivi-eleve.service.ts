@@ -188,7 +188,7 @@ export class SuiviEleveService {
     // ==================== SANCTIONS ====================
     async createSanction(dto: CreateSanctionEleveDto, decideParId: string, etablissementId: string, req?: Request): Promise<SanctionEleve> {
         // Vérifier si validation requise pour sanctions graves
-        const requireValidation = await getParamBoolean('suivi-eleves.sanction.require_validation', false);
+        const requireValidation = await getParamBoolean('suivi-eleves.sanction.require_validation', { defaultValue: false });
         const sanctionGrave = dto.gravite === 'GRAVE' || dto.gravite === 'TRES_GRAVE';
         
         const sanction = this.sanctionRepo.create({
@@ -205,7 +205,7 @@ export class SuiviEleveService {
         // Créer workflow si nécessaire
         if (requireValidation && sanctionGrave && decideParId) {
             try {
-                const niveauxRequis = await getParamNumber('suivi-eleves.sanction.validation_levels', 2);
+                const niveauxRequis = await getParamNumber('suivi-eleves.sanction.validation_levels', { defaultValue: 2 });
                 
                 await validationWorkflowService.createWorkflow({
                     module: 'suivi-eleves',

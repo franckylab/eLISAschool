@@ -8,6 +8,7 @@ export interface Note {
     id: string;
     eleveId: string;
     matiereId: string;
+    classeAnneeId: string;
     periodeId: string;
     enseignantId: string;
     valeur: number;
@@ -16,7 +17,6 @@ export interface Note {
     remarque?: string;
     dateEvaluation?: string;
     etablissementId: string;
-    anneeScolaireId: string;
     createdAt: string;
     updatedAt: string;
     eleve?: {
@@ -35,6 +35,11 @@ export interface Note {
         id: string;
         nom: string;
         prenom: string;
+    };
+    classeAnnee?: {
+        id: string;
+        classe: { id: string; nom: string; niveau: string };
+        anneeScolaire: { id: string; nom: string; anneeDebut: number };
     };
 }
 

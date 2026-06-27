@@ -719,9 +719,20 @@ export class ElevesService {
     async importElevesCSV(
         csvContent: string,
         etablissementId: string,
-        anneeScolaireId: string,
-        classeId: string
+        classeAnneeId: string
     ): Promise<{ importe: number; erreurs: number; details: string[] }> {
+        // Récupérer l'année scolaire depuis classeAnnee
+        const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
+        const classeAnnee = await classeAnneeRepo.findOne({
+            where: { id: classeAnneeId },
+            relations: ['anneeScolaire']
+        }) as any;
+
+        if (!classeAnnee) {
+            throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
+        }
+
+        const anneeScolaireId = classeAnnee.anneeScolaireId;
         const lines = csvContent.split('\n').filter((line) => line.trim());
         if (lines.length < 2) {
             throw new AppError('Le fichier CSV est vide ou invalide', 400, 'CSV_INVALID');

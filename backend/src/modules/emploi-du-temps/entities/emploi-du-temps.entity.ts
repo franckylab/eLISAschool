@@ -20,10 +20,11 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Classe } from '@modules/classes/entities';
+import { ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Salle } from '@modules/salles/entities';
+import { AffectationMatiere } from '@modules/matieres/entities';
 
 /**
  * Jours de la semaine
@@ -49,22 +50,23 @@ export enum TypeCreneau {
 }
 
 @Entity('emploi_du_temps')
-@Index(['classeId'])
+@Index(['classeAnneeId'])
 @Index(['matiereId'])
 @Index(['enseignantId'])
 @Index(['salleId'])
+@Index(['affectationMatiereId'])
 @Index(['jour', 'heureDebut'])
-@Index(['classeId', 'jour', 'heureDebut', 'heureFin'], { unique: true })
+@Index(['classeAnneeId', 'jour', 'heureDebut', 'heureFin'], { unique: true })
 export class EmploiDuTemps {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'uuid' })
-    classeId!: string;
+    classeAnneeId!: string;
 
-    @ManyToOne(() => Classe)
-    @JoinColumn({ name: 'classeId' })
-    classe!: Classe;
+    @ManyToOne(() => ClasseAnnee)
+    @JoinColumn({ name: 'classeAnneeId' })
+    classeAnnee!: ClasseAnnee;
 
     @Column({ type: 'uuid' })
     matiereId!: string;
@@ -72,6 +74,13 @@ export class EmploiDuTemps {
     @ManyToOne(() => Matiere)
     @JoinColumn({ name: 'matiereId' })
     matiere!: Matiere;
+
+    @Column({ type: 'uuid', nullable: true })
+    affectationMatiereId?: string;
+
+    @ManyToOne(() => AffectationMatiere, { nullable: true })
+    @JoinColumn({ name: 'affectationMatiereId' })
+    affectationMatiere?: AffectationMatiere;
 
     @Column({ type: 'uuid' })
     enseignantId!: string;

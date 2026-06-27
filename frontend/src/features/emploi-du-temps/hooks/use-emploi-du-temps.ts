@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 // Types
 export interface Creneau {
     id: string;
-    classeId: string;
+    classeAnneeId: string;
     matiereId: string;
     enseignantId: string;
     salleId?: string;
@@ -24,12 +24,15 @@ export interface Creneau {
     heureDebut: string;
     heureFin: string;
     typeCreneau: string;
-    anneeScolaireId: string;
     genereAutomatiquement: boolean;
     actif: boolean;
+    classeAnnee?: { 
+        id: string; 
+        classe: { id: string; nom: string; niveau: string };
+        anneeScolaire: { id: string; nom: string; anneeDebut: number };
+    };
     matiere?: { id: string; nom: string; code?: string };
     enseignant?: { id: string; nom: string; prenom: string };
-    classe?: { id: string; nom: string; niveau: string };
 }
 
 export interface PreferenceEDT {
@@ -57,8 +60,8 @@ export interface TemplateEDT {
 const EDT_KEYS = {
     creneaux: {
         all: ['emploi-du-temps'] as const,
-        classe: (classeId: string, anneeScolaireId: string) => 
-            [...EDT_KEYS.creneaux.all, 'classe', classeId, anneeScolaireId] as const,
+        classeAnnee: (classeAnneeId: string) => 
+            [...EDT_KEYS.creneaux.all, 'classeAnnee', classeAnneeId] as const,
         enseignant: (enseignantId: string, anneeScolaireId: string) => 
             [...EDT_KEYS.creneaux.all, 'enseignant', enseignantId, anneeScolaireId] as const,
     },
@@ -73,17 +76,16 @@ const EDT_KEYS = {
 // CRUD Créneaux
 // ==========================================
 
-export function useCreneauxByClasse(classeId: string, anneeScolaireId: string) {
+export function useCreneauxByClasseAnnee(classeAnneeId: string) {
     return useQuery({
-        queryKey: EDT_KEYS.creneaux.classe(classeId, anneeScolaireId),
+        queryKey: EDT_KEYS.creneaux.classeAnnee(classeAnneeId),
         queryFn: async () => {
             const response = await apiClient.get<{ data: Creneau[] }>(
-                `/api/emploi-du-temps/classe/${classeId}`,
-                { anneeScolaireId }
+                `/api/emploi-du-temps/classe-annee/${classeAnneeId}`
             );
             return response.data;
         },
-        enabled: !!classeId && !!anneeScolaireId,
+        enabled: !!classeAnneeId,
         staleTime: 2 * 60 * 1000, // 2 min
     });
 }

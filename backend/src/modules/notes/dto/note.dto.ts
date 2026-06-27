@@ -11,9 +11,8 @@ import { paginationSchema } from '@common/dto/pagination.dto';
 export const createNoteSchema = z.object({
     eleveId: z.string().uuid(),
     matiereId: z.string().uuid(),
-    // classeId: z.string().uuid(),  ← SUPPRIMÉ (migration 084) - déduit via AffectationEleve
+    classeAnneeId: z.string().uuid(),
     periodeId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid().optional(), // Si non fourni, service prendra l'année de la période ou active
     typeEvaluation: z.nativeEnum(TypeEvaluation).default(TypeEvaluation.DEVOIR),
     description: z.string().max(255).optional(),
     valeur: z.number().min(0),
@@ -29,9 +28,8 @@ export const updateNoteSchema = createNoteSchema.partial().extend({
 
 export const createBulkNotesSchema = z.object({
     matiereId: z.string().uuid(),
-    // classeId: z.string().uuid(),  ← SUPPRIMÉ (migration 084) - déduit via AffectationEleve pour chaque élève
+    classeAnneeId: z.string().uuid(),
     periodeId: z.string().uuid(),
-    anneeScolaireId: z.string().uuid().optional(),
     typeEvaluation: z.nativeEnum(TypeEvaluation).default(TypeEvaluation.DEVOIR),
     description: z.string().max(255).optional(),
     bareme: z.number().positive().default(20),
@@ -48,9 +46,8 @@ export const queryNotesSchema = paginationSchema
     .extend({
         eleveId: z.string().uuid().optional(),
         matiereId: z.string().uuid().optional(),
-        // classeId: z.string().uuid().optional(),  ← SUPPRIMÉ - utiliser anneeScolaireId + eleveId pour filtrer
+        classeAnneeId: z.string().uuid().optional(),
         periodeId: z.string().uuid().optional(),
-        anneeScolaireId: z.string().uuid().optional(),
         statut: z.nativeEnum(StatutNote).optional(),
         typeEvaluation: z.nativeEnum(TypeEvaluation).optional(),
     });
