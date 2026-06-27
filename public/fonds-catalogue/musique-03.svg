@@ -1,5 +1,303 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
   <rect width="100%" height="100%" fill="transparent"/>
+  <g stroke="currentColor" fill="none">
+
+    <!-- GUITARES (6) -->
+    <g transform="translate(140, 140) rotate(-18)" opacity="0.36">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(610, 210) rotate(-10)" opacity="0.33">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1070, 170) rotate(-22)" opacity="0.35">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1530, 230) rotate(-8)" opacity="0.32">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(370, 550) rotate(-15)" opacity="0.38">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(970, 610) rotate(-25)" opacity="0.34">
+      <ellipse cx="0" cy="15" rx="28" ry="35" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-25" rx="18" ry="22" stroke-width="2.5"/>
+      <line x1="0" y1="-45" x2="0" y2="-5" stroke-width="2"/>
+      <line x1="-3" y1="-45" x2="-3" y2="-5" stroke-width="1"/>
+      <line x1="3" y1="-45" x2="3" y2="-5" stroke-width="1"/>
+      <circle cx="0" cy="15" r="8" stroke-width="1.5"/>
+    </g>
+
+    <!-- PIANOS / CLAVIERS (6) -->
+    <g transform="translate(530, 150) rotate(-22)" opacity="0.36">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(990, 240) rotate(-10)" opacity="0.33">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1460, 330) rotate(-18)" opacity="0.35">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(290, 650) rotate(-8)" opacity="0.32">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(770, 730) rotate(-20)" opacity="0.38">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1310, 810) rotate(-12)" opacity="0.34">
+      <rect x="-55" y="-25" width="110" height="50" rx="4" stroke-width="2.5"/>
+      <line x1="-45" y1="-15" x2="-45" y2="15" stroke-width="1.5"/>
+      <line x1="-35" y1="-15" x2="-35" y2="15" stroke-width="1.5"/>
+      <line x1="-25" y1="-15" x2="-25" y2="15" stroke-width="1.5"/>
+      <line x1="-15" y1="-15" x2="-15" y2="15" stroke-width="1.5"/>
+      <line x1="-5" y1="-15" x2="-5" y2="15" stroke-width="1.5"/>
+      <line x1="5" y1="-15" x2="5" y2="15" stroke-width="1.5"/>
+      <line x1="15" y1="-15" x2="15" y2="15" stroke-width="1.5"/>
+      <line x1="25" y1="-15" x2="25" y2="15" stroke-width="1.5"/>
+      <line x1="35" y1="-15" x2="35" y2="15" stroke-width="1.5"/>
+      <line x1="45" y1="-15" x2="45" y2="15" stroke-width="1.5"/>
+    </g>
+
+    <!-- TAMBOURS / DRUMS (5) -->
+    <g transform="translate(410, 130) rotate(-15)" opacity="0.36">
+      <ellipse cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-15" rx="35" ry="20" stroke-width="2"/>
+      <line x1="-35" y1="0" x2="-35" y2="-15" stroke-width="2"/>
+      <line x1="35" y1="0" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="-15" y1="-25" x2="-10" y2="-40" stroke-width="2.5"/>
+      <circle cx="-10" cy="-42" r="4" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+    </g>
+
+    <g transform="translate(870, 250) rotate(-22)" opacity="0.33">
+      <ellipse cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-15" rx="35" ry="20" stroke-width="2"/>
+      <line x1="-35" y1="0" x2="-35" y2="-15" stroke-width="2"/>
+      <line x1="35" y1="0" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="-15" y1="-25" x2="-10" y2="-40" stroke-width="2.5"/>
+      <circle cx="-10" cy="-42" r="4" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+    </g>
+
+    <g transform="translate(1330, 360) rotate(-10)" opacity="0.35">
+      <ellipse cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-15" rx="35" ry="20" stroke-width="2"/>
+      <line x1="-35" y1="0" x2="-35" y2="-15" stroke-width="2"/>
+      <line x1="35" y1="0" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="-15" y1="-25" x2="-10" y2="-40" stroke-width="2.5"/>
+      <circle cx="-10" cy="-42" r="4" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+    </g>
+
+    <g transform="translate(510, 770) rotate(-18)" opacity="0.32">
+      <ellipse cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-15" rx="35" ry="20" stroke-width="2"/>
+      <line x1="-35" y1="0" x2="-35" y2="-15" stroke-width="2"/>
+      <line x1="35" y1="0" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="-15" y1="-25" x2="-10" y2="-40" stroke-width="2.5"/>
+      <circle cx="-10" cy="-42" r="4" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+    </g>
+
+    <g transform="translate(1090, 870) rotate(-8)" opacity="0.38">
+      <ellipse cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+      <ellipse cx="0" cy="-15" rx="35" ry="20" stroke-width="2"/>
+      <line x1="-35" y1="0" x2="-35" y2="-15" stroke-width="2"/>
+      <line x1="35" y1="0" x2="35" y2="-15" stroke-width="2"/>
+      <line x1="-15" y1="-25" x2="-10" y2="-40" stroke-width="2.5"/>
+      <circle cx="-10" cy="-42" r="4" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+    </g>
+
+    <!-- NOTES DE MUSIQUE (5) -->
+    <g transform="translate(670, 370) rotate(-12)" opacity="0.36">
+      <ellipse cx="-12" cy="20" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <ellipse cx="12" cy="15" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <line x1="-2" y1="18" x2="-2" y2="-30" stroke-width="2.5"/>
+      <line x1="22" y1="13" x2="22" y2="-35" stroke-width="2.5"/>
+      <path d="M-2,-30 Q10,-35 22,-35" stroke-width="2.5"/>
+    </g>
+
+    <g transform="translate(1090, 430) rotate(-25)" opacity="0.33">
+      <ellipse cx="-12" cy="20" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <ellipse cx="12" cy="15" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <line x1="-2" y1="18" x2="-2" y2="-30" stroke-width="2.5"/>
+      <line x1="22" y1="13" x2="22" y2="-35" stroke-width="2.5"/>
+      <path d="M-2,-30 Q10,-35 22,-35" stroke-width="2.5"/>
+    </g>
+
+    <g transform="translate(1550, 520) rotate(-18)" opacity="0.35">
+      <ellipse cx="-12" cy="20" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <ellipse cx="12" cy="15" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <line x1="-2" y1="18" x2="-2" y2="-30" stroke-width="2.5"/>
+      <line x1="22" y1="13" x2="22" y2="-35" stroke-width="2.5"/>
+      <path d="M-2,-30 Q10,-35 22,-35" stroke-width="2.5"/>
+    </g>
+
+    <g transform="translate(410, 900) rotate(-10)" opacity="0.32">
+      <ellipse cx="-12" cy="20" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <ellipse cx="12" cy="15" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <line x1="-2" y1="18" x2="-2" y2="-30" stroke-width="2.5"/>
+      <line x1="22" y1="13" x2="22" y2="-35" stroke-width="2.5"/>
+      <path d="M-2,-30 Q10,-35 22,-35" stroke-width="2.5"/>
+    </g>
+
+    <g transform="translate(890, 950) rotate(-22)" opacity="0.38">
+      <ellipse cx="-12" cy="20" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <ellipse cx="12" cy="15" rx="10" ry="8" stroke-width="2" fill="currentColor" opacity="0.15"/>
+      <line x1="-2" y1="18" x2="-2" y2="-30" stroke-width="2.5"/>
+      <line x1="22" y1="13" x2="22" y2="-35" stroke-width="2.5"/>
+      <path d="M-2,-30 Q10,-35 22,-35" stroke-width="2.5"/>
+    </g>
+
+    <!-- VIOLONS (4) -->
+    <g transform="translate(950, 310) rotate(-22)" opacity="0.36">
+      <path d="M-15,-40 Q-25,-20 -15,0 Q-10,20 0,25 Q10,20 15,0 Q25,-20 15,-40 Z" stroke-width="2.5"/>
+      <line x1="0" y1="25" x2="0" y2="45" stroke-width="2"/>
+      <line x1="-8" y1="45" x2="8" y2="45" stroke-width="2.5"/>
+      <line x1="-2" y1="-50" x2="-2" y2="-40" stroke-width="1"/>
+      <line x1="2" y1="-50" x2="2" y2="-40" stroke-width="1"/>
+    </g>
+
+    <g transform="translate(1390, 440) rotate(-15)" opacity="0.33">
+      <path d="M-15,-40 Q-25,-20 -15,0 Q-10,20 0,25 Q10,20 15,0 Q25,-20 15,-40 Z" stroke-width="2.5"/>
+      <line x1="0" y1="25" x2="0" y2="45" stroke-width="2"/>
+      <line x1="-8" y1="45" x2="8" y2="45" stroke-width="2.5"/>
+      <line x1="-2" y1="-50" x2="-2" y2="-40" stroke-width="1"/>
+      <line x1="2" y1="-50" x2="2" y2="-40" stroke-width="1"/>
+    </g>
+
+    <g transform="translate(590, 920) rotate(-8)" opacity="0.35">
+      <path d="M-15,-40 Q-25,-20 -15,0 Q-10,20 0,25 Q10,20 15,0 Q25,-20 15,-40 Z" stroke-width="2.5"/>
+      <line x1="0" y1="25" x2="0" y2="45" stroke-width="2"/>
+      <line x1="-8" y1="45" x2="8" y2="45" stroke-width="2.5"/>
+      <line x1="-2" y1="-50" x2="-2" y2="-40" stroke-width="1"/>
+      <line x1="2" y1="-50" x2="2" y2="-40" stroke-width="1"/>
+    </g>
+
+    <g transform="translate(1620, 850) rotate(-20)" opacity="0.32">
+      <path d="M-15,-40 Q-25,-20 -15,0 Q-10,20 0,25 Q10,20 15,0 Q25,-20 15,-40 Z" stroke-width="2.5"/>
+      <line x1="0" y1="25" x2="0" y2="45" stroke-width="2"/>
+      <line x1="-8" y1="45" x2="8" y2="45" stroke-width="2.5"/>
+      <line x1="-2" y1="-50" x2="-2" y2="-40" stroke-width="1"/>
+      <line x1="2" y1="-50" x2="2" y2="-40" stroke-width="1"/>
+    </g>
+
+    <!-- MICROPHONES (4) -->
+    <g transform="translate(1130, 530) rotate(-22)" opacity="0.36">
+      <path d="M-12,-35 Q-12,-45 0,-45 Q12,-45 12,-35 L12,-10 Q12,0 0,0 Q-12,0 -12,-10 Z" stroke-width="2.5"/>
+      <line x1="0" y1="0" x2="0" y2="30" stroke-width="2.5"/>
+      <path d="M-15,30 Q0,38 15,30" stroke-width="2"/>
+      <line x1="-10" y1="30" x2="-10" y2="40" stroke-width="2"/>
+      <line x1="10" y1="30" x2="10" y2="40" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1530, 660) rotate(-8)" opacity="0.33">
+      <path d="M-12,-35 Q-12,-45 0,-45 Q12,-45 12,-35 L12,-10 Q12,0 0,0 Q-12,0 -12,-10 Z" stroke-width="2.5"/>
+      <line x1="0" y1="0" x2="0" y2="30" stroke-width="2.5"/>
+      <path d="M-15,30 Q0,38 15,30" stroke-width="2"/>
+      <line x1="-10" y1="30" x2="-10" y2="40" stroke-width="2"/>
+      <line x1="10" y1="30" x2="10" y2="40" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(290, 960) rotate(-15)" opacity="0.35">
+      <path d="M-12,-35 Q-12,-45 0,-45 Q12,-45 12,-35 L12,-10 Q12,0 0,0 Q-12,0 -12,-10 Z" stroke-width="2.5"/>
+      <line x1="0" y1="0" x2="0" y2="30" stroke-width="2.5"/>
+      <path d="M-15,30 Q0,38 15,30" stroke-width="2"/>
+      <line x1="-10" y1="30" x2="-10" y2="40" stroke-width="2"/>
+      <line x1="10" y1="30" x2="10" y2="40" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1750, 750) rotate(-12)" opacity="0.38">
+      <path d="M-12,-35 Q-12,-45 0,-45 Q12,-45 12,-35 L12,-10 Q12,0 0,0 Q-12,0 -12,-10 Z" stroke-width="2.5"/>
+      <line x1="0" y1="0" x2="0" y2="30" stroke-width="2.5"/>
+      <path d="M-15,30 Q0,38 15,30" stroke-width="2"/>
+      <line x1="-10" y1="30" x2="-10" y2="40" stroke-width="2"/>
+      <line x1="10" y1="30" x2="10" y2="40" stroke-width="2"/>
+    </g>
+
+  </g>
+</svg><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="100%" height="100%" fill="transparent"/>
   <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
     
     <!-- Touches de piano -->

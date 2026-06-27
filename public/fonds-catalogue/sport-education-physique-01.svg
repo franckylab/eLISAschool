@@ -1,13 +1,328 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
   <rect width="100%" height="100%" fill="transparent"/>
-  <g opacity="0.08" stroke="currentColor" stroke-width="2" fill="none">
-    
-    <!-- Ballons -->
-    <circle cx="300" cy="250" r="70" stroke-width="4" fill="currentColor" opacity="0.06"/>
-    <path d="M300,180 Q350,250 300,320 Q250,250 300,180" stroke-width="3" fill="none"/>
-    <circle cx="800" cy="400" r="60" stroke-width="4" fill="currentColor" opacity="0.06"/>
-    <circle cx="1300" cy="300" r="70" stroke-width="4" fill="currentColor" opacity="0.06"/>
-    <path d="M1300,230 Q1350,300 1300,370 Q1250,300 1300,230" stroke-width="3" fill="none"/>
+  <g stroke="currentColor" fill="none">
 
+    <!-- BALLONS DE FOOT (6) -->
+    <g transform="translate(160, 170) rotate(0)" opacity="0.35">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(640, 240) rotate(0)" opacity="0.32">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1120, 190) rotate(0)" opacity="0.38">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1580, 260) rotate(0)" opacity="0.33">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(400, 580) rotate(0)" opacity="0.36">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1020, 640) rotate(0)" opacity="0.34">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <path d="M0,-35 L8,-15 L28,-15 L12,0 L18,20 L0,10 L-18,20 L-12,0 L-28,-15 L-8,-15 Z" stroke-width="1.5"/>
+    </g>
+
+    <!-- BALLONS DE BASKET (6) -->
+    <g transform="translate(540, 160) rotate(0)" opacity="0.35">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1020, 250) rotate(0)" opacity="0.32">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1480, 340) rotate(0)" opacity="0.38">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(310, 680) rotate(0)" opacity="0.33">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(790, 760) rotate(0)" opacity="0.36">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <g transform="translate(1350, 840) rotate(0)" opacity="0.34">
+      <circle cx="0" cy="0" r="35" stroke-width="2.5"/>
+      <line x1="-35" y1="0" x2="35" y2="0" stroke-width="2"/>
+      <line x1="0" y1="-35" x2="0" y2="35" stroke-width="2"/>
+      <path d="M-25,-25 Q0,-15 25,-25" stroke-width="1.5"/>
+      <path d="M-25,25 Q0,15 25,25" stroke-width="1.5"/>
+    </g>
+
+    <!-- RAQUETTES DE TENNIS (5) -->
+    <g transform="translate(430, 150) rotate(-15)" opacity="0.35">
+      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
+      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
+      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(890, 270) rotate(-22)" opacity="0.32">
+      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
+      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
+      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(1370, 380) rotate(-10)" opacity="0.38">
+      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
+      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
+      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(530, 800) rotate(-18)" opacity="0.33">
+      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
+      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
+      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(1130, 900) rotate(-8)" opacity="0.36">
+      <ellipse cx="0" cy="-20" rx="22" ry="30" stroke-width="2.5"/>
+      <line x1="0" y1="10" x2="0" y2="45" stroke-width="2.5"/>
+      <line x1="-15" y1="-20" x2="15" y2="-20" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="-10" x2="15" y2="-10" stroke-width="1" opacity="0.4"/>
+      <line x1="-15" y1="0" x2="15" y2="0" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <!-- FILETS DE VOLLEY (5) -->
+    <g transform="translate(690, 390) rotate(0)" opacity="0.35">
+      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
+      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
+      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
+      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(1130, 460) rotate(0)" opacity="0.32">
+      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
+      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
+      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
+      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(1590, 560) rotate(0)" opacity="0.38">
+      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
+      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
+      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
+      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(430, 930) rotate(0)" opacity="0.33">
+      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
+      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
+      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
+      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <g transform="translate(930, 980) rotate(0)" opacity="0.36">
+      <line x1="-50" y1="-30" x2="-50" y2="30" stroke-width="2.5"/>
+      <line x1="50" y1="-30" x2="50" y2="30" stroke-width="2.5"/>
+      <line x1="-50" y1="-30" x2="50" y2="-30" stroke-width="2.5"/>
+      <line x1="-40" y1="-30" x2="-40" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-30" y1="-30" x2="-30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-20" y1="-30" x2="-20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="-10" y1="-30" x2="-10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="10" y1="-30" x2="10" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="20" y1="-30" x2="20" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="30" y1="-30" x2="30" y2="30" stroke-width="1" opacity="0.4"/>
+      <line x1="40" y1="-30" x2="40" y2="30" stroke-width="1" opacity="0.4"/>
+    </g>
+
+    <!-- HALTÈRES (4) -->
+    <g transform="translate(1000, 340) rotate(-20)" opacity="0.35">
+      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
+      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1430, 470) rotate(-12)" opacity="0.32">
+      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
+      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(630, 950) rotate(-18)" opacity="0.38">
+      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
+      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1660, 880) rotate(-8)" opacity="0.33">
+      <rect x="-30" y="-8" width="60" height="16" rx="2" stroke-width="2.5"/>
+      <rect x="-38" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+      <rect x="26" y="-15" width="12" height="30" rx="2" stroke-width="2"/>
+    </g>
+
+    <!-- SIFFLETS (4) -->
+    <g transform="translate(1170, 560) rotate(-15)" opacity="0.35">
+      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
+      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
+      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1570, 690) rotate(-22)" opacity="0.32">
+      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
+      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
+      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(330, 990) rotate(-10)" opacity="0.38">
+      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
+      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
+      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(1790, 780) rotate(-18)" opacity="0.36">
+      <path d="M-20,-10 Q-20,-20 -10,-20 L10,-20 Q20,-20 20,-10 L20,5 Q20,15 10,15 L-10,15 Q-20,15 -20,5 Z" stroke-width="2.5"/>
+      <circle cx="-25" cy="-5" r="8" stroke-width="2"/>
+      <path d="M-20,-5 L-25,-5" stroke-width="2"/>
+    </g>
+
+  </g>
+</svg><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg3"
+   sodipodi:docname="sport-education-physique-01.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     id="namedview3"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.69444444"
+     inkscape:cx="960.48"
+     inkscape:cy="540"
+     inkscape:window-width="1920"
+     inkscape:window-height="958"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3" />
+  <g
+     opacity="0.08"
+     stroke="currentColor"
+     stroke-width="2"
+     fill="none"
+     id="g3">
+    <!-- Ballons -->
+    <circle
+       cx="300"
+       cy="250"
+       r="70"
+       stroke-width="4"
+       fill="currentColor"
+       opacity="0.06"
+       id="circle1" />
+    <path
+       d="M300,180 Q350,250 300,320 Q250,250 300,180"
+       stroke-width="3"
+       fill="none"
+       id="path1" />
+    <circle
+       cx="800"
+       cy="400"
+       r="60"
+       stroke-width="4"
+       fill="currentColor"
+       opacity="0.06"
+       id="circle2" />
+    <circle
+       cx="1300"
+       cy="300"
+       r="70"
+       stroke-width="4"
+       fill="currentColor"
+       opacity="0.06"
+       id="circle3" />
+    <path
+       d="M1300,230 Q1350,300 1300,370 Q1250,300 1300,230"
+       stroke-width="3"
+       fill="none"
+       id="path3" />
   </g>
 </svg>

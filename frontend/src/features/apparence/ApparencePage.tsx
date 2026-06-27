@@ -49,6 +49,8 @@ export function ApparencePage() {
     const [filtreCategorie, setFiltreCategorie] = useState<CategorieFond | 'toutes'>('toutes');
     const [showCatalogue, setShowCatalogue] = useState(false);
     const [fondApercu, setFondApercu] = useState<string | null>(null);
+    const [selectionnes, setSelectionnes] = useState<Set<string>>(new Set()); // IDs des fonds sélectionnés
+    const [ajoutEnCours, setAjoutEnCours] = useState(false); // État pour ajout en batch
 
     // Hook pour connaître le fond actuellement affiché
     const { fondActuelId } = useFondActuel();
@@ -57,26 +59,35 @@ export function ApparencePage() {
     const queryClient = useQueryClient();
     const appliquerFond = useMutation({
         mutationFn: async (fondEtabId: string) => {
-            // Pour les fonds système virtuels, on ne peut pas modifier via l'API
+            console.log('[Apparence] appliquerFond.mutate called avec:', { fondEtabId });
+            
+            // Pour les fonds système virtuels, créer une association réelle
             if (fondEtabId.startsWith('systeme-')) {
-                // Extraire l'ID du fond catalogue et le mettre en ordre 1
+                // Extraire l'ID du fond catalogue
                 const fondCatalogueId = fondEtabId.replace('systeme-', '');
+                console.log('[Apparence] Fond système détecté, création association avec fondCatalogueId:', fondCatalogueId);
                 
-                // On doit trouver l'association correspondante ou la créer
-                // Pour simplifier, on invalide juste le cache pour forcer la rotation à reprendre
-                queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'rotation'] });
-                toast.success('Fond système appliqué');
-                return { success: true };
+                // Créer une association réelle dans fonds_etablissement avec ordre=1
+                const response = await apiClient.post('/api/apparence/fonds/etablissement', {
+                    fondId: fondCatalogueId,
+                    ordre: 1,
+                    actif: true,
+                });
+                console.log('[Apparence] Association créée:', response.data);
+                return response.data;
             }
             
             // Mettre à jour le fond pour le passer à ordre=1 et actif=true
+            console.log('[Apparence] PATCH /api/apparence/fonds/etablissement/', fondEtabId, { ordre: 1, actif: true });
             const response = await apiClient.patch(`/api/apparence/fonds/etablissement/${fondEtabId}`, {
                 ordre: 1,
                 actif: true,
             });
+            console.log('[Apparence] Réponse PATCH:', response.data);
             return response.data;
         },
         onSuccess: () => {
+            console.log('[Apparence] onSuccess - invalidation et refetch');
             // Invalider et forcer le rechargement immédiat des caches
             queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'fonds'] });
             queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'rotation'] });
@@ -153,6 +164,110 @@ export function ApparencePage() {
         } catch {
             toast.error('Erreur lors de l\'ajout du fond');
         }
+    };
+
+    // Ajouter plusieurs fonds en batch (performance optimisée)
+    const handleAjouterSelection = async (fondIds: string[]) => {
+        if (fondIds.length === 0) {
+            toast.warning('Aucun fond à ajouter');
+            return;
+        }
+
+        setAjoutEnCours(true);
+        let succes = 0;
+        let echecs = 0;
+
+        try {
+            // Ajout séquentiel pour éviter les race conditions
+            for (const fondId of fondIds) {
+                try {
+                    await ajouterFond.mutateAsync({ fondId });
+                    succes++;
+                } catch (error) {
+                    // Ignorer les erreurs "déjà ajouté" (409)
+                    if (error?.response?.status !== 409) {
+                        echecs++;
+                        console.error(`[Apparence] Erreur ajout fond ${fondId}:`, error);
+                    }
+                }
+            }
+
+            // Message de synthèse
+            if (succes > 0 && echecs === 0) {
+                toast.success(`${succes} fond(s) ajouté(s) avec succès`);
+            } else if (succes > 0 && echecs > 0) {
+                toast.warning(`${succes} ajouté(s), ${echecs} échec(s)`);
+            } else {
+                toast.error('Erreur lors de l\'ajout des fonds');
+            }
+
+            // Vider la sélection après ajout
+            setSelectionnes(new Set());
+        } finally {
+            setAjoutEnCours(false);
+        }
+    };
+
+    // Ajouter tous les fonds filtrés (non déjà ajoutés)
+    const handleAjouterTous = async () => {
+        const fondsAAjouter = catalogueFiltre
+            .filter((fond) => !fondsEtab?.some((fe) => fe.fondId === fond.id))
+            .map((fond) => fond.id);
+
+        if (fondsAAjouter.length === 0) {
+            toast.info('Tous les fonds sont déjà ajoutés');
+            return;
+        }
+
+        await handleAjouterSelection(fondsAAjouter);
+    };
+
+    // Toggle sélection d'un fond
+    const toggleSelection = (fondId: string) => {
+        setSelectionnes((prev) => {
+            const nouveau = new Set(prev);
+            if (nouveau.has(fondId)) {
+                nouveau.delete(fondId);
+            } else {
+                nouveau.add(fondId);
+            }
+            return nouveau;
+        });
+    };
+
+    // Sélectionner/désélectionner tous les fonds filtrés
+    const toggleSelectionTous = () => {
+        const idsDisponibles = catalogueFiltre
+            .filter((fond) => !fondsEtab?.some((fe) => fe.fondId === fond.id))
+            .map((fond) => fond.id);
+
+        if (selectionnes.size === idsDisponibles.length && idsDisponibles.length > 0) {
+            // Désélectionner tout
+            setSelectionnes(new Set());
+        } else {
+            // Sélectionner tous les disponibles
+            setSelectionnes(new Set(idsDisponibles));
+        }
+    };
+
+    // Vérifier si tous les fonds disponibles sont sélectionnés
+    const tousSelectionnes = () => {
+        const idsDisponibles = catalogueFiltre
+            .filter((fond) => !fondsEtab?.some((fe) => fe.fondId === fond.id))
+            .map((fond) => fond.id);
+        
+        return idsDisponibles.length > 0 && selectionnes.size === idsDisponibles.length;
+    };
+
+    // Compter les fonds sélectionnés disponibles
+    const nbSelectionnesDisponibles = () => {
+        const idsDisponibles = new Set(
+            catalogueFiltre
+                .filter((fond) => !fondsEtab?.some((fe) => fe.fondId === fond.id))
+                .map((fond) => fond.id)
+        );
+        
+        return [...selectionnes].filter((id) => idsDisponibles.has(id)).length;
     };
 
     // Supprimer un fond de l'établissement
@@ -322,6 +437,17 @@ export function ApparencePage() {
                             // Comparer avec fondId (ID du fond catalogue), pas fe.id (ID de l'association)
                             const estFondActif = fondActuelId === fe.fondId || fondActuelId === fe.fond.id;
                             
+                            // Log de débogage pour tracer la comparaison
+                            if (estFondActif) {
+                                console.log('[Apparence] Fond ACTIF détecté:', {
+                                    feId: fe.id,
+                                    feFondId: fe.fondId,
+                                    feFondDotId: fe.fond?.id,
+                                    fondActuelId,
+                                    estFondActif,
+                                });
+                            }
+                            
                             return (
                                 <div
                                     key={fe.id}
@@ -421,64 +547,184 @@ export function ApparencePage() {
             {/* Modal catalogue */}
             <CustomModal
                 open={showCatalogue}
-                onOpenChange={(v) => { if (!v) setShowCatalogue(false); }}
+                onOpenChange={(v) => {
+                    if (!v) {
+                        setShowCatalogue(false);
+                        setSelectionnes(new Set()); // Vider la sélection à la fermeture
+                    }
+                }}
                 title="Choisir un fond d'écran"
                 description="Sélectionnez un fond dans le catalogue pour l'ajouter à votre établissement"
                 size="3xl"
+                footer={
+                    selectionnes.size > 0 && (
+                        <div className="flex items-center justify-between w-full">
+                            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                                {nbSelectionnesDisponibles()} fond(s) sélectionné(s)
+                            </span>
+                            <div className="flex items-center gap-[var(--gap-sm)]">
+                                <ElisaButton
+                                    variant="outline"
+                                    taille="sm"
+                                    onClick={() => setSelectionnes(new Set())}
+                                    icon={<X className="h-4 w-4" />}
+                                >
+                                    Annuler
+                                </ElisaButton>
+                                <ElisaButton
+                                    variant="primary"
+                                    taille="sm"
+                                    onClick={() => handleAjouterSelection([...selectionnes])}
+                                    chargement={ajoutEnCours || ajouterFond.isPending}
+                                    icon={<Plus className="h-4 w-4" />}
+                                >
+                                    Ajouter ({nbSelectionnesDisponibles()})
+                                </ElisaButton>
+                            </div>
+                        </div>
+                    )
+                }
             >
                 <div className="flex flex-col gap-[var(--gap-md)]">
-                    {/* Filtres par catégorie */}
-                    <div className="flex flex-wrap gap-[var(--gap-xs)]">
-                        <ElisaButton
-                            variant={filtreCategorie === 'toutes' ? 'primary' : 'outline'}
-                            taille="xs"
-                            onClick={() => setFiltreCategorie('toutes')}
-                        >
-                            Toutes
-                        </ElisaButton>
-                        {Object.entries(CATEGORIE_LABELS).map(([value, label]) => (
+                    {/* Barre d'actions : filtres + sélection */}
+                    <div className="flex flex-col gap-[var(--gap-sm)]">
+                        {/* Filtres par catégorie */}
+                        <div className="flex flex-wrap gap-[var(--gap-xs)]">
                             <ElisaButton
-                                key={value}
-                                variant={filtreCategorie === value ? 'primary' : 'outline'}
+                                variant={filtreCategorie === 'toutes' ? 'primary' : 'outline'}
                                 taille="xs"
-                                onClick={() => setFiltreCategorie(value as CategorieFond)}
+                                onClick={() => {
+                                    setFiltreCategorie('toutes');
+                                    setSelectionnes(new Set()); // Vider sélection quand on change de filtre
+                                }}
                             >
-                                {label}
+                                Toutes
                             </ElisaButton>
-                        ))}
+                            {Object.entries(CATEGORIE_LABELS).map(([value, label]) => (
+                                <ElisaButton
+                                    key={value}
+                                    variant={filtreCategorie === value ? 'primary' : 'outline'}
+                                    taille="xs"
+                                    onClick={() => {
+                                        setFiltreCategorie(value as CategorieFond);
+                                        setSelectionnes(new Set()); // Vider sélection quand on change de filtre
+                                    }}
+                                >
+                                    {label}
+                                </ElisaButton>
+                            ))}
+                        </div>
+
+                        {/* Actions de sélection en masse */}
+                        {!loadingCatalogue && catalogueFiltre.length > 0 && (
+                            <div className="flex items-center justify-between rounded-lg bg-[var(--color-fond)] px-[var(--space-md)] py-[var(--space-sm)]">
+                                <div className="flex items-center gap-[var(--gap-sm)]">
+                                    <label className="flex items-center gap-[var(--gap-xs)] cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={tousSelectionnes()}
+                                            onChange={toggleSelectionTous}
+                                            className="h-4 w-4 rounded border-[var(--color-bordure)] text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-600)]"
+                                        />
+                                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                                            Sélectionner tout
+                                        </span>
+                                    </label>
+                                    {selectionnes.size > 0 && (
+                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                            ({nbSelectionnesDisponibles()} sélectionné(s))
+                                        </span>
+                                    )}
+                                </div>
+                                <ElisaButton
+                                    variant="primary"
+                                    taille="xs"
+                                    onClick={handleAjouterTous}
+                                    chargement={ajoutEnCours || ajouterFond.isPending}
+                                    disabled={catalogueFiltre.every((fond) => fondsEtab?.some((fe) => fe.fondId === fond.id))}
+                                    icon={<Upload className="h-3 w-3" />}
+                                >
+                                    Ajouter tous
+                                </ElisaButton>
+                            </div>
+                        )}
                     </div>
 
                     {/* Grille de fonds */}
                     {loadingCatalogue ? (
                         <p style={{ fontSize: 'var(--text-base)' }}>Chargement du catalogue...</p>
+                    ) : !catalogueFiltre || catalogueFiltre.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-[var(--color-bordure)] p-[var(--space-xl)] text-center">
+                            <Image className="mx-auto mb-[var(--space-md)] h-[var(--icon-lg)] w-[var(--icon-lg)] text-gray-400" />
+                            <p style={{ fontSize: 'var(--text-base)' }}>Aucun fond dans cette catégorie</p>
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-[var(--gap-md)] sm:grid-cols-2 md:grid-cols-3">
-                            {catalogueFiltre?.map((fond) => {
+                            {catalogueFiltre.map((fond) => {
                                 const dejaAjoute = fondsEtab?.some((fe) => fe.fondId === fond.id);
+                                const estSelectionne = selectionnes.has(fond.id);
 
                                 return (
                                     <div
                                         key={fond.id}
-                                        className="rounded-lg border border-[var(--color-bordure)] p-[var(--space-md)]"
+                                        className={`relative rounded-lg border p-[var(--space-md)] transition-all cursor-pointer ${
+                                            estSelectionne
+                                                ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-50)] shadow-md'
+                                                : dejaAjoute
+                                                ? 'border-[var(--color-bordure)] bg-[var(--color-fond)] opacity-75'
+                                                : 'border-[var(--color-bordure)] bg-[var(--color-surface)] hover:border-[var(--color-dominant-400)] hover:shadow-sm'
+                                        }`}
+                                        onClick={() => !dejaAjoute && toggleSelection(fond.id)}
                                     >
-                                        <p style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                                            {fond.nom}
-                                        </p>
-                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                                            {CATEGORIE_LABELS[fond.categorie]}
-                                        </p>
+                                        {/* Badge "Déjà ajouté" */}
+                                        {dejaAjoute && (
+                                            <div className="absolute -top-2 -right-2 z-20 rounded-full bg-gray-500 px-2 py-1 text-xs font-semibold text-white shadow-lg">
+                                                Déjà ajouté
+                                            </div>
+                                        )}
 
-                                        <ElisaButton
-                                            variant="primary"
-                                            taille="sm"
-                                            fullWidth
-                                            className="mt-[var(--space-sm)]"
-                                            onClick={() => handleAjouterFond(fond)}
-                                            chargement={ajouterFond.isPending}
-                                            disabled={dejaAjoute}
-                                        >
-                                            {dejaAjoute ? 'Déjà ajouté' : 'Ajouter'}
-                                        </ElisaButton>
+                                        {/* Checkbox de sélection */}
+                                        {!dejaAjoute && (
+                                            <div className="absolute top-[var(--space-sm)] right-[var(--space-sm)]">
+                                                <div
+                                                    className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                                                        estSelectionne
+                                                            ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-600)]'
+                                                            : 'border-[var(--color-bordure)] bg-white'
+                                                    }`}
+                                                >
+                                                    {estSelectionne && (
+                                                        <Check className="h-3 w-3 text-white" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="pr-6">
+                                            <p style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
+                                                {fond.nom}
+                                            </p>
+                                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                                {CATEGORIE_LABELS[fond.categorie]}
+                                            </p>
+                                        </div>
+
+                                        {/* Bouton d'ajout individuel */}
+                                        {!dejaAjoute && (
+                                            <ElisaButton
+                                                variant={estSelectionne ? 'outline' : 'primary'}
+                                                taille="sm"
+                                                fullWidth
+                                                className="mt-[var(--space-sm)]"
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Empêcher la propagation au clic sur la carte
+                                                    handleAjouterFond(fond);
+                                                }}
+                                                chargement={ajouterFond.isPending}
+                                            >
+                                                {estSelectionne ? 'Sélectionné ✓' : 'Ajouter'}
+                                            </ElisaButton>
+                                        )}
                                     </div>
                                 );
                             })}

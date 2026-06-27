@@ -153,6 +153,23 @@ export class ApparenceService {
             actif: true,
         });
 
+        // Si on définit un ordre, réorganiser les autres fonds
+        if (dto.ordre !== undefined) {
+            // Récupérer tous les fonds actifs de l'établissement
+            const autresFonds = await this.fondEtabRepo.find({
+                where: { etablissementId, actif: true },
+                order: { ordre: 'ASC' },
+            });
+
+            // Incrémenter l'ordre de tous les fonds qui ont un ordre >= au nouveau
+            for (const autre of autresFonds) {
+                if (autre.ordre >= dto.ordre) {
+                    autre.ordre += 1;
+                    await this.fondEtabRepo.save(autre);
+                }
+            }
+        }
+
         await this.fondEtabRepo.save(fondEtab);
         logger.info(`[Apparence] Fond ${fond.nom} ajouté à l'établissement ${etablissementId}`);
 
@@ -185,6 +202,23 @@ export class ApparenceService {
 
         if (!fondEtab) {
             throw new AppError('Fond non trouvé pour cet établissement', 404, 'NOT_FOUND');
+        }
+
+        // Si on change l'ordre, réorganiser les autres fonds
+        if (dto.ordre !== undefined) {
+            // Récupérer tous les fonds actifs de l'établissement (sauf celui-ci)
+            const autresFonds = await this.fondEtabRepo.find({
+                where: { etablissementId, actif: true },
+                order: { ordre: 'ASC' },
+            });
+
+            // Incrémenter l'ordre de tous les fonds qui ont un ordre >= au nouveau
+            for (const autre of autresFonds) {
+                if (autre.id !== fondEtabId && autre.ordre >= dto.ordre) {
+                    autre.ordre += 1;
+                    await this.fondEtabRepo.save(autre);
+                }
+            }
         }
 
         Object.assign(fondEtab, dto);
