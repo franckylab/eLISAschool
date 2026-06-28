@@ -120,7 +120,8 @@ services:
       SMTP_FROM: ${SMTP_FROM:-noreply@elisaschool.cm}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
     ports:
-      - "${APP_PORT:-7000}:7000"
+      # Backend accessible depuis l'hôte ET le réseau local (0.0.0.0)
+      - "0.0.0.0:${APP_PORT:-7000}:7000"
     volumes:
       - ./backend:/app/backend
       - ./shared:/app/shared
@@ -147,9 +148,10 @@ services:
     container_name: elisaschool_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:7000/api
+      VITE_API_URL: http://backend:7000
     ports:
-      - "${FRONTEND_PORT:-7001}:7001"
+      # Frontend accessible depuis l'hôte ET le réseau local (0.0.0.0)
+      - "0.0.0.0:${FRONTEND_PORT:-7001}:7001"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -158,7 +160,19 @@ services:
       - elisaschool_network
     depends_on:
       - backend
-    command: sh -c "cd /app && npm install && npm run dev -- --host 0.0.0.0 --port 7001"
+    command: >
+      sh -c "
+        cd /app &&
+        echo '📦 Vérification des dépendances...' &&
+        if [ ! -d 'node_modules' ] || [ ! -f 'node_modules/.package-lock.json' ] || [ ! -x 'node_modules/.bin/vite' ]; then
+          echo '⚙️  Installation des dépendances...' &&
+          npm install --frozen-lockfile;
+        else
+          echo '✅ Dépendances déjà installées';
+        fi &&
+        echo '🚀 Démarrage Vite avec HMR...' &&
+        npm run dev -- --host 0.0.0.0 --port 7001
+      "
 
 networks:
   elisaschool_network:

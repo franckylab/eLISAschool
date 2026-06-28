@@ -46,7 +46,7 @@ export async function seedGroupesEtablissements(
                 NOW(),
                 NOW()
             )
-            ON CONFLICT (cle) DO NOTHING;
+            ON CONFLICT (cle, "etablissementId") DO NOTHING;
         `);
         logger.info('[Seed] ✅ Paramètre groupes-etablissements.actif créé');
 

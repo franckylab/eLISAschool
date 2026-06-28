@@ -33,6 +33,7 @@
 
 import { AppDataSource } from '@database/data-source';
 import { Classe, TypeClasse, CreneauHoraire } from '@modules/classes/entities';
+import { ClasseAnnee, StatutClasseAnnee } from '@modules/classes/entities/classe-annee.entity';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
@@ -65,6 +66,7 @@ export async function seedClassesParDefaut(
     logger.info('🏫 Seed des classes par défaut (v2.0 - 1 classe/niveau)...');
 
     const classeRepo = AppDataSource.getRepository(Classe);
+    const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
     const niveauRepo = AppDataSource.getRepository(Niveau);
     const filiereRepo = AppDataSource.getRepository(Filiere);
     const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
@@ -195,38 +197,64 @@ export async function seedClassesParDefaut(
             const nom = niveau.nom; // Ex: "6ème", "Form 1"
             const code = `${niveau.code}`; // Ex: "6EME", "FORM1"
 
-            // Vérifier si la classe existe déjà pour cette année et établissement
-            const existing = await classeRepo.findOne({
+            // Vérifier si la classe (template) existe déjà pour cet établissement
+            const existingClasse = await classeRepo.findOne({
                 where: {
                     code,
+                    etablissementId,
+                }
+            });
+
+            let classe: Classe;
+            
+            if (existingClasse) {
+                logger.debug(`  ⏭️ Classe (template) existante: ${nom} (${code})`);
+                classe = existingClasse;
+            } else {
+                // Créer la classe (template permanent)
+                classe = classeRepo.create({
+                    nom,
+                    code,
+                    niveauId: niveau.id,
+                    etablissementId,
+                    typeClasse: template.typeClasse || TypeClasse.NORMALE,
+                    creneauHoraire: template.creneauHoraire || CreneauHoraire.MATIN,
+                    actif: true,
+                });
+
+                await classeRepo.save(classe);
+                logger.info(`  ✅ Classe (template) créée: ${nom} (${code})`);
+            }
+
+            // Vérifier si l'instance annuelle existe déjà
+            const existingClasseAnnee = await classeAnneeRepo.findOne({
+                where: {
+                    classeId: classe.id,
                     anneeScolaireId: anneeActive.id,
                     etablissementId,
                 }
             });
 
-            if (existing) {
-                logger.debug(`  ⏭️ Classe existante: ${nom} (${code})`);
+            if (existingClasseAnnee) {
+                logger.debug(`  ⏭️ ClasseAnnee existante: ${nom} (${code}) pour ${anneeActive.libelle}`);
                 skippedCount++;
                 continue;
             }
 
-            // Créer la classe
-            const classe = classeRepo.create({
-                nom,
-                code,
-                niveauId: niveau.id,
+            // Créer l'instance annuelle (ClasseAnnee)
+            const classeAnnee = classeAnneeRepo.create({
+                classeId: classe.id,
                 anneeScolaireId: anneeActive.id,
                 etablissementId,
-                typeClasse: template.typeClasse || TypeClasse.NORMALE,
-                creneauHoraire: template.creneauHoraire || CreneauHoraire.MATIN,
                 effectifMax: template.effectifMax || 40,
                 effectifActuel: 0,
                 actif: true,
+                statut: StatutClasseAnnee.ACTIVE,
             });
 
-            await classeRepo.save(classe);
+            await classeAnneeRepo.save(classeAnnee);
             createdCount++;
-            logger.info(`  ✅ Classe créée: ${nom} (${code}) - Max ${template.effectifMax || 40} élèves`);
+            logger.info(`  ✅ ClasseAnnee créée: ${nom} (${code}) - Max ${template.effectifMax || 40} élèves - ${anneeActive.libelle}`);
 
         } catch (error) {
             errorCount++;

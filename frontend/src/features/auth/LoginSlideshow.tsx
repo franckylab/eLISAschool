@@ -203,11 +203,15 @@ function IllustrationAnalytics() {
                 [30, 110], [60, 90], [90, 100], [120, 70], [150, 50]
             ].map(([x, y], i) => (
                 <motion.circle
-                    key={i} cx={x} cy={y} r="4"
+                    key={i}
+                    cx={x}
+                    cy={y}
+                    r={4}
                     fill="rgba(255,255,255,0.8)"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 1 + i * 0.15 }}
+                    style={{ transformOrigin: 'center' }}
                 />
             ))}
         </svg>
@@ -240,10 +244,14 @@ function IllustrationSecurity() {
                 [50, 40], [150, 40], [50, 160], [150, 160]
             ].map(([x, y], i) => (
                 <motion.circle
-                    key={i} cx={x} cy={y} r="3"
+                    key={i}
+                    cx={x}
+                    cy={y}
+                    r={3}
                     fill="rgba(255,255,255,0.3)"
                     animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.5, 1] }}
                     transition={{ delay: i * 0.2, duration: 2, repeat: Infinity }}
+                    style={{ transformOrigin: 'center' }}
                 />
             ))}
         </svg>
@@ -288,11 +296,16 @@ function IllustrationGlobal() {
         <svg viewBox="0 0 200 200" className="h-full w-full" fill="none">
             {/* Globe */}
             <motion.circle
-                cx="100" cy="100" r="70"
-                fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" strokeWidth="2"
+                cx={100}
+                cy={100}
+                r={70}
+                fill="rgba(255,255,255,0.1)"
+                stroke="rgba(255,255,255,0.4)"
+                strokeWidth={2}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.8, type: 'spring' }}
+                style={{ transformOrigin: 'center' }}
             />
             {/* Lignes de latitude */}
             <ellipse cx="100" cy="100" rx="70" ry="35" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
@@ -307,10 +320,15 @@ function IllustrationGlobal() {
                 <motion.g key={i}>
                     <circle cx={x} cy={y} r="5" fill="rgba(255,255,255,0.5)" />
                     <motion.circle
-                        cx={x} cy={y} r="8"
-                        fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                        cx={x}
+                        cy={y}
+                        r={8}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.3)"
+                        strokeWidth={1}
                         animate={{ r: [8, 12, 8], opacity: [0.5, 0, 0.5] }}
                         transition={{ delay: i * 0.3, duration: 2, repeat: Infinity }}
+                        style={{ transformOrigin: 'center' }}
                     />
                 </motion.g>
             ))}

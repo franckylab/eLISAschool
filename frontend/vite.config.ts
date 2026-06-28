@@ -91,9 +91,24 @@ export default defineConfig({
     server: {
         port: 7001,
         host: '0.0.0.0',
+        // Configuration HMR pour Docker
+        hmr: {
+            protocol: 'ws',
+            host: 'localhost',
+            port: 7001,
+            clientPort: 7001,
+        },
+        watch: {
+            // Utiliser le polling pour Docker (compatible avec les volumes bind mount)
+            usePolling: true,
+            // Intervalle de vérification (ms)
+            interval: 100,
+            // Ignorer node_modules et .git
+            ignored: ['**/node_modules/**', '**/.git/**'],
+        },
         proxy: {
             '/api': {
-                target: process.env.VITE_API_URL || 'http://localhost:7000',
+                target: process.env.VITE_API_URL || 'http://backend:7000',
                 changeOrigin: true,
                 // Forward les requêtes preflight CORS au backend
                 configure: (proxy, _options) => {

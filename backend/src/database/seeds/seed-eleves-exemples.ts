@@ -14,6 +14,8 @@ import { Eleve, StatutEleve } from '@modules/eleves/entities';
 import { Utilisateur, StatutUtilisateur } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { Classe } from '@modules/classes/entities';
+import { ClasseAnnee } from '@modules/classes/entities/classe-annee.entity';
+import { AffectationEleve, StatutAffectationEleve } from '@modules/classes/entities/affectation-eleve.entity';
 import { Genre } from '@shared/enums/statuts.enum';
 import { logger } from '@common/utils/logger.util';
 
@@ -39,23 +41,31 @@ export async function seedElevesExemples(
     const eleveRepo = AppDataSource.getRepository(Eleve);
     const utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     const classeRepo = AppDataSource.getRepository(Classe);
+    const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+    const affectationRepo = AppDataSource.getRepository(AffectationEleve);
 
-    // Récupérer les classes de l'établissement pour l'année active
-    const classes = await classeRepo.find({
+    // Récupérer les classes années actives pour l'établissement et l'année
+    const classesAnnees = await classeAnneeRepo.find({
         where: {
             etablissementId,
-            anneeScolaireId,
+            anneeScolaireId: anneeScolaireId,
             actif: true,
         },
+        relations: ['classe'],
     });
 
-    if (classes.length === 0) {
+    if (classesAnnees.length === 0) {
         logger.warn('⚠️ Aucune classe trouvée pour cet établissement et cette année');
         return;
     }
 
-    const classeMap = new Map<string, string>();
-    classes.forEach(c => classeMap.set(c.code, c.id));
+    // Mapper code de classe → classeAnneeId
+    const classeAnneeMap = new Map<string, string>();
+    classesAnnees.forEach(ca => {
+        if (ca.classe) {
+            classeAnneeMap.set(ca.classe.code, ca.id);
+        }
+    });
 
     const elevesData: EleveTemplate[] = [
         // Primaire Francophone
@@ -122,9 +132,9 @@ export async function seedElevesExemples(
                 continue;
             }
 
-            // Trouver la classe
-            const classeId = classeMap.get(data.classeCode);
-            if (!classeId) {
+            // Trouver la classe année
+            const classeAnneeId = classeAnneeMap.get(data.classeCode);
+            if (!classeAnneeId) {
                 logger.warn(`  ⚠️ Classe ${data.classeCode} non trouvée`);
                 skippedCount++;
                 continue;
@@ -143,7 +153,7 @@ export async function seedElevesExemples(
 
             await utilisateurRepo.save(utilisateur);
 
-            // Créer l'élève
+            // Créer l'élève (sans classeAnneeId)
             const eleve = eleveRepo.create({
                 utilisateurId: utilisateur.id,
                 nom: data.nom,
@@ -165,11 +175,28 @@ export async function seedElevesExemples(
 
             await eleveRepo.save(eleve);
 
-            // Mettre à jour l'effectif de la classe
-            const classe = await classeRepo.findOne({ where: { id: classeId } });
-            if (classe) {
-                classe.effectifActuel = (classe.effectifActuel || 0) + 1;
-                await classeRepo.save(classe);
+            // Créer l'affectation de l'élève à la classe année
+            const classeAnnee = await classeAnneeRepo.findOne({ 
+                where: { id: classeAnneeId },
+                relations: ['classe'],
+            });
+            
+            if (classeAnnee && classeAnnee.classe) {
+                const affectation = affectationRepo.create({
+                    eleveId: eleve.id,
+                    classeId: classeAnnee.classe.id,
+                    classeAnneeId: classeAnnee.id,
+                    anneeScolaireId: anneeScolaireId,
+                    dateAffectation: new Date(),
+                    statut: StatutAffectationEleve.ACTIVE,
+                    etablissementId,
+                });
+
+                await affectationRepo.save(affectation);
+
+                // Mettre à jour l'effectif de la classe année
+                classeAnnee.effectifActuel = (classeAnnee.effectifActuel || 0) + 1;
+                await classeAnneeRepo.save(classeAnnee);
             }
 
             createdCount++;
