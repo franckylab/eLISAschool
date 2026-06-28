@@ -162,20 +162,11 @@ export class ConfigurationScoring {
 }
 /**
  * ==================================
- * eLISAschool - Entités Scoring
+ * eLISAschool - Entités Scoring (ScoreEleve, HistoriqueScore, RegleScoring)
  * ==================================
  * Version: 1.0.0
  * Auteur: franck arlos chendjou
  */
-
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    Index,
-} from 'typeorm';
 
 /**
  * Type d'indicateur de scoring

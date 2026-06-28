@@ -143,12 +143,16 @@ services:
   # ==================================
   # Frontend React/Vite (Development)
   # ==================================
+  # Frontend React (Development)
+  # ==================================
   frontend:
     image: node:20-alpine
     container_name: elisaschool_frontend
     restart: unless-stopped
+    # NOTE: VITE_API_URL est défini pour bypass le proxy Vite (qui a des problèmes de connexion)
+    # Le frontend appelle directement le backend via l'hôte (host.docker.internal ou IP)
     environment:
-      VITE_API_URL: http://backend:7000
+      VITE_API_URL: http://172.18.0.1:7000
     ports:
       # Frontend accessible depuis l'hôte ET le réseau local (0.0.0.0)
       - "0.0.0.0:${FRONTEND_PORT:-7001}:7001"
