@@ -88,14 +88,15 @@ services:
   # ==================================
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend.dev
     container_name: elisaschool_backend
     restart: unless-stopped
     environment:
       NODE_ENV: development
       ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
-      APP_URL: http://${HOST_IP:-localhost}:7000
+      HOST_IP: 10.0.0.1
+      APP_URL: http://10.0.0.1:7000
       DB_HOST: postgres
       DB_PORT: 7002
       DB_NAME: ${DB_NAME:-elisaschool}
@@ -103,13 +104,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
       REDIS_HOST: redis
       REDIS_PORT: 7003
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      JWT_SECRET: ${JWT_SECRET}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_256bits}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      FRONTEND_URL: http://${HOST_IP:-localhost}:7001
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:7001,http://0.0.0.0:7001,http://127.0.0.1:7001}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
+      FRONTEND_URL: http://10.0.0.1:7001
+      ALLOWED_ORIGINS: http://localhost:7001,http://127.0.0.1:7001,http://0.0.0.0:7001,http://10.0.0.1:7001
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -125,8 +126,8 @@ services:
     ports:
       - "0.0.0.0:${APP_PORT:-7000}:7000"
     volumes:
-      - ./backend:/app/backend
-      - ./shared:/app/shared
+      - ../backend:/app/backend
+      - ../shared:/app/shared
       - /app/backend/node_modules
       - /app/shared/node_modules
       - /app/node_modules
@@ -144,12 +145,8 @@ services:
         if [ ! -d 'node_modules' ] || [ ! -f 'node_modules/.package-lock.json' ]; then
           echo '📦 Installation dépendances...' && npm install;
         fi &&
-        echo '🔄 Migrations...' &&
-        npx typeorm migration:run -d dist/database/data-source.js || echo '⚠️  Aucune migration' &&
-        echo '🌱 Seeds...' &&
-        npx ts-node -r tsconfig-paths/register src/database/seeds/run-seeds.ts || echo '⚠️  Seeds OK' &&
-        echo '✅ Backend prêt' &&
-        npx nodemon --config nodemon.json
+        echo '✅ Backend prêt - Lancement avec ts-node...' &&
+        exec sh -c 'TS_NODE_TRANSPILE_ONLY=true npx ts-node -r tsconfig-paths/register ./src/index.ts'
       "
 
   # ==================================
@@ -160,14 +157,14 @@ services:
     container_name: elisaschool_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://${HOST_IP:-localhost}:7000
-      HOST_IP: ${HOST_IP:-localhost}
+      VITE_API_URL: http://10.0.0.1:7000
+      HOST_IP: 10.0.0.1
     ports:
       - "0.0.0.0:${FRONTEND_PORT:-7001}:7001"
     volumes:
-      - ./frontend:/app
+      - ../frontend:/app
       - /app/node_modules
-      - ./shared:/shared
+      - ../shared:/shared
     networks:
       - elisaschool_network
     depends_on:
@@ -179,8 +176,8 @@ services:
           echo '📦 Installation dépendances...' && npm install --frozen-lockfile;
         fi &&
         echo '🌐 Génération .env.local...' &&
-        printf 'VITE_API_URL=http://${HOST_IP:-localhost}:7000\n' > .env.local &&
-        echo '✅ VITE_API_URL=http://${HOST_IP:-localhost}:7000' &&
+        printf 'VITE_API_URL=http://10.0.0.1:7000\n' > .env.local &&
+        echo '✅ VITE_API_URL=http://10.0.0.1:7000' &&
         echo '🗑️  Nettoyage cache Vite...' &&
         rm -rf node_modules/.vite &&
         echo '🚀 Démarrage Vite HMR...' &&

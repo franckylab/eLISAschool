@@ -18,6 +18,19 @@ trigger: always_on
 
 ---
 
+## 📚 Documentation — Règle Associée
+
+**TOUJOURS** consulter et appliquer la règle de gestion documentaire : [elisaschool-docs-management.md](elisaschool-docs-management.md)
+
+**Règles clés** :
+- **TOUS** les fichiers `.md` (sauf README, QUICKSTART, CHEATSHEET) vont dans `docs/`
+- **Classification** par type : analyses/, corrections/, guides/, rapports/, etc.
+- **Nommage** : `TYPE-SUJET-CONTEXTE.md` (KEBAB-CASE)
+- **INDEX.md** : Mettre à jour après chaque session de travail
+- **Jamais** de fichiers `.md` à la racine du projet, `backend/`, ou `frontend/`
+
+---
+
 ## ⚠️ INVOCATION AUTOMATIQUE DES SKILLS — OBLIGATOIRE
 
 **Avant toute tâche de développement ou modification frontend**, l'IA **DOIT** invoquer proactivement le skill approprié **sans attendre que l'utilisateur le demande** :

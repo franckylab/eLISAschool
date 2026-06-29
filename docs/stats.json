@@ -1,0 +1,33 @@
+{
+  "last_updated": "2026-06-29T15:28:23.478539",
+  "total_documents": 274,
+  "by_category": {
+    "ameliorations": 11,
+    "analyses": 18,
+    "audits": 4,
+    "autres": 1,
+    "certifications": 2,
+    "checklists": 2,
+    "configurations": 4,
+    "corrections": 64,
+    "deploiements": 7,
+    "guides": 35,
+    "implementations": 41,
+    "migrations": 7,
+    "rapports": 43,
+    "resumes": 24,
+    "syntheses": 11
+  },
+  "recent_documents": [
+    "CONFIGURATION-ORGANISATION-v1.3.md",
+    "AMELIORATIONS-ORGANISATION-v1.1.md",
+    "AMELIORATIONS-GROUPES-V1.1.md",
+    "CERTIFICATION-FINALE-CORRECTIONS-ACADEMIQUE.md",
+    "GUIDE-COMMANDES-DOCKER-ELISASCHOOL.md",
+    "CORRECTION-DEFINITIVE-ACCES-RESEAU-V3.md",
+    "GUIDE-DEPANNAGE-ACCES-RESEAU-LOCAL.md",
+    "CORRECTION-DEFINITIVE-PROXY-VITE-V2.md",
+    "RAPPORT-DEV-MULTI-MACHINE-DEPLOIEMENT-AUTO.md",
+    "GUIDE-ACCES-RESEAU-LOCAL.md"
+  ]
+}
