@@ -1,3 +1,214 @@
+# 🐳 eLISAschool - Configuration Docker
+
+## 📁 Structure du dossier
+
+```
+docker/
+├── Dockerfiles
+│   ├── Dockerfile.backend          # Production (multi-stage)
+│   ├── Dockerfile.backend.dev      # Développement (nodemon)
+│   └── Dockerfile.frontend         # Production (Nginx)
+│
+├── Docker Compose (4 modes)
+│   ├── docker-compose.local.dev.yml    # Réseau local - Développement
+│   ├── docker-compose.local.prod.yml   # Réseau local - Production
+│   ├── docker-compose.cloud.dev.yml    # Cloud - Développement
+│   └── docker-compose.cloud.prod.yml   # Cloud - Production (SSL auto)
+│
+├── Configuration
+│   ├── .env.local                  # Template réseau local
+│   ├── .env.cloud                  # Template cloud
+│   ├── nginx.conf                  # Production Nginx
+│   ├── nginx.dev.conf              # Développement Nginx
+│   └── nginx.prod.conf             # Production Nginx (cloud)
+│
+├── Scripts
+│   ├── deploy.sh                   # Script de déploiement principal
+│   ├── backup-auto.sh              # Backup automatique (à créer)
+│   ├── backup-manuel.sh            # Backup manuel (à créer)
+│   ├── restore.sh                  # Restauration backup (à créer)
+│   └── update.sh                   # Mises à jour (à créer)
+│
+└── Backups
+    ├── daily/                      # Backups quotidiens
+    ├── weekly/                     # Backups hebdomadaires
+    └── monthly/                    # Backups mensuels
+```
+
+## 🚀 Démarrage Rapide
+
+### 1. Réseau Local - Développement
+
+```bash
+cd docker
+./deploy.sh local-dev up
+```
+
+**URLs d'accès :**
+- Frontend : `http://<IP_SERVEUR>:7001`
+- Backend : `http://<IP_SERVEUR>:7000`
+- pgAdmin : `http://<IP_SERVEUR>:7004`
+
+### 2. Réseau Local - Production
+
+```bash
+cd docker
+./deploy.sh local-prod up
+```
+
+### 3. Cloud - Développement
+
+```bash
+cd docker
+# Éditer docker/.env.cloud et définir DOMAIN_NAME
+./deploy.sh cloud-dev up
+```
+
+### 4. Cloud - Production (HTTPS automatique)
+
+```bash
+cd docker
+# Éditer docker/.env.cloud et définir DOMAIN_NAME
+./deploy.sh cloud-prod up
+```
+
+## ⚙️ Configuration
+
+### Fichiers .env
+
+#### `.env.local` - Réseau Local
+```bash
+HOST_IP=AUTO_DETECT        # IP auto-détectée ou manuelle
+DB_PASSWORD=...            # Généré automatiquement
+JWT_SECRET=...             # Généré automatiquement
+```
+
+#### `.env.cloud` - Cloud
+```bash
+DOMAIN_NAME=app.elisaschool.cm
+SSL_MODE=auto              # auto (Let's Encrypt) ou manual
+DB_PASSWORD=...            # Généré automatiquement
+```
+
+### Génération Automatique des Secrets
+
+Au premier démarrage, le script génère automatiquement :
+- `DB_PASSWORD` (32 caractères)
+- `JWT_SECRET` (64 caractères)
+- `REDIS_PASSWORD` (32 caractères)
+- `ENCRYPTION_KEY` (32 caractères)
+
+⚠️ **Conservez précieusement le fichier `.env` après génération !**
+
+## 📋 Commandes Disponibles
+
+```bash
+# Démarrer
+./deploy.sh <mode> up
+
+# Arrêter
+./deploy.sh <mode> down
+
+# Redémarrer
+./deploy.sh <mode> restart
+
+# Reconstruire les images
+./deploy.sh <mode> rebuild
+
+# Voir les logs
+./deploy.sh <mode> logs [service]
+
+# État des services
+./deploy.sh <mode> status
+```
+
+## 🔧 Modes de Déploiement
+
+| Mode | Usage | Hot-Reload | SSL | Ports |
+|------|-------|------------|-----|-------|
+| `local-dev` | Développement local | ✅ Oui | ❌ Non | 7000-7004 |
+| `local-prod` | Production locale | ❌ Non | ❌ Non | 7000-7004 |
+| `cloud-dev` | Développement cloud | ✅ Oui | ❌ Non | 80 |
+| `cloud-prod` | Production cloud | ❌ Non | ✅ Auto | 80/443 |
+
+## 🗄️ Ports Utilisés
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Backend | 7000 | API Express |
+| Frontend | 7001 | React/Vite (dev) ou Nginx (prod) |
+| PostgreSQL | 7002 | Base de données |
+| Redis | 7003 | Cache & sessions |
+| pgAdmin | 7004 | Administration DB |
+
+## 🔐 Sécurité
+
+### Validation Production
+
+Le script valide automatiquement en mode production :
+- `JWT_SECRET` ≥ 64 caractères
+- `DB_PASSWORD` ≥ 16 caractères
+- `ENCRYPTION_KEY` ≥ 32 caractères
+
+### CORS
+
+En mode local, les CORS sont configurés automatiquement avec l'IP détectée.
+
+## 📊 Ressources Allouées (Production)
+
+| Service | CPU | RAM |
+|---------|-----|-----|
+| PostgreSQL | 2 cores | 2 GB |
+| Redis | 1 core | 1 GB |
+| Backend | 2 cores | 2 GB |
+| Frontend | 1 core | 512 MB |
+| pgAdmin | 0.5 core | 512 MB |
+
+## 🐛 Dépannage
+
+### Voir les logs
+```bash
+./deploy.sh local-dev logs backend
+./deploy.sh local-dev logs frontend
+```
+
+### Vérifier l'état
+```bash
+./deploy.sh local-dev status
+```
+
+### Reconstruire from scratch
+```bash
+./deploy.sh local-dev down
+./deploy.sh local-dev rebuild
+```
+
+### Accéder à un conteneur
+```bash
+docker exec -it elisaschool_backend sh
+docker exec -it elisaschool_frontend sh
+```
+
+## 📝 Notes Importantes
+
+1. **Ne jamais commiter** les fichiers `.env.local` ou `.env.cloud` (secrets)
+2. **Toujours faire un backup** avant une mise à jour
+3. **Tester en dev** avant de déployer en prod
+4. **Vérifier les logs** en cas de problème
+
+## 🔄 Migrations
+
+Les migrations TypeORM sont exécutées automatiquement au démarrage du backend.
+
+## 🌱 Seeds
+
+Les seeds sont exécutés automatiquement au premier démarrage.
+
+---
+
+**Version :** 1.0.0  
+**Auteur :** franck arlos chendjou  
+**Dernière mise à jour :** 2026-06-27
 # 🐳 eLISAschool - Docker Compose
 
 ## 🎯 Architecture

@@ -1,98 +1,61 @@
 # 📚 Index de la Documentation - eLISAschool
 
+> ⚠️ **IMPORTANT** : Toute la documentation a été réorganisée dans le dossier `docs/`
+
+---
+
 ## 🎯 Point d'Entrée
 
-**Nouveau sur le projet ?** → Commencez par [`QUICKSTART.md`](QUICKSTART.md)
+**Documentation complète** → [docs/INDEX.md](docs/INDEX.md) ⭐ **NOUVEAU**
 
-**Développeur quotidien ?** → Gardez [`CHEATSHEET.md`](CHEATSHEET.md) à portée de main
+**Nouveau sur le projet ?** → [QUICKSTART.md](QUICKSTART.md)
 
-**Besoin d'aide sur les scripts ?** → [`scripts/README.md`](scripts/README.md)
+**Développeur quotidien ?** → [CHEATSHEET.md](CHEATSHEET.md)
 
----
-
-## 📖 Documentation par Thème
-
-### 🚀 Démarrage
-| Document | Fichier | Description |
-|----------|---------|-------------|
-| **Guide de démarrage rapide** | [`QUICKSTART.md`](QUICKSTART.md) | Démarrer en 3 étapes |
-| **Aide-mémoire commandes** | [`CHEATSHEET.md`](CHEATSHEET.md) | Commandes essentielles ⭐ |
-| **Scripts disponibles** | [`scripts/README.md`](scripts/README.md) | Documentation des scripts |
+**Besoin d'aide sur les scripts ?** → [scripts/README.md](scripts/README.md)
 
 ---
 
-### 🎓 Module Élèves
+## 📂 Accès Direct par Catégorie
 
-#### Documentation Principale
-| Document | Fichier | Lignes | Usage |
-|----------|---------|--------|-------|
-| **README du module** | [`README-MODULE-ELEVES.md`](README-MODULE-ELEVES.md) | 273 | Documentation complète |
-| **Guide d'implémentation** | [`IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md`](IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md) | 256 | Comment c'est fait |
-| **Résumé visuel** | [`RESUME-MODULE-ELEVES.md`](RESUME-MODULE-ELEVES.md) | 359 | Architecture et stats |
+| Catégorie | Lien | Documents |
+|-----------|------|-----------|
+| 🔍 Analyses | [docs/analyses/](docs/analyses/) | 17 documents |
+| 🔧 Corrections | [docs/corrections/](docs/corrections/) | 63 documents |
+| 🔨 Implémentations | [docs/implementations/](docs/implementations/) | 41 documents |
+| 📖 Guides | [docs/guides/](docs/guides/) | 29 documents |
+| 📊 Rapports | [docs/rapports/](docs/rapports/) | 31 documents |
+| 📝 Synthèses | [docs/syntheses/](docs/syntheses/) | 11 documents |
+| 📋 Résumés | [docs/resumes/](docs/resumes/) | 23 documents |
+| 🎓 Certifications | [docs/certifications/](docs/certifications/) | 2 documents |
+| ✅ Checklists | [docs/checklists/](docs/checklists/) | 2 documents |
+| 🔍 Audits | [docs/audits/](docs/audits/) | 3 documents |
+| ⚙️ Configurations | [docs/configurations/](docs/configurations/) | 4 documents |
+| 🚀 Déploiements | [docs/deploiements/](docs/deploiements/) | 7 documents |
+| 🔄 Migrations | [docs/migrations/](docs/migrations/) | 7 documents |
+| ✨ Améliorations | [docs/ameliorations/](docs/ameliorations/) | 11 documents |
+| 📁 Autres | [docs/autres/](docs/autres/) | 131 documents |
 
-#### Tests et Validation
-| Document | Fichier | Lignes | Usage |
-|----------|---------|--------|-------|
-| **Guide de test** | [`GUIDE-TEST-MODULE-ELEVES.md`](GUIDE-TEST-MODULE-ELEVES.md) | 307 | 13 tests détaillés |
-| **Checklist finale** | [`CHECKLIST-FINALE-MODULE-ELEVES.md`](CHECKLIST-FINALE-MODULE-ELEVES.md) | 236 | Validation complète |
-| **Template CSV** | [`template-import-eleves.csv`](template-import-eleves.csv) | 12 | Test import |
-
----
-
-### 🔧 Corrections et Maintenance
-
-#### Frontend
-| Document | Fichier | Lignes | Description |
-|----------|---------|--------|-------------|
-| **Rapport corrections** | [`CORRECTIONS-FRONTEND-FINAL.md`](CORRECTIONS-FRONTEND-FINAL.md) | 212 | Toutes les corrections |
-| **Résumé initial** | [`CORRECTIONS-FRONTEND-RESUME.md`](CORRECTIONS-FRONTEND-RESUME.md) | 118 | Premières corrections |
+**Total : 380 documents organisés** 📚
 
 ---
 
-### 📊 Rapports et Statistiques
-
-| Document | Fichier | Lignes | Description |
-|----------|---------|--------|-------------|
-| **Rapport final session** | [`RAPPORT-FINAL-SESSION.md`](RAPPORT-FINAL-SESSION.md) | 431 | Session complète |
-| **Synthèse finale** | [`SYNTHESE-FINALE.md`](SYNTHESE-FINALE.md) | 171 | Résumé exécutif |
-| **Statistiques projet** | [`STATISTIQUES-PROJET.md`](STATISTIQUES-PROJET.md) | 390 | Métriques complètes |
-
-### 📝 Templates et Checklists
-
-| Document | Fichier | Lignes | Usage |
-|----------|---------|--------|-------|
-| **Template documentation** | [`TEMPLATE-DOCUMENTATION-MODULE.md`](TEMPLATE-DOCUMENTATION-MODULE.md) | 210 | Nouveau module |
-| **Checklist module** | [`CHECKLIST-NOUVEAU-MODULE.md`](CHECKLIST-NOUVEAU-MODULE.md) | 244 | Validation module |
-| **Aide-mémoire** | [`CHEATSHEET.md`](CHEATSHEET.md) | 484 | Commandes utiles |
-
----
-
-### 🏗️ Architecture et Conventions
-
-| Document | Fichier | Description |
-|----------|---------|-------------|
-| **Conventions de code** | `.qoder/rules/elisaschool-conventions.md` | Règles de développement |
-| **Documentation technique** | `docs/technical.md` | Architecture système |
-| **Guide utilisateur** | `docs/user-guide.fr.md` | Documentation fonctionnelle |
-
----
-
-## 🎯 Guide par Rôle
+## 🎯 Guide Rapide par Rôle
 
 ### 👨‍💻 Développeur
 
 **Commencer ici** :
-1. [`QUICKSTART.md`](QUICKSTART.md) - Setup environnement
+1. [QUICKSTART.md](QUICKSTART.md) - Setup environnement
 2. `.qoder/rules/elisaschool-conventions.md` - Conventions
-3. [`README-MODULE-ELEVES.md`](README-MODULE-ELEVES.md) - Exemple de module
+3. [docs/INDEX.md](docs/INDEX.md) - **Toute la documentation**
 
 **Développer un module** :
 - Skill `elisaschool-dev` - Backend
 - Skill `elisaschool-frontend-dev` - Frontend
-- [`IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md`](IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md) - Exemple complet
+- [docs/implementations/](docs/implementations/) - Exemples complets
 
 **Corriger des erreurs** :
-- [`CORRECTIONS-FRONTEND-FINAL.md`](CORRECTIONS-FRONTEND-FINAL.md) - Méthodologie
+- [docs/corrections/](docs/corrections/) - Méthodologie et fixes
 - `scripts/verify-setup.sh` - Vérification
 
 ---
@@ -100,9 +63,9 @@
 ### 🧪 Testeur
 
 **Commencer ici** :
-1. [`QUICKSTART.md`](QUICKSTART.md) - Accéder à l'app
-2. [`GUIDE-TEST-MODULE-ELEVES.md`](GUIDE-TEST-MODULE-ELEVES.md) - Tests à exécuter
-3. [`CHECKLIST-FINALE-MODULE-ELEVES.md`](CHECKLIST-FINALE-MODULE-ELEVES.md) - Validation
+1. [QUICKSTART.md](QUICKSTART.md) - Accéder à l'app
+2. [docs/guides/GUIDE-TEST-MODULE-ELEVES.md](docs/guides/GUIDE-TEST-MODULE-ELEVES.md) - Tests à exécuter
+3. [docs/checklists/CHECKLIST-FINALE-MODULE-ELEVES.md](docs/checklists/CHECKLIST-FINALE-MODULE-ELEVES.md) - Validation
 
 **Tests à faire** :
 - 13 tests fonctionnels documentés
@@ -115,13 +78,13 @@
 ### 👔 Chef de Projet
 
 **Commencer ici** :
-1. [`RAPPORT-FINAL-SESSION.md`](RAPPORT-FINAL-SESSION.md) - Ce qui a été fait
-2. [`RESUME-MODULE-ELEVES.md`](RESUME-MODULE-ELEVES.md) - Architecture
-3. [`QUICKSTART.md`](QUICKSTART.md) - Comment accéder
+1. [docs/resumes/RESUME-FINAL.md](docs/resumes/RESUME-FINAL.md) - Résumé exécutif
+2. [docs/syntheses/SYNTHESE-FINALE.md](docs/syntheses/SYNTHESE-FINALE.md) - Synthèse projet
+3. [QUICKSTART.md](QUICKSTART.md) - Comment accéder
 
 **Suivi** :
+- [docs/rapports/](docs/rapports/) - Rapports complets
 - Métriques dans les rapports
-- ROI estimé dans le rapport final
 - Prochaines étapes documentées
 
 ---
@@ -129,9 +92,9 @@
 ### 🎓 Nouvel Arrivant
 
 **Parcours recommandé** :
-1. [`QUICKSTART.md`](QUICKSTART.md) - Démarrer l'app
-2. `README.md` - Comprendre le projet
-3. [`README-MODULE-ELEVES.md`](README-MODULE-ELEVES.md) - Voir un exemple
+1. [QUICKSTART.md](QUICKSTART.md) - Démarrer l'app
+2. [README.md](README.md) - Comprendre le projet
+3. [docs/INDEX.md](docs/INDEX.md) - **Explorer toute la documentation**
 4. `.qoder/rules/elisaschool-conventions.md` - Apprendre les règles
 
 ---
@@ -140,16 +103,19 @@
 
 ### Par Mot-Clé
 
-| Sujet | Fichiers |
-|-------|----------|
-| **Installation** | [`QUICKSTART.md`](QUICKSTART.md), `README.md` |
-| **Élèves** | `README-MODULE-ELEVES.md`, `GUIDE-TEST-MODULE-ELEVES.md` |
-| **API** | `http://localhost:3001/api/docs`, `IMPLEMENTATION-*.md` |
-| **Tests** | [`GUIDE-TEST-MODULE-ELEVES.md`](GUIDE-TEST-MODULE-ELEVES.md), [`CHECKLIST-*.md`](CHECKLIST-FINALE-MODULE-ELEVES.md) |
-| **Erreurs** | [`CORRECTIONS-FRONTEND-FINAL.md`](CORRECTIONS-FRONTEND-FINAL.md) |
+| Sujet | Emplacement |
+|-------|-------------|
+| **Installation** | [QUICKSTART.md](QUICKSTART.md), [README.md](README.md) |
+| **Architecture** | [docs/analyses/](docs/analyses/) |
+| **Élèves** | [docs/implementations/IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md](docs/implementations/IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md) |
+| **Multi-tenant** | [docs/analyses/ANALYSE-ARCHITECTURE-MULTI-TENANT.md](docs/analyses/ANALYSE-ARCHITECTURE-MULTI-TENANT.md) |
+| **RBAC** | [docs/migrations/MIGRATION-RBAC-v3-MULTI-TENANT-STRICT.md](docs/migrations/MIGRATION-RBAC-v3-MULTI-TENANT-STRICT.md) |
+| **Finances** | [docs/analyses/ANALYSE-GESTION-FINANCIERE.md](docs/analyses/ANALYSE-GESTION-FINANCIERE.md) |
+| **API** | `http://localhost:3001/api/docs`, [docs/](docs/) |
+| **Tests** | [docs/guides/GUIDE-TEST-MODULE-ELEVES.md](docs/guides/GUIDE-TEST-MODULE-ELEVES.md) |
+| **Erreurs** | [docs/corrections/](docs/corrections/) |
 | **Conventions** | `.qoder/rules/elisaschool-conventions.md` |
-| **Architecture** | [`RESUME-MODULE-ELEVES.md`](RESUME-MODULE-ELEVES.md), `docs/technical.md` |
-| **Déploiement** | `QUICKSTART.md`, `docker/` |
+| **Déploiement** | [docs/deploiements/](docs/deploiements/) |
 
 ---
 
@@ -160,36 +126,40 @@ eLISAschool/
 │
 ├── 📄 README.md                          # Documentation principale
 ├── 📄 QUICKSTART.md                      # Guide de démarrage rapide ⭐
-├── 📄 INDEX.md                           # Ce fichier (index)
+├── 📄 INDEX.md                           # Ce fichier (pointeur vers docs/)
+├── 📄 CHEATSHEET.md                      # Aide-mémoire commandes
 │
-├── 🎓 Module Élèves
-│   ├── README-MODULE-ELEVES.md           # Documentation du module
-│   ├── IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md  # Guide d'implémentation
-│   ├── RESUME-MODULE-ELEVES.md           # Résumé visuel
-│   ├── GUIDE-TEST-MODULE-ELEVES.md       # Guide de test
-│   ├── CHECKLIST-FINALE-MODULE-ELEVES.md # Checklist validation
-│   └── template-import-eleves.csv        # Template CSV
-│
-├── 🔧 Corrections
-│   ├── CORRECTIONS-FRONTEND-RESUME.md    # Résumé initial
-│   └── CORRECTIONS-FRONTEND-FINAL.md     # Rapport final
-│
-├── 📊 Rapports
-│   └── RAPPORT-FINAL-SESSION.md          # Rapport de session
+├── 📚 docs/                              # 🆕 TOUS LES DOCUMENTS ICI
+│   ├── INDEX.md                          # Index complet ⭐
+│   ├── analyses/                         # 17 analyses
+│   ├── corrections/                      # 63 corrections
+│   ├── implementations/                  # 41 implémentations
+│   ├── guides/                           # 29 guides
+│   ├── rapports/                         # 31 rapports
+│   ├── syntheses/                        # 11 synthèses
+│   ├── resumes/                          # 23 résumés
+│   ├── certifications/                   # 2 certifications
+│   ├── checklists/                       # 2 checklists
+│   ├── audits/                           # 3 audits
+│   ├── configurations/                   # 4 configurations
+│   ├── deploiements/                     # 7 déploiements
+│   ├── migrations/                       # 7 migrations
+│   ├── ameliorations/                    # 11 améliorations
+│   └── autres/                           # 131 documents divers
 │
 ├── 🛠️ Scripts
-│   ├── README.md                   # Documentation des scripts
-│   ├── start-dev.sh                # Démarrage environnement
-│   ├── stop-dev.sh                 # Arrêt environnement
-│   └── verify-setup.sh             # Vérification état
+│   ├── README.md                         # Documentation des scripts
+│   ├── start-dev.sh                      # Démarrage environnement
+│   ├── stop-dev.sh                       # Arrêt environnement
+│   └── verify-setup.sh                   # Vérification état
 │
-└── 📚 Documentation Existante
-    ├── docs/
-    │   ├── technical.md
-    │   └── user-guide.fr.md
-    └── .qoder/
-        └── rules/
-            └── elisaschool-conventions.md
+└── 📚 Configuration
+    ├── .qoder/
+    │   └── rules/
+    │       └── elisaschool-conventions.md
+    ├── backend/
+    ├── frontend/
+    └── docker/
 ```
 
 ---
@@ -199,33 +169,33 @@ eLISAschool/
 ### Devenir Développeur eLISAschool
 
 **Niveau 1 - Débutant** (1 jour)
-- [ ] Lire `README.md`
-- [ ] Suivre [`QUICKSTART.md`](QUICKSTART.md)
+- [ ] Lire [README.md](README.md)
+- [ ] Suivre [QUICKSTART.md](QUICKSTART.md)
 - [ ] Exécuter `scripts/verify-setup.sh`
 
 **Niveau 2 - Intermédiaire** (1 semaine)
 - [ ] Lire `.qoder/rules/elisaschool-conventions.md`
-- [ ] Étudier [`README-MODULE-ELEVES.md`](README-MODULE-ELEVES.md)
-- [ ] Tester le module élèves
+- [ ] Explorer [docs/INDEX.md](docs/INDEX.md)
+- [ ] Étudier un module dans [docs/implementations/](docs/implementations/)
 
 **Niveau 3 - Avancé** (1 mois)
-- [ ] Lire [`IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md`](IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md)
-- [ ] Créer un nouveau module
+- [ ] Créer un nouveau module (skills `/elisaschool-dev`)
 - [ ] Contribuer à la documentation
+- [ ] Review [docs/analyses/](docs/analyses/) pour comprendre l'architecture
 
 ---
 
 ### Tester l'Application
 
 **Test Rapide** (10 minutes)
-- [ ] Suivre [`QUICKSTART.md`](QUICKSTART.md) - Étape 3
+- [ ] Suivre [QUICKSTART.md](QUICKSTART.md) - Étape 3
 - [ ] Créer un élève
 - [ ] Exporter en CSV
 
 **Test Complet** (1 heure)
-- [ ] Suivre [`GUIDE-TEST-MODULE-ELEVES.md`](GUIDE-TEST-MODULE-ELEVES.md)
+- [ ] Suivre [docs/guides/GUIDE-TEST-MODULE-ELEVES.md](docs/guides/GUIDE-TEST-MODULE-ELEVES.md)
 - [ ] Exécuter les 13 tests
-- [ ] Remplir [`CHECKLIST-FINALE-MODULE-ELEVES.md`](CHECKLIST-FINALE-MODULE-ELEVES.md)
+- [ ] Remplir [docs/checklists/CHECKLIST-FINALE-MODULE-ELEVES.md](docs/checklists/CHECKLIST-FINALE-MODULE-ELEVES.md)
 
 ---
 
@@ -239,8 +209,9 @@ eLISAschool/
    ```
 
 2. **Consulter la documentation** :
-   - Erreurs compilation → [`CORRECTIONS-FRONTEND-FINAL.md`](CORRECTIONS-FRONTEND-FINAL.md)
-   - Problèmes setup → [`QUICKSTART.md`](QUICKSTART.md) - Dépannage
+   - Erreurs compilation → [docs/corrections/](docs/corrections/)
+   - Problèmes setup → [QUICKSTART.md](QUICKSTART.md) - Dépannage
+   - Index complet → [docs/INDEX.md](docs/INDEX.md)
 
 3. **Vérifier les logs** :
    - Frontend : Console navigateur (F12)
@@ -252,18 +223,18 @@ eLISAschool/
 
 | Métrique | Valeur |
 |----------|--------|
-| **Fichiers de documentation** | 15+ |
-| **Lignes totales** | ~5,000+ |
-| **Guides de test** | 2 |
-| **Scripts utilitaires** | 1 |
-| **Templates** | 1 |
+| **Fichiers de documentation** | 380+ |
+| **Catégories** | 15 dossiers thématiques |
+| **Guides de test** | 2+ |
+| **Scripts utilitaires** | 10+ |
+| **Templates** | 1+ |
 
 ---
 
-**📌 Bookmark cette page pour un accès rapide à toute la documentation !**
+**📌 Bookmark [docs/INDEX.md](docs/INDEX.md) pour un accès rapide à toute la documentation !**
 
 ---
 
-*Dernière mise à jour : 11 juin 2026*  
-*Version : 1.0.0*  
+*Dernière mise à jour : 29 juin 2026*  
+*Version : 2.0.0 (Réorganisation complète)*  
 *eLISAschool - Système de Gestion Scolaire*

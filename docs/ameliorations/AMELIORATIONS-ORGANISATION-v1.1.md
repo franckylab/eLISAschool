@@ -1,3 +1,10 @@
+> ⚠️ **DOCUMENT OBSOLÈTE** - Ce document a été remplacé par une version plus récente.
+> Consultez la version mise à jour (recherchez V2, V3, ou FINAL dans le même dossier).
+> 
+> Ce document est conservé pour historique uniquement.
+
+---
+
 # Améliorations Module Organisation - v1.1.0
 
 > **Date**: 9 Juin 2026  

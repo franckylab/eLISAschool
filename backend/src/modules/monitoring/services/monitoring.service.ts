@@ -7,6 +7,8 @@
  */
 
 import os from 'os';
+import fs from 'fs';
+import path from 'path';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { getParam, getParamBoolean } from '@modules/configuration/utils/config.helper';
@@ -196,6 +198,104 @@ export class MonitoringService {
             status: anyDown ? 'down' : (allOk ? 'ok' : 'degraded'),
             details: checks,
         };
+    }
+
+    /**
+     * Statut des backups
+     */
+    async getBackupStatus(): Promise<any> {
+        try {
+            const backupDir = path.resolve(process.cwd(), '..', 'docker', 'backups');
+            
+            if (!fs.existsSync(backupDir)) {
+                return {
+                    configured: false,
+                    message: 'Répertoire de backup non configuré',
+                    daily: 0,
+                    weekly: 0,
+                    monthly: 0,
+                    manual: 0,
+                    lastBackup: null,
+                };
+            }
+
+            const countFiles = (dir: string) => {
+                const fullPath = path.join(backupDir, dir);
+                if (!fs.existsSync(fullPath)) return 0;
+                return fs.readdirSync(fullPath).filter(f => f.endsWith('.sql.gz')).length;
+            };
+
+            const getLastBackup = (): string | null => {
+                const dirs = ['daily', 'weekly', 'monthly', 'manual'];
+                let latestFile: string | null = null;
+                let latestTime = 0;
+
+                for (const dir of dirs) {
+                    const fullPath = path.join(backupDir, dir);
+                    if (!fs.existsSync(fullPath)) continue;
+
+                    const files = fs.readdirSync(fullPath)
+                        .filter(f => f.endsWith('.sql.gz'))
+                        .map(f => ({
+                            name: f,
+                            path: path.join(fullPath, f),
+                            time: fs.statSync(path.join(fullPath, f)).mtimeMs,
+                        }));
+
+                    for (const file of files) {
+                        if (file.time > latestTime) {
+                            latestTime = file.time;
+                            latestFile = file.path;
+                        }
+                    }
+                }
+
+                return latestFile;
+            };
+
+            return {
+                configured: true,
+                directory: backupDir,
+                daily: countFiles('daily'),
+                weekly: countFiles('weekly'),
+                monthly: countFiles('monthly'),
+                manual: countFiles('manual'),
+                lastBackup: getLastBackup(),
+                lastBackupDate: getLastBackup() ? new Date(fs.statSync(getLastBackup()!).mtimeMs).toISOString() : null,
+            };
+        } catch (error) {
+            logger.warn('Erreur récupération statut backups:', error);
+            return { configured: false, error: 'Erreur lecture répertoire backups' };
+        }
+    }
+
+    /**
+     * Informations sur les mises à jour
+     */
+    async getUpdateInfo(): Promise<any> {
+        try {
+            // Version actuelle
+            const versionFile = path.resolve(process.cwd(), '..', 'VERSION');
+            const currentVersion = fs.existsSync(versionFile) 
+                ? fs.readFileSync(versionFile, 'utf-8').trim() 
+                : '1.0.0';
+
+            // Historique des mises à jour
+            const updateHistoryFile = path.resolve(process.cwd(), '..', 'docker', 'scripts', 'update-history.json');
+            const updateHistory = fs.existsSync(updateHistoryFile)
+                ? JSON.parse(fs.readFileSync(updateHistoryFile, 'utf-8'))
+                : [];
+
+            return {
+                version: currentVersion,
+                lastUpdate: updateHistory.length > 0 ? updateHistory[0] : null,
+                totalUpdates: updateHistory.length,
+                recentUpdates: updateHistory.slice(0, 5),
+            };
+        } catch (error) {
+            logger.warn('Erreur récupération infos mises à jour:', error);
+            return { version: '1.0.0', error: 'Erreur lecture historique' };
+        }
     }
 
     /**

@@ -1,0 +1,193 @@
+# ==================================
+# eLISAschool - Docker Compose Local Production
+# ==================================
+# Version: 1.0.0
+# Auteur: franck arlos chendjou
+#
+# Usage: ./deploy.sh local-prod up
+# Optimisé pour production locale, sans hot-reload
+# Ports: Backend=7000, Frontend=7001, PostgreSQL=7002, Redis=7003, pgAdmin=7004
+
+services:
+  # ==================================
+  # Base de données PostgreSQL 16
+  # ==================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: elisaschool_db
+    restart: unless-stopped
+    command: postgres -p 7002
+    environment:
+      POSTGRES_DB: ${DB_NAME:-elisaschool}
+      POSTGRES_USER: ${DB_USER:-elisaschool_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
+    ports:
+      - "${DB_PORT:-7002}:7002"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - elisaschool_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool} -p 7002"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ==================================
+  # Redis (cache et synchronisation)
+  # ==================================
+  redis:
+    image: redis:7-alpine
+    container_name: elisaschool_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --port 7003
+      --requirepass ${REDIS_PASSWORD:-elisaschool_password}
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_PORT:-7003}:7003"
+    volumes:
+      - redis_data:/data
+    networks:
+      - elisaschool_network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 7003 -a $REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # ==================================
+  # pgAdmin 4 (Administration PostgreSQL)
+  # ==================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: elisaschool_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@elisaschool.cm}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_LISTEN_PORT: 7004
+    ports:
+      - "${PGADMIN_PORT:-7004}:7004"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - elisaschool_network
+    depends_on:
+      - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ==================================
+  # Backend API Express (Production)
+  # ==================================
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: elisaschool_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
+      APP_URL: http://${HOST_IP:-localhost}:7000
+      DB_HOST: postgres
+      DB_PORT: 7002
+      DB_NAME: ${DB_NAME:-elisaschool}
+      DB_USER: ${DB_USER:-elisaschool_user}
+      DB_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 7003
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FRONTEND_URL: http://${HOST_IP:-localhost}:7001
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@elisaschool.cm}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
+      FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "0.0.0.0:${APP_PORT:-7000}:7000"
+    networks:
+      - elisaschool_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ==================================
+  # Frontend React (Production Nginx)
+  # ==================================
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        VITE_API_URL: http://${HOST_IP:-localhost}:7000
+    container_name: elisaschool_frontend
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${FRONTEND_PORT:-7001}:80"
+    networks:
+      - elisaschool_network
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+networks:
+  elisaschool_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local

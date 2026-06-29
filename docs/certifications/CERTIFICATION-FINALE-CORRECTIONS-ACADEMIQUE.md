@@ -1,3 +1,10 @@
+> ⚠️ **DOCUMENT OBSOLÈTE** - Ce document a été remplacé par une version plus récente.
+> **Remplacé par :** CERTIFICATION-FINALE-CORRECTIONS-ACADEMIQUE-V2.md
+> 
+> Ce document est conservé pour historique uniquement.
+
+---
+
 # 🏆 Certification Finale — Corrections Architecture Académique
 
 > **Date** : 2026-06-27 17:00  

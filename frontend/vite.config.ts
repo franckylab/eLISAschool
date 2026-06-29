@@ -106,17 +106,9 @@ export default defineConfig({
             // Ignorer node_modules et .git
             ignored: ['**/node_modules/**', '**/.git/**'],
         },
-        proxy: {
-            '/api': {
-                target: 'http://backend:7000',
-                changeOrigin: true,
-            },
-            // Proxy pour les fichiers SVG du catalogue (évite les erreurs CORS)
-            '/fonds-catalogue': {
-                target: 'http://backend:7000',
-                changeOrigin: true,
-            },
-        },
+        // Proxy Vite DÉSACTIVÉ - bug http-proxy-middleware dans Docker
+        // Le frontend utilise VITE_API_URL pour appeler directement le backend
+        // proxy: { ... } ← SUPPRIMÉ
     },
     build: {
         sourcemap: false,

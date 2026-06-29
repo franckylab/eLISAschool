@@ -1,0 +1,14 @@
+# ==================================
+# eLISAschool - Cron Backup Automatique
+# ==================================
+# Installation: crontab docker/scripts/cron-backup.txt
+# Vérification: crontab -l
+
+# Backup automatique quotidien à 2h du matin
+0 2 * * * cd /mnt/DONNEES/projets/eLISAschool/docker && bash scripts/backup-auto.sh >> logs/backup-cron.log 2>&1
+
+# Vérification espace disque chaque lundi à 3h
+0 3 * * 1 df -h /mnt/DONNEES/projets/eLISAschool/docker/backups | mail -s "Backup Disk Usage" admin@elisaschool.cm
+
+# Nettoyage logs anciens (>30 jours) le 1er du mois à 4h
+0 4 1 * * find /mnt/DONNEES/projets/eLISAschool/logs -name "*.log" -mtime +30 -delete

@@ -66,5 +66,21 @@ router.get('/logs', authMiddleware, requirePermission('super_admin:all'), async 
     } catch (error) { next(error); }
 });
 
+// Statut des backups (admin)
+router.get('/backups', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const backupStatus = await monitoringService.getBackupStatus();
+        res.json({ success: true, data: backupStatus });
+    } catch (error) { next(error); }
+});
+
+// Informations sur les mises à jour (admin)
+router.get('/updates', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const updateInfo = await monitoringService.getUpdateInfo();
+        res.json({ success: true, data: updateInfo });
+    } catch (error) { next(error); }
+});
+
 export const monitoringController = router;
 export default router;
