@@ -115,8 +115,43 @@ export function createApp(): Application {
         : [];
     const origins = [envConfig.app.frontendUrl, ...allowedOrigins].filter(Boolean);
 
+    // Fonction de validation CORS dynamique
+    // Accepte les origines explicites + sous-réseau local 10.0.0.0/24
+    const isOriginAllowed = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // 1. Pas d'origine (requêtes server-to-server, curl, etc.) → autoriser
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        // 2. Origine dans la liste explicite → autoriser
+        if (origins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        // 3. Développement : accepter tout le sous-réseau 10.0.0.0/24
+        if (envConfig.app.isDevelopment) {
+            const localSubnetRegex = /^https?:\/\/10\.0\.0\.\d{1,3}(:\d+)?$/;
+            if (localSubnetRegex.test(origin)) {
+                callback(null, true);
+                return;
+            }
+
+            // 4. localhost et 127.0.0.1 avec n'importe quel port
+            const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/;
+            if (localhostRegex.test(origin)) {
+                callback(null, true);
+                return;
+            }
+        }
+
+        // 5. Origine non reconnue → bloquer
+        callback(new Error(`CORS: Origine ${origin} non autorisée`));
+    };
+
     app.use(cors({
-        origin: origins.length > 1 ? origins : origins[0],
+        origin: isOriginAllowed,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
