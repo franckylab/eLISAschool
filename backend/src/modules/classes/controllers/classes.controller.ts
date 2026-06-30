@@ -21,9 +21,20 @@ const service = new ClassesService();
  */
 router.get('/', authMiddleware, requirePermission('classes:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const sortBy = (req.query.sortBy as string) || 'nom';
+        const sortOrder = (req.query.sortOrder as string) === 'DESC' ? 'DESC' : 'ASC';
         const niveauId = req.query.niveauId as string;
         const anneeId = req.query.anneeId as string;
-        const classes = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC' as const, niveauId, anneeScolaireId: anneeId }, req.etablissementId);
+        const search = req.query.search as string;
+        const actifParam = req.query.actif as string;
+        const actif = actifParam !== undefined ? actifParam === 'true' : undefined;
+
+        const classes = await service.findAll(
+            { page, limit, sortBy, sortOrder: sortOrder as 'ASC' | 'DESC', niveauId, anneeScolaireId: anneeId, search, actif },
+            req.etablissementId
+        );
         res.json({ success: true, data: classes });
     } catch (error) { next(error); }
 });
@@ -43,6 +54,18 @@ router.get('/all', authMiddleware, requirePermission('classes:view'), async (req
     } catch (error) { next(error); }
 });
 
+/**
+ * @route   GET /api/classes/:id
+ * @desc    Récupérer une classe par ID (avec données annuelles enrichies)
+ * @access  Authentifié avec permission classes:view
+ */
+router.get('/:id', authMiddleware, requirePermission('classes:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const classe = await service.findOne(req.params.id, req.etablissementId);
+        res.json({ success: true, data: classe });
+    } catch (error) { next(error); }
+});
+
 router.post('/', authMiddleware, requirePermission('classes:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createClasseSchema, req.body);
@@ -54,14 +77,14 @@ router.post('/', authMiddleware, requirePermission('classes:create'), async (req
 router.patch('/:id', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateClasseSchema, req.body);
-        const classe = await service.update(req.params.id, dto);
+        const classe = await service.update(req.params.id, dto, req.etablissementId);
         res.json({ success: true, data: classe });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('classes:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id);
+        await service.delete(req.params.id, req.etablissementId);
         res.json({ success: true, message: 'Classe supprimée' });
     } catch (error) { next(error); }
 });

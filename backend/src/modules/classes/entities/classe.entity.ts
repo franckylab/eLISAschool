@@ -76,6 +76,12 @@ export class Classe {
     @Column({ type: 'text', nullable: true })
     description?: string;
 
+    /**
+     * Salle principale assignée à cette classe
+     */
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    sallePrincipale?: string;
+
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 

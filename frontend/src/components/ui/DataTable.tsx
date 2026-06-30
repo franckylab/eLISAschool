@@ -750,12 +750,18 @@ function LigneTableauInterne<T>({
                 style={style}
                 className={`${estPinned || estActions ? 'border-[var(--color-border)]' : ''} ${col.className || ''}`}
             >
-                <div 
-                    className="min-w-0 overflow-hidden"
-                    style={{ padding: 'var(--padding-table-cell)' }}
-                >
-                    <CelluleContenu contenu={contenu} colonne={col} />
-                </div>
+                {estActions ? (
+                    <div style={{ padding: 'var(--padding-table-cell)' }}>
+                        {contenu}
+                    </div>
+                ) : (
+                    <div 
+                        className="min-w-0 overflow-hidden"
+                        style={{ padding: 'var(--padding-table-cell)' }}
+                    >
+                        <CelluleContenu contenu={contenu} colonne={col} />
+                    </div>
+                )}
             </td>
         );
     });

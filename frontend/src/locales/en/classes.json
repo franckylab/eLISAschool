@@ -8,5 +8,172 @@
     "salle": "Room",
     "capacite": "Capacity",
     "effectif": "Enrollment",
-    "principal": "Head teacher"
+    "principal": "Head teacher",
+    "sousTitre": {
+        "classesActives": "active class(es)"
+    },
+    "colonnes": {
+        "code": "Code",
+        "nom": "Name",
+        "effectif": "Enrollment",
+        "salle": "Room",
+        "principal": "Head Teacher",
+        "type": "Type",
+        "creneau": "Schedule",
+        "statut": "Status",
+        "actions": "Actions",
+        "matricule": "ID",
+        "nomComplet": "Full name",
+        "dateNaissance": "Date of birth"
+    },
+    "types": {
+        "normale": "Regular",
+        "bilingue": "Bilingual",
+        "renforcee": "Intensive",
+        "internationale": "International"
+    },
+    "creneaux": {
+        "matin": "Morning",
+        "apresMidi": "Afternoon",
+        "journeeComplete": "Full day"
+    },
+    "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "sexe": {
+        "masculin": "Male",
+        "feminin": "Female",
+        "garcons": "Boys",
+        "filles": "Girls"
+    },
+    "onglets": {
+        "informations": "Information",
+        "eleves": "Students",
+        "statistiques": "Statistics"
+    },
+    "info": {
+        "titreGeneral": "General information",
+        "titreConfig": "Configuration",
+        "nomClasse": "Class name",
+        "code": "Code",
+        "niveau": "Level",
+        "cycle": "Cycle",
+        "typeClasse": "Class type",
+        "effectifMax": "Maximum capacity",
+        "sallePrincipale": "Main room",
+        "statut": "Status",
+        "anneeScolaire": "School year",
+        "creneau": "Time slot",
+        "description": "Description",
+        "nonAssignee": "Not assigned",
+        "nonAssigne": "Not assigned",
+        "illimite": "Unlimited"
+    },
+    "stats": {
+        "effectif": "Enrollment",
+        "salle": "Room",
+        "principal": "Head Teacher",
+        "tauxOccupation": "Occupancy rate",
+        "rempli": "filled",
+        "pasDeLimite": "No limit defined",
+        "repartitionSexe": "Gender distribution",
+        "totalEleves": "Total students"
+    },
+    "eleves": {
+        "inscrits": "Enrolled students",
+        "inscrireEleve": "Enroll a student",
+        "aucunEleve": "No students enrolled in this class"
+    },
+    "affectation": {
+        "titre": "Assign a student to the class",
+        "description": "Select the student and assignment details",
+        "eleve": "Student",
+        "selectionnerEleve": "Select a student",
+        "date": "Assignment date",
+        "motif": "Reason",
+        "selectionnerMotif": "Select a reason",
+        "commentaire": "Comment",
+        "commentairePlaceholder": "Comment or note (optional)...",
+        "affecter": "Assign",
+        "motifs": {
+            "aucun": "No specific reason",
+            "inscription": "New enrollment",
+            "changementClasse": "Class change",
+            "passageNiveau": "Level promotion",
+            "transfere": "Transferred student",
+            "redoublement": "Repeating year"
+        }
+    },
+    "boutons": {
+        "nouveau": "New class",
+        "creer": "Create",
+        "enregistrer": "Save",
+        "modifier": "Edit",
+        "supprimer": "Delete",
+        "retour": "Back",
+        "annuler": "Cancel",
+        "suivant": "Next",
+        "precedent": "Previous"
+    },
+    "actions": {
+        "voir": "View details",
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    },
+    "chargement": {
+        "liste": "Loading classes...",
+        "detail": "Loading class...",
+        "eleves": "Loading students..."
+    },
+    "erreurs": {
+        "chargement": "Unable to load classes",
+        "classeNonTrouvee": "Class not found"
+    },
+    "confirmations": {
+        "supprimerTitre": "Delete this class",
+        "supprimerMessage": "Are you sure you want to delete the class \"{{nom}}\"?",
+        "supprimerDetails": "This action is irreversible and will delete all associated data."
+    },
+    "filtres": {
+        "recherchePlaceholder": "Search for a class..."
+    },
+    "champs": {
+        "nom": "Class name",
+        "nomPlaceholder": "E.g.: Grade 6 A",
+        "code": "Code",
+        "codePlaceholder": "E.g.: 6E_A",
+        "niveau": "Level",
+        "selectionnerNiveau": "Select a level",
+        "filiere": "Track (optional)",
+        "selectionnerFiliere": "Select a track",
+        "typeClasse": "Class type",
+        "creneauHoraire": "Time slot",
+        "description": "Description (optional)",
+        "descriptionPlaceholder": "Description or specific notes...",
+        "anneeScolaire": "School year",
+        "selectionnerAnnee": "Select a year",
+        "sallePrincipale": "Main room",
+        "sallePlaceholder": "E.g.: Room 101",
+        "effectifMax": "Maximum enrollment",
+        "effectifMaxHint": "Maximum number of students (1-100)"
+    },
+    "annee": {
+        "enCours": "In progress",
+        "cloturee": "Closed"
+    },
+    "formulaire": {
+        "creerTitre": "Create a class",
+        "modifierTitre": "Edit class",
+        "creerDescription": "Step {{etape}} of {{total}} — Fill in the information",
+        "modifierDescription": "Edit the class model information",
+        "titreModele": "Class model",
+        "titreInstance": "Annual instance",
+        "resume": "Creation summary"
+    },
+    "validation": {
+        "nomRequis": "Class name is required",
+        "niveauRequis": "Level is required",
+        "anneeRequise": "School year is required"
+    }
 }

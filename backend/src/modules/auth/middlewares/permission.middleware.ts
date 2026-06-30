@@ -32,6 +32,13 @@ export function requirePermission(permission: string) {
                 throw new AppError('Non authentifié', 401, 'UNAUTHORIZED');
             }
 
+            // SUPER_ADMIN bypass : toutes les permissions automatiquement
+            const userRoles = (req.utilisateur.roles?.length ? req.utilisateur.roles : [req.utilisateur.role]);
+            if (userRoles.includes('SUPER_ADMIN')) {
+                next();
+                return;
+            }
+
             // Résoudre les permissions de l'utilisateur (avec cache et contexte établissement)
             const userPermissions = await permissionResolverService.resolvePermissions(
                 req.utilisateur.id,
@@ -69,6 +76,13 @@ export function requireAnyPermission(permissions: string[]) {
                 throw new AppError('Non authentifié', 401, 'UNAUTHORIZED');
             }
 
+            // SUPER_ADMIN bypass
+            const userRoles = (req.utilisateur.roles?.length ? req.utilisateur.roles : [req.utilisateur.role]);
+            if (userRoles.includes('SUPER_ADMIN')) {
+                next();
+                return;
+            }
+
             const userPermissions = await permissionResolverService.resolvePermissions(
                 req.utilisateur.id,
                 req.utilisateur?.etablissementId
@@ -103,6 +117,13 @@ export function requireAllPermissions(permissions: string[]) {
         try {
             if (!req.utilisateur || !req.utilisateur.id) {
                 throw new AppError('Non authentifié', 401, 'UNAUTHORIZED');
+            }
+
+            // SUPER_ADMIN bypass
+            const userRoles = (req.utilisateur.roles?.length ? req.utilisateur.roles : [req.utilisateur.role]);
+            if (userRoles.includes('SUPER_ADMIN')) {
+                next();
+                return;
             }
 
             const userPermissions = await permissionResolverService.resolvePermissions(

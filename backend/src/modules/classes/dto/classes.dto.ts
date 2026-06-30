@@ -19,6 +19,11 @@ export const createClasseSchema = z.object({
     creneauHoraire: z.nativeEnum(CreneauHoraire).default(CreneauHoraire.MATIN),
     description: z.string().optional(),
     actif: z.boolean().default(true),
+    // Champs d'instance annuelle (optionnels — utilisés pour créer le ClasseAnnee)
+    anneeScolaireId: z.string().uuid().optional(),
+    professeurPrincipalId: z.string().uuid().nullable().optional(),
+    sallePrincipale: z.string().max(100).optional(),
+    effectifMax: z.number().int().min(1).max(200).optional(),
 });
 
 export const updateClasseSchema = createClasseSchema.partial();
@@ -27,6 +32,8 @@ export const affecterEleveSchema = z.object({
     eleveId: z.string().uuid(),
     classeId: z.string().uuid(),
     dateAffectation: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+    motifChangement: z.string().max(100).optional(),
+    commentaire: z.string().optional(),
 });
 
 export type CreateClasseDto = z.infer<typeof createClasseSchema>;

@@ -8,5 +8,172 @@
     "salle": "Salle",
     "capacite": "Capacité",
     "effectif": "Effectif",
-    "principal": "Enseignant principal"
+    "principal": "Enseignant principal",
+    "sousTitre": {
+        "classesActives": "classe(s) active(s)"
+    },
+    "colonnes": {
+        "code": "Code",
+        "nom": "Nom",
+        "effectif": "Effectif",
+        "salle": "Salle",
+        "principal": "Prof. Principal",
+        "type": "Type",
+        "creneau": "Créneau",
+        "statut": "Statut",
+        "actions": "Actions",
+        "matricule": "Matricule",
+        "nomComplet": "Nom complet",
+        "dateNaissance": "Date naissance"
+    },
+    "types": {
+        "normale": "Normale",
+        "bilingue": "Bilingue",
+        "renforcee": "Renforcée",
+        "internationale": "Internationale"
+    },
+    "creneaux": {
+        "matin": "Matin",
+        "apresMidi": "Après-midi",
+        "journeeComplete": "Journée complète"
+    },
+    "statut": {
+        "actif": "Actif",
+        "inactif": "Inactif"
+    },
+    "sexe": {
+        "masculin": "Masculin",
+        "feminin": "Féminin",
+        "garcons": "Garçons",
+        "filles": "Filles"
+    },
+    "onglets": {
+        "informations": "Informations",
+        "eleves": "Élèves",
+        "statistiques": "Statistiques"
+    },
+    "info": {
+        "titreGeneral": "Informations générales",
+        "titreConfig": "Configuration",
+        "nomClasse": "Nom de la classe",
+        "code": "Code",
+        "niveau": "Niveau",
+        "cycle": "Cycle",
+        "typeClasse": "Type de classe",
+        "effectifMax": "Capacité maximale",
+        "sallePrincipale": "Salle principale",
+        "statut": "Statut",
+        "anneeScolaire": "Année scolaire",
+        "creneau": "Créneau horaire",
+        "description": "Description",
+        "nonAssignee": "Non assignée",
+        "nonAssigne": "Non assigné",
+        "illimite": "Illimitée"
+    },
+    "stats": {
+        "effectif": "Effectif",
+        "salle": "Salle",
+        "principal": "Prof. Principal",
+        "tauxOccupation": "Taux d'occupation",
+        "rempli": "rempli",
+        "pasDeLimite": "Pas de limite définie",
+        "repartitionSexe": "Répartition par sexe",
+        "totalEleves": "Total élèves"
+    },
+    "eleves": {
+        "inscrits": "Élèves inscrits",
+        "inscrireEleve": "Inscrire un élève",
+        "aucunEleve": "Aucun élève inscrit dans cette classe"
+    },
+    "affectation": {
+        "titre": "Affecter un élève à la classe",
+        "description": "Sélectionnez l'élève et les informations d'affectation",
+        "eleve": "Élève",
+        "selectionnerEleve": "Sélectionner un élève",
+        "date": "Date d'affectation",
+        "motif": "Motif",
+        "selectionnerMotif": "Sélectionner un motif",
+        "commentaire": "Commentaire",
+        "commentairePlaceholder": "Commentaire ou remarque (optionnel)...",
+        "affecter": "Affecter",
+        "motifs": {
+            "aucun": "Aucun motif spécifique",
+            "inscription": "Nouvelle inscription",
+            "changementClasse": "Changement de classe",
+            "passageNiveau": "Passage de niveau",
+            "transfere": "Élève transféré",
+            "redoublement": "Redoublement"
+        }
+    },
+    "boutons": {
+        "nouveau": "Nouvelle classe",
+        "creer": "Créer",
+        "enregistrer": "Enregistrer",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer",
+        "retour": "Retour",
+        "annuler": "Annuler",
+        "suivant": "Suivant",
+        "precedent": "Précédent"
+    },
+    "actions": {
+        "voir": "Voir détails",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    },
+    "chargement": {
+        "liste": "Chargement des classes...",
+        "detail": "Chargement de la classe...",
+        "eleves": "Chargement des élèves..."
+    },
+    "erreurs": {
+        "chargement": "Impossible de charger les classes",
+        "classeNonTrouvee": "Classe non trouvée"
+    },
+    "confirmations": {
+        "supprimerTitre": "Supprimer cette classe",
+        "supprimerMessage": "Êtes-vous sûr de vouloir supprimer la classe « {{nom}} » ?",
+        "supprimerDetails": "Cette action est irréversible et supprimera toutes les données associées."
+    },
+    "filtres": {
+        "recherchePlaceholder": "Rechercher une classe..."
+    },
+    "champs": {
+        "nom": "Nom de la classe",
+        "nomPlaceholder": "Ex: 6ème A",
+        "code": "Code",
+        "codePlaceholder": "Ex: 6E_A",
+        "niveau": "Niveau",
+        "selectionnerNiveau": "Sélectionner un niveau",
+        "filiere": "Filière (optionnel)",
+        "selectionnerFiliere": "Sélectionner une filière",
+        "typeClasse": "Type de classe",
+        "creneauHoraire": "Créneau horaire",
+        "description": "Description (optionnel)",
+        "descriptionPlaceholder": "Description ou remarques spécifiques...",
+        "anneeScolaire": "Année scolaire",
+        "selectionnerAnnee": "Sélectionner une année",
+        "sallePrincipale": "Salle principale",
+        "sallePlaceholder": "Ex: Salle 101",
+        "effectifMax": "Effectif maximal",
+        "effectifMaxHint": "Nombre maximum d'élèves (1-100)"
+    },
+    "annee": {
+        "enCours": "En cours",
+        "cloturee": "Clôturée"
+    },
+    "formulaire": {
+        "creerTitre": "Créer une classe",
+        "modifierTitre": "Modifier la classe",
+        "creerDescription": "Étape {{etape}} sur {{total}} — Renseignez les informations",
+        "modifierDescription": "Modifiez les informations du modèle de classe",
+        "titreModele": "Modèle de classe",
+        "titreInstance": "Instance annuelle",
+        "resume": "Résumé de la création"
+    },
+    "validation": {
+        "nomRequis": "Le nom de la classe est requis",
+        "niveauRequis": "Le niveau est requis",
+        "anneeRequise": "L'année scolaire est requise"
+    }
 }

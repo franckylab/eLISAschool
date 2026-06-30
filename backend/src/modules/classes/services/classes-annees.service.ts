@@ -50,7 +50,11 @@ export class ClassesAnneesService {
         }
 
         const classeAnnee = this.classeAnneeRepo.create({
-            ...dto,
+            classeId: dto.classeId,
+            anneeScolaireId: dto.anneeScolaireId,
+            professeurPrincipalId: dto.professeurPrincipalId ?? undefined,
+            effectifMax: dto.effectifMax ?? 50,
+            notes: dto.notes,
             etablissementId,
             statut: StatutClasseAnnee.ACTIVE,
             actif: true,
@@ -61,7 +65,7 @@ export class ClassesAnneesService {
 
         // Workflow de validation si activé
         if (createurId && etablissementId) {
-            const requireValidation = await getParamBoolean('classes.require_validation', false);
+            const requireValidation = await getParamBoolean('classes.require_validation', { defaultValue: false });
 
             if (requireValidation) {
                 await validationWorkflowService.createWorkflow(
@@ -119,7 +123,7 @@ export class ClassesAnneesService {
             });
         }
 
-        return paginateWithQueryBuilder(qb, { page: page || 1, limit: limit || 20 });
+        return paginateWithQueryBuilder(qb, page || 1, limit || 20);
     }
 
     /**

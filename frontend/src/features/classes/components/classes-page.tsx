@@ -1,7 +1,15 @@
 /**
  * ==================================
- * eLISAschool - Page Classes
+ * eLISAschool - Page Classes (Liste)
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Corrections :
+ * - Responsive design complet (mobile → desktop)
+ * - i18n complet (toutes les chaînes traduites)
+ * - Variables CSS pour l'adaptabilité
+ * - Ultra-responsivité (clamp, variables CSS)
  */
 
 import { useState } from 'react';
@@ -11,18 +19,20 @@ import { Plus, Users, Edit, Trash2, Eye } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useClasses, useSupprimerClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
-import { DataTable } from '@/components/ui/DataTable';
+import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import type { Classe, ClasseFiltres } from '../types/classe.types';
-import type { Column } from '@/components/ui/DataTable';
 
 export function ClassesPage() {
-    const { t } = useTranslation();
+    const { t } = useTranslation('classes');
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
+    const estMobile = useMediaQuery('(max-width: 767px)');
+
     const [filtres, setFiltres] = useState<ClasseFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
     const [classeSelected, setClasseSelected] = useState<Classe | undefined>();
@@ -49,15 +59,17 @@ export function ClassesPage() {
         setClasseSelected(undefined);
     };
 
+    // Colonnes du tableau
     const colonnes: Column<Classe>[] = [
         {
             key: 'code',
-            header: 'Code',
+            header: t('colonnes.code'),
             sortable: true,
             render: (classe) => (
                 <button
                     onClick={() => navigate({ to: '/classes/$id', params: { id: classe.id } })}
-                    className="font-mono text-sm font-semibold text-[var(--color-dominant-600)] hover:underline cursor-pointer"
+                    className="font-mono font-semibold text-[var(--color-dominant-600)] hover:underline cursor-pointer"
+                    style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                 >
                     {classe.code}
                 </button>
@@ -66,15 +78,17 @@ export function ClassesPage() {
         {
             key: 'nom',
             pinned: 'left' as const,
-            header: 'Nom',
+            header: t('colonnes.nom'),
             sortable: true,
             render: (classe) => (
                 <button
                     onClick={() => navigate({ to: '/classes/$id', params: { id: classe.id } })}
                     className="hover:underline cursor-pointer text-left"
                 >
-                    <p className="font-medium">{classe.nom}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
+                    <p className="font-medium" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}>
+                        {classe.nom}
+                    </p>
+                    <p className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.625rem, 0.58rem + 0.2vw, 0.75rem)' }}>
                         {classe.niveau?.nom}
                         {classe.filiere && ` - ${classe.filiere.code}`}
                     </p>
@@ -83,13 +97,13 @@ export function ClassesPage() {
         },
         {
             key: 'effectif',
-            header: 'Effectif',
+            header: t('colonnes.effectif'),
             sortable: true,
             className: 'text-center',
             render: (classe) => (
                 <div className="flex items-center justify-center gap-1">
-                    <Users className="h-4 w-4 text-[var(--color-text-muted)]" />
-                    <span className="font-medium">
+                    <Users className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)]" />
+                    <span className="font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                         {classe.effectifActuel || 0} / {classe.effectifMax || '∞'}
                     </span>
                 </div>
@@ -97,19 +111,27 @@ export function ClassesPage() {
         },
         {
             key: 'salle',
-            header: 'Salle',
-            render: (classe) => classe.sallePrincipale || '-',
+            header: t('colonnes.salle'),
+            render: (classe) => (
+                <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                    {classe.sallePrincipale || '-'}
+                </span>
+            ),
         },
         {
             key: 'principal',
-            header: 'Principal',
+            header: t('colonnes.principal'),
             render: (classe) => (
-                classe.professeurPrincipal ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}` : '-'
+                <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                    {classe.professeurPrincipal
+                        ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
+                        : '-'}
+                </span>
             ),
         },
         {
             key: 'typeClasse',
-            header: 'Type',
+            header: t('colonnes.type'),
             className: 'text-center',
             render: (classe) => {
                 const typeColors: Record<string, string> = {
@@ -118,25 +140,31 @@ export function ClassesPage() {
                     RENFORCEE: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
                     INTERNATIONALE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
                 };
+                const typeLabels: Record<string, string> = {
+                    NORMALE: t('types.normale'),
+                    BILINGUE: t('types.bilingue'),
+                    RENFORCEE: t('types.renforcee'),
+                    INTERNATIONALE: t('types.internationale'),
+                };
                 return (
                     <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-gray-100 text-gray-800'}`}>
-                        {classe.typeClasse}
+                        {typeLabels[classe.typeClasse] || classe.typeClasse}
                     </span>
                 );
             },
         },
         {
             key: 'creneauHoraire',
-            header: 'Créneau',
+            header: t('colonnes.creneau'),
             className: 'text-center',
             render: (classe) => {
                 const creneauLabels: Record<string, string> = {
-                    MATIN: 'Matin',
-                    APRES_MIDI: 'Après-midi',
-                    JOURNEE_COMPLETE: 'Journée',
+                    MATIN: t('creneaux.matin'),
+                    APRES_MIDI: t('creneaux.apresMidi'),
+                    JOURNEE_COMPLETE: t('creneaux.journeeComplete'),
                 };
                 return (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                         {creneauLabels[classe.creneauHoraire] || classe.creneauHoraire}
                     </span>
                 );
@@ -144,44 +172,42 @@ export function ClassesPage() {
         },
         {
             key: 'statut',
-            header: t('commun.statut'),
+            header: t('colonnes.statut'),
             sortable: true,
             className: 'text-center',
             render: (classe) => (
-                <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        classe.actif
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                    }`}
-                >
-                    {classe.actif ? 'Actif' : 'Inactif'}
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                    classe.actif
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}>
+                    {classe.actif ? t('statut.actif') : t('statut.inactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: t('commun.actions'),
+            header: t('colonnes.actions'),
             className: 'text-right',
             renderActions: (classe) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('actions.voir'),
                     onClick: () => navigate({ to: '/classes/$id', params: { id: classe.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('actions.modifier'),
                     onClick: () => handleEdition(classe),
                     permission: 'classes:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('actions.supprimer'),
                     onClick: () => setClasseToDelete(classe),
                     permission: 'classes:delete',
                     variant: 'danger' as const,
@@ -190,21 +216,20 @@ export function ClassesPage() {
         },
     ];
 
-    // Affichage skeleton pendant le chargement
+    // États de chargement et erreur
     if (isLoading) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement des classes..." />
+                <LoadingState message={t('chargement.liste')} />
             </div>
         );
     }
 
-    // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
                 <ErrorState
-                    message={error.message || "Impossible de charger les classes"}
+                    message={error.message || t('erreurs.chargement')}
                     onRetry={() => refetch()}
                 />
             </div>
@@ -212,23 +237,32 @@ export function ClassesPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-[var(--gap-lg)] p-[var(--space-md)] sm:p-[var(--space-lg)]">
+            {/* Header responsive */}
             <motion.div
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                className={`flex ${estMobile ? 'flex-col gap-3' : 'flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'}`}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
                 <div>
-                    <h1 className="text-3xl font-bold">{t('classes.titre', { defaultValue: 'Classes' })}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                        {data?.meta?.totalItems || 0} classe(s) active(s)
+                    <h1
+                        className="font-bold text-[var(--color-text-primary)]"
+                        style={{ fontSize: 'clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem)' }}
+                    >
+                        {t('titre')}
+                    </h1>
+                    <p
+                        className="text-[var(--color-text-secondary)] mt-1"
+                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                    >
+                        {data?.meta?.totalItems || 0} {t('sousTitre.classesActives')}
                     </p>
                 </div>
                 {hasPermission('classes:create') && (
                     <ElisaButton
                         variant="primary"
                         size="sm"
-                        icon={<Plus className="h-4 w-4" />}
+                        icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                         onClick={handleCreation}
                     >
                         {t('boutons.nouveau')}
@@ -236,14 +270,16 @@ export function ClassesPage() {
                 )}
             </motion.div>
 
+            {/* Tableau des classes */}
             <DataTable
+                tableId="classes"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                searchPlaceholder={t('filtres.recherche')}
+                searchPlaceholder={t('filtres.recherchePlaceholder')}
                 onSearchChange={(recherche) =>
                     setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                 }
@@ -260,6 +296,7 @@ export function ClassesPage() {
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
             />
 
+            {/* Modal Formulaire */}
             {modalOpen && (
                 <ClasseFormModal
                     mode={modeFormulaire}
@@ -269,11 +306,12 @@ export function ClassesPage() {
                 />
             )}
 
+            {/* Modal Confirmation Suppression */}
             <ConfirmationModal
                 isOpen={!!classeToDelete}
-                title="Supprimer cette classe"
-                message={`Êtes-vous sûr de vouloir supprimer la classe "${classeToDelete?.nom}" ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées."
+                title={t('confirmations.supprimerTitre')}
+                message={t('confirmations.supprimerMessage', { nom: classeToDelete?.nom || '' })}
+                details={t('confirmations.supprimerDetails')}
                 variant="danger"
                 onConfirm={async () => {
                     if (classeToDelete) {

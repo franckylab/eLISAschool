@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import type { PaginatedResult } from '@shared/types/api.types';
-import type { Classe, CreerClasseDto, ModifierClasseDto, ClasseFiltres } from '../types/classe.types';
+import type { Classe, CreerClasseDto, CreerClasseCompletDto, ModifierClasseDto, ClasseFiltres, AffecterEleveDto } from '../types/classe.types';
 
 const CLASSES_KEYS = {
     all: ['classes'] as const,
@@ -39,7 +39,7 @@ export function useClasses(filtres: ClasseFiltres = {}) {
             // Ajouter uniquement les filtres non vides
             if (filtres.recherche) params.search = filtres.recherche;
             if (filtres.niveauId) params.niveauId = filtres.niveauId;
-            if (filtres.anneeScolaireId) params.classeAnneeId = filtres.anneeScolaireId; // Ancien nom -> nouveau
+            if (filtres.anneeScolaireId) params.anneeId = filtres.anneeScolaireId;
             if (filtres.actif !== undefined) params.actif = filtres.actif;
 
             const response = await apiClient.get<PaginatedResult<Classe>>('/api/classes', params);
@@ -72,6 +72,8 @@ export function useClasse(id: string) {
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
     });
+    // Retourne { data: Classe | undefined, isLoading, error, ... }
+    // Utilisation : const { data: classe } = useClasse(id);
 }
 
 export function useClassesStats(etablissementId?: string) {
@@ -95,7 +97,7 @@ export function useCreerClasse() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (dto: CreerClasseDto) => {
+        mutationFn: async (dto: CreerClasseDto | CreerClasseCompletDto) => {
             const response = await apiClient.post<Classe>('/api/classes', dto);
             
             if (!response.data) {
@@ -155,6 +157,32 @@ export function useSupprimerClasse() {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+        },
+    });
+}
+
+/**
+ * Hook pour affecter un élève à une classe
+ */
+export function useAffecterEleve() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (dto: AffecterEleveDto) => {
+            const response = await apiClient.post<any>('/api/classes/affectations', dto);
+            if (!response.data) {
+                throw new Error("Erreur lors de l'affectation de l'élève");
+            }
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.details() });
+            queryClient.invalidateQueries({ queryKey: ['eleves'] });
+            toast.success('Élève affecté avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || "Erreur lors de l'affectation");
         },
     });
 }

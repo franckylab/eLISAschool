@@ -29,6 +29,11 @@ export interface Classe {
         nom: string;
         code: string;
         sousSysteme: string;
+        cycle?: {
+            id: string;
+            nom: string;
+            code: string;
+        };
     };
     filiereId?: string;
     filiere?: {
@@ -41,6 +46,23 @@ export interface Classe {
     description?: string;
     actif: boolean;
     etablissementId: string;
+    /** Champs enrichis via ClasseAnnee (instance annuelle) */
+    effectifActuel?: number;
+    effectifMax?: number;
+    anneeScolaireId?: string;
+    professeurPrincipalId?: string;
+    professeurPrincipal?: {
+        id: string;
+        nom: string;
+        prenom: string;
+    } | null;
+    anneeScolaire?: {
+        id: string;
+        libelle: string;
+        statut?: string;
+    } | null;
+    sallePrincipale?: string;
+    classeAnneeId?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -53,6 +75,11 @@ export interface CreerClasseDto {
     typeClasse?: TypeClasse;
     creneauHoraire?: CreneauHoraire;
     description?: string;
+    /** Champs d'instance annuelle (optionnels) */
+    anneeScolaireId?: string;
+    professeurPrincipalId?: string | null;
+    sallePrincipale?: string;
+    effectifMax?: number;
 }
 
 export interface ModifierClasseDto extends Partial<CreerClasseDto> {
@@ -71,4 +98,43 @@ export interface ClasseFiltres {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+}
+
+/**
+ * DTO pour la création du modèle de classe (étape 1)
+ */
+export interface CreerClasseModeleDto {
+    nom: string;
+    code?: string;
+    niveauId: string;
+    filiereId?: string | null;
+    typeClasse?: TypeClasse;
+    creneauHoraire?: CreneauHoraire;
+    description?: string;
+}
+
+/**
+ * DTO pour l'instance annuelle de classe (étape 2)
+ */
+export interface CreerClasseInstanceDto {
+    anneeScolaireId: string;
+    professeurPrincipalId?: string | null;
+    sallePrincipale?: string;
+    effectifMax?: number;
+}
+
+/**
+ * DTO combiné pour le formulaire complet
+ */
+export interface CreerClasseCompletDto extends CreerClasseModeleDto, CreerClasseInstanceDto {}
+
+/**
+ * DTO pour l'affectation d'un élève à une classe
+ */
+export interface AffecterEleveDto {
+    eleveId: string;
+    classeId: string;
+    dateAffectation?: string;
+    motifChangement?: string;
+    commentaire?: string;
 }
