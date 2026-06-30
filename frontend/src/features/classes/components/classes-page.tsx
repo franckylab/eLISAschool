@@ -13,11 +13,11 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Users, Edit, Trash2, Eye } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { useClasses, useSupprimerClasse } from '../hooks/use-classes';
+import { Plus, Users, Edit, Trash2, Eye, Power } from 'lucide-react';
+import { useClasses, useSupprimerClasse, useToggleActifClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -38,9 +38,11 @@ export function ClassesPage() {
     const [classeSelected, setClasseSelected] = useState<Classe | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
     const [classeToDelete, setClasseToDelete] = useState<Classe | null>(null);
+    const [classeToToggle, setClasseToToggle] = useState<Classe | null>(null);
 
     const { data, isLoading, error, refetch } = useClasses(filtres);
     const supprimer = useSupprimerClasse();
+    const toggleActif = useToggleActifClasse();
 
     const handleCreation = () => {
         setModeFormulaire('creation');
@@ -52,6 +54,21 @@ export function ClassesPage() {
         setModeFormulaire('edition');
         setClasseSelected(classe);
         setModalOpen(true);
+    };
+
+    const handleVoirDetail = (classe: Classe) => {
+        navigate({ to: '/classes/$id', params: { id: classe.id } });
+    };
+
+    const handleToggleActif = (classe: Classe) => {
+        setClasseToToggle(classe);
+    };
+
+    const confirmToggleActif = async () => {
+        if (classeToToggle) {
+            await toggleActif.mutateAsync({ id: classeToToggle.id, actif: !classeToToggle.actif });
+            setClasseToToggle(null);
+        }
     };
 
     const handleSuccess = () => {
@@ -67,7 +84,7 @@ export function ClassesPage() {
             sortable: true,
             render: (classe) => (
                 <button
-                    onClick={() => navigate({ to: '/classes/$id', params: { id: classe.id } })}
+                    onClick={() => handleVoirDetail(classe)}
                     className="font-mono font-semibold text-[var(--color-dominant-600)] hover:underline cursor-pointer"
                     style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                 >
@@ -82,7 +99,7 @@ export function ClassesPage() {
             sortable: true,
             render: (classe) => (
                 <button
-                    onClick={() => navigate({ to: '/classes/$id', params: { id: classe.id } })}
+                    onClick={() => handleVoirDetail(classe)}
                     className="hover:underline cursor-pointer text-left"
                 >
                     <p className="font-medium" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}>
@@ -194,8 +211,16 @@ export function ClassesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: t('actions.voir'),
-                    onClick: () => navigate({ to: '/classes/$id', params: { id: classe.id } }),
+                    onClick: () => handleVoirDetail(classe),
                     variant: 'info' as const,
+                },
+                {
+                    key: 'toggleActif',
+                    icon: Power,
+                    label: classe.actif ? t('actions.desactiver') : t('actions.activer'),
+                    onClick: () => handleToggleActif(classe),
+                    permission: 'classes:edit',
+                    variant: classe.actif ? 'warning' as const : 'success' as const,
                 },
                 {
                     key: 'modifier',
@@ -321,6 +346,20 @@ export function ClassesPage() {
                 }}
                 onCancel={() => setClasseToDelete(null)}
                 isLoading={supprimer.isPending}
+            />
+
+            {/* Modal Confirmation Toggle Actif */}
+            <ConfirmationModal
+                isOpen={!!classeToToggle}
+                title={classeToToggle?.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
+                message={classeToToggle?.actif
+                    ? t('confirmations.desactiverMessage', { nom: classeToToggle?.nom || '' })
+                    : t('confirmations.activerMessage', { nom: classeToToggle?.nom || '' })
+                }
+                variant={classeToToggle?.actif ? 'warning' : 'info'}
+                onConfirm={confirmToggleActif}
+                onCancel={() => setClasseToToggle(null)}
+                isLoading={toggleActif.isPending}
             />
         </div>
     );

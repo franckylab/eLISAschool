@@ -10,7 +10,7 @@
  * Toutes les capacités sont activées par défaut.
  */
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useCallback, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, Minus, Maximize2, Minimize2 } from 'lucide-react';
@@ -102,28 +102,50 @@ export function CustomModal({
     const isMinimized = state === 'minimized';
     const isMaximized = state === 'maximized';
 
+    // ── Détection des clics sur l'overlay vs contenu du modal ──
+    // On utilise un ref pour savoir si le pointerdown a eu lieu sur l'overlay.
+    // Cela évite de fermer le modal quand on clique dans le contenu (y compris les portails Radix Select).
+    const overlayRef = useRef<HTMLDivElement>(null);
+
+    const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+        // Ne fermer que si le clic cible directement l'overlay (pas un enfant)
+        if (e.target === overlayRef.current && closeOnOverlayClick) {
+            onOpenChange(false);
+        }
+    }, [closeOnOverlayClick, onOpenChange]);
+
     return (
         <AnimatePresence>
             {open && (
-                <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal>
+                <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal={false}>
                     <DialogPrimitive.Portal>
-                        {/* Overlay */}
+                        {/* Overlay — cliquer sur l'overlay (pas sur le contenu) ferme le modal */}
                         <DialogPrimitive.Overlay asChild>
                             <motion.div
+                                ref={overlayRef}
                                 className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.15 }}
-                                onClick={closeOnOverlayClick ? () => onOpenChange(false) : undefined}
+                                onClick={handleOverlayClick}
                             />
                         </DialogPrimitive.Overlay>
 
-                        {/* Content — on désactive le positionnement Radix (asChild) et on positionne nous-mêmes */}
+                        {/* Content — modal={false} évite le conflit avec les portails Radix (Select, Dropdown) */}
                         <DialogPrimitive.Content
                             className="focus:outline-none"
                             onPointerDownOutside={(e) => {
-                                if (!closeOnOverlayClick) e.preventDefault();
+                                // Avec modal={false}, empêcher Radix de fermer automatiquement
+                                e.preventDefault();
+                            }}
+                            onEscapeKeyDown={(e) => {
+                                // Permettre la fermeture via Échap
+                                if (closeOnOverlayClick) {
+                                    onOpenChange(false);
+                                } else {
+                                    e.preventDefault();
+                                }
                             }}
                             asChild
                         >

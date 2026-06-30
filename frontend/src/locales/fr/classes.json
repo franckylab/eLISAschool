@@ -83,7 +83,8 @@
     "eleves": {
         "inscrits": "Élèves inscrits",
         "inscrireEleve": "Inscrire un élève",
-        "aucunEleve": "Aucun élève inscrit dans cette classe"
+        "aucunEleve": "Aucun élève inscrit dans cette classe",
+        "rechercher": "Rechercher un élève..."
     },
     "affectation": {
         "titre": "Affecter un élève à la classe",
@@ -114,12 +115,15 @@
         "retour": "Retour",
         "annuler": "Annuler",
         "suivant": "Suivant",
-        "precedent": "Précédent"
+        "precedent": "Précédent",
+        "confirmer": "Confirmer la création"
     },
     "actions": {
         "voir": "Voir détails",
         "modifier": "Modifier",
-        "supprimer": "Supprimer"
+        "supprimer": "Supprimer",
+        "activer": "Activer",
+        "desactiver": "Désactiver"
     },
     "chargement": {
         "liste": "Chargement des classes...",
@@ -133,7 +137,11 @@
     "confirmations": {
         "supprimerTitre": "Supprimer cette classe",
         "supprimerMessage": "Êtes-vous sûr de vouloir supprimer la classe « {{nom}} » ?",
-        "supprimerDetails": "Cette action est irréversible et supprimera toutes les données associées."
+        "supprimerDetails": "Cette action est irréversible et supprimera toutes les données associées.",
+        "activerTitre": "Activer cette classe",
+        "activerMessage": "Voulez-vous activer la classe « {{nom}} » ?",
+        "desactiverTitre": "Désactiver cette classe",
+        "desactiverMessage": "Voulez-vous désactiver la classe « {{nom}} » ? Elle ne sera plus disponible."
     },
     "filtres": {
         "recherchePlaceholder": "Rechercher une classe..."
@@ -156,7 +164,8 @@
         "sallePrincipale": "Salle principale",
         "sallePlaceholder": "Ex: Salle 101",
         "effectifMax": "Effectif maximal",
-        "effectifMaxHint": "Nombre maximum d'élèves (1-100)"
+        "effectifMaxHint": "Nombre maximum d'élèves (1-100)",
+        "actif": "Actif"
     },
     "annee": {
         "enCours": "En cours",
@@ -169,7 +178,13 @@
         "modifierDescription": "Modifiez les informations du modèle de classe",
         "titreModele": "Modèle de classe",
         "titreInstance": "Instance annuelle",
-        "resume": "Résumé de la création"
+        "titreConfirmation": "Confirmation",
+        "resume": "Résumé de la création",
+        "resumeComplet": "Récapitulatif complet",
+        "resumeModele": "Informations du modèle",
+        "resumeInstance": "Configuration annuelle",
+        "confirmMessage": "Vérifiez les informations avant de créer la classe.",
+        "creerClasse": "Créer la classe"
     },
     "validation": {
         "nomRequis": "Le nom de la classe est requis",

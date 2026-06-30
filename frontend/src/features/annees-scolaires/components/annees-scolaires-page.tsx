@@ -213,6 +213,7 @@ export function AnneesScolairesPage() {
             </motion.div>
 
             <DataTable
+                tableId="annees-scolaires"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

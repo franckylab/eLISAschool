@@ -16,15 +16,14 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useParams } from '@tanstack/react-router';
-import { useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
     ArrowLeft, Users, BookOpen, MapPin,
-    Edit, Trash2, UserPlus, TrendingUp, Award
+    Edit, Trash2, UserPlus, TrendingUp, Award, RefreshCw, Power
 } from 'lucide-react';
-import { useClasse, useSupprimerClasse, useAffecterEleve } from '../hooks/use-classes';
+import { useClasse, useSupprimerClasse, useAffecterEleve, useElevesClasse, useReconcilierEffectif, useToggleActifClasse } from '../hooks/use-classes';
 import { useEleves } from '@/features/eleves/hooks/use-eleves';
 import { ClasseFormModal } from './classe-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -57,44 +56,38 @@ export function ClasseDetailPage() {
     const [modalEditionOpen, setModalEditionOpen] = useState(false);
     const [modalAffectationOpen, setModalAffectationOpen] = useState(false);
     const [classeToDelete, setClasseToDelete] = useState(false);
+    const [classeToToggle, setClasseToToggle] = useState(false);
+    const [pageEleves, setPageEleves] = useState(1);
+    const [rechercheEleves, setRechercheEleves] = useState('');
 
     // Queries
     const { data: classe, isLoading: loadingClasse, error: erreurClasse } = useClasse(id);
     const supprimer = useSupprimerClasse();
+    const reconcilier = useReconcilierEffectif(id);
+    const toggleActif = useToggleActifClasse();
 
-    const { data: elevesData, isLoading: loadingEleves } = useEleves({
-        classeId: id,
-        page: 1,
-        limit: 50,
-    });
+    // Élèves via l'endpoint dédié avec pagination backend et statistiques
+    const { data: elevesClasseData, isLoading: loadingEleves } = useElevesClasse(id, pageEleves, 20, rechercheEleves || undefined);
+    const eleves = (elevesClasseData?.eleves?.items || []) as Eleve[];
+    const statsEleves = elevesClasseData?.stats;
+    const paginationEleves = elevesClasseData?.eleves?.meta;
 
-    const eleves = elevesData?.items || [];
-
-    // Données pour le modal d'affectation (passées en prop)
-
-    // Statistiques calculées
+    // Statistiques calculées depuis les données backend
     const statsSexe = useMemo(() => {
-        const garcons = eleves.filter((e: Eleve) => e.sexe === 'M').length;
-        const filles = eleves.filter((e: Eleve) => e.sexe === 'F').length;
-        const total = eleves.length;
-        return {
-            garcons,
-            filles,
-            total,
-            pourcentageGarcons: total > 0 ? (garcons / total) * 100 : 0,
-            pourcentageFilles: total > 0 ? (filles / total) * 100 : 0,
-        };
-    }, [eleves]);
+        if (statsEleves) return statsEleves;
+        return { garcons: 0, filles: 0, total: 0, pourcentageGarcons: 0, pourcentageFilles: 0 };
+    }, [statsEleves]);
 
     const tauxOccupation = useMemo(() => {
         if (!classe?.effectifMax) return null;
-        const effectif = classe.effectifActuel || 0;
+        // Privilégier le COUNT réel, fallback sur le compteur stocké
+        const effectif = statsEleves?.total ?? classe.effectifActuel ?? 0;
         return {
             pourcentage: (effectif / classe.effectifMax) * 100,
             effectif,
             capacite: classe.effectifMax,
         };
-    }, [classe]);
+    }, [classe, statsEleves]);
 
     // Colonnes du tableau des élèves
     const colonnesEleves: Column<Eleve>[] = [
@@ -138,7 +131,7 @@ export function ClasseDetailPage() {
     // Onglets
     const onglets = [
         { id: 'informations' as const, label: t('onglets.informations'), icon: BookOpen },
-        { id: 'eleves' as const, label: `${t('onglets.eleves')} (${eleves.length})`, icon: Users },
+        { id: 'eleves' as const, label: `${t('onglets.eleves')} (${statsEleves?.total ?? 0})`, icon: Users },
         { id: 'statistiques' as const, label: t('onglets.statistiques'), icon: TrendingUp },
     ];
 
@@ -147,6 +140,13 @@ export function ClasseDetailPage() {
         await supprimer.mutateAsync(id);
         navigate({ to: '/classes' });
         setClasseToDelete(false);
+    };
+
+    const handleToggleActif = async () => {
+        if (classe) {
+            await toggleActif.mutateAsync({ id: classe.id, actif: !classe.actif });
+            setClasseToToggle(false);
+        }
     };
 
     // États de chargement et erreur
@@ -212,6 +212,15 @@ export function ClasseDetailPage() {
                     <ElisaButton
                         variant="outline"
                         size="sm"
+                        icon={<Power className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                        onClick={() => setClasseToToggle(true)}
+                        className={estMobile ? 'flex-1' : ''}
+                    >
+                        {classe.actif ? t('actions.desactiver') : t('actions.activer')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="outline"
+                        size="sm"
                         icon={<Edit className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                         onClick={() => setModalEditionOpen(true)}
                         className={estMobile ? 'flex-1' : ''}
@@ -238,20 +247,31 @@ export function ClasseDetailPage() {
                     transition={{ delay: 0.1 }}
                     className="rounded-[var(--radius-lg)] border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-[var(--space-md)]"
                 >
-                    <div className="flex items-center gap-[var(--gap-sm)] mb-2">
-                        <Users className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-blue-600 dark:text-blue-400" />
-                        <span
-                            className="font-medium text-blue-700 dark:text-blue-300"
-                            style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.875rem)' }}
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-[var(--gap-sm)]">
+                            <Users className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-blue-600 dark:text-blue-400" />
+                            <span
+                                className="font-medium text-blue-700 dark:text-blue-300"
+                                style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.875rem)' }}
+                            >
+                                {t('stats.effectif')}
+                            </span>
+                        </div>
+                        {/* Bouton Actualiser — réconciliation effectif */}
+                        <button
+                            onClick={() => reconcilier.mutate()}
+                            disabled={reconcilier.isPending}
+                            className="rounded-[var(--radius-md)] bg-blue-100 dark:bg-blue-900/50 p-2 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors disabled:opacity-50"
+                            title="Actualiser l'effectif"
                         >
-                            {t('stats.effectif')}
-                        </span>
+                            <RefreshCw className={`h-4 w-4 ${reconcilier.isPending ? 'animate-spin' : ''}`} />
+                        </button>
                     </div>
                     <p
                         className="font-bold text-blue-800 dark:text-blue-200"
                         style={{ fontSize: 'clamp(1.25rem, 1.1rem + 0.6vw, 1.875rem)' }}
                     >
-                        {effectifActuel} / {effectifMax || '∞'}
+                        {statsEleves?.total ?? effectifActuel} / {effectifMax || '∞'}
                     </p>
                 </motion.div>
 
@@ -471,16 +491,29 @@ export function ClasseDetailPage() {
                                 className="font-semibold text-[var(--color-text-primary)]"
                                 style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
                             >
-                                {t('eleves.inscrits')} ({eleves.length})
+                                {t('eleves.inscrits')} ({statsEleves?.total ?? 0})
                             </h3>
-                            <ElisaButton
-                                variant="primary"
-                                size="sm"
-                                icon={<UserPlus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                                onClick={() => setModalAffectationOpen(true)}
-                            >
-                                {t('eleves.inscrireEleve')}
-                            </ElisaButton>
+                            <div className={`flex ${estMobile ? 'flex-col gap-2' : 'items-center gap-3'}`}>
+                                {/* Recherche */}
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder={t('eleves.rechercher')}
+                                        value={rechercheEleves}
+                                        onChange={(e) => { setRechercheEleves(e.target.value); setPageEleves(1); }}
+                                        className="pl-3 pr-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
+                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)', width: 'clamp(120px, 30vw, 200px)' }}
+                                    />
+                                </div>
+                                <ElisaButton
+                                    variant="primary"
+                                    size="sm"
+                                    icon={<UserPlus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    onClick={() => setModalAffectationOpen(true)}
+                                >
+                                    {t('eleves.inscrireEleve')}
+                                </ElisaButton>
+                            </div>
                         </div>
                         {loadingEleves ? (
                             <LoadingState message={t('chargement.eleves')} />
@@ -496,6 +529,15 @@ export function ClasseDetailPage() {
                                 tableId="classe-eleves"
                                 data={eleves}
                                 columns={colonnesEleves}
+                                pagination={paginationEleves ? {
+                                    page: paginationEleves.currentPage,
+                                    limit: paginationEleves.itemsPerPage,
+                                    total: paginationEleves.totalItems,
+                                    totalPages: paginationEleves.totalPages,
+                                    hasNext: paginationEleves.hasNext,
+                                    hasPrev: paginationEleves.hasPrev,
+                                    onPageChange: setPageEleves,
+                                } : undefined}
                                 enableReordering
                                 enablePinning
                                 enableColumnVisibility
@@ -605,6 +647,20 @@ export function ClasseDetailPage() {
                 isLoading={supprimer.isPending}
             />
 
+            {/* Modal Toggle Actif */}
+            <ConfirmationModal
+                isOpen={classeToToggle}
+                title={classe.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
+                message={classe.actif
+                    ? t('confirmations.desactiverMessage', { nom: classe.nom })
+                    : t('confirmations.activerMessage', { nom: classe.nom })
+                }
+                variant={classe.actif ? 'warning' : 'info'}
+                onConfirm={handleToggleActif}
+                onCancel={() => setClasseToToggle(false)}
+                isLoading={toggleActif.isPending}
+            />
+
             {/* Modal Affectation Élève */}
             {modalAffectationOpen && (
                 <ModalAffectationEleve
@@ -635,12 +691,12 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
 
     // Charger les élèves de l'établissement
     const { data: tousElevesData } = useEleves({ page: 1, limit: 200 });
-    // Charger les élèves déjà affectés à cette classe
-    const { data: elevesClasseData } = useEleves({ classeId, page: 1, limit: 500 });
+    // Charger les élèves déjà affectés via l'endpoint dédié
+    const { data: elevesAffectesData } = useElevesClasse(classeId, 1, 500);
 
     // Filtrer les élèves déjà affectés à cette classe
     const elevesDejaAffectes = new Set(
-        (elevesClasseData?.items || []).map((e: Eleve) => e.id)
+        (elevesAffectesData?.eleves?.items || []).map((e: any) => e.id)
     );
     const elevesDisponibles = (tousElevesData?.items || []).filter(
         (e: Eleve) => !elevesDejaAffectes.has(e.id)

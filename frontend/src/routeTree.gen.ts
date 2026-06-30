@@ -44,6 +44,7 @@ import { Route as AuthBulletinsRouteImport } from './routes/_auth.bulletins'
 import { Route as AuthApparenceRouteImport } from './routes/_auth.apparence'
 import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
 import { Route as AuthEtablissementsIndexRouteImport } from './routes/_auth.etablissements.index'
+import { Route as AuthClassesIndexRouteImport } from './routes/_auth.classes.index'
 import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
@@ -236,6 +237,11 @@ const AuthEtablissementsIndexRoute = AuthEtablissementsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthEtablissementsRoute,
 } as any)
+const AuthClassesIndexRoute = AuthClassesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthClassesRoute,
+} as any)
 const AuthUtilisateursIdRoute = AuthUtilisateursIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/classes/': typeof AuthClassesIndexRoute
   '/etablissements/': typeof AuthEtablissementsIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
@@ -385,7 +392,6 @@ export interface FileRoutesByTo {
   '/apparence': typeof AuthApparenceRoute
   '/bulletins': typeof AuthBulletinsRoute
   '/change-password': typeof AuthChangePasswordRoute
-  '/classes': typeof AuthClassesRouteWithChildren
   '/competences': typeof AuthCompetencesRoute
   '/configuration': typeof AuthConfigurationRoute
   '/cycles': typeof AuthCyclesRoute
@@ -419,6 +425,7 @@ export interface FileRoutesByTo {
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/classes': typeof AuthClassesIndexRoute
   '/etablissements': typeof AuthEtablissementsIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
@@ -473,6 +480,7 @@ export interface FileRoutesById {
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/_auth/classes/': typeof AuthClassesIndexRoute
   '/_auth/etablissements/': typeof AuthEtablissementsIndexRoute
   '/(authenticated)/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/(authenticated)/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
@@ -527,6 +535,7 @@ export interface FileRouteTypes {
     | '/personnel/$id'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
+    | '/classes/'
     | '/etablissements/'
     | '/parametres/structure-academique/cycles'
     | '/parametres/structure-academique/diplomes-eleves'
@@ -544,7 +553,6 @@ export interface FileRouteTypes {
     | '/apparence'
     | '/bulletins'
     | '/change-password'
-    | '/classes'
     | '/competences'
     | '/configuration'
     | '/cycles'
@@ -578,6 +586,7 @@ export interface FileRouteTypes {
     | '/personnel/$id'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
+    | '/classes'
     | '/etablissements'
     | '/parametres/structure-academique/cycles'
     | '/parametres/structure-academique/diplomes-eleves'
@@ -631,6 +640,7 @@ export interface FileRouteTypes {
     | '/_auth/personnel/$id'
     | '/_auth/salles/statistiques'
     | '/_auth/utilisateurs/$id'
+    | '/_auth/classes/'
     | '/_auth/etablissements/'
     | '/(authenticated)/parametres/structure-academique/cycles'
     | '/(authenticated)/parametres/structure-academique/diplomes-eleves'
@@ -896,6 +906,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthEtablissementsIndexRouteImport
       parentRoute: typeof AuthEtablissementsRoute
     }
+    '/_auth/classes/': {
+      id: '/_auth/classes/'
+      path: '/'
+      fullPath: '/classes/'
+      preLoaderRoute: typeof AuthClassesIndexRouteImport
+      parentRoute: typeof AuthClassesRoute
+    }
     '/_auth/utilisateurs/$id': {
       id: '/_auth/utilisateurs/$id'
       path: '/$id'
@@ -1024,10 +1041,12 @@ const AuthAnneesScolairesRouteWithChildren =
 
 interface AuthClassesRouteChildren {
   AuthClassesIdRoute: typeof AuthClassesIdRoute
+  AuthClassesIndexRoute: typeof AuthClassesIndexRoute
 }
 
 const AuthClassesRouteChildren: AuthClassesRouteChildren = {
   AuthClassesIdRoute: AuthClassesIdRoute,
+  AuthClassesIndexRoute: AuthClassesIndexRoute,
 }
 
 const AuthClassesRouteWithChildren = AuthClassesRoute._addFileChildren(

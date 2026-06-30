@@ -21,8 +21,8 @@ export function useToutesAnneesScolaires(_etablissementId?: string) {
         queryKey: ANNEES_SCOLAIRES_KEYS.toutes(),
         queryFn: async () => {
             const params = { limit: 100, page: 1 };
-            const response = await apiClient.get<{ success: boolean; data: AnneeScolaire[] }>('/api/annees-scolaires', params);
-            return response.data?.data || [];
+            const response = await apiClient.get<AnneeScolaire[]>('/api/annees-scolaires', params);
+            return response.data || [];
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 min

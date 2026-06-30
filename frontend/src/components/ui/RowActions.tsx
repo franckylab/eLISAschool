@@ -124,7 +124,7 @@ export function RowActions({
                         align="end"
                         sideOffset={4}
                         collisionPadding={8}
-                        className="z-[60] min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-xl animate-in fade-in zoom-in-95 duration-150"
+                        className="z-[1100] min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-xl animate-in fade-in zoom-in-95 duration-150"
                     >
                         {actionsFiltrees.map((action) => {
                             const Icon = action.icon;

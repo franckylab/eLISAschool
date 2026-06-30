@@ -36,6 +36,9 @@ export class AnneeScolaire {
     @Column({ type: 'varchar', length: 50 })
     libelle!: string; // ex: 2024-2025
 
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    code!: string; // ex: 2024-2025
+
     @Column({ type: 'date' })
     dateDebut!: Date;
 

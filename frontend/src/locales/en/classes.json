@@ -83,7 +83,8 @@
     "eleves": {
         "inscrits": "Enrolled students",
         "inscrireEleve": "Enroll a student",
-        "aucunEleve": "No students enrolled in this class"
+        "aucunEleve": "No students enrolled in this class",
+        "rechercher": "Search a student..."
     },
     "affectation": {
         "titre": "Assign a student to the class",
@@ -114,12 +115,15 @@
         "retour": "Back",
         "annuler": "Cancel",
         "suivant": "Next",
-        "precedent": "Previous"
+        "precedent": "Previous",
+        "confirmer": "Confirm creation"
     },
     "actions": {
         "voir": "View details",
         "modifier": "Edit",
-        "supprimer": "Delete"
+        "supprimer": "Delete",
+        "activer": "Activate",
+        "desactiver": "Deactivate"
     },
     "chargement": {
         "liste": "Loading classes...",
@@ -133,7 +137,11 @@
     "confirmations": {
         "supprimerTitre": "Delete this class",
         "supprimerMessage": "Are you sure you want to delete the class \"{{nom}}\"?",
-        "supprimerDetails": "This action is irreversible and will delete all associated data."
+        "supprimerDetails": "This action is irreversible and will delete all associated data.",
+        "activerTitre": "Activate this class",
+        "activerMessage": "Do you want to activate the class \"{{nom}}\"?",
+        "desactiverTitre": "Deactivate this class",
+        "desactiverMessage": "Do you want to deactivate the class \"{{nom}}\"? The class will no longer be available."
     },
     "filtres": {
         "recherchePlaceholder": "Search for a class..."
@@ -156,7 +164,8 @@
         "sallePrincipale": "Main room",
         "sallePlaceholder": "E.g.: Room 101",
         "effectifMax": "Maximum enrollment",
-        "effectifMaxHint": "Maximum number of students (1-100)"
+        "effectifMaxHint": "Maximum number of students (1-100)",
+        "actif": "Active"
     },
     "annee": {
         "enCours": "In progress",
@@ -169,7 +178,13 @@
         "modifierDescription": "Edit the class model information",
         "titreModele": "Class model",
         "titreInstance": "Annual instance",
-        "resume": "Creation summary"
+        "titreConfirmation": "Confirmation",
+        "resume": "Creation summary",
+        "resumeComplet": "Complete summary",
+        "resumeModele": "Model information",
+        "resumeInstance": "Annual configuration",
+        "confirmMessage": "Please verify the information before creating the class.",
+        "creerClasse": "Create the class"
     },
     "validation": {
         "nomRequis": "Class name is required",

@@ -138,3 +138,32 @@ export interface AffecterEleveDto {
     motifChangement?: string;
     commentaire?: string;
 }
+
+/**
+ * Statistiques des élèves d'une classe
+ */
+export interface ElevesClasseStats {
+    total: number;
+    garcons: number;
+    filles: number;
+    pourcentageGarcons: number;
+    pourcentageFilles: number;
+}
+
+/**
+ * Résultat de l'endpoint GET /api/classes/:id/eleves
+ */
+export interface ElevesClasseResult {
+    eleves: {
+        items: Array<Record<string, any> & { classeId?: string; affectationId?: string }>;
+        meta: {
+            currentPage: number;
+            itemsPerPage: number;
+            totalItems: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
+    };
+    stats: ElevesClasseStats;
+}

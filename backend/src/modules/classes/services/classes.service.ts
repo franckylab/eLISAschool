@@ -222,6 +222,160 @@ export class ClassesService {
         logger.info(`[${etablissementId}] Classe supprimée: ${id}`);
     }
 
+    // ==== ÉLÈVES DE LA CLASSE ====
+
+    /**
+     * Récupérer les élèves d'une classe via les affectations actives
+     * Retourne pagination + statistiques (sexe, effectif réel)
+     */
+    async findElevesByClasse(
+        classeId: string,
+        options: { page: number; limit: number; search?: string },
+        etablissementId?: string
+    ): Promise<{
+        eleves: PaginatedResult<any>;
+        stats: { total: number; garcons: number; filles: number; pourcentageGarcons: number; pourcentageFilles: number };
+    }> {
+        const { page, limit, search } = options;
+
+        // Requête principale : affectations actives avec JOIN élève
+        const qb = this.affectationRepo
+            .createQueryBuilder('ae')
+            .innerJoinAndSelect('ae.eleve', 'e')
+            .leftJoinAndSelect('e.utilisateur', 'u')
+            .where('ae.classeId = :classeId', { classeId })
+            .andWhere('ae.actif = :actif', { actif: true })
+            .andWhere('ae.statut = :statut', { statut: StatutAffectationEleve.ACTIVE });
+
+        if (etablissementId) {
+            qb.andWhere('ae.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        if (search) {
+            qb.andWhere(
+                '(e.nom ILIKE :search OR e.prenom ILIKE :search OR e.matricule ILIKE :search)',
+                { search: `%${search}%` }
+            );
+        }
+
+        qb.orderBy('e.nom', 'ASC').addOrderBy('e.prenom', 'ASC');
+
+        const elevesPagines = await paginateWithQueryBuilder(qb, page, limit, false);
+
+        // Aplatir : retourner les données de l'élève enrichies avec classeId (contexte affectation)
+        const items = elevesPagines.items.map((ae: any) => ({
+            ...ae.eleve,
+            classeId: ae.classeId,
+            affectationId: ae.id,
+            dateAffectation: ae.dateAffectation,
+        }));
+
+        // Statistiques sexe (calculées sur le TOTAL, pas seulement la page courante)
+        const statsQb = this.affectationRepo
+            .createQueryBuilder('ae')
+            .innerJoin('ae.eleve', 'e')
+            .where('ae.classeId = :classeId', { classeId })
+            .andWhere('ae.actif = :actif', { actif: true })
+            .andWhere('ae.statut = :statut', { statut: StatutAffectationEleve.ACTIVE });
+
+        if (etablissementId) {
+            statsQb.andWhere('ae.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        const statsBrutes = await statsQb
+            .select([
+                'COUNT(*) as total',
+                "SUM(CASE WHEN e.sexe = 'M' THEN 1 ELSE 0 END) as garcons",
+                "SUM(CASE WHEN e.sexe = 'F' THEN 1 ELSE 0 END) as filles",
+            ])
+            .getRawOne();
+
+        const total = parseInt(statsBrutes?.total || '0');
+        const garcons = parseInt(statsBrutes?.garcons || '0');
+        const filles = parseInt(statsBrutes?.filles || '0');
+
+        return {
+            eleves: {
+                items,
+                meta: elevesPagines.meta,
+            },
+            stats: {
+                total,
+                garcons,
+                filles,
+                pourcentageGarcons: total > 0 ? (garcons / total) * 100 : 0,
+                pourcentageFilles: total > 0 ? (filles / total) * 100 : 0,
+            },
+        };
+    }
+
+    /**
+     * Compter les affectations réelles d'une classe (pour réconciliation)
+     */
+    async compterElevesActifs(classeId: string, anneeScolaireId?: string): Promise<number> {
+        const where: any = { classeId, actif: true, statut: StatutAffectationEleve.ACTIVE };
+        if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
+        return this.affectationRepo.count({ where });
+    }
+
+    /**
+     * Réconcilier le compteur effectifActuel avec le nombre réel d'affectations
+     */
+    async reconcilierEffectif(classeAnneeId: string): Promise<{ ancien: number; nouveau: number }> {
+        const classeAnnee = await this.classeAnneeRepo.findOne({ where: { id: classeAnneeId } });
+        if (!classeAnnee) throw new AppError('Classe-année non trouvée', 404, 'NOT_FOUND');
+
+        const effectifReel = await this.compterElevesActifs(classeAnnee.classeId, classeAnnee.anneeScolaireId);
+        const ancienEffectif = classeAnnee.effectifActuel;
+
+        if (ancienEffectif !== effectifReel) {
+            classeAnnee.effectifActuel = effectifReel;
+            await this.classeAnneeRepo.save(classeAnnee);
+            logger.info(`[Réconciliation] ClasseAnnee ${classeAnneeId}: effectif ${ancienEffectif} → ${effectifReel}`);
+        }
+
+        return { ancien: ancienEffectif, nouveau: effectifReel };
+    }
+
+    /**
+     * Réconcilier l'effectif d'une classe par son ID (trouve la ClasseAnnee active)
+     */
+    async reconcilierEffectifByClasse(classeId: string, etablissementId?: string): Promise<{ ancien: number; nouveau: number; effectifReel: number }> {
+        // Trouver la ClasseAnnee active pour cette classe
+        const classeAnnee = await this.classeAnneeRepo.findOne({
+            where: { classeId, actif: true },
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!classeAnnee) {
+            // Pas de ClasseAnnee : compter les affectations réelles quand même
+            const effectifReel = await this.compterElevesActifs(classeId);
+            return { ancien: 0, nouveau: effectifReel, effectifReel };
+        }
+
+        const effectifReel = await this.compterElevesActifs(classeAnnee.classeId, classeAnnee.anneeScolaireId);
+        const ancienEffectif = classeAnnee.effectifActuel;
+
+        if (ancienEffectif !== effectifReel) {
+            classeAnnee.effectifActuel = effectifReel;
+            await this.classeAnneeRepo.save(classeAnnee);
+            logger.info(`[Réconciliation] Classe ${classeId} (ClasseAnnee ${classeAnnee.id}): effectif ${ancienEffectif} → ${effectifReel}`);
+        }
+
+        return { ancien: ancienEffectif, nouveau: effectifReel, effectifReel };
+    }
+
+    /**
+     * Basculer le statut actif/inactif d'une classe
+     */
+    async toggleActif(id: string, actif: boolean, etablissementId?: string): Promise<Classe> {
+        const classe = await this.findOne(id, etablissementId);
+        classe.actif = actif;
+        await this.classeRepo.save(classe);
+        logger.info(`[${etablissementId}] Classe ${actif ? 'activée' : 'désactivée'}: ${classe.nom}`);
+        return classe;
+    }
+
     // ==== AFFECTATIONS ====
 
     async affecterEleve(dto: AffecterEleveDto, createurId: string, etablissementId?: string): Promise<AffectationEleve> {

@@ -106,6 +106,19 @@ export class ElevesService {
             qb.andWhere('e.statut = :statut', { statut });
         }
 
+        // Filtre par classe via affectations actives (la relation élève↔classe passe par AffectationEleve)
+        if (classeId) {
+            qb.andWhere(
+                `e.id IN (
+                    SELECT ae.eleveId FROM affectations_eleves ae
+                    WHERE ae.classeId = :classeId
+                    AND ae.actif = true
+                    AND ae.statut = 'ACTIVE'
+                )`,
+                { classeId }
+            );
+        }
+
         // Recherche textuelle
         if (search) {
             qb.andWhere(

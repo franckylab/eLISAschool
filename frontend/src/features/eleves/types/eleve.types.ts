@@ -55,9 +55,9 @@ export interface Eleve {
     // Workflow
     statut: StatutEleve;
     
-    // Relations
-    classeId: string;
-    anneeScolaireId: string;
+    // Relations (classeId présent uniquement via affectations ou endpoint dédié)
+    classeId?: string;
+    anneeScolaireId?: string;
     etablissementId: string;
     utilisateurId?: string;
     

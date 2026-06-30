@@ -16,14 +16,14 @@ const service = new AnneesScolairesService();
 
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const annees = await service.findAll();
+        const annees = await service.findAll(req.etablissementId);
         res.json({ success: true, data: annees });
     } catch (error) { next(error); }
 });
 
 router.get('/active', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const annee = await service.findActive();
+        const annee = await service.findActive(req.etablissementId);
         res.json({ success: true, data: annee });
     } catch (error) { next(error); }
 });
@@ -44,9 +44,16 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     } catch (error) { next(error); }
 });
 
+router.post('/:id/activer', authMiddleware, requirePermission('annees-scolaires:activer'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const annee = await service.activer(req.params.id, req.etablissementId);
+        res.json({ success: true, data: annee });
+    } catch (error) { next(error); }
+});
+
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id);
+        await service.delete(req.params.id, req.etablissementId);
         res.json({ success: true, message: 'Année scolaire supprimée' });
     } catch (error) { next(error); }
 });

@@ -1,24 +1,26 @@
 /**
  * ==================================
- * eLISAschool - Formulaire Classe (2 étapes)
+ * eLISAschool - Formulaire Classe (3 étapes)
  * ==================================
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
- * Formulaire en 2 étapes :
+ * Formulaire en 3 étapes :
  * - Étape 1 : Modèle de classe (nom, code, niveau, filière, type, créneau)
- * - Étape 2 : Instance annuelle (année scolaire, professeur principal, salle, effectif max)
+ * - Étape 2 : Instance annuelle (année scolaire, salle, effectif max)
+ * - Étape 3 : Résumé complet + Confirmation
  *
  * Corrections :
  * - Typage strict (pas de any)
  * - Responsive design complet
  * - i18n complet
  * - Validation par étape
+ * - Étape 3 : récapitulatif complet avant soumission
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Save, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { useCreerClasse, useModifierClasse } from '../hooks/use-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
@@ -45,7 +47,7 @@ interface ClasseFormModalProps {
     onCancel: () => void;
 }
 
-type EtapeFormulaire = 1 | 2;
+type EtapeFormulaire = 1 | 2 | 3;
 
 interface ErreursFormulaire {
     nom?: string;
@@ -71,7 +73,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const [erreurs, setErreurs] = useState<ErreursFormulaire>({});
 
     // Données étape 1 : Modèle de classe
-    const [modeleData, setModeleData] = useState<CreerClasseModeleDto>({
+    const [modeleData, setModeleData] = useState<CreerClasseModeleDto & { actif?: boolean }>({
         nom: classe?.nom || '',
         code: classe?.code || '',
         niveauId: classe?.niveauId || '',
@@ -79,6 +81,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         typeClasse: classe?.typeClasse || TypeClasseEnum.NORMALE,
         creneauHoraire: classe?.creneauHoraire || CreneauHoraireEnum.MATIN,
         description: classe?.description || '',
+        actif: classe?.actif ?? true,
     });
 
     // Données étape 2 : Instance annuelle
@@ -100,6 +103,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                 typeClasse: classe.typeClasse,
                 creneauHoraire: classe.creneauHoraire,
                 description: classe.description || '',
+                actif: classe.actif ?? true,
             });
             setInstanceData({
                 anneeScolaireId: classe.anneeScolaireId || '',
@@ -148,8 +152,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     // Validation étape 1
     const validerEtape1 = (): boolean => {
         const nouvellesErreurs: ErreursFormulaire = {};
-
-        if (!modeleData.nom?.trim()) {
+        const nom = typeof modeleData.nom === 'string' ? modeleData.nom : '';
+        if (!nom.trim()) {
             nouvellesErreurs.nom = t('validation.nomRequis');
         }
         if (!modeleData.niveauId) {
@@ -179,15 +183,24 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         }
     };
 
+    const allerEtape3 = () => {
+        if (validerEtape2()) {
+            setEtape(3);
+        }
+    };
+
     const retournerEtape1 = () => {
         setErreurs({});
         setEtape(1);
     };
 
-    // Soumission finale
-    const handleSubmit = async () => {
-        if (mode === 'creation' && !validerEtape2()) return;
+    const retournerEtape2 = () => {
+        setErreurs({});
+        setEtape(2);
+    };
 
+    // Soumission finale (depuis l'étape 3)
+    const handleSubmit = async () => {
         try {
             if (mode === 'creation') {
                 // En création, on envoie les données combinées (modèle + instance)
@@ -236,47 +249,87 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         : t('formulaire.modifierTitre');
 
     const description = mode === 'creation'
-        ? t('formulaire.creerDescription', { etape, total: 2 })
+        ? t('formulaire.creerDescription', { etape, total: 3 })
         : t('formulaire.modifierDescription');
 
     // Footer dynamique selon l'étape
-    const footer = mode === 'creation' && etape === 1 ? (
-        <>
-            <ElisaButton variant="outline" onClick={onCancel}>
-                {t('boutons.annuler')}
-            </ElisaButton>
-            <ElisaButton
-                variant="primary"
-                onClick={allerEtape2}
-                icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-            >
-                {t('boutons.suivant')}
-            </ElisaButton>
-        </>
-    ) : (
-        <>
-            <ElisaButton variant="outline" onClick={onCancel}>
-                {t('boutons.annuler')}
-            </ElisaButton>
-            {mode === 'creation' && etape === 2 && (
+    const footer = (() => {
+        // Étape 1 : Annuler + Suivant
+        if (mode !== 'creation' || etape === 1) {
+            return (
+                <>
+                    <ElisaButton variant="outline" onClick={onCancel}>
+                        {t('boutons.annuler')}
+                    </ElisaButton>
+                    {mode === 'creation' ? (
+                        <ElisaButton
+                            variant="primary"
+                            onClick={allerEtape2}
+                            icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                        >
+                            {t('boutons.suivant')}
+                        </ElisaButton>
+                    ) : (
+                        <ElisaButton
+                            variant="primary"
+                            isLoading={isLoading}
+                            icon={<Save className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                            onClick={handleSubmit}
+                        >
+                            {t('boutons.enregistrer')}
+                        </ElisaButton>
+                    )}
+                </>
+            );
+        }
+        // Étape 2 : Annuler + Précédent + Suivant
+        if (etape === 2) {
+            return (
+                <>
+                    <ElisaButton variant="outline" onClick={onCancel}>
+                        {t('boutons.annuler')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="outline"
+                        onClick={retournerEtape1}
+                        icon={<ChevronLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                    >
+                        {t('boutons.precedent')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        onClick={allerEtape3}
+                        icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                    >
+                        {t('boutons.suivant')}
+                    </ElisaButton>
+                </>
+            );
+        }
+        // Étape 3 : Annuler + Précédent + Confirmer création
+        return (
+            <>
+                <ElisaButton variant="outline" onClick={onCancel}>
+                    {t('boutons.annuler')}
+                </ElisaButton>
                 <ElisaButton
                     variant="outline"
-                    onClick={retournerEtape1}
+                    onClick={retournerEtape2}
                     icon={<ChevronLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                 >
                     {t('boutons.precedent')}
                 </ElisaButton>
-            )}
-            <ElisaButton
-                variant="primary"
-                isLoading={isLoading}
-                icon={<Save className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                onClick={handleSubmit}
-            >
-                {mode === 'creation' ? t('boutons.creer') : t('boutons.enregistrer')}
-            </ElisaButton>
-        </>
-    );
+                <ElisaButton
+                    variant="primary"
+                    isLoading={isLoading}
+                    icon={<CheckCircle2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                    onClick={handleSubmit}
+                >
+                    {t('boutons.confirmer')}
+                </ElisaButton>
+            </>
+        );
+    })();
 
     return (
         <CustomModal
@@ -291,20 +344,31 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                 {/* Indicateur d'étape (mode création) */}
                 {mode === 'creation' && (
                     <div className="flex items-center gap-[var(--gap-sm)] mb-[var(--space-md)]">
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                        {/* Étape 1 */}
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
                             etape >= 1
                                 ? 'bg-[var(--color-dominant-600)] text-white'
                                 : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
                         }`}>
                             1
                         </div>
-                        <div className={`flex-1 h-1 rounded ${etape >= 2 ? 'bg-[var(--color-dominant-600)]' : 'bg-[var(--color-surface-secondary)]'}`} />
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                        <div className={`flex-1 h-1 rounded transition-colors ${etape >= 2 ? 'bg-[var(--color-dominant-600)]' : 'bg-[var(--color-surface-secondary)]'}`} />
+                        {/* Étape 2 */}
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
                             etape >= 2
                                 ? 'bg-[var(--color-dominant-600)] text-white'
                                 : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
                         }`}>
                             2
+                        </div>
+                        <div className={`flex-1 h-1 rounded transition-colors ${etape >= 3 ? 'bg-[var(--color-dominant-600)]' : 'bg-[var(--color-surface-secondary)]'}`} />
+                        {/* Étape 3 */}
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
+                            etape >= 3
+                                ? 'bg-[var(--color-dominant-600)] text-white'
+                                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
+                        }`}>
+                            <CheckCircle2 className="w-4 h-4" />
                         </div>
                     </div>
                 )}
@@ -324,7 +388,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             <ElisaInput
                                 label={t('champs.nom')}
                                 value={modeleData.nom || ''}
-                                onChange={(value) => handleChangeModele('nom', value as string)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('nom', e.target.value)}
                                 error={erreurs.nom}
                                 placeholder={t('champs.nomPlaceholder')}
                                 required
@@ -332,7 +396,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             <ElisaInput
                                 label={t('champs.code')}
                                 value={modeleData.code || ''}
-                                onChange={(value) => handleChangeModele('code', value as string)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('code', e.target.value)}
                                 error={erreurs.code}
                                 placeholder={t('champs.codePlaceholder')}
                             />
@@ -393,6 +457,36 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}
                             />
                         </div>
+
+                        {/* Statut actif/inactif (mode édition uniquement) */}
+                        {mode === 'edition' && (
+                            <div className="flex items-center gap-[var(--gap-md)]">
+                                <label
+                                    className="flex items-center gap-[var(--gap-sm)] cursor-pointer"
+                                    style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={modeleData.actif ?? true}
+                                        onChange={(e) => {
+                                            const nouveauActif = e.target.checked;
+                                            setModeleData(prev => ({ ...prev, actif: nouveauActif }));
+                                        }}
+                                        className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-500)]"
+                                    />
+                                    <span className="font-medium text-[var(--color-text-primary)]">
+                                        {t('champs.actif')}
+                                    </span>
+                                    <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        modeleData.actif
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                    }`}>
+                                        {modeleData.actif ? t('statut.actif') : t('statut.inactif')}
+                                    </span>
+                                </label>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -420,7 +514,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             <ElisaInput
                                 label={t('champs.sallePrincipale')}
                                 value={instanceData.sallePrincipale || ''}
-                                onChange={(value) => handleChangeInstance('sallePrincipale', value as string)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('sallePrincipale', e.target.value)}
                                 placeholder={t('champs.sallePlaceholder')}
                             />
                         </div>
@@ -431,37 +525,105 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 label={t('champs.effectifMax')}
                                 type="number"
                                 value={instanceData.effectifMax?.toString() || '50'}
-                                onChange={(value) => handleChangeInstance('effectifMax', parseInt(value as string) || 50)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
                                 min="1"
                                 max="100"
                                 hint={t('champs.effectifMaxHint')}
                             />
                         </div>
 
-                        {/* Résumé de la création */}
-                        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
-                            <h4
-                                className="font-medium text-[var(--color-text-primary)] mb-2"
+
+                    </div>
+                )}
+
+                {/* Étape 3 : Résumé complet + Confirmation (mode création uniquement) */}
+                {mode === 'creation' && etape === 3 && (
+                    <div className="space-y-[var(--space-md)]">
+                        {/* Message de confirmation */}
+                        <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-dominant-600)]/30 bg-[var(--color-dominant-600)]/5 p-[var(--space-md)]">
+                            <CheckCircle2 className="w-5 h-5 text-[var(--color-dominant-600)] shrink-0" />
+                            <p
+                                className="text-[var(--color-text-primary)]"
                                 style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
                             >
-                                {t('formulaire.resume')}
+                                {t('formulaire.confirmMessage')}
+                            </p>
+                        </div>
+
+                        {/* Section Modèle de classe */}
+                        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
+                            <h4
+                                className="font-semibold text-[var(--color-text-primary)] mb-3"
+                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                            >
+                                {t('formulaire.resumeModele')}
                             </h4>
-                            <dl className="space-y-1" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                <div className="flex justify-between">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.nom')}:</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.nom}</dd>
+                            <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.nom')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.nom || '-'}</dd>
                                 </div>
-                                <div className="flex justify-between">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.niveau')}:</dt>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.code')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.code || '-'}</dd>
+                                </div>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.niveau')}</dt>
                                     <dd className="font-medium text-[var(--color-text-primary)]">
                                         {niveaux.find((n: { id: string; nom: string }) => n.id === modeleData.niveauId)?.nom || '-'}
                                     </dd>
                                 </div>
-                                <div className="flex justify-between">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.typeClasse')}:</dt>
+                                {estSecondCycle && modeleData.filiereId && (
+                                    <div className="flex flex-col">
+                                        <dt className="text-[var(--color-text-secondary)]">{t('champs.filiere')}</dt>
+                                        <dd className="font-medium text-[var(--color-text-primary)]">
+                                            {filieres.find((f: { id: string; nom: string }) => f.id === modeleData.filiereId)?.nom || '-'}
+                                        </dd>
+                                    </div>
+                                )}
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.typeClasse')}</dt>
                                     <dd className="font-medium text-[var(--color-text-primary)]">
                                         {optionsTypesClasse.find(o => o.value === modeleData.typeClasse)?.label || '-'}
                                     </dd>
+                                </div>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.creneauHoraire')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">
+                                        {optionsCreneaux.find(o => o.value === modeleData.creneauHoraire)?.label || '-'}
+                                    </dd>
+                                </div>
+                                {modeleData.description && (
+                                    <div className="flex flex-col col-span-2">
+                                        <dt className="text-[var(--color-text-secondary)]">{t('champs.description')}</dt>
+                                        <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.description}</dd>
+                                    </div>
+                                )}
+                            </dl>
+                        </div>
+
+                        {/* Section Configuration annuelle */}
+                        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
+                            <h4
+                                className="font-semibold text-[var(--color-text-primary)] mb-3"
+                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                            >
+                                {t('formulaire.resumeInstance')}
+                            </h4>
+                            <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.anneeScolaire')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">
+                                        {anneesScolaires.find((a: { id: string; libelle: string }) => a.id === instanceData.anneeScolaireId)?.libelle || '-'}
+                                    </dd>
+                                </div>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.sallePrincipale')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.sallePrincipale || '-'}</dd>
+                                </div>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.effectifMax || '-'}</dd>
                                 </div>
                             </dl>
                         </div>

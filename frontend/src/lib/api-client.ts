@@ -450,8 +450,8 @@ class ApiClient {
         return this.request<ApiResponse<T>>(url);
     }
 
-    async getPaginated<T>(endpoint: string, options?: PaginationOptions): Promise<ApiResponse<PaginatedResult<T>>> {
-        const params: Record<string, string | number | undefined> = {};
+    async getPaginated<T>(endpoint: string, options?: PaginationOptions & Record<string, any>): Promise<ApiResponse<PaginatedResult<T>>> {
+        const params: Record<string, string | number | boolean | undefined> = { ...options };
         if (options?.page) params.page = options.page;
         if (options?.limit) params.limit = options.limit;
         if (options?.sortBy) params.sortBy = options.sortBy;

@@ -105,7 +105,7 @@ export const ElisaSelect = forwardRef<HTMLButtonElement, ElisaSelectProps>(
 
                     <SelectPrimitive.Portal>
                         <SelectPrimitive.Content
-                            className="z-[60] max-h-60 overflow-hidden rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg animate-in fade-in-0 zoom-in-95"
+                            className="z-[1100] max-h-60 overflow-hidden rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg animate-in fade-in-0 zoom-in-95"
                             position="popper"
                             sideOffset={4}
                         >

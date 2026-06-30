@@ -8,8 +8,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { ClassesService } from '../services';
 import { createClasseSchema, updateClasseSchema, affecterEleveSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
+import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 const service = new ClassesService();
@@ -55,6 +55,38 @@ router.get('/all', authMiddleware, requirePermission('classes:view'), async (req
 });
 
 /**
+ * @route   GET /api/classes/:id/eleves
+ * @desc    Récupérer les élèves d'une classe avec pagination et statistiques
+ * @access  Authentifié avec permission classes:view
+ */
+router.get('/:id/eleves', authMiddleware, requirePermission('classes:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const search = req.query.search as string;
+
+        const result = await service.findElevesByClasse(
+            req.params.id,
+            { page, limit, search },
+            req.etablissementId
+        );
+        res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+/**
+ * @route   POST /api/classes/:id/reconcilier-effectif
+ * @desc    Réconcilier le compteur effectifActuel avec le nombre réel d'affectations
+ * @access  Authentifié avec permission classes:edit
+ */
+router.post('/:id/reconcilier-effectif', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await service.reconcilierEffectifByClasse(req.params.id, req.etablissementId);
+        res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+/**
  * @route   GET /api/classes/:id
  * @desc    Récupérer une classe par ID (avec données annuelles enrichies)
  * @access  Authentifié avec permission classes:view
@@ -94,6 +126,22 @@ router.post('/affectations', authMiddleware, requirePermission('classes:affecter
         const dto = validateDto(affecterEleveSchema, req.body);
         const affectation = await service.affecterEleve(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: affectation });
+    } catch (error) { next(error); }
+});
+
+/**
+ * @route   POST /api/classes/:id/activer
+ * @desc    Basculer le statut actif/inactif d'une classe
+ * @access  Authentifié avec permission classes:edit
+ */
+router.post('/:id/activer', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { actif } = req.body as { actif: boolean };
+        if (typeof actif !== 'boolean') {
+            throw new AppError('Le champ "actif" est requis et doit être un booléen', 400, 'VALIDATION_ERROR');
+        }
+        const classe = await service.toggleActif(req.params.id, actif, req.etablissementId);
+        res.json({ success: true, data: classe });
     } catch (error) { next(error); }
 });
 
