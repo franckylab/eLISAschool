@@ -12,7 +12,6 @@ import { useCreerAnneeScolaire, useModifierAnneeScolaire } from '../hooks/use-an
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
-import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import type { AnneeScolaire, CreerAnneeScolaireDto } from '../types/annee-scolaire.types';
 
 interface AnneeScolaireFormModalProps {
@@ -32,8 +31,6 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
         code: annee?.code || '',
         dateDebut: annee?.dateDebut?.split('T')[0] || '',
         dateFin: annee?.dateFin?.split('T')[0] || '',
-        statut: annee?.statut || 'future',
-        estActuelle: annee?.estActuelle || false,
     });
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
@@ -45,8 +42,6 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                 code: annee.code,
                 dateDebut: annee.dateDebut?.split('T')[0],
                 dateFin: annee.dateFin?.split('T')[0],
-                statut: annee.statut,
-                estActuelle: annee.estActuelle,
             });
         }
     }, [annee, mode]);
@@ -103,7 +98,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
         }
     };
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: string, value: string | boolean | undefined) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (erreurs[field]) {
             setErreurs(prev => {
@@ -137,7 +132,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
             open={true}
             onOpenChange={(open) => { if (!open) onCancel(); }}
             title={titre}
-            description="Définissez les dates et le statut de l'année scolaire"
+            description="Définissez les dates de l'année scolaire"
             size="2xl"
             footer={
                 <>
@@ -162,7 +157,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                     <ElisaInput
                         label="Libellé"
                         value={formData.libelle || ''}
-                        onChange={(value: any) => handleChange('libelle', value)}
+                        onChange={(e) => handleChange('libelle', e.target.value)}
                         error={erreurs.libelle}
                         placeholder="Ex: Année scolaire 2024-2025"
                         required
@@ -170,7 +165,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                     <ElisaInput
                         label="Code"
                         value={formData.code || ''}
-                        onChange={(value: any) => handleChange('code', value)}
+                        onChange={(e) => handleChange('code', e.target.value)}
                         error={erreurs.code}
                         placeholder="Ex: 2024-2025"
                         required
@@ -183,7 +178,7 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                         label="Date de début"
                         type="date"
                         value={formData.dateDebut || ''}
-                        onChange={(value: any) => handleDateChange('dateDebut', value)}
+                        onChange={(e) => handleDateChange('dateDebut', e.target.value)}
                         error={erreurs.dateDebut}
                         required
                     />
@@ -191,44 +186,16 @@ export function AnneeScolaireFormModal({ mode, annee, onSuccess, onCancel }: Ann
                         label="Date de fin"
                         type="date"
                         value={formData.dateFin || ''}
-                        onChange={(value: any) => handleDateChange('dateFin', value)}
+                        onChange={(e) => handleDateChange('dateFin', e.target.value)}
                         error={erreurs.dateFin}
                         required
                     />
                 </div>
 
-                {/* Statut */}
-                <ElisaSelect
-                    label="Statut"
-                    value={formData.statut || 'future'}
-                    onValueChange={(value: any) => handleChange('statut', value)}
-                    options={[
-                        { value: 'active', label: 'Active' },
-                        { value: 'inactive', label: 'Inactive' },
-                        { value: 'future', label: 'Future' },
-                        { value: 'archivee', label: 'Archivée' },
-                    ]}
-                />
-
-                {/* Année actuelle */}
-                <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <input
-                        type="checkbox"
-                        id="estActuelle"
-                        checked={formData.estActuelle || false}
-                        onChange={(e) => handleChange('estActuelle', e.target.checked)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label htmlFor="estActuelle" className="text-sm font-medium text-blue-900 cursor-pointer">
-                        Définir comme année scolaire actuelle
-                    </label>
-                </div>
-
                 {/* Informations */}
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-800">
-                        <strong>ℹ️ Information :</strong> Si vous définissez cette année comme "actuelle", 
-                        l'année scolaire actuelle sera automatiquement désactivée.
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                        <strong>ℹ️ Information :</strong> Le statut et l'activation de l'année se gèrent depuis la page de détails via les boutons dédiés (Activer, Clôturer, Réouvrir).
                     </p>
                 </div>
             </form>

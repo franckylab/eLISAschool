@@ -6,9 +6,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Calendar, CheckCircle, Edit, Trash2, Eye, Power } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { useAnneesScolaires, useActiverAnneeScolaire, useSupprimerAnneeScolaire } from '../hooks/use-annees-scolaires';
+import { Plus, Calendar, CheckCircle, Edit, Trash2, Eye, Power, Lock, Unlock } from 'lucide-react';
+import { useAnneesScolaires, useActiverAnneeScolaire, useSupprimerAnneeScolaire, useCloturerAnneeScolaire, useReouvrirAnneeScolaire } from '../hooks/use-annees-scolaires';
 import { AnneeScolaireFormModal } from './annee-scolaire-form-modal';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -18,17 +17,20 @@ import { usePermissions } from '@/hooks';
 import type { AnneeScolaire, AnneeScolaireFiltres } from '../types/annee-scolaire.types';
 
 export function AnneesScolairesPage() {
-    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<AnneeScolaireFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
     const [anneeSelected, setAnneeSelected] = useState<AnneeScolaire | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
     const [anneeToDelete, setAnneeToDelete] = useState<AnneeScolaire | null>(null);
+    const [anneeToCloturer, setAnneeToCloturer] = useState<AnneeScolaire | null>(null);
+    const [anneeToReouvrir, setAnneeToReouvrir] = useState<AnneeScolaire | null>(null);
 
     const { data, isLoading, error, refetch } = useAnneesScolaires(filtres);
     const activer = useActiverAnneeScolaire();
     const supprimer = useSupprimerAnneeScolaire();
+    const cloturer = useCloturerAnneeScolaire();
+    const reouvrir = useReouvrirAnneeScolaire();
 
     const handleCreation = () => {
         setModeFormulaire('creation');
@@ -65,7 +67,7 @@ export function AnneesScolairesPage() {
             sortable: true,
             render: (a) => (
                 <button
-                    onClick={() => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } })}
+                    onClick={() => { window.location.href = `/annees-scolaires/${a.id}`; }}
                     className="hover:underline cursor-pointer text-left"
                 >
                     <div className="flex items-center gap-2">
@@ -110,7 +112,7 @@ export function AnneesScolairesPage() {
             sortable: true,
             className: 'text-center',
             render: (a) => {
-                const statuts: any = {
+                const statuts: Record<string, { label: string; color: string; icone?: typeof CheckCircle }> = {
                     active: { label: 'Active', color: 'green', icone: CheckCircle },
                     inactive: { label: 'Inactive', color: 'gray' },
                     future: { label: 'Future', color: 'blue' },
@@ -134,7 +136,7 @@ export function AnneesScolairesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } }),
+                    onClick: () => { window.location.href = `/annees-scolaires/${a.id}`; },
                     variant: 'info' as const,
                 },
                 {
@@ -143,8 +145,26 @@ export function AnneesScolairesPage() {
                     label: 'Activer',
                     onClick: () => activer.mutateAsync(a.id),
                     permission: 'annees-scolaires:activer',
-                    hidden: a.estActuelle,
+                    hidden: a.estActuelle || a.statut === 'archivee',
                     variant: 'success' as const,
+                },
+                {
+                    key: 'cloturer',
+                    icon: Lock,
+                    label: 'Clôturer',
+                    onClick: () => setAnneeToCloturer(a),
+                    permission: 'annees-scolaires:cloturer',
+                    hidden: a.statut === 'archivee',
+                    variant: 'warning' as const,
+                },
+                {
+                    key: 'reouvrir',
+                    icon: Unlock,
+                    label: 'Réouvrir',
+                    onClick: () => setAnneeToReouvrir(a),
+                    permission: 'annees-scolaires:reouvrir',
+                    hidden: a.statut !== 'archivee',
+                    variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
@@ -260,6 +280,40 @@ export function AnneesScolairesPage() {
                 }}
                 onCancel={() => setAnneeToDelete(null)}
                 isLoading={supprimer.isPending}
+            />
+
+            <ConfirmationModal
+                isOpen={!!anneeToCloturer}
+                title="Clôturer cette année scolaire"
+                message={`Êtes-vous sûr de vouloir clôturer l'année "${anneeToCloturer?.libelle}" ?`}
+                details="Cette action marquera l'année comme terminée. Les opérations de notes et bulletins pourraient être restreintes."
+                variant="warning"
+                confirmLabel="Clôturer"
+                onConfirm={async () => {
+                    if (anneeToCloturer) {
+                        await cloturer.mutateAsync(anneeToCloturer.id);
+                        setAnneeToCloturer(null);
+                    }
+                }}
+                onCancel={() => setAnneeToCloturer(null)}
+                isLoading={cloturer.isPending}
+            />
+
+            <ConfirmationModal
+                isOpen={!!anneeToReouvrir}
+                title="Réouvrir cette année scolaire"
+                message={`Êtes-vous sûr de vouloir réouvrir l'année "${anneeToReouvrir?.libelle}" ?`}
+                details="L'année sera à nouveau disponible pour les opérations courantes."
+                variant="info"
+                confirmLabel="Réouvrir"
+                onConfirm={async () => {
+                    if (anneeToReouvrir) {
+                        await reouvrir.mutateAsync(anneeToReouvrir.id);
+                        setAnneeToReouvrir(null);
+                    }
+                }}
+                onCancel={() => setAnneeToReouvrir(null)}
+                isLoading={reouvrir.isPending}
             />
         </div>
     );

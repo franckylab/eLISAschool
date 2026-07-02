@@ -43,11 +43,14 @@ import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-pa
 import { Route as AuthBulletinsRouteImport } from './routes/_auth.bulletins'
 import { Route as AuthApparenceRouteImport } from './routes/_auth.apparence'
 import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
+import { Route as AuthPeriodesIndexRouteImport } from './routes/_auth.periodes.index'
 import { Route as AuthEtablissementsIndexRouteImport } from './routes/_auth.etablissements.index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth.classes.index'
+import { Route as AuthAnneesScolairesIndexRouteImport } from './routes/_auth.annees-scolaires.index'
 import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
+import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
 import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
 import { Route as AuthEtablissementsIdRouteImport } from './routes/_auth.etablissements.$id'
 import { Route as AuthElevesIdRouteImport } from './routes/_auth.eleves.$id'
@@ -232,6 +235,11 @@ const AuthAnneesScolairesRoute = AuthAnneesScolairesRouteImport.update({
   path: '/annees-scolaires',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthPeriodesIndexRoute = AuthPeriodesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthPeriodesRoute,
+} as any)
 const AuthEtablissementsIndexRoute = AuthEtablissementsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -242,6 +250,12 @@ const AuthClassesIndexRoute = AuthClassesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthClassesRoute,
 } as any)
+const AuthAnneesScolairesIndexRoute =
+  AuthAnneesScolairesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthAnneesScolairesRoute,
+  } as any)
 const AuthUtilisateursIdRoute = AuthUtilisateursIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -256,6 +270,11 @@ const AuthPersonnelIdRoute = AuthPersonnelIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AuthPersonnelRoute,
+} as any)
+const AuthPeriodesIdRoute = AuthPeriodesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthPeriodesRoute,
 } as any)
 const AuthMatieresIdRoute = AuthMatieresIdRouteImport.update({
   id: '/$id',
@@ -356,7 +375,7 @@ export interface FileRoutesByFullPath {
   '/niveaux': typeof AuthNiveauxRoute
   '/notes': typeof AuthNotesRoute
   '/parametres': typeof AuthParametresRoute
-  '/periodes': typeof AuthPeriodesRoute
+  '/periodes': typeof AuthPeriodesRouteWithChildren
   '/personnel': typeof AuthPersonnelRouteWithChildren
   '/programmes': typeof AuthProgrammesRoute
   '/responsables-eleves': typeof AuthResponsablesElevesRoute
@@ -371,11 +390,14 @@ export interface FileRoutesByFullPath {
   '/eleves/$id': typeof AuthElevesIdRoute
   '/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/matieres/$id': typeof AuthMatieresIdRoute
+  '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
   '/classes/': typeof AuthClassesIndexRoute
   '/etablissements/': typeof AuthEtablissementsIndexRoute
+  '/periodes/': typeof AuthPeriodesIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
   '/parametres/structure-academique/examens-nationaux': typeof authenticatedParametresStructureAcademiqueExamensNationauxRoute
@@ -388,7 +410,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/apparence': typeof AuthApparenceRoute
   '/bulletins': typeof AuthBulletinsRoute
   '/change-password': typeof AuthChangePasswordRoute
@@ -407,7 +428,6 @@ export interface FileRoutesByTo {
   '/niveaux': typeof AuthNiveauxRoute
   '/notes': typeof AuthNotesRoute
   '/parametres': typeof AuthParametresRoute
-  '/periodes': typeof AuthPeriodesRoute
   '/personnel': typeof AuthPersonnelRouteWithChildren
   '/programmes': typeof AuthProgrammesRoute
   '/responsables-eleves': typeof AuthResponsablesElevesRoute
@@ -422,11 +442,14 @@ export interface FileRoutesByTo {
   '/eleves/$id': typeof AuthElevesIdRoute
   '/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/matieres/$id': typeof AuthMatieresIdRoute
+  '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/annees-scolaires': typeof AuthAnneesScolairesIndexRoute
   '/classes': typeof AuthClassesIndexRoute
   '/etablissements': typeof AuthEtablissementsIndexRoute
+  '/periodes': typeof AuthPeriodesIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
   '/parametres/structure-academique/examens-nationaux': typeof authenticatedParametresStructureAcademiqueExamensNationauxRoute
@@ -462,7 +485,7 @@ export interface FileRoutesById {
   '/_auth/niveaux': typeof AuthNiveauxRoute
   '/_auth/notes': typeof AuthNotesRoute
   '/_auth/parametres': typeof AuthParametresRoute
-  '/_auth/periodes': typeof AuthPeriodesRoute
+  '/_auth/periodes': typeof AuthPeriodesRouteWithChildren
   '/_auth/personnel': typeof AuthPersonnelRouteWithChildren
   '/_auth/programmes': typeof AuthProgrammesRoute
   '/_auth/responsables-eleves': typeof AuthResponsablesElevesRoute
@@ -477,11 +500,14 @@ export interface FileRoutesById {
   '/_auth/eleves/$id': typeof AuthElevesIdRoute
   '/_auth/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/_auth/matieres/$id': typeof AuthMatieresIdRoute
+  '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/utilisateurs/$id': typeof AuthUtilisateursIdRoute
+  '/_auth/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
   '/_auth/classes/': typeof AuthClassesIndexRoute
   '/_auth/etablissements/': typeof AuthEtablissementsIndexRoute
+  '/_auth/periodes/': typeof AuthPeriodesIndexRoute
   '/(authenticated)/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
   '/(authenticated)/parametres/structure-academique/diplomes-eleves': typeof authenticatedParametresStructureAcademiqueDiplomesElevesRoute
   '/(authenticated)/parametres/structure-academique/examens-nationaux': typeof authenticatedParametresStructureAcademiqueExamensNationauxRoute
@@ -532,11 +558,14 @@ export interface FileRouteTypes {
     | '/eleves/$id'
     | '/etablissements/$id'
     | '/matieres/$id'
+    | '/periodes/$id'
     | '/personnel/$id'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
+    | '/annees-scolaires/'
     | '/classes/'
     | '/etablissements/'
+    | '/periodes/'
     | '/parametres/structure-academique/cycles'
     | '/parametres/structure-academique/diplomes-eleves'
     | '/parametres/structure-academique/examens-nationaux'
@@ -549,7 +578,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
-    | '/annees-scolaires'
     | '/apparence'
     | '/bulletins'
     | '/change-password'
@@ -568,7 +596,6 @@ export interface FileRouteTypes {
     | '/niveaux'
     | '/notes'
     | '/parametres'
-    | '/periodes'
     | '/personnel'
     | '/programmes'
     | '/responsables-eleves'
@@ -583,11 +610,14 @@ export interface FileRouteTypes {
     | '/eleves/$id'
     | '/etablissements/$id'
     | '/matieres/$id'
+    | '/periodes/$id'
     | '/personnel/$id'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
+    | '/annees-scolaires'
     | '/classes'
     | '/etablissements'
+    | '/periodes'
     | '/parametres/structure-academique/cycles'
     | '/parametres/structure-academique/diplomes-eleves'
     | '/parametres/structure-academique/examens-nationaux'
@@ -637,11 +667,14 @@ export interface FileRouteTypes {
     | '/_auth/eleves/$id'
     | '/_auth/etablissements/$id'
     | '/_auth/matieres/$id'
+    | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
     | '/_auth/salles/statistiques'
     | '/_auth/utilisateurs/$id'
+    | '/_auth/annees-scolaires/'
     | '/_auth/classes/'
     | '/_auth/etablissements/'
+    | '/_auth/periodes/'
     | '/(authenticated)/parametres/structure-academique/cycles'
     | '/(authenticated)/parametres/structure-academique/diplomes-eleves'
     | '/(authenticated)/parametres/structure-academique/examens-nationaux'
@@ -899,6 +932,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAnneesScolairesRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/periodes/': {
+      id: '/_auth/periodes/'
+      path: '/'
+      fullPath: '/periodes/'
+      preLoaderRoute: typeof AuthPeriodesIndexRouteImport
+      parentRoute: typeof AuthPeriodesRoute
+    }
     '/_auth/etablissements/': {
       id: '/_auth/etablissements/'
       path: '/'
@@ -912,6 +952,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/classes/'
       preLoaderRoute: typeof AuthClassesIndexRouteImport
       parentRoute: typeof AuthClassesRoute
+    }
+    '/_auth/annees-scolaires/': {
+      id: '/_auth/annees-scolaires/'
+      path: '/'
+      fullPath: '/annees-scolaires/'
+      preLoaderRoute: typeof AuthAnneesScolairesIndexRouteImport
+      parentRoute: typeof AuthAnneesScolairesRoute
     }
     '/_auth/utilisateurs/$id': {
       id: '/_auth/utilisateurs/$id'
@@ -933,6 +980,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/personnel/$id'
       preLoaderRoute: typeof AuthPersonnelIdRouteImport
       parentRoute: typeof AuthPersonnelRoute
+    }
+    '/_auth/periodes/$id': {
+      id: '/_auth/periodes/$id'
+      path: '/$id'
+      fullPath: '/periodes/$id'
+      preLoaderRoute: typeof AuthPeriodesIdRouteImport
+      parentRoute: typeof AuthPeriodesRoute
     }
     '/_auth/matieres/$id': {
       id: '/_auth/matieres/$id'
@@ -1030,10 +1084,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthAnneesScolairesRouteChildren {
   AuthAnneesScolairesIdRoute: typeof AuthAnneesScolairesIdRoute
+  AuthAnneesScolairesIndexRoute: typeof AuthAnneesScolairesIndexRoute
 }
 
 const AuthAnneesScolairesRouteChildren: AuthAnneesScolairesRouteChildren = {
   AuthAnneesScolairesIdRoute: AuthAnneesScolairesIdRoute,
+  AuthAnneesScolairesIndexRoute: AuthAnneesScolairesIndexRoute,
 }
 
 const AuthAnneesScolairesRouteWithChildren =
@@ -1088,6 +1144,20 @@ const AuthMatieresRouteChildren: AuthMatieresRouteChildren = {
 
 const AuthMatieresRouteWithChildren = AuthMatieresRoute._addFileChildren(
   AuthMatieresRouteChildren,
+)
+
+interface AuthPeriodesRouteChildren {
+  AuthPeriodesIdRoute: typeof AuthPeriodesIdRoute
+  AuthPeriodesIndexRoute: typeof AuthPeriodesIndexRoute
+}
+
+const AuthPeriodesRouteChildren: AuthPeriodesRouteChildren = {
+  AuthPeriodesIdRoute: AuthPeriodesIdRoute,
+  AuthPeriodesIndexRoute: AuthPeriodesIndexRoute,
+}
+
+const AuthPeriodesRouteWithChildren = AuthPeriodesRoute._addFileChildren(
+  AuthPeriodesRouteChildren,
 )
 
 interface AuthPersonnelRouteChildren {
@@ -1147,7 +1217,7 @@ interface AuthRouteChildren {
   AuthNiveauxRoute: typeof AuthNiveauxRoute
   AuthNotesRoute: typeof AuthNotesRoute
   AuthParametresRoute: typeof AuthParametresRoute
-  AuthPeriodesRoute: typeof AuthPeriodesRoute
+  AuthPeriodesRoute: typeof AuthPeriodesRouteWithChildren
   AuthPersonnelRoute: typeof AuthPersonnelRouteWithChildren
   AuthProgrammesRoute: typeof AuthProgrammesRoute
   AuthResponsablesElevesRoute: typeof AuthResponsablesElevesRoute
@@ -1180,7 +1250,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthNiveauxRoute: AuthNiveauxRoute,
   AuthNotesRoute: AuthNotesRoute,
   AuthParametresRoute: AuthParametresRoute,
-  AuthPeriodesRoute: AuthPeriodesRoute,
+  AuthPeriodesRoute: AuthPeriodesRouteWithChildren,
   AuthPersonnelRoute: AuthPersonnelRouteWithChildren,
   AuthProgrammesRoute: AuthProgrammesRoute,
   AuthResponsablesElevesRoute: AuthResponsablesElevesRoute,

@@ -1,7 +1,20 @@
 /**
  * ==================================
- * eLISAschool - Entités Périodes
+ * eLISAschool - Entité Période (v5.0 — Niveaux de périodicité)
  * ==================================
+ * Version: 5.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Refonte architecturale v5.0 :
+ * - Suppression de l'enum TypePeriode (SEQUENCE, TRIMESTRE, SEMESTRE, ANNEE)
+ * - Remplacement par FK niveauId vers NiveauPeriode (niveaux configurables)
+ * - Chaque établissement définit ses propres niveaux et libellés
+ * - Hiérarchie via table de jointure PeriodeComposition (inchangée)
+ *
+ * Historique :
+ * - v3.0 : Suppression entité TypePeriode → enum inline
+ * - v4.0 : Templates personnalisables
+ * - v5.0 : Niveaux de périodicité configurables + usages sémantiques
  */
 
 import {
@@ -11,11 +24,14 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToMany,
     JoinColumn,
-    Index
+    Index,
 } from 'typeorm';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { NiveauPeriode } from './niveau-periode.entity';
+import { PeriodeComposition } from './periode-composition.entity';
 
 /**
  * Statut de la période (support workflow de clôture)
@@ -26,39 +42,29 @@ export enum StatutPeriode {
     CLOTUREE = 'CLOTUREE',
 }
 
-@Entity('types_periodes')
-export class TypePeriode {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
-
-    @Column({ type: 'varchar', length: 50, unique: true })
-    code!: string; // TRIMESTRE, SEMESTRE, SEQUENCE, TERM
-
-    @Column({ type: 'varchar', length: 100 })
-    nom!: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-}
-
 @Entity('periodes')
 @Index(['anneeScolaireId'])
-@Index(['typeId'])
 @Index(['etablissementId'])
-@Index(['anneeScolaireId', 'etablissementId'])  // Index composite pour requêtes multi-tenant
+@Index(['niveauId'])
+@Index(['anneeScolaireId', 'etablissementId'])
+@Index(['anneeScolaireId', 'niveauId'])
 export class Periode {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'varchar', length: 100 })
-    nom!: string; // Trimestre 1, Séquence 1...
+    nom!: string;
 
+    /**
+     * FK vers NiveauPeriode — remplace l'ancien champ type (enum TypePeriode).
+     * Détermine le niveau hiérarchique et l'usage sémantique de la période.
+     */
     @Column({ type: 'uuid' })
-    typeId!: string;
+    niveauId!: string;
 
-    @ManyToOne(() => TypePeriode)
-    @JoinColumn({ name: 'typeId' })
-    type?: TypePeriode;
+    @ManyToOne(() => NiveauPeriode)
+    @JoinColumn({ name: 'niveauId' })
+    niveau?: NiveauPeriode;
 
     @Column({ type: 'uuid' })
     anneeScolaireId!: string;
@@ -84,26 +90,27 @@ export class Periode {
     @Column({ type: 'date' })
     dateFin!: Date;
 
-    @Column({ type: 'int', default: 1 })
-    ordre!: number;
-
-    @Column({ type: 'float', default: 1 })
-    poids!: number; // Pour le calcul annuel
-
     /**
      * Statut de la période (support workflow de clôture)
-     * Remplace l'ancien champ cloturee (boolean)
      */
     @Column({ type: 'varchar', length: 30, default: StatutPeriode.OUVERTE })
     statut!: StatutPeriode;
 
+    // ==== RELATIONS HIÉRARCHIQUES ====
+
     /**
-     * Getter de compatibilité pour l'ancien champ cloturee
-     * @deprecated Utiliser statut === StatutPeriode.CLOTUREE à la place
+     * Compositions où cette période est PARENT
+     * (ex: un trimestre qui contient des séquences)
      */
-    get cloturee(): boolean {
-        return this.statut === StatutPeriode.CLOTUREE;
-    }
+    @OneToMany(() => PeriodeComposition, (comp) => comp.periodeParent, { cascade: true })
+    compositionsEnfants?: PeriodeComposition[];
+
+    /**
+     * Compositions où cette période est ENFANT
+     * (ex: une séquence contenue dans un trimestre)
+     */
+    @OneToMany(() => PeriodeComposition, (comp) => comp.periodeEnfant)
+    compositionsParents?: PeriodeComposition[];
 
     @CreateDateColumn()
     createdAt!: Date;

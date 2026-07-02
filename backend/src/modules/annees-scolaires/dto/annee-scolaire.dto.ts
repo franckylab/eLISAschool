@@ -5,6 +5,8 @@
  */
 
 import { z } from 'zod';
+import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
+import { StatutAnneeScolaire } from '../entities';
 
 export const createAnneeScolaireSchema = z.object({
     libelle: z.string().min(2, "Le libellé est requis").max(50),
@@ -20,9 +22,7 @@ export const queryAnneesScolairesSchema = paginationWithSortSchema.merge(searchS
     etablissementId: z.string().uuid().optional(),
 });
 
-export const updateAnneeScolaireSchema = createAnneeScolaireSchema.partial().extend({
-    cloturee: z.boolean().optional(),
-});
+export const updateAnneeScolaireSchema = createAnneeScolaireSchema.partial();
 
 export type CreateAnneeScolaireDto = z.infer<typeof createAnneeScolaireSchema>;
 export type UpdateAnneeScolaireDto = z.infer<typeof updateAnneeScolaireSchema>;

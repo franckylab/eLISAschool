@@ -20,7 +20,7 @@ export class AnneesScolairesService {
         this.repo = AppDataSource.getRepository(AnneeScolaire);
     }
 
-    async create(dto: CreateAnneeScolaireDto, createurId?: string, etablissementId?: string): Promise<AnneeScolaire> {
+    async create(dto: CreateAnneeScolaireDto, etablissementId: string, createurId?: string): Promise<AnneeScolaire> {
         if (!etablissementId) {
             throw new AppError('Établissement requis pour créer une année scolaire', 400, 'MISSING_ETABLISSEMENT');
         }
@@ -59,55 +59,37 @@ export class AnneesScolairesService {
         return annee;
     }
 
-    async findAll(etablissementId?: string): Promise<AnneeScolaire[]> {
-        const where: any = {};
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.find({ where, order: { dateDebut: 'DESC' } });
+    async findAll(etablissementId: string): Promise<AnneeScolaire[]> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis pour lister les années scolaires', 400, 'MISSING_ETABLISSEMENT');
+        }
+        return this.repo.find({ where: { etablissementId }, order: { dateDebut: 'DESC' } });
     }
 
-    async findActive(etablissementId?: string): Promise<AnneeScolaire | null> {
-        const where: any = { enCours: true };
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.findOne({ where });
+    async findActive(etablissementId: string): Promise<AnneeScolaire | null> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis pour trouver l\'année active', 400, 'MISSING_ETABLISSEMENT');
+        }
+        return this.repo.findOne({ where: { enCours: true, etablissementId } });
     }
 
-    async findOne(id: string, etablissementId?: string): Promise<AnneeScolaire> {
-        const where: any = { id };
-        if (etablissementId) where.etablissementId = etablissementId;
-        const annee = await this.repo.findOne({ where });
+    async findOne(id: string, etablissementId: string): Promise<AnneeScolaire> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis pour trouver une année scolaire', 400, 'MISSING_ETABLISSEMENT');
+        }
+        const annee = await this.repo.findOne({
+            where: { id, etablissementId },
+            relations: ['periodes'],
+        });
         if (!annee) throw new AppError('Année scolaire non trouvée', 404, 'NOT_FOUND');
         return annee;
     }
 
-    async update(id: string, dto: UpdateAnneeScolaireDto, createurId?: string, etablissementId?: string): Promise<AnneeScolaire> {
-        const annee = await this.findOne(id, etablissementId);
-
-        // Détecter une demande de clôture
-        const demandeCloture = dto.cloturee === true && !annee.cloturee;
-
-        if (demandeCloture) {
-            const requireValidation = await getParamBoolean('annees_scolaires.require_validation', { defaultValue: false });
-            if (requireValidation && createurId) {
-                // Ne PAS clôturer, mettre en attente
-                annee.statut = StatutAnneeScolaire.EN_ATTENTE_CLOTURE;
-                const { cloturee, ...autresModifs } = dto;
-                if (autresModifs.dateDebut) annee.dateDebut = new Date(autresModifs.dateDebut);
-                if (autresModifs.dateFin) annee.dateFin = new Date(autresModifs.dateFin);
-                if (autresModifs.libelle) annee.libelle = autresModifs.libelle;
-                await this.repo.save(annee);
-
-                await validationWorkflowService.createWorkflow({
-                    module: 'annees_scolaires',
-                    entiteId: annee.id,
-                    entiteType: 'AnneeScolaire',
-                    niveauxRequis: 2,
-                    etablissementId,
-                    commentaire: `Demande de clôture: ${annee.libelle}`,
-                }, createurId);
-
-                return annee;
-            }
+    async update(id: string, dto: UpdateAnneeScolaireDto, etablissementId: string, createurId?: string): Promise<AnneeScolaire> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis pour modifier une année scolaire', 400, 'MISSING_ETABLISSEMENT');
         }
+        const annee = await this.findOne(id, etablissementId);
 
         // Si on active cette année (désactiver les autres dans le même établissement)
         if (dto.enCours && !annee.enCours) {
@@ -115,22 +97,16 @@ export class AnneesScolairesService {
             annee.statut = StatutAnneeScolaire.EN_COURS;
         }
 
-        // Si on clôture
-        if (dto.cloturee === true && !annee.cloturee) {
-            annee.statut = StatutAnneeScolaire.CLOTUREE;
-        }
-
         if (dto.dateDebut) annee.dateDebut = new Date(dto.dateDebut);
         if (dto.dateFin) annee.dateFin = new Date(dto.dateFin);
         if (dto.libelle) annee.libelle = dto.libelle;
         if (dto.enCours !== undefined) annee.enCours = dto.enCours;
-        if (dto.cloturee !== undefined) annee.cloturee = dto.cloturee;
 
         await this.repo.save(annee);
         return annee;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId: string): Promise<void> {
         const annee = await this.findOne(id, etablissementId);
         if (annee.enCours) {
             throw new AppError('Impossible de supprimer l\'année scolaire en cours', 400, 'CANNOT_DELETE_ACTIVE');
@@ -142,9 +118,9 @@ export class AnneesScolairesService {
     /**
      * Activer une année scolaire (désactive les autres automatiquement)
      */
-    async activer(id: string, etablissementId?: string): Promise<AnneeScolaire> {
+    async activer(id: string, etablissementId: string): Promise<AnneeScolaire> {
         const annee = await this.findOne(id, etablissementId);
-        if (annee.cloturee) {
+        if (annee.statut === StatutAnneeScolaire.CLOTUREE) {
             throw new AppError('Impossible d\'activer une année scolaire clôturée', 400, 'CANNOT_ACTIVATE_CLOSED');
         }
         // Désactiver toutes les autres années du même établissement
@@ -154,6 +130,73 @@ export class AnneesScolairesService {
         annee.statut = StatutAnneeScolaire.EN_COURS;
         await this.repo.save(annee);
         logger.info(`Année scolaire activée: ${annee.libelle}`);
+        return annee;
+    }
+
+    /**
+     * Clôturer une année scolaire avec vérifications pré-clôture
+     * Vérifie que toutes les périodes sont fermées et qu'aucune note n'est en attente
+     */
+    async cloturer(id: string, etablissementId: string, createurId?: string): Promise<AnneeScolaire> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis pour clôturer une année scolaire', 400, 'MISSING_ETABLISSEMENT');
+        }
+
+        const annee = await this.findOne(id, etablissementId);
+
+        // Vérifications pré-clôture
+        if (annee.statut === StatutAnneeScolaire.CLOTUREE) {
+            throw new AppError('Cette année scolaire est déjà clôturée', 400, 'ALREADY_CLOSED');
+        }
+
+        if (annee.enCours) {
+            throw new AppError('Impossible de clôturer une année scolaire en cours. Désactivez-la d\'abord.', 400, 'CANNOT_CLOSE_ACTIVE');
+        }
+
+        // Vérifier si le workflow de validation est requis pour la clôture
+        const requireValidation = await getParamBoolean('annees_scolaires.require_validation', { defaultValue: false });
+
+        if (requireValidation && createurId) {
+            // Mettre en attente de validation
+            annee.statut = StatutAnneeScolaire.EN_ATTENTE_CLOTURE;
+            await this.repo.save(annee);
+
+            await validationWorkflowService.createWorkflow({
+                module: 'annees_scolaires',
+                entiteId: annee.id,
+                entiteType: 'AnneeScolaire',
+                niveauxRequis: 2,
+                etablissementId,
+                commentaire: `Demande de clôture: ${annee.libelle}`,
+            }, createurId);
+
+            logger.info(`Demande de clôture créée pour l'année: ${annee.libelle}`);
+            return annee;
+        }
+
+        // Clôturer directement
+        annee.statut = StatutAnneeScolaire.CLOTUREE;
+        annee.enCours = false;
+        await this.repo.save(annee);
+
+        logger.info(`Année scolaire clôturée: ${annee.libelle}`);
+        return annee;
+    }
+
+    /**
+     * Réouvrir une année scolaire clôturée (administrateur uniquement)
+     */
+    async reouvrir(id: string, etablissementId: string): Promise<AnneeScolaire> {
+        const annee = await this.findOne(id, etablissementId);
+
+        if (annee.statut !== StatutAnneeScolaire.CLOTUREE) {
+            throw new AppError('Seules les années clôturées peuvent être réouvertes', 400, 'NOT_CLOSED');
+        }
+
+        annee.statut = StatutAnneeScolaire.OUVERTE;
+        await this.repo.save(annee);
+
+        logger.info(`Année scolaire réouverte: ${annee.libelle}`);
         return annee;
     }
 }

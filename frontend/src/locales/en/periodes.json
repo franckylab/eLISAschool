@@ -1,14 +1,138 @@
 {
     "titre": "Periods",
     "nouvellePeriode": "New period",
-    "code": "Code",
     "nom": "Name",
-    "type": "Type",
-    "trimestre": "Quarter",
-    "semestre": "Semester",
-    "module": "Module",
-    "autre": "Other",
+    "niveau": "Periodicity level",
     "dateDebut": "Start date",
     "dateFin": "End date",
-    "anneeScolaire": "School year"
+    "anneeScolaire": "School year",
+    "niveaux": {
+        "titre": "Periodicity levels",
+        "description": "Configure hierarchical period levels",
+        "ajouter": "Add a level",
+        "modifier": "Edit level",
+        "supprimer": "Delete level",
+        "label": "Label",
+        "usage": "Usage",
+        "hierarchie": "Hierarchical level",
+        "systeme": "System",
+        "personnalise": "Custom"
+    },
+    "usages": {
+        "titre": "Level usages",
+        "NOTES": "Grade entry",
+        "BULLETIN": "Report card generation",
+        "COMPOSITION": "Composition",
+        "ANNEE": "School year",
+        "AUTRE": "Other"
+    },
+    "statut": {
+        "OUVERTE": "Open",
+        "EN_ATTENTE_CLOTURE": "Pending closure",
+        "CLOTUREE": "Closed"
+    },
+    "actions": {
+        "cloturer": "Close",
+        "reouvrir": "Reopen",
+        "supprimer": "Delete",
+        "voir": "View details",
+        "modifier": "Edit",
+        "generer": "Generate from template"
+    },
+    "formulaire": {
+        "creerTitre": "New period",
+        "modifierTitre": "Edit period",
+        "creerDescription": "Step {{etape}} of {{total}}",
+        "modifierDescription": "Editing period",
+        "titreIdentification": "Identification",
+        "titrePeriode": "Period",
+        "titreResume": "Summary & Confirmation",
+        "resumeMessage": "Review the information before creating the period.",
+        "resumeIdentification": "Identification",
+        "resumePeriode": "Period",
+        "duree": "Duration",
+        "dureeJours": "{{count}} day",
+        "dureeJours_plural": "{{count}} days"
+    },
+    "champs": {
+        "nom": "Period name",
+        "nomPlaceholder": "E.g.: Term 1, Semester 2...",
+        "niveau": "Periodicity level",
+        "niveauPlaceholder": "Select a level...",
+        "anneeScolaire": "School year",
+        "anneePlaceholder": "Select a year...",
+        "dateDebut": "Start date",
+        "dateFin": "End date"
+    },
+    "validation": {
+        "nomRequis": "Name is required",
+        "nomMin": "Name must be at least 2 characters",
+        "niveauRequis": "Periodicity level is required",
+        "anneeRequise": "School year is required",
+        "dateDebutRequise": "Start date is required",
+        "dateFinRequise": "End date is required",
+        "dateFinPosterieure": "End date must be after start date",
+        "chevauchement": "Dates overlap with an existing period of the same level"
+    },
+    "compositions": {
+        "titre": "Compositions",
+        "ajouter": "Add child",
+        "retirer": "Remove",
+        "enfants": "Child periods",
+        "aucun": "No composition",
+        "ordre": "Order",
+        "poids": "Weight",
+        "parent": "Parent",
+        "enfant": "Child"
+    },
+    "templates": {
+        "titre": "Templates",
+        "generer": "Generate",
+        "description": "Automatic generation of a period hierarchy",
+        "defauts": "Default models",
+        "depuisModele": "New from model",
+        "creer": "New template",
+        "modifier": "Edit template",
+        "succes": "Hierarchy generated successfully",
+        "modeles": {
+            "troisTrimDeuxSeq": "3 Terms × 2 Sequences",
+            "deuxSemTroisSeq": "2 Semesters × 3 Sequences",
+            "deuxSemDeuxTrim": "2 Semesters × 2 Terms",
+            "sixSeqDirectes": "6 Direct Sequences",
+            "quatreTerms": "4 Terms (Anglo-Saxon system)"
+        }
+    },
+    "arbre": {
+        "titre": "Tree view",
+        "expand": "Expand",
+        "collapse": "Collapse",
+        "sansEnfants": "No children",
+        "racine": "Root"
+    },
+    "cloture": {
+        "titre": "Close period",
+        "verification": "Impact verification",
+        "notes": "Linked grades",
+        "bulletins": "Linked report cards",
+        "commentaire": "Comment (optional)",
+        "forcer": "Force closure",
+        "bloquant": "Grades pending validation detected",
+        "succes": "Period closed successfully",
+        "cascade": "Also close child periods"
+    },
+    "detail": {
+        "informations": "Information",
+        "donneesLiees": "Linked data",
+        "verrouillage": "Lock",
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "boutons": {
+        "annuler": "Cancel",
+        "suivant": "Next",
+        "precedent": "Previous",
+        "creer": "Create",
+        "enregistrer": "Save",
+        "confirmer": "Confirm"
+    }
 }

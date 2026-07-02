@@ -134,7 +134,14 @@ export function RowActions({
                                 <DropdownMenu.Item
                                     key={action.key}
                                     disabled={action.disabled}
-                                    onSelect={() => action.onClick()}
+                                    onSelect={(event) => {
+                                        // Laisser le dropdown se fermer naturellement (ne pas preventDefault)
+                                        // Retarder l'exécution d'une frame pour éviter tout conflit
+                                        // d'événements pointer entre le dropdown et le modal
+                                        requestAnimationFrame(() => {
+                                            action.onClick();
+                                        });
+                                    }}
                                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer outline-none focus:bg-[var(--color-surface-alt)] ${colors.dropdown}`}
                                 >
                                     <Icon className="h-4 w-4 shrink-0" />

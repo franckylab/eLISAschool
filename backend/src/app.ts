@@ -63,7 +63,7 @@ import { personnelController, contratController, typeContratController, affectat
 import { classesController, classesAnneesController } from '@modules/classes';
 import { matieresController, configurationMatiereClasseController } from '@modules/matieres';
 import { configurationScoringController } from '@modules/scoring';
-import { periodesController } from '@modules/periodes';
+import { periodesController, templatesPeriodeController, niveauxPeriodeController, usagesNiveauController } from '@modules/periodes';
 import { programmesController } from '@modules/programmes';
 import { elevesController } from '@modules/eleves';
 import { bulletinsController } from '@modules/bulletins';
@@ -429,6 +429,9 @@ export function createApp(): Application {
     app.use('/api/scoring/config', authMiddleware, filterByEtablissement(), configurationScoringController);
     app.use('/api/matieres', authMiddleware, filterByEtablissement(), matieresController);
     app.use('/api/periodes', authMiddleware, filterByEtablissement(), periodesController);
+    app.use('/api/periodes-templates', authMiddleware, filterByEtablissement(), templatesPeriodeController);
+    app.use('/api/niveaux-periode', authMiddleware, filterByEtablissement(), niveauxPeriodeController);
+    app.use('/api/usages-niveau', authMiddleware, filterByEtablissement(), usagesNiveauController);
     app.use('/api/programmes', requireModuleActive('programmes'), authMiddleware, filterByEtablissement(), programmesController);
     app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
     app.use('/api/bulletins', authMiddleware, filterByEtablissement(), bulletinsController);

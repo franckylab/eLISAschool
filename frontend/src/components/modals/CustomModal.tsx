@@ -139,6 +139,11 @@ export function CustomModal({
                                 // Avec modal={false}, empêcher Radix de fermer automatiquement
                                 e.preventDefault();
                             }}
+                            onFocusOutside={(e) => {
+                                // Empêcher la fermeture quand le focus se déplace à l'extérieur
+                                // (ex: restauration du focus du dropdown trigger après fermeture)
+                                e.preventDefault();
+                            }}
                             onEscapeKeyDown={(e) => {
                                 // Permettre la fermeture via Échap
                                 if (closeOnOverlayClick) {

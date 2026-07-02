@@ -11,10 +11,12 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToMany,
     JoinColumn,
-    Index,
+    Index
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
+import { Periode } from '@modules/periodes/entities';
 
 /**
  * Statut workflow d'une année scolaire
@@ -48,11 +50,20 @@ export class AnneeScolaire {
     @Column({ type: 'boolean', default: false })
     enCours!: boolean;
 
-    @Column({ type: 'boolean', default: false })
-    cloturee!: boolean;
-
+    /**
+     * Statut workflow de l'année scolaire
+     * Remplace l'ancien champ cloturee (boolean) pour éviter la redondance
+     */
     @Column({ type: 'varchar', length: 30, default: StatutAnneeScolaire.OUVERTE })
     statut!: StatutAnneeScolaire;
+
+    /**
+     * Getter de compatibilité pour l'ancien champ cloturee
+     * @deprecated Utiliser statut === StatutAnneeScolaire.CLOTUREE à la place
+     */
+    get cloturee(): boolean {
+        return this.statut === StatutAnneeScolaire.CLOTUREE;
+    }
 
     /**
      * Établissement de l'année scolaire (multi-tenancy)
@@ -63,6 +74,12 @@ export class AnneeScolaire {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    /**
+     * Périodes liées à cette année scolaire (trimestres, semestres, séquences)
+     */
+    @OneToMany(() => Periode, (periode) => periode.anneeScolaire)
+    periodes?: Periode[];
 
     @CreateDateColumn()
     createdAt!: Date;

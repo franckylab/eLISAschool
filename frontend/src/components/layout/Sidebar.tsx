@@ -44,8 +44,10 @@ import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModulePermissions } from '@/hooks';
 import { useEtablissement } from '@/features/etablissement';
+import { useAnneeScolaireActive } from '@/features/annees-scolaires';
 import { cn } from '@/lib/cn';
 import { ElisaLogo } from '@/components/branding';
+import { Badge } from '@/components/ui';
 import { useState } from 'react';
 
 interface NavItem {
@@ -257,6 +259,9 @@ export function Sidebar() {
     const { data: etablissement } = useEtablissement(etablissementId || '');
     const logoEtablissement = etablissement?.logoUrl;
 
+    // Charger l'année scolaire active
+    const { data: anneeActive } = useAnneeScolaireActive();
+
     // Vérifier les permissions pour chaque module
     const etablissementsPerms = useModulePermissions('etablissements');
     const cyclesPerms = useModulePermissions('cycles');
@@ -436,6 +441,20 @@ export function Sidebar() {
             {!isCollapsed && etablissement && (
                 <div className="border-t border-[var(--color-bordure)] p-2">
                     <div className="flex flex-col items-center gap-1">
+                        {/* Badge année scolaire active */}
+                        {anneeActive && (
+                            <Badge
+                                variant="success"
+                                size="xs"
+                                dot
+                                className="w-full justify-center"
+                                title={`Année en cours : ${anneeActive.libelle}`}
+                            >
+                                <CalendarDays className="h-3 w-3" />
+                                {anneeActive.libelle}
+                            </Badge>
+                        )}
+
                         {logoEtablissement ? (
                             <img
                                 src={logoEtablissement}

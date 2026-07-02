@@ -1,14 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Route Années Scolaires
+ * eLISAschool - Route Années Scolaires (Layout)
  * ==================================
+ * Route layout pour la liste et les détails d'années scolaires
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { AnneesScolairesPage } from '@/features/annees-scolaires/components/annees-scolaires-page';
 
 export const Route = createFileRoute('/_auth/annees-scolaires')({
     beforeLoad: () => requireModulePermission('annees-scolaires'),
-    component: AnneesScolairesPage,
+    component: AnneesScolairesLayout,
 });
+
+function AnneesScolairesLayout() {
+    return <Outlet />;
+}

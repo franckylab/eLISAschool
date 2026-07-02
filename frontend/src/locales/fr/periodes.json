@@ -1,14 +1,138 @@
 {
     "titre": "Périodes",
     "nouvellePeriode": "Nouvelle période",
-    "code": "Code",
     "nom": "Nom",
-    "type": "Type",
-    "trimestre": "Trimestre",
-    "semestre": "Semestre",
-    "module": "Module",
-    "autre": "Autre",
+    "niveau": "Niveau de périodicité",
     "dateDebut": "Date de début",
     "dateFin": "Date de fin",
-    "anneeScolaire": "Année scolaire"
+    "anneeScolaire": "Année scolaire",
+    "niveaux": {
+        "titre": "Niveaux de périodicité",
+        "description": "Configurer les niveaux hiérarchiques de périodes",
+        "ajouter": "Ajouter un niveau",
+        "modifier": "Modifier le niveau",
+        "supprimer": "Supprimer le niveau",
+        "label": "Libellé",
+        "usage": "Usage",
+        "hierarchie": "Niveau hiérarchique",
+        "systeme": "Système",
+        "personnalise": "Personnalisé"
+    },
+    "usages": {
+        "titre": "Usages de niveau",
+        "NOTES": "Saisie des notes",
+        "BULLETIN": "Génération des bulletins",
+        "COMPOSITION": "Composition",
+        "ANNEE": "Année scolaire",
+        "AUTRE": "Autre"
+    },
+    "statut": {
+        "OUVERTE": "Ouverte",
+        "EN_ATTENTE_CLOTURE": "En attente de validation",
+        "CLOTUREE": "Clôturée"
+    },
+    "actions": {
+        "cloturer": "Clôturer",
+        "reouvrir": "Réouvrir",
+        "supprimer": "Supprimer",
+        "voir": "Voir le détail",
+        "modifier": "Modifier",
+        "generer": "Générer depuis template"
+    },
+    "formulaire": {
+        "creerTitre": "Nouvelle période",
+        "modifierTitre": "Modifier la période",
+        "creerDescription": "Étape {{etape}} sur {{total}}",
+        "modifierDescription": "Modification de la période",
+        "titreIdentification": "Identification",
+        "titrePeriode": "Période",
+        "titreResume": "Résumé & Confirmation",
+        "resumeMessage": "Vérifiez les informations avant de créer la période.",
+        "resumeIdentification": "Identification",
+        "resumePeriode": "Période",
+        "duree": "Durée",
+        "dureeJours": "{{count}} jour",
+        "dureeJours_plural": "{{count}} jours"
+    },
+    "champs": {
+        "nom": "Nom de la période",
+        "nomPlaceholder": "Ex : Trimestre 1, Semestre 2...",
+        "niveau": "Niveau de périodicité",
+        "niveauPlaceholder": "Sélectionner un niveau...",
+        "anneeScolaire": "Année scolaire",
+        "anneePlaceholder": "Sélectionner une année...",
+        "dateDebut": "Date de début",
+        "dateFin": "Date de fin"
+    },
+    "validation": {
+        "nomRequis": "Le nom est requis",
+        "nomMin": "Le nom doit contenir au moins 2 caractères",
+        "niveauRequis": "Le niveau de périodicité est requis",
+        "anneeRequise": "L'année scolaire est requise",
+        "dateDebutRequise": "La date de début est requise",
+        "dateFinRequise": "La date de fin est requise",
+        "dateFinPosterieure": "La date de fin doit être postérieure à la date de début",
+        "chevauchement": "Les dates chevauchent une période existante de même niveau"
+    },
+    "compositions": {
+        "titre": "Compositions",
+        "ajouter": "Ajouter un enfant",
+        "retirer": "Retirer",
+        "enfants": "Périodes enfants",
+        "aucun": "Aucune composition",
+        "ordre": "Ordre",
+        "poids": "Poids",
+        "parent": "Parent",
+        "enfant": "Enfant"
+    },
+    "templates": {
+        "titre": "Templates",
+        "generer": "Générer",
+        "description": "Génération automatique d'une hiérarchie de périodes",
+        "defauts": "Modèles prédéfinis",
+        "depuisModele": "Nouveau depuis un modèle",
+        "creer": "Nouveau template",
+        "modifier": "Modifier le template",
+        "succes": "Hiérarchie générée avec succès",
+        "modeles": {
+            "troisTrimDeuxSeq": "3 Trimestres × 2 Séquences",
+            "deuxSemTroisSeq": "2 Semestres × 3 Séquences",
+            "deuxSemDeuxTrim": "2 Semestres × 2 Trimestres",
+            "sixSeqDirectes": "6 Séquences directes",
+            "quatreTerms": "4 Terms (système anglo-saxon)"
+        }
+    },
+    "arbre": {
+        "titre": "Vue arborescente",
+        "expand": "Développer",
+        "collapse": "Réduire",
+        "sansEnfants": "Aucun enfant",
+        "racine": "Racine"
+    },
+    "cloture": {
+        "titre": "Clôturer la période",
+        "verification": "Vérification des impacts",
+        "notes": "Notes liées",
+        "bulletins": "Bulletins liés",
+        "commentaire": "Commentaire (optionnel)",
+        "forcer": "Forcer la clôture",
+        "bloquant": "Notes en attente de validation détectées",
+        "succes": "Période clôturée avec succès",
+        "cascade": "Clôturer également les périodes enfants"
+    },
+    "detail": {
+        "informations": "Informations",
+        "donneesLiees": "Données liées",
+        "verrouillage": "Verrouillage",
+        "actif": "Actif",
+        "inactif": "Inactif"
+    },
+    "boutons": {
+        "annuler": "Annuler",
+        "suivant": "Suivant",
+        "precedent": "Précédent",
+        "creer": "Créer",
+        "enregistrer": "Enregistrer",
+        "confirmer": "Confirmer"
+    }
 }

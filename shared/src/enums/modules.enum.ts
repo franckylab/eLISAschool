@@ -27,6 +27,7 @@ export enum ModuleName {
   // Modules académiques
   NOTES = 'notes',
   BULLETINS = 'bulletins',
+  PERIODES = 'periodes',
   EMPLOI_DU_TEMPS = 'emploi-du-temps',
   ELEVES = 'eleves',
   ORIENTATION = 'orientation',
@@ -98,6 +99,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   
   [ModuleName.NOTES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.BULLETINS]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.PERIODES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.EMPLOI_DU_TEMPS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ELEVES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ORIENTATION]: ModuleCategory.ACADEMIQUES,

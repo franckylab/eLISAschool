@@ -2,9 +2,11 @@
  * ==================================
  * eLISAschool - Types Année Scolaire
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  */
+
+import type { NiveauPeriode } from '@/features/periodes/types/periode.types';
 
 export interface AnneeScolaire {
     id: string;
@@ -17,26 +19,21 @@ export interface AnneeScolaire {
     estActuelle: boolean;
     createdAt: string;
     updatedAt: string;
-    trimestres?: Trimestre[];
-    semestres?: Semestre[];
+    periodes?: Periode[];
 }
 
-export interface Trimestre {
+/**
+ * Période liée à une année scolaire (vue simplifiée)
+ * Alignée sur le modèle v5.0 — niveauId (FK vers NiveauPeriode)
+ */
+export interface Periode {
     id: string;
     nom: string;
-    numero: number;
+    niveauId: string;
+    niveau?: NiveauPeriode;
     dateDebut: string;
     dateFin: string;
-    anneeScolaireId: string;
-}
-
-export interface Semestre {
-    id: string;
-    nom: string;
-    numero: number;
-    dateDebut: string;
-    dateFin: string;
-    anneeScolaireId: string;
+    statut: 'OUVERTE' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
 }
 
 export interface CreerAnneeScolaireDto {
@@ -44,8 +41,6 @@ export interface CreerAnneeScolaireDto {
     code: string;
     dateDebut: string;
     dateFin: string;
-    statut?: 'active' | 'inactive' | 'future' | 'archivee';
-    estActuelle?: boolean;
 }
 
 export interface ModifierAnneeScolaireDto extends Partial<CreerAnneeScolaireDto> {

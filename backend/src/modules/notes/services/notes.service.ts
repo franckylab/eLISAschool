@@ -280,6 +280,21 @@ export class NotesService {
     async update(id: string, updateDto: UpdateNoteDto, utilisateurId: string): Promise<Note> {
         const note = await this.findOne(id);
 
+        // Vérifier le verrouillage de la période associée
+        if (note.periodeId) {
+            const periode = await periodesService.findOne(note.periodeId);
+            if (periode.statut === StatutPeriode.CLOTUREE) {
+                const lockOnCloture = await getParamBoolean('periodes.lock_on_cloture', { defaultValue: true });
+                if (lockOnCloture) {
+                    throw new AppError(
+                        'Impossible de modifier une note dans une période clôturée',
+                        400,
+                        'PERIODE_CLOTUREE_IMMUTABLE',
+                    );
+                }
+            }
+        }
+
         // Si on change le statut, utiliser le workflow de validation
         if (updateDto.statut) {
             const workflow = await validationWorkflowService.findByModuleAndEntite('notes', id);

@@ -5,4 +5,6 @@ export { ElisaSelect } from './ElisaSelect';
 export { ElisaToggle } from './ElisaToggle';
 export { ColorPicker } from './ColorPicker';
 export { RowActions } from './RowActions';
+export { Badge } from './Badge';
 export type { ActionConfig, ActionVariant } from './RowActions';
+export type { BadgeProps } from './Badge';

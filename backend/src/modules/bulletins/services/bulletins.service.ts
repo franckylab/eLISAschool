@@ -13,6 +13,7 @@ import { logger } from '@common/utils/logger.util';
 import { parentsService } from '@modules/responsables-eleves/services';
 import { classesService } from '@modules/classes/services';
 import { periodesService } from '@modules/periodes/services';
+import { StatutPeriode } from '@modules/periodes/entities';
 import { notesService } from '@modules/notes/services';
 import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
 import { matieresService } from '@modules/matieres/services';
@@ -61,6 +62,18 @@ export class BulletinsService {
             }
 
             const periode = await periodesService.findOne(dto.periodeId);
+
+            // Vérifier le verrouillage de la période
+            if (periode.statut === StatutPeriode.CLOTUREE) {
+                const lockOnCloture = await getParamBoolean('periodes.lock_on_cloture', { defaultValue: true });
+                if (lockOnCloture) {
+                    throw new AppError(
+                        'Impossible de générer des bulletins pour une période clôturée',
+                        400,
+                        'PERIODE_CLOTUREE_IMMUTABLE',
+                    );
+                }
+            }
 
             // Vérifier que la période appartient à la même année scolaire
             if (periode.anneeScolaireId !== classeAnnee.anneeScolaireId) {

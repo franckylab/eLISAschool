@@ -231,6 +231,38 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.PERIODES]: {
+        name: ModuleName.PERIODES,
+        label: 'Périodes',
+        description: 'Gestion des périodes scolaires (séquences, trimestres, semestres)',
+        icon: 'CalendarDays',
+        basePath: '/periodes',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.ENSEIGNANT],
+        permissions: [
+            Permission.PERIODES_VIEW,
+            Permission.PERIODES_CREATE,
+            Permission.PERIODES_EDIT,
+            Permission.PERIODES_DELETE,
+            Permission.PERIODES_TEMPLATES_VIEW,
+            Permission.PERIODES_TEMPLATES_CREATE,
+            Permission.PERIODES_TEMPLATES_EDIT,
+            Permission.PERIODES_TEMPLATES_DELETE,
+            Permission.PERIODES_TEMPLATES_GENERER,
+            Permission.PERIODES_LABELS_VIEW,
+            Permission.PERIODES_LABELS_EDIT,
+        ],
+        dependencies: [ModuleName.AUTH, ModuleName.UTILISATEURS],
+        defaultSettings: {
+            label_sequence: 'Séquence',
+            label_trimestre: 'Trimestre',
+            label_semestre: 'Semestre',
+            label_annee: 'Année',
+            requireValidation: false,
+        },
+    },
+
     [ModuleName.EMPLOI_DU_TEMPS]: {
         name: ModuleName.EMPLOI_DU_TEMPS,
         label: 'Emploi du Temps',
