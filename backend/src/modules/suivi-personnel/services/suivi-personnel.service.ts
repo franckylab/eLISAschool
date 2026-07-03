@@ -26,13 +26,13 @@ export class SuiviPersonnelService {
     }
 
     async createIncident(dto: CreateIncidentPersonnelDto, declarantId: string, etablissementId: string, req?: Request): Promise<IncidentPersonnel> {
-        const incident = this.incidentRepo.create({
-            ...dto,
+        const incidentData = this.incidentRepo.create({
+            ...dto as any,
             declarantId,
             etablissementId,
             dateIncident: new Date(),
         });
-        await this.incidentRepo.save(incident);
+        const incident = (await this.incidentRepo.save(incidentData) as unknown) as IncidentPersonnel;
         
         // Audit trail
         if (req?.utilisateur?.id) {
@@ -72,7 +72,7 @@ export class SuiviPersonnelService {
                     sourceId: incident.id,
                     declencheurAutomatique: true,
                     categorieScore: 'comportement',
-                }, dto.etablissementId, dto.anneeScolaireId, declarantId);
+                }, etablissementId, dto.anneeScolaireId, declarantId);
                 
                 logger.info(`[Suivi-Personnel] Scoring appliqué: ${points} points pour incident ${dto.gravite}`);
             }
@@ -109,12 +109,12 @@ export class SuiviPersonnelService {
     }
 
     async createEvaluation(dto: CreateEvaluationPersonnelDto, evaluateurId: string, etablissementId: string, req?: Request): Promise<EvaluationPersonnel> {
-        const evaluation = this.evaluationRepo.create({
-            ...dto,
+        const evaluationData = this.evaluationRepo.create({
+            ...dto as any,
             evaluateurId,
             etablissementId,
         });
-        await this.evaluationRepo.save(evaluation);
+        const evaluation = (await this.evaluationRepo.save(evaluationData) as unknown) as EvaluationPersonnel;
         
         // GAMIFICATION : Attribution automatique de points pour évaluation positive
         try {
@@ -188,7 +188,7 @@ export class SuiviPersonnelService {
                         sourceId: evaluation.id,
                         declencheurAutomatique: true,
                         categorieScore: 'performance',
-                    }, dto.etablissementId, dto.anneeScolaireId);
+                    }, etablissementId, dto.anneeScolaireId);
                     
                     logger.info(`[Suivi-Personnel] Scoring appliqué: ${points} points pour évaluation ${dto.noteGlobale}/20`);
                 }

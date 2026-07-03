@@ -64,6 +64,7 @@ export interface LoginResponseDto {
             etablissementPrincipal: boolean;
             actif: boolean;
         }>;
+        permissions?: string[];
     };
     // NOUVEAU v3.0 : Sélection d'établissement
     etablissementsDisponibles?: Array<{

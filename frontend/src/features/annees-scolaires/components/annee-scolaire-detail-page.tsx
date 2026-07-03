@@ -119,7 +119,7 @@ export function AnneeScolaireDetailPage() {
         const groupes: Record<string, { typeNom: string; periodes: Periode[] }> = {};
         for (const periode of annee.periodes) {
             const niveauKey = periode.niveauId || 'AUTRE';
-            const typeNom = periode.niveau?.label || niveauKey.substring(0, 8);
+            const typeNom = periode.niveau?.label || periode.niveauId?.substring(0, 8) || 'AUTRE';
             if (!groupes[niveauKey]) {
                 groupes[niveauKey] = { typeNom, periodes: [] };
             }

@@ -272,9 +272,5 @@ export const auditSante = {
     },
 };
 
-export {
-    auditSondage,
-    auditAnnonce,
-    auditGamification,
-    auditSante,
-};
+
+

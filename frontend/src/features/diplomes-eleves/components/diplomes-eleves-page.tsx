@@ -65,7 +65,7 @@ export function DiplomesElevesPage() {
             render: (diplome: DiplomeEleve, _index: number) => (
                 <div className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">{diplome.eleve?.nom || diplome.eleveId.substring(0, 8)}</span>
+                    <span className="text-sm font-medium">{diplome.eleve?.nom || diplome.eleveId?.substring(0, 8) || '—'}</span>
                 </div>
             ),
         },
@@ -73,7 +73,7 @@ export function DiplomesElevesPage() {
             key: 'examenNationalId',
             header: 'Examen',
             render: (diplome: DiplomeEleve, _index: number) => (
-                <span className="text-sm">{diplome.examenNational?.nom || diplome.examenNationalId.substring(0, 8)}</span>
+                <span className="text-sm">{diplome.examenNational?.nom || diplome.examenNationalId?.substring(0, 8) || '—'}</span>
             ),
         },
         {
@@ -225,8 +225,7 @@ export function DiplomesElevesPage() {
                         hasPrev: currentPage > 1,
                         onPageChange: setPage,
                     } : undefined}
-                    emptyMessage="Aucun diplôme enregistré"
-                />
+                    emptyMessage="Aucun diplôme enregistré" tableId={''}                />
             </motion.div>
 
             {/* Modal Formulaire */}

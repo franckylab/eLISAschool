@@ -48,23 +48,34 @@ const LABELS_STATUT: Record<string, string> = {
 };
 
 /**
- * Configuration des niveaux de l'arborescence
- * Chaque niveau a une position fixe pour sa barre verticale (effet escalier réel)
- * Les barres sont positionnées absolument dans l'espace d'indentation
+ * Configuration des couleurs et barres de l'arborescence (profondeur dynamique)
  */
-const NIVEAU_CONFIG = [
+const NIVEAU_CONFIG_BASE = [
     { barWidth: 4, color: 'var(--color-dominant-600)', bgColor: 'transparent' },
     { barWidth: 5, color: 'var(--color-dominant-400)', bgColor: 'var(--color-dominant-50)' },
     { barWidth: 6, color: 'var(--color-dominant-300)', bgColor: 'var(--color-dominant-50)' },
 ] as const;
 
+function getNiveauConfig(profondeur: number) {
+    if (profondeur < NIVEAU_CONFIG_BASE.length) {
+        return NIVEAU_CONFIG_BASE[profondeur];
+    }
+    // Generer dynamiquement pour des profondeurs arbitraires
+    return {
+        barWidth: 6,
+        color: 'var(--color-dominant-200)',
+        bgColor: 'var(--color-dominant-50)'
+    };
+}
+
 const INDENT_DESKTOP = 28;
 const BAR_WIDTH = 3;       // Épaisseur de chaque barre
 const BAR_SPACING = 8;     // Espacement entre barres
 const BAR_ZONE_PAD = 8;    // Padding gauche dans la zone des barres
-const MAX_PROFONDEUR = NIVEAU_CONFIG.length - 1;
+const MAX_PROFONDEUR = 5;  // Profondeur maximale supportée pour les barres de gauche
 /** Largeur fixe de la zone des barres (aligne header et lignes) */
 const BAR_ZONE_FIXED = BAR_ZONE_PAD + (MAX_PROFONDEUR + 1) * (BAR_WIDTH + BAR_SPACING);
+
 
 /**
  * Ligne aplatie pour le rendu (parent ou enfant visible)
@@ -404,7 +415,7 @@ export function PeriodesPage() {
                             {lignes.map((ligne) => {
                                 const { node, profondeur, aEnfants } = ligne;
                                 const isExpanded = expanded.has(node.id);
-                                const niveau = NIVEAU_CONFIG[Math.min(profondeur, NIVEAU_CONFIG.length - 1)];
+                                const niveau = getNiveauConfig(profondeur);
 
                                 return (
                                     <div
@@ -419,7 +430,7 @@ export function PeriodesPage() {
                                             aria-hidden="true"
                                         >
                                             {Array.from({ length: profondeur + 1 }, (_, i) => {
-                                                const cfg = NIVEAU_CONFIG[Math.min(i, NIVEAU_CONFIG.length - 1)];
+                                                const cfg = getNiveauConfig(i);
                                                 const estNiveauCourant = i === profondeur;
                                                 return (
                                                     <div
@@ -456,7 +467,7 @@ export function PeriodesPage() {
                                                     <Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
                                                     <span className={`truncate ${profondeur === 0 ? 'font-semibold' : 'font-medium'} text-[var(--color-text-primary)]`} style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>{node.nom}</span>
                                                 </div>
-                                                <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)] text-center">{node.niveau?.label || (node.niveauId ? node.niveauId.substring(0, 8) : '—')}</span>
+                                                <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)] text-center">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
                                                 <div style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem)' }}>
                                                     <p className="text-[var(--color-text-primary)]">{new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
                                                     <p className="text-xs text-[var(--color-text-muted)]">→ {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
@@ -483,7 +494,7 @@ export function PeriodesPage() {
                                                     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium shrink-0 ml-2 ${COULEURS_STATUT[node.statut]}`}>{LABELS_STATUT[node.statut]}</span>
                                                 </div>
                                                 <div className="flex items-center gap-[var(--gap-sm)] flex-wrap mb-[var(--space-xs)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                                    <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]">{node.niveau?.label || (node.niveauId ? node.niveauId.substring(0, 8) : '—')}</span>
+                                                    <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
                                                     <span className="text-[var(--color-text-secondary)]">
                                                         {new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                                                         {' → '}
@@ -611,9 +622,20 @@ export function PeriodesPage() {
                     }
                     onConfirm={async () => {
                         const { type, periode } = confirmAction;
-                        if (type === 'supprimer') await supprimer.mutateAsync(periode.id);
-                        else if (type === 'reouvrir') await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle' });
-                        setConfirmAction(null);
+                        if (type === 'supprimer') {
+                            try {
+                                await supprimer.mutateAsync(periode.id);
+                                setConfirmAction(null);
+                            } catch (e) {
+                                // L'erreur est déjà affichée par le toast.error dans la configuration onError de la mutation.
+                                // On ne ferme pas le modal en cas d'erreur pour que l'utilisateur puisse corriger/comprendre.
+                            }
+                        } else if (type === 'reouvrir') {
+                            try {
+                                await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle' });
+                                setConfirmAction(null);
+                            } catch (e) {}
+                        }
                     }}
                     onCancel={() => setConfirmAction(null)}
                     isLoading={supprimer.isPending || reouvrir.isPending}

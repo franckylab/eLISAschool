@@ -14,6 +14,7 @@
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
+import { StatutNote } from '@modules/notes/entities/note.entity';
 import { Periode, PeriodeComposition, StatutPeriode, NiveauPeriode } from '../entities';
 import {
     CreatePeriodeDto,
@@ -144,6 +145,10 @@ export class PeriodesService {
 
     /**
      * Structure arborescente des périodes pour une année scolaire (v5.0)
+     * Construit l'arbre complet à profondeur arbitraire en une seule passe :
+     * 1. Charge toutes les périodes de l'année
+     * 2. Charge toutes les compositions entre ces périodes
+     * 3. Résout les enfants récursivement via une Map (pas de limite de profondeur)
      */
     async findAllArbre(anneeId: string, etablissementId?: string): Promise<PeriodeArbre[]> {
         const where: any = { anneeScolaireId: anneeId };
@@ -151,6 +156,7 @@ export class PeriodesService {
             where.etablissementId = etablissementId;
         }
 
+        // 1. Toutes les périodes de l'année (tous niveaux confondus)
         const periodes = await this.periodeRepo.find({
             where,
             relations: ['niveau'],
@@ -160,70 +166,52 @@ export class PeriodesService {
         const periodeIds = periodes.map(p => p.id);
         if (periodeIds.length === 0) return [];
 
+        // 2. Toutes les compositions dont le parent appartient à cette année
+        //    (couvre toutes les profondeurs : année→semestre, semestre→trimestre, etc.)
         const compositions = await this.compositionRepo.find({
             where: { periodeParentId: In(periodeIds) },
             order: { ordre: 'ASC' },
-            relations: ['periodeEnfant', 'periodeEnfant.niveau'],
         });
 
-        const enfantsMap = new Map<string, PeriodeArbre[]>();
-        const enfantsIds = new Set<string>();
-
-        for (const comp of compositions) {
-            if (!enfantsMap.has(comp.periodeParentId)) {
-                enfantsMap.set(comp.periodeParentId, []);
-            }
-            const enfant = comp.periodeEnfant;
-            if (enfant) {
-                enfantsIds.add(enfant.id);
-                enfantsMap.get(comp.periodeParentId)!.push({
-                    id: enfant.id,
-                    nom: enfant.nom,
-                    niveauId: enfant.niveauId,
-                    niveau: enfant.niveau ? {
-                        id: enfant.niveau.id,
-                        niveau: enfant.niveau.niveau,
-                        label: enfant.niveau.label,
-                        usageCode: enfant.niveau.usageCode,
-                    } : undefined,
-                    dateDebut: enfant.dateDebut,
-                    dateFin: enfant.dateFin,
-                    statut: enfant.statut,
-                    anneeScolaireId: enfant.anneeScolaireId,
-                    etablissementId: enfant.etablissementId,
-                    enfants: [],
-                    createdAt: enfant.createdAt,
-                    updatedAt: enfant.updatedAt,
-                });
-            }
-        }
-
-        const arbre: PeriodeArbre[] = [];
+        // 3. Construire une Map id→PeriodeArbre pour chaque période
+        const nodesById = new Map<string, PeriodeArbre>();
         for (const periode of periodes) {
-            if (!enfantsIds.has(periode.id)) {
-                arbre.push({
-                    id: periode.id,
-                    nom: periode.nom,
-                    niveauId: periode.niveauId,
-                    niveau: periode.niveau ? {
-                        id: periode.niveau.id,
-                        niveau: periode.niveau.niveau,
-                        label: periode.niveau.label,
-                        usageCode: periode.niveau.usageCode,
-                    } : undefined,
-                    dateDebut: periode.dateDebut,
-                    dateFin: periode.dateFin,
-                    statut: periode.statut,
-                    anneeScolaireId: periode.anneeScolaireId,
-                    etablissementId: periode.etablissementId,
-                    enfants: enfantsMap.get(periode.id) || [],
-                    createdAt: periode.createdAt,
-                    updatedAt: periode.updatedAt,
-                });
+            nodesById.set(periode.id, {
+                id: periode.id,
+                nom: periode.nom,
+                niveauId: periode.niveauId,
+                niveau: periode.niveau ? {
+                    id: periode.niveau.id,
+                    niveau: periode.niveau.niveau,
+                    label: periode.niveau.label,
+                    usageCode: periode.niveau.usageCode,
+                } : undefined,
+                dateDebut: periode.dateDebut,
+                dateFin: periode.dateFin,
+                statut: periode.statut,
+                anneeScolaireId: periode.anneeScolaireId,
+                etablissementId: periode.etablissementId,
+                enfants: [],
+                createdAt: periode.createdAt,
+                updatedAt: periode.updatedAt,
+            });
+        }
+
+        // 4. Relier enfants aux parents via les compositions (toutes profondeurs)
+        const enfantsIds = new Set<string>();
+        for (const comp of compositions) {
+            const parent = nodesById.get(comp.periodeParentId);
+            const enfant = nodesById.get(comp.periodeEnfantId);
+            if (parent && enfant) {
+                parent.enfants.push(enfant);
+                enfantsIds.add(enfant.id);
             }
         }
 
-        return arbre;
+        // 5. Retourner uniquement les racines (jamais enfants)
+        return periodes
+            .filter(p => !enfantsIds.has(p.id))
+            .map(p => nodesById.get(p.id)!);
     }
 
     /**
@@ -562,6 +550,10 @@ export class PeriodesService {
         });
 
         for (const comp of parentsCompositions) {
+            // Ignorer la relation parent-enfant directe existante que l'on est en train de modifier/remplacer
+            if (comp.periodeParentId === ancestorId && profondeur === 0) {
+                continue;
+            }
             if (comp.periodeParentId === ancestorId) return true;
             const hasCycle = await this.detecterCycle(comp.periodeParentId, ancestorId, profondeur + 1);
             if (hasCycle) return true;
@@ -678,7 +670,7 @@ export class PeriodesService {
         const notesEnAttente = await notesRepo.count({
             where: {
                 periodeId: periode.id,
-                statut: 'EN_ATTENTE_VALIDATION',
+                statut: StatutNote.BROUILLON,
             },
         });
 

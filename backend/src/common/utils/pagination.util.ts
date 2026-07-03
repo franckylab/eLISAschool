@@ -189,7 +189,7 @@ export async function paginateWithRepository<T extends ObjectLiteral>(
  * @param useOptimizedCount - Activer le COUNT optimisé
  * @returns Résultat paginé
  */
-export async function paginateWithQueryBuilder<T>(
+export async function paginateWithQueryBuilder<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     page: number,
     limit: number,
@@ -231,7 +231,7 @@ export async function paginateWithQueryBuilder<T>(
  * @param limit - Limite par page
  * @returns Résultat paginé
  */
-export async function paginateWithCustomCount<T>(
+export async function paginateWithCustomCount<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     countQueryBuilder: SelectQueryBuilder<T>,
     page: number,
@@ -348,7 +348,7 @@ export interface CursorPaginationOptions {
  * @param direction - Direction de pagination
  * @returns Résultat paginé par curseur
  */
-export async function paginateWithCursor<T>(
+export async function paginateWithCursor<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     cursorField: keyof T | 'id' | 'createdAt',
     cursorValue: string | null,
@@ -392,11 +392,11 @@ export async function paginateWithCursor<T>(
     
     // Calculer les curseurs
     const nextCursor = hasNextPage && items.length > 0
-        ? String(items[items.length - 1][cursorField])
+        ? String((items[items.length - 1] as any)[cursorField])
         : null;
     
     const previousCursor = cursorValue
-        ? String(items.length > 0 ? items[0][cursorField] : cursorValue)
+        ? String(items.length > 0 ? (items[0] as any)[cursorField] : cursorValue)
         : null;
     
     return {

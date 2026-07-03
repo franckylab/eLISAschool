@@ -270,14 +270,35 @@ export class TemplatesPeriodeService {
         const dateFin = new Date(dto.dateFin);
         const periodesCreees: Periode[] = [];
 
-        // Générer récursivement depuis le nœud racine
+        // 1. Résoudre le niveau pour la racine du template (ex: niveau 3, usageCode ANNEE)
+        const niveauRacine = niveaux.find(
+            n => n.niveau === template.structure.niveau && n.usageCode === template.structure.usageCode,
+        );
+        let rootParentId: string | null = null;
+
+        if (niveauRacine) {
+            // Créer la période racine
+            const racinePeriode = this.periodeRepo.create({
+                nom: template.structure.nom,
+                niveauId: niveauRacine.id,
+                anneeScolaireId: dto.anneeScolaireId,
+                etablissementId,
+                dateDebut,
+                dateFin,
+            });
+            await this.periodeRepo.save(racinePeriode);
+            periodesCreees.push(racinePeriode);
+            rootParentId = racinePeriode.id;
+        }
+
+        // 2. Générer récursivement les enfants depuis le nœud racine
         await this.genererRecursif(
             template.structure,
             dto.anneeScolaireId,
             etablissementId,
             dateDebut,
             dateFin,
-            null, // pas de parent pour la racine
+            rootParentId, // ID de la période racine comme parent
             0,    // profondeur 0
             null, // pas de préfixe de nom
             periodesCreees,

@@ -347,7 +347,7 @@ export interface ModifierUsageNiveauDto {
  */
 export function getLabelNiveau(niveaux: NiveauPeriode[], niveauId: string): string {
     const niveau = niveaux.find(n => n.id === niveauId);
-    return niveau?.label || (niveauId ? niveauId.substring(0, 8) : '—');
+    return niveau?.label || niveauId?.substring(0, 8) || '—';
 }
 
 /**

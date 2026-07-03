@@ -452,7 +452,7 @@ export function PeriodeDetailPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--gap-md)]">
                                     {[
                                         { label: 'ID', value: periode.id, mono: true },
-                                        { label: 'Établissement', value: (periode.etablissementId ? periode.etablissementId.substring(0, 8) : '—') + '...', mono: true },
+                                        { label: 'Établissement', value: (periode.etablissementId?.substring(0, 8) || '—') + '...', mono: true },
                                         { label: 'Créée le', value: new Date(periode.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
                                         { label: 'Modifiée le', value: new Date(periode.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
                                     ].map((item) => (
@@ -696,8 +696,10 @@ export function PeriodeDetailPage() {
                 variant="info"
                 confirmLabel="Réouvrir"
                 onConfirm={async () => {
-                    await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle depuis le détail' });
-                    setConfirmAction(null);
+                    try {
+                        await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle depuis le détail' });
+                        setConfirmAction(null);
+                    } catch (e) {}
                 }}
                 onCancel={() => setConfirmAction(null)}
                 isLoading={reouvrir.isPending}
@@ -710,9 +712,11 @@ export function PeriodeDetailPage() {
                 details="Cette action est irréversible."
                 variant="danger"
                 onConfirm={async () => {
-                    await supprimer.mutateAsync(periode.id);
-                    setConfirmAction(null);
-                    navigate({ to: '/periodes' } as any);
+                    try {
+                        await supprimer.mutateAsync(periode.id);
+                        setConfirmAction(null);
+                        navigate({ to: '/periodes' } as any);
+                    } catch (e) {}
                 }}
                 onCancel={() => setConfirmAction(null)}
                 isLoading={supprimer.isPending}

@@ -107,7 +107,7 @@ export class TypeEnumService {
         qb.orderBy('t.ordre', 'ASC')
           .addOrderBy('t.createdAt', 'DESC');
 
-        return paginateWithQueryBuilder(qb, { page, limit });
+        return paginateWithQueryBuilder(qb, page, limit);
     }
 
     /**

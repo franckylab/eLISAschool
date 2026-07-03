@@ -166,6 +166,31 @@ export async function seedEtablissementsParDefaut(): Promise<EtablissementsDefau
         logger.info('✅ Configuration de l\'établissement secondaire créée');
     }
 
+    // Seed les usages sémantiques système par défaut (nécessaires pour les niveaux de période)
+    const { UsageNiveau } = await import('@modules/periodes/entities/usage-niveau.entity');
+    const usageRepo = AppDataSource.getRepository(UsageNiveau);
+    const usagesDefaut = [
+        { code: 'NOTES', label: 'Saisie des notes', estSysteme: true },
+        { code: 'BULLETIN', label: 'Génération des bulletins', estSysteme: true },
+        { code: 'COMPOSITION', label: 'Création de compositions', estSysteme: true },
+        { code: 'ANNEE', label: 'Niveau racine (Année)', estSysteme: true },
+        { code: 'AUTRE', label: 'Autre usage', estSysteme: true }
+    ];
+    for (const u of usagesDefaut) {
+        const exist = await usageRepo.findOne({ where: { code: u.code } });
+        if (!exist) {
+            const usage = usageRepo.create(u);
+            await usageRepo.save(usage);
+            logger.info(`✅ Usage système créé: ${u.code}`);
+        }
+    }
+
+    // Seed les niveaux de périodicité par défaut pour les deux établissements
+    const { NiveauxPeriodeService } = await import('@modules/periodes/services/niveaux-periode.service');
+    const niveauxService = new NiveauxPeriodeService();
+    await niveauxService.seedNiveauxDefaut(etablissementPrincipal.id);
+    await niveauxService.seedNiveauxDefaut(etablissementSecondaire.id);
+
     return {
         principal: etablissementPrincipal.id,
         secondaire: etablissementSecondaire.id,

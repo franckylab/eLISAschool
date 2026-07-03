@@ -117,8 +117,8 @@ export function ModalFormPeriode({
             setNom(periode.nom);
             setNiveauId(periode.niveauId);
             setAnneeId(periode.anneeScolaireId);
-            setDateDebut(periode.dateDebut ? periode.dateDebut.substring(0, 10) : '');
-            setDateFin(periode.dateFin ? periode.dateFin.substring(0, 10) : '');
+            setDateDebut(periode.dateDebut?.substring(0, 10) || '');
+            setDateFin(periode.dateFin?.substring(0, 10) || '');
         } else {
             setNom('');
             setNiveauId(niveaux.length > 0 ? niveaux[0].id : '');
@@ -451,7 +451,7 @@ export function ModalFormPeriode({
                                 </div>
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('niveau')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{niveaux.find(n => n.id === niveauId)?.label || (niveauId ? niveauId.substring(0, 8) : '—')}</dd>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{niveaux.find(n => n.id === niveauId)?.label || niveauId?.substring(0, 8) || '—'}</dd>
                                 </div>
                             </dl>
                         </div>

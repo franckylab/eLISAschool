@@ -14,6 +14,7 @@ export const createIncidentPersonnelSchema = z.object({
     type: z.string().min(2).max(200),
     description: z.string().min(10),
     actionPrise: z.string().optional(),
+    etablissementId: z.string().uuid().optional(),
 });
 
 export const createEvaluationPersonnelSchema = z.object({
@@ -28,4 +29,10 @@ export const createEvaluationPersonnelSchema = z.object({
     objectifs: z.string().optional(),
     commentaires: z.string().optional(),
     visibleConcerned: z.boolean().default(false),
+    etablissementId: z.string().uuid().optional(),
 });
+
+// TypeScript types inferred from Zod schemas
+export type CreateIncidentPersonnelDto = z.infer<typeof createIncidentPersonnelSchema>;
+export type CreateEvaluationPersonnelDto = z.infer<typeof createEvaluationPersonnelSchema>;
+

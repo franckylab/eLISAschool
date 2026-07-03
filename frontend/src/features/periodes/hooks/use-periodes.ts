@@ -209,7 +209,7 @@ export function useCreerPeriode() {
             toast.success('Période créée avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la création');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la création');
         },
     });
 }
@@ -230,7 +230,7 @@ export function useModifierPeriode() {
             toast.success('Période modifiée avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la modification');
         },
     });
 }
@@ -251,7 +251,7 @@ export function useSupprimerPeriode() {
             toast.success('Période supprimée avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la suppression');
         },
     });
 }
@@ -276,7 +276,7 @@ export function useAjouterComposition() {
             toast.success('Composition ajoutée');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'ajout');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de l\'ajout');
         },
     });
 }
@@ -300,7 +300,7 @@ export function useModifierComposition() {
             toast.success('Composition modifiée');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la modification');
         },
     });
 }
@@ -321,7 +321,7 @@ export function useSupprimerComposition() {
             toast.success('Composition supprimée');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la suppression');
         },
     });
 }
@@ -345,7 +345,7 @@ export function useGenererTemplate() {
             toast.success('Hiérarchie générée avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la génération');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la génération');
         },
     });
 }
@@ -369,7 +369,7 @@ export function useCloturerPeriode() {
             toast.success('Période clôturée avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la clôture');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la clôture');
         },
     });
 }
@@ -393,7 +393,7 @@ export function useReouvrirPeriode() {
             toast.success('Période réouverte avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la réouverture');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de la réouverture');
         },
     });
 }
@@ -416,7 +416,7 @@ export function useRemplacerCompositions() {
             toast.success('Compositions enregistrées avec succès');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'enregistrement des compositions');
+            toast.error(error.message || error.response?.data?.error?.message || 'Erreur lors de l\'enregistrement des compositions');
         },
     });
 }
@@ -812,7 +812,7 @@ export function useLabelNiveauPeriode() {
 
     const getLabel = (niveauId: string): string => {
         const niveau = niveaux.find(n => n.id === niveauId);
-        return niveau?.label || (niveauId ? niveauId.substring(0, 8) : '—');
+        return niveau?.label || niveauId?.substring(0, 8) || '—';
     };
 
     const getLabelByNiveau = (niveauValue: number): string => {
