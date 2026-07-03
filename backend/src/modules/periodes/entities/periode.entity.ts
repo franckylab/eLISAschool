@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  *
  * Refonte architecturale v5.0 :
- * - Suppression de l'enum TypePeriode (SEQUENCE, TRIMESTRE, SEMESTRE, ANNEE)
+ * - Suppression de l'enum TypePeriode (EVALUATION, TRIMESTRE, SEMESTRE, ANNEE)
  * - Remplacement par FK niveauId vers NiveauPeriode (niveaux configurables)
  * - Chaque établissement définit ses propres niveaux et libellés
  * - Hiérarchie via table de jointure PeriodeComposition (inchangée)

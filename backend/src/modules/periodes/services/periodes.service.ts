@@ -12,7 +12,7 @@
  * - Cohérence avec les niveaux configurables par établissement
  */
 
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { StatutNote } from '@modules/notes/entities/note.entity';
 import { Periode, PeriodeComposition, StatutPeriode, NiveauPeriode } from '../entities';
@@ -27,7 +27,7 @@ import {
     ReouvrirPeriodeDto,
 } from '../dto';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
-import { getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
+import { getParamBoolean, getParam, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -215,6 +215,47 @@ export class PeriodesService {
     }
 
     /**
+     * Période en cours pour l'établissement.
+     * Déterminée par :
+     * 1. Année scolaire active (enCours=true)
+     * 2. Niveau hiérarchique configuré (periodes.niveau_affichage_courant)
+     * 3. Période avec dateDebut <= now <= dateFin et statut OUVERTE
+     */
+    async findActive(etablissementId: string): Promise<Periode | null> {
+        const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
+        const anneeActive = await anneesScolairesService.findActive(etablissementId);
+        if (!anneeActive) return null;
+
+        const niveauParam = await getParamNumber('periodes.niveau_affichage_courant', {
+            defaultValue: 1,
+            etablissementId,
+        });
+
+        const { niveauxPeriodeService } = await import('./niveaux-periode.service');
+        let niveau: NiveauPeriode;
+        try {
+            niveau = await niveauxPeriodeService.findByNiveau(niveauParam, etablissementId);
+        } catch {
+            return null;
+        }
+
+        const now = new Date();
+        const periode = await this.periodeRepo.findOne({
+            where: {
+                anneeScolaireId: anneeActive.id,
+                niveauId: niveau.id,
+                etablissementId,
+                dateDebut: LessThanOrEqual(now),
+                dateFin: MoreThanOrEqual(now),
+                statut: StatutPeriode.OUVERTE,
+            },
+            relations: ['niveau', 'anneeScolaire'],
+        });
+
+        return periode || null;
+    }
+
+    /**
      * Détail d'une période avec ses compositions
      */
     async findOne(id: string, etablissementId?: string): Promise<Periode> {
@@ -349,6 +390,37 @@ export class PeriodesService {
             relations: ['periodeEnfant', 'periodeEnfant.niveau'],
             order: { ordre: 'ASC' },
         });
+    }
+
+    /**
+     * Retourne le nombre de notes saisies pour chaque enfant d'une période parent.
+     * Utilisé pour afficher la progression de saisie dans l'UI.
+     */
+    async getProgressionEnfants(periodeId: string): Promise<{ id: string; noteCount: number }[]> {
+        const compositions = await this.compositionRepo.find({
+            where: { periodeParentId: periodeId },
+            select: ['id', 'periodeEnfantId'],
+        });
+
+        if (compositions.length === 0) return [];
+
+        const enfantIds = compositions.map(c => c.periodeEnfantId);
+
+        const notesRepo = AppDataSource.getRepository('Note');
+        const rawCounts = await notesRepo
+            .createQueryBuilder('note')
+            .select('note.periodeId', 'periodeId')
+            .addSelect('COUNT(*)', 'count')
+            .where('note.periodeId IN (:...ids)', { ids: enfantIds })
+            .groupBy('note.periodeId')
+            .getRawMany() as { periodeId: string; count: string }[];
+
+        const countMap = new Map(rawCounts.map(r => [r.periodeId, parseInt(r.count, 10)]));
+
+        return enfantIds.map(id => ({
+            id,
+            noteCount: countMap.get(id) || 0,
+        }));
     }
 
     // ================================================================

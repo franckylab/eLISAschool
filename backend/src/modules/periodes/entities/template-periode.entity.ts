@@ -57,7 +57,7 @@ export class TemplatePeriodeEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    /** Nom lisible du template — ex: "3 Trimestres × 2 Séquences" */
+    /** Nom lisible du template — ex: "3 Trimestres × 2 Évaluations" */
     @Column({ type: 'varchar', length: 200 })
     nom!: string;
 

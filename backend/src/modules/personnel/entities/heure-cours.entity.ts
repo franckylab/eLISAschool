@@ -93,9 +93,6 @@ export class HeureCours {
     @Column({ type: 'varchar', length: 30, default: StatutEffectue.PLANIFIE })
     statutEffectue!: StatutEffectue;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    salleObsolète?: string | null; // @deprecated Utiliser salleId à la place
-
     @Column({ type: 'text', nullable: true })
     commentaire?: string; // Observations, remplacement, annulation
 

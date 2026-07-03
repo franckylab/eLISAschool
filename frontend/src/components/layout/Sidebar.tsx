@@ -45,6 +45,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModulePermissions } from '@/hooks';
 import { useEtablissement } from '@/features/etablissement';
 import { useAnneeScolaireActive } from '@/features/annees-scolaires';
+import { usePeriodeActive } from '@/features/periodes';
 import { cn } from '@/lib/cn';
 import { ElisaLogo } from '@/components/branding';
 import { Badge } from '@/components/ui';
@@ -262,6 +263,9 @@ export function Sidebar() {
     // Charger l'année scolaire active
     const { data: anneeActive } = useAnneeScolaireActive();
 
+    // Charger la période en cours
+    const { data: periodeActive } = usePeriodeActive();
+
     // Vérifier les permissions pour chaque module
     const etablissementsPerms = useModulePermissions('etablissements');
     const cyclesPerms = useModulePermissions('cycles');
@@ -452,6 +456,18 @@ export function Sidebar() {
                             >
                                 <CalendarDays className="h-3 w-3" />
                                 {anneeActive.libelle}
+                            </Badge>
+                        )}
+                        {periodeActive && (
+                            <Badge
+                                variant="default"
+                                size="xs"
+                                dot
+                                className="w-full justify-center"
+                                title={`Période en cours : ${periodeActive.nom} (${new Date(periodeActive.dateDebut).toLocaleDateString('fr-FR')} - ${new Date(periodeActive.dateFin).toLocaleDateString('fr-FR')})`}
+                            >
+                                <Calendar className="h-3 w-3" />
+                                {periodeActive.nom}
                             </Badge>
                         )}
 

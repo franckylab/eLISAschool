@@ -57,6 +57,7 @@ const PERIODES_KEYS = {
     compositions: (id: string) => [...PERIODES_KEYS.all, 'compositions', id] as const,
     enfantsDisponibles: (id: string) => [...PERIODES_KEYS.all, 'enfants-disponibles', id] as const,
     impacts: (id: string) => [...PERIODES_KEYS.all, 'impacts', id] as const,
+    progressionEnfants: (id: string) => [...PERIODES_KEYS.all, 'progression-enfants', id] as const,
     templates: {
         all: ['periodes-templates'] as const,
         listes: () => [...['periodes-templates'], 'liste'] as const,
@@ -186,6 +187,23 @@ export function useVerifierImpacts(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 1 * 60 * 1000,
+    });
+}
+
+/**
+ * Progression (notes saisies) pour chaque enfant d'une période parent
+ */
+export function useProgressionEnfants(periodeId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: PERIODES_KEYS.progressionEnfants(periodeId),
+        queryFn: async () => {
+            const response = await apiClient.get<{ id: string; noteCount: number }[]>(`/api/periodes/${periodeId}/progression-enfants`);
+            return response.data;
+        },
+        enabled: !!periodeId && isAuthenticated,
+        staleTime: 2 * 60 * 1000,
     });
 }
 
@@ -796,6 +814,32 @@ export function useSupprimerUsageNiveau() {
         onError: (error: any) => {
             toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
         },
+    });
+}
+
+// ================================================================
+// QUERY — Période active (période en cours)
+// ================================================================
+
+const PERIODE_ACTIVE_KEY = ['periodes', 'active'] as const;
+
+/**
+ * Hook pour récupérer la période en cours.
+ * Appelle GET /api/periodes/active qui détermine la période courante
+ * à partir de l'année active, du niveau configuré et de la date du jour.
+ */
+export function usePeriodeActive() {
+    const { isAuthenticated, etablissementId } = useAuthStore();
+
+    return useQuery({
+        queryKey: [...PERIODE_ACTIVE_KEY, etablissementId],
+        queryFn: async () => {
+            const response = await apiClient.get<Periode | null>('/api/periodes/active');
+            return response.data ?? null;
+        },
+        enabled: isAuthenticated && !!etablissementId,
+        staleTime: 5 * 60 * 1000,
+        retry: false,
     });
 }
 

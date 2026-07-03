@@ -8,6 +8,7 @@
 
 export { SallesPage } from './pages/SallesPage';
 export { SallesStatistiquesPage } from './pages/SallesStatistiquesPage';
+export { SalleDetailPage } from './pages/SalleDetailPage';
 export { SalleFormModal } from './components/SalleFormModal';
 export { SalleSelect } from './components/SalleSelect';
 export { useSalles, useSalle, useSallesDisponibles, useStatistiquesSalles, useCreerSalle, useModifierSalle, useSupprimerSalle } from './hooks/use-salles';

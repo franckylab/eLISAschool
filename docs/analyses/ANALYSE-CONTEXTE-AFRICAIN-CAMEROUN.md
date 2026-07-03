@@ -53,7 +53,7 @@ Le Cameroun a **DEUX sous-systèmes éducatifs** :
 @Entity('types_periodes')
 export class TypePeriode {
     @Column({ type: 'varchar', length: 50, unique: true })
-    code!: string; // TRIMESTRE, SEMESTRE, SEQUENCE, TERM
+    code!: string; // TRIMESTRE, SEMESTRE, EVALUATION, TERM
     
     // ✅ Supporte les deux sous-systèmes camerounais
     // ✅ Supporte systèmes sous-régionaux
@@ -64,7 +64,7 @@ export class TypePeriode {
 - ✅ TRIMESTRE (francophone)
 - ✅ TERM (anglophone)
 - ✅ SEMESTRE (universitaire/supérieur)
-- ✅ SEQUENCE (primaire/système alternatif)
+- ✅ EVALUATION (primaire/système alternatif)
 
 #### 2. Rôles Système Éducatif Africain
 ```sql

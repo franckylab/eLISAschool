@@ -46,6 +46,10 @@ export interface TransfertItem {
     label: string;
     sublabel?: string;
     badge?: string;
+    /** Poids optionnel pour répartition personnalisée */
+    poids?: number;
+    /** Callback appelé quand le poids change (si éditable) */
+    onPoidsChange?: (id: string, poids: number) => void;
 }
 
 interface TransfertListProps<T extends TransfertItem> {
@@ -67,6 +71,8 @@ interface TransfertListProps<T extends TransfertItem> {
     isLoading?: boolean;
     /** Texte affiché quand aucune donnée */
     emptyText?: string;
+    /** Activer l'affichage/édition des poids dans la colonne sélectionnée */
+    showPoids?: boolean;
 }
 
 /**
@@ -77,11 +83,13 @@ function SortableItem<T extends TransfertItem>({
     context,
     renderContent,
     onRemove,
+    renderPoids,
 }: {
     item: T;
     context: 'pool' | 'selection';
     renderContent: (item: T) => ReactNode;
     onRemove?: (id: string) => void;
+    renderPoids?: (item: T) => ReactNode | null;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.id,
@@ -113,6 +121,7 @@ function SortableItem<T extends TransfertItem>({
             <div className="flex-1 min-w-0 py-1.5 px-2">
                 {renderContent(item)}
             </div>
+            {context === 'selection' && renderPoids && renderPoids(item)}
             {context === 'selection' && onRemove && (
                 <button
                     onClick={() => onRemove(item.id)}
@@ -139,6 +148,7 @@ export function TransfertList<T extends TransfertItem>({
     disableDrag = false,
     isLoading = false,
     emptyText = 'Aucun élément',
+    showPoids = false,
 }: TransfertListProps<T>) {
     const estMobile = useMediaQuery('(max-width: 639px)');
     const [recherchePool, setRecherchePool] = useState('');
@@ -186,6 +196,28 @@ export function TransfertList<T extends TransfertItem>({
     ), []);
 
     const render = renderItem || defaultRenderItem;
+
+    // Composant d'affichage/édition du poids
+    const renderPoids = useCallback((item: T) => {
+        if (!showPoids || item.onPoidsChange === undefined) return null;
+        return (
+            <div className="flex items-center gap-[var(--gap-xxs)] shrink-0 ml-[var(--gap-xs)]">
+                <label className="text-[10px] font-medium text-[var(--color-text-tertiary)] shrink-0" style={{ width: '30px' }}>
+                    Poids
+                </label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={item.poids ?? 1}
+                    onChange={(e) => item.onPoidsChange?.(item.id, parseFloat(e.target.value) || 0)}
+                    className="w-14 rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)] text-center"
+                    style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)', padding: '0.125rem 0.25rem' }}
+                    aria-label={`Poids de ${item.label}`}
+                />
+            </div>
+        );
+    }, [showPoids]);
 
     // Handlers boutons
     const ajouter = (item: T) => {
@@ -324,6 +356,7 @@ export function TransfertList<T extends TransfertItem>({
                                     context="selection"
                                     renderContent={render}
                                     onRemove={retirer}
+                                    renderPoids={renderPoids}
                                 />
                             ))}
                         </SortableContext>

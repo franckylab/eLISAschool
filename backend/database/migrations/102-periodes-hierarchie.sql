@@ -54,8 +54,8 @@ WHERE type IS NULL;
 -- =============================================
 -- ÉTAPE 3 : Migrer les données — restructuration hiérarchique
 -- Pour chaque année scolaire, les anciens trimestres deviennent des parents
--- et on crée 2 séquences enfants par trimestre
--- Les notes existantes sont migrées vers la 1ère séquence
+-- et on crée 2 évaluations enfants par trimestre
+-- Les notes existantes sont migrées vers la 1ère évaluation
 -- =============================================
 
 -- Note : Cette migration est conçue pour être exécutée sur des données existantes
@@ -80,7 +80,7 @@ BEGIN
           )
         ORDER BY p."anneeScolaireId", p."dateDebut"
     LOOP
-        -- Créer 2 séquences enfants par défaut
+        -- Créer 2 évaluations enfants par défaut
         v_seq1_id := gen_random_uuid();
         v_seq2_id := gen_random_uuid();
 
@@ -89,23 +89,23 @@ BEGIN
             "dateDebut", "dateFin", statut, "createdAt", "updatedAt"
         ) VALUES (
             v_seq1_id,
-            v_periode.nom || ' - Séquence 1',
-            'SEQUENCE',
+            v_periode.nom || ' - Évaluation 1',
+            'EVALUATION',
             v_periode."anneeScolaireId",
             v_periode."etablissementId",
             v_periode."dateDebut",
-            -- La séquence 1 couvre la première moitié de la période parent
+            -- L'évaluation 1 couvre la première moitié de la période parent
             v_periode."dateDebut" + ((v_periode."dateFin" - v_periode."dateDebut") / 2),
             v_periode.statut,
             NOW(),
             NOW()
         ), (
             v_seq2_id,
-            v_periode.nom || ' - Séquence 2',
-            'SEQUENCE',
+            v_periode.nom || ' - Évaluation 2',
+            'EVALUATION',
             v_periode."anneeScolaireId",
             v_periode."etablissementId",
-            -- La séquence 2 commence au milieu
+            -- L'évaluation 2 commence au milieu
             v_periode."dateDebut" + ((v_periode."dateFin" - v_periode."dateDebut") / 2) + INTERVAL '1 day',
             v_periode."dateFin",
             v_periode.statut,
@@ -119,17 +119,17 @@ BEGIN
             (v_periode.id, v_seq1_id, 1, 1.0),
             (v_periode.id, v_seq2_id, 2, 1.0);
 
-        -- Migrer les notes existantes vers la 1ère séquence
+        -- Migrer les notes existantes vers la 1ère évaluation
         UPDATE notes
         SET "periodeId" = v_seq1_id
         WHERE "periodeId" = v_periode.id;
 
-        -- Migrer les bulletins existants vers la 1ère séquence
+        -- Migrer les bulletins existants vers la 1ère évaluation
         UPDATE bulletins
         SET "periodeId" = v_seq1_id
         WHERE "periodeId" = v_periode.id;
 
-        -- Migrer les scores existants vers la 1ère séquence
+        -- Migrer les scores existants vers la 1ère évaluation
         UPDATE scores_eleves
         SET "periodeId" = v_seq1_id
         WHERE "periodeId" = v_periode.id;

@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, IndisponibiliteEnseignant } from '@modules/personnel/entities';
 import { RepartitionHoraire } from '../entities';
+import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -132,6 +133,7 @@ export class EmploiDuTempsValidatorService {
 
     /**
      * Vérifier conflit salle
+     * Utilise le service transverse pour couvrir EDT + HeureCours
      */
     private async verifierConflitSalle(
         salleId: string,
@@ -140,30 +142,27 @@ export class EmploiDuTempsValidatorService {
         heureFin: string,
         etablissementId: string
     ): Promise<ConflitDetection | null> {
-        const conflit = await this.heureCoursRepo.findOne({
-            where: {
-                salleId,
-                date,
-                etablissementId,
-                heureDebut: this.lessThan(heureFin),
-                heureFin: this.moreThan(heureDebut),
+        const { disponible, conflits } = await salleAvailabilityService.verifierDisponibilite(
+            salleId,
+            etablissementId,
+            { date, heureDebut, heureFin }
+        );
+
+        if (disponible) return null;
+
+        const conflit = conflits[0];
+        if (!conflit) return null;
+
+        return {
+            type: 'SALLE',
+            severity: 'ERROR',
+            message: `La salle est déjà occupée de ${conflit.heureDebut} à ${conflit.heureFin}`,
+            conflictingIds: [conflit.id],
+            details: {
+                source: conflit.source,
+                ...conflit.details,
             },
-        });
-
-        if (conflit) {
-            return {
-                type: 'SALLE',
-                severity: 'ERROR',
-                message: `La salle est déjà occupée de ${conflit.heureDebut} à ${conflit.heureFin}`,
-                conflictingIds: [conflit.id],
-                details: {
-                    enseignant: conflit.enseignantId,
-                    classe: conflit.classeId,
-                },
-            };
-        }
-
-        return null;
+        };
     }
 
     /**

@@ -365,7 +365,7 @@ export function createApp(): Application {
     // Modules académiques avec filtrage multi-tenant
     app.use('/api/bulletins', authMiddleware, requireModuleActive('bulletins'), filterByEtablissement(), bulletinsController);
     app.use('/api/emploi-du-temps', authMiddleware, requireModuleActive('emploi-du-temps'), filterByEtablissement(), emploiDuTempsModuleController);
-    app.use('/api/salles', authMiddleware, filterByEtablissement(), sallesController);
+    app.use('/api/salles', authMiddleware, requireModuleActive('salles'), filterByEtablissement(), sallesController);
     app.use('/api/options', authMiddleware, requireModuleActive('options'), filterByEtablissement(), optionsController);
     app.use('/api/cantine', authMiddleware, requireModuleActive('cantine'), filterByEtablissement(), cantineController);
     app.use('/api/transport', authMiddleware, requireModuleActive('transport'), filterByEtablissement(), transportController);

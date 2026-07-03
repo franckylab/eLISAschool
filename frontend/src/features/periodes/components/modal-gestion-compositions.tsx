@@ -62,6 +62,13 @@ export function ModalGestionCompositions({
     const [selectionLocales, setSelectionLocales] = useState<EnfantTransfert[]>([]);
     const [dirty, setDirty] = useState(false);
 
+    const handlePoidsChange = useCallback((id: string, poids: number) => {
+        setSelectionLocales(prev =>
+            prev.map(item => item.id === id ? { ...item, poids } : item)
+        );
+        setDirty(true);
+    }, []);
+
     // Hooks data — utiliser une référence stable quand la query est désactivée
     const { data: compositions = EMPTY_ARRAY, isLoading: isLoadingComp } = useCompositions(periode?.id || '');
     const { data: disponibles = EMPTY_DISPONIBLES, isLoading: isLoadingDisp } = useEnfantsDisponibles(periode?.id || '');
@@ -83,12 +90,14 @@ export function ModalGestionCompositions({
                 dateDebut: c.periodeEnfant!.dateDebut,
                 dateFin: c.periodeEnfant!.dateFin,
                 badge: `${c.ordre}`,
+                poids: c.poids ?? 1,
+                onPoidsChange: handlePoidsChange,
                 compositionExistante: c,
             }));
         setSelectionLocales(enfantsActuels);
         setDirty(false);
         setShowPoids(false);
-    }, [compositions, periode, isOpen]);
+    }, [compositions, periode, isOpen, handlePoidsChange]);
 
     // Pool disponible (enfants non encore sélectionnés)
     // Ne recalculer que si le modal est ouvert
@@ -110,9 +119,14 @@ export function ModalGestionCompositions({
 
     // Callback quand la sélection change
     const handleSelectionChange = useCallback((items: EnfantTransfert[]) => {
-        setSelectionLocales(items);
+        const enriched = items.map(item => ({
+            ...item,
+            poids: item.poids ?? 1,
+            onPoidsChange: handlePoidsChange,
+        }));
+        setSelectionLocales(enriched);
         setDirty(true);
-    }, []);
+    }, [handlePoidsChange]);
 
     // Sauvegarder
     const handleSauvegarder = async () => {
@@ -124,7 +138,7 @@ export function ModalGestionCompositions({
                     enfants: selectionLocales.map((item, index) => ({
                         periodeEnfantId: item.periodeId,
                         ordre: index + 1,
-                        poids: item.compositionExistante?.poids ?? 1,
+                        poids: item.poids ?? 1,
                     })),
                 },
             });
@@ -210,6 +224,7 @@ export function ModalGestionCompositions({
                     labelSelection="Enfants de la période"
                     isLoading={isLoadingComp || isLoadingDisp}
                     emptyText="Aucune période disponible"
+                    showPoids={showPoids}
                 />
 
                 {/* Info contextuelle */}

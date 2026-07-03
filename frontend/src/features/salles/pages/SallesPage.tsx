@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSalles, useSupprimerSalle, useStatistiquesSalles } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle, FiltresSalles, Salle } from '../types/salle.types';
@@ -30,6 +31,7 @@ import {
     Search,
     Edit,
     Trash2,
+    Eye,
     Building2,
     Users,
     MapPin,
@@ -71,6 +73,8 @@ const getStatutLabel = (statut: StatutSalle): string => STATUT_SALLE_LABELS[stat
 // ==================================
 
 export function SallesPage() {
+    const navigate = useNavigate();
+
     // State des filtres
     const [filtres, setFiltres] = useState<FiltresSalles>({
         page: 1,
@@ -120,6 +124,10 @@ export function SallesPage() {
         setEditSalleId(salleId);
         setFormOpen(true);
     }, []);
+
+    const handleView = useCallback((salleId: string) => {
+        navigate({ to: '/salles/$salleId', params: { salleId } });
+    }, [navigate]);
 
     const handleDeleteRequest = useCallback((salleId: string) => {
         setDeleteSalleId(salleId);
@@ -465,7 +473,15 @@ export function SallesPage() {
 
                                                 {/* Actions */}
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center justify-end gap-2">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <ElisaButton
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleView(salle.id)}
+                                                            icon={<Eye className="h-4 w-4" />}
+                                                        >
+                                                            Voir
+                                                        </ElisaButton>
                                                         <ElisaButton
                                                             variant="ghost"
                                                             size="sm"

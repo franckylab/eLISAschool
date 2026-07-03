@@ -131,7 +131,7 @@ export function ClassesPage() {
             header: t('colonnes.salle'),
             render: (classe) => (
                 <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                    {classe.sallePrincipale || '-'}
+                    {classe.salle?.nom || classe.salleId?.substring(0, 8) || '-'}
                 </span>
             ),
         },

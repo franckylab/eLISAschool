@@ -21,6 +21,7 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
+import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { EmploiDuTemps, PreferenceEmploiDuTemps, RepartitionHoraire, JourSemaine, TypeCreneau } from '../entities';
 
 export class EmploiDuTempsService {
@@ -131,7 +132,7 @@ export class EmploiDuTempsService {
             const dureeCreneau = preferences.dureeCreneauDefaut || 60;
 
             for (let i = 0; i < volumeHebdo; i++) {
-                const placement = this.trouverCreneauDisponible(
+                const placement = await this.trouverCreneauDisponible(
                     plan,
                     preferences,
                     affectation,
@@ -217,13 +218,13 @@ export class EmploiDuTempsService {
         return plan;
     }
 
-    private trouverCreneauDisponible(
+    private async trouverCreneauDisponible(
         plan: any,
         preferences: PreferenceEmploiDuTemps,
         affectation: any,
         creneauxExistants: EmploiDuTemps[],
         respecterContraintes: boolean
-    ): { jour: string; heureDebut: string; heureFin: string; salleId?: string } | null {
+    ): Promise<{ jour: string; heureDebut: string; heureFin: string; salleId?: string } | null> {
         const jours = preferences.joursTravailles || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
         const dureeCreneau = preferences.dureeCreneauDefaut || 60;
         const enseignantId = affectation.enseignantId;
@@ -270,12 +271,40 @@ export class EmploiDuTempsService {
                 }
 
                 if (tousLibres) {
-                    return { jour, heureDebut, heureFin };
+                    // Essayer d'assigner une salle disponible
+                    const salleId = await this.trouverSalleDisponible(
+                        affectation.etablissementId,
+                        jour,
+                        heureDebut,
+                        heureFin,
+                        affectation.matiere?.typeSallePreferee,
+                        affectation.matiere?.capaciteMinRequise
+                    );
+                    return { jour, heureDebut, heureFin, salleId };
                 }
             }
         }
 
         return null;
+    }
+
+    private async trouverSalleDisponible(
+        etablissementId: string,
+        jour: string,
+        heureDebut: string,
+        heureFin: string,
+        typeSalle?: string,
+        capaciteMin?: number
+    ): Promise<string | undefined> {
+        try {
+            const salles = await salleAvailabilityService.trouverSallesDisponibles(
+                etablissementId,
+                { jour, heureDebut, heureFin, capaciteMin, typeSalle }
+            );
+            return salles[0]?.id;
+        } catch {
+            return undefined;
+        }
     }
 
     private enseignantDisponible(

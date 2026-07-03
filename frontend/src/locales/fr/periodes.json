@@ -95,10 +95,13 @@
         "modifier": "Modifier le template",
         "succes": "Hiérarchie générée avec succès",
         "modeles": {
-            "troisTrimDeuxSeq": "3 Trimestres × 2 Séquences",
-            "deuxSemTroisSeq": "2 Semestres × 3 Séquences",
+            "troisTrimDeuxEval": "3 Trimestres × 2 Évaluations",
+            "troisTrimDirects": "3 Trimestres directs",
+            "deuxSemTroisEval": "2 Semestres × 3 Évaluations",
             "deuxSemDeuxTrim": "2 Semestres × 2 Trimestres",
-            "sixSeqDirectes": "6 Séquences directes",
+            "sixEvalDirectes": "6 Évaluations directes",
+            "neufMensuellesPrimaire": "9 Évaluations mensuelles (Primaire)",
+            "anneeUnique": "Année unique",
             "quatreTerms": "4 Terms (système anglo-saxon)"
         }
     },

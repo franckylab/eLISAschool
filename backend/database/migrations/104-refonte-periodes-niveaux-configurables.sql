@@ -69,7 +69,7 @@ BEGIN
         -- Vérifier si des niveaux existent déjà
         IF NOT EXISTS (SELECT 1 FROM niveaux_periode WHERE "etablissementId" = etab.id) THEN
             INSERT INTO niveaux_periode ("etablissementId", niveau, label, "usageCode") VALUES
-                (etab.id, 0, 'Séquence', 'NOTES'),
+                (etab.id, 0, 'Évaluation', 'NOTES'),
                 (etab.id, 1, 'Trimestre', 'BULLETIN'),
                 (etab.id, 2, 'Semestre', 'BULLETIN'),
                 (etab.id, 3, 'Année', 'ANNEE');
@@ -107,7 +107,7 @@ BEGIN
 
         -- Migrer les périodes existantes
         IF seq_id IS NOT NULL THEN
-            UPDATE periodes SET "niveauId" = seq_id WHERE type = 'SEQUENCE' AND "etablissementId" = etab.id AND "niveauId" IS NULL;
+            UPDATE periodes SET "niveauId" = seq_id WHERE type = 'EVALUATION' AND "etablissementId" = etab.id AND "niveauId" IS NULL;
         END IF;
         IF trim_id IS NOT NULL THEN
             UPDATE periodes SET "niveauId" = trim_id WHERE type = 'TRIMESTRE' AND "etablissementId" = etab.id AND "niveauId" IS NULL;

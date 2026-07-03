@@ -60,6 +60,16 @@ router.get('/', authMiddleware, requirePermission(Permission.PERIODES_VIEW), asy
 });
 
 /**
+ * GET /active — Période en cours (basée sur l'année active et la date courante)
+ */
+router.get('/active', authMiddleware, requirePermission(Permission.PERIODES_VIEW), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const periode = await service.findActive(req.etablissementId!);
+        res.json({ success: true, data: periode });
+    } catch (error) { next(error); }
+});
+
+/**
  * GET /:id — Détail d'une période (avec compositions enfants)
  */
 router.get('/:id', authMiddleware, requirePermission(Permission.PERIODES_VIEW), async (req: Request, res: Response, next: NextFunction) => {
@@ -220,6 +230,16 @@ router.post('/:id/reouvrir', authMiddleware, requirePermission(Permission.PERIOD
             req.etablissementId!,
         );
         res.json({ success: true, data: periode });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /:id/progression-enfants — Progression (temporelle + notes) des enfants d'une période
+ */
+router.get('/:id/progression-enfants', authMiddleware, requirePermission(Permission.PERIODES_VIEW), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await service.getProgressionEnfants(req.params.id);
+        res.json({ success: true, data });
     } catch (error) { next(error); }
 });
 

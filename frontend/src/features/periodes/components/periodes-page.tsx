@@ -53,7 +53,7 @@ const LABELS_STATUT: Record<string, string> = {
 const NIVEAU_CONFIG_BASE = [
     { barWidth: 4, color: 'var(--color-dominant-600)', bgColor: 'transparent' },
     { barWidth: 5, color: 'var(--color-dominant-400)', bgColor: 'var(--color-dominant-50)' },
-    { barWidth: 6, color: 'var(--color-dominant-300)', bgColor: 'var(--color-dominant-50)' },
+    { barWidth: 6, color: 'var(--color-dominant-300)', bgColor: 'var(--color-dominant-100)' },
 ] as const;
 
 function getNiveauConfig(profondeur: number) {
@@ -64,7 +64,7 @@ function getNiveauConfig(profondeur: number) {
     return {
         barWidth: 6,
         color: 'var(--color-dominant-200)',
-        bgColor: 'var(--color-dominant-50)'
+        bgColor: 'var(--color-dominant-100)'
     };
 }
 
@@ -469,8 +469,8 @@ export function PeriodesPage() {
                                                 </div>
                                                 <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)] text-center">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
                                                 <div style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem)' }}>
-                                                    <p className="text-[var(--color-text-primary)]">{new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
-                                                    <p className="text-xs text-[var(--color-text-muted)]">→ {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
+                                                    <p className="text-[var(--color-text-primary)]">{new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                    <p className="text-xs text-[var(--color-text-muted)]">→ {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                 </div>
                                                 <span className={`rounded-full border px-2 py-0.5 text-xs font-medium text-center ${COULEURS_STATUT[node.statut]}`}>{LABELS_STATUT[node.statut]}</span>
                                             </div>
@@ -496,9 +496,9 @@ export function PeriodesPage() {
                                                 <div className="flex items-center gap-[var(--gap-sm)] flex-wrap mb-[var(--space-xs)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                                                     <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
                                                     <span className="text-[var(--color-text-secondary)]">
-                                                        {new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                                                        {new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                         {' → '}
-                                                        {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                                                        {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </span>
                                                 </div>
                                             </div>

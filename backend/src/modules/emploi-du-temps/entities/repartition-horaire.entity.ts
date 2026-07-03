@@ -21,6 +21,7 @@ import {
     Index,
 } from 'typeorm';
 import { AffectationMatiere } from '@modules/matieres/entities';
+import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { JourSemaine } from './emploi-du-temps.entity';
 
@@ -53,7 +54,11 @@ export class RepartitionHoraire {
     nombreHeures!: number; // Durée du créneau en heures
 
     @Column({ type: 'uuid', nullable: true })
-    sallePrefereeId?: string; // Salle préférée pour ce créneau
+    salleId?: string;
+
+    @ManyToOne(() => Salle, { nullable: true })
+    @JoinColumn({ name: 'salleId' })
+    salle?: Salle;
 
     @Column({ type: 'int', default: 1 })
     priorite!: number; // 1 = haute priorité, 5 = flexible

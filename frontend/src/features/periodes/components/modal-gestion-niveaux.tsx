@@ -215,7 +215,7 @@ function SectionNiveaux() {
                                     type="text"
                                     value={formLabel}
                                     onChange={(e) => setFormLabel(e.target.value)}
-                                    placeholder="ex: Séquence, Trimestre..."
+                                    placeholder="ex: Évaluation, Trimestre..."
                                     className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-2 py-1.5 text-sm"
                                     style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                                     required

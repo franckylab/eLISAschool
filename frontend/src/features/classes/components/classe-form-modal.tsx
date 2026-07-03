@@ -25,6 +25,7 @@ import { useCreerClasse, useModifierClasse } from '../hooks/use-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
+import { SalleSelect } from '@/features/salles/components/SalleSelect';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
@@ -88,7 +89,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const [instanceData, setInstanceData] = useState<CreerClasseInstanceDto>({
         anneeScolaireId: classe?.anneeScolaireId || '',
         professeurPrincipalId: classe?.professeurPrincipalId || null,
-        sallePrincipale: classe?.sallePrincipale || '',
+        salleId: classe?.salleId || '',
         effectifMax: classe?.effectifMax || 50,
     });
 
@@ -108,7 +109,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
             setInstanceData({
                 anneeScolaireId: classe.anneeScolaireId || '',
                 professeurPrincipalId: classe.professeurPrincipalId || null,
-                sallePrincipale: classe.sallePrincipale || '',
+                salleId: classe.salleId || '',
                 effectifMax: classe.effectifMax || 50,
             });
         }
@@ -511,11 +512,10 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 placeholder={t('champs.selectionnerAnnee')}
                                 required
                             />
-                            <ElisaInput
+                            <SalleSelect
+                                value={instanceData.salleId || ''}
+                                onChange={(value) => handleChangeInstance('salleId', value)}
                                 label={t('champs.sallePrincipale')}
-                                value={instanceData.sallePrincipale || ''}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('sallePrincipale', e.target.value)}
-                                placeholder={t('champs.sallePlaceholder')}
                             />
                         </div>
 
@@ -619,7 +619,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 </div>
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.sallePrincipale')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.sallePrincipale || '-'}</dd>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.salleId || '-'}</dd>
                                 </div>
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>

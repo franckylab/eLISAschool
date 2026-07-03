@@ -39,7 +39,7 @@ export class ClassesService {
             typeClasse: dto.typeClasse,
             creneauHoraire: dto.creneauHoraire,
             description: dto.description,
-            sallePrincipale: dto.sallePrincipale,
+            salleId: dto.salleId,
             actif: dto.actif ?? true,
             etablissementId,
         });
@@ -89,6 +89,7 @@ export class ClassesService {
             .leftJoinAndSelect('c.niveau', 'n')
             .leftJoinAndSelect('n.cycle', 'cycle')
             .leftJoinAndSelect('c.filiere', 'f')
+            .leftJoinAndSelect('c.salle', 's')
             .leftJoinAndSelect('ca.anneeScolaire', 'a')
             .leftJoinAndSelect('ca.professeurPrincipal', 'pp')
             .where('1=1');
@@ -149,7 +150,7 @@ export class ClassesService {
     async findById(id: string): Promise<Classe> {
         const classe = await this.classeRepo.findOne({
             where: { id },
-            relations: ['niveau', 'filiere'],
+            relations: ['niveau', 'filiere', 'salle'],
         });
         if (!classe) throw new AppError('Classe non trouvée', 404, 'NOT_FOUND');
         return classe;
@@ -169,6 +170,7 @@ export class ClassesService {
             .leftJoinAndSelect('c.niveau', 'n')
             .leftJoinAndSelect('n.cycle', 'cycle')
             .leftJoinAndSelect('c.filiere', 'f')
+            .leftJoinAndSelect('c.salle', 's')
             .leftJoinAndSelect('ca.anneeScolaire', 'a')
             .leftJoinAndSelect('ca.professeurPrincipal', 'pp')
             .where('c.id = :id', { id });
@@ -201,7 +203,7 @@ export class ClassesService {
     async update(id: string, dto: UpdateClasseDto, etablissementId?: string): Promise<Classe> {
         const classe = await this.findOne(id, etablissementId);
         // Ne mettre à jour que les champs du modèle permanent (Classe)
-        const champsValides = ['nom', 'code', 'niveauId', 'filiereId', 'typeClasse', 'creneauHoraire', 'description', 'sallePrincipale', 'actif'];
+        const champsValides = ['nom', 'code', 'niveauId', 'filiereId', 'typeClasse', 'creneauHoraire', 'description', 'salleId', 'actif'];
         for (const champ of champsValides) {
             if ((dto as any)[champ] !== undefined) {
                 (classe as any)[champ] = (dto as any)[champ];

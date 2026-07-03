@@ -13,12 +13,13 @@
  * - Vérification des conflits d'occupation
  */
 
-import { Repository, Like, ILike } from 'typeorm';
+import { Repository, ILike, MoreThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Salle, TypeSalle, StatutSalle } from '../entities';
 import { CreateSalleDto, UpdateSalleDto, QuerySallesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { salleAvailabilityService } from './salle-availability.service';
 
 export class SalleService {
     private repo: Repository<Salle>;
@@ -134,8 +135,7 @@ export class SalleService {
     }
 
     /**
-     * Récupère les salles disponibles pour un créneau horaire
-     * (pour l'emploi du temps)
+     * Récupère les salles disponibles
      */
     async findDisponibles(
         etablissementId: string,
@@ -149,7 +149,7 @@ export class SalleService {
         };
 
         if (capaciteMin) {
-            where.capacite = capaciteMin;
+            where.capacite = MoreThan(capaciteMin - 1) as any;
         }
 
         if (typeSalle) {
@@ -161,7 +161,7 @@ export class SalleService {
 
     /**
      * Vérifie si une salle est disponible pour un créneau horaire
-     * (utile pour validation dans emploi-du-temps)
+     * Utilise le service transverse pour checker EDT + HeureCours
      */
     async estDisponiblePourCreneau(
         salleId: string,
@@ -172,34 +172,12 @@ export class SalleService {
         anneeScolaireId: string,
         excludeEmploiId?: string
     ): Promise<boolean> {
-        // Vérifier que la salle existe et est disponible
-        const salle = await this.findOne(salleId, etablissementId);
-        if (!salle.disponible || salle.statut !== StatutSalle.DISPONIBLE) {
-            return false;
-        }
-
-        // Vérifier les conflits dans l'emploi du temps
-        const EmploiDuTempsRepo = AppDataSource.getRepository('EmploiDuTemps');
-        const conflit = await EmploiDuTempsRepo.findOne({
-            where: {
-                salleId,
-                jour: jour as any,
-                anneeScolaireId,
-                actif: true,
-                ...(excludeEmploiId && { id: excludeEmploiId }),
-            },
-        });
-
-        // Si pas de créneau ce jour-là, disponible
-        if (!conflit) return true;
-
-        // Vérifier l'overlap horaire
-        const overlap = (
-            heureDebut < (conflit as any).heureFin &&
-            heureFin > (conflit as any).heureDebut
+        const { disponible } = await salleAvailabilityService.verifierDisponibilite(
+            salleId,
+            etablissementId,
+            { jour, heureDebut, heureFin, anneeScolaireId, excludeEmploiId }
         );
-
-        return !overlap;
+        return disponible;
     }
 
     /**

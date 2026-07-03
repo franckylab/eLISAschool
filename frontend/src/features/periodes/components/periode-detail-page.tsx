@@ -21,6 +21,7 @@ import {
     usePeriode, useSupprimerPeriode,
     useCloturerPeriode, useReouvrirPeriode,
     useCompositions, useNiveauxPeriode,
+    useProgressionEnfants,
 } from '../hooks/use-periodes';
 import { StatutPeriode, niveauPeutAvoirEnfants } from '../types/periode.types';
 import type { PeriodeComposition } from '../types/periode.types';
@@ -59,6 +60,16 @@ function formatDateFr(dateStr: string): string {
     });
 }
 
+/** Progression temporelle (0-100) entre deux dates */
+function calculeProgression(dateDebut: string, dateFin: string): number {
+    const debut = new Date(dateDebut).getTime();
+    const fin = new Date(dateFin).getTime();
+    const maintenant = Date.now();
+    if (maintenant < debut) return 0;
+    if (maintenant > fin) return 100;
+    return Math.round(((maintenant - debut) / (fin - debut)) * 100);
+}
+
 /** Format de date court pour mobile (ex: "15 jan. 2026") */
 function formatDateFrCourt(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -81,6 +92,7 @@ export function PeriodeDetailPage() {
 
     const { data: periode, isLoading } = usePeriode(id);
     const { data: compositionsEnfants = EMPTY_COMPOSITIONS } = useCompositions(id);
+    const { data: progressionEnfants = [] } = useProgressionEnfants(id);
     const supprimer = useSupprimerPeriode();
     const cloturer = useCloturerPeriode();
     const reouvrir = useReouvrirPeriode();
@@ -532,10 +544,11 @@ export function PeriodeDetailPage() {
                                     {/* Vue desktop : tableau grille */}
                                     <div className="hidden sm:block rounded-[var(--radius-lg)] border border-[var(--color-bordure)] overflow-hidden">
                                         {/* En-tête */}
-                                        <div className="grid grid-cols-[1fr_80px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-surface-alt)] border-b border-[var(--color-bordure)] text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+                                        <div className="grid grid-cols-[1fr_80px_100px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-surface-alt)] border-b border-[var(--color-bordure)] text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
                                             <span>Nom</span>
                                             <span>Type</span>
                                             <span>Période</span>
+                                            <span>Progression</span>
                                             <span className="text-right">Ordre</span>
                                         </div>
                                         {/* Lignes */}
@@ -545,8 +558,10 @@ export function PeriodeDetailPage() {
                                                 .map((comp) => {
                                                     const enfant = comp.periodeEnfant;
                                                     if (!enfant) return null;
+                                                    const progPct = calculeProgression(enfant.dateDebut, enfant.dateFin);
+                                                    const noteCount = progressionEnfants.find(p => p.id === enfant.id)?.noteCount ?? 0;
                                                     return (
-                                                        <div key={comp.id} className="grid grid-cols-[1fr_80px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] hover:bg-[var(--color-surface-alt)]/50 transition-colors">
+                                                        <div key={comp.id} className="grid grid-cols-[1fr_80px_100px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] hover:bg-[var(--color-surface-alt)]/50 transition-colors">
                                                             <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
                                                                 <Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
                                                                 <span className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
@@ -559,6 +574,25 @@ export function PeriodeDetailPage() {
                                                             <div style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem)' }}>
                                                                 <p className="text-[var(--color-text-primary)]">{new Date(enfant.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
                                                                 <p className="text-xs text-[var(--color-text-muted)]">→ {new Date(enfant.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 min-w-0">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div className="flex-1 h-1.5 rounded-full bg-[var(--color-surface-alt)] overflow-hidden">
+                                                                        <div
+                                                                            className="h-full rounded-full transition-all duration-500"
+                                                                            style={{
+                                                                                width: `${progPct}%`,
+                                                                                background: progPct >= 100 ? 'var(--color-success)' : 'var(--color-dominant-500)',
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-[var(--color-text-tertiary)] tabular-nums w-7 text-right">
+                                                                        {progPct}%
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-xs text-[var(--color-text-muted)]">
+                                                                    {noteCount} note{noteCount !== 1 ? 's' : ''}
+                                                                </span>
                                                             </div>
                                                             <span className="text-right text-sm font-medium text-[var(--color-text-secondary)]">
                                                                 {comp.ordre}
@@ -576,6 +610,8 @@ export function PeriodeDetailPage() {
                                             .map((comp) => {
                                                 const enfant = comp.periodeEnfant;
                                                 if (!enfant) return null;
+                                                const progPct = calculeProgression(enfant.dateDebut, enfant.dateFin);
+                                                const noteCount = progressionEnfants.find(p => p.id === enfant.id)?.noteCount ?? 0;
                                                 return (
                                                     <div key={comp.id} className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'clamp(0.75rem, 0.6rem + 0.4vw, 1rem)' }}>
                                                         <div className="flex items-center justify-between mb-[var(--space-xs)]">
@@ -596,6 +632,21 @@ export function PeriodeDetailPage() {
                                                                 {' → '}
                                                                 {new Date(enfant.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                                                             </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 mt-2">
+                                                            <div className="flex items-center gap-1.5 flex-1">
+                                                                <div className="flex-1 h-1.5 rounded-full bg-[var(--color-surface-alt)] overflow-hidden">
+                                                                    <div
+                                                                        className="h-full rounded-full transition-all duration-500"
+                                                                        style={{
+                                                                            width: `${progPct}%`,
+                                                                            background: progPct >= 100 ? 'var(--color-success)' : 'var(--color-dominant-500)',
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs font-medium text-[var(--color-text-tertiary)] tabular-nums">{progPct}%</span>
+                                                            </div>
+                                                            <span className="text-xs text-[var(--color-text-muted)]">{noteCount} note{noteCount !== 1 ? 's' : ''}</span>
                                                         </div>
                                                     </div>
                                                 );

@@ -76,27 +76,37 @@ export class TemplatesPeriodeService {
     getTemplatesParDefaut(): Array<{ nom: string; description: string; structure: NoeudTemplatePeriode }> {
         return [
             {
-                nom: '3 Trimestres × 2 Séquences',
-                description: 'Modèle camerounais francophone classique : 3 trimestres, chacun divisé en 2 séquences',
+                nom: '3 Trimestres × 2 Évaluations',
+                description: 'Modèle secondaire Cameroun (réforme 2019) : 3 trimestres, chacun divisé en 2 évaluations',
                 structure: {
                     niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
                     enfants: [{
                         niveau: 1, usageCode: 'BULLETIN', count: 3, nom: 'Trimestre {n}',
                         enfants: [
-                            { niveau: 0, usageCode: 'NOTES', count: 2, nom: 'Séquence {n}' },
+                            { niveau: 0, usageCode: 'NOTES', count: 2, nom: 'Évaluation {n}' },
                         ],
                     }],
                 },
             },
             {
-                nom: '2 Semestres × 3 Séquences',
-                description: 'Modèle alternatif : 2 semestres, chacun divisé en 3 séquences',
+                nom: '3 Trimestres directs',
+                description: 'Modèle secondaire simplifié : 3 trimestres sans sous-périodes',
+                structure: {
+                    niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
+                    enfants: [
+                        { niveau: 1, usageCode: 'BULLETIN', count: 3, nom: 'Trimestre {n}' },
+                    ],
+                },
+            },
+            {
+                nom: '2 Semestres × 3 Évaluations',
+                description: 'Modèle alternatif : 2 semestres, chacun divisé en 3 évaluations',
                 structure: {
                     niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
                     enfants: [{
                         niveau: 2, usageCode: 'BULLETIN', count: 2, nom: 'Semestre {n}',
                         enfants: [
-                            { niveau: 0, usageCode: 'NOTES', count: 3, nom: 'Séquence {n}' },
+                            { niveau: 0, usageCode: 'NOTES', count: 3, nom: 'Évaluation {n}' },
                         ],
                     }],
                 },
@@ -115,13 +125,30 @@ export class TemplatesPeriodeService {
                 },
             },
             {
-                nom: '6 Séquences directes',
-                description: 'Modèle simplifié : 6 séquences sans regroupement trimestriel',
+                nom: '6 Évaluations directes',
+                description: 'Modèle simplifié : 6 évaluations sans regroupement trimestriel',
                 structure: {
                     niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
                     enfants: [
-                        { niveau: 0, usageCode: 'NOTES', count: 6, nom: 'Séquence {n}' },
+                        { niveau: 0, usageCode: 'NOTES', count: 6, nom: 'Évaluation {n}' },
                     ],
+                },
+            },
+            {
+                nom: '9 Évaluations mensuelles (Primaire)',
+                description: 'Modèle primaire Cameroun : 9 évaluations mensuelles avec mentions (A/ECA/NA)',
+                structure: {
+                    niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
+                    enfants: [
+                        { niveau: 1, usageCode: 'BULLETIN', count: 9, nom: 'Mois {n}' },
+                    ],
+                },
+            },
+            {
+                nom: 'Année unique',
+                description: 'Modèle ultra-simplifié : une seule période annuelle sans subdivision',
+                structure: {
+                    niveau: 3, usageCode: 'ANNEE', count: 1, nom: 'Année scolaire',
                 },
             },
             {
@@ -240,6 +267,38 @@ export class TemplatesPeriodeService {
     // ================================================================
 
     /**
+     * Convertir une structure v4 (champ `type`) en v5.0 (`niveau` + `usageCode`).
+     * Permet la rétrocompatibilité avec les templates persistés avant la migration 104.
+     */
+    private convertirStructureV4(noeud: Record<string, unknown>): NoeudTemplatePeriode {
+        const typeMap: Record<string, { niveau: number; usageCode: string }> = {
+            ANNEE: { niveau: 3, usageCode: 'ANNEE' },
+            SEMESTRE: { niveau: 2, usageCode: 'BULLETIN' },
+            TRIMESTRE: { niveau: 1, usageCode: 'BULLETIN' },
+            EVALUATION: { niveau: 0, usageCode: 'NOTES' },
+        };
+
+        const type = (noeud.type as string) || '';
+        const mapping = typeMap[type];
+
+        if (!mapping) {
+            // Déjà en format v5.0 ou type inconnu — utiliser tel quel
+            return noeud as unknown as NoeudTemplatePeriode;
+        }
+
+        const enfantsV4 = noeud.enfants as Record<string, unknown>[] | undefined;
+        const enfants = enfantsV4?.map(e => this.convertirStructureV4(e));
+
+        return {
+            niveau: mapping.niveau,
+            usageCode: mapping.usageCode,
+            count: (noeud.count as number) || 1,
+            nom: (noeud.nom as string) || '',
+            ...(enfants && enfants.length > 0 ? { enfants } : {}),
+        };
+    }
+
+    /**
      * Générer une hiérarchie complète de périodes depuis un template.
      * Algorithme récursif : divise la durée du parent par le count de chaque enfant.
      * Utilise niveau + usageCode pour résoudre le niveauId correspondant.
@@ -260,6 +319,9 @@ export class TemplatesPeriodeService {
         const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
         await anneesScolairesService.findOne(dto.anneeScolaireId, etablissementId);
 
+        // Conversion de la structure si elle est au format v4 (champ `type`)
+        const structure = this.convertirStructureV4(template.structure as unknown as Record<string, unknown>);
+
         // Pré-charger les niveaux de l'établissement pour résolution rapide
         const niveaux = await this.niveauRepo.find({
             where: { etablissementId },
@@ -272,14 +334,14 @@ export class TemplatesPeriodeService {
 
         // 1. Résoudre le niveau pour la racine du template (ex: niveau 3, usageCode ANNEE)
         const niveauRacine = niveaux.find(
-            n => n.niveau === template.structure.niveau && n.usageCode === template.structure.usageCode,
+            n => n.niveau === structure.niveau && n.usageCode === structure.usageCode,
         );
         let rootParentId: string | null = null;
 
         if (niveauRacine) {
             // Créer la période racine
             const racinePeriode = this.periodeRepo.create({
-                nom: template.structure.nom,
+                nom: structure.nom,
                 niveauId: niveauRacine.id,
                 anneeScolaireId: dto.anneeScolaireId,
                 etablissementId,
@@ -293,7 +355,7 @@ export class TemplatesPeriodeService {
 
         // 2. Générer récursivement les enfants depuis le nœud racine
         await this.genererRecursif(
-            template.structure,
+            structure,
             dto.anneeScolaireId,
             etablissementId,
             dateDebut,

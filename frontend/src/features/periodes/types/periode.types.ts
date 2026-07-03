@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  *
  * Refonte v5.0 :
- * - Suppression de l'enum TypePeriode (SEQUENCE, TRIMESTRE, SEMESTRE, ANNEE)
+ * - Suppression de l'enum TypePeriode (EVALUATION, TRIMESTRE, SEMESTRE, ANNEE)
  * - Remplacement par NiveauPeriode (entité configurable par établissement)
  * - Chaque niveau a un label, un niveau hiérarchique et un usageCode
  * - Les usages (UsageNiveau) déterminent les règles métier (NOTES, BULLETIN, etc.)
@@ -38,7 +38,7 @@ export interface NiveauPeriode {
     etablissementId: string;
     /** Niveau hiérarchique (0 = base, 1, 2, 3... = niveaux supérieurs) */
     niveau: number;
-    /** Libellé personnalisé — ex: "Séquence", "Trimestre", "Semestre", "Année" */
+    /** Libellé personnalisé — ex: "Évaluation", "Trimestre", "Semestre", "Année" */
     label: string;
     /** Code de l'usage associé (FK logique vers UsageNiveau.code) */
     usageCode: string;

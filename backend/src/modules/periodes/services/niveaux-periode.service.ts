@@ -29,7 +29,7 @@ import { logger } from '@common/utils/logger.util';
  * Niveaux par défaut pour un nouvel établissement (modèle camerounais francophone).
  */
 export const NIVEAUX_DEFAUT = [
-    { niveau: 0, label: 'Séquence', usageCode: 'NOTES' },
+    { niveau: 0, label: 'Évaluation', usageCode: 'NOTES' },
     { niveau: 1, label: 'Trimestre', usageCode: 'BULLETIN' },
     { niveau: 2, label: 'Semestre', usageCode: 'BULLETIN' },
     { niveau: 3, label: 'Année', usageCode: 'ANNEE' },

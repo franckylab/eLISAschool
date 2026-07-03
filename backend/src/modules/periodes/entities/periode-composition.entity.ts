@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  *
  * Table de jointure pour la hiérarchie des périodes.
- * Relie un parent (ex: Trimestre) à un enfant (ex: Séquence).
+ * Relie un parent (ex: Trimestre) à un enfant (ex: Évaluation).
  * Porte le poids de composition et l'ordre dans le parent.
  */
 
@@ -56,7 +56,7 @@ export class PeriodeComposition {
      * Poids de composition — coefficient utilisé dans le calcul
      * de la moyenne pondérée du parent.
      *
-     * Exemple : Séquence 1 (poids=1) + Séquence 2 (poids=2)
+     * Exemple : Évaluation 1 (poids=1) + Évaluation 2 (poids=2)
      * → Moyenne trim = (moy_seq1 × 1 + moy_seq2 × 2) / 3
      */
     @Column({ type: 'float', default: 1.0 })

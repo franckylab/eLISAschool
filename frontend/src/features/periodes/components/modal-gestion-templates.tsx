@@ -266,7 +266,7 @@ function FormTemplate({ template, onClose, onSaved }: FormTemplateProps) {
                     count: 3,
                     nom: 'Trimestre',
                     enfants: [
-                        { niveau: 0, usageCode: 'NOTES', count: 2, nom: 'Séquence' },
+                        { niveau: 0, usageCode: 'NOTES', count: 2, nom: 'Évaluation' },
                     ],
                 },
             ],

@@ -6,10 +6,10 @@
  * Auteur: franck arlos chendjou
  *
  * Niveaux de périodicité configurables par établissement.
- * Remplace l'ancien enum TypePeriode (SEQUENCE, TRIMESTRE, SEMESTRE, ANNEE).
+ * Remplace l'ancien enum TypePeriode (EVALUATION, TRIMESTRE, SEMESTRE, ANNEE).
  *
  * Chaque établissement définit ses propres niveaux :
- * - Niveau 0 : plus petite instance (base) — ex: "Séquence"
+ * - Niveau 0 : plus petite instance (base) — ex: "Évaluation"
  * - Niveau 1 : groupe de niveaux 0 — ex: "Trimestre"
  * - Niveau 2 : groupe de niveaux 1 — ex: "Semestre"
  * - Niveau 3 : niveau racine — ex: "Année"
@@ -51,7 +51,7 @@ export class NiveauPeriode {
     niveau!: number;
 
     /**
-     * Libellé personnalisé du niveau — ex: "Séquence", "Trimestre", "Semestre", "Année"
+     * Libellé personnalisé du niveau — ex: "Évaluation", "Trimestre", "Semestre", "Année"
      */
     @Column({ type: 'varchar', length: 50 })
     label!: string;

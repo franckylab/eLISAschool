@@ -34,11 +34,11 @@ CREATE INDEX IF NOT EXISTS idx_templates_periode_actif ON templates_periode(acti
 -- 2. SEED — 4 templates système par défaut
 -- =============================================
 
--- Template 1 : 3 Trimestres × 2 Séquences (Cameroun francophone)
+-- Template 1 : 3 Trimestres × 2 Évaluations (Cameroun francophone)
 INSERT INTO templates_periode (nom, description, structure, est_systeme, actif)
 VALUES (
-    '3 Trimestres × 2 Séquences',
-    '3 trimestres, chacun divisé en 2 séquences. Total : 3 trimestres + 6 séquences.',
+    '3 Trimestres × 2 Évaluations',
+    '3 trimestres, chacun divisé en 2 évaluations. Total : 3 trimestres + 6 évaluations.',
     '{
         "type": "ANNEE",
         "count": 1,
@@ -50,9 +50,9 @@ VALUES (
                 "nom": "Trimestre {n}",
                 "enfants": [
                     {
-                        "type": "SEQUENCE",
+                        "type": "EVALUATION",
                         "count": 2,
-                        "nom": "Séquence {n}"
+                        "nom": "Évaluation {n}"
                     }
                 ]
             }
@@ -62,11 +62,11 @@ VALUES (
     true
 ) ON CONFLICT DO NOTHING;
 
--- Template 2 : 2 Semestres × 3 Séquences
+-- Template 2 : 2 Semestres × 3 Évaluations
 INSERT INTO templates_periode (nom, description, structure, est_systeme, actif)
 VALUES (
-    '2 Semestres × 3 Séquences',
-    '2 semestres, chacun divisé en 3 séquences. Total : 2 semestres + 6 séquences.',
+    '2 Semestres × 3 Évaluations',
+    '2 semestres, chacun divisé en 3 évaluations. Total : 2 semestres + 6 évaluations.',
     '{
         "type": "ANNEE",
         "count": 1,
@@ -78,9 +78,9 @@ VALUES (
                 "nom": "Semestre {n}",
                 "enfants": [
                     {
-                        "type": "SEQUENCE",
+                        "type": "EVALUATION",
                         "count": 3,
-                        "nom": "Séquence {n}"
+                        "nom": "Évaluation {n}"
                     }
                 ]
             }
@@ -90,20 +90,20 @@ VALUES (
     true
 ) ON CONFLICT DO NOTHING;
 
--- Template 3 : 6 Séquences directes (sans parent)
+-- Template 3 : 6 Évaluations directes (sans parent)
 INSERT INTO templates_periode (nom, description, structure, est_systeme, actif)
 VALUES (
-    '6 Séquences directes',
-    '6 séquences sans regroupement. Total : 6 séquences.',
+    '6 Évaluations directes',
+    '6 évaluations sans regroupement. Total : 6 évaluations.',
     '{
         "type": "ANNEE",
         "count": 1,
         "nom": "Année scolaire",
         "enfants": [
             {
-                "type": "SEQUENCE",
+                "type": "EVALUATION",
                 "count": 6,
-                "nom": "Séquence {n}"
+                "nom": "Évaluation {n}"
             }
         ]
     }'::jsonb,
@@ -111,7 +111,7 @@ VALUES (
     true
 ) ON CONFLICT DO NOTHING;
 
--- Template 4 : 2 Trimestres simples (sans séquences)
+-- Template 4 : 2 Trimestres simples (sans évaluations)
 INSERT INTO templates_periode (nom, description, structure, est_systeme, actif)
 VALUES (
     '2 Trimestres simples',
@@ -141,7 +141,7 @@ VALUES (
 
 INSERT INTO parametres_systeme (cle, valeur, description, categorie, module, type_valeur)
 VALUES
-    ('periodes.label_sequence', 'Séquence', 'Libellé personnalisé pour le type SEQUENCE', 'MODULE', 'periodes', 'STRING'),
+    ('periodes.label_evaluation', 'Évaluation', 'Libellé personnalisé pour le type EVALUATION', 'MODULE', 'periodes', 'STRING'),
     ('periodes.label_trimestre', 'Trimestre', 'Libellé personnalisé pour le type TRIMESTRE', 'MODULE', 'periodes', 'STRING'),
     ('periodes.label_semestre', 'Semestre', 'Libellé personnalisé pour le type SEMESTRE', 'MODULE', 'periodes', 'STRING'),
     ('periodes.label_annee', 'Année', 'Libellé personnalisé pour le type ANNEE', 'MODULE', 'periodes', 'STRING')

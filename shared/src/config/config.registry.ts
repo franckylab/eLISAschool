@@ -255,7 +255,7 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         ],
         dependencies: [ModuleName.AUTH, ModuleName.UTILISATEURS],
         defaultSettings: {
-            label_sequence: 'Séquence',
+            label_evaluation: 'Évaluation',
             label_trimestre: 'Trimestre',
             label_semestre: 'Semestre',
             label_annee: 'Année',

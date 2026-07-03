@@ -95,10 +95,13 @@
         "modifier": "Edit template",
         "succes": "Hierarchy generated successfully",
         "modeles": {
-            "troisTrimDeuxSeq": "3 Terms × 2 Sequences",
-            "deuxSemTroisSeq": "2 Semesters × 3 Sequences",
+            "troisTrimDeuxEval": "3 Terms × 2 Evaluations",
+            "troisTrimDirects": "3 Direct Terms",
+            "deuxSemTroisEval": "2 Semesters × 3 Evaluations",
             "deuxSemDeuxTrim": "2 Semesters × 2 Terms",
-            "sixSeqDirectes": "6 Direct Sequences",
+            "sixEvalDirectes": "6 Direct Evaluations",
+            "neufMensuellesPrimaire": "9 Monthly Evaluations (Primary)",
+            "anneeUnique": "Single Year",
             "quatreTerms": "4 Terms (Anglo-Saxon system)"
         }
     },

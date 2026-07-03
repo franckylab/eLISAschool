@@ -168,7 +168,7 @@ export function ClasseDetailPage() {
     // Données affichées
     const niveauNom = classe.niveau?.nom || '-';
     const cycleNom = classe.niveau?.cycle?.nom;
-    const salleNom = classe.sallePrincipale || t('info.nonAssignee');
+    const salleNom = classe.salle?.nom || classe.salleId || t('info.nonAssignee');
     const principalNom = classe.professeurPrincipal
         ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
         : t('info.nonAssigne');

@@ -49,6 +49,7 @@ import { Route as AuthClassesIndexRouteImport } from './routes/_auth.classes.ind
 import { Route as AuthAnneesScolairesIndexRouteImport } from './routes/_auth.annees-scolaires.index'
 import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
+import { Route as AuthSallesSalleIdRouteImport } from './routes/_auth.salles.$salleId'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
 import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
@@ -266,6 +267,11 @@ const AuthSallesStatistiquesRoute = AuthSallesStatistiquesRouteImport.update({
   path: '/statistiques',
   getParentRoute: () => AuthSallesRoute,
 } as any)
+const AuthSallesSalleIdRoute = AuthSallesSalleIdRouteImport.update({
+  id: '/$salleId',
+  path: '/$salleId',
+  getParentRoute: () => AuthSallesRoute,
+} as any)
 const AuthPersonnelIdRoute = AuthPersonnelIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/annees-scolaires': typeof AuthAnneesScolairesIndexRoute
@@ -502,6 +510,7 @@ export interface FileRoutesById {
   '/_auth/matieres/$id': typeof AuthMatieresIdRoute
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
+  '/_auth/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/_auth/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
@@ -560,6 +569,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/periodes/$id'
     | '/personnel/$id'
+    | '/salles/$salleId'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
     | '/annees-scolaires/'
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/periodes/$id'
     | '/personnel/$id'
+    | '/salles/$salleId'
     | '/salles/statistiques'
     | '/utilisateurs/$id'
     | '/annees-scolaires'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/_auth/matieres/$id'
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
+    | '/_auth/salles/$salleId'
     | '/_auth/salles/statistiques'
     | '/_auth/utilisateurs/$id'
     | '/_auth/annees-scolaires/'
@@ -974,6 +986,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSallesStatistiquesRouteImport
       parentRoute: typeof AuthSallesRoute
     }
+    '/_auth/salles/$salleId': {
+      id: '/_auth/salles/$salleId'
+      path: '/$salleId'
+      fullPath: '/salles/$salleId'
+      preLoaderRoute: typeof AuthSallesSalleIdRouteImport
+      parentRoute: typeof AuthSallesRoute
+    }
     '/_auth/personnel/$id': {
       id: '/_auth/personnel/$id'
       path: '/$id'
@@ -1173,10 +1192,12 @@ const AuthPersonnelRouteWithChildren = AuthPersonnelRoute._addFileChildren(
 )
 
 interface AuthSallesRouteChildren {
+  AuthSallesSalleIdRoute: typeof AuthSallesSalleIdRoute
   AuthSallesStatistiquesRoute: typeof AuthSallesStatistiquesRoute
 }
 
 const AuthSallesRouteChildren: AuthSallesRouteChildren = {
+  AuthSallesSalleIdRoute: AuthSallesSalleIdRoute,
   AuthSallesStatistiquesRoute: AuthSallesStatistiquesRoute,
 }
 
