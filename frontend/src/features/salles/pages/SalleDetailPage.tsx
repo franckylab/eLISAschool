@@ -9,8 +9,6 @@ import {
     ArrowLeft,
     Edit,
     Building2,
-    Users,
-    MapPin,
     Wrench,
     CheckCircle,
     AlertCircle,

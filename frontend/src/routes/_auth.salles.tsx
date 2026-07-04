@@ -1,16 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Route Salles (Liste)
+ * eLISAschool - Route Salles (Layout)
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
+ * Route layout pour la liste et les détails des salles
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { SallesPage } from '@/features/salles';
 
 export const Route = createFileRoute('/_auth/salles')({
     beforeLoad: () => requireModulePermission('salles'),
-    component: SallesPage,
+    component: SallesLayout,
 });
+
+function SallesLayout() {
+    return <Outlet />;
+}

@@ -65,9 +65,14 @@ export enum ModuleName {
   
   // Module organisation
   ORGANISATION = 'organisation',
-  
+
   // Module RH & Recrutement
   RECRUTEMENT = 'recrutement',
+
+  // Modules manquants (référencés dans app.ts mais absents du registre)
+  SALLES = 'salles',
+  OPTIONS = 'options',
+  PERSONNEL = 'personnel',
 }
 
 /**
@@ -128,17 +133,9 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.PERIPHERIQUES]: ModuleCategory.SYSTEME,
   [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
   [ModuleName.RECRUTEMENT]: ModuleCategory.CRITIQUES,
+  [ModuleName.SALLES]: ModuleCategory.LOGISTIQUES,
+  [ModuleName.OPTIONS]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.PERSONNEL]: ModuleCategory.ACADEMIQUES,
 };
 
-/**
- * Modules activés par défaut
- */
-export const DEFAULT_ACTIVE_MODULES: ModuleName[] = [
-  ModuleName.AUTH,
-  ModuleName.UTILISATEURS,
-  ModuleName.CONFIGURATION,
-  ModuleName.NOTIFICATIONS,
-  ModuleName.NOTES,
-];
-
-export default { ModuleName, ModuleCategory, MODULE_CATEGORIES, DEFAULT_ACTIVE_MODULES };
+export default { ModuleName, ModuleCategory, MODULE_CATEGORIES };

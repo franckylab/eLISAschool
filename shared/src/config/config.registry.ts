@@ -8,7 +8,7 @@
  * Configuration par défaut de chaque module
  */
 
-import { ModuleName } from '../enums/modules.enum';
+import { ModuleName, ModuleCategory, MODULE_CATEGORIES } from '../enums/modules.enum';
 import { Role, Permission } from '../enums/roles.enum';
 
 /**
@@ -666,6 +666,48 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.SALLES]: {
+        name: ModuleName.SALLES,
+        label: 'Salles',
+        description: 'Gestion des salles de classe',
+        icon: 'DoorOpen',
+        basePath: '/salles',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {},
+    },
+
+    [ModuleName.OPTIONS]: {
+        name: ModuleName.OPTIONS,
+        label: 'Options',
+        description: 'Gestion des options et filières',
+        icon: 'GitBranch',
+        basePath: '/options',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {},
+    },
+
+    [ModuleName.PERSONNEL]: {
+        name: ModuleName.PERSONNEL,
+        label: 'Personnel',
+        description: 'Gestion complète du personnel (contrats, paie, absences, évaluations)',
+        icon: 'Users',
+        basePath: '/personnel',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT],
+        permissions: [],
+        dependencies: [ModuleName.AUTH],
+        defaultSettings: {},
+    },
+
     [ModuleName.DASHBOARD]: {
         name: ModuleName.DASHBOARD,
         label: 'Dashboard',
@@ -695,9 +737,9 @@ export function getModuleConfig(moduleName: ModuleName): ModuleConfig {
 /**
  * Récupère tous les modules d'une catégorie
  */
-export function getModulesByCategory(category: string): ModuleConfig[] {
+export function getModulesByCategory(category: ModuleCategory): ModuleConfig[] {
     return Object.values(MODULE_REGISTRY).filter(
-        (m) => m.basePath.includes(category) || m.label.toLowerCase().includes(category)
+        (m) => MODULE_CATEGORIES[m.name] === category
     );
 }
 

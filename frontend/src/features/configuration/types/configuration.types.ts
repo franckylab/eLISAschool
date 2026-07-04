@@ -1,20 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Types Configuration
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
-/**
- * Types pour la configuration
- * @note Utiliser exclusivement ParametreSysteme avec scopage établissement
- */
-
-// =============================================
-// PARAMÈTRES SYSTÈME
-// =============================================
-
 export interface ParametreSysteme {
     id: string;
     cle: string;
@@ -23,7 +6,6 @@ export interface ParametreSysteme {
     categorie: string;
     description?: string;
     etablissementId?: string;
-    actif: boolean;
     creeAt: string;
     majAt: string;
 }
@@ -39,7 +21,6 @@ export interface CreateParametreDto {
 export interface UpdateParametreDto {
     valeur?: string;
     description?: string;
-    actif?: boolean;
 }
 
 export interface ParametreFiltres {
@@ -50,24 +31,34 @@ export interface ParametreFiltres {
     etablissementId?: string;
 }
 
-// =============================================
-// CONFIGURATION MODULES
-// =============================================
+export interface ModuleRegistryEntry {
+    name: string;
+    label: string;
+    description: string;
+    icon: string;
+    basePath: string;
+    category: string;
+    defaultActive: boolean;
+    premium: boolean;
+    dependencies: string[];
+    defaultRoles: string[];
+    actif: boolean;
+}
 
 export interface ConfigurationModule {
     id: string;
     moduleNom: string;
-    actif: boolean;
-    ordre: number;
-    configuration?: Record<string, any>;
+    champsPersonnalises: any[];
+    widgets: any[];
+    parametres: Record<string, any>;
     creeAt: string;
     majAt: string;
 }
 
 export interface UpdateConfigModuleDto {
-    actif?: boolean;
-    ordre?: number;
-    configuration?: Record<string, any>;
+    champsPersonnalises?: any[];
+    widgets?: any[];
+    parametres?: Record<string, any>;
 }
 
 export interface ToggleModuleDto {
@@ -75,9 +66,18 @@ export interface ToggleModuleDto {
     actif: boolean;
 }
 
-// =============================================
-// HISTORIQUE CONFIGURATION
-// =============================================
+export interface ModuleImpact {
+    modulesAActiver: string[];
+    modulesADesactiver: string[];
+    conflits: string[];
+}
+
+export interface ModuleState {
+    entry: ModuleRegistryEntry;
+    config: ConfigurationModule | null;
+    actif: boolean;
+    isLoading: boolean;
+}
 
 export interface HistoriqueConfiguration {
     id: string;
@@ -100,10 +100,6 @@ export interface HistoriqueFiltres {
     dateDebut?: string;
     dateFin?: string;
 }
-
-// =============================================
-// BACKUP
-// =============================================
 
 export interface BackupRecord {
     id: string;

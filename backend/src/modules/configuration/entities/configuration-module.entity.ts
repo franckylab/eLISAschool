@@ -74,9 +74,9 @@ export class ConfigurationModule {
     @Column({ type: 'simple-json', default: '{}' })
     parametres!: Record<string, any>;
 
-    // Module activé/désactivé
-    @Column({ type: 'boolean', default: true })
-    actif!: boolean;
+    // ACTIF SUPPRIMÉ - Utiliser ParametreSysteme (clé: modules.{name}.actif) comme source unique
+    // @Column({ type: 'boolean', default: true })
+    // actif!: boolean;
 
     // Valeurs par défaut pour restauration
     @Column({ type: 'simple-json', nullable: true })

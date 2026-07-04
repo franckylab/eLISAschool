@@ -1,17 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Controller Salles
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- * 
- * Routes REST pour la gestion des salles :
- * - CRUD complet
- * - Pagination et filtrage
- * - Statistiques
- * - Vérification disponibilité
- */
-
 import { Router, Request, Response, NextFunction } from 'express';
 import { salleService } from '../services';
 import { createSalleSchema, updateSalleSchema, querySallesSchema } from '../dto';
@@ -20,10 +6,6 @@ import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
-
-// ==================================
-// Helper de validation
-// ==================================
 
 function validate(schema: any, data: unknown): any {
     const result = schema.safeParse(data);
@@ -37,13 +19,6 @@ function validate(schema: any, data: unknown): any {
     return result.data;
 }
 
-// ==================================
-// Routes CRUD
-// ==================================
-
-/**
- * GET /api/salles - Lister toutes les salles (paginé)
- */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(querySallesSchema, {
@@ -76,9 +51,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     }
 });
 
-/**
- * GET /api/salles/statistiques - Statistiques des salles
- */
+// Routes GET fixes DOIVENT être avant /:id
 router.get('/statistiques', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const stats = await salleService.getStatistiques(req.utilisateur?.etablissementId!);
@@ -88,9 +61,6 @@ router.get('/statistiques', authMiddleware, async (req: Request, res: Response, 
     }
 });
 
-/**
- * GET /api/salles/disponibles - Salles disponibles pour emploi du temps
- */
 router.get('/disponibles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const capaciteMin = req.query.capaciteMin ? parseInt(req.query.capaciteMin as string) : undefined;
@@ -108,9 +78,6 @@ router.get('/disponibles', authMiddleware, async (req: Request, res: Response, n
     }
 });
 
-/**
- * GET /api/salles/:id - Détail d'une salle
- */
 router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const salle = await salleService.findOne(req.params.id, req.utilisateur?.etablissementId!);
@@ -120,9 +87,6 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
     }
 });
 
-/**
- * POST /api/salles - Créer une salle
- */
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createSalleSchema, req.body);
@@ -133,9 +97,6 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
     }
 });
 
-/**
- * PATCH /api/salles/:id - Modifier une salle
- */
 router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateSalleSchema, req.body);
@@ -146,9 +107,6 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     }
 });
 
-/**
- * DELETE /api/salles/:id - Supprimer une salle
- */
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await salleService.delete(req.params.id, req.utilisateur?.etablissementId!);

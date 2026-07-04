@@ -1,11 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Hooks Configuration
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
@@ -15,29 +7,110 @@ import type {
     ConfigurationModule,
     UpdateConfigModuleDto,
     ToggleModuleDto,
+    ModuleRegistryEntry,
+    ModuleImpact,
+    ModuleState,
     HistoriqueConfiguration,
     HistoriqueFiltres,
     BackupRecord,
     CreateBackupDto,
 } from '../types/configuration.types';
 
-// =============================================
-// CLÉS DE CACHE
-// =============================================
-
 const CONFIG_KEYS = {
     all: ['configuration'] as const,
     params: () => [...CONFIG_KEYS.all, 'params'] as const,
     paramsList: (filtres: ParametreFiltres) => [...CONFIG_KEYS.params(), 'list', filtres] as const,
     modules: () => [...CONFIG_KEYS.all, 'modules'] as const,
+    registry: () => [...CONFIG_KEYS.all, 'modules', 'registry'] as const,
+    moduleState: (moduleNom: string) => [...CONFIG_KEYS.modules(), 'state', moduleNom] as const,
+    moduleImpact: (moduleNom: string, actif: boolean) => [...CONFIG_KEYS.all, 'modules', 'impact', moduleNom, String(actif)] as const,
     history: () => [...CONFIG_KEYS.all, 'history'] as const,
     historyList: (filtres: HistoriqueFiltres) => [...CONFIG_KEYS.history(), 'list', filtres] as const,
     backups: () => [...CONFIG_KEYS.all, 'backups'] as const,
 };
 
-// =============================================
-// PARAMÈTRES SYSTÈME
-// =============================================
+export function useModuleRegistry() {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: CONFIG_KEYS.registry(),
+        queryFn: async () => {
+            const [registryRes, configRes] = await Promise.all([
+                apiClient.get<ModuleRegistryEntry[]>('/api/configuration/modules/registry'),
+                apiClient.get<ConfigurationModule[]>('/api/configuration/modules'),
+            ]);
+
+            const entries = registryRes.data || [];
+            const configs = configRes.data || [];
+            const configMap = new Map(configs.map((c) => [c.moduleNom, c]));
+
+            const states: ModuleState[] = [];
+            for (const entry of entries) {
+                const config = configMap.get(entry.name) || null;
+                states.push({
+                    entry,
+                    config,
+                    actif: entry.actif,
+                    isLoading: false,
+                });
+            }
+            return states;
+        },
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useToggleModule() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (dto: ToggleModuleDto) => {
+            const response = await apiClient.post<{ success: boolean; data: any; message: string }>(
+                '/api/configuration/modules/toggle',
+                dto
+            );
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.modules() });
+            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.registry() });
+        },
+    });
+}
+
+export function useModuleImpact(moduleNom: string, actif: boolean) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: CONFIG_KEYS.moduleImpact(moduleNom, actif),
+        queryFn: async () => {
+            const response = await apiClient.get<ModuleImpact>(
+                `/api/configuration/modules/registry/impact`,
+                { params: { moduleNom, actif: String(actif) } }
+            );
+            return response.data;
+        },
+        enabled: isAuthenticated && !!moduleNom,
+        staleTime: 30 * 1000,
+    });
+}
+
+export function useConfigModules() {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: CONFIG_KEYS.modules(),
+        queryFn: async () => {
+            const response = await apiClient.get<{ data: ConfigurationModule[] }>(
+                '/api/configuration/modules'
+            );
+            return response.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
 
 export function useParametres(filtres: ParametreFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
@@ -47,12 +120,7 @@ export function useParametres(filtres: ParametreFiltres = {}) {
         queryFn: async () => {
             const response = await apiClient.get<{
                 data: ParametreSysteme[];
-                meta: {
-                    totalItems: number;
-                    currentPage: number;
-                    totalPages: number;
-                    itemsPerPage: number;
-                };
+                meta: { totalItems: number; currentPage: number; totalPages: number; itemsPerPage: number };
             }>('/api/configuration/parametres', { params: filtres as any });
 
             if (!response.data) {
@@ -114,43 +182,6 @@ export function useSupprimerParametre() {
     });
 }
 
-// =============================================
-// CONFIGURATION MODULES
-// =============================================
-
-export function useConfigModules() {
-    const { isAuthenticated } = useAuthStore();
-
-    return useQuery({
-        queryKey: CONFIG_KEYS.modules(),
-        queryFn: async () => {
-            const response = await apiClient.get<{ data: ConfigurationModule[] }>(
-                '/api/configuration/modules'
-            );
-            return response.data;
-        },
-        enabled: isAuthenticated,
-        staleTime: 5 * 60 * 1000,
-    });
-}
-
-export function useToggleModule() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (dto: ToggleModuleDto) => {
-            const response = await apiClient.post<ConfigurationModule>(
-                '/api/configuration/modules/toggle',
-                dto
-            );
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.modules() });
-        },
-    });
-}
-
 export function useUpdateConfigModule() {
     const queryClient = useQueryClient();
 
@@ -168,10 +199,6 @@ export function useUpdateConfigModule() {
     });
 }
 
-// =============================================
-// HISTORIQUE CONFIGURATION
-// =============================================
-
 export function useHistoriqueConfiguration(filtres: HistoriqueFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
 
@@ -180,12 +207,7 @@ export function useHistoriqueConfiguration(filtres: HistoriqueFiltres = {}) {
         queryFn: async () => {
             const response = await apiClient.get<{
                 data: HistoriqueConfiguration[];
-                meta: {
-                    totalItems: number;
-                    currentPage: number;
-                    totalPages: number;
-                    itemsPerPage: number;
-                };
+                meta: { totalItems: number; currentPage: number; totalPages: number; itemsPerPage: number };
             }>('/api/configuration/historique', { params: filtres as any });
 
             if (!response.data) {
@@ -210,16 +232,10 @@ export function useRestaurerHistorique() {
             return response.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.app() });
-            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.params() });
-            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.modules() });
+            queryClient.invalidateQueries({ queryKey: CONFIG_KEYS.all });
         },
     });
 }
-
-// =============================================
-// BACKUP
-// =============================================
 
 export function useBackups() {
     const { isAuthenticated } = useAuthStore();

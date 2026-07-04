@@ -637,11 +637,38 @@ export enum Permission {
     CONFIGURATION_SEED = 'configuration:seed',
     CONFIGURATION_LICENCE_ACTIVER = 'configuration:licence:activer',
 
+    // Permissions granulaires du module Configuration (unifiées Permissions + ConfigPermission)
+    CONFIG_APP_VIEW = 'config:app:view',
+    CONFIG_APP_EDIT = 'config:app:edit',
+    CONFIG_MODULE_VIEW = 'config:module:view',
+    CONFIG_MODULE_EDIT = 'config:module:edit',
+    CONFIG_MODULE_TOGGLE = 'config:module:toggle',
+    CONFIG_PARAM_VIEW = 'config:param:view',
+    CONFIG_PARAM_CREATE = 'config:param:create',
+    CONFIG_PARAM_EDIT = 'config:param:edit',
+    CONFIG_PARAM_DELETE = 'config:param:delete',
+    CONFIG_PARAM_RESET = 'config:param:reset',
+    CONFIG_HISTORY_VIEW = 'config:history:view',
+    CONFIG_HISTORY_RESTORE = 'config:history:restore',
+    CONFIG_BACKUP_CREATE = 'config:backup:create',
+    CONFIG_BACKUP_RESTORE = 'config:backup:restore',
+    CONFIG_EXPORT = 'config:export',
+    CONFIG_IMPORT = 'config:import',
+    CONFIG_CACHE_INVALIDATE = 'config:cache:invalidate',
+
     // ==================================
     // APPARENCE (Fonds d'écran, Thème, Logo)
     // ==================================
     APPARENCE_FONDS_VIEW = 'apparence:fonds:view',
     APPARENCE_FONDS_MANAGE = 'apparence:fonds:manage',
+
+    // Santé
+    SANTE_VIEW = 'sante:view',
+    SANTE_CONSULTATIONS = 'sante:consultations',
+    SANTE_VACCINATIONS = 'sante:vaccinations',
+
+    // Menu cantine (view manquant)
+    CANTINE_MENUS_VIEW = 'cantine:menus:view',
 
     // ==================================
     // MONITORING
@@ -830,6 +857,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.UTILISATEURS_MANAGE, Permission.UTILISATEURS_DELETE, Permission.UTILISATEURS_ETABLISSEMENTS_MANAGE, Permission.UTILISATEURS_IMPORT, Permission.UTILISATEURS_EXPORT, Permission.UTILISATEURS_STATUT_CHANGE,
         Permission.ROLES_VIEW, Permission.ROLES_MANAGE,
         Permission.CONFIG_VIEW, Permission.CONFIG_EDIT,
+        Permission.CONFIG_APP_VIEW, Permission.CONFIG_APP_EDIT,
+        Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_MODULE_EDIT, Permission.CONFIG_MODULE_TOGGLE,
+        Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_PARAM_CREATE, Permission.CONFIG_PARAM_EDIT,
+        Permission.CONFIG_PARAM_DELETE, Permission.CONFIG_PARAM_RESET,
+        Permission.CONFIG_HISTORY_VIEW, Permission.CONFIG_HISTORY_RESTORE,
+        Permission.CONFIG_BACKUP_CREATE, Permission.CONFIG_BACKUP_RESTORE,
+        Permission.CONFIG_EXPORT, Permission.CONFIG_CACHE_INVALIDATE,
         Permission.MONITORING_VIEW,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.NOTIFICATIONS_MANAGE,
@@ -966,7 +1000,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
-        Permission.CONFIG_VIEW,
+        Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
         // Validation permissions
@@ -1130,7 +1164,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
-        Permission.CONFIG_VIEW,
+        Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
         // Validation niveaux 2-3
@@ -1164,7 +1198,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
-        Permission.CONFIG_VIEW,
+        Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
         Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
@@ -1191,7 +1225,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
-        Permission.CONFIG_VIEW,
+        Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
         Permission.VALIDATION_NOTES_LEVEL2,
@@ -1586,6 +1620,254 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
         Permission.CANTINE_VIEW,
         Permission.TRANSPORT_VIEW,
+    ],
+
+    // ==================================
+    // ENSEIGNANTS SPÉCIALISÉS (manquants)
+    // ==================================
+
+    [Role.PROFESSEUR_SPECIAL]: [
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    [Role.PROFESSEUR_LANGUES]: [
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
+        Permission.BULLETINS_VIEW,
+        Permission.CLUBS_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.GAMIFICATION_VIEW,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.VALIDATION_NOTES_LEVEL1,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    // ==================================
+    // SANTÉ & BIEN-ÊTRE (manquants)
+    // ==================================
+
+    [Role.MEDECIN_SCOLAIRE]: [
+        Permission.SANTE_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.DOCUMENTS_VIEW,
+    ],
+
+    [Role.INFIRMIER_SCOLAIRE]: [
+        Permission.SANTE_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.DOCUMENTS_VIEW,
+    ],
+
+    [Role.NUTRITIONNISTE]: [
+        Permission.CANTINE_VIEW, Permission.CANTINE_MANAGE,
+        Permission.CANTINE_MENUS_CREATE, Permission.CANTINE_MENUS_EDIT,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.KINESITHERAPEUTE]: [
+        Permission.SANTE_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+    ],
+
+    // ==================================
+    // CANTINE & LOGISTIQUE (manquants)
+    // ==================================
+
+    [Role.CUISINIER]: [
+        Permission.CANTINE_VIEW,
+        Permission.CANTINE_MENUS_VIEW,
+        Permission.MESSAGES_SEND,
+    ],
+
+    [Role.CHAUFFEUR]: [
+        Permission.TRANSPORT_VIEW,
+        Permission.TRANSPORT_LIGNES_VIEW,
+        Permission.TRANSPORT_PRESENCES_ENREGISTRER,
+        Permission.MESSAGES_SEND,
+    ],
+
+    [Role.AGENT_ENTRETIEN]: [
+        Permission.MATERIEL_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+    ],
+
+    // ==================================
+    // CLUBS & ACTIVITÉS (manquants)
+    // ==================================
+
+    [Role.COORDINATEUR_CLUBS]: [
+        Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
+        Permission.CLUBS_CREATE, Permission.CLUBS_EDIT, Permission.CLUBS_DELETE,
+        Permission.CLUBS_INSCRIPTIONS_MANAGE,
+        Permission.CLUBS_EVENEMENTS_VIEW, Permission.CLUBS_EVENEMENTS_CREATE,
+        Permission.CLUBS_EVENEMENTS_EDIT, Permission.CLUBS_EVENEMENTS_DELETE,
+        Permission.GAMIFICATION_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.ENTRAINEUR_SPORTIF]: [
+        Permission.CLUBS_VIEW, Permission.CLUBS_MANAGE,
+        Permission.CLUBS_EVENEMENTS_VIEW, Permission.CLUBS_EVENEMENTS_CREATE,
+        Permission.GAMIFICATION_VIEW,
+        Permission.GAMIFICATION_CLASSEMENT_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    [Role.ANIMATEUR_CULTUREL]: [
+        Permission.CLUBS_VIEW,
+        Permission.CLUBS_EVENEMENTS_VIEW, Permission.CLUBS_EVENEMENTS_CREATE,
+        Permission.CLUBS_EVENEMENTS_EDIT,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+    ],
+
+    // ==================================
+    // SPÉCIALISÉ (manquants)
+    // ==================================
+
+    [Role.COORDINATEUR_EXAMEN]: [
+        Permission.USERS_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.BULLETINS_EXPORT,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+    ],
+
+    [Role.RESPONSABLE_BOURSES]: [
+        Permission.USERS_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.FINANCES_SCOLARITE_VIEW,
+        Permission.FINANCES_ETAT_COMPTE_VIEW,
+        Permission.FINANCES_REMISE_GRANT,
+        Permission.FINANCES_DASHBOARD_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+    ],
+
+    [Role.AUDITEUR_INTERNE]: [
+        Permission.USERS_VIEW,
+        Permission.ROLES_VIEW,
+        Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW, Permission.FINANCES_RAPPORTS_GENERER,
+        Permission.FINANCES_COMPTABILITE_VIEW, Permission.FINANCES_COMPTABILITE_BALANCE,
+        Permission.FINANCES_COMPTABILITE_RAPPORT,
+        Permission.FINANCES_BUDGET_VIEW, Permission.FINANCES_BUDGET_RAPPORTS,
+        Permission.MONITORING_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW, Permission.NOTES_STATISTIQUES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.DOCUMENTS_VIEW,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW,
+    ],
+
+    [Role.STATISTICIEN]: [
+        Permission.ELEVES_VIEW,
+        Permission.CLASSES_VIEW, Permission.CLASSES_EFFECTIFS_VIEW,
+        Permission.NOTES_VIEW, Permission.NOTES_STATISTIQUES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.FINANCES_DASHBOARD_VIEW, Permission.FINANCES_DASHBOARD_KPI,
+        Permission.FINANCES_RAPPORTS_GENERER,
+        Permission.MONITORING_VIEW, Permission.MONITORING_STATS_VIEW,
+        Permission.MONITORING_METRICS_VIEW,
+        Permission.VALIDATION_DASHBOARD_VIEW, Permission.VALIDATION_RAPPORTS_VIEW,
+        Permission.VALIDATION_RAPPORTS_EXPORT,
+        Permission.MESSAGES_SEND,
+    ],
+
+    [Role.CHARGE_COMMUNICATION]: [
+        Permission.NOTIFICATIONS_VIEW, Permission.NOTIFICATIONS_MANAGE,
+        Permission.NOTIFICATIONS_ENVOYER, Permission.NOTIFICATIONS_CREATE,
+        Permission.NOTIFICATIONS_BULK_CREATE,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.MESSAGERIE_VIEW,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
+        Permission.APPARENCE_FONDS_VIEW,
+        Permission.SONDAGES_CREATE, Permission.SONDAGES_VOTE, Permission.SONDAGES_ANALYZE,
+        Permission.REQUETES_VIEW,
+    ],
+
+    // ==================================
+    // PERSONNEL ADMINISTRATIF (manquants)
+    // ==================================
+
+    [Role.ACCUEIL_STANDARD]: [
+        Permission.USERS_VIEW,
+        Permission.ELEVES_VIEW,
+        Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+        Permission.NOTIFICATIONS_VIEW,
+    ],
+
+    // ==================================
+    // PERSONNEL TECHNIQUE (manquants)
+    // ==================================
+
+    [Role.ANIMATEUR_TICE]: [
+        Permission.USERS_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.MATERIEL_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
+        Permission.PROGRAMMES_CHAPITRE_READ,
+        Permission.PROGRAMMES_DASHBOARD_READ,
+    ],
+
+    // ==================================
+    // SURVEILLANCE & VIE SCOLAIRE (manquants)
+    // ==================================
+
+    [Role.MAITRE_INTERNAT]: [
+        // Responsable internat
+        Permission.ELEVES_VIEW,
+        Permission.CLASSES_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.CANTINE_VIEW,
+        Permission.TRANSPORT_VIEW,
+        Permission.VALIDATION_ELEVES_LEVEL2,
+    ],
+
+    [Role.CONSEILLER_VIE_SCOLAIRE]: [
+        // CPE
+        Permission.ELEVES_VIEW, Permission.ELEVES_EDIT,
+        Permission.CLASSES_VIEW,
+        Permission.NOTES_VIEW,
+        Permission.BULLETINS_VIEW,
+        Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
+        Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
+        Permission.CANTINE_VIEW,
+        Permission.TRANSPORT_VIEW,
+        Permission.CLUBS_VIEW,
+        Permission.VALIDATION_ELEVES_LEVEL2,
+        Permission.VALIDATION_CLUBS_LEVEL2,
+        Permission.VALIDATION_DASHBOARD_VIEW,
+        Permission.DOCUMENTS_VIEW,
     ],
 };
 

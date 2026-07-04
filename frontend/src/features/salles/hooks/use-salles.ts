@@ -50,14 +50,10 @@ export function useSalles(filtres?: FiltresSalles) {
                 if (filtres.search) params.search = filtres.search;
             }
             
-            const response = await apiClient.get<{
-                success: boolean;
-                data: Salle[];
-                pagination: PaginationResponse;
-            }>('/api/salles', { params });
+            const response = await apiClient.get<Salle[]>('/api/salles', { params });
             return {
-                data: response.data?.data || [],
-                pagination: response.data?.pagination,
+                data: response.data || [],
+                pagination: (response as any).pagination as PaginationResponse | undefined,
             };
         },
         enabled: isAuthenticated,
@@ -71,11 +67,10 @@ export function useSalle(id: string) {
     return useQuery({
         queryKey: SALLES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{
-                success: boolean;
-                data: Salle;
-            }>(`/api/salles/${id}`);
-            return response.data?.data;
+            const response = await apiClient.get<Salle>(`/api/salles/${id}`);
+            const data = response.data;
+            if (!data) throw new Error('Salle non trouvée');
+            return data;
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000, // 5 minutes
@@ -92,11 +87,8 @@ export function useSallesDisponibles(capaciteMin?: number, typeSalle?: string) {
             if (capaciteMin) params.capaciteMin = capaciteMin;
             if (typeSalle) params.typeSalle = typeSalle;
             
-            const response = await apiClient.get<{
-                success: boolean;
-                data: Salle[];
-            }>('/api/salles/disponibles', { params });
-            return response.data?.data || [];
+            const response = await apiClient.get<Salle[]>('/api/salles/disponibles', { params });
+            return response.data || [];
         },
         enabled: isAuthenticated,
         staleTime: 2 * 60 * 1000, // 2 minutes
@@ -109,14 +101,13 @@ export function useStatistiquesSalles() {
     return useQuery({
         queryKey: SALLES_KEYS.stats(),
         queryFn: async () => {
-            const response = await apiClient.get<{
-                success: boolean;
-                data: StatistiquesSalles;
-            }>('/api/salles/statistiques');
-            return response.data?.data;
+            const response = await apiClient.get<StatistiquesSalles>('/api/salles/statistiques');
+            const data = response.data;
+            if (!data) return {} as StatistiquesSalles;
+            return data;
         },
         enabled: isAuthenticated,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 5 * 60 * 1000,
     });
 }
 
@@ -129,11 +120,10 @@ export function useCreerSalle() {
     
     return useMutation({
         mutationFn: async (dto: CreerSalleDto) => {
-            const response = await apiClient.post<{
-                success: boolean;
-                data: Salle;
-            }>('/api/salles', dto);
-            return response.data?.data;
+            const response = await apiClient.post<Salle>('/api/salles', dto);
+            const data = response.data;
+            if (!data) throw new Error('Impossible de créer la salle');
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['salles'] });
@@ -150,11 +140,10 @@ export function useModifierSalle() {
     
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: ModifierSalleDto }) => {
-            const response = await apiClient.patch<{
-                success: boolean;
-                data: Salle;
-            }>(`/api/salles/${id}`, dto);
-            return response.data?.data;
+            const response = await apiClient.patch<Salle>(`/api/salles/${id}`, dto);
+            const data = response.data;
+            if (!data) throw new Error('Impossible de modifier la salle');
+            return data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['salles'] });

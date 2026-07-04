@@ -33,7 +33,16 @@ export function requireConfigPermission(
                 return;
             }
 
-            if (!hasConfigPermission(userRole, permission)) {
+            // ADMIN bypass (cohérence frontend: ADMIN voit tout)
+            if (userRole === 'ADMIN') {
+                next();
+                return;
+            }
+
+            // Vérification avec fallback: d'abord les permissions JWT dynamiques,
+            // puis le mapping statique par rôle
+            const userPermissions: string[] = (req.utilisateur as any).permissions || [];
+            if (!hasConfigPermission(userRole, permission, userPermissions)) {
                 await auditService.logAccessDenied(
                     req.utilisateur.id,
                     `Permission configuration requise: ${permission}`,

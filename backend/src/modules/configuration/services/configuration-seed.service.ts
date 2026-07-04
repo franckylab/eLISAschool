@@ -89,7 +89,6 @@ export class ConfigurationSeedService {
                     champsPersonnalises: [],
                     widgets: [],
                     parametres: registryConfig.defaultSettings || {},
-                    actif: registryConfig.defaultActive,
                 };
 
                 Object.assign(existing, {
@@ -110,7 +109,6 @@ export class ConfigurationSeedService {
                 champsPersonnalises: [],
                 widgets: [],
                 parametres: registryConfig.defaultSettings || {},
-                actif: registryConfig.defaultActive,
             };
 
             const config = this.configModuleRepo.create({

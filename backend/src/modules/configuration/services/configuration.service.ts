@@ -121,7 +121,6 @@ export class ConfigurationService {
                 champsPersonnalises: [],
                 widgets: [],
                 parametres: registryConfig?.defaultSettings || {},
-                actif: registryConfig?.defaultActive ?? true,
             });
             await this.configModuleRepository.save(config);
         }
@@ -143,7 +142,7 @@ export class ConfigurationService {
         if (updateDto.champsPersonnalises !== undefined) config.champsPersonnalises = updateDto.champsPersonnalises;
         if (updateDto.widgets !== undefined) config.widgets = updateDto.widgets;
         if (updateDto.parametres !== undefined) config.parametres = { ...config.parametres, ...updateDto.parametres };
-        if (updateDto.actif !== undefined) config.actif = updateDto.actif;
+        // actif est géré via ParametresSysteme (toggleModule), pas dans ConfigurationModule
 
         await this.configModuleRepository.save(config);
         this.invalidateCache('modules');
@@ -201,10 +200,7 @@ export class ConfigurationService {
         // 3. Écrire dans ParametreSysteme (source unique de vérité)
         await this.toggleModuleParametre(moduleNom, actif, etablissementId);
 
-        // 4. Synchroniser ConfigurationModule.actif
-        await this.syncConfigurationModule(moduleNom, actif, etablissementId);
-
-        // 5. Historique
+        // 4. Historique
         await this.historyService.logAction({
             utilisateurId,
             action: ActionConfiguration.UPDATE,
@@ -248,26 +244,6 @@ export class ConfigurationService {
         await this.setParametre(cle, actif, etablissementId);
     }
 
-    private async syncConfigurationModule(moduleNom: string, actif: boolean, etablissementId?: string): Promise<void> {
-        let config = await this.configModuleRepository.findOne({
-            where: { moduleNom, etablissementId: etablissementId || undefined }
-        });
-
-        if (!config) {
-            const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
-            config = this.configModuleRepository.create({
-                moduleNom,
-                etablissementId,
-                actif,
-                parametres: registryConfig?.defaultSettings || {},
-            });
-        } else {
-            config.actif = actif;
-        }
-
-        await this.configModuleRepository.save(config);
-    }
-
     async getAllModulesConfig(etablissementId?: string): Promise<ConfigurationModule[]> {
         return this.configModuleRepository.find({
             where: { etablissementId: etablissementId || undefined },
@@ -307,10 +283,9 @@ export class ConfigurationService {
             for (const dep of registryConfig.dependencies) {
                 const estActive = await this.isModuleActive(dep, etablissementId);
                 if (!estActive) {
-                    // Auto-activation de la dépendance
+                    // Auto-activation de la dépendance (ParametreSysteme uniquement)
                     try {
                         await this.toggleModuleParametre(dep, true, etablissementId);
-                        await this.syncConfigurationModule(dep, true, etablissementId);
                         modulesAutoActivés.push(dep);
                     } catch (error) {
                         const depConfig = MODULE_REGISTRY[dep];
@@ -350,6 +325,62 @@ export class ConfigurationService {
      */
     public async verifierActivationModule(moduleNom: string, etablissementId?: string) {
         return this.verifierDependances(moduleNom, true, etablissementId, new Set());
+    }
+
+    /**
+     * Calcule l'impact d'une activation/désactivation de module
+     * Retourne la liste des modules qui seraient activés/désactivés en cascade
+     */
+    public async calculerImpactActivation(
+        moduleNom: string,
+        actif: boolean,
+        etablissementId?: string,
+        visite: Set<string> = new Set()
+    ): Promise<{ modulesAActiver: string[]; modulesADesactiver: string[]; conflits: string[] }> {
+        if (visite.has(moduleNom)) {
+            return { modulesAActiver: [], modulesADesactiver: [], conflits: [`Cycle détecté: ${moduleNom}`] };
+        }
+        visite.add(moduleNom);
+
+        const modulesAActiver: string[] = [];
+        const modulesADesactiver: string[] = [];
+        const conflits: string[] = [];
+
+        if (actif) {
+            const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
+            if (registryConfig?.dependencies) {
+                for (const dep of registryConfig.dependencies) {
+                    const estActive = await this.isModuleActive(dep, etablissementId);
+                    if (!estActive) {
+                        modulesAActiver.push(dep);
+                        const cascade = await this.calculerImpactActivation(dep, true, etablissementId, visite);
+                        for (const m of cascade.modulesAActiver) {
+                            if (!modulesAActiver.includes(m)) modulesAActiver.push(m);
+                        }
+                    }
+                }
+            }
+        } else {
+            const reverseDeps = this.getReverseDependencies(moduleNom);
+            for (const rev of reverseDeps) {
+                const estActive = await this.isModuleActive(rev, etablissementId);
+                if (estActive && !visite.has(rev)) {
+                    modulesADesactiver.push(rev);
+                    const cascade = await this.calculerImpactActivation(rev, false, etablissementId, visite);
+                    for (const m of cascade.modulesADesactiver) {
+                        if (!modulesADesactiver.includes(m)) modulesADesactiver.push(m);
+                    }
+                }
+            }
+
+            if (modulesADesactiver.length > 0) {
+                conflits.push(
+                    `La désactivation de "${moduleNom}" entraînera la désactivation de: ${modulesADesactiver.join(', ')}`
+                );
+            }
+        }
+
+        return { modulesAActiver, modulesADesactiver, conflits };
     }
 
     getReverseDependencies(moduleNom: string): ModuleName[] {

@@ -9,7 +9,6 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { AppDataSource } from '@database/data-source';
 import { ConfigurationService } from '../services/configuration.service';
 import { ConfigurationSeedService } from '../services/configuration-seed.service';
 import { ConfigurationHistoryService } from '../services/configuration-history.service';
@@ -32,7 +31,7 @@ import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 import { MODULE_REGISTRY } from '@shared/config/config.registry';
-import { ModuleName } from '@shared/enums/modules.enum';
+import { ModuleName, MODULE_CATEGORIES } from '@shared/enums/modules.enum';
 import {
     canViewConfigApp,
     canEditConfigApp,
@@ -154,6 +153,50 @@ router.get('/modules', authMiddleware, canViewConfigModule, async (req: Request,
     } catch (error) { next(error); }
 });
 
+// Registry des modules (depuis MODULE_REGISTRY) - doit être avant /modules/:moduleNom
+router.get('/modules/registry', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur?.etablissementId;
+        const registry = await Promise.all(
+            Object.values(MODULE_REGISTRY).map(async (config) => {
+                const actif = await configurationService.isModuleActive(config.name, etablissementId);
+                return {
+                    name: config.name,
+                    label: config.label,
+                    description: config.description,
+                    icon: config.icon,
+                    basePath: config.basePath,
+                    category: MODULE_CATEGORIES[config.name],
+                    defaultActive: config.defaultActive,
+                    premium: config.premium,
+                    dependencies: config.dependencies,
+                    defaultRoles: config.defaultRoles,
+                    actif,
+                };
+            })
+        );
+        res.json({ success: true, data: registry });
+    } catch (error) { next(error); }
+});
+
+// Impact d'activation/désactivation
+router.get('/modules/registry/impact', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleNom, actif } = req.query;
+        if (!moduleNom || typeof actif === 'undefined') {
+            throw new AppError('moduleNom et actif requis', 400, 'MISSING_PARAMS');
+        }
+        const isActivating = actif === 'true' || actif === true;
+        const etablissementId = req.utilisateur?.etablissementId;
+        const impact = await configurationService.calculerImpactActivation(
+            moduleNom as string,
+            isActivating,
+            etablissementId
+        );
+        res.json({ success: true, data: impact });
+    } catch (error) { next(error); }
+});
+
 router.get('/modules/:moduleNom', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const config = await configurationService.getConfigModule(req.params.moduleNom, req.utilisateur?.etablissementId);
@@ -193,6 +236,24 @@ router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async
     } catch (error) { next(error); }
 });
 
+// Nouvelle route toggle avec moduleNom dans le body (correspond au frontend)
+router.post('/modules/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleNom, actif } = req.body;
+        if (!moduleNom || typeof actif !== 'boolean') {
+            throw new AppError('moduleNom (string) et actif (boolean) requis', 400, 'INVALID_TOGGLE_BODY');
+        }
+        const result = await configurationService.toggleModule(
+            moduleNom,
+            actif,
+            req.utilisateur?.etablissementId,
+            req.utilisateur?.id,
+            req
+        );
+        res.json({ success: true, data: result, message: result.message });
+    } catch (error) { next(error); }
+});
+
 router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const moduleNom = req.params.moduleNom;
@@ -203,47 +264,30 @@ router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModu
             throw new AppError(`Module "${moduleNom}" non trouvé dans le registre`, 404, 'MODULE_NOT_FOUND');
         }
 
-        // Optimisation: Charger tous les modules actifs en UNE SEULE requête
-        const modulesActifsData: Record<string, boolean> = {};
-        
-        if (etablissementId) {
-            const configRepo = AppDataSource.getRepository('EtablissementConfig');
-            const config = await configRepo.findOne({ where: { etablissementId } });
-            if (config?.modulesActifs) {
-                Object.assign(modulesActifsData, config.modulesActifs);
-            }
-        }
-        
-        // Fallback: ConfigurationApp
-        if (Object.keys(modulesActifsData).length === 0) {
-            const appConfig = await configurationService.getConfigApp();
-            if (appConfig.modulesActifs) {
-                Object.assign(modulesActifsData, appConfig.modulesActifs);
-            }
-        }
-
-        // Dépendances (calcul en mémoire, pas de requêtes DB)
-        const dependances = (registryConfig.dependencies || []).map((dep) => {
+        // Dépendances (depuis ParametreSysteme - source de vérité)
+        const dependances = [];
+        for (const dep of (registryConfig.dependencies || [])) {
             const depConfig = MODULE_REGISTRY[dep];
-            const actif = modulesActifsData[dep] ?? depConfig?.defaultActive ?? false;
-            return {
+            const actif = await configurationService.isModuleActive(dep, etablissementId);
+            dependances.push({
                 nom: dep,
                 label: depConfig?.label || dep,
                 actif,
                 requis: true,
-            };
-        });
+            });
+        }
 
-        // Reverse dépendances (calcul en mémoire)
-        const reverseDependances = configurationService.getReverseDependencies(moduleNom).map((revDep) => {
+        // Reverse dépendances (depuis ParametreSysteme)
+        const reverseDependances = [];
+        for (const revDep of configurationService.getReverseDependencies(moduleNom)) {
             const revConfig = MODULE_REGISTRY[revDep];
-            const actif = modulesActifsData[revDep] ?? revConfig?.defaultActive ?? false;
-            return {
+            const actif = await configurationService.isModuleActive(revDep, etablissementId);
+            reverseDependances.push({
                 nom: revDep,
                 label: revConfig?.label || revDep,
                 actif,
-            };
-        });
+            });
+        }
 
         // État actuel (utilise le cache maintenant)
         const estActif = await configurationService.isModuleActive(moduleNom, etablissementId);

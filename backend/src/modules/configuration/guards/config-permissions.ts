@@ -71,13 +71,65 @@ export const CONFIG_ROLE_PERMISSIONS: Record<string, ConfigPermission[]> = {
         ConfigPermission.CONFIG_HISTORY_VIEW,
     ],
 
-    // Autres rôles : aucune permission de configuration
+    // Direction d'établissement
+    PROVISEUR: [
+        ConfigPermission.CONFIG_APP_VIEW,
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+        ConfigPermission.CONFIG_HISTORY_VIEW,
+    ],
+    PRINCIPAL: [
+        ConfigPermission.CONFIG_APP_VIEW,
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+        ConfigPermission.CONFIG_HISTORY_VIEW,
+    ],
+    DIRECTEUR: [
+        ConfigPermission.CONFIG_APP_VIEW,
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+        ConfigPermission.CONFIG_HISTORY_VIEW,
+    ],
+    CENSEUR: [
+        ConfigPermission.CONFIG_APP_VIEW,
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+    ],
+    DIRECTEUR_ADJOINT: [
+        ConfigPermission.CONFIG_APP_VIEW,
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+        ConfigPermission.CONFIG_HISTORY_VIEW,
+    ],
+    RESPONSABLE_PEDAGOGIQUE: [
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+    ],
+
+    // Personnel technique (accès limité)
+    TECHNICIEN_INFO: [
+        ConfigPermission.CONFIG_MODULE_VIEW,
+        ConfigPermission.CONFIG_PARAM_VIEW,
+    ],
+
+    // Autres rôles : aucune permission de configuration par défaut
 };
 
 /**
- * Vérifie si un rôle a une permission de configuration
+ * Vérifie si un rôle ou un ensemble de permissions contient une permission de configuration.
+ * Vérifie d'abord les permissions dynamiques (JWT/DB), puis le mapping statique par rôle.
  */
-export function hasConfigPermission(role: string, permission: ConfigPermission): boolean {
+export function hasConfigPermission(
+    role: string,
+    permission: ConfigPermission,
+    userPermissions?: string[]
+): boolean {
+    // Vérifier les permissions dynamiques (assignées via RBAC en DB)
+    if (userPermissions && userPermissions.includes(permission)) {
+        return true;
+    }
+
+    // Fallback au mapping statique par rôle
     const rolePermissions = CONFIG_ROLE_PERMISSIONS[role];
     if (!rolePermissions) return false;
     return rolePermissions.includes(permission);

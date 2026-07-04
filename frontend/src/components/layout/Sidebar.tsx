@@ -444,32 +444,54 @@ export function Sidebar() {
             {/* Logo et slogan de l'établissement (en bas de la sidebar) */}
             {!isCollapsed && etablissement && (
                 <div className="border-t border-[var(--color-bordure)] p-2">
-                    <div className="flex flex-col items-center gap-1">
-                        {/* Badge année scolaire active */}
-                        {anneeActive && (
-                            <Badge
-                                variant="success"
-                                size="xs"
-                                dot
-                                className="w-full justify-center"
-                                title={`Année en cours : ${anneeActive.libelle}`}
-                            >
-                                <CalendarDays className="h-3 w-3" />
-                                {anneeActive.libelle}
-                            </Badge>
-                        )}
-                        {periodeActive && (
-                            <Badge
-                                variant="default"
-                                size="xs"
-                                dot
-                                className="w-full justify-center"
-                                title={`Période en cours : ${periodeActive.nom} (${new Date(periodeActive.dateDebut).toLocaleDateString('fr-FR')} - ${new Date(periodeActive.dateFin).toLocaleDateString('fr-FR')})`}
-                            >
-                                <Calendar className="h-3 w-3" />
-                                {periodeActive.nom}
-                            </Badge>
-                        )}
+                    <div className="flex flex-col items-center gap-1.5">
+                        {/* Indicateur unifié : Année + Période en cours */}
+                        <div className="w-full">
+                            <div className="flex flex-col gap-1">
+                                {/* Année scolaire — toujours affichée si active */}
+                                {anneeActive && (
+                                    <div className="relative" data-tooltip="Année en cours">
+                                        <Badge
+                                            variant="success"
+                                            size="xs"
+                                            dot
+                                            className="w-full justify-center group"
+                                            title={`Année en cours : ${anneeActive.libelle}`}
+                                        >
+                                            <CalendarDays className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                            <span className="truncate" style={{ minWidth: 0 }}>{anneeActive.libelle}</span>
+                                        </Badge>
+                                        {/* Indicateur de transition vers la période */}
+                                        {periodeActive && (
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 hidden group-hover:block group-focus-within:block" aria-hidden="true">
+                                                <div className="w-px h-1.5 bg-[var(--color-success)]/30" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                {/* Période en cours — affichée seulement si dispo */}
+                                {periodeActive && (
+                                    <div className="relative" data-tooltip="Période en cours">
+                                        <Badge
+                                            variant="default"
+                                            size="xs"
+                                            dot
+                                            className="w-full justify-center"
+                                            title={`Période en cours : ${periodeActive.nom} — ${new Date(periodeActive.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })} au ${new Date(periodeActive.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })}`}
+                                        >
+                                            <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                            <span className="truncate" style={{ minWidth: 0 }}>{periodeActive.nom}</span>
+                                        </Badge>
+                                    </div>
+                                )}
+                                {!anneeActive && !periodeActive && (
+                                    <Badge variant="outline" size="xs" className="w-full justify-center text-[var(--color-texte-secondaire)]">
+                                        <CalendarDays className="h-3 w-3" />
+                                        Aucune année active
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
 
                         {logoEtablissement ? (
                             <img
