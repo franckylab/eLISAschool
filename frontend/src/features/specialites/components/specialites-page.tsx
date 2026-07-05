@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, BookOpen, Hash } from 'lucide-react';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
@@ -39,6 +40,7 @@ interface SpecialiteFormData {
 }
 
 export function SpecialitesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const { data: filieres } = useToutesFilieres();
     
@@ -123,7 +125,7 @@ export function SpecialitesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => {/* Voir détails */},
+                    onClick: () => navigate({ to: '/specialites/$id', params: { id: s.id } }),
                     variant: 'info' as const,
                 },
                 {

@@ -13,3 +13,4 @@ export * from './hooks/use-eleves';
 
 // Components
 export { ElevesPage } from './components/eleves-page';
+export { EleveDetailPage } from './components/eleve-detail-page';

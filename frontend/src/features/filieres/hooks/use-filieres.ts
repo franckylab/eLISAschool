@@ -65,6 +65,25 @@ export function useFilieres(filtres: FiliereFiltres = {}) {
     });
 }
 
+export function useFilieresByCycle(cycleId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...FILIERES_KEYS.all, 'cycle', cycleId],
+        queryFn: async () => {
+            const response = await apiClient.get<PaginatedResult<Filiere>>('/api/filieres', {
+                cycleId,
+                limit: 100,
+                sortBy: 'nom',
+                sortOrder: 'ASC',
+            });
+            const result = (response as any).data as PaginatedResult<Filiere>;
+            return result?.items || [];
+        },
+        enabled: !!cycleId && isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
 export function useToutesFilieres() {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
@@ -88,16 +107,13 @@ export function useFiliere(id: string) {
     return useQuery({
         queryKey: FILIERES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{
-                success: boolean;
-                data: Filiere;
-            }>(`/api/filieres/${id}`);
+            const response = await apiClient.get<Filiere>(`/api/filieres/${id}`);
 
-            if (!response.data?.success) {
+            if (!response.data) {
                 throw new Error('Filière non trouvée');
             }
 
-            return response.data?.data;
+            return response.data;
         },
         enabled: isAuthenticated && !!id,
         staleTime: 3 * 60 * 1000, // 3 minutes

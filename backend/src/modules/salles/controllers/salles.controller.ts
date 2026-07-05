@@ -87,6 +87,29 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
     }
 });
 
+// Statistiques détaillées d'une salle spécifique
+router.get('/:id/stats', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        const stats = await salleService.getSalleStats(id, req.utilisateur?.etablissementId!, anneeScolaireId);
+        res.json({ success: true, data: stats });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Classes liées à une salle
+router.get('/:id/classes', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const classes = await salleService.getClassesBySalle(id, req.utilisateur?.etablissementId!);
+        res.json({ success: true, data: classes });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createSalleSchema, req.body);

@@ -26,6 +26,7 @@ import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import { SalleSelect } from '@/features/salles/components/SalleSelect';
+import type { Salle } from '@/features/salles/types/salle.types';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
@@ -89,9 +90,16 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const [instanceData, setInstanceData] = useState<CreerClasseInstanceDto>({
         anneeScolaireId: classe?.anneeScolaireId || '',
         professeurPrincipalId: classe?.professeurPrincipalId || null,
-        salleId: classe?.salleId || '',
+        sallePrincipaleId: classe?.sallePrincipaleId || '',
         effectifMax: classe?.effectifMax || 50,
     });
+
+    const [selectedCapacite, setSelectedCapacite] = useState<number | null>(
+        classe?.salle?.capacite || null
+    );
+    const [selectedSalleNom, setSelectedSalleNom] = useState<string | null>(
+        classe?.salle?.nom || null
+    );
 
     // Initialisation en mode édition
     useEffect(() => {
@@ -109,9 +117,10 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
             setInstanceData({
                 anneeScolaireId: classe.anneeScolaireId || '',
                 professeurPrincipalId: classe.professeurPrincipalId || null,
-                salleId: classe.salleId || '',
+                sallePrincipaleId: classe.sallePrincipaleId || '',
                 effectifMax: classe.effectifMax || 50,
             });
+            setSelectedCapacite(classe?.salle?.capacite || null);
         }
     }, [classe, mode]);
 
@@ -204,16 +213,16 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const handleSubmit = async () => {
         try {
             if (mode === 'creation') {
-                // En création, on envoie les données combinées (modèle + instance)
                 await creerClasse.mutateAsync({
                     ...modeleData,
                     ...instanceData,
                 } as CreerClasseCompletDto);
             } else if (classe) {
-                // En édition, on met à jour le modèle permanent
                 await modifierClasse.mutateAsync({
                     id: classe.id,
                     ...modeleData,
+                    sallePrincipaleId: instanceData.sallePrincipaleId || null,
+                    effectifMax: instanceData.effectifMax,
                 });
             }
             onSuccess();
@@ -245,45 +254,49 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         }
     };
 
+    const handleSalleChange = (salleId: string, salle?: Salle) => {
+        setInstanceData(prev => ({
+            ...prev,
+            sallePrincipaleId: salleId,
+            effectifMax: salle ? salle.capacite : (prev.effectifMax || 50),
+        }));
+        setSelectedCapacite(salle?.capacite || null);
+        setSelectedSalleNom(salle?.nom || null);
+        if (erreurs.anneeScolaireId) {
+            setErreurs(prev => {
+                const next = { ...prev };
+                delete next.anneeScolaireId;
+                return next;
+            });
+        }
+    };
+
     const titre = mode === 'creation'
         ? t('formulaire.creerTitre')
         : t('formulaire.modifierTitre');
 
     const description = mode === 'creation'
         ? t('formulaire.creerDescription', { etape, total: 3 })
-        : t('formulaire.modifierDescription');
+        : `${t('formulaire.modifierDescription')} — ${t('formulaire.etape')} ${etape}/3`;
 
     // Footer dynamique selon l'étape
     const footer = (() => {
-        // Étape 1 : Annuler + Suivant
-        if (mode !== 'creation' || etape === 1) {
+        if (etape === 1) {
             return (
                 <>
                     <ElisaButton variant="outline" onClick={onCancel}>
                         {t('boutons.annuler')}
                     </ElisaButton>
-                    {mode === 'creation' ? (
-                        <ElisaButton
-                            variant="primary"
-                            onClick={allerEtape2}
-                            icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        >
-                            {t('boutons.suivant')}
-                        </ElisaButton>
-                    ) : (
-                        <ElisaButton
-                            variant="primary"
-                            isLoading={isLoading}
-                            icon={<Save className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                            onClick={handleSubmit}
-                        >
-                            {t('boutons.enregistrer')}
-                        </ElisaButton>
-                    )}
+                    <ElisaButton
+                        variant="primary"
+                        onClick={allerEtape2}
+                        icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                    >
+                        {t('boutons.suivant')}
+                    </ElisaButton>
                 </>
             );
         }
-        // Étape 2 : Annuler + Précédent + Suivant
         if (etape === 2) {
             return (
                 <>
@@ -307,7 +320,6 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                 </>
             );
         }
-        // Étape 3 : Annuler + Précédent + Confirmer création
         return (
             <>
                 <ElisaButton variant="outline" onClick={onCancel}>
@@ -326,7 +338,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     icon={<CheckCircle2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                     onClick={handleSubmit}
                 >
-                    {t('boutons.confirmer')}
+                    {mode === 'creation' ? t('boutons.confirmer') : t('boutons.enregistrer')}
                 </ElisaButton>
             </>
         );
@@ -342,9 +354,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
             footer={footer}
         >
             <div className="space-y-[var(--space-md)]">
-                {/* Indicateur d'étape (mode création) */}
-                {mode === 'creation' && (
-                    <div className="flex items-center gap-[var(--gap-sm)] mb-[var(--space-md)]">
+                <div className="flex items-center gap-[var(--gap-sm)] mb-[var(--space-md)]">
                         {/* Étape 1 */}
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
                             etape >= 1
@@ -372,7 +382,6 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             <CheckCircle2 className="w-4 h-4" />
                         </div>
                     </div>
-                )}
 
                 {/* Étape 1 : Modèle de classe */}
                 {(mode === 'edition' || etape === 1) && (
@@ -491,8 +500,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     </div>
                 )}
 
-                {/* Étape 2 : Instance annuelle (mode création uniquement) */}
-                {mode === 'creation' && etape === 2 && (
+                {/* Étape 2 : Instance annuelle */}
+                {etape === 2 && (
                     <div className="space-y-[var(--space-md)]">
                         <h3
                             className="font-semibold text-[var(--color-text-primary)]"
@@ -503,41 +512,58 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
 
                         {/* Année scolaire et Salle */}
                         <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaSelect
-                                label={t('champs.anneeScolaire')}
-                                value={instanceData.anneeScolaireId || ''}
-                                onValueChange={(value) => handleChangeInstance('anneeScolaireId', value)}
-                                error={erreurs.anneeScolaireId}
-                                options={optionsAnneesScolaires}
-                                placeholder={t('champs.selectionnerAnnee')}
-                                required
-                            />
+                            {mode === 'creation' ? (
+                                <ElisaSelect
+                                    label={t('champs.anneeScolaire')}
+                                    value={instanceData.anneeScolaireId || ''}
+                                    onValueChange={(value) => handleChangeInstance('anneeScolaireId', value)}
+                                    error={erreurs.anneeScolaireId}
+                                    options={optionsAnneesScolaires}
+                                    placeholder={t('champs.selectionnerAnnee')}
+                                    required
+                                />
+                            ) : (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">{t('champs.anneeScolaire')}</label>
+                                    <div className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700">
+                                        {classe?.anneeScolaire?.libelle || '-'}
+                                    </div>
+                                </div>
+                            )}
                             <SalleSelect
-                                value={instanceData.salleId || ''}
-                                onChange={(value) => handleChangeInstance('salleId', value)}
+                                value={instanceData.sallePrincipaleId || ''}
+                                onChange={handleSalleChange}
                                 label={t('champs.sallePrincipale')}
                             />
                         </div>
 
                         {/* Effectif max */}
                         <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaInput
-                                label={t('champs.effectifMax')}
-                                type="number"
-                                value={instanceData.effectifMax?.toString() || '50'}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
-                                min="1"
-                                max="100"
-                                hint={t('champs.effectifMaxHint')}
-                            />
+                            <div className="space-y-1">
+                                {selectedCapacite && (
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                                            Capacité salle: {selectedCapacite} places
+                                        </span>
+                                    </div>
+                                )}
+                                <ElisaInput
+                                    label={t('champs.effectifMax')}
+                                    type="number"
+                                    value={instanceData.effectifMax?.toString() || '50'}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
+                                    min="1"
+                                    max={selectedCapacite || 200}
+                                    hint={selectedCapacite ? `Limitée par la capacité de la salle (max ${selectedCapacite})` : t('champs.effectifMaxHint')}
+                                />
+                            </div>
                         </div>
-
 
                     </div>
                 )}
 
-                {/* Étape 3 : Résumé complet + Confirmation (mode création uniquement) */}
-                {mode === 'creation' && etape === 3 && (
+                {/* Étape 3 : Résumé complet + Confirmation */}
+                {etape === 3 && (
                     <div className="space-y-[var(--space-md)]">
                         {/* Message de confirmation */}
                         <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-dominant-600)]/30 bg-[var(--color-dominant-600)]/5 p-[var(--space-md)]">
@@ -546,7 +572,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 className="text-[var(--color-text-primary)]"
                                 style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
                             >
-                                {t('formulaire.confirmMessage')}
+                                {mode === 'creation' ? t('formulaire.confirmMessage') : 'Vérifiez les modifications avant d\'enregistrer'}
                             </p>
                         </div>
 
@@ -614,12 +640,18 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.anneeScolaire')}</dt>
                                     <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {anneesScolaires.find((a: { id: string; libelle: string }) => a.id === instanceData.anneeScolaireId)?.libelle || '-'}
+                                        {mode === 'creation'
+                                            ? anneesScolaires.find((a: { id: string; libelle: string }) => a.id === instanceData.anneeScolaireId)?.libelle || '-'
+                                            : classe?.anneeScolaire?.libelle || '-'
+                                        }
                                     </dd>
                                 </div>
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.sallePrincipale')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.salleId || '-'}</dd>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">
+                                        {selectedSalleNom || '-'}
+                                        {selectedCapacite && ` (${selectedCapacite} places)`}
+                                    </dd>
                                 </div>
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>

@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ClasseAnnee, StatutClasseAnnee } from '../entities/classe-annee.entity';
 import { CreateClasseAnneeDto, UpdateClasseAnneeDto } from '../dto/classes.dto';
+import { Salle } from '@modules/salles/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
@@ -49,11 +50,22 @@ export class ClassesAnneesService {
             );
         }
 
+        let effectifMax = dto.effectifMax ?? 50;
+
+        if (dto.sallePrincipaleId) {
+            const salleRepo = AppDataSource.getRepository(Salle);
+            const salle = await salleRepo.findOne({ where: { id: dto.sallePrincipaleId } });
+            if (salle && effectifMax > salle.capacite) {
+                effectifMax = salle.capacite;
+            }
+        }
+
         const classeAnnee = this.classeAnneeRepo.create({
             classeId: dto.classeId,
             anneeScolaireId: dto.anneeScolaireId,
             professeurPrincipalId: dto.professeurPrincipalId ?? undefined,
-            effectifMax: dto.effectifMax ?? 50,
+            sallePrincipaleId: dto.sallePrincipaleId ?? undefined,
+            effectifMax,
             notes: dto.notes,
             etablissementId,
             statut: StatutClasseAnnee.ACTIVE,
@@ -166,7 +178,38 @@ export class ClassesAnneesService {
      */
     async update(id: string, dto: UpdateClasseAnneeDto): Promise<ClasseAnnee> {
         const classeAnnee = await this.findOne(id);
-        Object.assign(classeAnnee, dto);
+
+        if (dto.sallePrincipaleId !== undefined) {
+            classeAnnee.sallePrincipaleId = dto.sallePrincipaleId || undefined;
+            if (dto.sallePrincipaleId) {
+                const salle = await AppDataSource.getRepository(Salle).findOne({
+                    where: { id: dto.sallePrincipaleId },
+                });
+                if (salle && (dto.effectifMax === undefined || dto.effectifMax > salle.capacite)) {
+                    classeAnnee.effectifMax = salle.capacite;
+                }
+            }
+        }
+
+        if (dto.effectifMax !== undefined) {
+            if (classeAnnee.sallePrincipaleId) {
+                const salle = await AppDataSource.getRepository(Salle).findOne({
+                    where: { id: classeAnnee.sallePrincipaleId },
+                });
+                if (salle && dto.effectifMax > salle.capacite) {
+                    throw new AppError(
+                        `L'effectif max (${dto.effectifMax}) dépasse la capacité de la salle (${salle.capacite})`,
+                        400,
+                        'EFFECTIF_EXCEEDS_CAPACITE'
+                    );
+                }
+            }
+            classeAnnee.effectifMax = dto.effectifMax;
+        }
+
+        if (dto.professeurPrincipalId !== undefined) classeAnnee.professeurPrincipalId = dto.professeurPrincipalId || undefined;
+        if (dto.notes !== undefined) classeAnnee.notes = dto.notes;
+
         await this.classeAnneeRepo.save(classeAnnee);
         logger.info(`Classe-année mise à jour: ${classeAnnee.id}`);
         return classeAnnee;
@@ -216,6 +259,7 @@ export class ClassesAnneesService {
                 classeId: classeSource.classeId,
                 anneeScolaireId: anneeDestinationId,
                 etablissementId,
+                sallePrincipaleId: classeSource.sallePrincipaleId,
                 effectifMax: classeSource.effectifMax,
                 effectifActuel: 0,
                 actif: true,

@@ -7,8 +7,9 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, FileText, GraduationCap } from 'lucide-react';
+import { Plus, FileText, GraduationCap, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -25,6 +26,7 @@ import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { ExamenNationalFormModal } from './examen-national-form-modal';
 
 export function ExamensNationauxPage() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -132,6 +134,35 @@ export function ExamensNationauxPage() {
                     {examen.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            className: 'text-right',
+            renderActions: (e) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: '/examens-nationaux/$id', params: { id: e.id } }),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => { setExamenToEdit(e); setShowFormModal(true); },
+                    permission: 'examens-nationaux:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setExamenToDelete(e),
+                    permission: 'examens-nationaux:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

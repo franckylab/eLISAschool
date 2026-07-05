@@ -203,7 +203,7 @@ export function createApp(): Application {
     }) as any);
 
     // ETag pour le cache HTTP
-    app.set('etag', 'strong');
+    app.set('etag', false);
 
     // Parsing JSON avec limite de taille
     app.use(express.json({ limit: '10mb' }));
@@ -336,6 +336,12 @@ export function createApp(): Application {
     // Attache automatiquement l'etablissementId depuis le JWT
     // Les SUPER_ADMIN peuvent accéder à tous les établissements
     app.use('/api/', tenantMiddleware);
+
+    // Désactiver le cache navigateur pour les routes API (React Query gère le cache applicatif)
+    app.use('/api/', (req, res, next) => {
+        res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+        next();
+    });
 
     // ==================================
     // Montage des routes des modules

@@ -19,6 +19,9 @@ import type {
     FiltresSalles,
     StatistiquesSalles,
     PaginationResponse,
+    SalleStats,
+    CreneauEmploiDuTemps,
+    ClasseLiee,
 } from '../types/salle.types';
 
 const SALLES_KEYS = {
@@ -26,6 +29,9 @@ const SALLES_KEYS = {
     detail: (id: string) => ['salles', id] as const,
     disponibles: () => ['salles', 'disponibles'] as const,
     stats: () => ['salles', 'stats'] as const,
+    salleStats: (id: string) => ['salles', id, 'stats'] as const,
+    salleEmploiDuTemps: (id: string) => ['salles', id, 'emploi-du-temps'] as const,
+    salleClasses: (id: string) => ['salles', id, 'classes'] as const,
 };
 
 // ==================================
@@ -111,6 +117,54 @@ export function useStatistiquesSalles() {
     });
 }
 
+export function useSalleStats(salleId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: SALLES_KEYS.salleStats(salleId),
+        queryFn: async () => {
+            const response = await apiClient.get<SalleStats>(`/api/salles/${salleId}/stats`);
+            const data = response.data;
+            if (!data) throw new Error('Impossible de charger les statistiques');
+            return data;
+        },
+        enabled: isAuthenticated && !!salleId,
+        staleTime: 3 * 60 * 1000,
+    });
+}
+
+export function useSalleEmploiDuTemps(salleId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: SALLES_KEYS.salleEmploiDuTemps(salleId),
+        queryFn: async () => {
+            const response = await apiClient.get<CreneauEmploiDuTemps[]>(
+                `/api/emploi-du-temps/plannings/salle/${salleId}`
+            );
+            const data = response.data;
+            return data || [];
+        },
+        enabled: isAuthenticated && !!salleId,
+        staleTime: 2 * 60 * 1000,
+    });
+}
+
+export function useSalleClasses(salleId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: SALLES_KEYS.salleClasses(salleId),
+        queryFn: async () => {
+            const response = await apiClient.get<ClasseLiee[]>(`/api/salles/${salleId}/classes`);
+            const data = response.data;
+            return data || [];
+        },
+        enabled: isAuthenticated && !!salleId,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
 // ==================================
 // Hooks de mutation
 // ==================================
@@ -148,6 +202,9 @@ export function useModifierSalle() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['salles'] });
             queryClient.invalidateQueries({ queryKey: SALLES_KEYS.detail(variables.id) });
+            queryClient.invalidateQueries({ queryKey: SALLES_KEYS.salleStats(variables.id) });
+            queryClient.invalidateQueries({ queryKey: SALLES_KEYS.salleEmploiDuTemps(variables.id) });
+            queryClient.invalidateQueries({ queryKey: SALLES_KEYS.salleClasses(variables.id) });
             toast.success('Salle modifiée avec succès');
         },
         onError: (error: any) => {

@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Building2, Users, MapPin, BarChart3 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Building2, Users, MapPin, BarChart3, CheckCircle, Wrench, AlertCircle } from 'lucide-react';
 import { useSalles, useSupprimerSalle, useStatistiquesSalles } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle, FiltresSalles, Salle } from '../types/salle.types';
-import { CustomModal } from '@/components/modals/CustomModal';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { SalleFormModal } from '../components/SalleFormModal';
 import { DataTable } from '@/components/ui/DataTable';
@@ -34,7 +34,12 @@ const STATUT_SALLE_LABELS: Record<StatutSalle, string> = {
 const getTypeLabel = (type: TypeSalle): string => TYPE_SALLE_LABELS[type] || type;
 const getStatutLabel = (statut: StatutSalle): string => STATUT_SALLE_LABELS[statut] || statut;
 
+function Skeleton({ className }: { className?: string }) {
+    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
+}
+
 export function SallesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
 
     const [filtres, setFiltres] = useState<FiltresSalles>({
@@ -118,13 +123,17 @@ export function SallesPage() {
             header: 'Statut',
             render: (s) => {
                 const displayStatut = !s.disponible ? StatutSalle.INDISPONIBLE : s.statut;
+                const icon = displayStatut === StatutSalle.DISPONIBLE ? CheckCircle
+                    : displayStatut === StatutSalle.EN_MAINTENANCE ? Wrench : AlertCircle;
                 const colorMap = {
                     [StatutSalle.DISPONIBLE]: 'bg-green-100 text-green-800',
                     [StatutSalle.EN_MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
                     [StatutSalle.INDISPONIBLE]: 'bg-red-100 text-red-800',
                 };
+                const Icon = icon;
                 return (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[displayStatut]}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[displayStatut]}`}>
+                        <Icon className="h-3.5 w-3.5" />
                         {getStatutLabel(displayStatut)}
                     </span>
                 );
@@ -139,7 +148,7 @@ export function SallesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => { window.location.href = `/salles/${s.id}`; },
+                    onClick: () => navigate({ to: '/salles/$salleId', params: { salleId: s.id } }),
                     variant: 'info' as const,
                 },
                 ...(hasPermission('config:edit') ? [
@@ -161,100 +170,117 @@ export function SallesPage() {
         },
     ];
 
-    const StatCards = useMemo(() => {
-        if (statsLoading || !stats) return null;
-        const cards = [
-            { icon: <Building2 className="h-6 w-6 text-blue-600" />, label: 'Total salles', value: stats.total, color: 'bg-blue-50' },
-            { icon: <Users className="h-6 w-6 text-green-600" />, label: 'Disponibles', value: stats.disponibles, color: 'bg-green-50' },
-            { icon: <MapPin className="h-6 w-6 text-orange-600" />, label: 'Capacité totale', value: stats.capaciteTotale?.toLocaleString() || 0, color: 'bg-orange-50' },
-            { icon: <BarChart3 className="h-6 w-6 text-purple-600" />, label: 'Taux occupation', value: `${stats.total > 0 ? Math.round(((stats.total - stats.disponibles) / stats.total) * 100) : 0}%`, color: 'bg-purple-50' },
-        ];
+    const statCards = [
+        { icon: Building2, label: 'Total salles', value: stats?.total ?? 0, color: 'text-blue-600', iconBg: 'bg-blue-100' },
+        { icon: CheckCircle, label: 'Disponibles', value: stats?.disponibles ?? 0, color: 'text-green-600', iconBg: 'bg-green-100' },
+        { icon: Users, label: 'Capacité totale', value: stats?.capaciteTotale?.toLocaleString() ?? 0, color: 'text-orange-600', iconBg: 'bg-orange-100' },
+        { icon: BarChart3, label: 'Taux occupation', value: stats && stats.total > 0 ? `${Math.round(((stats.total - stats.disponibles) / stats.total) * 100)}%` : '0%', color: 'text-purple-600', iconBg: 'bg-purple-100' },
+    ];
+
+    if (isLoading && salles.length === 0) {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {cards.map((card) => (
-                    <div key={card.label} className={`${card.color} rounded-xl p-4 shadow-sm border border-gray-200`}>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white rounded-lg shadow-sm">{card.icon}</div>
-                            <div>
-                                <p className="text-sm text-gray-600">{card.label}</p>
-                                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+                <Skeleton className="h-10 w-56 mb-8" />
+                <div className="grid grid-cols-4 gap-4 mb-8">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+                </div>
+                <Skeleton className="h-96 w-full" />
             </div>
         );
-    }, [stats, statsLoading]);
+    }
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <motion.div
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gestion des Salles</h1>
-                    <p className="text-sm text-gray-500 mt-1">{pagination?.total || 0} salle(s)</p>
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-8 mb-8">
+                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+                        <Building2 className="w-full h-full" />
+                    </div>
+                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-5">
+                            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
+                                <Building2 className="h-10 w-10 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold text-white mb-1">Gestion des Salles</h1>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-emerald-200">{pagination?.total || 0} salle(s)</span>
+                                    <span className="text-emerald-300">•</span>
+                                    <span className="text-sm text-emerald-200">{stats?.capaciteTotale || 0} places au total</span>
+                                </div>
+                            </div>
+                        </div>
+                        {hasPermission('config:edit') && (
+                            <ElisaButton
+                                onClick={() => { setSalleToEdit(null); setShowFormModal(true); }}
+                                icon={<Plus className="h-4 w-4" />}
+                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+                            >
+                                Nouvelle salle
+                            </ElisaButton>
+                        )}
+                    </div>
                 </div>
-                {hasPermission('config:edit') && (
-                    <ElisaButton
-                        variant="primary"
-                        size="sm"
-                        icon={<Plus className="h-4 w-4" />}
-                        onClick={() => { setSalleToEdit(null); setShowFormModal(true); }}
-                    >
-                        Nouvelle salle
-                    </ElisaButton>
-                )}
-            </motion.div>
 
-            {StatCards}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                    {statCards.map((card) => (
+                        <motion.div
+                            key={card.label}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
+                                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">{card.label}</p>
+                        </motion.div>
+                    ))}
+                </div>
 
-            <DataTable
-                data={salles}
-                columns={colonnes}
-                isLoading={isLoading}
-                tableId="salles"
-                enableReordering
-                enablePinning
-                enableColumnVisibility
-                searchable
-                searchPlaceholder="Rechercher par nom, code ou localisation..."
-                onSearchChange={(search) => setFiltres((prev) => ({ ...prev, search, page: 1 }))}
-                disableClientSearch
-                pagination={pagination ? { page: pagination.page, limit: pagination.limit, total: pagination.total, totalPages: pagination.totalPages, hasNext: pagination.hasNext, hasPrev: pagination.hasPrev } : undefined}
-                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
-                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
-            />
+                <DataTable
+                    data={salles}
+                    columns={colonnes}
+                    isLoading={isLoading}
+                    tableId="salles"
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    searchable
+                    searchPlaceholder="Rechercher par nom, code ou localisation..."
+                    onSearchChange={(search) => setFiltres((prev) => ({ ...prev, search, page: 1 }))}
+                    disableClientSearch
+                    pagination={pagination ? {
+                        page: pagination.page,
+                        limit: pagination.limit,
+                        total: pagination.total,
+                        totalPages: pagination.totalPages,
+                        hasNext: pagination.hasNext,
+                        hasPrev: pagination.hasPrev,
+                    } : undefined}
+                    onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                    onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                />
 
-            {showFormModal && (
-                <CustomModal
+                <SalleFormModal
                     open={showFormModal}
-                    onOpenChange={(open) => {
-                        if (!open) { setShowFormModal(false); setSalleToEdit(null); }
-                    }}
-                    title={salleToEdit ? 'Modifier la salle' : 'Nouvelle salle'}
-                    description={salleToEdit ? 'Modifiez les informations de la salle' : 'Créez une nouvelle salle'}
-                    size="2xl"
-                >
-                    <SalleFormModal
-                        open={showFormModal}
-                        onClose={() => { setShowFormModal(false); setSalleToEdit(null); }}
-                        salleId={salleToEdit?.id}
-                    />
-                </CustomModal>
-            )}
+                    onClose={() => { setShowFormModal(false); setSalleToEdit(null); }}
+                    salleId={salleToEdit?.id}
+                />
 
-            <ConfirmationModal
-                isOpen={!!salleToDelete}
-                title="Confirmer la suppression"
-                message={`Êtes-vous sûr de vouloir supprimer la salle "${salleToDelete?.nom}" ? Cette action est irréversible.`}
-                confirmLabel="Supprimer"
-                variant="danger"
-                onConfirm={handleDelete}
-                onCancel={() => setSalleToDelete(null)}
-            />
+                <ConfirmationModal
+                    isOpen={!!salleToDelete}
+                    title="Confirmer la suppression"
+                    message={`Êtes-vous sûr de vouloir supprimer la salle "${salleToDelete?.nom}" ? Cette action est irréversible.`}
+                    confirmLabel="Supprimer"
+                    variant="danger"
+                    onConfirm={handleDelete}
+                    onCancel={() => setSalleToDelete(null)}
+                />
+            </motion.div>
         </div>
     );
 }

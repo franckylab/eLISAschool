@@ -1,37 +1,24 @@
-/**
- * ==================================
- * eLISAschool - Page Classes (Liste)
- * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
- *
- * Corrections :
- * - Responsive design complet (mobile → desktop)
- * - i18n complet (toutes les chaînes traduites)
- * - Variables CSS pour l'adaptabilité
- * - Ultra-responsivité (clamp, variables CSS)
- */
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Users, Edit, Trash2, Eye, Power } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Eye, Power, GraduationCap, School, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import { useClasses, useSupprimerClasse, useToggleActifClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import type { Classe, ClasseFiltres } from '../types/classe.types';
+
+function Skeleton({ className }: { className?: string }) {
+    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
+}
 
 export function ClassesPage() {
     const { t } = useTranslation('classes');
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const estMobile = useMediaQuery('(max-width: 767px)');
 
     const [filtres, setFiltres] = useState<ClasseFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
@@ -42,6 +29,16 @@ export function ClassesPage() {
 
     const { data, isLoading, error, refetch } = useClasses(filtres);
     const supprimer = useSupprimerClasse();
+
+    const computedStats = useMemo(() => {
+        const items = data?.items || [];
+        return {
+            total: data?.meta?.totalItems ?? 0,
+            actives: items.filter(c => c.actif).length,
+            effectifTotal: items.reduce((sum, c) => sum + (c.effectifActuel || 0), 0),
+            niveaux: new Set(items.map(c => c.niveauId)).size,
+        };
+    }, [data]);
     const toggleActif = useToggleActifClasse();
 
     const handleCreation = () => {
@@ -76,7 +73,6 @@ export function ClassesPage() {
         setClasseSelected(undefined);
     };
 
-    // Colonnes du tableau
     const colonnes: Column<Classe>[] = [
         {
             key: 'code',
@@ -85,8 +81,7 @@ export function ClassesPage() {
             render: (classe) => (
                 <button
                     onClick={() => handleVoirDetail(classe)}
-                    className="font-mono font-semibold text-[var(--color-dominant-600)] hover:underline cursor-pointer"
-                    style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                    className="font-mono font-semibold text-blue-600 hover:underline cursor-pointer"
                 >
                     {classe.code}
                 </button>
@@ -102,10 +97,8 @@ export function ClassesPage() {
                     onClick={() => handleVoirDetail(classe)}
                     className="hover:underline cursor-pointer text-left"
                 >
-                    <p className="font-medium" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}>
-                        {classe.nom}
-                    </p>
-                    <p className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.625rem, 0.58rem + 0.2vw, 0.75rem)' }}>
+                    <p className="font-medium text-gray-900 text-sm">{classe.nom}</p>
+                    <p className="text-xs text-gray-500">
                         {classe.niveau?.nom}
                         {classe.filiere && ` - ${classe.filiere.code}`}
                     </p>
@@ -119,8 +112,8 @@ export function ClassesPage() {
             className: 'text-center',
             render: (classe) => (
                 <div className="flex items-center justify-center gap-1">
-                    <Users className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)]" />
-                    <span className="font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                    <Users className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="font-medium text-sm text-gray-900">
                         {classe.effectifActuel || 0} / {classe.effectifMax || '∞'}
                     </span>
                 </div>
@@ -130,8 +123,8 @@ export function ClassesPage() {
             key: 'salle',
             header: t('colonnes.salle'),
             render: (classe) => (
-                <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                    {classe.salle?.nom || classe.salleId?.substring(0, 8) || '-'}
+                <span className="text-sm text-gray-700">
+                    {classe.salle?.nom || classe.sallePrincipaleId?.substring(0, 8) || '-'}
                 </span>
             ),
         },
@@ -139,7 +132,7 @@ export function ClassesPage() {
             key: 'principal',
             header: t('colonnes.principal'),
             render: (classe) => (
-                <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                <span className="text-sm text-gray-700">
                     {classe.professeurPrincipal
                         ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
                         : '-'}
@@ -152,10 +145,10 @@ export function ClassesPage() {
             className: 'text-center',
             render: (classe) => {
                 const typeColors: Record<string, string> = {
-                    NORMALE: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                    BILINGUE: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-                    RENFORCEE: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-                    INTERNATIONALE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+                    NORMALE: 'bg-blue-100 text-blue-800',
+                    BILINGUE: 'bg-purple-100 text-purple-800',
+                    RENFORCEE: 'bg-orange-100 text-orange-800',
+                    INTERNATIONALE: 'bg-indigo-100 text-indigo-800',
                 };
                 const typeLabels: Record<string, string> = {
                     NORMALE: t('types.normale'),
@@ -181,7 +174,7 @@ export function ClassesPage() {
                     JOURNEE_COMPLETE: t('creneaux.journeeComplete'),
                 };
                 return (
-                    <span className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                    <span className="text-sm text-gray-500">
                         {creneauLabels[classe.creneauHoraire] || classe.creneauHoraire}
                     </span>
                 );
@@ -193,11 +186,12 @@ export function ClassesPage() {
             sortable: true,
             className: 'text-center',
             render: (classe) => (
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     classe.actif
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                 }`}>
+                    {classe.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                     {classe.actif ? t('statut.actif') : t('statut.inactif')}
                 </span>
             ),
@@ -241,126 +235,149 @@ export function ClassesPage() {
         },
     ];
 
-    // États de chargement et erreur
-    if (isLoading) {
+    const statCards = [
+        { icon: School, label: t('stats.total') || 'Total', value: computedStats.total, color: 'text-blue-600', iconBg: 'bg-blue-100' },
+        { icon: CheckCircle, label: t('stats.actives') || 'Actives', value: computedStats.actives, color: 'text-green-600', iconBg: 'bg-green-100' },
+        { icon: Users, label: t('stats.effectifTotal') || 'Effectif total', value: computedStats.effectifTotal, color: 'text-purple-600', iconBg: 'bg-purple-100' },
+        { icon: BookOpen, label: t('stats.niveaux') || 'Niveaux', value: computedStats.niveaux, color: 'text-amber-600', iconBg: 'bg-amber-100' },
+    ];
+
+    if (isLoading && !data?.items?.length) {
         return (
-            <div className="p-6">
-                <LoadingState message={t('chargement.liste')} />
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+                <Skeleton className="h-10 w-56 mb-8" />
+                <div className="grid grid-cols-4 gap-4 mb-8">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+                </div>
+                <Skeleton className="h-96 w-full" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="p-6">
-                <ErrorState
-                    message={error.message || t('erreurs.chargement')}
-                    onRetry={() => refetch()}
-                />
+            <div className="p-6 flex flex-col items-center justify-center min-h-[300px] gap-4">
+                <p className="text-red-600 font-medium">{error.message || t('erreurs.chargement')}</p>
+                <ElisaButton variant="outline" onClick={() => refetch()}>
+                    {t('boutons.retour')}
+                </ElisaButton>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-[var(--gap-lg)] p-[var(--space-md)] sm:p-[var(--space-lg)]">
-            {/* Header responsive */}
-            <motion.div
-                className={`flex ${estMobile ? 'flex-col gap-3' : 'flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'}`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1
-                        className="font-bold text-[var(--color-text-primary)]"
-                        style={{ fontSize: 'clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem)' }}
-                    >
-                        {t('titre')}
-                    </h1>
-                    <p
-                        className="text-[var(--color-text-secondary)] mt-1"
-                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                    >
-                        {data?.meta?.totalItems || 0} {t('sousTitre.classesActives')}
-                    </p>
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 mb-8">
+                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+                        <GraduationCap className="w-full h-full" />
+                    </div>
+                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-5">
+                            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
+                                <GraduationCap className="h-10 w-10 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold text-white mb-1">{t('titre')}</h1>
+                                <p className="text-sm text-blue-200">
+                                    {data?.meta?.totalItems || 0} {t('sousTitre.classesActives')}
+                                </p>
+                            </div>
+                        </div>
+                        {hasPermission('classes:create') && (
+                            <ElisaButton
+                                onClick={handleCreation}
+                                icon={<Plus className="h-4 w-4" />}
+                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+                            >
+                                {t('boutons.nouveau')}
+                            </ElisaButton>
+                        )}
+                    </div>
                 </div>
-                {hasPermission('classes:create') && (
-                    <ElisaButton
-                        variant="primary"
-                        size="sm"
-                        icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        onClick={handleCreation}
-                    >
-                        {t('boutons.nouveau')}
-                    </ElisaButton>
-                )}
-            </motion.div>
 
-            {/* Tableau des classes */}
-            <DataTable
-                tableId="classes"
-                data={data?.items || []}
-                columns={colonnes}
-                isLoading={isLoading}
-                enableReordering
-                enablePinning
-                enableColumnVisibility
-                searchPlaceholder={t('filtres.recherchePlaceholder')}
-                onSearchChange={(recherche) =>
-                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
-                }
-                disableClientSearch
-                pagination={data?.meta ? {
-                    page: data.meta.currentPage,
-                    limit: data.meta.itemsPerPage,
-                    total: data.meta.totalItems,
-                    totalPages: data.meta.totalPages,
-                    hasNext: data.meta.currentPage < data.meta.totalPages,
-                    hasPrev: data.meta.currentPage > 1,
-                } : undefined}
-                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
-                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
-            />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                    {statCards.map((card) => (
+                        <motion.div
+                            key={card.label}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
+                                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">{card.label}</p>
+                        </motion.div>
+                    ))}
+                </div>
 
-            {/* Modal Formulaire */}
-            {modalOpen && (
-                <ClasseFormModal
-                    mode={modeFormulaire}
-                    classe={classeSelected}
-                    onSuccess={handleSuccess}
-                    onCancel={() => setModalOpen(false)}
-                />
-            )}
-
-            {/* Modal Confirmation Suppression */}
-            <ConfirmationModal
-                isOpen={!!classeToDelete}
-                title={t('confirmations.supprimerTitre')}
-                message={t('confirmations.supprimerMessage', { nom: classeToDelete?.nom || '' })}
-                details={t('confirmations.supprimerDetails')}
-                variant="danger"
-                onConfirm={async () => {
-                    if (classeToDelete) {
-                        await supprimer.mutateAsync(classeToDelete.id);
-                        setClasseToDelete(null);
+                <DataTable
+                    tableId="classes"
+                    data={data?.items || []}
+                    columns={colonnes}
+                    isLoading={isLoading}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    searchPlaceholder={t('filtres.recherchePlaceholder')}
+                    onSearchChange={(recherche) =>
+                        setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                     }
-                }}
-                onCancel={() => setClasseToDelete(null)}
-                isLoading={supprimer.isPending}
-            />
+                    disableClientSearch
+                    pagination={data?.meta ? {
+                        page: data.meta.currentPage,
+                        limit: data.meta.itemsPerPage,
+                        total: data.meta.totalItems,
+                        totalPages: data.meta.totalPages,
+                        hasNext: data.meta.currentPage < data.meta.totalPages,
+                        hasPrev: data.meta.currentPage > 1,
+                    } : undefined}
+                    onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                    onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                />
 
-            {/* Modal Confirmation Toggle Actif */}
-            <ConfirmationModal
-                isOpen={!!classeToToggle}
-                title={classeToToggle?.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
-                message={classeToToggle?.actif
-                    ? t('confirmations.desactiverMessage', { nom: classeToToggle?.nom || '' })
-                    : t('confirmations.activerMessage', { nom: classeToToggle?.nom || '' })
-                }
-                variant={classeToToggle?.actif ? 'warning' : 'info'}
-                onConfirm={confirmToggleActif}
-                onCancel={() => setClasseToToggle(null)}
-                isLoading={toggleActif.isPending}
-            />
+                {modalOpen && (
+                    <ClasseFormModal
+                        mode={modeFormulaire}
+                        classe={classeSelected}
+                        onSuccess={handleSuccess}
+                        onCancel={() => setModalOpen(false)}
+                    />
+                )}
+
+                <ConfirmationModal
+                    isOpen={!!classeToDelete}
+                    title={t('confirmations.supprimerTitre')}
+                    message={t('confirmations.supprimerMessage', { nom: classeToDelete?.nom || '' })}
+                    details={t('confirmations.supprimerDetails')}
+                    variant="danger"
+                    onConfirm={async () => {
+                        if (classeToDelete) {
+                            await supprimer.mutateAsync(classeToDelete.id);
+                            setClasseToDelete(null);
+                        }
+                    }}
+                    onCancel={() => setClasseToDelete(null)}
+                    isLoading={supprimer.isPending}
+                />
+
+                <ConfirmationModal
+                    isOpen={!!classeToToggle}
+                    title={classeToToggle?.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
+                    message={classeToToggle?.actif
+                        ? t('confirmations.desactiverMessage', { nom: classeToToggle?.nom || '' })
+                        : t('confirmations.activerMessage', { nom: classeToToggle?.nom || '' })
+                    }
+                    variant={classeToToggle?.actif ? 'warning' : 'info'}
+                    onConfirm={confirmToggleActif}
+                    onCancel={() => setClasseToToggle(null)}
+                    isLoading={toggleActif.isPending}
+                />
+            </motion.div>
         </div>
     );
 }

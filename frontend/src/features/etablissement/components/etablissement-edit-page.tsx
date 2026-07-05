@@ -352,7 +352,7 @@ export function EtablissementEditPage() {
                                 variant="primary"
                                 size="sm"
                                 icon={<Edit className="h-4 w-4" />}
-                                onClick={() => window.location.href = `/etablissements/${id}?mode=edit`}
+                                onClick={() => navigate({ to: '/etablissements/$id', params: { id }, search: { mode: 'edit' } })}
                             >
                                 Modifier
                             </ElisaButton>
@@ -363,7 +363,7 @@ export function EtablissementEditPage() {
                             <ElisaButton
                                 variant="outline"
                                 size="sm"
-                                onClick={() => window.location.href = `/etablissements/${id}?mode=view`}
+                                onClick={() => navigate({ to: '/etablissements/$id', params: { id }, search: { mode: 'view' } })}
                             >
                                 Retour à la consultation
                             </ElisaButton>

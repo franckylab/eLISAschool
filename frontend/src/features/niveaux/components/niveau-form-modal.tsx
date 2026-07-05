@@ -10,7 +10,8 @@ import { useCreerNiveau, useModifierNiveau } from '../hooks/use-niveaux';
 import { useCycles } from '@/features/cycles/hooks/use-cycles';
 import type { Niveau } from '../types/niveau.types';
 
-export function NiveauFormModal({ niveau, onClose }: { niveau: Niveau | null; onClose: () => void }) {
+export function NiveauFormModal({ niveau, onClose, open = true }: { niveau: Niveau | null; onClose: () => void; open?: boolean }) {
+    if (!open) return null;
     const creer = useCreerNiveau();
     const modifier = useModifierNiveau();
     const { data: cycles } = useCycles({ page: 1, limit: 50, actif: true });

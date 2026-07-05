@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useParams } from '@tanstack/react-router';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Calendar, Clock, Trash2,
@@ -76,6 +76,7 @@ function calculerProgression(dateDebut: string, dateFin: string): number {
 }
 
 export function AnneeScolaireDetailPage() {
+    const navigate = useNavigate();
     const { id } = useParams({ from: '/_auth/annees-scolaires/$id' });
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
     const [confirmActiver, setConfirmActiver] = useState(false);
@@ -156,7 +157,7 @@ export function AnneeScolaireDetailPage() {
                 <p style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.125rem)' }} className="text-[var(--color-text-secondary)]">
                     Année scolaire non trouvée
                 </p>
-                <ElisaButton variant="primary" onClick={() => { window.location.href = '/annees-scolaires'; }}>
+                <ElisaButton variant="primary" onClick={() => navigate({ to: '/annees-scolaires' })}>
                     Retour à la liste
                 </ElisaButton>
             </div>
@@ -180,7 +181,7 @@ export function AnneeScolaireDetailPage() {
                             variant="ghost"
                             size="sm"
                             icon={<ArrowLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                            onClick={() => { window.location.href = '/annees-scolaires'; }}
+                            onClick={() => navigate({ to: '/annees-scolaires' })}
                         >
                             Retour
                         </ElisaButton>
@@ -564,7 +565,7 @@ export function AnneeScolaireDetailPage() {
                 onConfirm={async () => {
                     await activer.mutateAsync(id);
                     setConfirmActiver(false);
-                    window.location.href = '/annees-scolaires';
+                    navigate({ to: '/annees-scolaires' });
                 }}
                 onCancel={() => setConfirmActiver(false)}
                 isLoading={activer.isPending}
@@ -609,7 +610,7 @@ export function AnneeScolaireDetailPage() {
                 onConfirm={async () => {
                     await supprimer.mutateAsync(id);
                     setConfirmSupprimer(false);
-                    window.location.href = '/annees-scolaires';
+                    navigate({ to: '/annees-scolaires' });
                 }}
                 onCancel={() => setConfirmSupprimer(false)}
                 isLoading={supprimer.isPending}

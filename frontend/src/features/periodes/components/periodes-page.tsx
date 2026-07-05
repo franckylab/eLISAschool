@@ -25,6 +25,7 @@ import {
 } from '../hooks/use-periodes';
 import { useAnneesScolaires, useAnneeScolaireActive } from '@/features/annees-scolaires/hooks/use-annees-scolaires';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { useNavigate } from '@tanstack/react-router';
 import { usePermissions } from '@/hooks';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ModalCloturePeriode } from './modal-cloture-periode';
@@ -115,6 +116,7 @@ function aplatirArbre(
 }
 
 export function PeriodesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
 
     // Sélection année scolaire
@@ -190,7 +192,7 @@ export function PeriodesPage() {
         setModalClotureOpen(true);
     };
     const voirDetail = (p: PeriodeArbre) => {
-        window.location.href = `/periodes/${p.id}`;
+        navigate({ to: '/periodes/$id', params: { id: p.id } });
     };
     const openGestionCompositions = (p: PeriodeArbre) => {
         setPeriodeToCompose(arbreToPeriode(p));

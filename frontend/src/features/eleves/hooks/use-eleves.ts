@@ -52,7 +52,7 @@ export function useEleve(id: string) {
     return useQuery({
         queryKey: ELEVES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: Eleve }>(`/api/eleves/${id}`);
+            const response = await apiClient.get<Eleve>(`/api/eleves/${id}`);
             return response.data;
         },
         enabled: !!id,

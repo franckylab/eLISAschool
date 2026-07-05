@@ -23,7 +23,7 @@ const ONGLETS = ['informations', 'scolarite', 'finances', 'documents', 'historiq
 type OngletType = typeof ONGLETS[number];
 
 export function EleveDetailPage() {
-    const { id } = useParams({ from: '/_auth/eleves' });
+    const { id } = useParams({ from: '/_auth/eleves/$id' });
     const navigate = useNavigate();
     const { t } = useTranslation('eleves');
     const [ongletActif, setOngletActif] = useState<OngletType>('informations');

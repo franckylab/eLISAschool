@@ -34,7 +34,7 @@ export function EtablissementsPage() {
     };
 
     const handleVoirDetails = (etablissement: Etablissement) => {
-        window.location.href = `/etablissements/${etablissement.id}?mode=view`;
+        navigate({ to: '/etablissements/$id', params: { id: etablissement.id }, search: { mode: 'view' } });
     };
 
     const handleToggleActif = (etablissement: Etablissement) => {
@@ -160,7 +160,7 @@ export function EtablissementsPage() {
                     key: 'configurer',
                     icon: Edit,
                     label: 'Configurer',
-                    onClick: () => { window.location.href = `/etablissements/${etab.id}`; },
+                    onClick: () => navigate({ to: '/etablissements/$id', params: { id: etab.id } }),
                     permission: 'etablissements:edit',
                     variant: 'success' as const,
                 },

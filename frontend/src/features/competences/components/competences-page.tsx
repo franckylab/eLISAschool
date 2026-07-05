@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, BookOpen, GraduationCap, Layers, Target } from 'lucide-react';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
@@ -55,6 +56,7 @@ const DOMAINES = [
 ];
 
 export function CompetencesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const { data: niveaux } = useTousNiveaux();
     
@@ -165,7 +167,7 @@ export function CompetencesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => {/* Voir détails */},
+                    onClick: () => navigate({ to: '/competences/$id', params: { id: c.id } }),
                     variant: 'info' as const,
                 },
                 {

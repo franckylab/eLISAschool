@@ -35,6 +35,14 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
+// GET /api/niveaux/:id - Détail d'un niveau
+router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const niveau = await niveauxService.findOne(req.params.id, req.etablissementId!);
+        res.json({ success: true, data: niveau });
+    } catch (error) { next(error); }
+});
+
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createNiveauSchema, req.body);

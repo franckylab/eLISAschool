@@ -22,7 +22,7 @@ export const createClasseSchema = z.object({
     // Champs d'instance annuelle (optionnels — utilisés pour créer le ClasseAnnee)
     anneeScolaireId: z.string().uuid().optional(),
     professeurPrincipalId: z.string().uuid().nullable().optional(),
-    salleId: z.string().uuid('ID de la salle invalide').optional(),
+    sallePrincipaleId: z.string().uuid('ID de la salle invalide').optional(),
     effectifMax: z.number().int().min(1).max(200).optional(),
 });
 
@@ -48,6 +48,7 @@ export const createClasseAnneeSchema = z.object({
     anneeScolaireId: z.string().uuid(),
     etablissementId: z.string().uuid(),
     professeurPrincipalId: z.string().uuid().nullable().optional(),
+    sallePrincipaleId: z.string().uuid().nullable().optional(),
     effectifMax: z.number().int().min(1).default(50),
     notes: z.string().optional(),
 });

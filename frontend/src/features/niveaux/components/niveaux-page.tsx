@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { useNiveaux, useSupprimerNiveau } from '../hooks/use-niveaux';
@@ -17,6 +18,7 @@ import type { Niveau, NiveauFiltres } from '../types/niveau.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function NiveauxPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<NiveauFiltres>({ page: 1, limit: 20, recherche: '' });
     const [showFormModal, setShowFormModal] = useState(false);
@@ -76,7 +78,7 @@ export function NiveauxPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => {},
+                    onClick: () => navigate({ to: '/niveaux/$id', params: { id: n.id } }),
                     variant: 'info' as const,
                 },
                 {

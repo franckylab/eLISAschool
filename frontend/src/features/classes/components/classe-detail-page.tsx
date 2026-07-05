@@ -1,78 +1,71 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Classe
- * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
- *
- * Corrections :
- * - Propriétés cohérentes avec le type Classe
- * - ConfirmationModal au lieu de confirm() natif
- * - Bouton Modifier fonctionnel
- * - Modal d'affectation élève
- * - LoadingState standardisé
- * - Responsive design complet
- * - i18n complet
- */
-
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
     ArrowLeft, Users, BookOpen, MapPin,
-    Edit, Trash2, UserPlus, TrendingUp, Award, RefreshCw, Power
+    Edit, Trash2, UserPlus, TrendingUp, Award, RefreshCw, Power,
+    Calendar, CheckCircle, XCircle, AlertCircle,
+    GraduationCap, School,
 } from 'lucide-react';
 import { useClasse, useSupprimerClasse, useAffecterEleve, useElevesClasse, useReconcilierEffectif, useToggleActifClasse } from '../hooks/use-classes';
 import { useEleves } from '@/features/eleves/hooks/use-eleves';
 import { ClasseFormModal } from './classe-form-modal';
+import { ChangerSalleModal } from './changer-salle-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { DataTable, type Column } from '@/components/ui/DataTable';
-import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { usePermissions } from '@/hooks';
 import type { Eleve } from '@/features/eleves/types/eleve.types';
 
 type OngletActif = 'informations' | 'eleves' | 'statistiques';
 
-/**
- * Mapping créneau horaire enum → clé i18n
- */
 const creneauKey: Record<string, string> = {
     MATIN: 'matin',
     APRES_MIDI: 'apresMidi',
     JOURNEE_COMPLETE: 'journeeComplete',
 };
 
+function Skeleton({ className }: { className?: string }) {
+    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
+}
+
+function formatDateTime(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+    });
+}
+
 export function ClasseDetailPage() {
     const { t } = useTranslation('classes');
     const { id } = useParams({ from: '/_auth/classes/$id' });
     const navigate = useNavigate();
     const estMobile = useMediaQuery('(max-width: 767px)');
+    const { hasPermission } = usePermissions();
 
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
     const [modalEditionOpen, setModalEditionOpen] = useState(false);
     const [modalAffectationOpen, setModalAffectationOpen] = useState(false);
+    const [modalChangerSalleOpen, setModalChangerSalleOpen] = useState(false);
     const [classeToDelete, setClasseToDelete] = useState(false);
     const [classeToToggle, setClasseToToggle] = useState(false);
     const [pageEleves, setPageEleves] = useState(1);
     const [rechercheEleves, setRechercheEleves] = useState('');
 
-    // Queries
     const { data: classe, isLoading: loadingClasse, error: erreurClasse } = useClasse(id);
     const supprimer = useSupprimerClasse();
     const reconcilier = useReconcilierEffectif(id);
     const toggleActif = useToggleActifClasse();
 
-    // Élèves via l'endpoint dédié avec pagination backend et statistiques
     const { data: elevesClasseData, isLoading: loadingEleves } = useElevesClasse(id, pageEleves, 20, rechercheEleves || undefined);
     const eleves = (elevesClasseData?.eleves?.items || []) as Eleve[];
     const statsEleves = elevesClasseData?.stats;
     const paginationEleves = elevesClasseData?.eleves?.meta;
 
-    // Statistiques calculées depuis les données backend
     const statsSexe = useMemo(() => {
         if (statsEleves) return statsEleves;
         return { garcons: 0, filles: 0, total: 0, pourcentageGarcons: 0, pourcentageFilles: 0 };
@@ -80,7 +73,6 @@ export function ClasseDetailPage() {
 
     const tauxOccupation = useMemo(() => {
         if (!classe?.effectifMax) return null;
-        // Privilégier le COUNT réel, fallback sur le compteur stocké
         const effectif = statsEleves?.total ?? classe.effectifActuel ?? 0;
         return {
             pourcentage: (effectif / classe.effectifMax) * 100,
@@ -89,7 +81,6 @@ export function ClasseDetailPage() {
         };
     }, [classe, statsEleves]);
 
-    // Colonnes du tableau des élèves
     const colonnesEleves: Column<Eleve>[] = [
         {
             key: 'matricule',
@@ -102,7 +93,7 @@ export function ClasseDetailPage() {
             render: (e) => (
                 <div>
                     <p className="font-medium">{e.prenom} {e.nom}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
+                    <p className="text-xs text-gray-500">
                         {e.sexe === 'M' ? t('sexe.masculin') : t('sexe.feminin')}
                     </p>
                 </div>
@@ -119,8 +110,8 @@ export function ClasseDetailPage() {
             render: (e) => (
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                     e.statut === 'ACTIF'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                 }`}>
                     {e.statut === 'ACTIF' ? t('statut.actif') : t('statut.inactif')}
                 </span>
@@ -128,14 +119,12 @@ export function ClasseDetailPage() {
         },
     ];
 
-    // Onglets
     const onglets = [
         { id: 'informations' as const, label: t('onglets.informations'), icon: BookOpen },
         { id: 'eleves' as const, label: `${t('onglets.eleves')} (${statsEleves?.total ?? 0})`, icon: Users },
         { id: 'statistiques' as const, label: t('onglets.statistiques'), icon: TrendingUp },
     ];
 
-    // Handlers
     const handleSuppression = async () => {
         await supprimer.mutateAsync(id);
         navigate({ to: '/classes' });
@@ -149,532 +138,651 @@ export function ClasseDetailPage() {
         }
     };
 
-    // États de chargement et erreur
     if (loadingClasse) {
-        return <LoadingState message={t('chargement.detail')} />;
-    }
-
-    if (erreurClasse || !classe) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 p-6">
-                <ErrorState
-                    message={erreurClasse?.message || t('erreurs.classeNonTrouvee')}
-                    onRetry={() => navigate({ to: '/classes' })}
-                />
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+                <Skeleton className="h-10 w-48 mb-8" />
+                <Skeleton className="h-40 w-full mb-8" />
+                <div className="grid grid-cols-4 gap-4 mb-8">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Skeleton className="h-64" />
+                        <Skeleton className="h-48" />
+                    </div>
+                    <div className="space-y-6">
+                        <Skeleton className="h-32" />
+                        <Skeleton className="h-32" />
+                    </div>
+                </div>
             </div>
         );
     }
 
-    // Données affichées
+    if (erreurClasse || !classe) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+                <p className="text-xl font-semibold text-red-600 mb-2">
+                    {t('erreurs.classeNonTrouvee')}
+                </p>
+                <p className="text-gray-500 mb-6">
+                    {t('erreurs.classeNonTrouveeMessage') || "La classe demandée n'existe pas ou a été supprimée."}
+                </p>
+                <ElisaButton variant="outline" onClick={() => navigate({ to: '/classes' })}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    {t('boutons.retour')}
+                </ElisaButton>
+            </div>
+        );
+    }
+
     const niveauNom = classe.niveau?.nom || '-';
     const cycleNom = classe.niveau?.cycle?.nom;
-    const salleNom = classe.salle?.nom || classe.salleId || t('info.nonAssignee');
+    const salleNom = classe.salle?.nom || classe.sallePrincipaleId || t('info.nonAssignee');
     const principalNom = classe.professeurPrincipal
         ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
         : t('info.nonAssigne');
     const effectifActuel = classe.effectifActuel || 0;
     const effectifMax = classe.effectifMax || null;
 
+    const stats = [
+        {
+            icon: Users,
+            label: t('stats.effectif'),
+            value: `${statsEleves?.total ?? effectifActuel} / ${effectifMax || '∞'}`,
+            color: 'text-blue-600',
+            iconBg: 'bg-blue-100',
+            action: (
+                <button
+                    onClick={() => reconcilier.mutate()}
+                    disabled={reconcilier.isPending}
+                    className="rounded-lg bg-blue-100/50 p-1.5 text-blue-600 hover:bg-blue-200/50 transition-colors disabled:opacity-50"
+                    title="Actualiser l'effectif"
+                >
+                    <RefreshCw className={`h-3.5 w-3.5 ${reconcilier.isPending ? 'animate-spin' : ''}`} />
+                </button>
+            ),
+        },
+        {
+            icon: MapPin,
+            label: t('stats.salle'),
+            value: salleNom,
+            color: 'text-green-600',
+            iconBg: 'bg-green-100',
+            action: classe?.salle && hasPermission('classes:edit') && (
+                <ElisaButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setModalChangerSalleOpen(true)}
+                    icon={<Edit className="h-3.5 w-3.5" />}
+                    className="rounded-lg bg-green-100/50 p-1.5 text-green-600 hover:bg-green-200/50 transition-colors"
+                    title="Changer la salle"
+                />
+            ),
+        },
+        {
+            icon: Award,
+            label: t('stats.principal'),
+            value: principalNom,
+            color: 'text-purple-600',
+            iconBg: 'bg-purple-100',
+        },
+        {
+            icon: School,
+            label: t('stats.type'),
+            value: t(`types.${classe.typeClasse.toLowerCase()}`) || classe.typeClasse,
+            color: 'text-amber-600',
+            iconBg: 'bg-amber-100',
+        },
+    ];
+
+    const typeColors: Record<string, { text: string; bg: string }> = {
+        NORMALE: { text: 'text-blue-700', bg: 'bg-blue-50' },
+        BILINGUE: { text: 'text-purple-700', bg: 'bg-purple-50' },
+        RENFORCEE: { text: 'text-orange-700', bg: 'bg-orange-50' },
+        INTERNATIONALE: { text: 'text-indigo-700', bg: 'bg-indigo-50' },
+    };
+    const tc = typeColors[classe.typeClasse] || { text: 'text-gray-700', bg: 'bg-gray-50' };
+
     return (
-        <div className="flex flex-col gap-[var(--gap-lg)] p-[var(--space-md)] sm:p-[var(--space-lg)]">
-            {/* Header responsive */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${estMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}
-            >
-                <div className="flex items-center gap-[var(--gap-md)]">
-                    <ElisaButton
-                        variant="ghost"
-                        size="sm"
-                        icon={<ArrowLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        onClick={() => navigate({ to: '/classes' })}
-                    >
-                        {t('boutons.retour')}
-                    </ElisaButton>
-                    <div>
-                        <h1
-                            className="font-bold text-[var(--color-text-primary)]"
-                            style={{ fontSize: 'clamp(1.25rem, 1.1rem + 0.6vw, 1.875rem)' }}
-                        >
-                            {classe.nom}
-                        </h1>
-                        <p
-                            className="text-[var(--color-text-secondary)] mt-1"
-                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                        >
-                            {t('info.code')}: {classe.code} • {niveauNom}
-                            {cycleNom && ` • ${cycleNom}`}
-                        </p>
-                    </div>
-                </div>
-                <div className={`flex ${estMobile ? 'w-full' : 'gap-2'}`}>
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Power className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        onClick={() => setClasseToToggle(true)}
-                        className={estMobile ? 'flex-1' : ''}
-                    >
-                        {classe.actif ? t('actions.desactiver') : t('actions.activer')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="outline"
-                        size="sm"
-                        icon={<Edit className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        onClick={() => setModalEditionOpen(true)}
-                        className={estMobile ? 'flex-1' : ''}
-                    >
-                        {t('boutons.modifier')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="danger"
-                        size="sm"
-                        icon={<Trash2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                        onClick={() => setClasseToDelete(true)}
-                        className={estMobile ? 'flex-1' : ''}
-                    >
-                        {t('boutons.supprimer')}
-                    </ElisaButton>
-                </div>
-            </motion.div>
-
-            {/* Stats rapides - Grille responsive */}
-            <div className={`grid ${estMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-[var(--gap-md)]`}>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="rounded-[var(--radius-lg)] border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-[var(--space-md)]"
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <ElisaButton
+                    variant="ghost"
+                    onClick={() => navigate({ to: '/classes' })}
+                    icon={<ArrowLeft className="h-4 w-4" />}
+                    className="mb-6"
                 >
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-[var(--gap-sm)]">
-                            <Users className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-blue-600 dark:text-blue-400" />
-                            <span
-                                className="font-medium text-blue-700 dark:text-blue-300"
-                                style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.875rem)' }}
-                            >
-                                {t('stats.effectif')}
-                            </span>
+                    {t('boutons.retour')}
+                </ElisaButton>
+
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 mb-8">
+                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+                        <GraduationCap className="w-full h-full" />
+                    </div>
+                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-5">
+                            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
+                                <GraduationCap className="h-10 w-10 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold text-white mb-1">{classe.nom}</h1>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <span className="font-mono text-sm text-blue-200">{classe.code}</span>
+                                    <span className="text-blue-300">•</span>
+                                    <span className="text-sm text-blue-200">{niveauNom}</span>
+                                    {cycleNom && (
+                                        <>
+                                            <span className="text-blue-300">•</span>
+                                            <span className="text-sm text-blue-200">{cycleNom}</span>
+                                        </>
+                                    )}
+                                    <span className="text-blue-300">•</span>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium ${
+                                        classe.actif ? 'bg-green-400/20 text-green-200' : 'bg-red-400/20 text-red-200'
+                                    }`}>
+                                        {classe.actif
+                                            ? <><CheckCircle className="h-3.5 w-3.5" /> {t('statut.actif')}</>
+                                            : <><XCircle className="h-3.5 w-3.5" /> {t('statut.inactif')}</>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        {/* Bouton Actualiser — réconciliation effectif */}
-                        <button
-                            onClick={() => reconcilier.mutate()}
-                            disabled={reconcilier.isPending}
-                            className="rounded-[var(--radius-md)] bg-blue-100 dark:bg-blue-900/50 p-2 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors disabled:opacity-50"
-                            title="Actualiser l'effectif"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${reconcilier.isPending ? 'animate-spin' : ''}`} />
-                        </button>
-                    </div>
-                    <p
-                        className="font-bold text-blue-800 dark:text-blue-200"
-                        style={{ fontSize: 'clamp(1.25rem, 1.1rem + 0.6vw, 1.875rem)' }}
-                    >
-                        {statsEleves?.total ?? effectifActuel} / {effectifMax || '∞'}
-                    </p>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="rounded-[var(--radius-lg)] border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 p-[var(--space-md)]"
-                >
-                    <div className="flex items-center gap-[var(--gap-sm)] mb-2">
-                        <MapPin className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-green-600 dark:text-green-400" />
-                        <span
-                            className="font-medium text-green-700 dark:text-green-300"
-                            style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.875rem)' }}
-                        >
-                            {t('stats.salle')}
-                        </span>
-                    </div>
-                    <p
-                        className="font-bold text-green-800 dark:text-green-200 truncate"
-                        style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.5rem)' }}
-                    >
-                        {salleNom}
-                    </p>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className={`rounded-[var(--radius-lg)] border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 p-[var(--space-md)] ${estMobile ? 'col-span-2' : ''}`}
-                >
-                    <div className="flex items-center gap-[var(--gap-sm)] mb-2">
-                        <Award className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-purple-600 dark:text-purple-400" />
-                        <span
-                            className="font-medium text-purple-700 dark:text-purple-300"
-                            style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.875rem)' }}
-                        >
-                            {t('stats.principal')}
-                        </span>
-                    </div>
-                    <p
-                        className="font-bold text-purple-800 dark:text-purple-200 truncate"
-                        style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.125rem)' }}
-                    >
-                        {principalNom}
-                    </p>
-                </motion.div>
-            </div>
-
-            {/* Onglets responsive */}
-            <div className="border-b border-[var(--color-border)]">
-                <nav className={`flex ${estMobile ? 'gap-2 overflow-x-auto' : 'gap-6'}`}>
-                    {onglets.map((onglet) => {
-                        const Icon = onglet.icon;
-                        return (
-                            <button
-                                key={onglet.id}
-                                onClick={() => setOngletActif(onglet.id)}
-                                className={`flex items-center gap-[var(--gap-xs)] py-3 px-1 border-b-2 font-medium whitespace-nowrap transition-colors ${
-                                    ongletActif === onglet.id
-                                        ? 'border-[var(--color-dominant-600)] text-[var(--color-dominant-600)]'
-                                        : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border)]'
-                                }`}
-                                style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                        <div className="flex gap-2">
+                            <ElisaButton
+                                variant="ghost"
+                                onClick={() => setClasseToToggle(true)}
+                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+                                icon={<Power className="h-4 w-4" />}
                             >
-                                <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                                {onglet.label}
-                            </button>
+                                {classe.actif ? t('actions.desactiver') : t('actions.activer')}
+                            </ElisaButton>
+                            <ElisaButton
+                                onClick={() => setModalEditionOpen(true)}
+                                icon={<Edit className="h-4 w-4" />}
+                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+                            >
+                                {t('boutons.modifier')}
+                            </ElisaButton>
+                            <ElisaButton
+                                variant="danger"
+                                onClick={() => setClasseToDelete(true)}
+                                icon={<Trash2 className="h-4 w-4" />}
+                                className="bg-red-400/20 hover:bg-red-400/30 text-red-200 border-0 backdrop-blur-sm"
+                            >
+                                {t('boutons.supprimer')}
+                            </ElisaButton>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                    {stats.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                            >
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className={`p-2.5 rounded-xl ${stat.iconBg}`}>
+                                        <Icon className={`h-5 w-5 ${stat.color}`} />
+                                    </div>
+                                    {'action' in stat && stat.action}
+                                </div>
+                                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                                <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+                            </motion.div>
                         );
                     })}
-                </nav>
-            </div>
+                </div>
 
-            {/* Contenu des onglets */}
-            <motion.div
-                key={ongletActif}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-            >
-                {/* Onglet Informations */}
-                {ongletActif === 'informations' && (
-                    <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-lg)]`}>
-                        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--space-lg)]">
-                            <h3
-                                className="font-semibold mb-[var(--space-md)] text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
-                            >
-                                {t('info.titreGeneral')}
-                            </h3>
-                            <dl className="space-y-[var(--space-md)]">
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.nomClasse')}
-                                    </dt>
-                                    <dd className="mt-1 font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.125rem)' }}>
-                                        {classe.nom}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.code')}
-                                    </dt>
-                                    <dd className="mt-1 font-mono text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {classe.code}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.niveau')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {niveauNom}
-                                    </dd>
-                                </div>
-                                {cycleNom && (
-                                    <div>
-                                        <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                            {t('info.cycle')}
-                                        </dt>
-                                        <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                            {cycleNom}
-                                        </dd>
-                                    </div>
+                <div className="border-b border-gray-200 mb-6">
+                    <nav className="flex gap-6">
+                        {onglets.map((onglet) => {
+                            const Icon = onglet.icon;
+                            return (
+                                <button
+                                    key={onglet.id}
+                                    onClick={() => setOngletActif(onglet.id)}
+                                    className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                        ongletActif === onglet.id
+                                            ? 'border-blue-600 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    {onglet.label}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </div>
+
+                <motion.div
+                    key={ongletActif}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {ongletActif === 'informations' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2 space-y-6">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                >
+                                    <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                                        <BookOpen className="h-5 w-5 text-blue-500" />
+                                        {t('info.titreGeneral')}
+                                    </h2>
+                                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.nomClasse')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{classe.nom}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.code')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900 font-mono">{classe.code}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.niveau')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{niveauNom}</dd>
+                                        </div>
+                                        {cycleNom && (
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.cycle')}</dt>
+                                                <dd className="text-sm font-semibold text-gray-900">{cycleNom}</dd>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.typeClasse')}</dt>
+                                            <dd>
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${tc.bg} ${tc.text}`}>
+                                                    <GraduationCap className="h-3.5 w-3.5" />
+                                                    {t(`types.${classe.typeClasse.toLowerCase()}`) || classe.typeClasse}
+                                                </span>
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.creneau')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">
+                                                {t(`creneaux.${creneauKey[classe.creneauHoraire] || 'matin'}`)}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                >
+                                    <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                                        <MapPin className="h-5 w-5 text-green-500" />
+                                        {t('info.titreConfig')}
+                                    </h2>
+                                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.effectifMax')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{effectifMax || t('info.illimite')}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.sallePrincipale')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{salleNom}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.statut')}</dt>
+                                            <dd>
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                                                    classe.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                    {classe.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                                                    {classe.actif ? t('statut.actif') : t('statut.inactif')}
+                                                </span>
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.anneeScolaire')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{classe.anneeScolaire?.libelle || '-'}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('info.filiere')}</dt>
+                                            <dd className="text-sm font-semibold text-gray-900">{classe.filiere?.nom || '-'}</dd>
+                                        </div>
+                                    </dl>
+                                    {classe.description && (
+                                        <div className="mt-6 pt-5 border-t border-gray-100">
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">{t('info.description')}</dt>
+                                            <dd className="text-sm text-gray-700 leading-relaxed">{classe.description}</dd>
+                                        </div>
+                                    )}
+                                </motion.div>
+
+                                {/* Double capacité : effectif vs effectifMax + effectif vs salle */}
+                                {salleNom !== t('info.nonAssignee') && classe.salle?.capacite && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.25 }}
+                                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                    >
+                                        <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-blue-500" />
+                                            Capacité
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-gray-600">Effectif / Effectif max</span>
+                                                    <span className="font-medium text-gray-900">
+                                                        {tauxOccupation
+                                                            ? `${tauxOccupation.effectif} / ${tauxOccupation.capacite}`
+                                                            : `${effectifActuel} / ${effectifMax || '∞'}`}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min(tauxOccupation?.pourcentage ?? (effectifMax ? (effectifActuel / effectifMax) * 100 : 0), 100)}%` }}
+                                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                        className={`h-full rounded-full ${effectifMax && effectifActuel > effectifMax ? 'bg-red-500' : 'bg-blue-500'}`}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-gray-600">Effectif / Capacité salle</span>
+                                                    <span className="font-medium text-gray-900">
+                                                        {effectifActuel} / {classe.salle.capacite}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min((effectifActuel / classe.salle.capacite) * 100, 100)}%` }}
+                                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                        className={`h-full rounded-full ${effectifActuel > classe.salle.capacite ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
                                 )}
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.typeClasse')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {classe.typeClasse}
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
 
-                        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--space-lg)]">
-                            <h3
-                                className="font-semibold mb-[var(--space-md)] text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
-                            >
-                                {t('info.titreConfig')}
-                            </h3>
-                            <dl className="space-y-[var(--space-md)]">
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.effectifMax')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {effectifMax || t('info.illimite')}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.sallePrincipale')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {salleNom}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.statut')}
-                                    </dt>
-                                    <dd className="mt-1">
-                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                            classe.actif
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                        }`}>
+                                {/* EDT preview plié */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                >
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-indigo-500" />
+                                        Emploi du temps
+                                    </h4>
+                                    <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-4 text-center">
+                                        <Calendar className="h-8 w-8 mx-auto text-indigo-400 mb-2" />
+                                        <p className="text-sm font-medium text-indigo-700 mb-1">
+                                            Visualisation de l'emploi du temps
+                                        </p>
+                                        <p className="text-xs text-indigo-500">
+                                            L'affichage détaillé de l'emploi du temps sera disponible dans une prochaine version.
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.15 }}
+                                    className={`rounded-xl shadow-sm border p-6 ${
+                                        classe.actif ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3 mb-3">
+                                        {classe.actif
+                                            ? <CheckCircle className="h-6 w-6 text-green-600" />
+                                            : <XCircle className="h-6 w-6 text-gray-400" />
+                                        }
+                                        <span className={`font-semibold text-lg ${classe.actif ? 'text-green-800' : 'text-gray-600'}`}>
                                             {classe.actif ? t('statut.actif') : t('statut.inactif')}
                                         </span>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.anneeScolaire')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {classe.anneeScolaire?.libelle || '-'}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        {t('info.creneau')}
-                                    </dt>
-                                    <dd className="mt-1 text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                        {t(`creneaux.${creneauKey[classe.creneauHoraire] || 'matin'}`)}
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        {classe.actif
+                                            ? t('statut.actifDescription') || 'Cette classe est actuellement active et utilisable.'
+                                            : t('statut.inactifDescription') || 'Cette classe est actuellement inactive.'}
+                                    </p>
+                                </motion.div>
 
-                        {/* Description si présente */}
-                        {classe.description && (
-                            <div className={`${estMobile ? '' : 'col-span-2'} rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--space-lg)]`}>
-                                <h3
-                                    className="font-semibold mb-[var(--space-md)] text-[var(--color-text-primary)]"
-                                    style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.25 }}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                                 >
-                                    {t('info.description')}
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-gray-400" />
+                                        {t('stats.effectif')}
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
+                                            <span className="text-sm text-gray-600">{t('sexe.garcons')}</span>
+                                            <span className="text-sm font-semibold text-gray-900">{statsSexe.garcons}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
+                                            <span className="text-sm text-gray-600">{t('sexe.filles')}</span>
+                                            <span className="text-sm font-semibold text-gray-900">{statsSexe.filles}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
+                                            <span className="text-sm text-gray-600">{t('stats.total')}</span>
+                                            <span className="text-sm font-semibold text-gray-900">{statsSexe.total}</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.35 }}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                >
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-gray-400" />
+                                        {t('info.systeme') || 'Informations système'}
+                                    </h3>
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <p className="text-gray-500 text-xs">{t('info.creeLe') || 'Créé le'}</p>
+                                            <p className="font-medium text-gray-900">{formatDateTime(classe.createdAt)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-xs">{t('info.modifieLe') || 'Modifié le'}</p>
+                                            <p className="font-medium text-gray-900">{formatDateTime(classe.updatedAt)}</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        </div>
+                    )}
+
+                    {ongletActif === 'eleves' && (
+                        <div>
+                            <div className={`flex ${estMobile ? 'flex-col gap-3' : 'items-center justify-between'} mb-4`}>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    {t('eleves.inscrits')} ({statsEleves?.total ?? 0})
                                 </h3>
-                                <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                    {classe.description}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Onglet Élèves */}
-                {ongletActif === 'eleves' && (
-                    <div>
-                        <div className={`flex ${estMobile ? 'flex-col gap-3' : 'items-center justify-between'} mb-[var(--space-md)]`}>
-                            <h3
-                                className="font-semibold text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
-                            >
-                                {t('eleves.inscrits')} ({statsEleves?.total ?? 0})
-                            </h3>
-                            <div className={`flex ${estMobile ? 'flex-col gap-2' : 'items-center gap-3'}`}>
-                                {/* Recherche */}
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder={t('eleves.rechercher')}
-                                        value={rechercheEleves}
-                                        onChange={(e) => { setRechercheEleves(e.target.value); setPageEleves(1); }}
-                                        className="pl-3 pr-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)', width: 'clamp(120px, 30vw, 200px)' }}
-                                    />
-                                </div>
-                                <ElisaButton
-                                    variant="primary"
-                                    size="sm"
-                                    icon={<UserPlus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                                    onClick={() => setModalAffectationOpen(true)}
-                                >
-                                    {t('eleves.inscrireEleve')}
-                                </ElisaButton>
-                            </div>
-                        </div>
-                        {loadingEleves ? (
-                            <LoadingState message={t('chargement.eleves')} />
-                        ) : eleves.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)]">
-                                <Users className="h-12 w-12 text-[var(--color-text-muted)] mx-auto mb-3" />
-                                <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                    {t('eleves.aucunEleve')}
-                                </p>
-                            </div>
-                        ) : (
-                            <DataTable
-                                tableId="classe-eleves"
-                                data={eleves}
-                                columns={colonnesEleves}
-                                pagination={paginationEleves ? {
-                                    page: paginationEleves.currentPage,
-                                    limit: paginationEleves.itemsPerPage,
-                                    total: paginationEleves.totalItems,
-                                    totalPages: paginationEleves.totalPages,
-                                    hasNext: paginationEleves.hasNext,
-                                    hasPrev: paginationEleves.hasPrev,
-                                    onPageChange: setPageEleves,
-                                } : undefined}
-                                enableReordering
-                                enablePinning
-                                enableColumnVisibility
-                            />
-                        )}
-                    </div>
-                )}
-
-                {/* Onglet Statistiques */}
-                {ongletActif === 'statistiques' && (
-                    <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-lg)]`}>
-                        {/* Taux d'occupation */}
-                        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--space-lg)]">
-                            <h3
-                                className="font-semibold mb-[var(--space-md)] text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
-                            >
-                                {t('stats.tauxOccupation')}
-                            </h3>
-                            {tauxOccupation ? (
-                                <div>
-                                    <div className="overflow-hidden h-4 rounded bg-blue-100 dark:bg-blue-900">
-                                        <div
-                                            style={{ width: `${Math.min(tauxOccupation.pourcentage, 100)}%` }}
-                                            className="h-full bg-blue-500 transition-all duration-500 rounded"
+                                <div className={`flex ${estMobile ? 'flex-col gap-2' : 'items-center gap-3'}`}>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder={t('eleves.rechercher')}
+                                            value={rechercheEleves}
+                                            onChange={(e) => { setRechercheEleves(e.target.value); setPageEleves(1); }}
+                                            className="pl-3 pr-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                            style={{ width: 'clamp(120px, 30vw, 200px)' }}
                                         />
                                     </div>
-                                    <p
-                                        className="mt-2 text-[var(--color-text-secondary)]"
-                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                                    <ElisaButton
+                                        variant="primary"
+                                        size="sm"
+                                        icon={<UserPlus className="h-4 w-4" />}
+                                        onClick={() => setModalAffectationOpen(true)}
                                     >
-                                        {tauxOccupation.pourcentage.toFixed(1)}% {t('stats.rempli')}
-                                        {' '}({tauxOccupation.effectif}/{tauxOccupation.capacite})
-                                    </p>
+                                        {t('eleves.inscrireEleve')}
+                                    </ElisaButton>
+                                </div>
+                            </div>
+                            {loadingEleves ? (
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <Skeleton className="h-10 w-full mb-4" />
+                                    {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 w-full mb-2" />)}
+                                </div>
+                            ) : eleves.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-gray-50 border border-gray-200">
+                                    <Users className="h-12 w-12 text-gray-300 mb-3" />
+                                    <p className="text-gray-500">{t('eleves.aucunEleve')}</p>
                                 </div>
                             ) : (
-                                <p className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
-                                    {t('stats.pasDeLimite')}
-                                </p>
+                                <DataTable
+                                    tableId="classe-eleves"
+                                    data={eleves}
+                                    columns={colonnesEleves}
+                                    pagination={paginationEleves ? {
+                                        page: paginationEleves.currentPage,
+                                        limit: paginationEleves.itemsPerPage,
+                                        total: paginationEleves.totalItems,
+                                        totalPages: paginationEleves.totalPages,
+                                        hasNext: paginationEleves.hasNext,
+                                        hasPrev: paginationEleves.hasPrev,
+                                        onPageChange: setPageEleves,
+                                    } : undefined}
+                                    enableReordering
+                                    enablePinning
+                                    enableColumnVisibility
+                                />
                             )}
                         </div>
+                    )}
 
-                        {/* Répartition par sexe */}
-                        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--space-lg)]">
-                            <h3
-                                className="font-semibold mb-[var(--space-md)] text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
-                            >
-                                {t('stats.repartitionSexe')}
-                            </h3>
-                            <div className="space-y-[var(--space-md)]">
-                                <div>
-                                    <div className="flex justify-between mb-1" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        <span className="text-[var(--color-text-secondary)]">{t('sexe.garcons')}</span>
-                                        <span className="font-medium text-[var(--color-text-primary)]">{statsSexe.garcons}</span>
+                    {ongletActif === 'statistiques' && (
+                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6`}>
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('stats.tauxOccupation')}</h3>
+                                {tauxOccupation ? (
+                                    <div>
+                                        <div className="overflow-hidden h-4 rounded bg-blue-100">
+                                            <div
+                                                style={{ width: `${Math.min(tauxOccupation.pourcentage, 100)}%` }}
+                                                className="h-full bg-blue-500 transition-all duration-500 rounded"
+                                            />
+                                        </div>
+                                        <p className="mt-2 text-sm text-gray-600">
+                                            {tauxOccupation.pourcentage.toFixed(1)}% {t('stats.rempli')}
+                                            {' '}({tauxOccupation.effectif}/{tauxOccupation.capacite})
+                                        </p>
                                     </div>
-                                    <div className="overflow-hidden h-2 rounded bg-blue-100 dark:bg-blue-900">
-                                        <div
-                                            style={{ width: `${statsSexe.pourcentageGarcons}%` }}
-                                            className="h-full bg-blue-500 transition-all duration-500"
-                                        />
+                                ) : (
+                                    <p className="text-sm text-gray-400">{t('stats.pasDeLimite')}</p>
+                                )}
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('stats.repartitionSexe')}</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between mb-1 text-sm">
+                                            <span className="text-gray-600">{t('sexe.garcons')}</span>
+                                            <span className="font-medium text-gray-900">{statsSexe.garcons}</span>
+                                        </div>
+                                        <div className="overflow-hidden h-2 rounded bg-blue-100">
+                                            <div
+                                                style={{ width: `${statsSexe.pourcentageGarcons}%` }}
+                                                className="h-full bg-blue-500 transition-all duration-500"
+                                            />
+                                        </div>
                                     </div>
+                                    <div>
+                                        <div className="flex justify-between mb-1 text-sm">
+                                            <span className="text-gray-600">{t('sexe.filles')}</span>
+                                            <span className="font-medium text-gray-900">{statsSexe.filles}</span>
+                                        </div>
+                                        <div className="overflow-hidden h-2 rounded bg-pink-100">
+                                            <div
+                                                style={{ width: `${statsSexe.pourcentageFilles}%` }}
+                                                className="h-full bg-pink-500 transition-all duration-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-400 pt-2">{t('stats.totalEleves')}: {statsSexe.total}</p>
                                 </div>
-                                <div>
-                                    <div className="flex justify-between mb-1" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                        <span className="text-[var(--color-text-secondary)]">{t('sexe.filles')}</span>
-                                        <span className="font-medium text-[var(--color-text-primary)]">{statsSexe.filles}</span>
-                                    </div>
-                                    <div className="overflow-hidden h-2 rounded bg-pink-100 dark:bg-pink-900">
-                                        <div
-                                            style={{ width: `${statsSexe.pourcentageFilles}%` }}
-                                            className="h-full bg-pink-500 transition-all duration-500"
-                                        />
-                                    </div>
-                                </div>
-                                <p
-                                    className="text-[var(--color-text-muted)] pt-2"
-                                    style={{ fontSize: 'clamp(0.7rem, 0.65rem + 0.2vw, 0.8125rem)' }}
-                                >
-                                    {t('stats.totalEleves')}: {statsSexe.total}
-                                </p>
                             </div>
                         </div>
-                    </div>
+                    )}
+                </motion.div>
+
+                {modalChangerSalleOpen && (
+                    <ChangerSalleModal
+                        classe={classe}
+                        onClose={() => setModalChangerSalleOpen(false)}
+                    />
+                )}
+
+                {modalEditionOpen && (
+                    <ClasseFormModal
+                        mode="edition"
+                        classe={classe}
+                        onSuccess={() => setModalEditionOpen(false)}
+                        onCancel={() => setModalEditionOpen(false)}
+                    />
+                )}
+
+                <ConfirmationModal
+                    isOpen={classeToDelete}
+                    title={t('confirmations.supprimerTitre')}
+                    message={t('confirmations.supprimerMessage', { nom: classe.nom })}
+                    details={t('confirmations.supprimerDetails')}
+                    variant="danger"
+                    onConfirm={handleSuppression}
+                    onCancel={() => setClasseToDelete(false)}
+                    isLoading={supprimer.isPending}
+                />
+
+                <ConfirmationModal
+                    isOpen={classeToToggle}
+                    title={classe.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
+                    message={classe.actif
+                        ? t('confirmations.desactiverMessage', { nom: classe.nom })
+                        : t('confirmations.activerMessage', { nom: classe.nom })
+                    }
+                    variant={classe.actif ? 'warning' : 'info'}
+                    onConfirm={handleToggleActif}
+                    onCancel={() => setClasseToToggle(false)}
+                    isLoading={toggleActif.isPending}
+                />
+
+                {modalAffectationOpen && (
+                    <ModalAffectationEleve
+                        classeId={id}
+                        onClose={() => setModalAffectationOpen(false)}
+                    />
                 )}
             </motion.div>
-
-            {/* Modal Édition */}
-            {modalEditionOpen && (
-                <ClasseFormModal
-                    mode="edition"
-                    classe={classe}
-                    onSuccess={() => setModalEditionOpen(false)}
-                    onCancel={() => setModalEditionOpen(false)}
-                />
-            )}
-
-            {/* Modal Suppression (ConfirmationModal) */}
-            <ConfirmationModal
-                isOpen={classeToDelete}
-                title={t('confirmations.supprimerTitre')}
-                message={t('confirmations.supprimerMessage', { nom: classe.nom })}
-                details={t('confirmations.supprimerDetails')}
-                variant="danger"
-                onConfirm={handleSuppression}
-                onCancel={() => setClasseToDelete(false)}
-                isLoading={supprimer.isPending}
-            />
-
-            {/* Modal Toggle Actif */}
-            <ConfirmationModal
-                isOpen={classeToToggle}
-                title={classe.actif ? t('confirmations.desactiverTitre') : t('confirmations.activerTitre')}
-                message={classe.actif
-                    ? t('confirmations.desactiverMessage', { nom: classe.nom })
-                    : t('confirmations.activerMessage', { nom: classe.nom })
-                }
-                variant={classe.actif ? 'warning' : 'info'}
-                onConfirm={handleToggleActif}
-                onCancel={() => setClasseToToggle(false)}
-                isLoading={toggleActif.isPending}
-            />
-
-            {/* Modal Affectation Élève */}
-            {modalAffectationOpen && (
-                <ModalAffectationEleve
-                    classeId={id}
-                    onClose={() => setModalAffectationOpen(false)}
-                />
-            )}
         </div>
     );
 }
 
-/**
- * Modal d'affectation d'un élève à une classe
- */
 interface ModalAffectationEleveProps {
     classeId: string;
     onClose: () => void;
@@ -683,18 +791,14 @@ interface ModalAffectationEleveProps {
 function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps) {
     const { t } = useTranslation('classes');
     const affecterEleve = useAffecterEleve();
-    const estPetitEcran = useMediaQuery('(max-width: 479px)');
     const [eleveId, setEleveId] = useState('');
     const [dateAffectation, setDateAffectation] = useState(new Date().toISOString().split('T')[0]);
     const [motif, setMotif] = useState('');
     const [commentaire, setCommentaire] = useState('');
 
-    // Charger les élèves de l'établissement
     const { data: tousElevesData } = useEleves({ page: 1, limit: 200 });
-    // Charger les élèves déjà affectés via l'endpoint dédié
     const { data: elevesAffectesData } = useElevesClasse(classeId, 1, 500);
 
-    // Filtrer les élèves déjà affectés à cette classe
     const elevesDejaAffectes = new Set(
         (elevesAffectesData?.eleves?.items || []).map((e: any) => e.id)
     );
@@ -718,7 +822,6 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
 
     const handleSubmit = async () => {
         if (!eleveId) return;
-
         try {
             await affecterEleve.mutateAsync({
                 eleveId,
@@ -729,7 +832,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
             });
             onClose();
         } catch {
-            // L'erreur est gérée par le hook
+            // Handled by the hook
         }
     };
 
@@ -756,7 +859,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                 </>
             }
         >
-            <div className="space-y-[var(--space-md)]">
+            <div className="space-y-4">
                 <ElisaSelect
                     label={t('affectation.eleve')}
                     value={eleveId}
@@ -765,20 +868,16 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                     placeholder={t('affectation.selectionnerEleve')}
                     required
                 />
-                <div className={`grid ${estPetitEcran ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label
-                            className="block text-sm font-medium text-[var(--color-text-primary)] mb-1"
-                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                        >
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                             {t('affectation.date')}
                         </label>
                         <input
                             type="date"
                             value={dateAffectation}
                             onChange={(e) => setDateAffectation(e.target.value)}
-                            className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                            style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         />
                     </div>
                     <ElisaSelect
@@ -790,10 +889,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                     />
                 </div>
                 <div>
-                    <label
-                        className="block text-sm font-medium text-[var(--color-text-primary)] mb-1"
-                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('affectation.commentaire')}
                     </label>
                     <textarea
@@ -801,8 +897,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                         onChange={(e) => setCommentaire(e.target.value)}
                         placeholder={t('affectation.commentairePlaceholder')}
                         rows={3}
-                        className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] resize-none"
-                        style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
                     />
                 </div>
             </div>

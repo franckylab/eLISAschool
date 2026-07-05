@@ -16,7 +16,9 @@
 import { Repository, ILike, MoreThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Salle, TypeSalle, StatutSalle } from '../entities';
+import { ClasseAnnee } from '@modules/classes/entities';
 import { CreateSalleDto, UpdateSalleDto, QuerySallesDto } from '../dto';
+import { EmploiDuTemps } from '@modules/emploi-du-temps/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { salleAvailabilityService } from './salle-availability.service';
@@ -112,6 +114,38 @@ export class SalleService {
     async update(id: string, dto: UpdateSalleDto, etablissementId: string): Promise<Salle> {
         const salle = await this.findOne(id, etablissementId);
 
+        // Si réduction de capacité, vérifier les classes impactées
+        if (dto.capacite !== undefined && dto.capacite < salle.capacite) {
+            const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+            const classesLiees = await classeAnneeRepo.find({
+                where: { sallePrincipaleId: id, actif: true },
+                relations: ['classe'],
+            });
+
+            const classesBloquees = classesLiees.filter(ca => ca.effectifActuel > dto.capacite);
+            if (classesBloquees.length > 0) {
+                const noms = classesBloquees.map(ca => ca.classe?.nom || ca.classeId).join(', ');
+                throw new AppError(
+                    `Impossible de réduire la capacité à ${dto.capacite} : ${classesBloquees.length} classe(s) ont déjà plus d'élèves (${noms})`,
+                    400,
+                    'SALLE_CAPACITE_REDUCTION_BLOCKED'
+                );
+            }
+
+            const classesAlertees = classesLiees.filter(
+                ca => ca.effectifMax > dto.capacite && ca.effectifActuel <= dto.capacite
+            );
+            if (classesAlertees.length > 0) {
+                const noms = classesAlertees.map(ca => `${ca.classe?.nom || ca.classeId} (effectifMax: ${ca.effectifMax} → ${dto.capacite})`).join(', ');
+                logger.warn(`[${etablissementId}] Réduction capacité salle ${salle.nom}: effectifMax réduit pour ${classesAlertees.length} classe(s): ${noms}`);
+
+                for (const ca of classesAlertees) {
+                    ca.effectifMax = dto.capacite;
+                    await classeAnneeRepo.save(ca);
+                }
+            }
+        }
+
         // Si on modifie le statut, mettre à jour disponible en conséquence
         if (dto.statut === StatutSalle.EN_MAINTENANCE || dto.statut === StatutSalle.INDISPONIBLE) {
             dto.disponible = false;
@@ -181,7 +215,80 @@ export class SalleService {
     }
 
     /**
-     * Statistiques des salles
+     * Statistiques détaillées d'une salle spécifique
+     */
+    async getSalleStats(salleId: string, etablissementId: string, anneeScolaireId?: string): Promise<{
+        tauxOccupation: number;
+        totalCreneauxSemaine: number;
+        creneauxOccupes: number;
+        occupationParJour: Record<string, number>;
+        heuresReservees: number;
+        classesLiees: number;
+    }> {
+        await this.findOne(salleId, etablissementId);
+
+        const emploiRepo = AppDataSource.getRepository(EmploiDuTemps);
+        const where: any = { salleId, actif: true };
+        if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
+
+        const creneaux = await emploiRepo.find({ where });
+
+        // Jours/heures ouvrés standards
+        const JOURS_SEMAINE = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+        const HEURE_DEBUT = 7;
+        const HEURE_FIN = 18;
+        const totalSlots = JOURS_SEMAINE.length * (HEURE_FIN - HEURE_DEBUT);
+
+        const occupationParJour: Record<string, number> = {};
+        JOURS_SEMAINE.forEach(j => occupationParJour[j] = 0);
+
+        let heuresReservees = 0;
+
+        for (const c of creneaux) {
+            const [hD] = c.heureDebut.split(':').map(Number);
+            const [hF] = c.heureFin.split(':').map(Number);
+            const duree = Math.max(0, hF - hD);
+            heuresReservees += duree;
+
+            if (occupationParJour[c.jour] !== undefined) {
+                occupationParJour[c.jour] += duree;
+            }
+        }
+
+        const tauxOccupation = totalSlots > 0 ? Math.round((heuresReservees / totalSlots) * 100) : 0;
+
+        // Compter les classes liées
+        const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+        const classesLiees = await classeAnneeRepo.count({
+            where: { sallePrincipaleId: salleId, actif: true },
+        });
+
+        return {
+            tauxOccupation,
+            totalCreneauxSemaine: totalSlots,
+            creneauxOccupes: creneaux.length,
+            occupationParJour,
+            heuresReservees,
+            classesLiees,
+        };
+    }
+
+    /**
+     * Récupère les classes liées à une salle
+     */
+    async getClassesBySalle(salleId: string, etablissementId: string): Promise<ClasseAnnee[]> {
+        await this.findOne(salleId, etablissementId);
+
+        const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+        return classeAnneeRepo.find({
+            where: { sallePrincipaleId: salleId, actif: true },
+            relations: ['classe', 'anneeScolaire', 'professeurPrincipal'],
+            order: { createdAt: 'DESC' },
+        });
+    }
+
+    /**
+     * Statistiques globales des salles
      */
     async getStatistiques(etablissementId: string): Promise<{
         total: number;

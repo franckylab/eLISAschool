@@ -1,16 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Route Spécialités
+ * eLISAschool - Route Spécialités (Layout)
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
+ * Route layout pour la liste et les détails des spécialités
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { SpecialitesPage } from '@/features/specialites';
 
 export const Route = createFileRoute('/_auth/specialites')({
     beforeLoad: () => requireModulePermission('specialites'),
-    component: () => <SpecialitesPage />,
+    component: SpecialitesLayout,
 });
+
+function SpecialitesLayout() {
+    return <Outlet />;
+}

@@ -7,8 +7,9 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, School } from 'lucide-react';
+import { Plus, BookOpen, School, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -25,6 +26,7 @@ import { useTousCycles } from '@/features/cycles/hooks/use-tous-cycles';
 import { FiliereFormModal } from './filiere-form-modal';
 
 export function FilieresPage() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -111,6 +113,35 @@ export function FilieresPage() {
                     {filiere.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            className: 'text-right',
+            renderActions: (f) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: '/filieres/$id', params: { id: f.id } }),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => { setFiliereToEdit(f); setShowFormModal(true); },
+                    permission: 'filieres:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setFiliereToDelete(f),
+                    permission: 'filieres:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

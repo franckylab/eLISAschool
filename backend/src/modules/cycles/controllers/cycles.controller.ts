@@ -41,6 +41,14 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
+// GET /api/cycles/:id - Détail d'un cycle
+router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const cycle = await cyclesService.findOne(req.params.id, req.etablissementId!);
+        res.json({ success: true, data: cycle });
+    } catch (error) { next(error); }
+});
+
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createCycleSchema, req.body);

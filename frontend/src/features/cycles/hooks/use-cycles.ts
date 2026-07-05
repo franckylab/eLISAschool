@@ -46,7 +46,10 @@ export function useCycle(id: string) {
         queryKey: CYCLES_KEYS.detail(id),
         queryFn: async () => {
             const response = await apiClient.get<Cycle>(`/api/cycles/${id}`);
-            return (response as any).data;
+            if (!response.data) {
+                throw new Error('Cycle non trouvé');
+            }
+            return response.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,

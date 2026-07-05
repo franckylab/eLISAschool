@@ -27,6 +27,7 @@ import {
 import { Classe } from './classe.entity';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
+import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -89,6 +90,18 @@ export class ClasseAnnee {
     @ManyToOne(() => MembrePersonnel, { nullable: true })
     @JoinColumn({ name: 'professeurPrincipalId' })
     professeurPrincipal?: MembrePersonnel;
+
+    /**
+     * Salle principale assignée à cette classe pour cette année scolaire
+     * La capacité de cette salle borne l'effectif maximal (effectifMax)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    @Index()
+    sallePrincipaleId?: string;
+
+    @ManyToOne(() => Salle, { nullable: true })
+    @JoinColumn({ name: 'sallePrincipaleId' })
+    sallePrincipale?: Salle;
 
     /**
      * Effectif maximum autorisé pour cette classe cette année

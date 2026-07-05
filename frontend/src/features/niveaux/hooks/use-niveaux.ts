@@ -46,14 +46,33 @@ export function useNiveaux(filtres: NiveauFiltres = {}) {
     });
 }
 
+export function useNiveauxByCycle(cycleId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...NIVEAUX_KEYS.all, 'cycle', cycleId],
+        queryFn: async () => {
+            const response = await apiClient.get<PaginatedResult<Niveau>>('/api/niveaux', {
+                cycleId,
+                limit: 100,
+                sortBy: 'ordre',
+                sortOrder: 'ASC',
+            });
+            const result = (response as any).data as PaginatedResult<Niveau>;
+            return result?.items || [];
+        },
+        enabled: !!cycleId && isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
 export function useNiveau(id: string) {
     const { isAuthenticated } = useAuthStore();
     
     return useQuery({
         queryKey: NIVEAUX_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Niveau }>(`/api/niveaux/${id}`);
-            return response.data?.data;
+            const response = await apiClient.get<Niveau>(`/api/niveaux/${id}`);
+            return response.data;
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,

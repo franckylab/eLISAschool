@@ -71,6 +71,17 @@ router.get('/enseignant/:enseignantId', authMiddleware, async (req: Request, res
     } catch (error) { next(error); }
 });
 
+// Lister les créneaux d'une salle
+router.get('/salle/:salleId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { salleId } = req.params;
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+
+        const creneaux = await emploiDuTempsService.findBySalle(salleId, anneeScolaireId);
+        res.json({ success: true, data: creneaux });
+    } catch (error) { next(error); }
+});
+
 // Supprimer un créneau
 router.delete('/:id', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {

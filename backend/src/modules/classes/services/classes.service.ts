@@ -1,15 +1,10 @@
-/**
- * ==================================
- * eLISAschool - Service Classes
- * ==================================
- */
-
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Classe, AffectationEleve, StatutAffectationEleve, ClasseAnnee } from '../entities';
 import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, QueryClassesDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { salleService } from '@modules/salles/services/salle.service';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -26,11 +21,7 @@ export class ClassesService {
         this.affectationRepo = AppDataSource.getRepository(AffectationEleve);
     }
 
-    /**
-     * Créer une classe (modèle permanent) + instance année scolaire si année active
-     */
     async create(dto: CreateClasseDto, etablissementId?: string): Promise<Classe> {
-        // Créer le modèle permanent de classe
         const classe = this.classeRepo.create({
             nom: dto.nom,
             code: dto.code,
@@ -39,16 +30,13 @@ export class ClassesService {
             typeClasse: dto.typeClasse,
             creneauHoraire: dto.creneauHoraire,
             description: dto.description,
-            salleId: dto.salleId,
             actif: dto.actif ?? true,
             etablissementId,
         });
         await this.classeRepo.save(classe);
         logger.info(`Classe créée: ${dto.nom}`);
 
-        // Créer automatiquement une instance pour l'année scolaire active
         try {
-            // Utiliser l'année fournie ou l'année active
             let anneeScolaireId = dto.anneeScolaireId;
             if (!anneeScolaireId) {
                 const anneeActive = await anneesScolairesService.findActive();
@@ -56,12 +44,22 @@ export class ClassesService {
             }
 
             if (anneeScolaireId && etablissementId) {
+                let effectifMax = dto.effectifMax ?? 50;
+
+                if (dto.sallePrincipaleId) {
+                    const salle = await salleService.findOne(dto.sallePrincipaleId, etablissementId);
+                    if (dto.effectifMax === undefined || dto.effectifMax > salle.capacite) {
+                        effectifMax = salle.capacite;
+                    }
+                }
+
                 const classeAnnee = this.classeAnneeRepo.create({
                     classeId: classe.id,
                     anneeScolaireId,
                     etablissementId,
                     professeurPrincipalId: dto.professeurPrincipalId ?? undefined,
-                    effectifMax: dto.effectifMax ?? 50,
+                    sallePrincipaleId: dto.sallePrincipaleId ?? undefined,
+                    effectifMax,
                     effectifActuel: 0,
                     actif: true,
                     statut: 'ACTIVE' as any,
@@ -76,10 +74,6 @@ export class ClassesService {
         return classe;
     }
 
-    /**
-     * Rechercher toutes les classes avec pagination et filtres
-     * Requête via ClasseAnnee pour inclure professeur principal, année scolaire, effectifs
-     */
     async findAll(query: QueryClassesDto, etablissementId?: string): Promise<PaginatedResult<Classe>> {
         const { page, limit, search, niveauId, anneeScolaireId, actif } = query;
 
@@ -89,17 +83,15 @@ export class ClassesService {
             .leftJoinAndSelect('c.niveau', 'n')
             .leftJoinAndSelect('n.cycle', 'cycle')
             .leftJoinAndSelect('c.filiere', 'f')
-            .leftJoinAndSelect('c.salle', 's')
+            .leftJoinAndSelect('ca.sallePrincipale', 's')
             .leftJoinAndSelect('ca.anneeScolaire', 'a')
             .leftJoinAndSelect('ca.professeurPrincipal', 'pp')
             .where('1=1');
 
-        // Filtre par établissement (multi-tenancy)
         if (etablissementId) {
             qb.andWhere('ca.etablissementId = :etablissementId', { etablissementId });
         }
 
-        // Filtres optionnels
         if (niveauId) {
             qb.andWhere('c.niveauId = :niveauId', { niveauId });
         }
@@ -112,7 +104,6 @@ export class ClassesService {
             qb.andWhere('ca.actif = :actif', { actif });
         }
 
-        // Recherche textuelle
         if (search) {
             qb.andWhere(
                 '(c.nom ILIKE :search OR c.code ILIKE :search OR n.nom ILIKE :search)',
@@ -120,20 +111,19 @@ export class ClassesService {
             );
         }
 
-        // Tri avec validation
         const allowedFields = ['createdAt', 'nom', 'code', 'effectifActuel'];
         const orderField = allowedFields.includes(query.sortBy) ? query.sortBy : 'nom';
         qb.orderBy(`c.${orderField}`, query.sortOrder);
 
-        // Pagination
         const result = await paginateWithQueryBuilder(qb, page, limit, false);
 
-        // Aplatir les données pour le frontend (classe + données annuelles)
         return {
             items: result.items.map((ca: any) => ({
                 ...ca.classe,
                 effectifActuel: ca.effectifActuel || 0,
                 effectifMax: ca.effectifMax || 50,
+                salle: ca.sallePrincipale || null,
+                sallePrincipaleId: ca.sallePrincipaleId || null,
                 anneeScolaireId: ca.anneeScolaireId,
                 professeurPrincipalId: ca.professeurPrincipalId,
                 professeurPrincipal: ca.professeurPrincipal || null,
@@ -144,33 +134,26 @@ export class ClassesService {
         };
     }
 
-    /**
-     * Trouver une classe par ID (sans données annuelles, pour usage interne)
-     */
     async findById(id: string): Promise<Classe> {
         const classe = await this.classeRepo.findOne({
             where: { id },
-            relations: ['niveau', 'filiere', 'salle'],
+            relations: ['niveau', 'filiere'],
         });
         if (!classe) throw new AppError('Classe non trouvée', 404, 'NOT_FOUND');
         return classe;
     }
 
-    /**
-     * Trouver une classe par ID (via ClasseAnnee pour données complètes)
-     */
     async findOne(id: string, etablissementId?: string): Promise<Classe> {
         const where: any = {};
         if (etablissementId) where.etablissementId = etablissementId;
 
-        // Chercher la classe-année la plus récente pour cette classe
         const qb = this.classeAnneeRepo
             .createQueryBuilder('ca')
             .leftJoinAndSelect('ca.classe', 'c')
             .leftJoinAndSelect('c.niveau', 'n')
             .leftJoinAndSelect('n.cycle', 'cycle')
             .leftJoinAndSelect('c.filiere', 'f')
-            .leftJoinAndSelect('c.salle', 's')
+            .leftJoinAndSelect('ca.sallePrincipale', 's')
             .leftJoinAndSelect('ca.anneeScolaire', 'a')
             .leftJoinAndSelect('ca.professeurPrincipal', 'pp')
             .where('c.id = :id', { id });
@@ -187,11 +170,12 @@ export class ClassesService {
             throw new AppError('Classe non trouvée', 404, 'NOT_FOUND');
         }
 
-        // Retourner l'entité Classe enrichie avec les données annuelles
         const classe = classeAnnee.classe;
         return Object.assign(classe, {
             effectifActuel: classeAnnee.effectifActuel || 0,
             effectifMax: classeAnnee.effectifMax || 50,
+            salle: classeAnnee.sallePrincipale || null,
+            sallePrincipaleId: classeAnnee.sallePrincipaleId || null,
             anneeScolaireId: classeAnnee.anneeScolaireId,
             professeurPrincipalId: classeAnnee.professeurPrincipalId,
             professeurPrincipal: classeAnnee.professeurPrincipal || null,
@@ -202,8 +186,7 @@ export class ClassesService {
 
     async update(id: string, dto: UpdateClasseDto, etablissementId?: string): Promise<Classe> {
         const classe = await this.findOne(id, etablissementId);
-        // Ne mettre à jour que les champs du modèle permanent (Classe)
-        const champsValides = ['nom', 'code', 'niveauId', 'filiereId', 'typeClasse', 'creneauHoraire', 'description', 'salleId', 'actif'];
+        const champsValides = ['nom', 'code', 'niveauId', 'filiereId', 'typeClasse', 'creneauHoraire', 'description', 'actif'];
         for (const champ of champsValides) {
             if ((dto as any)[champ] !== undefined) {
                 (classe as any)[champ] = (dto as any)[champ];
@@ -211,12 +194,32 @@ export class ClassesService {
         }
         await this.classeRepo.save(classe);
         logger.info(`[${etablissementId}] Classe modifiée: ${classe.nom}`);
+
+        if (dto.sallePrincipaleId !== undefined || dto.effectifMax !== undefined) {
+            const classeAnneeId = (classe as any).classeAnneeId;
+            if (classeAnneeId) {
+                const classeAnnee = await this.classeAnneeRepo.findOne({ where: { id: classeAnneeId } });
+                if (classeAnnee) {
+                    if (dto.sallePrincipaleId !== undefined) {
+                        classeAnnee.sallePrincipaleId = dto.sallePrincipaleId || undefined;
+                        if (dto.sallePrincipaleId) {
+                            const salle = await salleService.findOne(dto.sallePrincipaleId, etablissementId!);
+                            classeAnnee.effectifMax = salle.capacite;
+                        }
+                    }
+                    if (dto.effectifMax !== undefined) {
+                        classeAnnee.effectifMax = Math.min(dto.effectifMax, classeAnnee.effectifMax || Infinity);
+                    }
+                    await this.classeAnneeRepo.save(classeAnnee);
+                }
+            }
+        }
+
         return classe;
     }
 
     async delete(id: string, etablissementId?: string): Promise<void> {
         const classe = await this.findOne(id, etablissementId);
-        // Vérifier s'il y a des élèves affectés à cette classe
         const count = await this.affectationRepo.count({ where: { classeId: id, actif: true } });
         if (count > 0) throw new AppError('La classe contient des élèves actifs', 400, 'CLASS_NOT_EMPTY');
 
@@ -226,10 +229,6 @@ export class ClassesService {
 
     // ==== ÉLÈVES DE LA CLASSE ====
 
-    /**
-     * Récupérer les élèves d'une classe via les affectations actives
-     * Retourne pagination + statistiques (sexe, effectif réel)
-     */
     async findElevesByClasse(
         classeId: string,
         options: { page: number; limit: number; search?: string },
@@ -240,7 +239,6 @@ export class ClassesService {
     }> {
         const { page, limit, search } = options;
 
-        // Requête principale : affectations actives avec JOIN élève
         const qb = this.affectationRepo
             .createQueryBuilder('ae')
             .innerJoinAndSelect('ae.eleve', 'e')
@@ -264,7 +262,6 @@ export class ClassesService {
 
         const elevesPagines = await paginateWithQueryBuilder(qb, page, limit, false);
 
-        // Aplatir : retourner les données de l'élève enrichies avec classeId (contexte affectation)
         const items = elevesPagines.items.map((ae: any) => ({
             ...ae.eleve,
             classeId: ae.classeId,
@@ -272,7 +269,6 @@ export class ClassesService {
             dateAffectation: ae.dateAffectation,
         }));
 
-        // Statistiques sexe (calculées sur le TOTAL, pas seulement la page courante)
         const statsQb = this.affectationRepo
             .createQueryBuilder('ae')
             .innerJoin('ae.eleve', 'e')
@@ -311,18 +307,12 @@ export class ClassesService {
         };
     }
 
-    /**
-     * Compter les affectations réelles d'une classe (pour réconciliation)
-     */
     async compterElevesActifs(classeId: string, anneeScolaireId?: string): Promise<number> {
         const where: any = { classeId, actif: true, statut: StatutAffectationEleve.ACTIVE };
         if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
         return this.affectationRepo.count({ where });
     }
 
-    /**
-     * Réconcilier le compteur effectifActuel avec le nombre réel d'affectations
-     */
     async reconcilierEffectif(classeAnneeId: string): Promise<{ ancien: number; nouveau: number }> {
         const classeAnnee = await this.classeAnneeRepo.findOne({ where: { id: classeAnneeId } });
         if (!classeAnnee) throw new AppError('Classe-année non trouvée', 404, 'NOT_FOUND');
@@ -339,18 +329,13 @@ export class ClassesService {
         return { ancien: ancienEffectif, nouveau: effectifReel };
     }
 
-    /**
-     * Réconcilier l'effectif d'une classe par son ID (trouve la ClasseAnnee active)
-     */
     async reconcilierEffectifByClasse(classeId: string, etablissementId?: string): Promise<{ ancien: number; nouveau: number; effectifReel: number }> {
-        // Trouver la ClasseAnnee active pour cette classe
         const classeAnnee = await this.classeAnneeRepo.findOne({
             where: { classeId, actif: true },
             order: { createdAt: 'DESC' },
         });
 
         if (!classeAnnee) {
-            // Pas de ClasseAnnee : compter les affectations réelles quand même
             const effectifReel = await this.compterElevesActifs(classeId);
             return { ancien: 0, nouveau: effectifReel, effectifReel };
         }
@@ -367,9 +352,6 @@ export class ClassesService {
         return { ancien: ancienEffectif, nouveau: effectifReel, effectifReel };
     }
 
-    /**
-     * Basculer le statut actif/inactif d'une classe
-     */
     async toggleActif(id: string, actif: boolean, etablissementId?: string): Promise<Classe> {
         const classe = await this.findOne(id, etablissementId);
         classe.actif = actif;
@@ -393,7 +375,6 @@ export class ClassesService {
                 throw new AppError('Aucune année scolaire active pour cette classe', 400, 'NO_ACTIVE_YEAR');
             }
 
-            // Vérifier si déjà affecté cette année
             const existing = await this.affectationRepo.findOne({
                 where: {
                     eleveId: dto.eleveId,
@@ -410,11 +391,23 @@ export class ClassesService {
                 throw new AppError('Élève déjà affecté à une classe pour cette année', 409, 'ALREADY_ASSIGNED');
             }
 
-            // Vérifier si la validation est requise
-            const requireValidation = await getParamBoolean('classes.require_validation', { defaultValue: false });
-
-            // Récupérer le classeAnneeId si disponible
+            // Vérifier la capacité de la salle principale avant affectation
             const classeAnneeId = (classe as any).classeAnneeId;
+            if (classeAnneeId) {
+                const classeAnnee = await this.classeAnneeRepo.findOne({
+                    where: { id: classeAnneeId },
+                    relations: ['sallePrincipale'],
+                });
+                if (classeAnnee?.sallePrincipale && classeAnnee.effectifActuel >= classeAnnee.sallePrincipale.capacite) {
+                    throw new AppError(
+                        `Capacité de la salle atteinte (${classeAnnee.sallePrincipale.capacite} places)`,
+                        400,
+                        'SALLE_CAPACITY_EXCEEDED'
+                    );
+                }
+            }
+
+            const requireValidation = await getParamBoolean('classes.require_validation', { defaultValue: false });
 
             const affectation = this.affectationRepo.create({
                 eleveId: dto.eleveId,
@@ -432,14 +425,12 @@ export class ClassesService {
 
             await queryRunner.manager.save(affectation);
 
-            // Mettre à jour effectif seulement si validation non requise
             if (!requireValidation && classeAnneeId) {
                 await queryRunner.manager.increment(ClasseAnnee, { id: classeAnneeId }, 'effectifActuel', 1);
             }
 
             await queryRunner.commitTransaction();
 
-            // Créer un workflow de validation si requis
             if (requireValidation) {
                 await validationWorkflowService.createWorkflow({
                     module: 'classes',
@@ -458,6 +449,50 @@ export class ClassesService {
         } catch (error: any) {
             await queryRunner.rollbackTransaction();
             logger.error(`[${etablissementId}] Erreur affectation élève: ${error.message}`);
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    async desaffecterEleve(affectationId: string, etablissementId?: string): Promise<void> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const affectation = await this.affectationRepo.findOne({
+                where: { id: affectationId },
+            });
+
+            if (!affectation) {
+                throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
+            }
+
+            affectation.actif = false;
+            affectation.statut = StatutAffectationEleve.INACTIVE;
+            await queryRunner.manager.save(affectation);
+
+            if (affectation.classeAnneeId) {
+                const classeAnnee = await queryRunner.manager.findOne(ClasseAnnee, {
+                    where: { id: affectation.classeAnneeId },
+                });
+                if (classeAnnee && classeAnnee.effectifActuel > 0) {
+                    await queryRunner.manager.decrement(
+                        ClasseAnnee,
+                        { id: affectation.classeAnneeId },
+                        'effectifActuel',
+                        1
+                    );
+                    logger.info(`[${etablissementId}] Effectif décrémenté: ClasseAnnee ${affectation.classeAnneeId}`);
+                }
+            }
+
+            await queryRunner.commitTransaction();
+            logger.info(`[${etablissementId}] Élève désaffecté: ${affectationId}`);
+        } catch (error: any) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`[${etablissementId}] Erreur désaffectation élève: ${error.message}`);
             throw error;
         } finally {
             await queryRunner.release();

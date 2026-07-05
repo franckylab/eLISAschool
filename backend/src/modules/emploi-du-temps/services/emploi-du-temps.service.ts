@@ -365,6 +365,17 @@ export class EmploiDuTempsService {
         }
     }
 
+    async findBySalle(salleId: string, anneeScolaireId?: string): Promise<EmploiDuTemps[]> {
+        const where: any = { salleId, actif: true };
+        if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
+
+        return this.repo.find({
+            where,
+            relations: ['matiere', 'enseignant', 'classeAnnee', 'classeAnnee.classe'],
+            order: { jour: 'ASC', heureDebut: 'ASC' },
+        });
+    }
+
     async supprimerCreneau(id: string): Promise<void> {
         const creneau = await this.repo.findOne({ where: { id } });
         if (!creneau) {

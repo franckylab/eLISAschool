@@ -130,6 +130,18 @@ router.post('/affectations', authMiddleware, requirePermission('classes:affecter
 });
 
 /**
+ * @route   DELETE /api/classes/affectations/:id
+ * @desc    Désaffecter un élève d'une classe (décrémente effectifActuel)
+ * @access  Authentifié avec permission classes:affecter
+ */
+router.delete('/affectations/:id', authMiddleware, requirePermission('classes:affecter'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await service.desaffecterEleve(req.params.id, req.etablissementId);
+        res.json({ success: true, message: 'Élève désaffecté' });
+    } catch (error) { next(error); }
+});
+
+/**
  * @route   POST /api/classes/:id/activer
  * @desc    Basculer le statut actif/inactif d'une classe
  * @access  Authentifié avec permission classes:edit

@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Calendar, Award } from 'lucide-react';
 import { useCycles, useSupprimerCycle, useCreerCycle, useModifierCycle } from '../hooks/use-cycles';
@@ -17,6 +18,7 @@ import type { Cycle, CycleFiltres, CreerCycleDto } from '../types/cycle.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function CyclesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<CycleFiltres>({ page: 1, limit: 20, recherche: '' });
     const [showFormModal, setShowFormModal] = useState(false);
@@ -117,7 +119,7 @@ export function CyclesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => {/* Voir détails */},
+                    onClick: () => navigate({ to: '/cycles/$id', params: { id: c.id } }),
                     variant: 'info' as const,
                 },
                 {

@@ -39,7 +39,9 @@
     },
     "statut": {
         "actif": "Active",
-        "inactif": "Inactive"
+        "inactif": "Inactive",
+        "actifDescription": "This class is currently active and usable.",
+        "inactifDescription": "This class is currently inactive."
     },
     "sexe": {
         "masculin": "Male",
@@ -68,7 +70,11 @@
         "description": "Description",
         "nonAssignee": "Not assigned",
         "nonAssigne": "Not assigned",
-        "illimite": "Unlimited"
+        "illimite": "Unlimited",
+        "filiere": "Track",
+        "systeme": "System information",
+        "creeLe": "Created on",
+        "modifieLe": "Modified on"
     },
     "stats": {
         "effectif": "Enrollment",
@@ -78,7 +84,12 @@
         "rempli": "filled",
         "pasDeLimite": "No limit defined",
         "repartitionSexe": "Gender distribution",
-        "totalEleves": "Total students"
+        "totalEleves": "Total students",
+        "type": "Type",
+        "total": "Total classes",
+        "actives": "Active",
+        "effectifTotal": "Total enrollment",
+        "niveaux": "Levels"
     },
     "eleves": {
         "inscrits": "Enrolled students",
@@ -132,7 +143,8 @@
     },
     "erreurs": {
         "chargement": "Unable to load classes",
-        "classeNonTrouvee": "Class not found"
+        "classeNonTrouvee": "Class not found",
+        "classeNonTrouveeMessage": "The requested class does not exist or has been deleted."
     },
     "confirmations": {
         "supprimerTitre": "Delete this class",

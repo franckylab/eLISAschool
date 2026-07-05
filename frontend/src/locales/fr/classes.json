@@ -39,7 +39,9 @@
     },
     "statut": {
         "actif": "Actif",
-        "inactif": "Inactif"
+        "inactif": "Inactif",
+        "actifDescription": "Cette classe est actuellement active et utilisable.",
+        "inactifDescription": "Cette classe est actuellement inactive."
     },
     "sexe": {
         "masculin": "Masculin",
@@ -68,7 +70,11 @@
         "description": "Description",
         "nonAssignee": "Non assignée",
         "nonAssigne": "Non assigné",
-        "illimite": "Illimitée"
+        "illimite": "Illimitée",
+        "filiere": "Filière",
+        "systeme": "Informations système",
+        "creeLe": "Créé le",
+        "modifieLe": "Modifié le"
     },
     "stats": {
         "effectif": "Effectif",
@@ -78,7 +84,12 @@
         "rempli": "rempli",
         "pasDeLimite": "Pas de limite définie",
         "repartitionSexe": "Répartition par sexe",
-        "totalEleves": "Total élèves"
+        "totalEleves": "Total élèves",
+        "type": "Type",
+        "total": "Total classes",
+        "actives": "Actives",
+        "effectifTotal": "Effectif total",
+        "niveaux": "Niveaux"
     },
     "eleves": {
         "inscrits": "Élèves inscrits",
@@ -132,7 +143,8 @@
     },
     "erreurs": {
         "chargement": "Impossible de charger les classes",
-        "classeNonTrouvee": "Classe non trouvée"
+        "classeNonTrouvee": "Classe non trouvée",
+        "classeNonTrouveeMessage": "La classe demandée n'existe pas ou a été supprimée."
     },
     "confirmations": {
         "supprimerTitre": "Supprimer cette classe",

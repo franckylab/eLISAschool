@@ -16,7 +16,6 @@ import {
 } from 'typeorm';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
-import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -76,17 +75,6 @@ export class Classe {
 
     @Column({ type: 'text', nullable: true })
     description?: string;
-
-    /**
-     * Salle principale assignée à cette classe
-     */
-    @Column({ type: 'uuid', nullable: true })
-    @Index()
-    salleId?: string;
-
-    @ManyToOne(() => Salle, { nullable: true })
-    @JoinColumn({ name: 'salleId' })
-    salle?: Salle;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

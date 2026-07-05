@@ -94,3 +94,41 @@ export interface PaginationResponse {
     hasNext: boolean;
     hasPrev: boolean;
 }
+
+export interface SalleStats {
+    tauxOccupation: number;
+    totalCreneauxSemaine: number;
+    creneauxOccupes: number;
+    occupationParJour: Record<string, number>;
+    heuresReservees: number;
+    classesLiees: number;
+}
+
+export interface CreneauEmploiDuTemps {
+    id: string;
+    jour: string;
+    heureDebut: string;
+    heureFin: string;
+    matiere?: { id: string; nom: string; code?: string; couleur?: string } | null;
+    enseignant?: { id: string; nom: string; prenom: string } | null;
+    classeAnnee?: {
+        id: string;
+        classe?: { id: string; nom: string; code?: string } | null;
+    } | null;
+    salleId?: string;
+    typeCreneau?: string;
+    couleur?: string;
+    notes?: string;
+}
+
+export interface ClasseLiee {
+    id: string;
+    classeId: string;
+    classe?: { id: string; nom: string; code?: string } | null;
+    anneeScolaire?: { id: string; libelle: string } | null;
+    professeurPrincipal?: { id: string; nom: string; prenom: string } | null;
+    effectifActuel: number;
+    effectifMax: number;
+    statut: string;
+    notes?: string;
+}

@@ -13,10 +13,12 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { useNavigate } from '@tanstack/react-router';
 import { usePermissions } from '@/hooks';
 import type { AnneeScolaire, AnneeScolaireFiltres } from '../types/annee-scolaire.types';
 
 export function AnneesScolairesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<AnneeScolaireFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
@@ -67,7 +69,7 @@ export function AnneesScolairesPage() {
             sortable: true,
             render: (a) => (
                 <button
-                    onClick={() => { window.location.href = `/annees-scolaires/${a.id}`; }}
+                    onClick={() => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } })}
                     className="hover:underline cursor-pointer text-left"
                 >
                     <div className="flex items-center gap-2">
@@ -136,7 +138,7 @@ export function AnneesScolairesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => { window.location.href = `/annees-scolaires/${a.id}`; },
+                    onClick: () => navigate({ to: '/annees-scolaires/$id', params: { id: a.id } }),
                     variant: 'info' as const,
                 },
                 {

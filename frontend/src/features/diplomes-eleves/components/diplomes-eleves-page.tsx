@@ -7,8 +7,9 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, GraduationCap, Calendar, Hash } from 'lucide-react';
+import { Plus, GraduationCap, Calendar, Hash, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -24,6 +25,7 @@ import {
 import { DiplomeEleveFormModal } from './diplome-eleve-form-modal';
 
 export function DiplomesElevesPage() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -127,6 +129,35 @@ export function DiplomesElevesPage() {
                     {diplome.resultat === 'ADMIS' ? 'Validé' : 'Inactif'}
                 </span>
             ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            className: 'text-right',
+            renderActions: (d) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => navigate({ to: '/diplomes-eleves/$id', params: { id: d.id } }),
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: 'Modifier',
+                    onClick: () => { setDiplomeToEdit(d); setShowFormModal(true); },
+                    permission: 'diplomes-eleves:edit',
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: 'Supprimer',
+                    onClick: () => setDiplomeToDelete(d),
+                    permission: 'diplomes-eleves:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 

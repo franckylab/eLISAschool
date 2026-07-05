@@ -11,5 +11,6 @@ export { SallesStatistiquesPage } from './pages/SallesStatistiquesPage';
 export { SalleDetailPage } from './pages/SalleDetailPage';
 export { SalleFormModal } from './components/SalleFormModal';
 export { SalleSelect } from './components/SalleSelect';
+export { AssignerClasseModal } from './components/AssignerClasseModal';
 export { useSalles, useSalle, useSallesDisponibles, useStatistiquesSalles, useCreerSalle, useModifierSalle, useSupprimerSalle } from './hooks/use-salles';
 export type { Salle, TypeSalle, StatutSalle, CreerSalleDto, ModifierSalleDto, FiltresSalles, StatistiquesSalles } from './types/salle.types';

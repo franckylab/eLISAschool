@@ -61,7 +61,7 @@ export interface Classe {
         libelle: string;
         statut?: string;
     } | null;
-    salleId?: string;
+    sallePrincipaleId?: string;
     salle?: {
         id: string;
         nom: string;
@@ -84,7 +84,7 @@ export interface CreerClasseDto {
     /** Champs d'instance annuelle (optionnels) */
     anneeScolaireId?: string;
     professeurPrincipalId?: string | null;
-    salleId?: string;
+    sallePrincipaleId?: string;
     effectifMax?: number;
 }
 
@@ -125,7 +125,7 @@ export interface CreerClasseModeleDto {
 export interface CreerClasseInstanceDto {
     anneeScolaireId: string;
     professeurPrincipalId?: string | null;
-    salleId?: string;
+    sallePrincipaleId?: string;
     effectifMax?: number;
 }
 
