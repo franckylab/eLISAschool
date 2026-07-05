@@ -1,12 +1,6 @@
-/**
- * ==================================
- * eLISAschool - Composant Message d'Erreur Inline
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
-import { AlertTriangle, Info, XCircle, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Info, XCircle, RefreshCw, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { ElisaButton } from './ElisaButton';
 
 interface ErrorMessageProps {
@@ -18,18 +12,68 @@ interface ErrorMessageProps {
     className?: string;
     dismissible?: boolean;
     onDismiss?: () => void;
+    autoDismissMs?: number;
 }
 
-/**
- * Composant de message d'erreur inline pour les interfaces utilisateur
- * 
- * @example
- * <ErrorMessage 
- *   title="Erreur de chargement"
- *   message="Impossible de charger les données"
- *   onRetry={() => refetch()}
- * />
- */
+const VARIANT_CONFIGS = {
+    error: {
+        bar: 'bg-red-500',
+        bg: 'bg-red-50/80',
+        icon: XCircle,
+        iconColor: 'text-red-600',
+        titleColor: 'text-red-900',
+        textColor: 'text-red-700',
+        buttonVariant: 'danger' as const,
+        shadowHover: 'shadow-red-200/50',
+    },
+    warning: {
+        bar: 'bg-amber-500',
+        bg: 'bg-amber-50/80',
+        icon: AlertTriangle,
+        iconColor: 'text-amber-600',
+        titleColor: 'text-amber-900',
+        textColor: 'text-amber-700',
+        buttonVariant: 'primary' as const,
+        shadowHover: 'shadow-amber-200/50',
+    },
+    info: {
+        bar: 'bg-blue-500',
+        bg: 'bg-blue-50/80',
+        icon: Info,
+        iconColor: 'text-blue-600',
+        titleColor: 'text-blue-900',
+        textColor: 'text-blue-700',
+        buttonVariant: 'primary' as const,
+        shadowHover: 'shadow-blue-200/50',
+    },
+};
+
+function AutoDismissProgress({ duration, onComplete }: { duration: number; onComplete: () => void }) {
+    const [width, setWidth] = useState(100);
+
+    useEffect(() => {
+        const start = performance.now();
+        const frame = () => {
+            const elapsed = performance.now() - start;
+            const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+            setWidth(remaining);
+            if (remaining <= 0) onComplete();
+            else requestAnimationFrame(frame);
+        };
+        const id = requestAnimationFrame(frame);
+        return () => cancelAnimationFrame(id);
+    }, [duration, onComplete]);
+
+    return (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/5 overflow-hidden">
+            <motion.div
+                className="h-full bg-black/10 rounded-full"
+                style={{ width: `${width}%` }}
+            />
+        </div>
+    );
+}
+
 export function ErrorMessage({
     title,
     message,
@@ -39,62 +83,58 @@ export function ErrorMessage({
     className = '',
     dismissible = false,
     onDismiss,
+    autoDismissMs,
 }: ErrorMessageProps) {
-    const variants = {
-        error: {
-            bg: 'bg-red-50',
-            border: 'border-red-200',
-            icon: XCircle,
-            iconColor: 'text-red-600',
-            titleColor: 'text-red-900',
-            textColor: 'text-red-700',
-            buttonVariant: 'danger' as const,
-        },
-        warning: {
-            bg: 'bg-yellow-50',
-            border: 'border-yellow-200',
-            icon: AlertTriangle,
-            iconColor: 'text-yellow-600',
-            titleColor: 'text-yellow-900',
-            textColor: 'text-yellow-700',
-            buttonVariant: 'primary' as const,
-        },
-        info: {
-            bg: 'bg-blue-50',
-            border: 'border-blue-200',
-            icon: Info,
-            iconColor: 'text-blue-600',
-            titleColor: 'text-blue-900',
-            textColor: 'text-blue-700',
-            buttonVariant: 'primary' as const,
-        },
-    };
+    const [dismissed, setDismissed] = useState(false);
 
-    const variantConfig = variants[variant];
-    const Icon = variantConfig.icon;
+    const handleDismiss = useCallback(() => {
+        setDismissed(true);
+        onDismiss?.();
+    }, [onDismiss]);
+
+    const config = VARIANT_CONFIGS[variant];
+    const Icon = config.icon;
+
+    if (dismissed) return null;
 
     return (
-        <div className={`${variantConfig.bg} ${variantConfig.border} border rounded-lg p-6 ${className}`}>
-            <div className="flex items-start gap-4">
-                <Icon className={`h-6 w-6 ${variantConfig.iconColor} flex-shrink-0 mt-0.5`} />
-                
-                <div className="flex-1">
+        <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            className={`relative overflow-hidden rounded-xl ${config.bg} backdrop-blur-sm ${className}`}
+        >
+            <div
+                className={`absolute inset-y-0 left-0 w-1 rounded-r ${config.bar}`}
+            />
+
+            <div className="flex items-start gap-3 p-4 pl-5">
+                <motion.div
+                    initial={{ rotate: -12, scale: 0 }}
+                    animate={{ rotate: 0, scale: 1 }}
+                    transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
+                >
+                    <Icon className={`h-5 w-5 ${config.iconColor} flex-shrink-0 mt-0.5`} />
+                </motion.div>
+
+                <div className="flex-1 min-w-0">
                     {title && (
-                        <h3 className={`text-lg font-semibold ${variantConfig.titleColor} mb-2`}>
+                        <h3 className={`text-sm font-semibold ${config.titleColor} mb-0.5`}>
                             {title}
                         </h3>
                     )}
-                    
-                    <p className={`${variantConfig.textColor} leading-relaxed`}>
+
+                    <p className={`text-sm ${config.textColor} leading-relaxed`}>
                         {message}
                     </p>
 
                     {onRetry && (
-                        <div className="mt-4">
+                        <div className="mt-3">
                             <ElisaButton
-                                variant={variantConfig.buttonVariant}
-                                size="sm"
-                                icon={<RefreshCw className="h-4 w-4" />}
+                                variant={config.buttonVariant}
+                                size="xs"
+                                icon={<RefreshCw className="h-3.5 w-3.5" />}
                                 onClick={onRetry}
                             >
                                 {retryLabel}
@@ -103,17 +143,24 @@ export function ErrorMessage({
                     )}
                 </div>
 
-                {dismissible && onDismiss && (
+                {(dismissible || autoDismissMs) && handleDismiss && (
                     <button
-                        onClick={onDismiss}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        onClick={handleDismiss}
+                        className="flex-shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-black/5 transition-all"
                         aria-label="Fermer"
                     >
-                        <XCircle className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                     </button>
                 )}
             </div>
-        </div>
+
+            {autoDismissMs && autoDismissMs > 0 && (
+                <AutoDismissProgress
+                    duration={autoDismissMs}
+                    onComplete={handleDismiss}
+                />
+            )}
+        </motion.div>
     );
 }
 

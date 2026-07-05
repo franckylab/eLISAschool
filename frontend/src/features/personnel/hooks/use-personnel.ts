@@ -8,7 +8,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import type { MembrePersonnel, CreerPersonnelDto, ModifierPersonnelDto, PersonnelFiltres } from '../types/personnel.types';
+import { fromFormToCreateDto } from '../types/personnel.types';
 import { toast } from 'sonner';
+
+const enseignantKeys = {
+    listes: () => ['enseignants', 'liste'] as const,
+    detail: (id: string) => ['enseignants', 'detail', id] as const,
+};
 
 const PERSONNEL_KEYS = {
     all: ['personnel'] as const,
@@ -46,7 +52,7 @@ export function useMembrePersonnel(id: string) {
     return useQuery({
         queryKey: PERSONNEL_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: MembrePersonnel }>(`/api/personnel/${id}`);
+            const response = await apiClient.get<MembrePersonnel>(`/api/personnel/${id}`);
             return response.data;
         },
         enabled: !!id,
@@ -56,15 +62,20 @@ export function useMembrePersonnel(id: string) {
 export function useCreerPersonnel() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: CreerPersonnelDto) => {
-            const response = await apiClient.post<{ data: MembrePersonnel }>('/api/personnel', dto);
+        mutationFn: async (dto: CreerPersonnelDto | Record<string, any>) => {
+            const payload = ('dateEmbauche' in dto) ? dto : fromFormToCreateDto(dto);
+            const response = await apiClient.post<MembrePersonnel>('/api/personnel', payload);
             return response.data;
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
+            queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
             if (data) {
-                toast.success(`${data.data.prenom} ${data.data.nom} ajouté(e) au personnel`);
+                queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
+                const nom = (data as any).nom || data.utilisateur?.profil?.nom || '';
+                const prenom = (data as any).prenom || data.utilisateur?.profil?.prenom || '';
+                toast.success(`${prenom} ${nom} ajouté(e) au personnel`);
             }
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
@@ -74,16 +85,45 @@ export function useCreerPersonnel() {
 export function useModifierPersonnel() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: ModifierPersonnelDto) => {
-            const { id, ...data } = dto;
-            const response = await apiClient.patch<{ data: MembrePersonnel }>(`/api/personnel/${id}`, data);
+        mutationFn: async (dto: ModifierPersonnelDto | Record<string, any>) => {
+            const { id, ...rest } = dto;
+            const payload: Record<string, any> = ('dateEmbauche' in rest || 'matricule' in rest)
+                ? rest
+                : {
+                    dateEmbauche: rest.dateEntree || rest.dateEmbauche,
+                    statut: rest.statut?.toUpperCase(),
+                    specialites: rest.specialite ? [rest.specialite] : rest.specialites,
+                    diplomes: rest.diplomes || rest.qualification,
+                    nom: rest.nom,
+                    prenom: rest.prenom,
+                    dateNaissance: rest.dateNaissance,
+                    sexe: rest.sexe,
+                    email: rest.email,
+                    telephone: rest.telephone,
+                    adresse: rest.adresse,
+                    poste: rest.poste,
+                    departement: rest.departement,
+                    typeContrat: rest.typeContrat,
+                    posteExact: rest.posteExact,
+                    service: rest.service,
+                    specialitePrincipale: rest.specialitePrincipale,
+                    educationNiveau: rest.educationNiveau,
+                    typePersonnelId: rest.typePersonnelId,
+                };
+            // Remove undefined to avoid overwriting existing values with nothing
+            Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+            const response = await apiClient.patch<MembrePersonnel>(`/api/personnel/${id}`, payload);
             return response.data;
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
             if (data) {
                 queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
-                toast.success(`${data.data.prenom} ${data.data.nom} modifié(e) avec succès`);
+                queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
+                const nom = (data as any).nom || data.utilisateur?.profil?.nom || '';
+                const prenom = (data as any).prenom || data.utilisateur?.profil?.prenom || '';
+                toast.success(`${prenom} ${nom} modifié(e) avec succès`);
             }
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
@@ -99,6 +139,7 @@ export function useSupprimerPersonnel() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
+            queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
             toast.success('Membre du personnel supprimé');
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),

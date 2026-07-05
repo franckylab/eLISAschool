@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useNiveau } from '../hooks/use-niveaux';
 import { NiveauFormModal } from './niveau-form-modal';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 
@@ -57,6 +58,7 @@ export function NiveauDetailPage() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
             >
+                <Breadcrumbs currentLabel={niveau.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/niveaux' })}

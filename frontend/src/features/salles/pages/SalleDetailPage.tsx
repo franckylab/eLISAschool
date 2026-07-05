@@ -9,15 +9,17 @@ import {
     Theater, Dumbbell, Music, Palette,
     Briefcase, HelpCircle, Clock,
     GraduationCap, Printer, Copy,
-    MoreHorizontal,
+    MoreHorizontal, AlertTriangle,
 } from 'lucide-react';
 import { useSalle, useStatistiquesSalles, useModifierSalle, useSalleStats, useSalleEmploiDuTemps, useSalleClasses } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle } from '../types/salle.types';
 import type { CreneauEmploiDuTemps, ClasseLiee } from '../types/salle.types';
 import { SalleFormModal } from '../components/SalleFormModal';
 import { AssignerClasseModal } from '../components/AssignerClasseModal';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePermissions } from '@/hooks';
 import { toast } from 'sonner';
 
@@ -126,6 +128,8 @@ export function SalleDetailPage() {
     const [statutMenuOpen, setStatutMenuOpen] = useState(false);
     const [duplicateFromId, setDuplicateFromId] = useState<string | null>(null);
     const [assignerClasseOpen, setAssignerClasseOpen] = useState(false);
+    const [showDepassementWarning, setShowDepassementWarning] = useState(true);
+    const [showTotalWarning, setShowTotalWarning] = useState(true);
 
     const creneauMap = useMemo(() => buildCreneauMap(emploiDuTemps), [emploiDuTemps]);
 
@@ -229,9 +233,18 @@ export function SalleDetailPage() {
         ? Math.min(100, Math.round((salleStats.heuresReservees / salleStats.totalCreneauxSemaine) * 100))
         : 0;
 
+    const totalEffectifActuel = classesLiees.reduce((sum, cl) => sum + (cl.effectifActuel || 0), 0);
+    const totalEffectifMax = classesLiees.reduce((sum, cl) => sum + (cl.effectifMax || 0), 0);
+    const effectifRatioMax = totalEffectifMax > 0 ? (totalEffectifActuel / totalEffectifMax) * 100 : 0;
+    const effectifRatioCapacite = salle.capacite > 0 ? (totalEffectifActuel / salle.capacite) * 100 : 0;
+
+    const classesDepassantCapacite = classesLiees.filter((cl) => cl.effectifMax > salle.capacite);
+    const nbClassesDepassantes = classesDepassantCapacite.length;
+
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <Breadcrumbs currentLabel={salle.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/salles' })}
@@ -367,6 +380,133 @@ export function SalleDetailPage() {
                         );
                     })}
                 </div>
+
+                {salleStats && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8"
+                    >
+                        <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-purple-500" />
+                            Taux d'occupation
+                            {totalEffectifMax > salle.capacite && (
+                                <Badge variant="warning" size="xs" icon={<AlertTriangle className="h-3 w-3" />} title="La somme des effectifs max dépasse la capacité de la salle">
+                                    Capacité
+                                </Badge>
+                            )}
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-gray-600">Créneaux occupés</span>
+                                    <span className="font-medium text-gray-900">
+                                        {salleStats.creneauxOccupes} / {salleStats.totalCreneauxSemaine}
+                                    </span>
+                                </div>
+                                <div className="overflow-hidden h-3 rounded bg-blue-100">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min((salleStats.creneauxOccupes / salleStats.totalCreneauxSemaine) * 100, 100)}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className="h-full bg-blue-500 rounded"
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {Math.min((salleStats.creneauxOccupes / salleStats.totalCreneauxSemaine) * 100, 100).toFixed(1)}% des créneaux utilisés
+                                </p>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-gray-600">Heures réservées / Semaine</span>
+                                    <span className="font-medium text-gray-900">
+                                        {salleStats.heuresReservees}h / {salleStats.totalCreneauxSemaine}h
+                                    </span>
+                                </div>
+                                <div className="overflow-hidden h-3 rounded bg-purple-100">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${capacityPercent}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className={`h-full rounded ${capacityPercent > 80 ? 'bg-red-500' : 'bg-purple-500'}`}
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {capacityPercent}% de la capacité horaire utilisée
+                                </p>
+                            </div>
+                        </div>
+
+                        {classesLiees.length > 0 && (
+                            <div className="mt-6 pt-6 border-t border-gray-100">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                                    Effectifs ({totalEffectifActuel} élèves)
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-gray-600">Effectif / Capacité max des classes</span>
+                                            <span className="font-medium text-gray-900">
+                                                {totalEffectifActuel} / {totalEffectifMax}
+                                            </span>
+                                        </div>
+                                        <div className="overflow-hidden h-3 rounded bg-blue-100">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${Math.min(effectifRatioMax, 100)}%` }}
+                                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                className="h-full bg-blue-500 rounded"
+                                            />
+                                        </div>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            {effectifRatioMax.toFixed(1)}% de la capacité max utilisée
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-gray-600">Effectif / Capacité de la salle</span>
+                                            <span className="font-medium text-gray-900">
+                                                {totalEffectifActuel} / {salle.capacite}
+                                            </span>
+                                        </div>
+                                        <div className="overflow-hidden h-3 rounded bg-emerald-100">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${Math.min(effectifRatioCapacite, 100)}%` }}
+                                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                className={`h-full rounded ${totalEffectifActuel > salle.capacite ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                            />
+                                        </div>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            {effectifRatioCapacite.toFixed(1)}% de la capacité physique utilisée
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {showDepassementWarning && nbClassesDepassantes > 0 && (
+                                    <ErrorMessage
+                                        variant="warning"
+                                        title="Incohérence détectée"
+                                        message={`${nbClassesDepassantes} classe${nbClassesDepassantes > 1 ? 's ont' : ' a'} un effectif max supérieur à la capacité de la salle (${salle.capacite} places).`}
+                                        dismissible
+                                        onDismiss={() => setShowDepassementWarning(false)}
+                                        autoDismissMs={30000}
+                                    />
+                                )}
+                                {showTotalWarning && totalEffectifMax > salle.capacite && (
+                                    <ErrorMessage
+                                        variant="warning"
+                                        title="Dépassement de capacité totale"
+                                        message={`La somme des effectifs max (${totalEffectifMax}) dépasse la capacité de la salle (${salle.capacite} places).`}
+                                        dismissible
+                                        onDismiss={() => setShowTotalWarning(false)}
+                                        autoDismissMs={30000}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
@@ -640,6 +780,11 @@ export function SalleDetailPage() {
                                     <div className="flex items-center gap-2">
                                         <GraduationCap className="h-5 w-5 text-amber-500" />
                                         <h2 className="text-lg font-semibold text-gray-900">Classes liées</h2>
+                                        {totalEffectifMax > salle.capacite && (
+                                            <Badge variant="warning" size="xs" icon={<AlertTriangle className="h-3 w-3" />} title="La somme des effectifs max dépasse la capacité de la salle">
+                                                Capacité
+                                            </Badge>
+                                        )}
                                         <Badge variant="outline" className="text-xs">
                                             {classesLiees.length}
                                         </Badge>
@@ -680,10 +825,20 @@ export function SalleDetailPage() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-sm font-semibold text-gray-900">
+                                                    <p className={`text-sm font-semibold ${cl.effectifMax > salle.capacite ? 'text-red-600' : 'text-gray-900'}`}>
                                                         {cl.effectifActuel}/{cl.effectifMax}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400">élèves</p>
+                                                    {cl.effectifMax > salle.capacite ? (
+                                                        <p className="flex items-center justify-end gap-1 text-[10px] text-amber-600 mt-0.5">
+                                                            <AlertTriangle className="h-3 w-3" />
+                                                            &gt; capa. salle ({salle.capacite})
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[10px] text-gray-400 mt-0.5">
+                                                            Max {cl.effectifMax} / Capa. salle {salle.capacite}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}

@@ -71,6 +71,28 @@ router.get(
 );
 
 /**
+ * GET /api/personnel/heures-cours/enseignants/:id/edt
+ * Obtenir l'emploi du temps hebdomadaire d'un enseignant
+ */
+router.get(
+    '/enseignants/:id/edt',
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const semaine = req.query.semaine as string || new Date().toISOString().split('T')[0];
+            const edt = await service.getEdtEnseignant(
+                req.params.id,
+                semaine,
+                req.etablissementId!
+            );
+            res.json({ success: true, data: edt });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
  * GET /api/personnel/enseignants/:id/volume-horaire
  * Calculer le volume horaire hebdomadaire d'un enseignant
  */

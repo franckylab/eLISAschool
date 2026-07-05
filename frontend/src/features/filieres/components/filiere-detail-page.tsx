@@ -16,6 +16,7 @@ import { useFiliere } from '../hooks/use-filieres';
 import { useSpecialites, type Specialite } from '@/features/specialites/hooks/use-specialites';
 import { useModifierFiliere } from '../hooks/use-filieres';
 import { FiliereFormModal } from './filiere-form-modal';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 
@@ -64,6 +65,7 @@ export function FiliereDetailPage() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
             >
+                <Breadcrumbs currentLabel={filiere.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/filieres' })}

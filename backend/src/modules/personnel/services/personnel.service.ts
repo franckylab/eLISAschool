@@ -45,8 +45,10 @@ export class PersonnelService {
         if (existing) throw new AppError('Matricule déjà utilisé', 409, 'MATRICULE_EXISTS');
 
         // Vérifier utilisateur unique
-        const userUsed = await this.personnelRepo.findOne({ where: { utilisateurId: dto.utilisateurId } });
-        if (userUsed) throw new AppError('Cet utilisateur est déjà membre du personnel', 409, 'USER_ALREADY_MEMBER');
+        if (dto.utilisateurId) {
+            const userUsed = await this.personnelRepo.findOne({ where: { utilisateurId: dto.utilisateurId } });
+            if (userUsed) throw new AppError('Cet utilisateur est déjà membre du personnel', 409, 'USER_ALREADY_MEMBER');
+        }
 
         // Vérifier si le workflow de validation est requis
         const requireValidation = await getParamBoolean('personnel.require_validation', false);
@@ -84,6 +86,7 @@ export class PersonnelService {
         const qb = this.personnelRepo
             .createQueryBuilder('p')
             .leftJoinAndSelect('p.utilisateur', 'u')
+            .leftJoinAndSelect('u.profil', 'prof')
             .leftJoinAndSelect('p.typePersonnel', 'tp')
             .where('1=1');
 
@@ -121,7 +124,7 @@ export class PersonnelService {
     async findOne(id: string): Promise<MembrePersonnel> {
         const membre = await this.personnelRepo.findOne({
             where: { id },
-            relations: ['utilisateur', 'typePersonnel'],
+            relations: ['utilisateur', 'utilisateur.profil', 'typePersonnel'],
         });
         if (!membre) throw new AppError('Membre non trouvé', 404, 'NOT_FOUND');
         return membre;

@@ -15,13 +15,22 @@ export const createTypePersonnelSchema = z.object({
 });
 
 export const createPersonnelSchema = z.object({
-    utilisateurId: z.string().uuid(),
+    utilisateurId: z.string().uuid().optional(),
     typePersonnelId: z.string().uuid().optional(),
     matricule: z.string().min(2).max(50),
     dateEmbauche: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     statut: z.enum(['ACTIF', 'INACTIF', 'CONGE']).default('ACTIF'),
     specialites: z.array(z.string()).optional(),
     diplomes: z.string().optional(),
+    // Infos personnelles dénormalisées
+    nom: z.string().max(100).optional(),
+    prenom: z.string().max(100).optional(),
+    dateNaissance: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    sexe: z.enum(['M', 'F']).optional(),
+    email: z.string().email().max(255).optional(),
+    telephone: z.string().max(50).optional(),
+    adresse: z.string().optional(),
+    departement: z.string().max(200).optional(),
 });
 
 export const updatePersonnelSchema = createPersonnelSchema.partial().omit({ utilisateurId: true });

@@ -1,23 +1,39 @@
-/**
- * ==================================
- * eLISAschool - Breadcrumbs
- * ==================================
- * Fil d'Ariane auto-généré depuis le router
- */
-
 import { Link, useMatches } from '@tanstack/react-router';
 import { ChevronRight, Home } from 'lucide-react';
 
-export function Breadcrumbs() {
+const LABEL_MAP: Record<string, string> = {
+    classes: 'Classes',
+    salles: 'Salles',
+    niveaux: 'Niveaux',
+    cycles: 'Cycles',
+    filieres: 'Filières',
+    matieres: 'Matières',
+    'annees-scolaires': 'Années scolaires',
+    parametres: 'Paramètres',
+    configuration: 'Configuration',
+    utilisateurs: 'Utilisateurs',
+    eleves: 'Élèves',
+};
+
+interface BreadcrumbsProps {
+    currentLabel?: string;
+}
+
+export function Breadcrumbs({ currentLabel }: BreadcrumbsProps) {
     const matches = useMatches();
 
-    // Filtrer les matches qui ont un path significatif
     const crumbs = matches
         .filter((m) => m.pathname && m.pathname !== '/' && !m.pathname.includes('_auth'))
-        .map((m) => ({
-            path: m.pathname,
-            label: m.pathname.split('/').filter(Boolean).pop() || '',
-        }));
+        .map((m, idx, arr) => {
+            const segment = m.pathname.split('/').filter(Boolean).pop() || '';
+            const isLast = idx === arr.length - 1;
+            return {
+                path: m.pathname,
+                label: isLast && currentLabel
+                    ? currentLabel
+                    : LABEL_MAP[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
+            };
+        });
 
     if (crumbs.length === 0) return null;
 

@@ -1,405 +1,692 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Matière
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, BookOpen, Clock, FileText, Users,
-    Edit, Trash2, Hash, TrendingUp, AlertCircle
+    Edit, Trash2, Hash, TrendingUp, AlertCircle,
+    GraduationCap, Layers, CheckCircle, XCircle,
+    Globe, UserCheck, Ban, UserPlus, AlertTriangle,
 } from 'lucide-react';
-import { useMatiere, useSupprimerMatiere } from '../hooks/use-matieres';
+import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
+import { MatiereFormModal } from './matiere-form-modal';
+import { AffectationFormModal } from './affectation-form-modal';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { Matiere } from '../types/matiere.types';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { LoadingState } from '@/components/feedback';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { usePermissions } from '@/hooks';
+import type { MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
+import type { AffectationPayload } from '../hooks/use-matieres';
 
-type OngletActif = 'informations' | 'programme' | 'statistiques';
+type OngletActif = 'informations' | 'programme' | 'affectations' | 'configurations';
+
+function StatutBadge({ actif }: { actif: boolean }) {
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${
+            actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+        }`}>
+            {actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+            {actif ? 'Active' : 'Inactive'}
+        </span>
+    );
+}
+
+const sousSystemeConfig: Record<string, { label: string; bg: string; text: string }> = {
+    FRANCOPHONE: { label: 'Francophone', bg: 'bg-blue-100', text: 'text-blue-700' },
+    ANGLOPHONE: { label: 'Anglophone', bg: 'bg-green-100', text: 'text-green-700' },
+    BICULTUREL: { label: 'Biculturel', bg: 'bg-purple-100', text: 'text-purple-700' },
+};
+
+function SousSystemeBadge({ value }: { value: string | null }) {
+    if (!value) return <span className="text-xs text-gray-500">Commun</span>;
+    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-gray-100', text: 'text-gray-700' };
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+            <Globe className="h-3 w-3" />
+            {cfg.label}
+        </span>
+    );
+}
+
+function formatDate(d: string) {
+    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 export function MatiereDetailPage() {
     const { id } = useParams({ from: '/_auth/matieres/$id' });
     const navigate = useNavigate();
-    const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
+    const { hasPermission } = usePermissions();
 
-    const { data: matiereData, isLoading } = useMatiere(id);
-    const matiere = matiereData?.data;
+    const { data: matiere, isLoading, error } = useMatiere(id);
+    const [formOpen, setFormOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const modifier = useModifierMatiere();
     const supprimer = useSupprimerMatiere();
 
-    const onglets = [
-        { id: 'informations' as const, label: 'Informations', icon: BookOpen },
-        { id: 'programme' as const, label: 'Programme', icon: FileText },
-        { id: 'statistiques' as const, label: 'Statistiques', icon: TrendingUp },
-    ];
+    const [affectationModalOpen, setAffectationModalOpen] = useState(false);
+    const [affectationToEdit, setAffectationToEdit] = useState<AffectationMatiere | null>(null);
+    const [deleteAffectationId, setDeleteAffectationId] = useState<string | null>(null);
+    const creerAffectation = useCreerAffectation();
+    const modifierAffectation = useModifierAffectation();
+    const supprimerAffectation = useSupprimerAffectation();
+
+    const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
+
+    const programmeQuery = useMatiereProgramme(id);
+    const affectationsQuery = useMatiereAffectations(id);
+    const configurationsQuery = useMatiereConfigurations(id);
+
+    const { niveauxSansAffectation, affectationsInactives, tauxCouverture } = useMemo(() => {
+        const programme = programmeQuery.data ?? [];
+        const affectations = affectationsQuery.data ?? [];
+        const affectes = new Set(affectations.map((a) => a.classeAnneeId));
+        const sansAffectation = programme.filter((p) => !affectes.has(p.niveauId));
+        const inactives = affectations.filter((a) => !a.actif);
+        const couverture = programme.length > 0
+            ? Math.round(((programme.length - sansAffectation.length) / programme.length) * 100)
+            : 0;
+        return {
+            niveauxSansAffectation: sansAffectation,
+            affectationsInactives: inactives,
+            tauxCouverture: couverture,
+        };
+    }, [programmeQuery.data, affectationsQuery.data]);
+
+    const handleSave = async (data: any) => {
+        await modifier.mutateAsync({ id, ...data });
+        setFormOpen(false);
+    };
+
+    const handleDelete = async () => {
+        await supprimer.mutateAsync(id);
+        navigate({ to: '/matieres' });
+    };
+
+    const handleAffectationSave = async (data: AffectationPayload) => {
+        if (affectationToEdit) {
+            await modifierAffectation.mutateAsync({ id: affectationToEdit.id, ...data });
+        } else {
+            await creerAffectation.mutateAsync(data);
+        }
+        setAffectationModalOpen(false);
+        setAffectationToEdit(null);
+    };
+
+    const handleDeleteAffectation = async () => {
+        if (!deleteAffectationId) return;
+        await supprimerAffectation.mutateAsync({ id: deleteAffectationId, matiereId: id });
+        setDeleteAffectationId(null);
+    };
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            <div className="p-6">
+                <LoadingState message="Chargement de la matière..." />
             </div>
         );
     }
 
-    if (!matiere) {
+    if (error || !matiere) {
         return (
-            <div className="flex flex-col items-center justify-center h-64">
-                <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <AlertCircle className="h-16 w-16 text-gray-400" />
                 <p className="text-lg text-gray-600">Matière non trouvée</p>
-                <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })} className="mt-4">
+                <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })}>
                     Retour à la liste
                 </ElisaButton>
             </div>
         );
     }
 
-    const couleurMatiere = matiere.couleur || '#3B82F6';
+    const couleur = matiere.couleur || '#3B82F6';
+
+    const onglets = [
+        { id: 'informations' as const, label: 'Informations', icon: BookOpen },
+        { id: 'programme' as const, label: 'Programme', icon: Layers, count: programmeQuery.data?.length, warning: niveauxSansAffectation.length > 0 },
+        { id: 'affectations' as const, label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length, warning: affectationsInactives.length > 0 },
+        { id: 'configurations' as const, label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
+    ];
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            {/* Header avec couleur de la matière */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+            <Breadcrumbs currentLabel={matiere.nom} />
+
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-lg border border-gray-200 overflow-hidden"
             >
-                {/* Barre de couleur */}
-                <div
-                    className="h-2 w-full"
-                    style={{ backgroundColor: couleurMatiere }}
-                />
+                <div className="h-2 w-full" style={{ backgroundColor: couleur }} />
 
                 <div className="p-6">
                     <div className="flex items-start justify-between">
                         <div className="flex items-start gap-6">
-                            {/* Icône avec couleur */}
-                            <div
-                                className="w-20 h-20 rounded-lg flex items-center justify-center shadow-lg"
-                                style={{ backgroundColor: `${couleurMatiere}20` }}
+                            <div className="w-20 h-20 rounded-lg flex items-center justify-center shadow-lg shrink-0"
+                                style={{ backgroundColor: `${couleur}20` }}
                             >
-                                <BookOpen
-                                    className="h-10 w-10"
-                                    style={{ color: couleurMatiere }}
-                                />
+                                <BookOpen className="h-10 w-10" style={{ color: couleur }} />
                             </div>
 
-                            {/* Infos principales */}
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h1 className="text-3xl font-bold text-gray-900">
-                                        {matiere.nom}
-                                    </h1>
-                                    {matiere.statut && (
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                            matiere.statut === 'actif'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                            {matiere.statut === 'actif' ? 'Active' : 'Inactive'}
-                                        </span>
-                                    )}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                    <h1 className="text-3xl font-bold text-gray-900 truncate">{matiere.nom}</h1>
+                                    <StatutBadge actif={matiere.actif} />
+                                    <SousSystemeBadge value={matiere.sousSysteme} />
                                 </div>
 
                                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                                     <div className="flex items-center gap-2">
                                         <Hash className="h-4 w-4" />
-                                        <span className="font-mono">{matiere.code}</span>
+                                        <span className="font-mono">{matiere.code || '-'}</span>
                                     </div>
-                                    {matiere.coefficient && (
+                                    {matiere.nomAnglais && (
                                         <div className="flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4" />
-                                            <span>Coefficient: {matiere.coefficient}</span>
-                                        </div>
-                                    )}
-                                    {matiere.nombreHeures && (
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4" />
-                                            <span>{matiere.nombreHeures}h/semaine</span>
+                                            <Globe className="h-4 w-4" />
+                                            <span>{matiere.nomAnglais}</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex flex-col gap-2">
-                            <ElisaButton
-                                variant="outline"
-                                size="sm"
-                                icon={<Edit className="h-4 w-4" />}
-                            >
-                                Modifier
-                            </ElisaButton>
-                            <ElisaButton
-                                variant="ghost"
-                                size="sm"
-                                icon={<ArrowLeft className="h-4 w-4" />}
-                                onClick={() => navigate({ to: '/matieres' })}
-                            >
+                        <div className="flex flex-col gap-2 shrink-0">
+                            {hasPermission('matieres:edit') && (
+                                <>
+                                    <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
+                                        Modifier
+                                    </ElisaButton>
+                                    <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteOpen(true)}>
+                                        Supprimer
+                                    </ElisaButton>
+                                </>
+                            )}
+                            <ElisaButton variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate({ to: '/matieres' })}>
                                 Retour
-                            </ElisaButton>
-                            <ElisaButton
-                                variant="danger"
-                                size="sm"
-                                icon={<Trash2 className="h-4 w-4" />}
-                                isLoading={supprimer.isPending}
-                                onClick={() => {
-                                    if (confirm(`Supprimer la matière "${matiere.nom}" ?`)) {
-                                        supprimer.mutateAsync(id).then(() => {
-                                            navigate({ to: '/matieres' });
-                                        });
-                                    }
-                                }}
-                            >
-                                Supprimer
                             </ElisaButton>
                         </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Stats rapides */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Coefficient</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">
-                        {matiere.coefficient || 'N/A'}
-                    </p>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <Clock className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Heures/semaine</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">
-                        {matiere.nombreHeures || 'N/A'}h
-                    </p>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <Users className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Classes</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">-</p>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <FileText className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-700">Statut</span>
-                    </div>
-                    <p className="text-2xl font-bold text-orange-800">
-                        {matiere.statut === 'actif' ? 'Active' : 'Inactive'}
-                    </p>
-                </motion.div>
+                <StatCard icon={Layers} label="Niveaux" value={programmeQuery.data?.length ?? '-'} color="blue" delay={0.1} />
+                <StatCard icon={Users} label="Enseignants" value={affectationsQuery.data?.length ?? '-'} color="green" delay={0.2} />
+                <StatCard icon={FileText} label="Configurations" value={configurationsQuery.data?.length ?? '-'} color="purple" delay={0.3} />
+                <StatCard icon={TrendingUp} label={`Couverture ${tauxCouverture}%`} value={`${programmeQuery.data?.length ? programmeQuery.data.length - niveauxSansAffectation.length : '-'}/${programmeQuery.data?.length ?? '-'}`}
+                    color={tauxCouverture >= 80 ? 'green' : tauxCouverture >= 50 ? 'yellow' : 'red'} delay={0.4}
+                />
             </div>
 
-            {/* Onglets */}
+            {niveauxSansAffectation.length > 0 && (
+                <ErrorMessage
+                    variant="warning"
+                    message={`${niveauxSansAffectation.length} niveau(x) sans enseignant assigné`}
+                    description="Ajoutez des affectations pour les niveaux du programme qui n'ont pas encore d'enseignant."
+                    autoDismissMs={30000}
+                />
+            )}
+
+            {affectationsInactives.length > 0 && (
+                <ErrorMessage
+                    variant="warning"
+                    message={`${affectationsInactives.length} affectation(s) inactive(s)`}
+                    description="Certaines affectations sont marquées comme inactives. Vérifiez leur état dans l'onglet Enseignants."
+                    autoDismissMs={30000}
+                />
+            )}
+
             <div className="border-b border-gray-200">
-                <nav className="-mb-px flex gap-6">
-                    {onglets.map((onglet) => {
-                        const Icon = onglet.icon;
+                <nav className="-mb-px flex gap-6 overflow-x-auto">
+                    {onglets.map((o) => {
+                        const Icon = o.icon;
                         return (
-                            <button
-                                key={onglet.id}
-                                onClick={() => setOngletActif(onglet.id)}
-                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                    ongletActif === onglet.id
+                            <button key={o.id} onClick={() => setOngletActif(o.id)}
+                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    ongletActif === o.id
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
                                 <Icon className="h-4 w-4" />
-                                {onglet.label}
+                                {o.label}
+                                {o.count !== undefined && (
+                                    <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                                        {o.count}
+                                    </span>
+                                )}
+                                {o.warning && (
+                                    <span title={o.id === 'programme' ? 'Niveaux sans enseignant' : 'Affectations inactives'}
+                                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
+                                    >
+                                        <AlertTriangle className="h-3 w-3" />
+                                        {o.id === 'programme' ? niveauxSansAffectation.length : affectationsInactives.length}
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
                 </nav>
             </div>
 
-            {/* Contenu des onglets */}
-            <motion.div
-                key={ongletActif}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-            >
+            <motion.div key={ongletActif} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {ongletActif === 'informations' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Informations générales */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <BookOpen className="h-5 w-5 text-blue-600" />
-                                Informations générales
-                            </h3>
-                            <dl className="space-y-4">
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Nom de la matière</dt>
-                                    <dd className="mt-1 text-lg font-medium text-gray-900">{matiere.nom}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Code</dt>
-                                    <dd className="mt-1 font-mono text-gray-900">{matiere.code}</dd>
-                                </div>
-                                {matiere.description && (
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Description</dt>
-                                        <dd className="mt-1 text-gray-900">{matiere.description}</dd>
-                                    </div>
-                                )}
-                            </dl>
-                        </div>
-
-                        {/* Configuration */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-green-600" />
-                                Configuration pédagogique
-                            </h3>
-                            <dl className="space-y-4">
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Coefficient</dt>
-                                    <dd className="mt-1">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold bg-blue-100 text-blue-800">
-                                            {matiere.coefficient || 'N/A'}
-                                        </span>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Nombre d'heures par semaine</dt>
-                                    <dd className="mt-1 text-gray-900">{matiere.nombreHeures || 'Non défini'}h</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Couleur</dt>
-                                    <dd className="mt-1 flex items-center gap-2">
-                                        <div
-                                            className="w-8 h-8 rounded-lg border-2 border-gray-200 shadow-sm"
-                                            style={{ backgroundColor: couleurMatiere }}
-                                        />
-                                        <span className="font-mono text-sm">{couleurMatiere}</span>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Statut</dt>
-                                    <dd className="mt-1">
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                            matiere.statut === 'actif'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                            {matiere.statut === 'actif' ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-
-                        {/* Métadonnées */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6 md:col-span-2">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-orange-600" />
-                                Métadonnées
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Créée le</dt>
-                                    <dd className="mt-1 text-gray-900">
-                                        {new Date(matiere.createdAt).toLocaleDateString('fr-FR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Dernière modification</dt>
-                                    <dd className="mt-1 text-gray-900">
-                                        {new Date(matiere.updatedAt).toLocaleDateString('fr-FR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </dd>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <InformationsTab matiere={matiere} couleur={couleur} />
                 )}
-
                 {ongletActif === 'programme' && (
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-blue-600" />
-                            Programme de la matière
-                        </h3>
-                        {matiere.programme ? (
-                            <div className="prose max-w-none">
-                                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                                    {matiere.programme}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 bg-gray-50 rounded-lg">
-                                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 mb-2">Aucun programme défini</p>
-                                <p className="text-sm text-gray-500">Le programme sera visible ici une fois ajouté</p>
-                            </div>
-                        )}
-                    </div>
+                    <ProgrammeTab data={programmeQuery.data} isLoading={programmeQuery.isLoading}
+                        niveauxSansAffectation={niveauxSansAffectation}
+                        affectations={affectationsQuery.data}
+                    />
                 )}
-
-                {ongletActif === 'statistiques' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold mb-4">Classes utilisant cette matière</h3>
-                            <div className="text-center py-12 bg-gray-50 rounded-lg">
-                                <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 mb-2">Données non disponibles</p>
-                                <p className="text-sm text-gray-500">Cette fonctionnalité sera disponible prochainement</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold mb-4">Performance moyenne</h3>
-                            <div className="text-center py-12 bg-gray-50 rounded-lg">
-                                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 mb-2">Statistiques non disponibles</p>
-                                <p className="text-sm text-gray-500">Les moyennes seront calculées automatiquement</p>
-                            </div>
-                        </div>
-                    </div>
+                {ongletActif === 'affectations' && (
+                    <AffectationsTab
+                        data={affectationsQuery.data}
+                        isLoading={affectationsQuery.isLoading}
+                        matiereId={id}
+                        onEdit={(a) => { setAffectationToEdit(a); setAffectationModalOpen(true); }}
+                        onDelete={(id) => setDeleteAffectationId(id)}
+                        onCreate={() => { setAffectationToEdit(null); setAffectationModalOpen(true); }}
+                        hasPermission={hasPermission('matieres:edit')}
+                    />
+                )}
+                {ongletActif === 'configurations' && (
+                    <ConfigurationsTab data={configurationsQuery.data} isLoading={configurationsQuery.isLoading} />
                 )}
             </motion.div>
+
+            {formOpen && (
+                <MatiereFormModal
+                    open={formOpen}
+                    onOpenChange={(v) => { if (!v) setFormOpen(false); }}
+                    matiere={matiere}
+                    onSave={handleSave}
+                    isLoading={modifier.isPending}
+                />
+            )}
+
+            {affectationModalOpen && (
+                <AffectationFormModal
+                    open={affectationModalOpen}
+                    onOpenChange={(v) => { if (!v) { setAffectationModalOpen(false); setAffectationToEdit(null); } }}
+                    matiereId={id}
+                    affectation={affectationToEdit}
+                    onSave={handleAffectationSave}
+                    isLoading={creerAffectation.isPending || modifierAffectation.isPending}
+                />
+            )}
+
+            <ConfirmationModal
+                isOpen={deleteOpen}
+                title="Supprimer cette matière"
+                message={`Êtes-vous sûr de vouloir supprimer "${matiere.nom}" ?`}
+                details="Cette action est irréversible et supprimera toutes les données associées (programme, affectations, configurations)."
+                variant="danger"
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteOpen(false)}
+                isLoading={supprimer.isPending}
+            />
+
+            <ConfirmationModal
+                isOpen={!!deleteAffectationId}
+                title="Supprimer cette affectation"
+                message="Êtes-vous sûr de vouloir supprimer cette affectation ?"
+                details="Cette action est irréversible."
+                variant="danger"
+                onConfirm={handleDeleteAffectation}
+                onCancel={() => setDeleteAffectationId(null)}
+                isLoading={supprimerAffectation.isPending}
+            />
+        </div>
+    );
+}
+
+function StatCard({ icon: Icon, label, value, color, delay }: { icon: any; label: string; value: string | number; color: string; delay: number }) {
+    const colors: Record<string, { bg: string; text: string; value: string }> = {
+        blue: { bg: 'from-blue-50 to-blue-100 border-blue-200', text: 'text-blue-700', value: 'text-blue-800' },
+        green: { bg: 'from-green-50 to-green-100 border-green-200', text: 'text-green-700', value: 'text-green-800' },
+        purple: { bg: 'from-purple-50 to-purple-100 border-purple-200', text: 'text-purple-700', value: 'text-purple-800' },
+        yellow: { bg: 'from-yellow-50 to-yellow-100 border-yellow-200', text: 'text-yellow-700', value: 'text-yellow-800' },
+        red: { bg: 'from-red-50 to-red-100 border-red-200', text: 'text-red-700', value: 'text-red-800' },
+        gray: { bg: 'from-gray-50 to-gray-100 border-gray-200', text: 'text-gray-700', value: 'text-gray-800' },
+    };
+    const c = colors[color] || colors.blue;
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
+            className={`bg-gradient-to-br ${c.bg} rounded-lg p-4 border`}
+        >
+            <div className="flex items-center gap-3 mb-2">
+                <Icon className={`w-5 h-5 ${c.text}`} />
+                <span className={`text-sm font-medium ${c.text}`}>{label}</span>
+            </div>
+            <p className={`text-3xl font-bold ${c.value}`}>{value}</p>
+        </motion.div>
+    );
+}
+
+function InformationsTab({ matiere, couleur }: { matiere: any; couleur: string }) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                    Informations générales
+                </h3>
+                <dl className="space-y-4">
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Nom</dt>
+                        <dd className="mt-1 text-lg font-medium text-gray-900">{matiere.nom}</dd>
+                    </div>
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Code</dt>
+                        <dd className="mt-1 font-mono text-gray-900">{matiere.code || '-'}</dd>
+                    </div>
+                    {matiere.nomAnglais && (
+                        <div>
+                            <dt className="text-sm font-medium text-gray-500">Nom anglais</dt>
+                            <dd className="mt-1 text-gray-900">{matiere.nomAnglais}</dd>
+                        </div>
+                    )}
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Sous-système</dt>
+                        <dd className="mt-1"><SousSystemeBadge value={matiere.sousSysteme} /></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    Configuration
+                </h3>
+                <dl className="space-y-4">
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Couleur</dt>
+                        <dd className="mt-1 flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg border-2 border-gray-200 shadow-sm" style={{ backgroundColor: couleur }} />
+                            <span className="font-mono text-sm">{couleur}</span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Statut</dt>
+                        <dd className="mt-1"><StatutBadge actif={matiere.actif} /></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6 md:col-span-2">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-orange-600" />
+                    Métadonnées
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Créée le</dt>
+                        <dd className="mt-1 text-gray-900">{formatDate(matiere.createdAt)}</dd>
+                    </div>
+                    <div>
+                        <dt className="text-sm font-medium text-gray-500">Dernière modification</dt>
+                        <dd className="mt-1 text-gray-900">{formatDate(matiere.updatedAt)}</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VolumeBar({ value, max }: { value: number; max: number }) {
+    const pct = max > 0 ? (value / max) * 100 : 0;
+    return (
+        <div className="flex items-center gap-2 w-24">
+            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs font-medium text-gray-600 w-8 text-right">{value}h</span>
+        </div>
+    );
+}
+
+function ProgrammeTab({ data, isLoading, niveauxSansAffectation, affectations }: {
+    data: MatiereNiveau[] | undefined;
+    isLoading: boolean;
+    niveauxSansAffectation: MatiereNiveau[];
+    affectations: AffectationMatiere[] | undefined;
+}) {
+    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement du programme..." /></div>;
+    if (!data || data.length === 0) return (
+        <EmptyState icon={Layers} message="Aucun niveau associé" sub="Ajoutez cette matière au programme d'un niveau depuis la section Programmes." />
+    );
+
+    const maxVolume = Math.max(...data.map((p) => p.volumeHoraire || 0));
+    const sansAffectationIds = new Set(niveauxSansAffectation.map((n) => n.id));
+
+    return (
+        <div className="space-y-4">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="text-left px-4 py-3 font-medium text-gray-600">Niveau</th>
+                                <th className="text-left px-4 py-3 font-medium text-gray-600">Groupe</th>
+                                <th className="text-left px-4 py-3 font-medium text-gray-600">Filière</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Couverture</th>
+                                <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {data.map((p) => {
+                                const sansEns = sansAffectationIds.has(p.id);
+                                return (
+                                    <tr key={p.id} className={`hover:bg-gray-50 ${sansEns ? 'bg-amber-50/50' : ''}`}>
+                                        <td className="px-4 py-3 font-medium">{p.niveau?.nom || p.niveauId}</td>
+                                        <td className="px-4 py-3 text-gray-600">{p.groupe?.nom || '-'}</td>
+                                        <td className="px-4 py-3 text-gray-600">{p.filiere?.nom || '-'}</td>
+                                        <td className="px-4 py-3 text-center font-semibold">{p.coefficient}</td>
+                                        <td className="px-4 py-3 text-center">/ {p.bareme}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            {p.volumeHoraire ? <VolumeBar value={p.volumeHoraire} max={maxVolume} /> : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {p.obligatoire ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                    <CheckCircle className="h-3 w-3" /> Oblig.
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
+                                                    <XCircle className="h-3 w-3" /> Optionnel
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {sansEns ? (
+                                                <span title="Aucun enseignant assigné à ce niveau"
+                                                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
+                                                >
+                                                    <AlertTriangle className="h-3 w-3" /> Non couvert
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                    <CheckCircle className="h-3 w-3" /> Couvert
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                p.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
+                                                p.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-700'
+                                            }`}>
+                                                {p.statut === 'ACTIF' ? 'Actif' : p.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreate, hasPermission }: {
+    data: AffectationMatiere[] | undefined;
+    isLoading: boolean;
+    matiereId: string;
+    onEdit: (a: AffectationMatiere) => void;
+    onDelete: (id: string) => void;
+    onCreate: () => void;
+    hasPermission: boolean;
+}) {
+    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement des affectations..." /></div>;
+
+    return (
+        <div className="space-y-4">
+            {hasPermission && (
+                <div className="flex justify-end">
+                    <ElisaButton variant="primary" size="sm" icon={<UserPlus className="h-4 w-4" />} onClick={onCreate}>
+                        Affecter un enseignant
+                    </ElisaButton>
+                </div>
+            )}
+
+            {!data || data.length === 0 ? (
+                <EmptyState icon={Users} message="Aucun enseignant assigné" sub="Utilisez le bouton ci-dessus pour affecter un enseignant à cette matière." />
+            ) : (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Enseignant</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Période</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
+                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600">Actions</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {data.map((a) => (
+                                    <tr key={a.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <UserCheck className="h-4 w-4 text-gray-400" />
+                                                <span className="font-medium">{a.enseignant ? `${a.enseignant.prenom} ${a.enseignant.nom}` : a.enseignantId}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">{a.classeAnnee?.classe?.nom || '-'}</td>
+                                        <td className="px-4 py-3 text-gray-600">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-center text-xs text-gray-500">
+                                            {a.dateDebut ? formatDate(a.dateDebut) : '-'}
+                                            {a.dateFin ? ` → ${formatDate(a.dateFin)}` : ''}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {a.actif ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                    <CheckCircle className="h-3 w-3" /> Actif
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                                                    <XCircle className="h-3 w-3" /> Inactif
+                                                </span>
+                                            )}
+                                        </td>
+                                        {hasPermission && (
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <ElisaButton variant="ghost" size="sm" onClick={() => onEdit(a)}>
+                                                        <Edit className="h-3.5 w-3.5" />
+                                                    </ElisaButton>
+                                                    <ElisaButton variant="ghost" size="sm" onClick={() => onDelete(a.id)}>
+                                                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                                    </ElisaButton>
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ConfigurationsTab({ data, isLoading }: { data: ConfigurationMatiereClasse[] | undefined; isLoading: boolean }) {
+    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement des configurations..." /></div>;
+    if (!data || data.length === 0) return (
+        <EmptyState icon={FileText} message="Aucune configuration spécifique" sub="Les configurations par classe héritent des valeurs du programme par défaut." />
+    );
+
+    const maxVolume = Math.max(...data.map((c) => c.volumeHoraireHebdo || 0));
+
+    return (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
+                            <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
+                            <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
+                            <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
+                            <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
+                            <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
+                            <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {data.map((c) => (
+                            <tr key={c.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium">{c.classeAnnee?.classe?.nom || '-'}</td>
+                                <td className="px-4 py-3 text-gray-600">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                <td className="px-4 py-3 text-center font-semibold">{c.coefficient ?? '—'}</td>
+                                <td className="px-4 py-3 text-center">{c.bareme ? `/ ${c.bareme}` : '—'}</td>
+                                <td className="px-4 py-3 text-center">
+                                    {c.volumeHoraireHebdo ? <VolumeBar value={c.volumeHoraireHebdo} max={maxVolume} /> : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    {c.obligatoire ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                            <CheckCircle className="h-3 w-3" /> Oblig.
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
+                                            <XCircle className="h-3 w-3" /> Optionnel
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        c.statut === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                                        c.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-gray-100 text-gray-700'
+                                    }`}>
+                                        {c.statut === 'ACTIVE' ? 'Active' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactive'}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+function EmptyState({ icon: Icon, message, sub }: { icon: any; message: string; sub: string }) {
+    return (
+        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <Icon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 font-medium mb-1">{message}</p>
+            <p className="text-sm text-gray-500">{sub}</p>
         </div>
     );
 }

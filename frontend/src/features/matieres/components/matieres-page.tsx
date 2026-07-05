@@ -8,8 +8,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { useMatieres, useSupprimerMatiere } from '../hooks/use-matieres';
+import { useMatieres, useSupprimerMatiere, useCreerMatiere, useModifierMatiere } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -21,32 +20,40 @@ import type { Column } from '@/components/ui/DataTable';
 
 export function MatieresPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<MatiereFiltres>({ page: 1, limit: 50 });
-    const [modalOpen, setModalOpen] = useState(false);
-    const [matiereSelected, setMatiereSelected] = useState<Matiere | undefined>();
-    const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
+    const [formOpen, setFormOpen] = useState(false);
+    const [matiereToEdit, setMatiereToEdit] = useState<Matiere | null>(null);
     const [matiereToDelete, setMatiereToDelete] = useState<Matiere | null>(null);
 
     const { data, isLoading, error, refetch } = useMatieres(filtres);
+    const creer = useCreerMatiere();
+    const modifier = useModifierMatiere();
     const supprimer = useSupprimerMatiere();
 
-    const handleCreation = () => {
-        setModeFormulaire('creation');
-        setMatiereSelected(undefined);
-        setModalOpen(true);
+    const handleSave = async (data: any) => {
+        if (matiereToEdit) {
+            await modifier.mutateAsync({ id: matiereToEdit.id, ...data });
+        } else {
+            await creer.mutateAsync(data);
+        }
+        setFormOpen(false);
+        setMatiereToEdit(null);
     };
 
     const handleEdition = (matiere: Matiere) => {
-        setModeFormulaire('edition');
-        setMatiereSelected(matiere);
-        setModalOpen(true);
+        setMatiereToEdit(matiere);
+        setFormOpen(true);
     };
 
-    const handleSuccess = () => {
-        setModalOpen(false);
-        setMatiereSelected(undefined);
+    const handleCreation = () => {
+        setMatiereToEdit(null);
+        setFormOpen(true);
+    };
+
+    const sousSystemeLabel = (v: string | null) => {
+        if (!v) return 'Commun';
+        return v === 'FRANCOPHONE' ? 'Francophone' : 'Anglophone';
     };
 
     const colonnes: Column<Matiere>[] = [
@@ -54,7 +61,7 @@ export function MatieresPage() {
             key: 'code',
             header: 'Code',
             sortable: true,
-            render: (m) => <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">{m.code}</span>,
+            render: (m) => <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">{m.code  || '-'}</span>,
         },
         {
             key: 'nom',
@@ -63,38 +70,40 @@ export function MatieresPage() {
             sortable: true,
             render: (m) => (
                 <button
-                    onClick={() => navigate({ to: '/matieres/$id', params: { id: m.id } })}
+                    onClick={() => window.location.href = `/matieres/${m.id}`}
                     className="hover:underline cursor-pointer text-left"
                 >
-                    <div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: m.couleur }} />
                         <p className="font-medium">{m.nom}</p>
-                        {m.description && <p className="text-xs text-[var(--color-text-muted)] line-clamp-1">{m.description}</p>}
+                        {m.nomAnglais && <span className="text-xs text-gray-400">({m.nomAnglais})</span>}
                     </div>
                 </button>
             ),
         },
         {
-            key: 'coefficient',
-            header: 'Coeff.',
-            sortable: true,
+            key: 'sousSysteme',
+            header: 'Système',
+            sortable: false,
             className: 'text-center',
-            render: (m) => <span className="rounded bg-[var(--color-accent-100)] px-2 py-1 text-sm font-semibold">{m.coefficient || '-'}</span>,
+            render: (m) => (
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                    !m.sousSysteme ? 'bg-gray-100 text-gray-700' :
+                    m.sousSysteme === 'FRANCOPHONE' ? 'bg-blue-100 text-blue-700' :
+                    'bg-green-100 text-green-700'
+                }`}>
+                    {sousSystemeLabel(m.sousSysteme)}
+                </span>
+            ),
         },
         {
-            key: 'nombreHeures',
-            header: 'Heures',
-            sortable: true,
-            className: 'text-center',
-            render: (m) => <span className="font-medium">{m.nombreHeures || '-'}</span>,
-        },
-        {
-            key: 'statut',
+            key: 'actif',
             header: t('commun.statut'),
             sortable: true,
             className: 'text-center',
             render: (m) => (
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.statut === 'actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {m.statut === 'actif' ? 'Actif' : 'Inactif'}
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {m.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
         },
@@ -107,7 +116,7 @@ export function MatieresPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => navigate({ to: '/matieres/$id', params: { id: m.id } }),
+                    onClick: () => window.location.href = `/matieres/${m.id}`,
                     variant: 'info' as const,
                 },
                 {
@@ -186,12 +195,13 @@ export function MatieresPage() {
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
             />
 
-            {modalOpen && (
+            {formOpen && (
                 <MatiereFormModal
-                    mode={modeFormulaire}
-                    matiere={matiereSelected}
-                    onSuccess={handleSuccess}
-                    onCancel={() => setModalOpen(false)}
+                    open={formOpen}
+                    onOpenChange={(v) => { if (!v) { setFormOpen(false); setMatiereToEdit(null); } }}
+                    matiere={matiereToEdit}
+                    onSave={handleSave}
+                    isLoading={creer.isPending || modifier.isPending}
                 />
             )}
 

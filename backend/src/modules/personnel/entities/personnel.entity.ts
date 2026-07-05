@@ -53,10 +53,10 @@ export class MembrePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
-    utilisateurId!: string;
+    @Column({ type: 'uuid', nullable: true })
+    utilisateurId?: string;
 
-    @OneToOne(() => Utilisateur)
+    @OneToOne(() => Utilisateur, { nullable: true })
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur?: Utilisateur;
 
@@ -104,6 +104,31 @@ export class MembrePersonnel {
     // Spécifique enseignant
     @Column({ type: 'varchar', length: 200, nullable: true })
     specialitePrincipale?: string;
+
+    // Infos personnelles dénormalisées (fallback quand utilisateur.profil est absent)
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    nom?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    prenom?: string;
+
+    @Column({ type: 'date', nullable: true })
+    dateNaissance?: string;
+
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    sexe?: string; // M / F
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    email?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    telephone?: string;
+
+    @Column({ type: 'text', nullable: true })
+    adresse?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    departement?: string;
 
     @Column({ type: 'int', nullable: true })
     anneesExperience?: number;

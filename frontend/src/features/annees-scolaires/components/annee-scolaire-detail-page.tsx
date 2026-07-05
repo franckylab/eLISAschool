@@ -20,6 +20,7 @@ import {
     useReouvrirAnneeScolaire
 } from '../hooks/use-annees-scolaires';
 import type { Periode } from '../types/annee-scolaire.types';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
@@ -166,6 +167,7 @@ export function AnneeScolaireDetailPage() {
 
     return (
         <div className="flex flex-col gap-[var(--gap-lg)] p-[var(--space-lg)]" style={{ maxWidth: 'clamp(800px, 90vw, 1200px)', margin: '0 auto' }}>
+            <Breadcrumbs currentLabel={annee.libelle} />
 
             {/* --- Header compact --- */}
             <motion.div

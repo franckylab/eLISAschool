@@ -344,6 +344,68 @@ export class HeureCoursService {
     }
 
     /**
+     * Obtenir l'emploi du temps hebdomadaire d'un enseignant
+     * Groupé par jour de la semaine (LUN → VEN)
+     */
+    async getEdtEnseignant(
+        enseignantId: string,
+        semaine: string,
+        etablissementId: string
+    ): Promise<{
+        semaine: string;
+        jours: Record<string, HeureCours[]>;
+    }> {
+        const dateRef = new Date(semaine);
+        if (isNaN(dateRef.getTime())) {
+            throw new AppError('Date de semaine invalide (format YYYY-MM-DD attendu)', 400, 'INVALID_DATE');
+        }
+
+        // Calculer lundi et samedi de la semaine
+        const dayOfWeek = dateRef.getDay();
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const lundi = new Date(dateRef);
+        lundi.setDate(dateRef.getDate() + diffToMonday);
+        lundi.setHours(0, 0, 0, 0);
+        const samedi = new Date(lundi);
+        samedi.setDate(lundi.getDate() + 6);
+        samedi.setHours(23, 59, 59, 999);
+
+        const heures = await this.repo.find({
+            where: {
+                enseignantId,
+                etablissementId,
+                date: { $gte: lundi, $lte: samedi } as any,
+            },
+            relations: ['matiere', 'classe', 'salle', 'remplacant'],
+            order: { date: 'ASC', heureDebut: 'ASC' },
+        });
+
+        // Grouper par jour
+        const jours: Record<string, HeureCours[]> = {
+            LUNDI: [],
+            MARDI: [],
+            MERCREDI: [],
+            JEUDI: [],
+            VENDREDI: [],
+            SAMEDI: [],
+        };
+
+        const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+        for (const h of heures) {
+            const dayIndex = (h.date as Date).getDay();
+            const dayName = dayNames[dayIndex];
+            if (jours[dayName]) {
+                jours[dayName].push(h);
+            }
+        }
+
+        return {
+            semaine: lundi.toISOString().split('T')[0],
+            jours,
+        };
+    }
+
+    /**
      * Supprimer un créneau
      */
     async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {

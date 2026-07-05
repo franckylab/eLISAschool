@@ -1,122 +1,82 @@
-/**
- * ==================================
- * eLISAschool - Formulaire Matière
- * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
- */
-
-import { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
-import { useCreerMatiere, useModifierMatiere } from '../hooks/use-matieres';
+import { useEffect, useState } from 'react';
+import { Save, BookOpen } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import type { Matiere, CreerMatiereDto } from '../types/matiere.types';
+import type { Matiere, CreerMatiereDto, SousSysteme } from '../types/matiere.types';
 
 interface MatiereFormModalProps {
-    mode: 'creation' | 'edition';
-    matiere?: Matiere;
-    onSuccess: () => void;
-    onCancel: () => void;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    matiere?: Matiere | null;
+    onSave: (data: any) => void;
+    isLoading?: boolean;
 }
 
-export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: MatiereFormModalProps) {
-    const creerMatiere = useCreerMatiere();
-    const modifierMatiere = useModifierMatiere();
-    const isLoading = creerMatiere.isPending || modifierMatiere.isPending;
-
-    const [formData, setFormData] = useState<Partial<CreerMatiereDto>>({
-        nom: matiere?.nom || '',
-        code: matiere?.code || '',
-        description: matiere?.description || '',
-        coefficient: matiere?.coefficient || 1,
-        couleur: matiere?.couleur || '#3B82F6',
-        statut: matiere?.statut || 'actif',
-        nombreHeures: matiere?.nombreHeures || 0,
-        programme: matiere?.programme || '',
-    });
+export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoading }: MatiereFormModalProps) {
+    const [nom, setNom] = useState('');
+    const [code, setCode] = useState('');
+    const [nomAnglais, setNomAnglais] = useState('');
+    const [couleur, setCouleur] = useState('#3B82F6');
+    const [actif, setActif] = useState(true);
+    const [sousSysteme, setSousSysteme] = useState<SousSysteme | ''>('');
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (matiere && mode === 'edition') {
-            setFormData({
-                nom: matiere.nom,
-                code: matiere.code,
-                description: matiere.description,
-                coefficient: matiere.coefficient,
-                couleur: matiere.couleur,
-                statut: matiere.statut,
-                nombreHeures: matiere.nombreHeures,
-                programme: matiere.programme,
-            });
+        if (matiere) {
+            setNom(matiere.nom || '');
+            setCode(matiere.code || '');
+            setNomAnglais(matiere.nomAnglais || '');
+            setCouleur(matiere.couleur || '#3B82F6');
+            setActif(matiere.actif);
+            setSousSysteme(matiere.sousSysteme || '');
+        } else {
+            setNom('');
+            setCode('');
+            setNomAnglais('');
+            setCouleur('#3B82F6');
+            setActif(true);
+            setSousSysteme('');
         }
-    }, [matiere, mode]);
+        setErreurs({});
+    }, [matiere, open]);
 
     const valider = (): boolean => {
-        const nouvellesErreurs: Record<string, string> = {};
-
-        if (!formData.nom?.trim()) {
-            nouvellesErreurs.nom = 'Le nom de la matière est requis';
-        }
-
-        if (!formData.code?.trim()) {
-            nouvellesErreurs.code = 'Le code de la matière est requis';
-        }
-
-        if ((formData.coefficient || 0) < 0.5) {
-            nouvellesErreurs.coefficient = 'Le coefficient doit être ≥ 0.5';
-        }
-
-        setErreurs(nouvellesErreurs);
-        return Object.keys(nouvellesErreurs).length === 0;
+        const e: Record<string, string> = {};
+        if (!nom.trim()) e.nom = 'Le nom de la matière est requis';
+        if (code && code.length > 50) e.code = '50 caractères maximum';
+        setErreurs(e);
+        return Object.keys(e).length === 0;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!valider()) return;
-
-        try {
-            if (mode === 'creation') {
-                await creerMatiere.mutateAsync(formData as CreerMatiereDto);
-            } else if (matiere) {
-                await modifierMatiere.mutateAsync({
-                    id: matiere.id,
-                    ...formData,
-                });
-            }
-            onSuccess();
-        } catch (error) {
-            console.error('Erreur formulaire matière:', error);
-        }
+        const data: CreerMatiereDto = {
+            nom: nom.trim(),
+            code: code.trim() || undefined,
+            nomAnglais: nomAnglais.trim() || undefined,
+            couleur,
+            sousSysteme: sousSysteme || undefined,
+            actif,
+        };
+        onSave(data);
     };
 
-    const handleChange = (field: string, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (erreurs[field]) {
-            setErreurs(prev => {
-                const next = { ...prev };
-                delete next[field];
-                return next;
-            });
-        }
-    };
-
-    const titre = mode === 'creation' ? 'Créer une matière' : 'Modifier la matière';
+    const titre = matiere ? 'Modifier la matière' : 'Créer une matière';
 
     return (
         <CustomModal
-            open={true}
-            onOpenChange={(open) => { if (!open) onCancel(); }}
+            open={open}
+            onOpenChange={onOpenChange}
             title={titre}
-            description="Renseignez les informations de la matière"
+            description={matiere ? 'Modifiez les informations de la matière' : 'Renseignez les informations de la matière'}
             size="2xl"
             footer={
                 <>
-                    <ElisaButton variant="outline" onClick={onCancel} type="button">
+                    <ElisaButton variant="outline" onClick={() => onOpenChange(false)} type="button">
                         Annuler
                     </ElisaButton>
                     <ElisaButton
@@ -126,105 +86,75 @@ export function MatiereFormModal({ mode, matiere, onSuccess, onCancel }: Matiere
                         icon={<Save className="h-4 w-4" />}
                         onClick={handleSubmit}
                     >
-                        {mode === 'creation' ? 'Créer' : 'Enregistrer'}
+                        {matiere ? 'Enregistrer' : 'Créer'}
                     </ElisaButton>
                 </>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Nom et Code */}
+            <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                     <ElisaInput
                         label="Nom de la matière"
-                        value={formData.nom || ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nom', e.target.value)}
+                        value={nom}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setNom(e.target.value); if (erreurs.nom) setErreurs((p) => { const n = { ...p }; delete n.nom; return n; }); }}
                         error={erreurs.nom}
                         placeholder="Ex: Mathématiques"
                         required
                     />
                     <ElisaInput
                         label="Code"
-                        value={formData.code || ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('code', e.target.value)}
-                        error={erreurs.code}
+                        value={code}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value.toUpperCase())}
                         placeholder="Ex: MATH"
-                        required
                     />
                 </div>
 
-                {/* Coefficient et Nombre d'heures */}
-                <div className="grid grid-cols-2 gap-4">
-                    <ElisaInput
-                        label="Coefficient"
-                        type="number"
-                        value={formData.coefficient?.toString() || '1'}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('coefficient', parseFloat(e.target.value))}
-                        error={erreurs.coefficient}
-                        min="0.5"
-                        max="10"
-                        step="0.5"
-                    />
-                    <ElisaInput
-                        label="Nombre d'heures/semaine"
-                        type="number"
-                        value={formData.nombreHeures?.toString() || '0'}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('nombreHeures', parseInt(e.target.value))}
-                        min="0"
-                        max="20"
-                    />
-                </div>
+                <ElisaInput
+                    label="Nom anglais"
+                    value={nomAnglais}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNomAnglais(e.target.value)}
+                    placeholder="Ex: Mathematics"
+                />
 
-                {/* Couleur et Statut */}
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Couleur
-                        </label>
-                        <div className="flex items-center gap-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Couleur</label>
+                        <div className="flex items-center gap-3">
                             <input
                                 type="color"
-                                value={formData.couleur || '#3B82F6'}
-                                onChange={(e) => handleChange('couleur', e.target.value)}
-                                className="w-16 h-10 rounded border border-gray-300 cursor-pointer"
+                                value={couleur}
+                                onChange={(e) => setCouleur(e.target.value)}
+                                className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
                             />
-                            <span className="text-sm text-gray-600 font-mono">
-                                {formData.couleur || '#3B82F6'}
-                            </span>
+                            <span className="text-sm text-gray-600 font-mono">{couleur}</span>
                         </div>
                     </div>
                     <ElisaSelect
-                        label="Statut"
-                        value={formData.statut || 'actif'}
-                        onValueChange={(value: string) => handleChange('statut', value)}
+                        label="Sous-système"
+                        value={sousSysteme}
+                        onValueChange={(v: string) => setSousSysteme(v as SousSysteme | '')}
                         options={[
-                            { value: 'actif', label: 'Actif' },
-                            { value: 'inactif', label: 'Inactif' },
+                            { value: '', label: 'Commun aux deux systèmes' },
+                            { value: 'FRANCOPHONE', label: 'Francophone' },
+                            { value: 'ANGLOPHONE', label: 'Anglophone' },
+                            { value: 'BICULTUREL', label: 'Biculturel' },
                         ]}
                     />
                 </div>
 
-                {/* Description */}
-                <div>
-                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Description</label>
-                    <textarea
-                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                        value={formData.description || ''}
-                        onChange={(e) => handleChange('description', e.target.value)}
-                        placeholder="Description optionnelle de la matière..."
-                        rows={3}
-                    />
-                </div>
+                <ElisaSelect
+                    label="Statut"
+                    value={actif ? 'true' : 'false'}
+                    onValueChange={(v: string) => setActif(v === 'true')}
+                    options={[
+                        { value: 'true', label: 'Actif' },
+                        { value: 'false', label: 'Inactif' },
+                    ]}
+                />
 
-                {/* Programme */}
-                <div>
-                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Programme</label>
-                    <textarea
-                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                        value={formData.programme || ''}
-                        onChange={(e) => handleChange('programme', e.target.value)}
-                        placeholder="Contenu du programme..."
-                        rows={3}
-                    />
+                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                    <BookOpen className="h-4 w-4 shrink-0" />
+                    <span>Les coefficients et volumes horaires se configurent par niveau et par classe dans les sections Programme et Configuration.</span>
                 </div>
             </form>
         </CustomModal>

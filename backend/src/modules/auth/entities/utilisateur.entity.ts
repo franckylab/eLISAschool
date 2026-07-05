@@ -25,6 +25,7 @@ import { Etablissement } from '@modules/etablissement/entities';
 // DEPRECATED: UtilisateurRole supprimé - rôles gérés exclusivement via UtilisateurEtablissement
 import { UtilisateurPermission } from './utilisateur-permission.entity';
 import { UtilisateurEtablissement } from './utilisateur-etablissement.entity';
+import { ProfilUtilisateur } from './profil-utilisateur.entity';
 import { Role } from '@shared/enums/roles.enum';
 
 // Ré-exporter l'enum Role pour compatibilité
@@ -109,6 +110,9 @@ export class Utilisateur {
 
     // NOTE: etablissementId SUPPRIMÉ en v4.0
     // Multi-établissements géré exclusivement via utilisateur_etablissements
+
+    @OneToOne(() => ProfilUtilisateur, profil => profil.utilisateur, { nullable: true })
+    profil?: ProfilUtilisateur;
 
     /**
      * Relations RBAC v3.0 (Multi-tenant strict)

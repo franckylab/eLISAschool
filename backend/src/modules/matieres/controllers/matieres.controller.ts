@@ -16,7 +16,8 @@ import {
     createMatiereSchema, updateMatiereSchema,
     createGroupeMatiereSchema,
     createMatiereNiveauSchema, updateMatiereNiveauSchema,
-    affecterEnseignantSchema
+    affecterEnseignantSchema,
+    queryMatieresSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
@@ -28,12 +29,7 @@ const service = new MatieresService();
 // Matières CRUD
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const query = validateDto(require('zod').z.object({
-            page: require('zod').z.coerce.number().optional(),
-            limit: require('zod').z.coerce.number().optional(),
-            groupeId: require('zod').z.string().optional(),
-            actif: require('zod').z.coerce.boolean().optional(),
-        }), req.query);
+        const query = validateDto(queryMatieresSchema, req.query);
         const etablissementId = req.utilisateur!.etablissementId!;
         const matieres = await service.findAll(query, etablissementId);
         res.json({ success: true, data: matieres });
@@ -106,12 +102,73 @@ router.patch('/programme/:id', authMiddleware, requirePermission('config:edit'),
     } catch (error) { next(error); }
 });
 
+// Détail matière
+router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const matiere = await service.findOne(req.params.id, etablissementId);
+        res.json({ success: true, data: matiere });
+    } catch (error) { next(error); }
+});
+
+// Programme par matière (les sous-routes sont définies après GET /:id car Express les fait correspondre avant /:id sans conflit)
+router.get('/:id/programme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const prog = await service.findProgrammeByMatiere(req.params.id);
+        res.json({ success: true, data: prog });
+    } catch (error) { next(error); }
+});
+
+// Affectations par enseignant
+router.get('/enseignants/:id/affectations', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const affectations = await service.getAffectationsByEnseignant(req.params.id, etablissementId);
+        res.json({ success: true, data: affectations });
+    } catch (error) { next(error); }
+});
+
+// Affectations par matière
+router.get('/:id/affectations', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const affectations = await service.findAffectationsByMatiere(req.params.id, etablissementId);
+        res.json({ success: true, data: affectations });
+    } catch (error) { next(error); }
+});
+
+// Configurations par matière
+router.get('/:id/configurations', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const configs = await service.findConfigurationsByMatiere(req.params.id, etablissementId);
+        res.json({ success: true, data: configs });
+    } catch (error) { next(error); }
+});
+
 // Affectation Enseignant
 router.post('/affectations', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(affecterEnseignantSchema, req.body);
         const affectation = await service.affecterEnseignant(dto, req.utilisateur?.id!, req.etablissementId);
         res.json({ success: true, data: affectation });
+    } catch (error) { next(error); }
+});
+
+router.patch('/affectations/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(affecterEnseignantSchema.partial(), req.body);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const affectation = await service.updateAffectation(req.params.id, dto, etablissementId);
+        res.json({ success: true, data: affectation });
+    } catch (error) { next(error); }
+});
+
+router.delete('/affectations/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        await service.deleteAffectation(req.params.id, etablissementId);
+        res.json({ success: true, message: 'Affectation supprimée' });
     } catch (error) { next(error); }
 });
 

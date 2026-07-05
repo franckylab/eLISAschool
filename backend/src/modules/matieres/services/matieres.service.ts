@@ -41,6 +41,17 @@ export class MatieresService {
     // ==== MATIERES ====
 
     /**
+     * Trouver une matière par ID (isolée par établissement)
+     */
+    async findOne(id: string, etablissementId: string): Promise<Matiere> {
+        const matiere = await this.matiereRepo.findOne({
+            where: { id, etablissementId },
+        });
+        if (!matiere) throw new AppError('Matière non trouvée', 404, 'NOT_FOUND');
+        return matiere;
+    }
+
+    /**
      * Créer une matière (isolée par établissement)
      */
     async create(dto: CreateMatiereDto, etablissementId: string): Promise<Matiere> {
@@ -66,10 +77,6 @@ export class MatieresService {
 
         const where: any = { etablissementId };
         
-        if (groupeId) {
-            where.groupeId = groupeId;
-        }
-
         if (actif !== undefined) {
             where.actif = actif;
         }
@@ -229,7 +236,6 @@ export class MatieresService {
 
         if (existing) {
             existing.enseignantId = dto.enseignantId; // Mise à jour de l'enseignant
-            if (dto.volumeHoraireHebdo) existing.volumeHoraireHebdo = dto.volumeHoraireHebdo;
             existing.statut = requireValidation
                 ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
                 : StatutAffectationMatiere.ACTIVE;
@@ -254,7 +260,9 @@ export class MatieresService {
             matiereId: dto.matiereId,
             classeAnneeId: dto.classeAnneeId,
             enseignantId: dto.enseignantId,
-            volumeHoraireHebdo: dto.volumeHoraireHebdo,
+            etablissementId: etablissementId!,
+            dateDebut: dto.dateDebut || new Date().toISOString().split('T')[0],
+            ...(dto.dateFin ? { dateFin: dto.dateFin } : {}),
             statut: requireValidation
                 ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
                 : StatutAffectationMatiere.ACTIVE,
@@ -277,6 +285,28 @@ export class MatieresService {
         }
 
         return affectation;
+    }
+
+    // ==== CRUD AFFECTATIONS ====
+
+    async updateAffectation(id: string, dto: Partial<AffecterEnseignantDto>, etablissementId: string): Promise<AffectationMatiere> {
+        const affectation = await this.affectationRepo.findOne({ where: { id, etablissementId } });
+        if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
+
+        if (dto.enseignantId) affectation.enseignantId = dto.enseignantId;
+        if (dto.dateDebut) affectation.dateDebut = dto.dateDebut;
+        if (dto.dateFin !== undefined) affectation.dateFin = dto.dateFin;
+
+        await this.affectationRepo.save(affectation);
+        logger.info(`Affectation mise à jour: ${id}`);
+        return affectation;
+    }
+
+    async deleteAffectation(id: string, etablissementId: string): Promise<void> {
+        const affectation = await this.affectationRepo.findOne({ where: { id, etablissementId } });
+        if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
+        await this.affectationRepo.remove(affectation);
+        logger.info(`Affectation supprimée: ${id}`);
     }
 
     // ==== CONFIGURATION MATIERE CLASSE ====
@@ -399,7 +429,7 @@ export class MatieresService {
     async findOneConfigurationMatiereClasse(id: string): Promise<ConfigurationMatiereClasse> {
         const config = await this.configurationMatiereClasseRepo.findOne({
             where: { id },
-            relations: ['matiere', 'classe', 'anneeScolaire', 'etablissement'],
+            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'etablissement'],
         });
 
         if (!config) {
@@ -464,19 +494,29 @@ export class MatieresService {
         credits: number | null;
         obligatoire: boolean;
     }> {
+        // 0. Trouver la ClasseAnnee correspondant à classeId + anneeScolaireId
+        const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
+        const classeAnnee = await classeAnneeRepo.findOne({
+            where: { classeId, anneeScolaireId, etablissementId },
+            relations: ['classe', 'classe.niveau'],
+        }) as any;
+
+        if (!classeAnnee) {
+            throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
+        }
+
         // 1. Chercher la configuration spécifique
         const config = await this.configurationMatiereClasseRepo.findOne({
             where: {
                 matiereId,
-                classeId,
-                anneeScolaireId,
+                classeAnneeId: classeAnnee.id,
                 etablissementId,
             },
-            relations: ['classe', 'classe.niveau'],
+            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.classe.niveau'],
         });
 
         // 2. Récupérer le MatiereNiveau (fallback)
-        const niveauId = config?.classe?.niveauId || (await classesService.findById(classeId)).niveauId;
+        const niveauId = config?.classeAnnee?.classe?.niveauId || classeAnnee.classe.niveauId;
         const matiereNiveau = await this.niveauRepo.findOne({
             where: {
                 matiereId,
@@ -500,6 +540,98 @@ export class MatieresService {
             credits: config?.credits ?? matiereNiveau.credits,
             obligatoire: config?.obligatoire ?? matiereNiveau.obligatoire,
         };
+    }
+
+    // ==== PROGRAMME PAR MATIERE ====
+
+    /**
+     * Obtenir le programme (niveaux) d'une matière
+     */
+    async findProgrammeByMatiere(matiereId: string): Promise<MatiereNiveau[]> {
+        return this.niveauRepo.find({
+            where: { matiereId },
+            relations: ['niveau', 'groupe', 'filiere'],
+            order: { createdAt: 'ASC' },
+        });
+    }
+
+    // ==== AFFECTATIONS PAR ENSEIGNANT ====
+
+    /**
+     * Obtenir les affectations matière/classe d'un enseignant
+     * Retourne chaque affectation avec :
+     * - les relations matiere, classeAnnee, classe, anneeScolaire, configuration
+     * - le coefficient effectif (hérité : affectation > config > matiereNiveau)
+     * - le volume horaire hebdo effectif (config > matiereNiveau)
+     * - l'effectif actuel de la classe
+     */
+    async getAffectationsByEnseignant(enseignantId: string, etablissementId: string): Promise<any[]> {
+        const affectations = await this.affectationRepo.find({
+            where: { enseignantId, etablissementId },
+            relations: [
+                'matiere',
+                'classeAnnee',
+                'classeAnnee.classe',
+                'classeAnnee.anneeScolaire',
+                'configuration',
+            ],
+            order: { createdAt: 'DESC' },
+        });
+
+        // Batch load MatiereNiveaux pour résoudre coefficients/volumes
+        const matiereIds = [...new Set(affectations.map(a => a.matiereId))];
+        const niveauIds = [...new Set(affectations.map(a => a.classeAnnee?.classe?.niveauId).filter(Boolean))];
+        const matiereNiveaux: Map<string, MatiereNiveau> = new Map();
+
+        if (matiereIds.length > 0 && niveauIds.length > 0) {
+            const nivs = await this.niveauRepo.createQueryBuilder('mn')
+                .where('mn.matiereId IN (:...matiereIds)', { matiereIds })
+                .andWhere('mn.niveauId IN (:...niveauIds)', { niveauIds })
+                .getMany();
+            for (const mn of nivs) {
+                matiereNiveaux.set(`${mn.matiereId}::${mn.niveauId}`, mn);
+            }
+        }
+
+        return affectations.map((aff) => {
+            const niveauId = aff.classeAnnee?.classe?.niveauId;
+            const key = niveauId ? `${aff.matiereId}::${niveauId}` : '';
+            const matiereNiveau = key ? matiereNiveaux.get(key) : null;
+            const config = aff.configuration;
+
+            return {
+                ...aff,
+                coefficient: aff.coefficient ?? config?.coefficient ?? matiereNiveau?.coefficient ?? 1,
+                volumeHoraireHebdo: config?.volumeHoraireHebdo ?? matiereNiveau?.volumeHoraire ?? null,
+                effectifActuel: aff.classeAnnee?.effectifActuel ?? 0,
+            };
+        });
+    }
+
+    // ==== AFFECTATIONS PAR MATIERE ====
+
+    /**
+     * Obtenir les affectations enseignants d'une matière
+     */
+    async findAffectationsByMatiere(matiereId: string, etablissementId: string): Promise<AffectationMatiere[]> {
+        return this.affectationRepo.find({
+            where: { matiereId, etablissementId },
+            relations: ['enseignant', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
+            order: { createdAt: 'DESC' },
+        });
+    }
+
+    // ==== CONFIGURATIONS PAR MATIERE ====
+
+    /**
+     * Obtenir les configurations classe d'une matière
+     */
+    async findConfigurationsByMatiere(matiereId: string, etablissementId: string): Promise<ConfigurationMatiereClasse[]> {
+        return this.configurationMatiereClasseRepo.find({
+            where: { matiereId, etablissementId },
+            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
+            order: { createdAt: 'DESC' },
+        });
     }
 }
 

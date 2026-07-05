@@ -51,6 +51,10 @@ async function apiSetPreference(cle: string, valeur: string, etablissementId?: s
     });
 
     if (!response.ok) {
+        if (response.status === 404) {
+            console.debug('[DataTable] Prefs API not available (404) - skipping save');
+            return;
+        }
         const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
         throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
     }
@@ -58,21 +62,18 @@ async function apiSetPreference(cle: string, valeur: string, etablissementId?: s
 
 async function apiGetPreference(cle: string): Promise<string | null> {
     const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
+    if (!accessToken) return null;
+
+    try {
+        const response = await fetch(`/api/preferences/my/${cle}`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        if (!response.ok) return null;
+        const json = await response.json();
+        return json?.data?.valeur ?? null;
+    } catch {
         return null;
     }
-    
-    const response = await fetch(`/api/preferences/my/${cle}`, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-        },
-    });
-
-    if (!response.ok) return null;
-
-    const json = await response.json();
-    return json?.data?.valeur ?? null;
 }
 
 // ============================================
@@ -150,8 +151,8 @@ export function useDataTablePreferences(
                         localStorage.setItem(localStorageKey, valeur);
                     }
                 }
-            } catch (error) {
-                console.warn(`[DataTable] Échec chargement préférences ${tableId}:`, error);
+            } catch {
+                // Backend preferences API may not exist — silent fallback
             }
         }
 

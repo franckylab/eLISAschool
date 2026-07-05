@@ -34,7 +34,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
         
         const data = await repo.find({
             where,
-            relations: ['matiere', 'classe', 'anneeScolaire'],
+            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
             order: { createdAt: 'DESC' },
         });
         
@@ -78,7 +78,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
     try {
         const data = await repo.findOne({
             where: { id: req.params.id },
-            relations: ['matiere', 'classe', 'anneeScolaire'],
+            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
         });
         
         if (!data) {

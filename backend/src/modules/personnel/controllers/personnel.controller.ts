@@ -39,6 +39,13 @@ router.get('/', authMiddleware, requirePermission('personnel:manage'), async (re
     } catch (error) { next(error); }
 });
 
+router.get('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const membre = await service.findOne(req.params.id);
+        res.json({ success: true, data: membre });
+    } catch (error) { next(error); }
+});
+
 router.post('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPersonnelSchema, req.body);

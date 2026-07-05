@@ -8,11 +8,12 @@
 
 import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
-import { useCreerPersonnel, useModifierPersonnel } from '../hooks/use-personnel';
+import { useCreerPersonnel, useModifierPersonnel, useMembrePersonnel } from '../hooks/use-personnel';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
+import { LoadingState } from '@/components/feedback';
 import type { MembrePersonnel, CreerPersonnelDto } from '../types/personnel.types';
 
 interface PersonnelFormModalProps {
@@ -22,50 +23,54 @@ interface PersonnelFormModalProps {
     onCancel: () => void;
 }
 
+const formNormalizer = {
+    sexe: (v?: string) => v === 'MASCULIN' ? 'M' : v === 'FEMININ' ? 'F' : v || 'M',
+    statut: (v?: string) => {
+        if (!v) return 'actif';
+        const map: Record<string, string> = { ACTIF: 'actif', INACTIF: 'inactif', CONGE: 'en_conge', DEMISSION: 'demission' };
+        return map[v] || v;
+    },
+    specialite: (m?: MembrePersonnel) => m?.specialite || m?.specialites?.[0] || m?.specialitePrincipale || '',
+    qualification: (m?: MembrePersonnel) => m?.qualification || m?.educationNiveau || m?.diplomes || '',
+    dateEntree: (m?: MembrePersonnel) => m?.dateEntree?.split('T')[0] || (m?.dateEmbauche ? new Date(m.dateEmbauche).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+};
+
+function buildFormData<M extends MembrePersonnel | undefined>(m: M): Partial<CreerPersonnelDto> {
+    return {
+        nom: m?.utilisateur?.profil?.nom || m?.nom || '',
+        prenom: m?.utilisateur?.profil?.prenom || m?.prenom || '',
+        dateNaissance: (m?.utilisateur?.profil?.dateNaissance || m?.dateNaissance)?.split('T')[0] || '',
+        sexe: formNormalizer.sexe(m?.utilisateur?.profil?.genre || m?.sexe),
+        email: m?.utilisateur?.email || m?.email || '',
+        telephone: m?.utilisateur?.profil?.telephone || m?.telephone || '',
+        adresse: m?.utilisateur?.profil?.adresse || m?.adresse || '',
+        poste: m?.poste || '',
+        departement: m?.departement || '',
+        typeContrat: m?.typeContrat || 'cdi',
+        dateEntree: formNormalizer.dateEntree(m),
+        statut: formNormalizer.statut(m?.statut),
+        specialite: formNormalizer.specialite(m),
+        qualification: formNormalizer.qualification(m),
+    };
+}
+
 export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: PersonnelFormModalProps) {
     const creerPersonnel = useCreerPersonnel();
     const modifierPersonnel = useModifierPersonnel();
-    const isLoading = creerPersonnel.isPending || modifierPersonnel.isPending;
+    const isMutating = creerPersonnel.isPending || modifierPersonnel.isPending;
 
-    const [formData, setFormData] = useState<Partial<CreerPersonnelDto>>({
-        nom: membre?.nom || '',
-        prenom: membre?.prenom || '',
-        dateNaissance: membre?.dateNaissance?.split('T')[0] || '',
-        sexe: membre?.sexe || 'M',
-        email: membre?.email || '',
-        telephone: membre?.telephone || '',
-        adresse: membre?.adresse || '',
-        poste: membre?.poste || '',
-        departement: membre?.departement || '',
-        typeContrat: membre?.typeContrat || 'cdi',
-        dateEntree: membre?.dateEntree?.split('T')[0] || new Date().toISOString().split('T')[0],
-        statut: membre?.statut || 'actif',
-        specialite: membre?.specialite || '',
-        qualification: membre?.qualification || '',
-    });
+    const editId = mode === 'edition' ? membre?.id ?? '' : '';
+    const { data: apiResponse, isLoading: isFetching } = useMembrePersonnel(editId);
+    const apiData = apiResponse?.data;
+    const source = mode === 'edition' && apiData ? apiData : membre;
+
+    const [formData, setFormData] = useState<Partial<CreerPersonnelDto>>(buildFormData(source));
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (membre && mode === 'edition') {
-            setFormData({
-                nom: membre.nom,
-                prenom: membre.prenom,
-                dateNaissance: membre.dateNaissance?.split('T')[0],
-                sexe: membre.sexe,
-                email: membre.email,
-                telephone: membre.telephone,
-                adresse: membre.adresse,
-                poste: membre.poste,
-                departement: membre.departement,
-                typeContrat: membre.typeContrat,
-                dateEntree: membre.dateEntree?.split('T')[0],
-                statut: membre.statut,
-                specialite: membre.specialite,
-                qualification: membre.qualification,
-            });
-        }
-    }, [membre, mode]);
+        setFormData(buildFormData(source));
+    }, [source, mode]);
 
     const valider = (): boolean => {
         const nouvellesErreurs: Record<string, string> = {};
@@ -106,9 +111,9 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
         try {
             if (mode === 'creation') {
                 await creerPersonnel.mutateAsync(formData as CreerPersonnelDto);
-            } else if (membre) {
+            } else if (source) {
                 await modifierPersonnel.mutateAsync({
-                    id: membre.id,
+                    id: source.id,
                     ...formData,
                 });
             }
@@ -146,7 +151,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     <ElisaButton
                         variant="primary"
                         type="submit"
-                        isLoading={isLoading}
+                        isLoading={isMutating}
                         icon={<Save className="h-4 w-4" />}
                         onClick={handleSubmit}
                     >
@@ -155,6 +160,9 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                 </>
             }
         >
+            {isFetching ? (
+                <div className="py-12"><LoadingState message="Chargement des données..." /></div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Identité */}
                 <div className="grid grid-cols-2 gap-4">
@@ -297,6 +305,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     />
                 </div>
             </form>
+            )}
         </CustomModal>
     );
 }

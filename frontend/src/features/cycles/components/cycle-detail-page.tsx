@@ -10,6 +10,7 @@ import { useCycle, useModifierCycle } from '../hooks/use-cycles';
 import { useNiveauxByCycle } from '@/features/niveaux';
 import { useFilieresByCycle } from '@/features/filieres';
 import { CycleFormModal } from './cycle-form-modal';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 
@@ -104,6 +105,7 @@ export function CycleDetailPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <Breadcrumbs currentLabel={cycle.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/cycles' })}

@@ -8,6 +8,7 @@ import {
     Calendar, CheckCircle, XCircle, AlertCircle,
     GraduationCap, School,
 } from 'lucide-react';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { useClasse, useSupprimerClasse, useAffecterEleve, useElevesClasse, useReconcilierEffectif, useToggleActifClasse } from '../hooks/use-classes';
 import { useEleves } from '@/features/eleves/hooks/use-eleves';
 import { ClasseFormModal } from './classe-form-modal';
@@ -249,6 +250,7 @@ export function ClasseDetailPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <Breadcrumbs currentLabel={classe.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/classes' })}
@@ -467,57 +469,6 @@ export function ClasseDetailPage() {
                                     )}
                                 </motion.div>
 
-                                {/* Double capacité : effectif vs effectifMax + effectif vs salle */}
-                                {salleNom !== t('info.nonAssignee') && classe.salle?.capacite && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.25 }}
-                                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-                                    >
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-blue-500" />
-                                            Capacité
-                                        </h4>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span className="text-gray-600">Effectif / Effectif max</span>
-                                                    <span className="font-medium text-gray-900">
-                                                        {tauxOccupation
-                                                            ? `${tauxOccupation.effectif} / ${tauxOccupation.capacite}`
-                                                            : `${effectifActuel} / ${effectifMax || '∞'}`}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${Math.min(tauxOccupation?.pourcentage ?? (effectifMax ? (effectifActuel / effectifMax) * 100 : 0), 100)}%` }}
-                                                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                                                        className={`h-full rounded-full ${effectifMax && effectifActuel > effectifMax ? 'bg-red-500' : 'bg-blue-500'}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span className="text-gray-600">Effectif / Capacité salle</span>
-                                                    <span className="font-medium text-gray-900">
-                                                        {effectifActuel} / {classe.salle.capacite}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${Math.min((effectifActuel / classe.salle.capacite) * 100, 100)}%` }}
-                                                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                                                        className={`h-full rounded-full ${effectifActuel > classe.salle.capacite ? 'bg-red-500' : 'bg-emerald-500'}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-
                                 {/* EDT preview plié */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -681,17 +632,47 @@ export function ClasseDetailPage() {
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('stats.tauxOccupation')}</h3>
                                 {tauxOccupation ? (
-                                    <div>
-                                        <div className="overflow-hidden h-4 rounded bg-blue-100">
-                                            <div
-                                                style={{ width: `${Math.min(tauxOccupation.pourcentage, 100)}%` }}
-                                                className="h-full bg-blue-500 transition-all duration-500 rounded"
-                                            />
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-gray-600">Effectif / Capacité max</span>
+                                                <span className="font-medium text-gray-900">
+                                                    {tauxOccupation.effectif} / {tauxOccupation.capacite}
+                                                </span>
+                                            </div>
+                                            <div className="overflow-hidden h-3 rounded bg-blue-100">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${Math.min(tauxOccupation.pourcentage, 100)}%` }}
+                                                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                    className="h-full bg-blue-500 rounded"
+                                                />
+                                            </div>
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                {tauxOccupation.pourcentage.toFixed(1)}% {t('stats.rempli')}
+                                            </p>
                                         </div>
-                                        <p className="mt-2 text-sm text-gray-600">
-                                            {tauxOccupation.pourcentage.toFixed(1)}% {t('stats.rempli')}
-                                            {' '}({tauxOccupation.effectif}/{tauxOccupation.capacite})
-                                        </p>
+                                        {classe.salle?.capacite && (
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-gray-600">Effectif / Capacité salle</span>
+                                                    <span className="font-medium text-gray-900">
+                                                        {tauxOccupation.effectif} / {classe.salle.capacite}
+                                                    </span>
+                                                </div>
+                                                <div className="overflow-hidden h-3 rounded bg-emerald-100">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min((tauxOccupation.effectif / classe.salle.capacite) * 100, 100)}%` }}
+                                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                        className={`h-full rounded ${tauxOccupation.effectif > classe.salle.capacite ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                                    />
+                                                </div>
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    {Math.min((tauxOccupation.effectif / classe.salle.capacite) * 100, 100).toFixed(1)}% utilisé
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <p className="text-sm text-gray-400">{t('stats.pasDeLimite')}</p>

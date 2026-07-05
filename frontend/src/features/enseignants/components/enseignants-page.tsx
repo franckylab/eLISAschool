@@ -1,58 +1,54 @@
-/**
- * ==================================
- * eLISAschool - Page Personnel
- * ==================================
- */
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, GraduationCap } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
-import { PersonnelFormModal } from './personnel-form-modal';
+import { useListeEnseignants } from '../hooks/use-enseignants';
+import { useSupprimerPersonnel } from '@/features/personnel/hooks/use-personnel';
+import { EnseignantFormModal } from './enseignant-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { LoadingState, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
-import type { MembrePersonnel, PersonnelFiltres } from '../types/personnel.types';
+import type { Enseignant, EnseignantFiltres } from '../types/enseignant.types';
 import type { Column } from '@/components/ui/DataTable';
 
-export function PersonnelPage() {
+export function EnseignantsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });
+    const [filtres, setFiltres] = useState<EnseignantFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
-    const [membreSelected, setMembreSelected] = useState<MembrePersonnel | undefined>();
+    const [enseignantSelected, setEnseignantSelected] = useState<Enseignant | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
     const [modalKey, setModalKey] = useState(0);
-    const [membreToDelete, setMembreToDelete] = useState<MembrePersonnel | null>(null);
+    const [enseignantToDelete, setEnseignantToDelete] = useState<Enseignant | null>(null);
 
-    const { data, isLoading, error, refetch } = usePersonnel(filtres);
+    const { data, isLoading, error, refetch } = useListeEnseignants(filtres);
     const supprimer = useSupprimerPersonnel();
 
     const handleCreation = () => {
         setModeFormulaire('creation');
-        setMembreSelected(undefined);
+        setEnseignantSelected(undefined);
         setModalKey(k => k + 1);
         setModalOpen(true);
     };
 
-    const handleEdition = (membre: MembrePersonnel) => {
+    const handleEdition = (enseignant: Enseignant) => {
         setModeFormulaire('edition');
-        setMembreSelected(membre);
+        setEnseignantSelected(enseignant);
         setModalKey(k => k + 1);
         setModalOpen(true);
     };
 
     const handleSuccess = () => {
         setModalOpen(false);
-        setMembreSelected(undefined);
+        setEnseignantSelected(undefined);
+        refetch();
     };
 
-    const colonnes: Column<MembrePersonnel>[] = [
+    const colonnes: Column<Enseignant>[] = [
         {
             key: 'matricule',
             header: 'Matricule',
@@ -70,26 +66,26 @@ export function PersonnelPage() {
                 const tel = p.utilisateur?.profil?.telephone ?? p.telephone ?? '';
                 return (
                     <button
-                        onClick={() => navigate({ to: '/personnel/$id', params: { id: p.id } })}
+                        onClick={() => navigate({ to: '/enseignants/$id', params: { id: p.id } })}
                         className="hover:underline cursor-pointer text-left"
                     >
-                        <div>
-                            <p className="font-medium">{prenom} {nom}</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">{email || tel || '-'}</p>
+                        <div className="flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-blue-500" />
+                            <div>
+                                <p className="font-medium">{prenom} {nom}</p>
+                                <p className="text-xs text-[var(--color-text-muted)]">{email || tel || '-'}</p>
+                            </div>
                         </div>
                     </button>
                 );
             },
         },
         {
-            key: 'poste',
-            header: 'Poste',
+            key: 'specialite',
+            header: 'Spécialité',
             sortable: true,
             render: (p) => (
-                <div>
-                    <p className="font-medium">{p.posteExact ?? p.poste ?? '—'}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{p.service ?? p.departement ?? '-'}</p>
-                </div>
+                <span className="text-sm">{p.specialites?.[0] ?? p.specialite ?? '-'}</span>
             ),
         },
         {
@@ -99,7 +95,7 @@ export function PersonnelPage() {
             className: 'text-center',
             render: (p) => {
                 const contrats: any = { cdi: 'CDI', cdd: 'CDD', vacataire: 'Vacataire', stage: 'Stage' };
-                return <span className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium">{contrats[p.typeContrat] ?? '—'}</span>;
+                return <span className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium">{contrats[p.typeContrat] ?? 'CDI'}</span>;
             },
         },
         {
@@ -146,7 +142,7 @@ export function PersonnelPage() {
                     key: 'supprimer',
                     icon: Trash2,
                     label: t('boutons.supprimer'),
-                    onClick: () => setMembreToDelete(p),
+                    onClick: () => setEnseignantToDelete(p),
                     permission: 'personnel:delete',
                     variant: 'danger' as const,
                 },
@@ -154,21 +150,19 @@ export function PersonnelPage() {
         },
     ];
 
-    // Affichage loading pendant le chargement
     if (isLoading) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement du personnel..." />
+                <LoadingState message="Chargement des enseignants..." />
             </div>
         );
     }
 
-    // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
                 <ErrorState
-                    message={error.message || "Impossible de charger les données du personnel"}
+                    message={error.message || "Impossible de charger les enseignants"}
                     onRetry={() => refetch()}
                 />
             </div>
@@ -179,11 +173,11 @@ export function PersonnelPage() {
         <div className="flex flex-col gap-6 p-6">
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
-                    <h1 className="text-3xl font-bold">{t('personnel.titre', { defaultValue: 'Personnel' })}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} membre(s)</p>
+                    <h1 className="text-3xl font-bold">Enseignants</h1>
+                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} enseignant(s)</p>
                 </div>
                 {hasPermission('personnel:create') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>{t('boutons.nouveau')}</ElisaButton>
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>Ajouter un enseignant</ElisaButton>
                 )}
             </motion.div>
 
@@ -194,7 +188,7 @@ export function PersonnelPage() {
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                searchPlaceholder={t('filtres.recherche')}
+                searchPlaceholder="Rechercher un enseignant..."
                 onSearchChange={(recherche) =>
                     setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                 }
@@ -212,28 +206,28 @@ export function PersonnelPage() {
             />
 
             {modalOpen && (
-                <PersonnelFormModal
+                <EnseignantFormModal
                     key={modalKey}
                     mode={modeFormulaire}
-                    membre={membreSelected}
+                    enseignant={enseignantSelected}
                     onSuccess={handleSuccess}
                     onCancel={() => setModalOpen(false)}
                 />
             )}
 
             <ConfirmationModal
-                isOpen={!!membreToDelete}
-                title="Supprimer ce membre du personnel"
-                message={`Êtes-vous sûr de vouloir supprimer ${membreToDelete?.utilisateur?.profil?.prenom || membreToDelete?.prenom || ''} ${membreToDelete?.utilisateur?.profil?.nom || membreToDelete?.nom || ''} ?`}
+                isOpen={!!enseignantToDelete}
+                title="Supprimer cet enseignant"
+                message={`Êtes-vous sûr de vouloir supprimer ${enseignantToDelete?.utilisateur?.profil?.prenom || enseignantToDelete?.prenom || ''} ${enseignantToDelete?.utilisateur?.profil?.nom || enseignantToDelete?.nom || ''} ?`}
                 details="Cette action est irréversible et supprimera toutes les données associées."
                 variant="danger"
                 onConfirm={async () => {
-                    if (membreToDelete) {
-                        await supprimer.mutateAsync(membreToDelete.id);
-                        setMembreToDelete(null);
+                    if (enseignantToDelete) {
+                        await supprimer.mutateAsync(enseignantToDelete.id);
+                        setEnseignantToDelete(null);
                     }
                 }}
-                onCancel={() => setMembreToDelete(null)}
+                onCancel={() => setEnseignantToDelete(null)}
                 isLoading={supprimer.isPending}
             />
         </div>

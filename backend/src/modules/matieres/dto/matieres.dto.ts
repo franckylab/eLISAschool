@@ -7,12 +7,14 @@
 
 import { z } from 'zod';
 import { paginationSchema } from '@common/dto/pagination.dto';
+import { SousSysteme } from '@modules/etablissement/entities';
 
 export const createMatiereSchema = z.object({
   nom: z.string().min(2).max(100),
   code: z.string().max(50).optional(),
   nomAnglais: z.string().max(100).optional(),
   couleur: z.string().regex(/^#[0-9A-F]{6}$/i).default('#000000'),
+  sousSysteme: z.nativeEnum(SousSysteme).optional(),
   actif: z.boolean().default(true),
 });
 
@@ -41,7 +43,8 @@ export const affecterEnseignantSchema = z.object({
   matiereId: z.string().uuid(),
   classeAnneeId: z.string().uuid(),
   enseignantId: z.string().uuid(),
-  volumeHoraireHebdo: z.number().int().optional(),
+  dateDebut: z.string().optional(),
+  dateFin: z.string().optional(),
 });
 
 /**

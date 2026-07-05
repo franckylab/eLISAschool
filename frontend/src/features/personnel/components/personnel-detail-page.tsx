@@ -28,6 +28,9 @@ const LABELS_TYPE_CONTRAT: Record<string, string> = {
 };
 
 const LABELS_STATUT: Record<string, string> = {
+    ACTIF: 'Actif',
+    INACTIF: 'Inactif',
+    CONGE: 'En congé',
     actif: 'Actif',
     inactif: 'Inactif',
     en_conge: 'En congé',
@@ -35,6 +38,9 @@ const LABELS_STATUT: Record<string, string> = {
 };
 
 const COULEURS_STATUT: Record<string, string> = {
+    ACTIF: 'bg-green-100 text-green-800 border-green-200',
+    INACTIF: 'bg-gray-100 text-gray-800 border-gray-200',
+    CONGE: 'bg-blue-100 text-blue-800 border-blue-200',
     actif: 'bg-green-100 text-green-800 border-green-200',
     inactif: 'bg-gray-100 text-gray-800 border-gray-200',
     en_conge: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -52,7 +58,7 @@ export function PersonnelDetailPage() {
 
     // Calculer l'ancienneté
     const anciennete = membre ? Math.floor(
-        (Date.now() - new Date(membre.dateEntree).getTime()) / (1000 * 60 * 60 * 24 * 365)
+        (Date.now() - new Date(membre.dateEmbauche ?? membre.dateEntree ?? '').getTime()) / (1000 * 60 * 60 * 24 * 365)
     ) : 0;
 
     const onglets = [
@@ -93,31 +99,31 @@ export function PersonnelDetailPage() {
                     <div className="flex items-start gap-6">
                         {/* Avatar */}
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                            {membre.prenom?.charAt(0)}{membre.nom?.charAt(0)}
+                            {(membre.utilisateur?.profil?.prenom ?? membre.prenom ?? '')?.charAt(0)}{(membre.utilisateur?.profil?.nom ?? membre.nom ?? '')?.charAt(0)}
                         </div>
 
                         {/* Infos principales */}
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-gray-900">
-                                    {membre.prenom} {membre.nom}
+                                    {membre.utilisateur?.profil?.prenom ?? membre.prenom ?? ''} {membre.utilisateur?.profil?.nom ?? membre.nom ?? ''}
                                 </h1>
                                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${COULEURS_STATUT[membre.statut]}`}>
                                     {LABELS_STATUT[membre.statut]}
                                 </span>
                             </div>
 
-                            <p className="text-lg text-gray-600 mb-3">{membre.poste}</p>
+                            <p className="text-lg text-gray-600 mb-3">{membre.posteExact ?? membre.poste ?? 'Enseignant'}</p>
 
                             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                                 <div className="flex items-center gap-2">
                                     <Briefcase className="h-4 w-4" />
-                                    <span>{LABELS_TYPE_CONTRAT[membre.typeContrat]}</span>
+                                    <span>{LABELS_TYPE_CONTRAT[membre.typeContrat ?? 'cdi']}</span>
                                 </div>
-                                {membre.departement && (
+                                {(membre.service ?? membre.departement ?? '') && (
                                     <div className="flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
-                                        <span>{membre.departement}</span>
+                                        <span>{membre.service ?? membre.departement ?? ''}</span>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2">
@@ -158,7 +164,7 @@ export function PersonnelDetailPage() {
                             icon={<Trash2 className="h-4 w-4" />}
                             isLoading={supprimer.isPending}
                             onClick={() => {
-                                if (confirm(`Supprimer ${membre.prenom} ${membre.nom} du personnel ?`)) {
+                                if (confirm(`Supprimer ${membre.utilisateur?.profil?.prenom ?? membre.prenom ?? ''} ${membre.utilisateur?.profil?.nom ?? membre.nom ?? ''} du personnel ?`)) {
                                     supprimer.mutateAsync(id).then(() => {
                                         navigate({ to: '/personnel' });
                                     });
@@ -184,7 +190,7 @@ export function PersonnelDetailPage() {
                         <span className="text-sm font-medium text-blue-700">Date d'entrée</span>
                     </div>
                     <p className="text-xl font-bold text-blue-800">
-                        {new Date(membre.dateEntree).toLocaleDateString('fr-FR')}
+                        {new Date(membre.dateEmbauche ?? membre.dateEntree ?? '').toLocaleDateString('fr-FR')}
                     </p>
                 </motion.div>
 
@@ -214,7 +220,7 @@ export function PersonnelDetailPage() {
                         <span className="text-sm font-medium text-purple-700">Qualification</span>
                     </div>
                     <p className="text-lg font-bold text-purple-800">
-                        {membre.qualification || 'Non spécifié'}
+                        {(membre.diplomes ?? membre.qualification ?? '') || 'Non spécifié'}
                     </p>
                 </motion.div>
 
@@ -229,7 +235,7 @@ export function PersonnelDetailPage() {
                         <span className="text-sm font-medium text-orange-700">Type contrat</span>
                     </div>
                     <p className="text-xl font-bold text-orange-800">
-                        {LABELS_TYPE_CONTRAT[membre.typeContrat]}
+                        {LABELS_TYPE_CONTRAT[membre.typeContrat ?? 'cdi']}
                     </p>
                 </motion.div>
             </div>
@@ -276,17 +282,17 @@ export function PersonnelDetailPage() {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Date de naissance</dt>
                                     <dd className="mt-1 text-gray-900">
-                                        {new Date(membre.dateNaissance).toLocaleDateString('fr-FR')}
+                                        {new Date(membre.utilisateur?.profil?.dateNaissance ?? membre.dateNaissance ?? '').toLocaleDateString('fr-FR')}
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Sexe</dt>
                                     <dd className="mt-1 text-gray-900">{membre.sexe === 'M' ? 'Masculin' : 'Féminin'}</dd>
                                 </div>
-                                {membre.specialite && (
+                                {(membre.specialites?.[0] ?? membre.specialite ?? '') && (
                                     <div>
                                         <dt className="text-sm font-medium text-gray-500">Spécialité</dt>
-                                        <dd className="mt-1 text-gray-900">{membre.specialite}</dd>
+                                        <dd className="mt-1 text-gray-900">{membre.specialites?.[0] ?? membre.specialite ?? ''}</dd>
                                     </div>
                                 )}
                             </dl>
@@ -299,30 +305,30 @@ export function PersonnelDetailPage() {
                                 Coordonnées
                             </h3>
                             <dl className="space-y-4">
-                                {membre.email && (
+                                {(membre.utilisateur?.email ?? membre.email ?? '') && (
                                     <div className="flex items-center gap-3">
                                         <Mail className="h-5 w-5 text-gray-400" />
                                         <div>
                                             <dt className="text-sm font-medium text-gray-500">Email</dt>
-                                            <dd className="text-gray-900">{membre.email}</dd>
+                                            <dd className="text-gray-900">{membre.utilisateur?.email ?? membre.email ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
-                                {membre.telephone && (
+                                {(membre.utilisateur?.profil?.telephone ?? membre.telephone ?? '') && (
                                     <div className="flex items-center gap-3">
                                         <Phone className="h-5 w-5 text-gray-400" />
                                         <div>
                                             <dt className="text-sm font-medium text-gray-500">Téléphone</dt>
-                                            <dd className="text-gray-900">{membre.telephone}</dd>
+                                            <dd className="text-gray-900">{membre.utilisateur?.profil?.telephone ?? membre.telephone ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
-                                {membre.adresse && (
+                                {(membre.utilisateur?.profil?.adresse ?? membre.adresse ?? '') && (
                                     <div className="flex items-start gap-3">
                                         <MapPin className="h-5 w-5 text-gray-400 mt-1" />
                                         <div>
                                             <dt className="text-sm font-medium text-gray-500">Adresse</dt>
-                                            <dd className="text-gray-900">{membre.adresse}</dd>
+                                            <dd className="text-gray-900">{membre.utilisateur?.profil?.adresse ?? membre.adresse ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
@@ -338,26 +344,26 @@ export function PersonnelDetailPage() {
                             <dl className="space-y-4">
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Poste</dt>
-                                    <dd className="mt-1 text-gray-900">{membre.poste}</dd>
+                                    <dd className="mt-1 text-gray-900">{membre.posteExact ?? membre.poste ?? 'Enseignant'}</dd>
                                 </div>
-                                {membre.departement && (
+                                {(membre.service ?? membre.departement ?? '') && (
                                     <div>
                                         <dt className="text-sm font-medium text-gray-500">Département</dt>
-                                        <dd className="mt-1 text-gray-900">{membre.departement}</dd>
+                                        <dd className="mt-1 text-gray-900">{membre.service ?? membre.departement ?? ''}</dd>
                                     </div>
                                 )}
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Type de contrat</dt>
                                     <dd className="mt-1">
                                         <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                            {LABELS_TYPE_CONTRAT[membre.typeContrat]}
+                                            {LABELS_TYPE_CONTRAT[membre.typeContrat ?? 'cdi']}
                                         </span>
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Date d'entrée</dt>
                                     <dd className="mt-1 text-gray-900">
-                                        {new Date(membre.dateEntree).toLocaleDateString('fr-FR')}
+                                        {new Date(membre.dateEmbauche ?? membre.dateEntree ?? '').toLocaleDateString('fr-FR')}
                                     </dd>
                                 </div>
                                 {membre.dateSortie && (
