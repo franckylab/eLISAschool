@@ -9,7 +9,7 @@
  * Vérifie les conflits d'enseignants, salles, classes et indisponibilités
  */
 
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, IndisponibiliteEnseignant } from '@modules/personnel/entities';
 import { RepartitionHoraire } from '../entities';
@@ -215,8 +215,8 @@ export class EmploiDuTempsValidatorService {
             where: {
                 enseignantId,
                 etablissementId,
-                dateDebut: this.lessThanOrEqual(date),
-                dateFin: this.moreThanOrEqual(date),
+                dateDebut: LessThanOrEqual(date),
+                dateFin: MoreThanOrEqual(date),
             },
         });
 

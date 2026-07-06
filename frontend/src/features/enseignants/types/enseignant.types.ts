@@ -88,10 +88,11 @@ export interface ContratEnseignant {
     membrePersonnelId: string;
     typeContrat: string;
     dateDebut: string;
-    dateFin?: string;
+    dateFin?: string | null;
+    salaireBase: number;
+    tarifHoraire?: number | null;
     statut: string;
-    salaire?: number;
-    poste?: string;
+    poste?: { id: string; nom: string; code?: string } | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -99,14 +100,17 @@ export interface ContratEnseignant {
 export interface BulletinPaie {
     id: string;
     membrePersonnelId: string;
+    contratId: string;
     mois: number;
     annee: number;
     salaireBase: number;
+    heuresEffectuees: number;
+    montantHeuresSup: number;
     primes: number;
-    retenues: number;
-    netAPayer: number;
+    deductions: number;
+    salaireNet: number;
     statut: string;
-    dateEdition: string;
+    datePaiement?: string;
     createdAt: string;
 }
 
@@ -114,21 +118,23 @@ export interface ParcoursComplet {
     membre: any;
     contrats: ContratEnseignant[];
     affectations: any[];
-    evaluations: any[];
-    absences: any[];
-    salaireEvolution: any[];
-    anciennete: number;
+    evaluations: EvaluationEnseignant[];
+    statistiquesAbsences: AssiduiteStats;
+    evolutionSalariale: any[];
+    anciennete: { annees: number; mois: number; jours: number };
+    score: number;
 }
 
 export interface AbsenceEnseignant {
     id: string;
     membrePersonnelId: string;
-    dateDebut: string;
-    dateFin: string;
-    motif: string;
-    justifiee: boolean;
-    statut: string;
-    typeAbsence?: string;
+    date: string;
+    type: string;
+    statutJustification: string;
+    motif?: string | null;
+    justification?: string | null;
+    heureDebut?: string | null;
+    heureFin?: string | null;
     createdAt: string;
 }
 
@@ -138,6 +144,16 @@ export interface AssiduiteStats {
     nonJustifiees: number;
     tauxAbsenteisme: number;
     periode: { dateDebut: string; dateFin: string };
+}
+
+export interface AffectationPayload {
+    matiereId: string;
+    classeAnneeId: string;
+    enseignantId: string;
+    coefficient?: number;
+    dateDebut?: string;
+    dateFin?: string;
+    actif?: boolean;
 }
 
 export interface ProgressionProgramme {

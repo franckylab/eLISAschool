@@ -63,6 +63,7 @@ import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisate
 import { Route as AuthSpecialitesIdRouteImport } from './routes/_auth.specialites.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
 import { Route as AuthSallesSalleIdRouteImport } from './routes/_auth.salles.$salleId'
+import { Route as AuthProgrammesIdRouteImport } from './routes/_auth/programmes.$id'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
 import { Route as AuthNiveauxIdRouteImport } from './routes/_auth.niveaux.$id'
@@ -358,6 +359,11 @@ const AuthSallesSalleIdRoute = AuthSallesSalleIdRouteImport.update({
   path: '/$salleId',
   getParentRoute: () => AuthSallesRoute,
 } as any)
+const AuthProgrammesIdRoute = AuthProgrammesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthProgrammesRoute,
+} as any)
 const AuthPersonnelIdRoute = AuthPersonnelIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -505,7 +511,7 @@ export interface FileRoutesByFullPath {
   '/parametres': typeof AuthParametresRoute
   '/periodes': typeof AuthPeriodesRouteWithChildren
   '/personnel': typeof AuthPersonnelRouteWithChildren
-  '/programmes': typeof AuthProgrammesRoute
+  '/programmes': typeof AuthProgrammesRouteWithChildren
   '/responsables-eleves': typeof AuthResponsablesElevesRoute
   '/salles': typeof AuthSallesRouteWithChildren
   '/specialites': typeof AuthSpecialitesRouteWithChildren
@@ -527,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/programmes/$id': typeof AuthProgrammesIdRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -569,7 +576,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthNotesRoute
   '/parametres': typeof AuthParametresRoute
   '/personnel': typeof AuthPersonnelRouteWithChildren
-  '/programmes': typeof AuthProgrammesRoute
+  '/programmes': typeof AuthProgrammesRouteWithChildren
   '/responsables-eleves': typeof AuthResponsablesElevesRoute
   '/utilisateurs': typeof AuthUtilisateursRouteWithChildren
   '/parametres/structure-academique': typeof authenticatedParametresStructureAcademiqueRouteRouteWithChildren
@@ -589,6 +596,7 @@ export interface FileRoutesByTo {
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
+  '/programmes/$id': typeof AuthProgrammesIdRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -646,7 +654,7 @@ export interface FileRoutesById {
   '/_auth/parametres': typeof AuthParametresRoute
   '/_auth/periodes': typeof AuthPeriodesRouteWithChildren
   '/_auth/personnel': typeof AuthPersonnelRouteWithChildren
-  '/_auth/programmes': typeof AuthProgrammesRoute
+  '/_auth/programmes': typeof AuthProgrammesRouteWithChildren
   '/_auth/responsables-eleves': typeof AuthResponsablesElevesRoute
   '/_auth/salles': typeof AuthSallesRouteWithChildren
   '/_auth/specialites': typeof AuthSpecialitesRouteWithChildren
@@ -668,6 +676,7 @@ export interface FileRoutesById {
   '/_auth/niveaux/$id': typeof AuthNiveauxIdRoute
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
+  '/_auth/programmes/$id': typeof AuthProgrammesIdRoute
   '/_auth/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -747,6 +756,7 @@ export interface FileRouteTypes {
     | '/niveaux/$id'
     | '/periodes/$id'
     | '/personnel/$id'
+    | '/programmes/$id'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/niveaux/$id'
     | '/periodes/$id'
     | '/personnel/$id'
+    | '/programmes/$id'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -887,6 +898,7 @@ export interface FileRouteTypes {
     | '/_auth/niveaux/$id'
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
+    | '/_auth/programmes/$id'
     | '/_auth/salles/$salleId'
     | '/_auth/salles/statistiques'
     | '/_auth/specialites/$id'
@@ -1303,6 +1315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSallesSalleIdRouteImport
       parentRoute: typeof AuthSallesRoute
     }
+    '/_auth/programmes/$id': {
+      id: '/_auth/programmes/$id'
+      path: '/$id'
+      fullPath: '/programmes/$id'
+      preLoaderRoute: typeof AuthProgrammesIdRouteImport
+      parentRoute: typeof AuthProgrammesRoute
+    }
     '/_auth/personnel/$id': {
       id: '/_auth/personnel/$id'
       path: '/$id'
@@ -1650,6 +1669,18 @@ const AuthPersonnelRouteWithChildren = AuthPersonnelRoute._addFileChildren(
   AuthPersonnelRouteChildren,
 )
 
+interface AuthProgrammesRouteChildren {
+  AuthProgrammesIdRoute: typeof AuthProgrammesIdRoute
+}
+
+const AuthProgrammesRouteChildren: AuthProgrammesRouteChildren = {
+  AuthProgrammesIdRoute: AuthProgrammesIdRoute,
+}
+
+const AuthProgrammesRouteWithChildren = AuthProgrammesRoute._addFileChildren(
+  AuthProgrammesRouteChildren,
+)
+
 interface AuthSallesRouteChildren {
   AuthSallesSalleIdRoute: typeof AuthSallesSalleIdRoute
   AuthSallesStatistiquesRoute: typeof AuthSallesStatistiquesRoute
@@ -1716,7 +1747,7 @@ interface AuthRouteChildren {
   AuthParametresRoute: typeof AuthParametresRoute
   AuthPeriodesRoute: typeof AuthPeriodesRouteWithChildren
   AuthPersonnelRoute: typeof AuthPersonnelRouteWithChildren
-  AuthProgrammesRoute: typeof AuthProgrammesRoute
+  AuthProgrammesRoute: typeof AuthProgrammesRouteWithChildren
   AuthResponsablesElevesRoute: typeof AuthResponsablesElevesRoute
   AuthSallesRoute: typeof AuthSallesRouteWithChildren
   AuthSpecialitesRoute: typeof AuthSpecialitesRouteWithChildren
@@ -1750,7 +1781,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthParametresRoute: AuthParametresRoute,
   AuthPeriodesRoute: AuthPeriodesRouteWithChildren,
   AuthPersonnelRoute: AuthPersonnelRouteWithChildren,
-  AuthProgrammesRoute: AuthProgrammesRoute,
+  AuthProgrammesRoute: AuthProgrammesRouteWithChildren,
   AuthResponsablesElevesRoute: AuthResponsablesElevesRoute,
   AuthSallesRoute: AuthSallesRouteWithChildren,
   AuthSpecialitesRoute: AuthSpecialitesRouteWithChildren,

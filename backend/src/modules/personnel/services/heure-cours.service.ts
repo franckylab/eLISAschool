@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, StatutEffectue } from '../entities';
 import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto } from '../dto';
@@ -202,7 +202,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: { $gte: dateDebut, $lte: dateFin } as any,
+                date: Between(dateDebut, dateFin) as any,
                 statutEffectue: StatutEffectue.EFFECTUE,
             },
         });
@@ -251,7 +251,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: { $gte: dateDebut, $lte: dateFin } as any,
+                date: Between(dateDebut, dateFin) as any,
             },
         });
 
@@ -374,7 +374,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: { $gte: lundi, $lte: samedi } as any,
+                date: Between(lundi, samedi) as any,
             },
             relations: ['matiere', 'classe', 'salle', 'remplacant'],
             order: { date: 'ASC', heureDebut: 'ASC' },

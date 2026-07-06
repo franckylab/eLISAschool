@@ -418,7 +418,7 @@ export function createApp(): Application {
     app.use('/api/examens-nationaux', authMiddleware, filterByEtablissement(), examensNationauxController);
     app.use('/api/diplomes-eleves', authMiddleware, filterByEtablissement(), diplomesElevesController);
     app.use('/api/annees-scolaires', authMiddleware, filterByEtablissement(), anneesScolairesController);
-    app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
+    // Sous-routes personnel (spécifiques — doivent être AVANT /api/personnel pour éviter que /:id n'intercepte)
     app.use('/api/personnel/contrats', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), contratController);
     app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typeContratController);
     app.use('/api/personnel/affectations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), affectationController);
@@ -429,6 +429,8 @@ export function createApp(): Application {
     app.use('/api/personnel/progressions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), progressionProgrammeController);
     app.use('/api/personnel/bulletins', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), bulletinPaieController);
     app.use('/api/personnel/dashboard', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelDashboardController);
+    // Route générique /:id en dernier
+    app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
     app.use('/api/classes', authMiddleware, filterByEtablissement(), classesController);
     app.use('/api/classes-annees', authMiddleware, filterByEtablissement(), classesAnneesController);
     app.use('/api/configuration-matiere-classe', authMiddleware, filterByEtablissement(), configurationMatiereClasseController);

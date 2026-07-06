@@ -26,6 +26,7 @@ import { ProgrammeFormModal } from './programme-form-modal';
 export function ProgrammesPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
+    const [recherche, setRecherche] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [programmeToEdit, setProgrammeToEdit] = useState<ProgrammePedagogique | null>(null);
     const [programmeToDelete, setProgrammeToDelete] = useState<ProgrammePedagogique | null>(null);
@@ -187,6 +188,27 @@ export function ProgrammesPage() {
                             Nouveau programme
                         </ElisaButton>
                     )}
+                </div>
+            </motion.div>
+
+            {/* Filtres */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="bg-white rounded-lg p-4 border border-gray-200"
+            >
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                        <label className="text-sm font-medium text-foreground mb-2 block">Rechercher</label>
+                        <input
+                            type="text"
+                            placeholder="Nom, code..."
+                            value={recherche}
+                            onChange={(e) => setRecherche(e.target.value)}
+                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                        />
+                    </div>
                 </div>
             </motion.div>
 

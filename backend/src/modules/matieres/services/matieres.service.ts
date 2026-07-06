@@ -236,6 +236,10 @@ export class MatieresService {
 
         if (existing) {
             existing.enseignantId = dto.enseignantId; // Mise à jour de l'enseignant
+            if (dto.dateDebut) existing.dateDebut = dto.dateDebut;
+            if (dto.dateFin !== undefined) existing.dateFin = dto.dateFin;
+            if (dto.coefficient !== undefined) existing.coefficient = dto.coefficient;
+            if (dto.actif !== undefined) existing.actif = dto.actif;
             existing.statut = requireValidation
                 ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
                 : StatutAffectationMatiere.ACTIVE;
@@ -263,6 +267,8 @@ export class MatieresService {
             etablissementId: etablissementId!,
             dateDebut: dto.dateDebut || new Date().toISOString().split('T')[0],
             ...(dto.dateFin ? { dateFin: dto.dateFin } : {}),
+            ...(dto.coefficient !== undefined ? { coefficient: dto.coefficient } : {}),
+            ...(dto.actif !== undefined ? { actif: dto.actif } : {}),
             statut: requireValidation
                 ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
                 : StatutAffectationMatiere.ACTIVE,
@@ -296,6 +302,8 @@ export class MatieresService {
         if (dto.enseignantId) affectation.enseignantId = dto.enseignantId;
         if (dto.dateDebut) affectation.dateDebut = dto.dateDebut;
         if (dto.dateFin !== undefined) affectation.dateFin = dto.dateFin;
+        if (dto.actif !== undefined) affectation.actif = dto.actif;
+        if (dto.coefficient !== undefined) affectation.coefficient = dto.coefficient;
 
         await this.affectationRepo.save(affectation);
         logger.info(`Affectation mise à jour: ${id}`);

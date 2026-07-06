@@ -100,7 +100,7 @@ export class ParcoursPersonnelService {
         const evolutionSalariale = this.calculerEvolutionSalariale(contrats, affectations);
 
         // 7. Calculer l'ancienneté
-        const anciennete = this.calculerAnciennete(membre.dateEmbauche);
+        const anciennete = this.calculerAnciennete(new Date(membre.dateEmbauche));
 
         // 8. Score et classement (optionnel - peut être récupéré du module suivi-personnel)
         const score = 0; // TODO: Intégrer avec scoring-personnel
@@ -161,7 +161,7 @@ export class ParcoursPersonnelService {
         const evolution = contrats.map(contrat => {
             const affectation = affectations.find(a => a.contratId === contrat.id);
             return {
-                date: contrat.dateDebut,
+                date: new Date(contrat.dateDebut),
                 salaire: Number(contrat.salaireBase),
                 typeContrat: contrat.typeContrat,
                 poste: affectation?.poste?.intitulé,

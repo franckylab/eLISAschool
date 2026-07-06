@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ContratPersonnel, TypeContrat, StatutContrat } from '../entities';
 import { CreateContratDto, UpdateContratDto, QueryContratDto } from '../dto';
@@ -269,7 +269,7 @@ export class ContratService {
             where: {
                 etablissementId,
                 statut: StatutContrat.ACTIF,
-                dateFin: { $lte: dateLimite } as any,
+                dateFin: LessThanOrEqual(dateLimite) as any,
             },
             relations: ['membrePersonnel', 'membrePersonnel.utilisateur'],
             order: { dateFin: 'ASC' },

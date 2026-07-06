@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { AffectationPoste, StatutAffectation, TypeMutation } from '../entities';
 import { CreateAffectationDto, UpdateAffectationDto, QueryAffectationDto } from '../dto';
@@ -327,7 +327,7 @@ export class AffectationService {
             where: {
                 etablissementId,
                 statut: StatutAffectation.ACTIF,
-                dateFin: { $lte: dateLimite } as any,
+                dateFin: LessThanOrEqual(dateLimite) as any,
             },
             relations: ['membrePersonnel', 'membrePersonnel.utilisateur', 'poste'],
             order: { dateFin: 'ASC' },

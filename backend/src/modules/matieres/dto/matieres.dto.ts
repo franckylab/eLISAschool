@@ -45,6 +45,8 @@ export const affecterEnseignantSchema = z.object({
   enseignantId: z.string().uuid(),
   dateDebut: z.string().optional(),
   dateFin: z.string().optional(),
+  actif: z.boolean().optional(),
+  coefficient: z.number().min(0).optional(),
 });
 
 /**

@@ -1,0 +1,307 @@
+import { useState, useMemo } from 'react';
+import {
+    BookOpen, CheckCircle, XCircle, Users, Clock, Plus,
+    Edit, Trash2, Filter,
+} from 'lucide-react';
+import { useEnseignantAffectationsMatiere, useCreerAffectationEnseignant, useModifierAffectationEnseignant, useSupprimerAffectationEnseignant, useToggleActifAffectation } from '../../hooks/use-enseignants';
+import { AffectationFormModal } from './affectation-form-modal';
+import { LoadingState } from '@/components/feedback';
+import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { Badge } from '@/components/ui/Badge';
+import type { AffectationEnseignant, AffectationPayload } from '../../types/enseignant.types';
+
+function formatAnnee(d: string) {
+    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
+}
+
+export function OngletMatieres({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
+    const { data, isLoading } = useEnseignantAffectationsMatiere(enseignantId);
+    const affectations = isActive ? (data ?? []) : [];
+
+    const creerAffectation = useCreerAffectationEnseignant();
+    const modifierAffectation = useModifierAffectationEnseignant();
+    const supprimerAffectation = useSupprimerAffectationEnseignant();
+    const toggleActif = useToggleActifAffectation();
+
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingAffectation, setEditingAffectation] = useState<AffectationEnseignant | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<AffectationEnseignant | null>(null);
+    const [filterClasse, setFilterClasse] = useState<string>('');
+
+    const filtered = useMemo(() => {
+        if (!filterClasse) return affectations;
+        return affectations.filter(a => a.classeAnnee?.classe?.nom === filterClasse);
+    }, [affectations, filterClasse]);
+
+    const classesUniques = useMemo(() => {
+        const set = new Set<string>();
+        affectations.forEach(a => { if (a.classeAnnee?.classe?.nom) set.add(a.classeAnnee.classe.nom); });
+        return Array.from(set).sort();
+    }, [affectations]);
+
+    const totalEffectif = affectations.reduce((s, a) => s + (a.effectifActuel ?? 0), 0);
+    const totalVolHoraire = affectations.reduce((s, a) => s + (a.volumeHoraireHebdo ?? 0), 0);
+    const heuresMax = 24;
+    const tauxCharge = heuresMax > 0 ? Math.min(totalVolHoraire / heuresMax, 1) : 0;
+
+    const handleAdd = () => {
+        setEditingAffectation(null);
+        setFormOpen(true);
+    };
+
+    const handleEdit = (a: AffectationEnseignant) => {
+        setEditingAffectation(a);
+        setFormOpen(true);
+    };
+
+    const handleSave = async (data: AffectationPayload) => {
+        try {
+            if (editingAffectation) {
+                await modifierAffectation.mutateAsync({
+                    id: editingAffectation.id,
+                    enseignantId,
+                    ...data,
+                });
+            } else {
+                await creerAffectation.mutateAsync(data);
+            }
+            setFormOpen(false);
+        } catch { /* handled by hooks */ }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            await supprimerAffectation.mutateAsync({ id: deleteTarget.id, enseignantId });
+            setDeleteTarget(null);
+        } catch { /* handled by hooks */ }
+    };
+
+    const handleToggleActif = async (a: AffectationEnseignant) => {
+        try {
+            await toggleActif.mutateAsync({ id: a.id, actif: !a.actif, enseignantId });
+        } catch { /* handled by hooks */ }
+    };
+
+    const isPending = creerAffectation.isPending || modifierAffectation.isPending || supprimerAffectation.isPending || toggleActif.isPending;
+
+    if (isLoading && isActive) {
+        return <div className="py-12"><LoadingState message="Chargement des matières..." /></div>;
+    }
+
+    return (
+        <div className="space-y-5">
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <MiniStat label="Matières" value={affectations.length} color="blue" />
+                <MiniStat label="Classes" value={classesUniques.size} color="purple" />
+                <MiniStat label="Effectif total" value={totalEffectif} color="green" />
+                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <p className="text-xs font-medium text-gray-500">Charge horaire</p>
+                    <div className="mt-2 flex items-baseline gap-1">
+                        <span className="text-2xl font-bold">{totalVolHoraire}</span>
+                        <span className="text-sm text-gray-500">/ {heuresMax}h</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                                tauxCharge > 0.85 ? 'bg-red-500' : tauxCharge > 0.65 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${tauxCharge * 100}%` }}
+                        />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">
+                        {tauxCharge > 0.85 ? 'Charge élevée' : tauxCharge > 0.65 ? 'Charge modérée' : 'Charge normale'}
+                    </p>
+                </div>
+            </div>
+
+            {/* Actions bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400" />
+                    <select
+                        value={filterClasse}
+                        onChange={(e) => setFilterClasse(e.target.value)}
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    >
+                        <option value="">Toutes les classes</option>
+                        {classesUniques.map((nom) => (
+                            <option key={nom} value={nom}>{nom}</option>
+                        ))}
+                    </select>
+                    <span className="text-xs text-gray-400">
+                        {filtered.length} / {affectations.length} affectation{affectations.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleAdd}>
+                    Ajouter une matière
+                </ElisaButton>
+            </div>
+
+            {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16">
+                    <BookOpen className="mb-3 h-12 w-12 text-gray-300" />
+                    <p className="font-medium text-gray-600">
+                        {affectations.length === 0 ? 'Aucune matière assignée' : 'Aucune affectation pour ce filtre'}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                        {affectations.length === 0
+                            ? 'Cliquez sur "Ajouter une matière" pour assigner un enseignement.'
+                            : 'Essayez un autre filtre.'}
+                    </p>
+                    {affectations.length === 0 && (
+                        <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleAdd} className="mt-4">
+                            Ajouter une matière
+                        </ElisaButton>
+                    )}
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Matière</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Classe</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Année scolaire</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">
+                                        <span className="inline-flex items-center gap-1">
+                                            Coeff.
+                                        </span>
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">
+                                        <span className="inline-flex items-center gap-1">
+                                            <Clock className="h-3 w-3" /> Vol.
+                                        </span>
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">
+                                        <span className="inline-flex items-center gap-1">
+                                            <Users className="h-3 w-3" /> Eff.
+                                        </span>
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Période</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Statut</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {filtered.map((a: AffectationEnseignant) => (
+                                    <tr key={a.id} className={`hover:bg-gray-50/80 transition-colors ${!a.actif ? 'opacity-60' : ''}`}>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                                                    style={{ backgroundColor: a.matiere?.couleur || '#6b7280' }}
+                                                />
+                                                <span className="font-medium">{a.matiere?.nom || a.matiereId.slice(0, 8)}</span>
+                                                {a.matiere?.code && (
+                                                    <span className="font-mono text-xs text-gray-400">({a.matiere.code})</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-gray-800">{a.classeAnnee?.classe?.nom || '-'}</td>
+                                        <td className="px-4 py-3 text-gray-500">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-center font-semibold">
+                                            <span className="inline-flex items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                                {a.coefficient ?? '—'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className="text-gray-700">{a.volumeHoraireHebdo ?? '—'}h</span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center text-gray-700">{a.effectifActuel ?? '—'}</td>
+                                        <td className="px-4 py-3 text-center text-xs text-gray-500">
+                                            <span className="whitespace-nowrap">{a.dateDebut ? formatAnnee(a.dateDebut) : '-'}</span>
+                                            {a.dateFin && (
+                                                <span className="whitespace-nowrap"> → {formatAnnee(a.dateFin)}</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {a.actif ? (
+                                                <Badge variant="success" dot>Actif</Badge>
+                                            ) : (
+                                                <Badge variant="secondary" dot>Inactif</Badge>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <button
+                                                    onClick={() => handleEdit(a)}
+                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                    title="Modifier"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleToggleActif(a)}
+                                                    className={`rounded-lg p-1.5 transition-colors ${
+                                                        a.actif
+                                                            ? 'text-gray-400 hover:bg-yellow-50 hover:text-yellow-600'
+                                                            : 'text-green-400 hover:bg-green-50 hover:text-green-600'
+                                                    }`}
+                                                    title={a.actif ? 'Désactiver' : 'Activer'}
+                                                >
+                                                    {a.actif ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteTarget(a)}
+                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                    title="Supprimer"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Form modal */}
+            <AffectationFormModal
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                enseignantId={enseignantId}
+                affectation={editingAffectation}
+                onSave={handleSave}
+                isLoading={isPending}
+            />
+
+            {/* Delete confirmation */}
+            <ConfirmationModal
+                isOpen={!!deleteTarget}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+                isLoading={supprimerAffectation.isPending}
+                title="Supprimer l'affectation"
+                message={
+                    deleteTarget
+                        ? `Retirer ${deleteTarget.matiere?.nom || 'cette matière'} pour la classe ${deleteTarget.classeAnnee?.classe?.nom || '?'} ?`
+                        : ''
+                }
+                variant="danger"
+                confirmLabel="Supprimer"
+            />
+        </div>
+    );
+}
+
+function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
+    const colors: Record<string, string> = {
+        blue: 'bg-blue-50 text-blue-800 border-blue-200',
+        purple: 'bg-purple-50 text-purple-800 border-purple-200',
+        green: 'bg-green-50 text-green-800 border-green-200',
+        orange: 'bg-orange-50 text-orange-800 border-orange-200',
+    };
+    return (
+        <div className={`rounded-xl border p-4 ${colors[color] || colors.blue}`}>
+            <p className="text-xs font-medium opacity-70">{label}</p>
+            <p className="mt-1 text-2xl font-bold">{value}</p>
+        </div>
+    );
+}

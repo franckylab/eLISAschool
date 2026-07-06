@@ -124,11 +124,12 @@ export class EvaluationService {
             .where('evaluation.enseignantId = :enseignantId', { enseignantId })
             .andWhere('evaluation.dateEvaluation BETWEEN :dateDebut AND :dateFin', { dateDebut, dateFin })
             .select('AVG(evaluation.note)', 'moyenne')
+            .addSelect('COUNT(evaluation.id)', 'nombreEvaluations')
             .getRawOne();
 
         return {
             moyenne: result.moyenne ? parseFloat(result.moyenne).toFixed(2) : null,
-            nombreEvaluations: parseInt(result.moyenne) ? 1 : 0,
+            nombreEvaluations: parseInt(result.nombreEvaluations) || 0,
         };
     }
 
