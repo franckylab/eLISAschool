@@ -55,16 +55,19 @@ export function OngletMatieres({ enseignantId, isActive }: { enseignantId: strin
         setFormOpen(true);
     };
 
-    const handleSave = async (data: AffectationPayload) => {
+    const handleSave = async (payload: AffectationPayload) => {
         try {
             if (editingAffectation) {
                 await modifierAffectation.mutateAsync({
                     id: editingAffectation.id,
                     enseignantId,
-                    ...data,
+                    dateDebut: payload.dateDebut,
+                    dateFin: payload.dateFin,
+                    actif: payload.actif,
+                    coefficient: payload.coefficient,
                 });
             } else {
-                await creerAffectation.mutateAsync(data);
+                await creerAffectation.mutateAsync(payload);
             }
             setFormOpen(false);
         } catch { /* handled by hooks */ }
@@ -95,7 +98,7 @@ export function OngletMatieres({ enseignantId, isActive }: { enseignantId: strin
             {/* Stats cards */}
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <MiniStat label="Matières" value={affectations.length} color="blue" />
-                <MiniStat label="Classes" value={classesUniques.size} color="purple" />
+                <MiniStat label="Classes" value={classesUniques.length} color="purple" />
                 <MiniStat label="Effectif total" value={totalEffectif} color="green" />
                 <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <p className="text-xs font-medium text-gray-500">Charge horaire</p>

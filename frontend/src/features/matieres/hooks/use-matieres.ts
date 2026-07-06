@@ -16,6 +16,7 @@ const MATIERES_KEYS = {
     programme: (id: string) => [...MATIERES_KEYS.all, 'programme', id] as const,
     affectations: (id: string) => [...MATIERES_KEYS.all, 'affectations', id] as const,
     configurations: (id: string) => [...MATIERES_KEYS.all, 'configurations', id] as const,
+    tousNiveaux: () => [...MATIERES_KEYS.all, 'tous-niveaux'] as const,
 };
 
 export function useMatieres(filtres: MatiereFiltres = {}) {
@@ -70,6 +71,19 @@ export function useMatiereProgramme(matiereId: string) {
             }
         },
         enabled: isAuthenticated && !!matiereId,
+    });
+}
+
+export function useTousMatieresNiveaux() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: MATIERES_KEYS.tousNiveaux(),
+        queryFn: async () => {
+            const response = await apiClient.get<MatiereNiveau[]>(`/api/matieres/programme`);
+            return response.data;
+        },
+        enabled: isAuthenticated,
+        staleTime: 10 * 60 * 1000,
     });
 }
 

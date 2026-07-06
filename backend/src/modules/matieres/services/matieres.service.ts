@@ -178,6 +178,14 @@ export class MatieresService {
         });
     }
 
+    async getAllMatieresNiveaux(etablissementId?: string): Promise<MatiereNiveau[]> {
+        return this.niveauRepo.find({
+            where: { matiere: { etablissementId } },
+            relations: ['matiere', 'niveau', 'groupe', 'filiere'],
+            order: { niveau: { ordre: 'ASC' }, matiere: { nom: 'ASC' } }
+        });
+    }
+
     async updateProgramme(id: string, dto: UpdateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         const prog = await this.niveauRepo.findOne({ where: { id } });
         if (!prog) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');

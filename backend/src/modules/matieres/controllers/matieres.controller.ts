@@ -79,6 +79,14 @@ router.post('/groupes', authMiddleware, requirePermission('config:edit'), async 
 });
 
 // Programmes (Matière-Niveau)
+router.get('/programme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const prog = await service.getAllMatieresNiveaux(etablissementId);
+        res.json({ success: true, data: prog });
+    } catch (error) { next(error); }
+});
+
 router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const prog = await service.getProgrammeNiveau(req.params.niveauId);

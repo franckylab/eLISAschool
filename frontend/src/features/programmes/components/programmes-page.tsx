@@ -7,8 +7,9 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, BookOpen, Clock, Layers } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, BookOpen, Clock, Layers, ArrowUpRight } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -24,6 +25,7 @@ import {
 import { ProgrammeFormModal } from './programme-form-modal';
 
 export function ProgrammesPage() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -42,7 +44,7 @@ export function ProgrammesPage() {
     const modifier = useModifierProgramme();
     const supprimer = useSupprimerProgramme();
 
-    const programmes = data?.data || [];
+    const programmes = data?.items || data?.data || [];
     const total = data?.meta?.totalItems || 0;
     const totalPages = data?.meta?.totalPages || 1;
 
@@ -76,14 +78,17 @@ export function ProgrammesPage() {
             key: 'cycle',
             header: 'Cycle',
             render: (p) => (
-                p.cycleNom ? (
-                    <div className="flex items-center gap-1">
-                        <Layers className="h-3 w-3 text-gray-500" />
-                        <span className="text-sm">{p.cycleNom}</span>
-                    </div>
-                ) : (
-                    <span className="text-gray-400">-</span>
-                )
+                <div className="flex items-center gap-1">
+                    <Layers className="h-3 w-3 text-gray-500" />
+                    <span className="text-sm">{p.cycle?.nom || p.cycleNom || '-'}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'nbMatieres',
+            header: 'Matières',
+            render: (p) => (
+                <span className="text-sm font-mono">{p.matieres?.length || p.nbMatieres || 0}</span>
             ),
         },
         {
@@ -93,7 +98,7 @@ export function ProgrammesPage() {
                 <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-sm font-medium">
-                        {p.nbHeuresHebdo || 0}h
+                        {p.nbHeuresCalculees || p.nbHeuresHebdo || 0}h
                     </span>
                 </div>
             ),
@@ -120,9 +125,9 @@ export function ProgrammesPage() {
             renderActions: (p) => [
                 {
                     key: 'voir',
-                    icon: Eye,
-                    label: 'Voir détails',
-                    onClick: () => {/* Voir détails */},
+                    icon: ArrowUpRight,
+                    label: 'Détails',
+                    onClick: () => navigate({ to: `/programmes/${p.id}` }),
                     variant: 'info' as const,
                 },
                 {
@@ -133,14 +138,14 @@ export function ProgrammesPage() {
                         setProgrammeToEdit(p);
                         setShowFormModal(true);
                     },
-                    permission: 'programmes:edit',
+                    permission: 'programmes:config:write',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
                     label: 'Supprimer',
                     onClick: () => setProgrammeToDelete(p),
-                    permission: 'programmes:delete',
+                    permission: 'programmes:config:write',
                     variant: 'danger' as const,
                 },
             ],
@@ -175,7 +180,7 @@ export function ProgrammesPage() {
                             Gérez les programmes pédagogiques par cycle et niveau
                         </p>
                     </div>
-                    {hasPermission('programmes:create') && (
+                    {hasPermission('programmes:config:write') && (
                         <ElisaButton
                             variant="primary"
                             size="md"
@@ -266,6 +271,7 @@ export function ProgrammesPage() {
                         totalPages,
                         onPageChange: setPage,
                     }}
+                    onRowClick={(p) => navigate({ to: `/programmes/${p.id}` })}
                     emptyMessage="Aucun programme pédagogique trouvé"
                 />
             </motion.div>

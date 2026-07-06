@@ -29,6 +29,7 @@ interface HeroHeaderProps {
     nbAbsences?: number;
     isDeleting: boolean;
     onDelete: () => void;
+    onEdit?: () => void;
     onBack: () => void;
 }
 
@@ -50,7 +51,7 @@ function nomFamille(e: Enseignant): string {
 
 export function HeroHeader({
     enseignant, nbMatieres, moyenneEval, totalHeures, nbAbsences,
-    isDeleting, onDelete, onBack,
+    isDeleting, onDelete, onEdit, onBack,
 }: HeroHeaderProps) {
     const prenom = nomPrenom(enseignant);
     const nom = nomFamille(enseignant);
@@ -107,7 +108,7 @@ export function HeroHeader({
                     </div>
 
                     <div className="flex shrink-0 flex-col gap-2">
-                        <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}>
+                        <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={onEdit}>
                             Modifier
                         </ElisaButton>
                         <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />}

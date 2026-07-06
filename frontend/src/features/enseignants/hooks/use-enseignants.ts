@@ -96,7 +96,7 @@ export function useEnseignantEvaluations(enseignantId: string) {
             const response = await apiClient.get<{ items: EvaluationEnseignant[]; meta: any }>(
                 `/api/personnel/evaluations?enseignantId=${enseignantId}&limit=100`
             );
-            return response.data.items;
+            return response.data?.items ?? [];
         },
         enabled: !!enseignantId && isAuthenticated,
     });
@@ -133,7 +133,7 @@ export function useEnseignantHeures(enseignantId: string) {
             const response = await apiClient.get<{ totalHeures: number; heuresParSemaine: number; nbSemaines: number }>(
                 `/api/personnel/heures-cours/enseignants/${enseignantId}/volume-horaire?dateDebut=${dateDebut}&dateFin=${dateFin}`
             );
-            return response.data;
+            return response.data ?? { totalHeures: 0, heuresParSemaine: 0, nbSemaines: 0 };
         },
         enabled: !!enseignantId && isAuthenticated,
     });
@@ -172,8 +172,8 @@ export function useEnseignantAbsences(enseignantId: string) {
                 `/api/personnel/absences?membrePersonnelId=${enseignantId}&limit=50`
             );
             return {
-                items: response.data.items,
-                total: response.data.meta?.totalItems ?? response.data.items.length,
+                items: response.data?.items ?? [],
+                total: response.data?.meta?.totalItems ?? response.data?.items?.length ?? 0,
             };
         },
         enabled: !!enseignantId && isAuthenticated,
@@ -202,7 +202,7 @@ export function useEnseignantBulletins(enseignantId: string) {
             const response = await apiClient.get<{ items: BulletinPaie[] }>(
                 `/api/personnel/bulletins/membres/${enseignantId}`
             );
-            return response.data.items;
+            return response.data?.items ?? [];
         },
         enabled: !!enseignantId && isAuthenticated,
     });
@@ -249,11 +249,12 @@ export function useCreerAffectationEnseignant() {
 export function useModifierAffectationEnseignant() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, enseignantId, ...dto }: { id: string; enseignantId: string } & Partial<AffectationPayload>) => {
+        mutationFn: async ({ id, ...dto }: { id: string; enseignantId: string } & Partial<AffectationPayload>) => {
             const body: Record<string, any> = {};
             if (dto.dateDebut !== undefined) body.dateDebut = dto.dateDebut;
             if (dto.dateFin !== undefined) body.dateFin = dto.dateFin;
-            if (dto.enseignantId !== undefined) body.enseignantId = dto.enseignantId;
+            if (dto.actif !== undefined) body.actif = dto.actif;
+            if (dto.coefficient !== undefined) body.coefficient = dto.coefficient;
             const response = await apiClient.patch<AffectationEnseignant>(`/api/matieres/affectations/${id}`, body);
             return response.data;
         },
@@ -285,7 +286,7 @@ export function useSupprimerAffectationEnseignant() {
 export function useToggleActifAffectation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, actif, enseignantId }: { id: string; actif: boolean; enseignantId: string }) => {
+        mutationFn: async ({ id, actif }: { id: string; actif: boolean; enseignantId: string }) => {
             const response = await apiClient.patch<AffectationEnseignant>(`/api/matieres/affectations/${id}`, { actif });
             return response.data;
         },

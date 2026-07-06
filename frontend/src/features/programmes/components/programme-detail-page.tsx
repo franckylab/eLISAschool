@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import { useTousCycles } from '@/features/cycles/hooks/use-tous-cycles';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
+import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
 import {
     useProgrammeDetail,
     useModifierProgramme,
@@ -36,6 +37,7 @@ export function ProgrammeDetailPage() {
     const { data: programme, isLoading } = useProgrammeDetail(programmeId);
     const { data: cycles } = useTousCycles();
     const { data: niveaux } = useTousNiveaux();
+    const { data: tousMatieresNiveaux } = useTousMatieresNiveaux();
     const modifier = useModifierProgramme();
     const supprimer = useSupprimerProgramme();
     const ajouterMatiere = useAjouterMatiereProgramme();
@@ -245,7 +247,11 @@ export function ProgrammeDetailPage() {
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                     >
                                         <option value="">Sélectionner...</option>
-                                        {/* Options chargées via les hooks */}
+                                        {(tousMatieresNiveaux ?? []).map((mn) => (
+                                            <option key={mn.id} value={mn.id}>
+                                                {mn.matiere?.nom} — {mn.niveau?.nom}{mn.groupe ? ` (${mn.groupe.nom})` : ''}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>
