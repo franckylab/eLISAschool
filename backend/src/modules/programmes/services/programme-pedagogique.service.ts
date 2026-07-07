@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ProgrammePedagogique } from '../entities/programme-pedagogique.entity';
 import { ProgrammeMatiere } from '../entities/programme-matiere.entity';
+import { ProgrammeChapitre } from '../entities/programme-chapitre.entity';
 import { CreateProgrammeDto, UpdateProgrammeDto, QueryProgrammesDto, AddMatiereProgrammeDto, UpdateMatiereProgrammeDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -10,10 +11,12 @@ import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/paginat
 export class ProgrammePedagogiqueService {
     private repo: Repository<ProgrammePedagogique>;
     private matiereRepo: Repository<ProgrammeMatiere>;
+    private chapitreRepo: Repository<ProgrammeChapitre>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(ProgrammePedagogique);
         this.matiereRepo = AppDataSource.getRepository(ProgrammeMatiere);
+        this.chapitreRepo = AppDataSource.getRepository(ProgrammeChapitre);
     }
 
     async create(dto: CreateProgrammeDto, etablissementId: string): Promise<ProgrammePedagogique> {
@@ -170,6 +173,21 @@ export class ProgrammePedagogiqueService {
             where: { programmeId, etablissementId },
             relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau', 'matiereNiveau.groupe'],
             order: { ordre: 'ASC' },
+        });
+    }
+
+    async getChapitresByProgramme(programmeId: string, etablissementId: string): Promise<ProgrammeChapitre[]> {
+        const matieres = await this.matiereRepo.find({
+            where: { programmeId, etablissementId },
+            select: ['matiereNiveauId'],
+        });
+        const matiereNiveauIds = matieres.map(m => m.matiereNiveauId);
+        if (matiereNiveauIds.length === 0) return [];
+
+        return this.chapitreRepo.find({
+            where: { matiereNiveauId: matiereNiveauIds as any, etablissementId },
+            relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau'],
+            order: { matiereNiveauId: 'ASC', ordre: 'ASC' },
         });
     }
 }

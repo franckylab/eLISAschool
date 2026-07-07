@@ -23,7 +23,7 @@ export function EvaluationsPage() {
 
     const colonnes = [
         { key: 'personnel', header: 'Personnel', render: (e: any) => <span className="font-medium">{e.personnel ? `${e.personnel.nom} ${e.personnel.prenom}` : '-'}</span> },
-        { key: 'periode', header: 'Période', className: 'w-28', render: (e: any) => <span className="text-sm font-medium">{e.periode}</span> },
+        { key: 'periode', header: 'Période', className: 'w-28', render: (e: any) => <span className="text-sm font-medium">{e.periodeObj?.nom || e.periode}</span> },
         { key: 'date', header: 'Date', className: 'w-28', render: (e: any) => <span className="text-sm">{new Date(e.dateEvaluation).toLocaleDateString('fr-FR')}</span> },
         { key: 'note', header: 'Note', className: 'w-24', render: (e: any) => <span className="text-lg font-bold">{e.noteGlobale}/20</span> },
         { key: 'statut', header: 'Statut', className: 'w-28', render: (e: any) => { const s = statuts[e.statut] || { label: e.statut, color: 'gray' }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${s.color}-100 text-${s.color}-700`}>{s.label}</span>; } },

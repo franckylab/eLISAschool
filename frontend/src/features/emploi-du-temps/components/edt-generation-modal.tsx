@@ -1,54 +1,34 @@
-/**
- * ==================================
- * eLISAschool - Modal de Génération EDT
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- * Date: 2026-06-14
- */
-
 import { useState } from 'react';
-import { useGenererEDT, usePreferencesEDT } from '../hooks/use-emploi-du-temps';
+import { useGenererEDT } from '../hooks/use-emploi-du-temps';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Settings, Loader2 } from 'lucide-react';
 
 interface EDTGenerationModalProps {
-    classeId: string;
-    anneeScolaireId: string;
+    classeAnneeId: string;
     onSuccess: () => void;
     onClose: () => void;
 }
 
-export function EDTGenerationModal({ classeId, anneeScolaireId, onSuccess, onClose }: EDTGenerationModalProps) {
-    const { data: preferences } = usePreferencesEDT();
+export function EDTGenerationModal({ classeAnneeId, onSuccess, onClose }: EDTGenerationModalProps) {
     const genererEDT = useGenererEDT();
-    
+
     const [regenerer, setRegenerer] = useState(false);
     const [respecterContraintes, setRespecterContraintes] = useState(true);
 
     const handleGenerer = async () => {
-        const etablissementId = (preferences as any)?.etablissementId;
-        
-        if (!etablissementId) {
-            return;
+        try {
+            await genererEDT.mutateAsync({
+                classeAnneeId,
+                options: { regenerer, respecterContraintes },
+            });
+            onSuccess();
+        } catch {
+            // Error already handled by hook's onError toast
         }
-
-        await genererEDT.mutateAsync({
-            classeId,
-            anneeScolaireId,
-            etablissementId,
-            options: {
-                regenerer,
-                respecterContraintes,
-            }
-        });
-
-        onSuccess();
     };
 
     return (
         <div className="space-y-6">
-            {/* Options de génération */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3">
                     <Settings className="h-5 w-5 text-[var(--color-dominant-600)]" />
@@ -88,18 +68,16 @@ export function EDTGenerationModal({ classeId, anneeScolaireId, onSuccess, onClo
                 </div>
             </div>
 
-            {/* Informations */}
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-sm text-blue-900 mb-2">ℹ️ Informations</h4>
+                <h4 className="font-semibold text-sm text-blue-900 mb-2">Informations</h4>
                 <ul className="text-xs text-blue-800 space-y-1">
-                    <li>• La génération utilise les affectations de la classe</li>
-                    <li>• Les volumes horaires sont respectés automatiquement</li>
-                    <li>• Les conflits d'enseignants sont évités</li>
-                    <li>• Un rapport de conflits est généré si nécessaire</li>
+                    <li> La génération utilise les affectations de la classe</li>
+                    <li> Les volumes horaires sont respectés automatiquement</li>
+                    <li> Les conflits d'enseignants sont évités</li>
+                    <li> Un rapport de conflits est généré si nécessaire</li>
                 </ul>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
                 <ElisaButton
                     variant="outline"

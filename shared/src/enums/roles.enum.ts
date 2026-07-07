@@ -309,6 +309,11 @@ export enum Permission {
     EMPLOI_DU_TEMPS_DELETE = 'emploi-du-temps:delete',
     EMPLOI_DU_TEMPS_GENERER = 'emploi-du-temps:generer',
     EMPLOI_DU_TEMPS_EXPORT = 'emploi-du-temps:export',
+    EMPLOI_DU_TEMPS_REALISATION_CREATE = 'emploi-du-temps:realisation:create',
+    EMPLOI_DU_TEMPS_REALISATION_VALIDATE = 'emploi-du-temps:realisation:validate',
+    EMPLOI_DU_TEMPS_PREFERENCES_MANAGE = 'emploi-du-temps:preferences:manage',
+    EMPLOI_DU_TEMPS_TEMPLATES_MANAGE = 'emploi-du-temps:templates:manage',
+    EMPLOI_DU_TEMPS_ALL_VIEW = 'emploi-du-temps:all:view',
 
     // ==================================
     // ÉLÈVES & PERSONNEL
@@ -922,6 +927,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_GENERER,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
         // Organisation
         Permission.ORGANISATION_VIEW,
         Permission.ORGANISATION_CREATE,
@@ -1069,6 +1086,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_GENERER,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
         Permission.APPARENCE_FONDS_MANAGE,
@@ -1094,6 +1123,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CHAPITRE_READ,
         Permission.PROGRAMMES_CORRELATION_READ,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Emploi du Temps (son propre EDT + déclaration réalisation)
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
     ],
 
     [Role.PERSONNEL]: [
@@ -1185,6 +1217,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
         Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_GENERER,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
     [Role.PRINCIPAL]: [
@@ -1212,6 +1256,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.PROGRAMMES_CHAPITRE_READ, Permission.PROGRAMMES_CHAPITRE_VALIDATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_GENERER,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
     [Role.DIRECTEUR]: [
@@ -1244,6 +1298,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.GROUPES_ETABLISSEMENTS_MANAGE_ADMINS,
         Permission.GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS,
         Permission.GROUPES_ETABLISSEMENTS_RAPPORTS,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
     [Role.CENSEUR]: [
@@ -1262,6 +1325,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Finances (lecture seule)
         Permission.FINANCES_SCOLARITE_VIEW,
         Permission.FINANCES_DASHBOARD_VIEW,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
     [Role.DIRECTEUR_ADJOINT]: [
@@ -1507,6 +1579,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_PAIEMENT_CREATE,
         Permission.FINANCES_RECU_GENERATE,
         Permission.FINANCES_DASHBOARD_VIEW,
+        // Emploi du Temps
+        Permission.EMPLOI_DU_TEMPS_VIEW,
+        Permission.EMPLOI_DU_TEMPS_CREATE,
+        Permission.EMPLOI_DU_TEMPS_EDIT,
+        Permission.EMPLOI_DU_TEMPS_DELETE,
+        Permission.EMPLOI_DU_TEMPS_EXPORT,
+        Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
     [Role.GESTIONNAIRE]: [
@@ -1620,6 +1700,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
         Permission.CANTINE_VIEW,
         Permission.TRANSPORT_VIEW,
+        Permission.EMPLOI_DU_TEMPS_VIEW,
     ],
 
     // ==================================

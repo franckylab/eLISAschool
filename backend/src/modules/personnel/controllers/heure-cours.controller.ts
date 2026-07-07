@@ -80,10 +80,12 @@ router.get(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const semaine = req.query.semaine as string || new Date().toISOString().split('T')[0];
+            const periodeId = req.query.periodeId as string | undefined;
             const edt = await service.getEdtEnseignant(
                 req.params.id,
                 semaine,
-                req.etablissementId!
+                req.etablissementId!,
+                periodeId
             );
             res.json({ success: true, data: edt });
         } catch (error) {
@@ -110,11 +112,13 @@ router.get(
                 });
             }
 
+            const periodeId = req.query.periodeId as string | undefined;
             const volume = await service.calculerVolumeHoraireHebdomadaire(
                 req.params.id,
                 new Date(dateDebut as string),
                 new Date(dateFin as string),
-                req.etablissementId!
+                req.etablissementId!,
+                periodeId
             );
             res.json({ success: true, data: volume });
         } catch (error) {

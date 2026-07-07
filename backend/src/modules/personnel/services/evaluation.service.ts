@@ -118,18 +118,23 @@ export class EvaluationService {
         return { success: true };
     }
 
-    async getMoyenneEnseignant(enseignantId: string, dateDebut: string, dateFin: string) {
-        const result = await this.repo
+    async getMoyenneEnseignant(enseignantId: string, dateDebut: string, dateFin: string, etablissementId?: string) {
+        const qb = this.repo
             .createQueryBuilder('evaluation')
             .where('evaluation.enseignantId = :enseignantId', { enseignantId })
             .andWhere('evaluation.dateEvaluation BETWEEN :dateDebut AND :dateFin', { dateDebut, dateFin })
             .select('AVG(evaluation.note)', 'moyenne')
-            .addSelect('COUNT(evaluation.id)', 'nombreEvaluations')
-            .getRawOne();
+            .addSelect('COUNT(evaluation.id)', 'nombreEvaluations');
+
+        if (etablissementId) {
+            qb.andWhere('evaluation.etablissementId = :etablissementId', { etablissementId });
+        }
+
+        const result = await qb.getRawOne();
 
         return {
-            moyenne: result.moyenne ? parseFloat(result.moyenne).toFixed(2) : null,
-            nombreEvaluations: parseInt(result.nombreEvaluations) || 0,
+            moyenne: result?.moyenne ? parseFloat(result.moyenne).toFixed(2) : null,
+            nombreEvaluations: result ? parseInt(result.nombreEvaluations, 10) || 0 : 0,
         };
     }
 

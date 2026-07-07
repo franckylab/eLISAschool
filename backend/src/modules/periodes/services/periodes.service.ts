@@ -221,6 +221,36 @@ export class PeriodesService {
      * 2. Niveau hiérarchique configuré (periodes.niveau_affichage_courant)
      * 3. Période avec dateDebut <= now <= dateFin et statut OUVERTE
      */
+    async findActiveByYear(anneeScolaireId: string, etablissementId: string): Promise<Periode | null> {
+        const niveauParam = await getParamNumber('periodes.niveau_affichage_courant', {
+            defaultValue: 1,
+            etablissementId,
+        });
+
+        const { niveauxPeriodeService } = await import('./niveaux-periode.service');
+        let niveau: NiveauPeriode;
+        try {
+            niveau = await niveauxPeriodeService.findByNiveau(niveauParam, etablissementId);
+        } catch {
+            return null;
+        }
+
+        const now = new Date();
+        const periode = await this.periodeRepo.findOne({
+            where: {
+                anneeScolaireId,
+                niveauId: niveau.id,
+                etablissementId,
+                dateDebut: LessThanOrEqual(now),
+                dateFin: MoreThanOrEqual(now),
+                statut: StatutPeriode.OUVERTE,
+            },
+            relations: ['niveau', 'anneeScolaire'],
+        });
+
+        return periode || null;
+    }
+
     async findActive(etablissementId: string): Promise<Periode | null> {
         const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
         const anneeActive = await anneesScolairesService.findActive(etablissementId);

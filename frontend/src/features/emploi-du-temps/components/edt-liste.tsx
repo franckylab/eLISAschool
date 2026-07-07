@@ -9,8 +9,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, FileDown, Plus, RefreshCw, Clock, Zap } from 'lucide-react';
-import { useCreneauxByClasse } from '../hooks/use-emploi-du-temps';
+import { Calendar, FileDown, Plus, RefreshCw, Clock } from 'lucide-react';
+import { useCreneaux } from '../hooks/use-emploi-du-temps';
 import { EDTCalendar } from '../components/edt-calendar';
 import { EDTGenerationModal } from '../components/edt-generation-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -19,26 +19,27 @@ import { ListLoading } from '@/components/feedback/ListLoading';
 import { EmptyState } from '@/components/feedback/EmptyState';
 
 interface EmploiDuTempsListeProps {
-    classeId: string;
+    classeAnneeId: string;
     anneeScolaireId: string;
     classeNom?: string;
 }
 
-export function EmploiDuTempsListe({ classeId, anneeScolaireId, classeNom }: EmploiDuTempsListeProps) {
+export function EmploiDuTempsListe({ classeAnneeId, anneeScolaireId, classeNom }: EmploiDuTempsListeProps) {
     const [generationModalOpen, setGenerationModalOpen] = useState(false);
     
-    const { data: creneaux, isLoading, refetch } = useCreneauxByClasse(classeId, anneeScolaireId);
+    const { data: paginated, isLoading, refetch } = useCreneaux({ classeAnneeId, anneeScolaireId });
+    const creneaux = paginated?.items;
 
     const handleExportHTML = () => {
         window.open(
-            `/api/emploi-du-temps/export/html/${classeId}?anneeScolaireId=${anneeScolaireId}`,
+            `/api/emploi-du-temps/export/html/${classeAnneeId}?anneeScolaireId=${anneeScolaireId}`,
             '_blank'
         );
     };
 
     const handleExportPDF = () => {
         window.open(
-            `/api/emploi-du-temps/export/pdf/${classeId}?anneeScolaireId=${anneeScolaireId}`,
+            `/api/emploi-du-temps/export/pdf/${classeAnneeId}?anneeScolaireId=${anneeScolaireId}`,
             '_blank'
         );
     };
@@ -132,8 +133,7 @@ export function EmploiDuTempsListe({ classeId, anneeScolaireId, classeNom }: Emp
                 size="2xl"
             >
                 <EDTGenerationModal
-                    classeId={classeId}
-                    anneeScolaireId={anneeScolaireId}
+                    classeAnneeId={classeAnneeId}
                     onSuccess={() => {
                         setGenerationModalOpen(false);
                         refetch();

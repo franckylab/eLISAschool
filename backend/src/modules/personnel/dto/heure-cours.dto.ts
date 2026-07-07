@@ -13,6 +13,7 @@ export const createHeureCoursSchema = z.object({
     classeId: z.string().uuid(),
     matiereId: z.string().uuid(),
     periodeId: z.string().uuid().optional(),
+    creneauId: z.string().uuid().optional(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     heureDebut: z.string().regex(/^\d{2}:\d{2}$/),
     heureFin: z.string().regex(/^\d{2}:\d{2}$/),

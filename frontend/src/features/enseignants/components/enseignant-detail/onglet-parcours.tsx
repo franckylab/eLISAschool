@@ -1,10 +1,56 @@
-import { Route, Briefcase, BookOpen, Star, Ban, TrendingUp, FileText } from 'lucide-react';
+import { useMemo } from 'react';
+import { Route, Briefcase, BookOpen, Star, Ban, TrendingUp, FileText, Calendar } from 'lucide-react';
 import { useEnseignantParcours } from '../../hooks/use-enseignants';
 import { LoadingState } from '@/components/feedback';
+
+function formatDate(d: string | undefined) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
+}
 
 export function OngletParcours({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
     const { data, isLoading } = useEnseignantParcours(enseignantId);
     const parcours = isActive ? data : undefined;
+
+    const timeline = useMemo(() => {
+        if (!parcours) return [];
+        const events: Array<{ date: string; type: string; title: string; description: string; icon: any; color: string }> = [];
+
+        (parcours.contrats || []).forEach((c: any) => {
+            events.push({
+                date: c.dateDebut,
+                type: 'contrat',
+                title: `Contrat ${c.typeContrat || ''}`,
+                description: `Salaire: ${c.salaireBase?.toLocaleString() || '—'} FCFA`,
+                icon: FileText,
+                color: 'blue',
+            });
+        });
+
+        (parcours.affectations || []).forEach((a: any) => {
+            events.push({
+                date: a.dateDebut,
+                type: 'affectation',
+                title: `Affectation: ${a.matiere?.nom || 'Matière'}`,
+                description: a.classe?.nom ? `Classe: ${a.classe.nom}` : '',
+                icon: BookOpen,
+                color: 'green',
+            });
+        });
+
+        (parcours.evaluations || []).forEach((e: any) => {
+            events.push({
+                date: e.dateEvaluation,
+                type: 'evaluation',
+                title: `Évaluation: ${e.note?.toFixed(1) || '—'}/5`,
+                description: e.categorie || '',
+                icon: Star,
+                color: 'purple',
+            });
+        });
+
+        return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [parcours]);
 
     if (isLoading && isActive) {
         return <div className="py-12"><LoadingState message="Chargement du parcours..." /></div>;
@@ -28,6 +74,7 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
 
     return (
         <div className="space-y-6">
+            {/* Summary cards */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 <ParcoursCard icon={Briefcase} label="Années de service" value={`${anneesService} an${anneesService > 1 ? 's' : ''}`} color="blue" />
                 <ParcoursCard icon={FileText} label="Contrats" value={nbContrats} color="purple" />
@@ -36,6 +83,57 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
                 <ParcoursCard icon={Ban} label="Absences" value={nbAbsences} color="red" />
             </div>
 
+            {/* Timeline */}
+            {timeline.length > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-white p-5">
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Chronologie du parcours
+                    </h3>
+                    <div className="relative space-y-0">
+                        {timeline.slice(0, 20).map((event, i) => {
+                            const Icon = event.icon;
+                            const colorMap: Record<string, string> = {
+                                blue: 'border-blue-400 bg-blue-100 text-blue-600',
+                                green: 'border-green-400 bg-green-100 text-green-600',
+                                purple: 'border-purple-400 bg-purple-100 text-purple-600',
+                                yellow: 'border-yellow-400 bg-yellow-100 text-yellow-600',
+                                red: 'border-red-400 bg-red-100 text-red-600',
+                            };
+                            const borderColor = `border-l-${event.color}-400`;
+                            return (
+                                <div key={i} className="relative flex gap-4 pb-6 pl-8 last:pb-0">
+                                    {/* Ligne verticale */}
+                                    {i < timeline.length - 1 && (
+                                        <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-200" />
+                                    )}
+                                    {/* Cercle icône */}
+                                    <div className={`absolute left-0 flex h-8 w-8 items-center justify-center rounded-full border-2 ${colorMap[event.color] || colorMap.blue}`}>
+                                        <Icon className="h-4 w-4" />
+                                    </div>
+                                    {/* Contenu */}
+                                    <div className="flex-1 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                                            <span className="shrink-0 text-xs text-gray-500">{formatDate(event.date)}</span>
+                                        </div>
+                                        {event.description && (
+                                            <p className="mt-0.5 text-xs text-gray-600">{event.description}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {timeline.length > 20 && (
+                            <p className="pt-2 text-center text-xs text-gray-500">
+                                +{timeline.length - 20} événement{timeline.length - 20 > 1 ? 's' : ''} supplémentaires
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Salary evolution */}
             {parcours.evolutionSalariale && parcours.evolutionSalariale.length > 0 && (
                 <div className="rounded-xl border border-gray-200 bg-white p-5">
                     <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
@@ -72,17 +170,17 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
 
 function ParcoursCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
     const colors: Record<string, string> = {
-        blue: 'bg-blue-50 text-blue-800 border-blue-200',
-        purple: 'bg-purple-50 text-purple-800 border-purple-200',
-        green: 'bg-green-50 text-green-800 border-green-200',
-        yellow: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-        red: 'bg-red-50 text-red-800 border-red-200',
+        blue: 'border-blue-200 bg-blue-50 text-blue-800',
+        purple: 'border-purple-200 bg-purple-50 text-purple-800',
+        green: 'border-green-200 bg-green-50 text-green-800',
+        yellow: 'border-yellow-200 bg-yellow-50 text-yellow-800',
+        red: 'border-red-200 bg-red-50 text-red-800',
     };
     return (
-        <div className={`rounded-lg border p-4 ${colors[color] || colors.blue}`}>
-            <Icon className="mb-2 h-5 w-5" />
-            <p className="text-xl font-bold">{value}</p>
-            <p className="mt-0.5 text-xs font-medium">{label}</p>
+        <div className={`rounded-xl border p-4 ${colors[color] || colors.blue}`}>
+            <Icon className="mb-2 h-5 w-5 opacity-70" />
+            <p className="text-xs font-medium opacity-70">{label}</p>
+            <p className="mt-1 text-xl font-bold">{value}</p>
         </div>
     );
 }

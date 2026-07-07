@@ -63,6 +63,8 @@ export class ProgrammeChapitreService {
         const qb = this.repo.createQueryBuilder('chapitre')
             .where('chapitre.etablissementId = :etablissementId', { etablissementId })
             .leftJoinAndSelect('chapitre.matiereNiveau', 'matiereNiveau')
+            .leftJoinAndSelect('matiereNiveau.matiere', 'matiere')
+            .leftJoinAndSelect('matiereNiveau.niveau', 'niveau')
             .leftJoinAndSelect('chapitre.periode', 'periode')
             .orderBy('chapitre.ordre', 'ASC');
 
@@ -77,7 +79,39 @@ export class ProgrammeChapitreService {
             qb.andWhere('chapitre.statut = :statut', { statut: query.statut });
         }
 
-        return paginateWithQueryBuilder(qb, query.page, query.limit);
+        const result = await paginateWithQueryBuilder(qb, query.page, query.limit);
+
+        // Enrichir chaque chapitre avec le programme associé via la jonction programmes_matieres
+        if (result.items.length > 0) {
+            const matiereNiveauIds = [...new Set(result.items.map(c => c.matiereNiveauId))];
+            const programmesParMatiere = await AppDataSource
+                .createQueryBuilder()
+                .select('pm.matiereNiveauId', 'matiereNiveauId')
+                .addSelect('prog.id', 'programmeId')
+                .addSelect('prog.nom', 'programmeNom')
+                .from('programmes_matieres', 'pm')
+                .leftJoin('programmes_pedagogiques', 'prog', 'prog.id = pm.programmeId')
+                .where('pm.matiereNiveauId IN (:...ids)', { ids: matiereNiveauIds })
+                .getRawMany();
+
+            const programmeMap = new Map<string, { programmeId: string; programmeNom: string }>();
+            for (const row of programmesParMatiere) {
+                if (!programmeMap.has(row.matiereNiveauId)) {
+                    programmeMap.set(row.matiereNiveauId, {
+                        programmeId: row.programmeId,
+                        programmeNom: row.programmeNom,
+                    });
+                }
+            }
+
+            result.items = result.items.map(chapitre => ({
+                ...chapitre,
+                programmeId: programmeMap.get(chapitre.matiereNiveauId)?.programmeId || null,
+                programmeNom: programmeMap.get(chapitre.matiereNiveauId)?.programmeNom || null,
+            })) as any;
+        }
+
+        return result;
     }
 
     /**

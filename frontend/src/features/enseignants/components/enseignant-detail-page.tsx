@@ -89,8 +89,17 @@ export function EnseignantDetailPage() {
                 }
             }
         };
+        const tabChangeHandler = (e: CustomEvent) => {
+            if (e.detail?.tab) {
+                handleTabChange(e.detail.tab as OngletId);
+            }
+        };
         window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        window.addEventListener('enseignant-tab-change', tabChangeHandler as EventListener);
+        return () => {
+            window.removeEventListener('keydown', handler);
+            window.removeEventListener('enseignant-tab-change', tabChangeHandler as EventListener);
+        };
     }, [ongletActif, handleTabChange]);
 
     if (isLoading) {

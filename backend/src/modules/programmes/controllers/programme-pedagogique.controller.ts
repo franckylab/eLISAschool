@@ -82,4 +82,11 @@ router.delete('/matieres/:pmId', authMiddleware, requirePermission('programmes:c
     } catch (error) { next(error); }
 });
 
+router.get('/:id/chapitres', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const chapitres = await service.getChapitresByProgramme(req.params.id, req.etablissementId!);
+        return res.json({ success: true, data: chapitres });
+    } catch (error) { next(error); }
+});
+
 export const programmePedagogiqueController = router;

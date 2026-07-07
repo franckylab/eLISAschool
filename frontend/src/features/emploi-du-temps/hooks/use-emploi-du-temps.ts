@@ -1,19 +1,7 @@
-/**
- * ==================================
- * eLISAschool - Hooks Emploi-du-Temps
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- * Date: 2026-06-14
- * 
- * Hooks TanStack Query pour le module emploi-du-temps
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 
-// Types
 export interface Creneau {
     id: string;
     classeAnneeId: string;
@@ -24,24 +12,71 @@ export interface Creneau {
     heureDebut: string;
     heureFin: string;
     typeCreneau: string;
-    genereAutomatiquement: boolean;
+    anneeScolaireId: string;
+    etablissementId: string;
+    couleur?: string;
+    notes?: string;
     actif: boolean;
-    classeAnnee?: { 
-        id: string; 
-        classe: { id: string; nom: string; niveau: string };
-        anneeScolaire: { id: string; nom: string; anneeDebut: number };
+    genereAutomatiquement: boolean;
+    createdAt: string;
+    updatedAt: string;
+    classeAnnee?: {
+        id: string;
+        classe: { id: string; nom: string; niveau?: string };
+        anneeScolaire: { id: string; nom?: string; anneeDebut?: number };
     };
-    matiere?: { id: string; nom: string; code?: string };
+    matiere?: { id: string; nom: string; code?: string; couleur?: string };
     enseignant?: { id: string; nom: string; prenom: string };
+    salle?: { id: string; nom: string; code?: string };
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    meta: {
+        currentPage: number;
+        itemsPerPage: number;
+        totalItems: number;
+        totalPages: number;
+        itemCount: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
+}
+
+export interface CreneauFilters {
+    classeAnneeId?: string;
+    enseignantId?: string;
+    salleId?: string;
+    matiereId?: string;
+    jour?: string;
+    typeCreneau?: string;
+    anneeScolaireId?: string;
+    actif?: boolean;
+    genereAutomatiquement?: boolean;
+    inclureHeuresCours?: boolean;
+    typeSource?: 'edt' | 'heure_cours';
+    page?: number;
+    limit?: number;
+    orderBy?: string;
+    orderDir?: 'ASC' | 'DESC';
 }
 
 export interface PreferenceEDT {
     id: string;
     etablissementId: string;
-    joursTravailles: string[];
     heureDebutCours: string;
     heureFinCours: string;
-    dureeCreneauDefaut: number;
+    dureeCreneauStandard: number;
+    dureeRecreation: number;
+    joursOuvrables: string[];
+    maxCreneauxParJour: number;
+    maxCreneauxMatiereParJour: number;
+    maxCreneauxConsecutifs: number;
+    pauseDebut?: string | null;
+    pauseFin?: string | null;
+    repartitionEquilibree: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface TemplateEDT {
@@ -56,190 +91,143 @@ export interface TemplateEDT {
     createdAt: string;
 }
 
-// Clés de requête
 const EDT_KEYS = {
-    creneaux: {
-        all: ['emploi-du-temps'] as const,
-        classeAnnee: (classeAnneeId: string) => 
-            [...EDT_KEYS.creneaux.all, 'classeAnnee', classeAnneeId] as const,
-        enseignant: (enseignantId: string, anneeScolaireId: string) => 
-            [...EDT_KEYS.creneaux.all, 'enseignant', enseignantId, anneeScolaireId] as const,
-    },
+    all: ['emploi-du-temps'] as const,
+    list: (filters: Record<string, any>) => ['emploi-du-temps', 'list', filters] as const,
+    detail: (id: string) => ['emploi-du-temps', id] as const,
     preferences: ['emploi-du-temps', 'preferences'] as const,
     templates: {
         all: ['emploi-du-temps', 'templates'] as const,
-        detail: (id: string) => [...EDT_KEYS.templates.all, id] as const,
+        detail: (id: string) => ['emploi-du-temps', 'templates', id] as const,
     },
 };
 
-// ==========================================
-// CRUD Créneaux
-// ==========================================
-
-export function useCreneauxByClasseAnnee(classeAnneeId: string) {
+export function useCreneaux(filters: CreneauFilters = {}) {
     return useQuery({
-        queryKey: EDT_KEYS.creneaux.classeAnnee(classeAnneeId),
+        queryKey: EDT_KEYS.list(filters),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: Creneau[] }>(
-                `/api/emploi-du-temps/classe-annee/${classeAnneeId}`
-            );
+            const params: Record<string, any> = {};
+            Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '') params[k] = v; });
+            const response = await apiClient.get<{ data: PaginatedResponse<Creneau> }>('/api/emploi-du-temps', params);
             return response.data;
         },
-        enabled: !!classeAnneeId,
-        staleTime: 2 * 60 * 1000, // 2 min
+        staleTime: 2 * 60 * 1000,
     });
 }
 
-export function useCreneauxByEnseignant(enseignantId: string, anneeScolaireId: string) {
+export function useCreneau(id: string) {
     return useQuery({
-        queryKey: EDT_KEYS.creneaux.enseignant(enseignantId, anneeScolaireId),
+        queryKey: EDT_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: Creneau[] }>(
-                `/api/emploi-du-temps/enseignant/${enseignantId}`,
-                { anneeScolaireId }
-            );
+            const response = await apiClient.get<{ data: Creneau }>(`/api/emploi-du-temps/${id}`);
             return response.data;
         },
-        enabled: !!enseignantId && !!anneeScolaireId,
+        enabled: !!id,
     });
 }
 
 export function useCreerCreneau() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: async (dto: any) => {
-            const response = await apiClient.post<{ data: Creneau }>(
-                '/api/emploi-du-temps',
-                dto
-            );
-            return response.data;
+            const res = await apiClient.post<{ data: Creneau }>('/api/emploi-du-temps', dto);
+            return res.data;
         },
-        onSuccess: (data, variables) => {
-            // Invalider les requêtes concernées
-            queryClient.invalidateQueries({
-                queryKey: EDT_KEYS.creneaux.classe(variables.classeId, variables.anneeScolaireId),
-            });
-            queryClient.invalidateQueries({
-                queryKey: EDT_KEYS.creneaux.enseignant(variables.enseignantId, variables.anneeScolaireId),
-            });
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
             toast.success('Créneau créé avec succès');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la création');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur lors de la création');
+        },
+    });
+}
+
+export function useUpdateCreneau() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: any) => {
+            const res = await apiClient.patch<{ data: Creneau }>(`/api/emploi-du-temps/${id}`, dto);
+            return res.data;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
+            toast.success('Créneau modifié');
+        },
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur lors de la modification');
         },
     });
 }
 
 export function useSupprimerCreneau() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/emploi-du-temps/${id}`);
-        },
-        onSuccess: (_, variables) => {
-            // Invalider toutes les listes de créneaux
-            queryClient.invalidateQueries({ queryKey: EDT_KEYS.creneaux.all });
+        mutationFn: async (id: string) => { await apiClient.delete(`/api/emploi-du-temps/${id}`); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
             toast.success('Créneau supprimé');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la suppression');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur lors de la suppression');
         },
     });
 }
-
-// ==========================================
-// Génération Automatique
-// ==========================================
 
 export function useGenererEDT() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: {
-            classeId: string;
-            anneeScolaireId: string;
-            etablissementId: string;
-            options?: { regenerer?: boolean; respecterContraintes?: boolean };
-        }) => {
-            const response = await apiClient.post<{
-                success: boolean;
-                message: string;
-                data: { nombreCreneaux: number; conflits: string[] };
-            }>('/api/emploi-du-temps/generer', dto);
-            return response.data;
+        mutationFn: async (dto: { classeAnneeId: string; options?: { regenerer?: boolean; respecterContraintes?: boolean } }) => {
+            const res = await apiClient.post<{ success: boolean; message: string; data: { nombreCreneaux: number; conflits: string[] } }>('/api/emploi-du-temps/generer', dto);
+            return res.data;
         },
-        onSuccess: (data, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: EDT_KEYS.creneaux.classe(variables.classeId, variables.anneeScolaireId),
-            });
-            
-            if (data?.success) {
-                toast.success(data.message);
-            } else {
-                const conflits = data?.data?.conflits?.length || 0;
-                toast.warning(`${data?.message || 'Erreur'}\n${conflits} conflits détectés`);
-            }
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
+            if (data?.success) toast.success(data.message);
+            else toast.warning(`${data?.message || 'Erreur'} — ${data?.data?.conflits?.length || 0} conflit(s)`);
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la génération');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur lors de la génération');
         },
     });
 }
-
-// ==========================================
-// Préférences
-// ==========================================
 
 export function usePreferencesEDT() {
     return useQuery({
         queryKey: EDT_KEYS.preferences,
         queryFn: async () => {
-            const response = await apiClient.get<{ data: PreferenceEDT }>(
-                '/api/emploi-du-temps/preferences'
-            );
-            return response.data;
+            const res = await apiClient.get<{ data: PreferenceEDT }>('/api/emploi-du-temps/preferences');
+            return res.data;
         },
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     });
 }
 
 export function useUpdatePreferencesEDT() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: async (dto: Partial<PreferenceEDT>) => {
-            const response = await apiClient.put<{ data: PreferenceEDT }>(
-                '/api/emploi-du-temps/preferences',
-                dto
-            );
-            return response.data;
+            const res = await apiClient.put<{ data: PreferenceEDT }>('/api/emploi-du-temps/preferences', dto);
+            return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: EDT_KEYS.preferences });
+            qc.invalidateQueries({ queryKey: EDT_KEYS.preferences });
             toast.success('Préférences mises à jour');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la mise à jour');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur');
         },
     });
 }
-
-// ==========================================
-// Templates
-// ==========================================
 
 export function useTemplatesEDT() {
     return useQuery({
         queryKey: EDT_KEYS.templates.all,
         queryFn: async () => {
-            const response = await apiClient.get<{ data: TemplateEDT[] }>(
-                '/api/emploi-du-temps/templates'
-            );
-            return response.data;
+            const res = await apiClient.get<{ data: TemplateEDT[] }>('/api/emploi-du-temps/templates');
+            return res.data;
         },
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: 10 * 60 * 1000,
     });
 }
 
@@ -247,70 +235,57 @@ export function useTemplateEDT(id: string) {
     return useQuery({
         queryKey: EDT_KEYS.templates.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: TemplateEDT }>(
-                `/api/emploi-du-temps/templates/${id}`
-            );
-            return response.data;
+            const res = await apiClient.get<{ data: TemplateEDT }>(`/api/emploi-du-temps/templates/${id}`);
+            return res.data;
         },
         enabled: !!id,
     });
 }
 
 export function useCreerTemplateEDT() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: async (dto: any) => {
-            const response = await apiClient.post<{ data: TemplateEDT }>(
-                '/api/emploi-du-temps/templates',
-                dto
-            );
-            return response.data;
+            const res = await apiClient.post<{ data: TemplateEDT }>('/api/emploi-du-temps/templates', dto);
+            return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
-            toast.success('Template créé avec succès');
+            qc.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
+            toast.success('Template créé');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la création');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur');
         },
     });
 }
 
 export function useSupprimerTemplateEDT() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/emploi-du-temps/templates/${id}`);
-        },
+        mutationFn: async (id: string) => { await apiClient.delete(`/api/emploi-du-temps/templates/${id}`); },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
+            qc.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
             toast.success('Template supprimé');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la suppression');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur');
         },
     });
 }
 
 export function useDupliquerTemplateEDT() {
-    const queryClient = useQueryClient();
-
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, nom }: { id: string; nom?: string }) => {
-            const response = await apiClient.post<{ data: TemplateEDT }>(
-                `/api/emploi-du-temps/templates/${id}/dupliquer`,
-                { nom }
-            );
-            return response.data;
+            const res = await apiClient.post<{ data: TemplateEDT }>(`/api/emploi-du-temps/templates/${id}/dupliquer`, { nom });
+            return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
+            qc.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
             toast.success('Template dupliqué');
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la duplication');
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error?.message || 'Erreur');
         },
     });
 }

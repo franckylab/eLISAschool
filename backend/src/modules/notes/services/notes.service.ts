@@ -80,9 +80,61 @@ export class NotesService {
             );
         }
 
-        // 4. Créer la note (classeId déduit via AffectationEleve, plus stocké dans Note)
+        // 4. Résoudre coefficient/bareme depuis la hiérarchie matières si non fournis
+        let coefficient = createDto.coefficient;
+        let bareme = createDto.bareme;
+
+        if (coefficient === undefined || bareme === undefined) {
+            try {
+                const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
+                const configRepo = AppDataSource.getRepository('ConfigurationMatiereClasse') as any;
+                const classeAnneeRepo = AppDataSource.getRepository('AffectationEleve') as any;
+
+                // Trouver le niveau de la classe
+                const affectation = await classeAnneeRepo.findOne({
+                    where: { eleveId: createDto.eleveId, anneeScolaireId: anneeId, actif: true },
+                    relations: ['classe'],
+                });
+
+                if (affectation?.classe?.niveauId) {
+                    const niveauId = affectation.classe.niveauId;
+
+                    // Chercher la configuration par classe
+                    const config = await configRepo.findOne({
+                        where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
+                    });
+
+                    if (coefficient === undefined) {
+                        coefficient = config?.coefficient;
+                    }
+                    if (bareme === undefined) {
+                        bareme = config?.bareme;
+                    }
+
+                    // Fallback sur MatiereNiveau (programme)
+                    if (coefficient === undefined || bareme === undefined) {
+                        const mn = await matiereNiveauRepo.findOne({
+                            where: { matiereId: createDto.matiereId, niveauId },
+                        });
+
+                        if (coefficient === undefined) {
+                            coefficient = mn?.coefficient;
+                        }
+                        if (bareme === undefined) {
+                            bareme = mn?.bareme;
+                        }
+                    }
+                }
+            } catch (e) {
+                logger.warn('[Notes] Impossible de résoudre config matiere (non bloquant)', e);
+            }
+        }
+
+        // 5. Créer la note (classeId déduit via AffectationEleve, plus stocké dans Note)
         const note = this.noteRepository.create({
             ...createDto,
+            coefficient: coefficient ?? 1,
+            bareme: bareme ?? params.baremeDefaut,
             anneeScolaireId: anneeId,
             enseignantId,
             dateEvaluation: createDto.dateEvaluation ? new Date(createDto.dateEvaluation) : undefined,
@@ -200,6 +252,47 @@ export class NotesService {
             anneeId = periode.anneeScolaireId;
         }
 
+        // Résoudre coefficient/bareme depuis la hiérarchie si non fournis
+        let coefficient = createDto.coefficient;
+        let bareme = createDto.bareme;
+
+        if (coefficient === undefined || bareme === undefined) {
+            try {
+                const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
+                const configRepo = AppDataSource.getRepository('ConfigurationMatiereClasse') as any;
+
+                const config = await configRepo.findOne({
+                    where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
+                });
+
+                if (coefficient === undefined) {
+                    coefficient = config?.coefficient;
+                }
+                if (bareme === undefined) {
+                    bareme = config?.bareme;
+                }
+
+                // Fallback MatiereNiveau — on prend la première matière associée à cette classe
+                if (coefficient === undefined || bareme === undefined) {
+                    const classeAnnee = await AppDataSource.getRepository('ClasseAnnee').findOne({
+                        where: { id: createDto.classeAnneeId },
+                        relations: ['classe'],
+                    });
+
+                    if (classeAnnee?.classe?.niveauId) {
+                        const mn = await matiereNiveauRepo.findOne({
+                            where: { matiereId: createDto.matiereId, niveauId: classeAnnee.classe.niveauId },
+                        });
+
+                        if (coefficient === undefined) coefficient = mn?.coefficient;
+                        if (bareme === undefined) bareme = mn?.bareme;
+                    }
+                }
+            } catch (e) {
+                logger.warn('[Notes] Impossible de résoudre config matiere pour bulk (non bloquant)', e);
+            }
+        }
+
         const notes = createDto.notes.map((n) =>
             this.noteRepository.create({
                 eleveId: n.eleveId,
@@ -210,8 +303,8 @@ export class NotesService {
                 typeEvaluation: createDto.typeEvaluation as TypeEvaluation,
                 description: createDto.description,
                 valeur: n.valeur,
-                bareme: createDto.bareme ?? params.baremeDefaut,
-                coefficient: createDto.coefficient,
+                bareme: bareme ?? params.baremeDefaut,
+                coefficient: coefficient ?? 1,
                 commentaire: n.commentaire,
                 dateEvaluation: createDto.dateEvaluation ? new Date(createDto.dateEvaluation) : undefined,
                 enseignantId,

@@ -8,6 +8,7 @@ import type {
     ProgrammeFiltres,
     ProgrammeMatiere,
     AddMatiereDto,
+    ProgrammeChapitre,
 } from '../types/programme.types';
 
 const PROGRAMMES_KEYS = {
@@ -17,6 +18,7 @@ const PROGRAMMES_KEYS = {
     details: () => [...PROGRAMMES_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...PROGRAMMES_KEYS.details(), id] as const,
     matieres: (id: string) => [...PROGRAMMES_KEYS.detail(id), 'matieres'] as const,
+    chapitres: (id: string) => [...PROGRAMMES_KEYS.detail(id), 'chapitres'] as const,
 };
 
 export function useProgrammes(filtres?: ProgrammeFiltres) {
@@ -166,6 +168,99 @@ export function useRetirerMatiereProgramme() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.detail(variables.programmeId) });
             queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.matieres(variables.programmeId) });
+        },
+    });
+}
+
+export function useTousChapitres(filtres?: {
+    matiereNiveauId?: string;
+    periodeId?: string;
+    statut?: string;
+    recherche?: string;
+    page?: number;
+    limit?: number;
+}) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: [...PROGRAMMES_KEYS.all, 'tous-chapitres', filtres],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (filtres?.matiereNiveauId) params.set('matiereNiveauId', filtres.matiereNiveauId);
+            if (filtres?.periodeId) params.set('periodeId', filtres.periodeId);
+            if (filtres?.statut) params.set('statut', filtres.statut);
+            if (filtres?.page) params.set('page', String(filtres.page));
+            if (filtres?.limit) params.set('limit', String(filtres.limit));
+            const response = await apiClient.get<{ data: ProgrammeChapitre[]; pagination: any }>(
+                `/api/programmes/chapitres?${params.toString()}`
+            );
+            return response;
+        },
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useChapitresProgramme(programmeId: string) {
+    const { isAuthenticated } = useAuthStore();
+
+    return useQuery({
+        queryKey: PROGRAMMES_KEYS.chapitres(programmeId),
+        queryFn: async () => {
+            const response = await apiClient.get<{ data: ProgrammeChapitre[] }>(
+                `/api/programmes/${programmeId}/chapitres`
+            );
+            return response.data || [];
+        },
+        enabled: isAuthenticated && !!programmeId,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useCreerChapitre() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (dto: {
+            matiereNiveauId: string;
+            titre: string;
+            description?: string;
+            objectifsPedagogiques?: string;
+            ordre?: number;
+            dureePrevueHeures?: number;
+        }) => {
+            const response = await apiClient.post<ProgrammeChapitre>('/api/programmes/chapitres', dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.all });
+        },
+    });
+}
+
+export function useModifierChapitre() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+            const response = await apiClient.patch<ProgrammeChapitre>(`/api/programmes/chapitres/${id}`, dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.all });
+        },
+    });
+}
+
+export function useSupprimerChapitre() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/programmes/chapitres/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.all });
         },
     });
 }

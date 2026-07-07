@@ -1,7 +1,12 @@
-import { CheckCircle, XCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { CheckCircle, XCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useEnseignantAbsences, useEnseignantAssiduite } from '../../hooks/use-enseignants';
+import { MiniBarChart } from '@/components/charts/MiniBarChart';
+import { MiniPieChart } from '@/components/charts/MiniPieChart';
 import { LoadingState } from '@/components/feedback';
 import type { AbsenceEnseignant } from '../../types/enseignant.types';
+
+const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 function formatDate(d: string) {
     return new Date(d).toLocaleDateString('fr-FR');
@@ -19,8 +24,27 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
     const assiduiteData = isActive ? assiduite.data : undefined;
     const total = absences.data?.total ?? 0;
 
+    const absencesParMois = useMemo(() => {
+        const grouped: Record<string, number> = {};
+        items.forEach((a: AbsenceEnseignant) => {
+            const d = new Date(a.date);
+            const key = MOIS[d.getMonth()];
+            grouped[key] = (grouped[key] || 0) + 1;
+        });
+        return Object.entries(grouped).map(([label, value]) => ({ label, value }));
+    }, [items]);
+
+    const justifiees = items.filter((a: AbsenceEnseignant) => a.statutJustification === 'JUSTIFIE').length;
+    const nonJustifiees = items.length - justifiees;
+
+    const pieData = [
+        { label: 'Justifiées', value: justifiees, color: '#10B981' },
+        { label: 'Non justifiées', value: nonJustifiees, color: '#EF4444' },
+    ];
+
     return (
         <div className="space-y-5">
+            {/* Stats cards */}
             {assiduiteData ? (
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <AssiduiteCard label="Total absences" value={assiduiteData.totalAbsences} color="red" />
@@ -31,10 +55,33 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
             ) : items.length > 0 ? (
                 <div className="grid grid-cols-3 gap-4">
                     <MiniCard label="Total" value={items.length} color="red" />
-                    <MiniCard label="Justifiées" value={items.filter((a: AbsenceEnseignant) => a.statutJustification === 'JUSTIFIE').length} color="green" />
-                    <MiniCard label="Non justifiées" value={items.filter((a: AbsenceEnseignant) => a.statutJustification !== 'JUSTIFIE').length} color="yellow" />
+                    <MiniCard label="Justifiées" value={justifiees} color="green" />
+                    <MiniCard label="Non justifiées" value={nonJustifiees} color="yellow" />
                 </div>
             ) : null}
+
+            {items.length > 0 && (
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    {absencesParMois.length > 1 && (
+                        <div className="rounded-xl border border-gray-200 bg-white p-5">
+                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <TrendingUp className="h-4 w-4 text-orange-500" />
+                                Tendance des absences
+                            </h4>
+                            <MiniBarChart data={absencesParMois} height={160} />
+                        </div>
+                    )}
+                    <div className="rounded-xl border border-gray-200 bg-white p-5">
+                        <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            Répartition justifiées / non justifiées
+                        </h4>
+                        <div className="flex justify-center">
+                            <MiniPieChart data={pieData} size={140} innerRadius={30} showLegend />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-green-300 bg-green-50 py-16">
@@ -89,29 +136,30 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
 
 function AssiduiteCard({ label, value, color }: { label: string; value: number | string; color: string }) {
     const colors: Record<string, string> = {
-        red: 'bg-red-50 text-red-800 border-red-200',
-        green: 'bg-green-50 text-green-800 border-green-200',
-        yellow: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-        orange: 'bg-orange-50 text-orange-800 border-orange-200',
+        red: 'from-red-50 to-red-100 border-red-200 text-red-800',
+        green: 'from-green-50 to-green-100 border-green-200 text-green-800',
+        yellow: 'from-yellow-50 to-yellow-100 border-yellow-200 text-yellow-800',
+        orange: 'from-orange-50 to-orange-100 border-orange-200 text-orange-800',
     };
     return (
-        <div className={`rounded-lg border p-4 ${colors[color] || colors.red}`}>
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="mt-0.5 text-xs font-medium">{label}</p>
+        <div className={`rounded-xl border bg-gradient-to-br p-4 ${colors[color] || colors.orange}`}>
+            <p className="text-xs font-medium opacity-70">{label}</p>
+            <p className="mt-1 text-2xl font-bold">{value}</p>
         </div>
     );
 }
 
-function MiniCard({ label, value, color }: { label: string; value: number; color: string }) {
+function MiniCard({ label, value, color }: { label: string; value: number | string; color: string }) {
     const colors: Record<string, string> = {
         red: 'bg-red-50 text-red-800 border-red-200',
         green: 'bg-green-50 text-green-800 border-green-200',
         yellow: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+        blue: 'bg-blue-50 text-blue-800 border-blue-200',
     };
     return (
-        <div className={`rounded-lg border p-3 text-center ${colors[color] || colors.red}`}>
-            <p className="text-xl font-bold">{value}</p>
-            <p className="text-xs font-medium">{label}</p>
+        <div className={`rounded-xl border p-4 ${colors[color] || colors.blue}`}>
+            <p className="text-xs font-medium opacity-70">{label}</p>
+            <p className="mt-1 text-2xl font-bold">{value}</p>
         </div>
     );
 }

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, Edit, Trash2, BookOpen, Clock, Layers,
     Target, FileText, BarChart3, Plus, X, Check,
-    AlertTriangle,
+    AlertTriangle, ChevronDown, ChevronRight, ListChecks,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -18,9 +18,14 @@ import {
     useSupprimerProgramme,
     useAjouterMatiereProgramme,
     useRetirerMatiereProgramme,
+    useChapitresProgramme,
+    useCreerChapitre,
+    useModifierChapitre,
+    useSupprimerChapitre,
 } from '../hooks/use-programmes';
 import { ProgrammeFormModal } from './programme-form-modal';
-import type { AddMatiereDto } from '../types/programme.types';
+import { ChapitreFormModal } from './chapitre-form-modal';
+import type { AddMatiereDto, ProgrammeChapitre } from '../types/programme.types';
 
 export function ProgrammeDetailPage() {
     const { id: programmeId } = useParams({ from: '/_auth/programmes/$id' });
@@ -34,6 +39,11 @@ export function ProgrammeDetailPage() {
     const [newCoefficient, setNewCoefficient] = useState<number>(1);
     const [newVolumeHoraire, setNewVolumeHoraire] = useState<number>(0);
 
+    const [showChapitreModal, setShowChapitreModal] = useState(false);
+    const [chapitreEdit, setChapitreEdit] = useState<ProgrammeChapitre | null>(null);
+    const [chapitreDeleteId, setChapitreDeleteId] = useState<string | null>(null);
+    const [chapitreMatiereNiveauId, setChapitreMatiereNiveauId] = useState<string>('');
+
     const { data: programme, isLoading } = useProgrammeDetail(programmeId);
     const { data: cycles } = useTousCycles();
     const { data: niveaux } = useTousNiveaux();
@@ -42,6 +52,10 @@ export function ProgrammeDetailPage() {
     const supprimer = useSupprimerProgramme();
     const ajouterMatiere = useAjouterMatiereProgramme();
     const retirerMatiere = useRetirerMatiereProgramme();
+    const { data: chapitres, refetch: refetchChapitres } = useChapitresProgramme(programmeId);
+    const creerChapitre = useCreerChapitre();
+    const modifierChapitre = useModifierChapitre();
+    const supprimerChapitre = useSupprimerChapitre();
 
     const handleDelete = async () => {
         try {
@@ -92,9 +106,12 @@ export function ProgrammeDetailPage() {
         );
     }
 
+    const chapitresCount = chapitres?.length || 0;
+
     const tabs = [
         { id: 'informations', label: 'Informations', icon: FileText },
         { id: 'matieres', label: 'Matières', icon: BookOpen, count: programme.matieres?.length || 0 },
+        { id: 'chapitres', label: 'Chapitres', icon: ListChecks, count: chapitresCount },
         { id: 'objectifs', label: 'Objectifs', icon: Target },
         { id: 'stats', label: 'Statistiques', icon: BarChart3 },
     ];
@@ -240,6 +257,20 @@ export function ProgrammeDetailPage() {
 
                     {showAddMatiere && (
                         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
+                            {(() => {
+                                const filtered = programme.niveauId
+                                    ? (tousMatieresNiveaux ?? []).filter(mn => mn.niveauId === programme.niveauId)
+                                    : (tousMatieresNiveaux ?? []);
+                                return (
+                                <>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    {programme.niveauId && (
+                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                            Filtré par niveau : {niveauNom}
+                                        </span>
+                                    )}
+                                    <span>{filtered.length} matière{filtered.length > 1 ? 's' : ''} disponible{filtered.length > 1 ? 's' : ''}</span>
+                                </div>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-600 mb-1">Matière - Niveau</label>
@@ -247,7 +278,7 @@ export function ProgrammeDetailPage() {
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                     >
                                         <option value="">Sélectionner...</option>
-                                        {(tousMatieresNiveaux ?? []).map((mn) => (
+                                        {filtered.map((mn) => (
                                             <option key={mn.id} value={mn.id}>
                                                 {mn.matiere?.nom} — {mn.niveau?.nom}{mn.groupe ? ` (${mn.groupe.nom})` : ''}
                                             </option>
@@ -275,6 +306,9 @@ export function ProgrammeDetailPage() {
                                     Ajouter
                                 </ElisaButton>
                             </div>
+                            </>
+                            );
+                            })()}
                         </div>
                     )}
 
@@ -326,6 +360,110 @@ export function ProgrammeDetailPage() {
                                 </tbody>
                             </table>
                         </div>
+                    )}
+                </motion.div>
+            )}
+
+            {tabActif === 'chapitres' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                    {(!chapitres || chapitres.length === 0) ? (
+                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                            <ListChecks className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                            <p className="text-gray-500">Aucun chapitre pour ce programme</p>
+                            <p className="text-sm text-gray-400 mt-1">Ajoutez des matières puis créez des chapitres dans chaque matière.</p>
+                        </div>
+                    ) : (
+                        (() => {
+                            const grouped: Record<string, { matiereNiveauId: string; chapitres: typeof chapitres }> = {};
+                            for (const ch of chapitres) {
+                                const matiereNom = ch.matiereNiveau?.matiere?.nom || ch.matiereNiveauId;
+                                if (!grouped[matiereNom]) grouped[matiereNom] = { matiereNiveauId: ch.matiereNiveauId, chapitres: [] };
+                                grouped[matiereNom].chapitres.push(ch);
+                            }
+                            return Object.entries(grouped).map(([matiereNom, g]) => (
+                                <div key={matiereNom} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.chapitres[0]?.matiereNiveau?.matiere?.couleur || '#6B7280' }} />
+                                            {matiereNom}
+                                            <span className="text-xs text-gray-400 font-normal">— {g.chapitres.length} chapitre{g.chapitres.length > 1 ? 's' : ''}</span>
+                                        </h3>
+                                        {hasPermission('programmes:config:write') && (
+                                            <button onClick={() => { setChapitreMatiereNiveauId(g.matiereNiveauId); setChapitreEdit(null); setShowChapitreModal(true); }}
+                                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" /> Ajouter
+                                            </button>
+                                        )}
+                                    </div>
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50/50">
+                                            <tr>
+                                                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Ordre</th>
+                                                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Titre</th>
+                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500">Durée</th>
+                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500">Progression</th>
+                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500">Statut</th>
+                                                {hasPermission('programmes:config:write') && (
+                                                    <th className="text-right px-4 py-2 text-xs font-medium text-gray-500">Actions</th>
+                                                )}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {g.chapitres.sort((a, b) => a.ordre - b.ordre).map((ch) => (
+                                                <tr key={ch.id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">{ch.ordre}</td>
+                                                    <td className="px-4 py-2.5">
+                                                        <p className="font-medium text-gray-800">{ch.titre}</p>
+                                                        {ch.description && (
+                                                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{ch.description}</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-center text-gray-600">
+                                                        {ch.dureePrevueHeures ? `${ch.dureePrevueHeures}h` : '-'}
+                                                    </td>
+                                                    <td className="px-4 py-2.5">
+                                                        <div className="flex items-center gap-2 justify-center">
+                                                            <div className="w-20 bg-gray-200 rounded-full h-1.5">
+                                                                <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${ch.progressionPourcentage}%` }} />
+                                                            </div>
+                                                            <span className="text-xs text-gray-500">{ch.progressionPourcentage}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-center">
+                                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                            ch.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
+                                                            ch.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-gray-100 text-gray-500'
+                                                        }`}>
+                                                            {ch.statut === 'ACTIF' ? 'Actif' : ch.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
+                                                        </span>
+                                                    </td>
+                                                    {hasPermission('programmes:config:write') && (
+                                                        <td className="px-4 py-2.5 text-right">
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <button onClick={() => { setChapitreEdit(ch); setShowChapitreModal(true); }}
+                                                                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                                    title="Modifier"
+                                                                >
+                                                                    <Edit className="h-3.5 w-3.5" />
+                                                                </button>
+                                                                <button onClick={() => setChapitreDeleteId(ch.id)}
+                                                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                                    title="Supprimer"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ));
+                        })()
                     )}
                 </motion.div>
             )}
@@ -392,6 +530,40 @@ export function ProgrammeDetailPage() {
                     await modifier.mutateAsync({ id: programmeId, ...dto });
                     setShowEditModal(false);
                 }}
+            />
+
+            <ChapitreFormModal
+                open={showChapitreModal}
+                chapitre={chapitreEdit}
+                onClose={() => { setShowChapitreModal(false); setChapitreEdit(null); }}
+                isLoading={creerChapitre.isPending || modifierChapitre.isPending}
+                onSubmit={async (dto) => {
+                    if (chapitreEdit) {
+                        await modifierChapitre.mutateAsync({ id: chapitreEdit.id, ...dto });
+                    } else {
+                        await creerChapitre.mutateAsync({ matiereNiveauId: chapitreMatiereNiveauId, ...dto });
+                    }
+                    setShowChapitreModal(false);
+                    setChapitreEdit(null);
+                    refetchChapitres();
+                }}
+            />
+
+            <ConfirmDialog
+                open={!!chapitreDeleteId}
+                onOpenChange={(v) => { if (!v) setChapitreDeleteId(null); }}
+                onConfirm={async () => {
+                    if (chapitreDeleteId) {
+                        await supprimerChapitre.mutateAsync(chapitreDeleteId);
+                        setChapitreDeleteId(null);
+                        refetchChapitres();
+                    }
+                }}
+                title="Supprimer le chapitre"
+                description="Êtes-vous sûr de vouloir supprimer ce chapitre ? Cette action est irréversible."
+                confirmText="Supprimer"
+                variant="danger"
+                isLoading={supprimerChapitre.isPending}
             />
 
             <ConfirmDialog

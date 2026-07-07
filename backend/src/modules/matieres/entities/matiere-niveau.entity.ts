@@ -17,6 +17,7 @@ import {
 import { Matiere, GroupeMatiere } from './matiere.entity';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
+import { Periode } from '@modules/periodes/entities';
 
 /**
  * Statut du programme matière-niveau (support workflow de validation)
@@ -32,7 +33,7 @@ export enum StatutMatiereNiveau {
 @Index(['matiereId'])
 @Index(['filiereId'])
 @Index(['niveauId', 'filiereId']) // Index composite pour filtrage par filière
-@Index(['matiereId', 'niveauId', 'filiereId'], { unique: true }) // Unicité programme par matière+niveau+filière
+@Index(['matiereId', 'niveauId', 'filiereId', 'periodeId'], { unique: true }) // Unicité par matière+niveau+filière+période
 export class MatiereNiveau {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -69,6 +70,25 @@ export class MatiereNiveau {
     @ManyToOne(() => Filiere, { nullable: true })
     @JoinColumn({ name: 'filiereId' })
     filiere?: Filiere;
+
+    /**
+     * Période de validité de ce programme matière-niveau
+     */
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
+
+    /**
+     * Dates de validité (auto-peuplées depuis l'année scolaire si periodeId défini)
+     */
+    @Column({ type: 'date', nullable: true })
+    dateDebut?: string;
+
+    @Column({ type: 'date', nullable: true })
+    dateFin?: string;
 
     // Système Francophone
     @Column({ type: 'float', default: 1 })

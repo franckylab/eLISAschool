@@ -5,11 +5,14 @@ import {
     ArrowLeft, BookOpen, Clock, FileText, Users,
     Edit, Trash2, Hash, TrendingUp, AlertCircle,
     GraduationCap, Layers, CheckCircle, XCircle,
-    Globe, UserCheck, Ban, UserPlus, AlertTriangle,
+    Globe, UserCheck, Ban, UserPlus, AlertTriangle, Plus,
 } from 'lucide-react';
-import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
+import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation, useCreerConfigurationMatiereClasse, useModifierConfigurationMatiereClasse, useSupprimerConfigurationMatiereClasse } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
+import { useCreneaux } from '@/features/emploi-du-temps';
+import { EDTCalendar } from '@/features/emploi-du-temps';
 import { AffectationFormModal } from './affectation-form-modal';
+import { ConfigurationFormModal } from './configuration-form-modal';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -19,7 +22,7 @@ import { usePermissions } from '@/hooks';
 import type { MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
 
-type OngletActif = 'informations' | 'programme' | 'affectations' | 'configurations';
+type OngletActif = 'informations' | 'programme' | 'affectations' | 'configurations' | 'emploi-du-temps';
 
 function StatutBadge({ actif }: { actif: boolean }) {
     return (
@@ -71,11 +74,19 @@ export function MatiereDetailPage() {
     const modifierAffectation = useModifierAffectation();
     const supprimerAffectation = useSupprimerAffectation();
 
+    const [configModalOpen, setConfigModalOpen] = useState(false);
+    const [configToEdit, setConfigToEdit] = useState<ConfigurationMatiereClasse | null>(null);
+    const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
+    const creerConfig = useCreerConfigurationMatiereClasse();
+    const modifierConfig = useModifierConfigurationMatiereClasse();
+    const supprimerConfig = useSupprimerConfigurationMatiereClasse();
+
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const programmeQuery = useMatiereProgramme(id);
     const affectationsQuery = useMatiereAffectations(id);
     const configurationsQuery = useMatiereConfigurations(id);
+    const edtQuery = useCreneaux({ matiereId: id, limit: 200 });
 
     const { niveauxSansAffectation, affectationsInactives, tauxCouverture } = useMemo(() => {
         const programme = programmeQuery.data ?? [];
@@ -113,6 +124,22 @@ export function MatiereDetailPage() {
         setAffectationToEdit(null);
     };
 
+    const handleConfigSave = async (data: any) => {
+        if (configToEdit) {
+            await modifierConfig.mutateAsync({ configId: configToEdit.id, matiereId: id, ...data });
+        } else {
+            await creerConfig.mutateAsync({ matiereId: id, ...data });
+        }
+        setConfigModalOpen(false);
+        setConfigToEdit(null);
+    };
+
+    const handleDeleteConfig = async () => {
+        if (!deleteConfigId) return;
+        await supprimerConfig.mutateAsync({ configId: deleteConfigId, matiereId: id });
+        setDeleteConfigId(null);
+    };
+
     const handleDeleteAffectation = async () => {
         if (!deleteAffectationId) return;
         await supprimerAffectation.mutateAsync({ id: deleteAffectationId, matiereId: id });
@@ -146,6 +173,7 @@ export function MatiereDetailPage() {
         { id: 'programme' as const, label: 'Programme', icon: Layers, count: programmeQuery.data?.length, warning: niveauxSansAffectation.length > 0 },
         { id: 'affectations' as const, label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length, warning: affectationsInactives.length > 0 },
         { id: 'configurations' as const, label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
+        { id: 'emploi-du-temps' as const, label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.items?.length },
     ];
 
     return (
@@ -189,7 +217,7 @@ export function MatiereDetailPage() {
                         </div>
 
                         <div className="flex flex-col gap-2 shrink-0">
-                            {hasPermission('matieres:edit') && (
+                            {hasPermission('config:edit') && (
                                 <>
                                     <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
                                         Modifier
@@ -285,11 +313,35 @@ export function MatiereDetailPage() {
                         onEdit={(a) => { setAffectationToEdit(a); setAffectationModalOpen(true); }}
                         onDelete={(id) => setDeleteAffectationId(id)}
                         onCreate={() => { setAffectationToEdit(null); setAffectationModalOpen(true); }}
-                        hasPermission={hasPermission('matieres:edit')}
+                        hasPermission={hasPermission('config:edit')}
                     />
                 )}
                 {ongletActif === 'configurations' && (
-                    <ConfigurationsTab data={configurationsQuery.data} isLoading={configurationsQuery.isLoading} />
+                    <ConfigurationsTab
+                        data={configurationsQuery.data}
+                        isLoading={configurationsQuery.isLoading}
+                        onEdit={(c) => { setConfigToEdit(c); setConfigModalOpen(true); }}
+                        onDelete={(id) => setDeleteConfigId(id)}
+                        onCreate={() => { setConfigToEdit(null); setConfigModalOpen(true); }}
+                        hasPermission={hasPermission('config:edit')}
+                    />
+                )}
+                {ongletActif === 'emploi-du-temps' && (
+                    <div className="space-y-4">
+                        {edtQuery.isLoading ? (
+                            <div className="py-12"><LoadingState message="Chargement de l'emploi du temps..." /></div>
+                        ) : !edtQuery.data?.items?.length ? (
+                            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 font-medium mb-1">Aucun créneau pour cette matière</p>
+                                <p className="text-sm text-gray-500">
+                                    Les créneaux apparaîtront ici une fois l'emploi du temps généré.
+                                </p>
+                            </div>
+                        ) : (
+                            <EDTCalendar creneaux={edtQuery.data.items} />
+                        )}
+                    </div>
                 )}
             </motion.div>
 
@@ -334,6 +386,27 @@ export function MatiereDetailPage() {
                 onConfirm={handleDeleteAffectation}
                 onCancel={() => setDeleteAffectationId(null)}
                 isLoading={supprimerAffectation.isPending}
+            />
+
+            <ConfigurationFormModal
+                open={configModalOpen}
+                onOpenChange={(v) => { if (!v) { setConfigModalOpen(false); setConfigToEdit(null); } }}
+                matiereId={id}
+                matiereNom={matiere.nom}
+                config={configToEdit}
+                onSave={handleConfigSave}
+                isLoading={creerConfig.isPending || modifierConfig.isPending}
+            />
+
+            <ConfirmationModal
+                isOpen={!!deleteConfigId}
+                title="Supprimer cette configuration"
+                message="Êtes-vous sûr de vouloir supprimer cette configuration matière-classe ?"
+                details="Cette action est irréversible."
+                variant="danger"
+                onConfirm={handleDeleteConfig}
+                onCancel={() => setDeleteConfigId(null)}
+                isLoading={supprimerConfig.isPending}
             />
         </div>
     );
@@ -619,66 +692,115 @@ function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreat
     );
 }
 
-function ConfigurationsTab({ data, isLoading }: { data: ConfigurationMatiereClasse[] | undefined; isLoading: boolean }) {
+function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermission }: {
+    data: ConfigurationMatiereClasse[] | undefined;
+    isLoading: boolean;
+    onEdit: (c: ConfigurationMatiereClasse) => void;
+    onDelete: (id: string) => void;
+    onCreate: () => void;
+    hasPermission: boolean;
+}) {
     if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement des configurations..." /></div>;
-    if (!data || data.length === 0) return (
-        <EmptyState icon={FileText} message="Aucune configuration spécifique" sub="Les configurations par classe héritent des valeurs du programme par défaut." />
-    );
 
-    const maxVolume = Math.max(...data.map((c) => c.volumeHoraireHebdo || 0));
+    const maxVolume = data && data.length > 0 ? Math.max(...data.map((c) => c.volumeHoraireHebdo || 0)) : 0;
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
-                            <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
-                            <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
-                            <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
-                            <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
-                            <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
-                            <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {data.map((c) => (
-                            <tr key={c.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-medium">{c.classeAnnee?.classe?.nom || '-'}</td>
-                                <td className="px-4 py-3 text-gray-600">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
-                                <td className="px-4 py-3 text-center font-semibold">{c.coefficient ?? '—'}</td>
-                                <td className="px-4 py-3 text-center">{c.bareme ? `/ ${c.bareme}` : '—'}</td>
-                                <td className="px-4 py-3 text-center">
-                                    {c.volumeHoraireHebdo ? <VolumeBar value={c.volumeHoraireHebdo} max={maxVolume} /> : '—'}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                    {c.obligatoire ? (
-                                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                            <CheckCircle className="h-3 w-3" /> Oblig.
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
-                                            <XCircle className="h-3 w-3" /> Optionnel
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                        c.statut === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                        c.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-gray-100 text-gray-700'
-                                    }`}>
-                                        {c.statut === 'ACTIVE' ? 'Active' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactive'}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+        <div className="space-y-4">
+            {hasPermission && (
+                <div className="flex justify-end">
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={onCreate}>
+                        Ajouter une configuration
+                    </ElisaButton>
+                </div>
+            )}
+
+            {!data || data.length === 0 ? (
+                <EmptyState icon={FileText} message="Aucune configuration spécifique" sub="Les configurations par classe héritent des valeurs du programme par défaut. Utilisez le bouton ci-dessus pour surcharger une classe." />
+            ) : (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
+                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600">Actions</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {data.map((c) => (
+                                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-4 py-3 font-medium">{c.classeAnnee?.classe?.nom || '-'}</td>
+                                        <td className="px-4 py-3 text-gray-600">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <InheritedValue value={c.coefficient} unit="" />
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <InheritedValue value={c.bareme} unit="" prefix="/ " />
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {c.volumeHoraireHebdo
+                                                ? <VolumeBar value={c.volumeHoraireHebdo} max={maxVolume} />
+                                                : <span className="text-xs text-gray-400 italic">Hérité</span>
+                                            }
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {c.obligatoire ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                    <CheckCircle className="h-3 w-3" /> Oblig.
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
+                                                    <XCircle className="h-3 w-3" /> Optionnel
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                c.statut === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                                                c.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-700'
+                                            }`}>
+                                                {c.statut === 'ACTIVE' ? 'Active' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        {hasPermission && (
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <button onClick={() => onEdit(c)}
+                                                        className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        title="Modifier"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    <button onClick={() => onDelete(c.id)}
+                                                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                        title="Supprimer"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
+}
+
+function InheritedValue({ value, unit, prefix }: { value: number | null | undefined; unit: string; prefix?: string }) {
+    if (value == null) return <span className="text-xs text-gray-400 italic">Hérité</span>;
+    return <span className="font-semibold">{prefix ?? ''}{value}{unit}</span>;
 }
 
 function EmptyState({ icon: Icon, message, sub }: { icon: any; message: string; sub: string }) {

@@ -35,6 +35,9 @@ export const createMatiereNiveauSchema = z.object({
   bareme: z.number().int().min(1).default(20),
   volumeHoraire: z.number().int().min(0).optional(),
   obligatoire: z.boolean().default(true),
+  periodeId: z.string().uuid('Période invalide').optional().nullable(),
+  dateDebut: z.string().optional().nullable(),
+  dateFin: z.string().optional().nullable(),
 });
 
 export const updateMatiereNiveauSchema = createMatiereNiveauSchema.partial();
@@ -66,6 +69,10 @@ export const createConfigurationMatiereClasseSchema = z.object({
 
 export const updateConfigurationMatiereClasseSchema = createConfigurationMatiereClasseSchema.partial();
 
+export const moveAffectationSchema = z.object({
+    cibleClasseAnneeId: z.string().uuid(),
+});
+
 export type CreateConfigurationMatiereClasseDto = z.infer<typeof createConfigurationMatiereClasseSchema>;
 export type UpdateConfigurationMatiereClasseDto = z.infer<typeof updateConfigurationMatiereClasseSchema>;
 
@@ -75,13 +82,14 @@ export type CreateGroupeMatiereDto = z.infer<typeof createGroupeMatiereSchema>;
 export type CreateMatiereNiveauDto = z.infer<typeof createMatiereNiveauSchema>;
 export type UpdateMatiereNiveauDto = z.infer<typeof updateMatiereNiveauSchema>;
 export type AffecterEnseignantDto = z.infer<typeof affecterEnseignantSchema>;
+export type MoveAffectationDto = z.infer<typeof moveAffectationSchema>;
 
 /**
  * Schéma de requête pour la liste des matières
  */
 export const queryMatieresSchema = paginationSchema.extend({
-    groupeId: z.string().uuid().optional(),
     actif: z.string().transform((v) => v === 'true').optional(),
+    recherche: z.string().max(100).optional(),
 });
 
 export type QueryMatieresDto = z.infer<typeof queryMatieresSchema>;

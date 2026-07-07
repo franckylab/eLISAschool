@@ -21,6 +21,7 @@ import { Matiere } from '@modules/matieres/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { EmploiDuTemps } from '@modules/emploi-du-temps/entities';
 
 /**
  * Statut d'exécution du cours
@@ -112,6 +113,13 @@ export class HeureCours {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    @Column({ type: 'uuid', nullable: true })
+    creneauId?: string;
+
+    @ManyToOne(() => EmploiDuTemps, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'creneauId' })
+    creneau?: EmploiDuTemps;
 
     @CreateDateColumn()
     createdAt!: Date;

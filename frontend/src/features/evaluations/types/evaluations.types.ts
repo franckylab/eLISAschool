@@ -9,7 +9,8 @@ export interface Evaluation {
     personnelId: string;
     evalueParId: string;
     dateEvaluation: string;
-    periode: string; // ex: "2024-T1"
+    periode: string; // ex: "2024-T1" (legacy)
+    periodeId?: string; // FK vers periodes (nouveau)
     noteGlobale: number; // sur 20
     criteres: EvaluationCritere[];
     pointsForts?: string;
@@ -31,6 +32,12 @@ export interface Evaluation {
         prenom: string;
         role?: string;
     };
+    periodeObj?: {
+        id: string;
+        nom: string;
+        dateDebut: string;
+        dateFin: string;
+    };
     page?: number;
     limit?: number;
 }
@@ -48,7 +55,8 @@ export interface EvaluationCritere {
 export interface CreerEvaluationDto {
     personnelId: string;
     dateEvaluation: string;
-    periode: string;
+    periode?: string;
+    periodeId?: string;
     criteres: Array<{ nom: string; note: number; commentaire?: string; poids: number }>;
     pointsForts?: string;
     axesAmelioration?: string;
@@ -60,7 +68,7 @@ export interface CreerEvaluationDto {
 export interface StatistiquesEvaluations {
     totalEvaluations: number;
     moyenneGenerale: number;
-    parPeriode: { periode: string; nombre: number; moyenne: number; }[];
+    parPeriode: { periode: string; periodeId?: string; nombre: number; moyenne: number; }[];
     distribution: {
         excellent: number; // >= 16
         bon: number; // 12-15

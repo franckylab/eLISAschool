@@ -160,6 +160,7 @@ export class PersonnelDashboardService {
             .where('evaluation.enseignantId = :enseignantId', { enseignantId })
             .andWhere('evaluation.etablissementId = :etablissementId', { etablissementId })
             .select('AVG(evaluation.note)', 'moyenne')
+            .addSelect('COUNT(evaluation.id)', 'count')
             .getRawOne();
 
         // Progression des programmes
@@ -177,7 +178,7 @@ export class PersonnelDashboardService {
             heuresMoyHebdo: Math.round(heuresMoyHebdo * 100) / 100,
             tauxPresence: Math.round(tauxPresence * 100) / 100,
             moyenneEvaluations: moyenneEval.moyenne ? parseFloat(moyenneEval.moyenne).toFixed(2) : null,
-            nombreEvaluations: parseInt(moyenneEval.moyenne) ? 1 : 0,
+            nombreEvaluations: moyenneEval.count ? parseInt(moyenneEval.count) : 0,
             moyenneProgression: moyenneProgression ? parseFloat(moyenneProgression as string) : 0,
             nombreProgressions: progressions.length,
         };

@@ -70,6 +70,22 @@ router.get('/active', authMiddleware, requirePermission(Permission.PERIODES_VIEW
 });
 
 /**
+ * GET /active-by-year — Période active pour une année scolaire donnée
+ * Query: anneeScolaireId (requis)
+ */
+router.get('/active-by-year', authMiddleware, requirePermission(Permission.PERIODES_VIEW), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            res.status(400).json({ success: false, error: { message: 'anneeScolaireId requis', code: 'MISSING_PARAM' } });
+            return;
+        }
+        const periode = await service.findActiveByYear(anneeScolaireId, req.etablissementId!);
+        res.json({ success: true, data: periode });
+    } catch (error) { next(error); }
+});
+
+/**
  * GET /:id — Détail d'une période (avec compositions enfants)
  */
 router.get('/:id', authMiddleware, requirePermission(Permission.PERIODES_VIEW), async (req: Request, res: Response, next: NextFunction) => {

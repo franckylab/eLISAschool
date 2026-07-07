@@ -11,6 +11,7 @@
 export { EmploiDuTempsListe } from './components/edt-liste';
 export { EDTPreferencesPage } from './components/edt-preferences';
 export { EDTTemplatesPage } from './components/edt-templates';
+export { EDTStandalonePage } from './components/edt-page';
 
 // Composants
 export { EDTCalendar } from './components/edt-calendar';

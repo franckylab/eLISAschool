@@ -25,6 +25,8 @@ import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Salle } from '@modules/salles/entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
+import { Periode } from '@modules/periodes/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Jours de la semaine
@@ -109,10 +111,30 @@ export class EmploiDuTemps {
     typeCreneau!: TypeCreneau;
 
     /**
+     * Période de validité du créneau
+     */
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
+
+    /**
      * Année scolaire concernée
      */
     @Column({ type: 'uuid' })
     anneeScolaireId!: string;
+
+    /**
+     * Établissement (multi-tenant)
+     */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     /**
      * Couleur pour affichage (optionnel)

@@ -208,7 +208,16 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Classes', path: '/classes', icon: School, module: 'classes' },
             { label: 'Années Scolaires', path: '/annees-scolaires', icon: CalendarDays, module: 'anneesScolaires' },
             { label: 'Matières', path: '/matieres', icon: Atom, module: 'matieres' },
-            { label: 'Programmes', path: '/programmes', icon: FileText, module: 'programmes' },
+            {
+                label: 'Programmes',
+                path: '/programmes',
+                icon: FileText,
+                module: 'programmes',
+                children: [
+                    { label: 'Liste', path: '/programmes', icon: FileText },
+                    { label: 'Catalogue chapitres', path: '/programmes/chapitres', icon: BookOpen },
+                ],
+            },
         ],
     },
     {
@@ -226,7 +235,7 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
             { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
             { label: 'Bulletins', path: '/bulletins', icon: FileText, module: 'bulletins' },
-            { label: 'Emploi du temps', path: '/emploi-du-temps', icon: Calendar, module: 'emploiDuTemps' },
+            { label: 'Emploi du temps', path: '/emploi-du-temps', icon: Calendar, module: 'emploi-du-temps' },
             { label: 'Salles', path: '/salles', icon: DoorOpen, module: 'salles' },
         ],
     },
@@ -288,6 +297,9 @@ export function Sidebar() {
     const utilisateursPerms = useModulePermissions('utilisateurs');
     const rolesPerms = useModulePermissions('roles');
     const sallesPerms = useModulePermissions('salles');
+    const emploiDuTempsPerms = useModulePermissions('emploi-du-temps');
+    const periodesPerms = useModulePermissions('periodes');
+    const bulletinsPerms = useModulePermissions('bulletins');
 
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
@@ -322,25 +334,28 @@ export function Sidebar() {
                 if (!item.module) return item;
                 
                 const permsMap: Record<string, { canAccess: boolean }> = {
-                    etablissements: etablissementsPerms,
-                    cycles: cyclesPerms,
-                    niveaux: niveauxPerms,
-                    filieres: filieresPerms,
-                    'examens-nationaux': examensNationauxPerms,
-                    'diplomes-eleves': diplomesElevesPerms,
+                    bulletins: bulletinsPerms,
                     classes: classesPerms,
-                    anneesScolaires: anneesScolairesPerms,
-                    matieres: matieresPerms,
-                    eleves: elevesPerms,
-                    personnel: personnelPerms,
-                    enseignants: enseignantsPerms,
-                    notes: notesPerms,
-                    finances: financesPerms,
-                    transport: transportPerms,
                     communication: communicationPerms,
-                    utilisateurs: utilisateursPerms,
+                    cycles: cyclesPerms,
+                    'diplomes-eleves': diplomesElevesPerms,
+                    eleves: elevesPerms,
+                    'emploi-du-temps': emploiDuTempsPerms,
+                    enseignants: enseignantsPerms,
+                    etablissements: etablissementsPerms,
+                    'examens-nationaux': examensNationauxPerms,
+                    filieres: filieresPerms,
+                    finances: financesPerms,
+                    matieres: matieresPerms,
+                    anneesScolaires: anneesScolairesPerms,
+                    notes: notesPerms,
+                    niveaux: niveauxPerms,
+                    periodes: periodesPerms,
+                    personnel: personnelPerms,
                     roles: rolesPerms,
                     salles: sallesPerms,
+                    transport: transportPerms,
+                    utilisateurs: utilisateursPerms,
                 };
                 
                 const perms = permsMap[item.module];

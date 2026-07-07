@@ -11,7 +11,7 @@ export const createProgrammeSchema = z.object({
     nbHeuresHebdo: z.coerce.number().int().min(0).default(0),
     objectifsGeneraux: z.string().max(10000).optional(),
     competencesVisees: z.array(z.string()).optional(),
-    anneeScolaireId: z.string().uuid('Année scolaire invalide').optional().nullable(),
+    periodeId: z.string().uuid('Période invalide').optional().nullable(),
     dateDebut: z.string().optional(),
     dateFin: z.string().optional(),
     actif: z.boolean().default(true),

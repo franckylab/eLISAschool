@@ -11,10 +11,10 @@
  * - Unicité des matières par établissement
  */
 
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse, StatutAffectationMatiere, StatutMatiereNiveau, StatutConfigurationMatiereClasse } from '../entities';
-import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, CreateConfigurationMatiereClasseDto, UpdateConfigurationMatiereClasseDto } from '../dto';
+import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, CreateConfigurationMatiereClasseDto, UpdateConfigurationMatiereClasseDto, MoveAffectationDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
@@ -72,13 +72,22 @@ export class MatieresService {
     /**
      * Rechercher toutes les matières avec pagination (filtré par établissement)
      */
-    async findAll(query: QueryMatieresDto = {}, etablissementId: string): Promise<PaginatedResult<Matiere>> {
-        const { page = 1, limit = 20, groupeId, actif } = query;
+    async findAll(query: QueryMatieresDto = {} as QueryMatieresDto, etablissementId: string): Promise<PaginatedResult<Matiere>> {
+        const { page = 1, limit = 20, actif, recherche } = query;
 
-        const where: any = { etablissementId };
+        const baseWhere: any = { etablissementId };
         
         if (actif !== undefined) {
-            where.actif = actif;
+            baseWhere.actif = actif;
+        }
+
+        let where: any = baseWhere;
+
+        if (recherche) {
+            where = [
+                { ...baseWhere, nom: ILike(`%${recherche}%`) },
+                { ...baseWhere, code: ILike(`%${recherche}%`) },
+            ];
         }
 
         return paginateWithRepository(this.matiereRepo, {
@@ -142,14 +151,14 @@ export class MatieresService {
         if (existing) throw new AppError('Matière déjà dans ce niveau', 409, 'MATIERE_IN_LEVEL_EXISTS');
 
         // Vérifier si la validation est requise
-        const requireValidation = await getParamBoolean('matieres.require_validation', false);
+        const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
         const prog = this.niveauRepo.create({
             ...dto,
             statut: requireValidation
                 ? StatutMatiereNiveau.EN_ATTENTE_VALIDATION
                 : StatutMatiereNiveau.ACTIF,
-        });
+        } as unknown as MatiereNiveau);
         await this.niveauRepo.save(prog);
 
         // Créer un workflow de validation si requis
@@ -193,7 +202,7 @@ export class MatieresService {
         await this.niveauRepo.save(prog);
 
         // Créer un workflow de validation si requis (pour suivi des modifications)
-        const requireValidation = await getParamBoolean('matieres.require_validation', false);
+        const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
         if (requireValidation) {
             await validationWorkflowService.createWorkflow({
                 module: 'matieres',
@@ -232,7 +241,7 @@ export class MatieresService {
         if (!prog) throw new AppError('Cette matière n\'est pas au programme de ce niveau', 400, 'MATIERE_NOT_IN_LEVEL');
 
         // Vérifier si la validation est requise
-        const requireValidation = await getParamBoolean('matieres.require_validation', false);
+        const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
         // Vérifier doublons
         const existing = await this.affectationRepo.findOne({
@@ -244,8 +253,8 @@ export class MatieresService {
 
         if (existing) {
             existing.enseignantId = dto.enseignantId; // Mise à jour de l'enseignant
-            if (dto.dateDebut) existing.dateDebut = dto.dateDebut;
-            if (dto.dateFin !== undefined) existing.dateFin = dto.dateFin;
+            if (dto.dateDebut) existing.dateDebut = new Date(dto.dateDebut);
+            if (dto.dateFin !== undefined) existing.dateFin = new Date(dto.dateFin);
             if (dto.coefficient !== undefined) existing.coefficient = dto.coefficient;
             if (dto.actif !== undefined) existing.actif = dto.actif;
             existing.statut = requireValidation
@@ -308,8 +317,8 @@ export class MatieresService {
         if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
 
         if (dto.enseignantId) affectation.enseignantId = dto.enseignantId;
-        if (dto.dateDebut) affectation.dateDebut = dto.dateDebut;
-        if (dto.dateFin !== undefined) affectation.dateFin = dto.dateFin;
+        if (dto.dateDebut) affectation.dateDebut = new Date(dto.dateDebut);
+        if (dto.dateFin !== undefined) affectation.dateFin = new Date(dto.dateFin);
         if (dto.actif !== undefined) affectation.actif = dto.actif;
         if (dto.coefficient !== undefined) affectation.coefficient = dto.coefficient;
 
@@ -323,6 +332,28 @@ export class MatieresService {
         if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
         await this.affectationRepo.remove(affectation);
         logger.info(`Affectation supprimée: ${id}`);
+    }
+
+    async moveAffectation(id: string, dto: MoveAffectationDto, etablissementId: string): Promise<AffectationMatiere> {
+        const affectation = await this.affectationRepo.findOne({ where: { id, etablissementId } });
+        if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
+
+        const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
+        const cibleClasseAnnee = await classeAnneeRepo.findOne({
+            where: { id: dto.cibleClasseAnneeId },
+            relations: ['classe'],
+        }) as any;
+        if (!cibleClasseAnnee) throw new AppError('Classe/Année cible non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
+
+        const prog = await this.niveauRepo.findOne({
+            where: { matiereId: affectation.matiereId, niveauId: cibleClasseAnnee.classe.niveauId }
+        });
+        if (!prog) throw new AppError('Cette matière n\'est pas au programme du niveau cible', 400, 'MATIERE_NOT_IN_LEVEL');
+
+        affectation.classeAnneeId = dto.cibleClasseAnneeId;
+        await this.affectationRepo.save(affectation);
+        logger.info(`Affectation déplacée: ${id} → classe ${dto.cibleClasseAnneeId}`);
+        return affectation;
     }
 
     // ==== CONFIGURATION MATIERE CLASSE ====
@@ -396,7 +427,7 @@ export class MatieresService {
 
         // Workflow de validation si activé
         if (createurId && etablissementId) {
-            const requireValidation = await getParamBoolean('matieres.require_validation', false);
+            const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
             if (requireValidation) {
                 await validationWorkflowService.createWorkflow({
@@ -407,9 +438,9 @@ export class MatieresService {
                     etablissementId,
                 }, createurId);
 
-                logger.info(`[${etablissementId}] Configuration matière-classe créée en attente de validation: ${config.matiereId} → ${config.classeId}`);
+                logger.info(`[${etablissementId}] Configuration matière-classe créée en attente de validation: ${config.matiereId} → ${config.classeAnneeId}`);
             } else {
-                logger.info(`Configuration matière-classe créée: ${config.matiereId} → ${config.classeId}`);
+                logger.info(`Configuration matière-classe créée: ${config.matiereId} → ${config.classeAnneeId}`);
             }
         }
 
@@ -467,7 +498,7 @@ export class MatieresService {
         Object.assign(config, dto);
         await this.configurationMatiereClasseRepo.save(config);
 
-        logger.info(`Configuration matière-classe mise à jour: ${config.matiereId} → ${config.classeId}`);
+        logger.info(`Configuration matière-classe mise à jour: ${config.matiereId} → ${config.classeAnneeId}`);
         return config;
     }
 
@@ -491,71 +522,78 @@ export class MatieresService {
         }
 
         await this.configurationMatiereClasseRepo.remove(config);
-        logger.info(`Configuration matière-classe supprimée: ${config.matiereId} → ${config.classeId}`);
+        logger.info(`Configuration matière-classe supprimée: ${config.matiereId} → ${config.classeAnneeId}`);
     }
 
     /**
-     * Obtenir la configuration effective d'une matière pour une classe
+     * Obtenir la configuration effective d'une matière pour une classe-année
      * (avec héritage depuis MatiereNiveau si override NULL)
+     * Retourne le format attendu par le frontend : config, defaults, effective
      */
     async getConfigurationEffective(
         matiereId: string,
-        classeId: string,
-        anneeScolaireId: string,
+        classeAnneeId: string,
         etablissementId: string
     ): Promise<{
-        coefficient: number;
-        bareme: number;
-        volumeHoraire: number | null;
-        credits: number | null;
-        obligatoire: boolean;
+        config: ConfigurationMatiereClasse | null;
+        defaults: { coefficient: number; bareme: number; volumeHoraire: number | null; credits: number | null; obligatoire: boolean; source: string };
+        effective: { coefficient: number; bareme: number; volumeHoraireHebdo: number | null; credits: number | null; obligatoire: boolean };
     }> {
-        // 0. Trouver la ClasseAnnee correspondant à classeId + anneeScolaireId
+        // Récupérer la ClasseAnnee pour obtenir le niveauId
         const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
         const classeAnnee = await classeAnneeRepo.findOne({
-            where: { classeId, anneeScolaireId, etablissementId },
-            relations: ['classe', 'classe.niveau'],
+            where: { id: classeAnneeId },
+            relations: ['classe'],
         }) as any;
 
         if (!classeAnnee) {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
         }
 
-        // 1. Chercher la configuration spécifique
+        // Chercher la configuration spécifique
         const config = await this.configurationMatiereClasseRepo.findOne({
             where: {
                 matiereId,
-                classeAnneeId: classeAnnee.id,
+                classeAnneeId,
                 etablissementId,
             },
-            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.classe.niveau'],
         });
 
-        // 2. Récupérer le MatiereNiveau (fallback)
-        const niveauId = config?.classeAnnee?.classe?.niveauId || classeAnnee.classe.niveauId;
+        // Récupérer le MatiereNiveau (valeurs par défaut)
         const matiereNiveau = await this.niveauRepo.findOne({
             where: {
                 matiereId,
-                niveauId,
+                niveauId: classeAnnee.classe.niveauId,
             },
-        });
+        }) as any;
 
-        if (!matiereNiveau) {
-            throw new AppError(
-                'Programme matière-niveau non trouvé',
-                404,
-                'MATIERE_NIVEAU_NOT_FOUND'
-            );
-        }
+        const defaults = matiereNiveau
+            ? {
+                coefficient: matiereNiveau.coefficient,
+                bareme: matiereNiveau.bareme,
+                volumeHoraire: matiereNiveau.volumeHoraire ?? null,
+                credits: matiereNiveau.credits ?? null,
+                obligatoire: matiereNiveau.obligatoire,
+                source: 'MatiereNiveau' as const,
+            }
+            : {
+                coefficient: 1,
+                bareme: 20,
+                volumeHoraire: null,
+                credits: null,
+                obligatoire: true,
+                source: 'MatiereNiveau' as const,
+            };
 
-        // 3. Appliquer l'héritage (override si config existe, sinon fallback)
-        return {
-            coefficient: config?.coefficient ?? matiereNiveau.coefficient,
-            bareme: config?.bareme ?? matiereNiveau.bareme,
-            volumeHoraire: config?.volumeHoraireHebdo ?? matiereNiveau.volumeHoraire,
-            credits: config?.credits ?? matiereNiveau.credits,
-            obligatoire: config?.obligatoire ?? matiereNiveau.obligatoire,
+        const effective = {
+            coefficient: config?.coefficient ?? defaults.coefficient,
+            bareme: config?.bareme ?? defaults.bareme,
+            volumeHoraireHebdo: config?.volumeHoraireHebdo ?? defaults.volumeHoraire,
+            credits: config?.credits ?? defaults.credits,
+            obligatoire: config?.obligatoire ?? defaults.obligatoire,
         };
+
+        return { config: config || null, defaults, effective };
     }
 
     // ==== PROGRAMME PAR MATIERE ====
@@ -617,7 +655,7 @@ export class MatieresService {
 
             return {
                 ...aff,
-                coefficient: aff.coefficient ?? config?.coefficient ?? matiereNiveau?.coefficient ?? 1,
+                coefficient: config?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1,
                 volumeHoraireHebdo: config?.volumeHoraireHebdo ?? matiereNiveau?.volumeHoraire ?? null,
                 effectifActuel: aff.classeAnnee?.effectifActuel ?? 0,
             };

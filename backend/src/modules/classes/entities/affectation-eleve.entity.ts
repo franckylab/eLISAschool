@@ -17,6 +17,7 @@ import {
 import { Classe } from './classe.entity';
 import { ClasseAnnee } from './classe-annee.entity';
 import { Eleve } from '@modules/eleves/entities';
+import { Periode } from '@modules/periodes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -64,6 +65,16 @@ export class AffectationEleve {
     @ManyToOne(() => ClasseAnnee, { nullable: true })
     @JoinColumn({ name: 'classeAnneeId' })
     classeAnnee?: ClasseAnnee;
+
+    /**
+     * Période d'affectation (scoping temporel)
+     */
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @Column({ type: 'uuid' })
     anneeScolaireId!: string;

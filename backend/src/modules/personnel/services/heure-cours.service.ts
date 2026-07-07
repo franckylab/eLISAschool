@@ -128,6 +128,7 @@ export class HeureCoursService {
             .leftJoinAndSelect('h.enseignant', 'ens')
             .leftJoinAndSelect('h.classe', 'c')
             .leftJoinAndSelect('h.matiere', 'm')
+            .leftJoinAndSelect('h.creneau', 'creneau')
             .where('1=1');
 
         // Filtre par établissement (multi-tenancy)
@@ -175,7 +176,7 @@ export class HeureCoursService {
     async findOne(id: string, etablissementId?: string): Promise<HeureCours> {
         const heureCours = await this.repo.findOne({
             where: { id, ...(etablissementId ? { etablissementId } : {}) },
-            relations: ['enseignant', 'classe', 'matiere', 'periode', 'remplacant'],
+            relations: ['enseignant', 'classe', 'matiere', 'periode', 'remplacant', 'creneau'],
         });
 
         if (!heureCours) {
@@ -192,7 +193,8 @@ export class HeureCoursService {
         enseignantId: string,
         dateDebut: Date,
         dateFin: Date,
-        etablissementId: string
+        etablissementId: string,
+        periodeId?: string
     ): Promise<{
         totalHeures: number;
         heuresParSemaine: number;
@@ -350,7 +352,8 @@ export class HeureCoursService {
     async getEdtEnseignant(
         enseignantId: string,
         semaine: string,
-        etablissementId: string
+        etablissementId: string,
+        periodeId?: string
     ): Promise<{
         semaine: string;
         jours: Record<string, HeureCours[]>;
@@ -376,7 +379,7 @@ export class HeureCoursService {
                 etablissementId,
                 date: Between(lundi, samedi) as any,
             },
-            relations: ['matiere', 'classe', 'salle', 'remplacant'],
+            relations: ['matiere', 'classe', 'salle', 'remplacant', 'creneau'],
             order: { date: 'ASC', heureDebut: 'ASC' },
         });
 

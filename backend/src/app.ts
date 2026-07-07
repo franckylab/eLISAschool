@@ -61,7 +61,7 @@ import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
 import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
 import { classesController, classesAnneesController } from '@modules/classes';
-import { matieresController, configurationMatiereClasseController } from '@modules/matieres';
+import { matieresController } from '@modules/matieres';
 import { configurationScoringController } from '@modules/scoring';
 import { periodesController, templatesPeriodeController, niveauxPeriodeController, usagesNiveauController } from '@modules/periodes';
 import { programmesController } from '@modules/programmes';
@@ -433,7 +433,6 @@ export function createApp(): Application {
     app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
     app.use('/api/classes', authMiddleware, filterByEtablissement(), classesController);
     app.use('/api/classes-annees', authMiddleware, filterByEtablissement(), classesAnneesController);
-    app.use('/api/configuration-matiere-classe', authMiddleware, filterByEtablissement(), configurationMatiereClasseController);
     app.use('/api/scoring/config', authMiddleware, filterByEtablissement(), configurationScoringController);
     app.use('/api/matieres', authMiddleware, filterByEtablissement(), matieresController);
     app.use('/api/periodes', authMiddleware, filterByEtablissement(), periodesController);

@@ -1,5 +1,7 @@
-import { Briefcase, FileText } from 'lucide-react';
+import { useMemo } from 'react';
+import { Briefcase, FileText, TrendingUp } from 'lucide-react';
 import { useEnseignantContrats, useEnseignantBulletins } from '../../hooks/use-enseignants';
+import { MiniLineChart } from '@/components/charts/MiniLineChart';
 import { LoadingState } from '@/components/feedback';
 import type { ContratEnseignant, BulletinPaie } from '../../types/enseignant.types';
 
@@ -33,8 +35,33 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
     const contratsData = isActive ? (contrats.data ?? []) : [];
     const bulletinsData = isActive ? (bulletins.data ?? []) : [];
 
+    const salaireEvolution = useMemo(() => {
+        return bulletinsData
+            .map((b: BulletinPaie) => ({
+                label: `${MOIS[b.mois - 1]?.slice(0, 3) || b.mois} ${b.annee}`,
+                value: b.salaireNet,
+            }))
+            .sort((a, b) => {
+                const [moisA, anneeA] = a.label.split(' ');
+                const [moisB, anneeB] = b.label.split(' ');
+                return (parseInt(anneeA) - parseInt(anneeB)) || (MOIS.indexOf(moisA) - MOIS.indexOf(moisB));
+            });
+    }, [bulletinsData]);
+
     return (
         <div className="space-y-6">
+            {/* Salaire evolution chart */}
+            {salaireEvolution.length > 1 && (
+                <div className="rounded-xl border border-gray-200 bg-white p-5">
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        Évolution du salaire net
+                    </h3>
+                    <MiniLineChart data={salaireEvolution} height={200} color="#10B981" />
+                </div>
+            )}
+
+            {/* Contrats */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
                     <Briefcase className="h-5 w-5 text-blue-600" />
@@ -78,6 +105,7 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                 )}
             </div>
 
+            {/* Bulletins */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
                     <FileText className="h-5 w-5 text-green-600" />

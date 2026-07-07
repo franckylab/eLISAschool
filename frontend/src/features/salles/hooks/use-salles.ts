@@ -139,11 +139,10 @@ export function useSalleEmploiDuTemps(salleId: string) {
     return useQuery({
         queryKey: SALLES_KEYS.salleEmploiDuTemps(salleId),
         queryFn: async () => {
-            const response = await apiClient.get<CreneauEmploiDuTemps[]>(
-                `/api/emploi-du-temps/plannings/salle/${salleId}`
+            const response = await apiClient.get<{ data: { items: CreneauEmploiDuTemps[] } }>(
+                `/api/emploi-du-temps?salleId=${salleId}`
             );
-            const data = response.data;
-            return data || [];
+            return response.data?.data?.items || [];
         },
         enabled: isAuthenticated && !!salleId,
         staleTime: 2 * 60 * 1000,

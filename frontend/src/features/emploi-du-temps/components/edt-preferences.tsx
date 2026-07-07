@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Clock, Calendar, Loader2, Check } from 'lucide-react';
+import { Settings, Clock, Calendar, Layers, BarChart3, Loader2, Check } from 'lucide-react';
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ListLoading } from '@/components/feedback/ListLoading';
@@ -29,19 +29,29 @@ export function EDTPreferencesPage() {
     const updatePreferences = useUpdatePreferencesEDT();
 
     const [formData, setFormData] = useState({
-        joursTravailles: [] as string[],
+        joursOuvrables: [] as string[],
         heureDebutCours: '07:30',
         heureFinCours: '17:30',
-        dureeCreneauDefaut: 55,
+        dureeCreneauStandard: 55,
+        dureeRecreation: 15,
+        maxCreneauxParJour: 8,
+        maxCreneauxMatiereParJour: 2,
+        maxCreneauxConsecutifs: 2,
+        repartitionEquilibree: true,
     });
 
     useEffect(() => {
-        if (preferences?.data) {
+        if (preferences) {
             setFormData({
-                joursTravailles: preferences.data.joursTravailles || [],
-                heureDebutCours: preferences.data.heureDebutCours || '07:30',
-                heureFinCours: preferences.data.heureFinCours || '17:30',
-                dureeCreneauDefaut: preferences.data.dureeCreneauDefaut || 55,
+                joursOuvrables: preferences.joursOuvrables || [],
+                heureDebutCours: preferences.heureDebutCours || '07:30',
+                heureFinCours: preferences.heureFinCours || '17:30',
+                dureeCreneauStandard: preferences.dureeCreneauStandard || 55,
+                dureeRecreation: preferences.dureeRecreation || 15,
+                maxCreneauxParJour: preferences.maxCreneauxParJour || 8,
+                maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
+                maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
+                repartitionEquilibree: preferences.repartitionEquilibree ?? true,
             });
         }
     }, [preferences]);
@@ -49,25 +59,30 @@ export function EDTPreferencesPage() {
     const handleToggleJour = (jour: string) => {
         setFormData(prev => ({
             ...prev,
-            joursTravailles: prev.joursTravailles.includes(jour)
-                ? prev.joursTravailles.filter(j => j !== jour)
-                : [...prev.joursTravailles, jour],
+            joursOuvrables: prev.joursOuvrables.includes(jour)
+                ? prev.joursOuvrables.filter(j => j !== jour)
+                : [...prev.joursOuvrables, jour],
         }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (formData.joursTravailles.length === 0) {
+        if (formData.joursOuvrables.length === 0) {
             toast.error('Veuillez sélectionner au moins un jour travaillé');
             return;
         }
 
         await updatePreferences.mutateAsync({
-            joursTravailles: formData.joursTravailles,
+            joursOuvrables: formData.joursOuvrables,
             heureDebutCours: formData.heureDebutCours,
             heureFinCours: formData.heureFinCours,
-            dureeCreneauDefaut: formData.dureeCreneauDefaut,
+            dureeCreneauStandard: formData.dureeCreneauStandard,
+            dureeRecreation: formData.dureeRecreation,
+            maxCreneauxParJour: formData.maxCreneauxParJour,
+            maxCreneauxMatiereParJour: formData.maxCreneauxMatiereParJour,
+            maxCreneauxConsecutifs: formData.maxCreneauxConsecutifs,
+            repartitionEquilibree: formData.repartitionEquilibree,
         });
     };
 
@@ -115,14 +130,14 @@ export function EDTPreferencesPage() {
                                 type="button"
                                 onClick={() => handleToggleJour(jour.value)}
                                 className={`p-3 rounded-lg border-2 transition-all ${
-                                    formData.joursTravailles.includes(jour.value)
+                                    formData.joursOuvrables.includes(jour.value)
                                         ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-50)]'
                                         : 'border-[var(--color-border)] hover:border-gray-300'
                                 }`}
                             >
                                 <div className="flex items-center justify-between">
                                     <span className="font-medium">{jour.label}</span>
-                                    {formData.joursTravailles.includes(jour.value) && (
+                                    {formData.joursOuvrables.includes(jour.value) && (
                                         <Check className="h-4 w-4 text-[var(--color-dominant-600)]" />
                                     )}
                                 </div>
@@ -144,11 +159,8 @@ export function EDTPreferencesPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Heure de début */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Heure de début
-                            </label>
+                            <label className="block text-sm font-medium mb-2">Heure de début</label>
                             <input
                                 type="time"
                                 value={formData.heureDebutCours}
@@ -157,12 +169,8 @@ export function EDTPreferencesPage() {
                                 required
                             />
                         </div>
-
-                        {/* Heure de fin */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Heure de fin
-                            </label>
+                            <label className="block text-sm font-medium mb-2">Heure de fin</label>
                             <input
                                 type="time"
                                 value={formData.heureFinCours}
@@ -171,20 +179,83 @@ export function EDTPreferencesPage() {
                                 required
                             />
                         </div>
-
-                        {/* Durée créneau */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Durée par créneau (minutes)
-                            </label>
+                            <label className="block text-sm font-medium mb-2">Durée créneau (min)</label>
                             <input
                                 type="number"
-                                value={formData.dureeCreneauDefaut}
-                                onChange={(e) => setFormData(prev => ({ ...prev, dureeCreneauDefaut: parseInt(e.target.value) }))}
+                                value={formData.dureeCreneauStandard}
+                                onChange={(e) => setFormData(prev => ({ ...prev, dureeCreneauStandard: parseInt(e.target.value) }))}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
-                                min="30"
-                                max="120"
-                                required
+                                min="30" max="120" required
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Durée récréation (min)</label>
+                            <input
+                                type="number"
+                                value={formData.dureeRecreation}
+                                onChange={(e) => setFormData(prev => ({ ...prev, dureeRecreation: parseInt(e.target.value) }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                min="5" max="30" required
+                            />
+                        </div>
+                        <div className="flex items-end pb-2">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.repartitionEquilibree}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, repartitionEquilibree: e.target.checked }))}
+                                    className="w-5 h-5 rounded border-gray-300"
+                                />
+                                <span className="text-sm font-medium">Répartition équilibrée des matières</span>
+                            </label>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Contraintes */}
+                <motion.div
+                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <BarChart3 className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                        <h2 className="text-xl font-semibold">Contraintes de planification</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Max créneaux / jour</label>
+                            <input
+                                type="number"
+                                value={formData.maxCreneauxParJour}
+                                onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxParJour: parseInt(e.target.value) }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                min="4" max="12" required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Max mêmes matière / jour</label>
+                            <input
+                                type="number"
+                                value={formData.maxCreneauxMatiereParJour}
+                                onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxMatiereParJour: parseInt(e.target.value) }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                min="1" max="4" required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Max consécutifs même matière</label>
+                            <input
+                                type="number"
+                                value={formData.maxCreneauxConsecutifs}
+                                onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxConsecutifs: parseInt(e.target.value) }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                min="1" max="3" required
                             />
                         </div>
                     </div>
@@ -204,10 +275,15 @@ export function EDTPreferencesPage() {
                         onClick={() => {
                             if (preferences) {
                                 setFormData({
-                                    joursTravailles: preferences.joursTravailles || [],
+                                    joursOuvrables: preferences.joursOuvrables || [],
                                     heureDebutCours: preferences.heureDebutCours || '07:30',
                                     heureFinCours: preferences.heureFinCours || '17:30',
-                                    dureeCreneauDefaut: preferences.dureeCreneauDefaut || 55,
+                                    dureeCreneauStandard: preferences.dureeCreneauStandard || 55,
+                                    dureeRecreation: preferences.dureeRecreation || 15,
+                                    maxCreneauxParJour: preferences.maxCreneauxParJour || 8,
+                                    maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
+                                    maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
+                                    repartitionEquilibree: preferences.repartitionEquilibree ?? true,
                                 });
                             }
                         }}

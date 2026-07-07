@@ -31,7 +31,6 @@ export interface MatiereFiltres {
     actif?: boolean;
     page?: number;
     limit?: number;
-    groupeId?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
 }
@@ -50,6 +49,7 @@ export interface MatiereNiveau {
     statut: string;
     createdAt: string;
     updatedAt: string;
+    matiere?: { id: string; nom: string; code: string; couleur?: string };
     niveau?: { id: string; nom: string; code: string; ordre: number };
     groupe?: { id: string; nom: string; ordre: number };
     filiere?: { id: string; nom: string; code: string };

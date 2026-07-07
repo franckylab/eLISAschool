@@ -5,7 +5,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { EmploisDuTempsPage } from '@/features/emplois-du-time';
+import { EDTStandalonePage as EmploisDuTempsPage } from '@/features/emploi-du-temps';
 import { ExamensPage } from '@/features/examens';
 import { BibliothequePage } from '@/features/bibliotheque';
 

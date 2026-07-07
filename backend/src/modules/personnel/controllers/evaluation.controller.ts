@@ -85,7 +85,8 @@ router.get(
             const moyenne = await evaluationService.getMoyenneEnseignant(
                 req.params.id,
                 dateDebut as string,
-                dateFin as string
+                dateFin as string,
+                req.etablissementId
             );
             res.json({ success: true, data: moyenne });
         } catch (error) {

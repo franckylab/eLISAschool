@@ -1,44 +1,80 @@
 # eLISAschool — Session Context
 
 ## Goal
-- Page détail enseignant fonctionnelle : 7 onglets opérationnels avec données réelles, sans erreur runtime.
+Analyse profonde et développement complet du système programmes (backend + frontend) dans eLISAschool, avec amélioration de la page détail enseignant.
+
+## Constraints & Preferences
+- Système multi-tenant avec etablissementId sur toutes les entités
+- TypeORM + Express (backend), TanStack Router + React Query + Zustand (frontend)
+- Synchronisation automatique en dev (synchronize: true)
+- Pagination via paginateWithQueryBuilder, réponses API standardisées { success, data }
+- Pattern module: entities/, dto/, services/, controllers/, index.ts
+- Zod validation pour tous les DTOs, endpoints REST RESTful
+- Frontend: barrel export via index.ts dans chaque feature, hooks React Query par feature
 
 ## Progress
-
 ### Done
-- **Architecture multi-composants** : `enseignant-detail-page.tsx` comme layout + 7 onglets dans `enseignant-detail/` (Informations, Matières & Classes, EDT, Contrat & Salaire, Évaluations, Absences, Parcours)
-- **11 hooks TanStack Query** dans `use-enseignants.ts` avec chargement lazy par onglet (`enabled: tabActif === 'x'`)
-- **Types frontend mis à jour** pour correspondre exactement aux entités backend (field names réels) :
-  - `ContratEnseignant` : `salaireBase` (pas `salaire`), `poste?: { id; nom; code }`
-  - `BulletinPaie` : `deductions` / `salaireNet` (pas `retenues` / `netAPayer`), ajout `heuresEffectuees`, `montantHeuresSup`, `contratId`
-  - `AbsenceEnseignant` : `date` unique (pas `dateDebut`/`dateFin`), `type`, `statutJustification` (enum), `heureDebut`, `heureFin`
-  - `ParcoursComplet` : `statistiquesAbsences` (pas `absences`), `evolutionSalariale` (pas `salaireEvolution`), `anciennete: { annees, mois, jours }`
-  - `AssiduiteStats` : ajout `periode`, transformation `tauxPresence` → `tauxAbsenteisme`
-- **Hooks corrigés** pour dépaqueter les réponses paginées (`response.data.items` au lieu de `response.data`)
-- **Composants mis à jour** pour utiliser les bons field names partout
-- **Backend redémarré** : 2 endpoints qui retournaient 404 (`/api/matieres/enseignants/:id/affectations`, `/api/personnel/heures-cours/enseignants/:id/edt`) répondent maintenant 401 (auth required, route existe)
-- `dateNaissance`, `sexe`, `departement` ajoutés à l'entité `MembrePersonnel`, DTO, et frontend
+- Analyse complète architecture backend (programmes, classes, cycles, niveaux, matières, personnel)
+- Analyse complète architecture frontend (programmes, classes, matières, enseignants, API client, routes)
+- Création entité ProgrammePedagogique (programmes_pedagogiques) avec relations Cycle, Niveau, ProgrammeMatiere
+- Création entité ProgrammeMatiere (programmes_matieres, jonction programme ↔ matiere_niveau)
+- Création DTOs: createProgrammeSchema, updateProgrammeSchema, queryProgrammesSchema, addMatiereProgrammeSchema
+- Création service ProgrammePedagogiqueService (CRUD + matieres management avec pagination, recherche, filtres)
+- Création controller programme-pedagogique.controller.ts (routes REST)
+- Mise à jour index.ts du module programmes (fusion des 3 controleurs: chapitres, correlation, programmes)
+- Migration SQL 070-programmes-pedagogiques.sql
+- Frontend: types programme.types.ts enrichis
+- Frontend: hooks use-programmes.ts rebuild (8 hooks)
+- Frontend: programme-form-modal.tsx refactoré (tous champs + cycles/niveaux API)
+- Frontend: programme-detail-page.tsx créée (7 tabs, cards, table matières, ajout/retrait matière)
+- Frontend: route _auth/programmes.$id.tsx
+- Frontend: programmes-page.tsx mise à jour (navigation détail)
+- Backend: GET /api/matieres/programme (liste tous matieres-niveaux) + service getAllMatieresNiveaux
+- Frontend: useTousMatieresNiveaux hook + select dropdown peuplé dans programme-detail
+- enseignant-detail-page: state showEditModal + render EnseignantFormModal + query invalidation
+- hero-header: prop onEdit + bouton Modifier actif
 
 ### Pending
-- Test fonctionnel complet : naviguer les 7 onglets avec un vrai token JWT
-- Vérifier que `useEnseignantMoyenneEvaluations` marche (le backend a un bug : `nombreEvaluations` vaut 0 ou 1, pas le vrai compte)
+- Régénérer routeTree.gen.ts (tsr generate — nécessite Node.js)
+- Tester les endpoints programmes avec un vrai token JWT
+- Vérifier useEnseignantMoyenneEvaluations (bug backend: nombreEvaluations = 0/1)
+- Ajouter page gestion chapitres dans détail programme
+- Optionnel: filtre par niveau dans le select ajout matière (filtrer par programme.niveauId)
 
 ## Key Decisions
-- Multi-composants (option B)
+- Multi-composants (option B pour détail enseignant)
 - Endpoint matières dans le module matieres (option A)
 - Chargement hybride header + lazy tabs
 - EDT grille + liste (option C)
 - Retour hook = `response.data` (pattern projet)
-- Types frontend calqués sur les entités backend (pas d'abstraction supplémentaire)
+- Types frontend calqués sur les entités backend
+- ProgrammePedagogique distinct de ProgrammeChapitre
+- Type "CYCLE" | "NIVEAU" | "PERSONNALISE" pour flexibilité du scope du programme
+- ProgrammeMatiere en jonction dédiée (coefficients/volumes surchargés)
+- Permission "programmes:config:write" pour les actions d'écriture
 
 ## Références
 | Fichier | Rôle |
 |---------|------|
-| `frontend/src/features/enseignants/hooks/use-enseignants.ts` | 11 hooks avec transformations API |
-| `frontend/src/features/enseignants/types/enseignant.types.ts` | Types alignés sur le backend |
-| `frontend/src/features/enseignants/components/enseignant-detail/*.tsx` | 7 onglets |
-| `backend/src/app.ts:421-431` | Montage des routes personnel |
-| `backend/src/modules/personnel/controllers/*.ts` | Controllers backend |
+| `backend/src/modules/programmes/entities/programme-pedagogique.entity.ts` | Entité programmes_pedagogiques |
+| `backend/src/modules/programmes/entities/programme-matiere.entity.ts` | Jonction programmes_matieres |
+| `backend/src/modules/programmes/dto/programme-pedagogique.dto.ts` | Schémas Zod |
+| `backend/src/modules/programmes/services/programme-pedagogique.service.ts` | Service CRUD |
+| `backend/src/modules/programmes/controllers/programme-pedagogique.controller.ts` | Routes REST |
+| `backend/src/modules/programmes/index.ts` | Barrel + fusion routers |
+| `backend/src/modules/matieres/controllers/matieres.controller.ts` | Route GET /programme ajoutée |
+| `backend/src/modules/matieres/services/matieres.service.ts` | getAllMatieresNiveaux() |
+| `backend/src/database/migrations/070-programmes-pedagogiques.sql` | Migration production |
+| `frontend/src/features/programmes/types/programme.types.ts` | Interfaces TypeScript |
+| `frontend/src/features/programmes/hooks/use-programmes.ts` | Hooks React Query |
+| `frontend/src/features/programmes/components/programmes-page.tsx` | Liste + DataTable |
+| `frontend/src/features/programmes/components/programme-form-modal.tsx` | Modal création/édition |
+| `frontend/src/features/programmes/components/programme-detail-page.tsx` | Détail tabbé |
+| `frontend/src/routes/_auth/programmes.$id.tsx` | Route détail |
+| `frontend/src/features/matieres/hooks/use-matieres.ts` | useTousMatieresNiveaux () |
+| `frontend/src/features/matieres/types/matiere.types.ts` | MatiereNiveau type |
+| `frontend/src/features/enseignants/components/enseignant-detail-page.tsx` | Page détail améliorée |
+| `frontend/src/features/enseignants/components/enseignant-detail/hero-header.tsx` | onEdit callback |
 
 ## DB Connection
 - Host: localhost:7002

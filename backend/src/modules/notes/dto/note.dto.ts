@@ -16,8 +16,8 @@ export const createNoteSchema = z.object({
     typeEvaluation: z.nativeEnum(TypeEvaluation).default(TypeEvaluation.DEVOIR),
     description: z.string().max(255).optional(),
     valeur: z.number().min(0),
-    bareme: z.number().positive().default(20),
-    coefficient: z.number().min(0).default(1),
+    bareme: z.number().positive().optional(),
+    coefficient: z.number().min(0).optional(),
     commentaire: z.string().optional(),
     dateEvaluation: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
 });
@@ -32,8 +32,8 @@ export const createBulkNotesSchema = z.object({
     periodeId: z.string().uuid(),
     typeEvaluation: z.nativeEnum(TypeEvaluation).default(TypeEvaluation.DEVOIR),
     description: z.string().max(255).optional(),
-    bareme: z.number().positive().default(20),
-    coefficient: z.number().min(0).default(1),
+    bareme: z.number().positive().optional(),
+    coefficient: z.number().min(0).optional(),
     dateEvaluation: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
     notes: z.array(z.object({
         eleveId: z.string().uuid(),

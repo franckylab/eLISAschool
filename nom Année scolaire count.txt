@@ -1,0 +1,22 @@
+{
+  "nom": "Année scolaire",
+  "count": 1,
+  "niveau": 3,
+  "enfants": [
+    {
+      "nom": "Trimestre {n}",
+      "count": 3,
+      "niveau": 1,
+      "enfants": [
+        {
+          "nom": "Séquence {n}",
+          "count": 2,
+          "niveau": 0,
+          "usageCode": "NOTES"
+        }
+      ],
+      "usageCode": "BULLETIN"
+    }
+  ],
+  "usageCode": "ANNEE"
+}

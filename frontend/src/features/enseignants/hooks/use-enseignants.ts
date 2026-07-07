@@ -71,16 +71,18 @@ export function useEnseignantAffectationsMatiere(enseignantId: string) {
     });
 }
 
-export function useEnseignantEdt(enseignantId: string, semaine?: string) {
+export function useEnseignantEdt(enseignantId: string, semaine?: string, periodeId?: string) {
     const { isAuthenticated } = useAuthStore();
     const now = new Date();
     const defaultSemaine = now.toISOString().split('T')[0];
+    const s = semaine || defaultSemaine;
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.edt(enseignantId, semaine || defaultSemaine),
+        queryKey: [...ENSEIGNANTS_KEYS.edt(enseignantId, s), periodeId || '__all__'],
         queryFn: async () => {
-            const s = semaine || defaultSemaine;
+            const params = new URLSearchParams({ semaine: s });
+            if (periodeId) params.set('periodeId', periodeId);
             const response = await apiClient.get<EdtEnseignant>(
-                `/api/personnel/heures-cours/enseignants/${enseignantId}/edt?semaine=${s}`
+                `/api/personnel/heures-cours/enseignants/${enseignantId}/edt?${params.toString()}`
             );
             return response.data;
         },
@@ -102,14 +104,28 @@ export function useEnseignantEvaluations(enseignantId: string) {
     });
 }
 
+function getAnneeScolaireDates(): { dateDebut: string; dateFin: string } {
+    const now = new Date();
+    const mois = now.getMonth() + 1;
+    const anneeCourante = now.getFullYear();
+    if (mois >= 9) {
+        return {
+            dateDebut: `${anneeCourante}-09-01`,
+            dateFin: `${anneeCourante + 1}-07-31`,
+        };
+    }
+    return {
+        dateDebut: `${anneeCourante - 1}-09-01`,
+        dateFin: `${anneeCourante}-07-31`,
+    };
+}
+
 export function useEnseignantMoyenneEvaluations(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ENSEIGNANTS_KEYS.moyenneEval(enseignantId),
         queryFn: async () => {
-            const now = new Date();
-            const dateDebut = new Date(now.getFullYear(), 8, 1).toISOString().split('T')[0];
-            const dateFin = new Date(now.getFullYear() + 1, 6, 31).toISOString().split('T')[0];
+            const { dateDebut, dateFin } = getAnneeScolaireDates();
             const response = await apiClient.get<any>(
                 `/api/personnel/evaluations/enseignants/${enseignantId}/moyenne-evaluations?dateDebut=${dateDebut}&dateFin=${dateFin}`
             );
@@ -122,16 +138,18 @@ export function useEnseignantMoyenneEvaluations(enseignantId: string) {
     });
 }
 
-export function useEnseignantHeures(enseignantId: string) {
+export function useEnseignantHeures(enseignantId: string, periodeId?: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.heures(enseignantId),
+        queryKey: [...ENSEIGNANTS_KEYS.heures(enseignantId), periodeId || '__all__'],
         queryFn: async () => {
             const now = new Date();
             const dateDebut = new Date(now.getFullYear(), 8, 1).toISOString().split('T')[0];
             const dateFin = new Date(now.getFullYear() + 1, 6, 31).toISOString().split('T')[0];
+            const params = new URLSearchParams({ dateDebut, dateFin });
+            if (periodeId) params.set('periodeId', periodeId);
             const response = await apiClient.get<{ totalHeures: number; heuresParSemaine: number; nbSemaines: number }>(
-                `/api/personnel/heures-cours/enseignants/${enseignantId}/volume-horaire?dateDebut=${dateDebut}&dateFin=${dateFin}`
+                `/api/personnel/heures-cours/enseignants/${enseignantId}/volume-horaire?${params.toString()}`
             );
             return response.data ?? { totalHeures: 0, heuresParSemaine: 0, nbSemaines: 0 };
         },
@@ -296,5 +314,21 @@ export function useToggleActifAffectation() {
             toast.success(variables.actif ? 'Affectation activée' : 'Affectation désactivée');
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors du changement de statut'),
+    });
+}
+
+export function useDeplacerAffectation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, cibleClasseAnneeId }: { id: string; cibleClasseAnneeId: string; enseignantId: string }) => {
+            const response = await apiClient.patch<AffectationEnseignant>(`/api/matieres/affectations/${id}/move`, { cibleClasseAnneeId });
+            return response.data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(variables.enseignantId) });
+            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(variables.enseignantId) });
+            toast.success('Matière déplacée vers une autre classe');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors du déplacement'),
     });
 }

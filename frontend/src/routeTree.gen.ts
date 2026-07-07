@@ -33,6 +33,7 @@ import { Route as AuthFilieresRouteImport } from './routes/_auth.filieres'
 import { Route as AuthExamensNationauxRouteImport } from './routes/_auth.examens-nationaux'
 import { Route as AuthEtablissementsRouteImport } from './routes/_auth.etablissements'
 import { Route as AuthEnseignantsRouteImport } from './routes/_auth/enseignants'
+import { Route as AuthEmploiDuTempsRouteImport } from './routes/_auth.emploi-du-temps'
 import { Route as AuthElevesRouteImport } from './routes/_auth.eleves'
 import { Route as AuthDiplomesElevesRouteImport } from './routes/_auth.diplomes-eleves'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
@@ -63,6 +64,7 @@ import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisate
 import { Route as AuthSpecialitesIdRouteImport } from './routes/_auth.specialites.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
 import { Route as AuthSallesSalleIdRouteImport } from './routes/_auth.salles.$salleId'
+import { Route as AuthProgrammesChapitresRouteImport } from './routes/_auth.programmes.chapitres'
 import { Route as AuthProgrammesIdRouteImport } from './routes/_auth/programmes.$id'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
@@ -205,6 +207,11 @@ const AuthEtablissementsRoute = AuthEtablissementsRouteImport.update({
 const AuthEnseignantsRoute = AuthEnseignantsRouteImport.update({
   id: '/enseignants',
   path: '/enseignants',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthEmploiDuTempsRoute = AuthEmploiDuTempsRouteImport.update({
+  id: '/emploi-du-temps',
+  path: '/emploi-du-temps',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthElevesRoute = AuthElevesRouteImport.update({
@@ -359,6 +366,11 @@ const AuthSallesSalleIdRoute = AuthSallesSalleIdRouteImport.update({
   path: '/$salleId',
   getParentRoute: () => AuthSallesRoute,
 } as any)
+const AuthProgrammesChapitresRoute = AuthProgrammesChapitresRouteImport.update({
+  id: '/chapitres',
+  path: '/chapitres',
+  getParentRoute: () => AuthProgrammesRoute,
+} as any)
 const AuthProgrammesIdRoute = AuthProgrammesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -498,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthDashboardRoute
   '/diplomes-eleves': typeof AuthDiplomesElevesRouteWithChildren
   '/eleves': typeof AuthElevesRouteWithChildren
+  '/emploi-du-temps': typeof AuthEmploiDuTempsRoute
   '/enseignants': typeof AuthEnseignantsRouteWithChildren
   '/etablissements': typeof AuthEtablissementsRouteWithChildren
   '/examens-nationaux': typeof AuthExamensNationauxRouteWithChildren
@@ -534,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
+  '/programmes/chapitres': typeof AuthProgrammesChapitresRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -570,6 +584,7 @@ export interface FileRoutesByTo {
   '/change-password': typeof AuthChangePasswordRoute
   '/configuration': typeof AuthConfigurationRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/emploi-du-temps': typeof AuthEmploiDuTempsRoute
   '/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
   '/modules-reporting': typeof AuthModulesReportingRoute
   '/modules-rh': typeof AuthModulesRhRoute
@@ -597,6 +612,7 @@ export interface FileRoutesByTo {
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
+  '/programmes/chapitres': typeof AuthProgrammesChapitresRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -641,6 +657,7 @@ export interface FileRoutesById {
   '/_auth/dashboard': typeof AuthDashboardRoute
   '/_auth/diplomes-eleves': typeof AuthDiplomesElevesRouteWithChildren
   '/_auth/eleves': typeof AuthElevesRouteWithChildren
+  '/_auth/emploi-du-temps': typeof AuthEmploiDuTempsRoute
   '/_auth/enseignants': typeof AuthEnseignantsRouteWithChildren
   '/_auth/etablissements': typeof AuthEtablissementsRouteWithChildren
   '/_auth/examens-nationaux': typeof AuthExamensNationauxRouteWithChildren
@@ -677,6 +694,7 @@ export interface FileRoutesById {
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
   '/_auth/programmes/$id': typeof AuthProgrammesIdRoute
+  '/_auth/programmes/chapitres': typeof AuthProgrammesChapitresRoute
   '/_auth/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -721,6 +739,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/diplomes-eleves'
     | '/eleves'
+    | '/emploi-du-temps'
     | '/enseignants'
     | '/etablissements'
     | '/examens-nationaux'
@@ -757,6 +776,7 @@ export interface FileRouteTypes {
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
+    | '/programmes/chapitres'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -793,6 +813,7 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/configuration'
     | '/dashboard'
+    | '/emploi-du-temps'
     | '/groupes-etablissements'
     | '/modules-reporting'
     | '/modules-rh'
@@ -820,6 +841,7 @@ export interface FileRouteTypes {
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
+    | '/programmes/chapitres'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -863,6 +885,7 @@ export interface FileRouteTypes {
     | '/_auth/dashboard'
     | '/_auth/diplomes-eleves'
     | '/_auth/eleves'
+    | '/_auth/emploi-du-temps'
     | '/_auth/enseignants'
     | '/_auth/etablissements'
     | '/_auth/examens-nationaux'
@@ -899,6 +922,7 @@ export interface FileRouteTypes {
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
     | '/_auth/programmes/$id'
+    | '/_auth/programmes/chapitres'
     | '/_auth/salles/$salleId'
     | '/_auth/salles/statistiques'
     | '/_auth/specialites/$id'
@@ -1103,6 +1127,13 @@ declare module '@tanstack/react-router' {
       path: '/enseignants'
       fullPath: '/enseignants'
       preLoaderRoute: typeof AuthEnseignantsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/emploi-du-temps': {
+      id: '/_auth/emploi-du-temps'
+      path: '/emploi-du-temps'
+      fullPath: '/emploi-du-temps'
+      preLoaderRoute: typeof AuthEmploiDuTempsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/eleves': {
@@ -1314,6 +1345,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/salles/$salleId'
       preLoaderRoute: typeof AuthSallesSalleIdRouteImport
       parentRoute: typeof AuthSallesRoute
+    }
+    '/_auth/programmes/chapitres': {
+      id: '/_auth/programmes/chapitres'
+      path: '/chapitres'
+      fullPath: '/programmes/chapitres'
+      preLoaderRoute: typeof AuthProgrammesChapitresRouteImport
+      parentRoute: typeof AuthProgrammesRoute
     }
     '/_auth/programmes/$id': {
       id: '/_auth/programmes/$id'
@@ -1671,10 +1709,12 @@ const AuthPersonnelRouteWithChildren = AuthPersonnelRoute._addFileChildren(
 
 interface AuthProgrammesRouteChildren {
   AuthProgrammesIdRoute: typeof AuthProgrammesIdRoute
+  AuthProgrammesChapitresRoute: typeof AuthProgrammesChapitresRoute
 }
 
 const AuthProgrammesRouteChildren: AuthProgrammesRouteChildren = {
   AuthProgrammesIdRoute: AuthProgrammesIdRoute,
+  AuthProgrammesChapitresRoute: AuthProgrammesChapitresRoute,
 }
 
 const AuthProgrammesRouteWithChildren = AuthProgrammesRoute._addFileChildren(
@@ -1734,6 +1774,7 @@ interface AuthRouteChildren {
   AuthDashboardRoute: typeof AuthDashboardRoute
   AuthDiplomesElevesRoute: typeof AuthDiplomesElevesRouteWithChildren
   AuthElevesRoute: typeof AuthElevesRouteWithChildren
+  AuthEmploiDuTempsRoute: typeof AuthEmploiDuTempsRoute
   AuthEnseignantsRoute: typeof AuthEnseignantsRouteWithChildren
   AuthEtablissementsRoute: typeof AuthEtablissementsRouteWithChildren
   AuthExamensNationauxRoute: typeof AuthExamensNationauxRouteWithChildren
@@ -1768,6 +1809,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthDashboardRoute: AuthDashboardRoute,
   AuthDiplomesElevesRoute: AuthDiplomesElevesRouteWithChildren,
   AuthElevesRoute: AuthElevesRouteWithChildren,
+  AuthEmploiDuTempsRoute: AuthEmploiDuTempsRoute,
   AuthEnseignantsRoute: AuthEnseignantsRouteWithChildren,
   AuthEtablissementsRoute: AuthEtablissementsRouteWithChildren,
   AuthExamensNationauxRoute: AuthExamensNationauxRouteWithChildren,

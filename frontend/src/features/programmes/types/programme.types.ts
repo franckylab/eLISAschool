@@ -35,7 +35,8 @@ export interface ProgrammePedagogique {
     nbHeuresCalculees?: number;
     objectifsGeneraux?: string;
     competencesVisees?: string[];
-    anneeScolaireId?: string;
+    periodeId?: string;
+    periode?: { id: string; nom: string };
     dateDebut?: string;
     dateFin?: string;
     actif: boolean;
@@ -56,7 +57,7 @@ export interface CreerProgrammeDto {
     nbHeuresHebdo?: number;
     objectifsGeneraux?: string;
     competencesVisees?: string[];
-    anneeScolaireId?: string | null;
+    periodeId?: string | null;
     dateDebut?: string;
     dateFin?: string;
     actif?: boolean;
@@ -82,4 +83,34 @@ export interface AddMatiereDto {
     volumeHoraire?: number;
     obligatoire?: boolean;
     ordre?: number;
+}
+
+export interface ProgrammeChapitre {
+    id: string;
+    matiereNiveauId: string;
+    periodeId?: string;
+    titre: string;
+    description?: string;
+    objectifsPedagogiques?: string;
+    ordre: number;
+    dureePrevueHeures?: number;
+    prerequis?: string[];
+    progressionPourcentage: number;
+    ressourcesPedagogiques?: Array<{
+        type: 'MANUEL' | 'VIDEO' | 'DOCUMENT' | 'LIEN';
+        titre: string;
+        url?: string;
+        description?: string;
+    }>;
+    competencesAssociees?: string[];
+    statut: 'ACTIF' | 'EN_ATTENTE_VALIDATION' | 'INACTIF';
+    matiereNiveau?: {
+        id: string;
+        matiereId: string;
+        niveauId: string;
+        matiere?: { id: string; nom: string; code: string; couleur?: string };
+        niveau?: { id: string; nom: string; code: string };
+    };
+    createdAt: string;
+    updatedAt: string;
 }

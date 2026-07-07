@@ -1,7 +1,17 @@
-import { Star } from 'lucide-react';
+import { useMemo } from 'react';
+import { Star, TrendingUp } from 'lucide-react';
 import { useEnseignantEvaluations, useEnseignantMoyenneEvaluations } from '../../hooks/use-enseignants';
+import { MiniBarChart } from '@/components/charts/MiniBarChart';
+import { MiniPieChart } from '@/components/charts/MiniPieChart';
 import { LoadingState } from '@/components/feedback';
 import type { EvaluationEnseignant } from '../../types/enseignant.types';
+
+const CATEGORIE_COLORS: Record<string, string> = {
+    Pédagogie: '#3B82F6', Discipline: '#10B981', 'Relationnel': '#F59E0B',
+    'Savoir-être': '#8B5CF6', Technique: '#EC4899',
+};
+
+const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 function formatDate(d: string) {
     return new Date(d).toLocaleDateString('fr-FR');
@@ -13,12 +23,38 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
     const evals = isActive ? (evaluations ?? []) : [];
     const moy = isActive ? moyenne : undefined;
 
+    const evolutionData = useMemo(() => {
+        const grouped: Record<string, { total: number; count: number }> = {};
+        evals.forEach((e: EvaluationEnseignant) => {
+            const d = new Date(e.dateEvaluation);
+            const key = `${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+            if (!grouped[key]) grouped[key] = { total: 0, count: 0 };
+            grouped[key].total += e.note;
+            grouped[key].count += 1;
+        });
+        return Object.entries(grouped).map(([label, v]) => ({
+            label, value: Math.round((v.total / v.count) * 10) / 10,
+        }));
+    }, [evals]);
+
+    const categorieData = useMemo(() => {
+        const grouped: Record<string, number> = {};
+        evals.forEach((e: EvaluationEnseignant) => {
+            const cat = e.categorie || 'Autre';
+            grouped[cat] = (grouped[cat] || 0) + 1;
+        });
+        return Object.entries(grouped).map(([label, value]) => ({
+            label, value, color: CATEGORIE_COLORS[label] || '#6B7280',
+        }));
+    }, [evals]);
+
     if ((evLoading || moyLoading) && isActive) {
         return <div className="py-12"><LoadingState message="Chargement des évaluations..." /></div>;
     }
 
     return (
         <div className="space-y-5">
+            {/* Moyenne card */}
             {moy && moy.total > 0 && (
                 <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-5">
                     <div className="flex items-center gap-4">
@@ -43,42 +79,69 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                     <p className="mt-1 text-sm text-gray-500">Les évaluations pédagogiques apparaîtront ici une fois soumises.</p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Catégorie</th>
-                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Note</th>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Évaluateur</th>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Commentaire</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {evals.map((e: EvaluationEnseignant) => (
-                                    <tr key={e.id} className="hover:bg-gray-50/80">
-                                        <td className="px-4 py-3 text-gray-600">{formatDate(e.dateEvaluation)}</td>
-                                        <td className="px-4 py-3">
-                                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                                                {e.categorie}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <span className={`text-lg font-semibold ${
-                                                e.note >= 4 ? 'text-green-600' : e.note >= 3 ? 'text-yellow-600' : 'text-red-600'
-                                            }`}>
-                                                {e.note.toFixed(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">{e.evaluateur ? `${e.evaluateur.prenom} ${e.evaluateur.nom}` : '-'}</td>
-                                        <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600">{e.commentaire || '-'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <>
+                    {/* Charts row */}
+                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                        {evolutionData.length > 1 && (
+                            <div className="rounded-xl border border-gray-200 bg-white p-5">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                                    Évolution de la note moyenne
+                                </h4>
+                                <MiniBarChart data={evolutionData} height={180} />
+                            </div>
+                        )}
+                        {categorieData.length > 0 && (
+                            <div className="rounded-xl border border-gray-200 bg-white p-5">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                    <Star className="h-4 w-4 text-purple-500" />
+                                    Répartition par catégorie
+                                </h4>
+                                <div className="flex justify-center">
+                                    <MiniPieChart data={categorieData} size={160} showLegend />
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </div>
+
+                    {/* Table */}
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Catégorie</th>
+                                        <th className="px-4 py-3 text-center font-medium text-gray-600">Note</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Évaluateur</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Commentaire</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {evals.map((e: EvaluationEnseignant) => (
+                                        <tr key={e.id} className="hover:bg-gray-50/80">
+                                            <td className="px-4 py-3 text-gray-600">{formatDate(e.dateEvaluation)}</td>
+                                            <td className="px-4 py-3">
+                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                    {e.categorie}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`text-lg font-semibold ${
+                                                    e.note >= 4 ? 'text-green-600' : e.note >= 3 ? 'text-yellow-600' : 'text-red-600'
+                                                }`}>
+                                                    {e.note.toFixed(1)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">{e.evaluateur ? `${e.evaluateur.prenom} ${e.evaluateur.nom}` : '-'}</td>
+                                            <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600">{e.commentaire || '-'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
             )}
         </div>
     );

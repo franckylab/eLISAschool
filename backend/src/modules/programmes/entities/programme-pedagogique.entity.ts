@@ -12,6 +12,7 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 import { Cycle } from '@modules/cycles/entities';
 import { Niveau } from '@modules/niveaux/entities';
+import { Periode } from '@modules/periodes/entities';
 import { ProgrammeMatiere } from './programme-matiere.entity';
 
 export enum ProgrammeType {
@@ -63,7 +64,11 @@ export class ProgrammePedagogique {
     competencesVisees?: string[];
 
     @Column({ type: 'uuid', nullable: true })
-    anneeScolaireId?: string;
+    periodeId?: string;
+
+    @ManyToOne(() => Periode, { nullable: true })
+    @JoinColumn({ name: 'periodeId' })
+    periode?: Periode;
 
     @Column({ type: 'date', nullable: true })
     dateDebut?: string;
