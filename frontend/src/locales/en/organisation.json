@@ -202,6 +202,7 @@
     "tousLesTypesOrg": "All types",
     "supprimerOrganisation": "Delete organisation",
     "confirmerSuppressionOrg": "Are you sure you want to delete this organisation? This action is irreversible.",
+    "creerOrganisation": "Create my organisation",
     "gererOrganisations": "Manage your organisation's organisations",
     "chargementOrganisation": "Loading organisation...",
     "organisationNonTrouvee": "Organisation not found",

@@ -495,13 +495,13 @@ function TabGeneration() {
     const [templateId, setTemplateId] = useState('');
     const [organisationId, setOrganisationId] = useState('');
     const [prefixeCode, setPrefixeCode] = useState('');
-    const [modeConflit, setModeConflit] = useState<'ERROR' | 'SKIP' | 'OVERWRITE'>('ERROR');
+    const [modeConflit, setModeConflit] = useState<'ERROR' | 'SKIP' | 'OVERWRITE'>('OVERWRITE');
     const [creerHierarchie, setCreerHierarchie] = useState(true);
     const [result, setResult] = useState<ResultatGeneration | null>(null);
 
-    const handleGenerate = async () => {
+    const handleGenerate = () => {
         if (!templateId || !organisationId) return;
-        const res = await generer.mutateAsync({
+        generer.mutate({
             templateId,
             organisationId,
             options: {
@@ -509,8 +509,9 @@ function TabGeneration() {
                 creerHierarchie,
                 modeConflit,
             },
+        }, {
+            onSuccess: (data) => setResult(data),
         });
-        setResult(res);
     };
 
     return (

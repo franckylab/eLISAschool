@@ -29,6 +29,7 @@ router.get('/hierarchie', authMiddleware, async (req: Request, res: Response, ne
 router.post('/hierarchie', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createHierarchiePersonnelSchema, req.body);
+        dto.etablissementId = req.utilisateur!.etablissementId!;
         const created = await organisationService.createHierarchie(dto);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }

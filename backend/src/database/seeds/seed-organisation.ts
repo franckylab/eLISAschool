@@ -193,7 +193,7 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
         if (!sub || !sup || !sub.occupantNom || !sup.occupantNom) continue;
         if (!sub.occupantId || !sup.occupantId) continue;
 
-        const existing = await hierRepo.findOne({ where: { personnelId: sub.occupantId, superieurId: sup.occupantId, etablissementId } });
+        const existing = await hierRepo.findOne({ where: { personnelId: sub.occupantId, superieurId: sup.occupantId } });
         if (existing) continue;
 
         const hier = hierRepo.create({
@@ -208,7 +208,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
             posteIntitule: sub.intitulé,
             uniteOrganisationnelleId: sub.uniteOrganisationnelleId,
             uniteNom: unitesMap.get([...unitesMap.entries()].find(([, u]) => u.id === sub.uniteOrganisationnelleId)?.[0] ?? '')?.nom,
-            etablissementId,
             dateDebut: new Date(),
         });
         await hierRepo.save(hier);

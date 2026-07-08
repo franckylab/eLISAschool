@@ -54,7 +54,6 @@ const ORGA_KEYS = {
 
 function handleError(error: any, message: string) {
     toast.error(error?.response?.data?.error?.message || message);
-    throw error;
 }
 
 // ─── ORGANISATIONS ───
@@ -101,6 +100,18 @@ export function useOrganisation(id: string) {
     });
 }
 
+export function useOrganisationMine() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ['organisation', 'mine'] as const,
+        queryFn: async () => {
+            const response = await apiClient.get<Organisation | null>('/api/organisation/organisations/mine');
+            return response.data;
+        },
+        enabled: isAuthenticated,
+    });
+}
+
 export function useCreerOrganisation() {
     const qc = useQueryClient();
     return useMutation({
@@ -108,7 +119,11 @@ export function useCreerOrganisation() {
             const response = await apiClient.post<Organisation>('/api/organisation/organisations', dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.all }); toast.success('Organisation créée'); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['organisation', 'mine'] });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.all });
+            toast.success('Organisation créée');
+        },
         onError: (e: any) => handleError(e, 'Erreur création organisation'),
     });
 }

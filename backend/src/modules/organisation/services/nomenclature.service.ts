@@ -258,9 +258,14 @@ class TemplateOrganisationService {
     }
 
     async findAll(etablissementId?: string): Promise<TemplateOrganisation[]> {
-        const where: any = { actif: true };
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.find({ where, order: { nom: 'ASC' } });
+        const qb = this.repo.createQueryBuilder('t');
+        if (etablissementId) {
+            qb.where('(t.etablissementId = :eid OR t.estSysteme = TRUE)', { eid: etablissementId });
+        } else {
+            qb.where('(t.etablissementId IS NULL OR t.estSysteme = TRUE)');
+        }
+        qb.andWhere('t.actif = TRUE').orderBy('t.nom', 'ASC');
+        return qb.getMany();
     }
 
     async findAllPaginated(page: number, limit: number, etablissementId?: string, search?: string, actif?: boolean) {

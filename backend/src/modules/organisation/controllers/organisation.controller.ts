@@ -17,6 +17,13 @@ function validate(schema: any, data: unknown): any {
     return result.data;
 }
 
+router.get('/organisations/mine', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const organisation = await organisationService.findOrganisationMine(req.utilisateur!.etablissementId!);
+        res.json({ success: true, data: organisation });
+    } catch (error) { next(error); }
+});
+
 router.get('/organisations', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;

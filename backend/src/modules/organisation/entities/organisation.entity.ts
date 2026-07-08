@@ -44,7 +44,7 @@ export enum StatutOrganisation {
  * Structure de haut niveau qui chapeaute toutes les unités organisationnelles
  */
 @Entity('organisations')
-@Index(['etablissementId'])
+@Index(['etablissementId'], { unique: true })
 @Index(['type'])
 export class Organisation {
     @PrimaryGeneratedColumn('uuid')

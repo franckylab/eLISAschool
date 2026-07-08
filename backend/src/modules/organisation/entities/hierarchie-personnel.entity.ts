@@ -20,6 +20,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
 
 /**
@@ -52,6 +53,7 @@ export enum StatutRelation {
 @Index(['superieurId'])
 @Index(['typeRelation'])
 @Index(['posteId'])
+@Index(['etablissementId'])
 export class HierarchiePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -80,7 +82,14 @@ export class HierarchiePersonnel {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
-    // Contexte
+    // Contexte — multi-tenant
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string | null;
+
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement | null;
+
     @Column({ type: 'uuid', nullable: true })
     posteId?: string;
 

@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Repository, QueryRunner } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { AppError } from '@common/filters/error.filter';
 import {
@@ -7,6 +7,8 @@ import {
     Poste,
     HierarchiePersonnel,
     TypeUniteOrganisationnelle,
+    TypePoste,
+    NiveauResponsabiliteEnum,
     StatutUnite,
     StatutPoste,
     TypeRelationHierarchique,
@@ -29,9 +31,7 @@ interface GenerationContext {
     prefixeCode: string;
     creerHierarchie: boolean;
     modeConflit: 'ERROR' | 'SKIP' | 'OVERWRITE';
-    uniteRepo: Repository<UniteOrganisationnelle>;
-    posteRepo: Repository<Poste>;
-    hierarchieRepo: Repository<HierarchiePersonnel>;
+    queryRunner: QueryRunner;
     result: ResultatGeneration;
     uniteRefMap: Map<string, string>;
     posteRefMap: Map<string, string>;
@@ -40,26 +40,43 @@ interface GenerationContext {
     niveauRespMap: Map<string, string>;
 }
 
-export class GenerationService {
-    private organisationRepo: Repository<Organisation>;
-    private uniteRepo: Repository<UniteOrganisationnelle>;
-    private posteRepo: Repository<Poste>;
-    private hierarchieRepo: Repository<HierarchiePersonnel>;
-    private templateRepo: Repository<TemplateOrganisation>;
-
-    constructor() {
-        this.organisationRepo = AppDataSource.getRepository(Organisation);
-        this.uniteRepo = AppDataSource.getRepository(UniteOrganisationnelle);
-        this.posteRepo = AppDataSource.getRepository(Poste);
-        this.hierarchieRepo = AppDataSource.getRepository(HierarchiePersonnel);
-        this.templateRepo = AppDataSource.getRepository(TemplateOrganisation);
+function fallbackTypePoste(valeur?: string): TypePoste {
+    if (valeur && Object.values(TypePoste).includes(valeur as TypePoste)) {
+        return valeur as TypePoste;
     }
+    return TypePoste.AUTRE;
+}
+
+function fallbackNiveauResponsabilite(valeur?: string): NiveauResponsabiliteEnum {
+    if (valeur && Object.values(NiveauResponsabiliteEnum).includes(valeur as NiveauResponsabiliteEnum)) {
+        return valeur as NiveauResponsabiliteEnum;
+    }
+    return NiveauResponsabiliteEnum.EXECUTANT;
+}
+
+function validerNoeud(noeud: NoeudTemplateOrganisation, chemin: string): void {
+    if (!noeud.nom || !noeud.nom.trim()) {
+        throw new AppError(
+            `Le nœud "${chemin}" a un nom vide. Chaque nœud doit avoir un nom non vide.`,
+            400,
+            'VALIDATION_ERROR',
+        );
+    }
+    if (noeud.enfants) {
+        for (let i = 0; i < noeud.enfants.length; i++) {
+            validerNoeud(noeud.enfants[i], `${chemin} > enfant[${i}]`);
+        }
+    }
+}
+
+export class GenerationService {
 
     async generer(dto: GenererOrganisationDto, etablissementId: string): Promise<ResultatGeneration> {
         // 1. Résoudre la structure
         let structure: NoeudTemplateOrganisation;
         if (dto.templateId) {
-            const template = await this.templateRepo.findOne({ where: { id: dto.templateId } });
+            const repo = AppDataSource.getRepository(TemplateOrganisation);
+            const template = await repo.findOne({ where: { id: dto.templateId } });
             if (!template) throw new AppError('Template non trouvé', 404, 'TEMPLATE_NOT_FOUND');
             structure = template.structure as NoeudTemplateOrganisation;
         } else if (dto.structure) {
@@ -68,39 +85,57 @@ export class GenerationService {
             throw new AppError('templateId ou structure requis', 400, 'VALIDATION_ERROR');
         }
 
+        // 1b. Valider la structure AVANT toute écriture
+        validerNoeud(structure, 'racine');
+
         // 2. Valider organisation cible
-        const organisation = await this.organisationRepo.findOne({
+        const organisationRepo = AppDataSource.getRepository(Organisation);
+        const organisation = await organisationRepo.findOne({
             where: { id: dto.organisationId, etablissementId },
         });
         if (!organisation) throw new AppError('Organisation non trouvée', 404, 'ORG_NOT_FOUND');
 
-        // 3. Pré-charger les références (niveaux, usages, catégories)
-        const context = await this.preparerContexte(etablissementId, dto);
+        // 3. Préparer contexte et ouvrir transaction
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // 4. Générer récursivement
-        await this.genererNoeud(structure, null, context);
+        try {
+            const context = await this.preparerContexte(etablissementId, dto, queryRunner);
 
-        // 5. Créer hiérarchie si demandé
-        if (context.creerHierarchie && structure.hierarchie) {
-            await this.genererHierarchie(structure, context);
+            // 4. Générer récursivement
+            await this.genererNoeud(structure, null, context);
+
+            // 5. Créer hiérarchie si demandé
+            if (context.creerHierarchie && structure.hierarchie) {
+                await this.genererHierarchie(structure, context);
+            }
+
+            // 6. Construire arborescence retour
+            context.result.arborescence = await organisationService.buildArborescence(dto.organisationId);
+
+            await queryRunner.commitTransaction();
+            return context.result;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
-
-        // 6. Construire arborescence retour
-        context.result.arborescence = await organisationService.buildArborescence(dto.organisationId);
-
-        return context.result;
     }
 
-    private async preparerContexte(etablissementId: string, dto: GenererOrganisationDto): Promise<GenerationContext> {
+    private async preparerContexte(
+        etablissementId: string,
+        dto: GenererOrganisationDto,
+        queryRunner: QueryRunner,
+    ): Promise<GenerationContext> {
         const context: GenerationContext = {
             etablissementId,
             organisationId: dto.organisationId,
             prefixeCode: dto.options?.prefixeCode || '',
             creerHierarchie: dto.options?.creerHierarchie ?? true,
             modeConflit: dto.options?.modeConflit || 'ERROR',
-            uniteRepo: this.uniteRepo,
-            posteRepo: this.posteRepo,
-            hierarchieRepo: this.hierarchieRepo,
+            queryRunner,
             result: {
                 unitesCrees: 0,
                 postesCrees: 0,
@@ -117,7 +152,6 @@ export class GenerationService {
             niveauRespMap: new Map(),
         };
 
-        // Charger les mappings des références système
         const niveaux = await niveauOrganisationService.findAll(etablissementId);
         for (const n of niveaux) {
             context.niveauOrgMap.set(n.label.toLowerCase(), n.id);
@@ -136,19 +170,33 @@ export class GenerationService {
         return context;
     }
 
+    private async supprimerArbreUnites(
+        uniteId: string,
+        queryRunner: QueryRunner,
+    ): Promise<void> {
+        const enfants = await queryRunner.manager.find(UniteOrganisationnelle, {
+            where: { parentId: uniteId },
+        });
+        for (const enfant of enfants) {
+            await this.supprimerArbreUnites(enfant.id, queryRunner);
+        }
+        await queryRunner.manager.delete(UniteOrganisationnelle, uniteId);
+    }
+
     private async genererNoeud(
         noeud: NoeudTemplateOrganisation,
         parentId: string | null,
         ctx: GenerationContext,
         index: number = 0,
     ): Promise<string | null> {
-        const baseCode = `${ctx.prefixeCode}${noeud.nom.toUpperCase().replace(/\s+/g, '_')}`;
+        const nomNet = noeud.nom.trim();
+        const baseCode = `${ctx.prefixeCode}${nomNet.toUpperCase().replace(/\s+/g, '_')}`;
         const code = noeud.count > 1 ? `${baseCode}_${index + 1}` : baseCode;
-        const nom = noeud.count > 1 ? `${noeud.nom} ${index + 1}` : noeud.nom;
+        const nom = noeud.count > 1 ? `${nomNet} ${index + 1}` : nomNet;
 
         // Vérifier conflit
         if (ctx.modeConflit !== 'OVERWRITE') {
-            const existing = await ctx.uniteRepo.findOne({
+            const existing = await ctx.queryRunner.manager.findOne(UniteOrganisationnelle, {
                 where: { code, organisationId: ctx.organisationId },
             });
             if (existing) {
@@ -159,9 +207,17 @@ export class GenerationService {
                         'UNITE_CODE_CONFLICT',
                     );
                 }
-                // SKIP: retourner l'ID existant, ne pas recréer
-                ctx.uniteRefMap.set(noeud.nom, existing.id);
+                ctx.uniteRefMap.set(nomNet, existing.id);
+                ctx.uniteRefMap.set(noeud.usageUnite, existing.id);
                 return existing.id;
+            }
+        } else {
+            // OVERWRITE : supprimer l'arbre existant avant de recréer
+            const existing = await ctx.queryRunner.manager.findOne(UniteOrganisationnelle, {
+                where: { code, organisationId: ctx.organisationId },
+            });
+            if (existing) {
+                await this.supprimerArbreUnites(existing.id, ctx.queryRunner);
             }
         }
 
@@ -171,7 +227,7 @@ export class GenerationService {
             ? typeVal
             : TypeUniteOrganisationnelle.SERVICE;
 
-        const unite = ctx.uniteRepo.create({
+        const unite = ctx.queryRunner.manager.create(UniteOrganisationnelle, {
             nom,
             code,
             type,
@@ -182,10 +238,11 @@ export class GenerationService {
             statut: StatutUnite.ACTIF,
             actif: true,
         });
-        const savedUnite = await ctx.uniteRepo.save(unite);
+        const savedUnite = await ctx.queryRunner.manager.save(unite);
         ctx.result.unitesCrees++;
-        ctx.result.unites.push({ ref: noeud.nom, id: savedUnite.id, nom, code });
-        ctx.uniteRefMap.set(noeud.nom, savedUnite.id);
+        ctx.result.unites.push({ ref: nomNet, id: savedUnite.id, nom, code });
+        ctx.uniteRefMap.set(nomNet, savedUnite.id);
+        ctx.uniteRefMap.set(noeud.usageUnite, savedUnite.id);
 
         // Créer les postes
         if (noeud.postes) {
@@ -217,24 +274,27 @@ export class GenerationService {
 
         for (let i = 0; i < count; i++) {
             const posteCode = `${ctx.prefixeCode}${templatePoste.ref.toUpperCase()}`;
+            const intituleBrut = templatePoste.intitulé ?? (templatePoste as any).intitule ?? 'Poste';
             const intitule = count > 1
-                ? `${templatePoste.intitulé} ${i + 1}`
-                : templatePoste.intitulé;
+                ? `${intituleBrut} ${i + 1}`
+                : intituleBrut;
 
-            const poste = ctx.posteRepo.create({
-                intitulé,
+            const poste = ctx.queryRunner.manager.create(Poste, {
+                intitulé: intitule,
                 code: posteCode,
-                type: (templatePoste.categoriePoste as any) || 'ADMINISTRATIF',
+                type: fallbackTypePoste(templatePoste.categoriePoste),
                 categoriePosteCode: templatePoste.categoriePoste,
+                niveauResponsabilite: fallbackNiveauResponsabilite(templatePoste.niveauResponsabilite),
                 niveauResponsabiliteCode: templatePoste.niveauResponsabilite,
                 uniteOrganisationnelleId: uniteId,
                 nombrePostes: 1,
                 statut: StatutPoste.VACANT,
                 actif: true,
             });
-            const savedPoste = await ctx.posteRepo.save(poste);
+            const savedPoste = await ctx.queryRunner.manager.save(poste);
             ctx.result.postesCrees++;
-            const posteRef = `${noeud.nom}.${templatePoste.ref}${count > 1 ? `_${i + 1}` : ''}`;
+            const nomNet = noeud.nom.trim();
+            const posteRef = `${nomNet}.${templatePoste.ref}${count > 1 ? `_${i + 1}` : ''}`;
             ctx.result.postes.push({ ref: posteRef, id: savedPoste.id, intitule, code: posteCode });
             ctx.posteRefMap.set(posteRef, savedPoste.id);
         }
@@ -252,8 +312,11 @@ export class GenerationService {
             const superieurUniteId = ctx.uniteRefMap.get(lien.superieurRef);
             const subordonneUniteId = ctx.uniteRefMap.get(lien.subordonneRef);
 
-            // Chercher les postes responsables dans chaque unité
-            const superieurPoste = await ctx.posteRepo.findOne({
+            if (!superieurUniteId || !subordonneUniteId) {
+                continue;
+            }
+
+            const superieurPoste = await ctx.queryRunner.manager.findOne(Poste, {
                 where: {
                     uniteOrganisationnelleId: superieurUniteId,
                     actif: true,
@@ -261,7 +324,7 @@ export class GenerationService {
                 order: { createdAt: 'ASC' },
             });
 
-            const subordonnePoste = await ctx.posteRepo.findOne({
+            const subordonnePoste = await ctx.queryRunner.manager.findOne(Poste, {
                 where: {
                     uniteOrganisationnelleId: subordonneUniteId,
                     actif: true,
@@ -270,14 +333,15 @@ export class GenerationService {
             });
 
             if (superieurPoste && subordonnePoste) {
-                const hierarchie = ctx.hierarchieRepo.create({
+                const hierarchie = ctx.queryRunner.manager.create(HierarchiePersonnel, {
+                    superieurId: superieurPoste.id,
                     posteId: subordonnePoste.id,
                     posteIntitule: subordonnePoste.intitulé,
                     typeRelation: (lien.typeRelation as TypeRelationHierarchique) || TypeRelationHierarchique.SUPERVISE_DIRECT,
                     statut: StatutRelation.ACTIVE,
                     actif: true,
                 });
-                const saved = await ctx.hierarchieRepo.save(hierarchie);
+                const saved = await ctx.queryRunner.manager.save(hierarchie);
                 ctx.result.hierarchiesCrees++;
                 ctx.result.hierarchies.push({
                     superieurRef: lien.superieurRef,
@@ -287,7 +351,6 @@ export class GenerationService {
             }
         }
 
-        // Traiter récursivement les enfants
         if (noeud.enfants) {
             for (const enfant of noeud.enfants) {
                 await this.genererHierarchie(enfant, ctx);

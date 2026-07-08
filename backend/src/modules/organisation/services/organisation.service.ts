@@ -116,6 +116,20 @@ export class OrganisationService {
             }
         }
 
+        // Vérifier qu'il n'y a pas déjà une organisation pour cet établissement
+        if (dto.etablissementId) {
+            const existingOrg = await this.organisationRepo.findOne({
+                where: { etablissementId: dto.etablissementId },
+            });
+            if (existingOrg) {
+                throw new AppError(
+                    'Une organisation existe déjà pour cet établissement',
+                    409,
+                    'ORG_ALREADY_EXISTS',
+                );
+            }
+        }
+
         const organisation = this.organisationRepo.create({
             ...dto,
             statut: StatutOrganisation.ACTIF,
@@ -124,6 +138,12 @@ export class OrganisationService {
         const saved = await this.organisationRepo.save(organisation);
         logger.info(`Organisation créée: ${saved.nom}`, { organisationId: saved.id });
         return saved;
+    }
+
+    async findOrganisationMine(etablissementId: string): Promise<Organisation | null> {
+        return this.organisationRepo.findOne({
+            where: { etablissementId },
+        });
     }
 
     async findAllOrganisations(etablissementId?: string): Promise<Organisation[]> {

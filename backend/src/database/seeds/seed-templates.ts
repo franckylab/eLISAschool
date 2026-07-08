@@ -13,7 +13,7 @@ export async function seedTemplatesOrganisation(): Promise<number> {
     let count = 0;
 
     for (const def of TEMPLATES) {
-        const exists = await repo.findOne({ where: { nom: def.nom, estSysteme: true, etablissementId: null } });
+        const exists = await repo.findOne({ where: { nom: def.nom, estSysteme: true as any } });
         if (exists) {
             logger.info(`  ↪ Template "${def.nom}" existe déjà, skip`);
             continue;
@@ -40,6 +40,7 @@ const P = {
     DIR: { ref: 'DIR', intitulé: 'Directeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_GENERALE', nombrePostes: 1 },
     CENSEUR: { ref: 'CENSEUR', intitulé: 'Censeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_ADJOINTE', nombrePostes: 1 },
     SURV: { ref: 'SURV', intitulé: 'Surveillant Général', categoriePoste: 'EDUCATIF', niveauResponsabilite: 'SUPERVISEUR', nombrePostes: 1 },
+    ADMIN: { ref: 'ADMIN', intitulé: 'Agent Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
     RESP_ADMIN: { ref: 'RESP_ADMIN', intitulé: 'Chef Service Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'RESPONSABLE', nombrePostes: 1 },
     SECRET: { ref: 'SECRET', intitulé: 'Secrétaire', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 2 },
     COMPTA: { ref: 'COMPTA', intitulé: 'Comptable', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
