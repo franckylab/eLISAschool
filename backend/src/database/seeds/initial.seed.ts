@@ -24,6 +24,7 @@ import { seedElevesExemples } from './seed-eleves-exemples';
 import { seedGroupesEtablissements } from './seed-groupes-etablissements';
 import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 import { seedOrganisation } from './seed-organisation';
+import { seedTemplatesOrganisation } from './seed-templates';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -90,7 +91,11 @@ export async function runSeeds(): Promise<void> {
     await seedOrganisation(etablissementPrincipalId, 'Lycée Bilingue eLISAschool');
     await seedOrganisation(etablissementSecondaireId, 'Collège Privé Les Palmiers');
 
-    // 14. Élèves exemples (uniquement pour l'établissement principal)
+    // 14. Templates d'organisation (système)
+    const templatesCount = await seedTemplatesOrganisation();
+    logger.info(`📋 ${templatesCount} templates système créés`);
+
+    // 15. Élèves exemples (uniquement pour l'établissement principal)
     if (anneeActivePrincipal) {
         await seedElevesExemples(etablissementPrincipalId, anneeActivePrincipal);
     }

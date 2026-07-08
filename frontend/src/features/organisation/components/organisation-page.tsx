@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Building2, Plus, Edit, Trash2, Search, AlertCircle } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Search, AlertCircle, SlidersHorizontal } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -123,13 +123,20 @@ export function OrganisationPage() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('titre')}</h1>
                     <p className="text-sm text-gray-500 mt-1">{t('gererOrganisations')}</p>
                 </div>
-                {hasPermission('organisation:edit') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}
-                        onClick={() => setShowCreateModal(true)}
+                <div className="flex items-center gap-2">
+                    <ElisaButton variant="outline" size="sm" icon={<SlidersHorizontal className="h-4 w-4" />}
+                        onClick={() => navigate({ to: '/organisation/nomenclatures' })}
                     >
-                        {t('creer')}
+                        Nomenclatures
                     </ElisaButton>
-                )}
+                    {hasPermission('organisation:edit') && (
+                        <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}
+                            onClick={() => setShowCreateModal(true)}
+                        >
+                            {t('creer')}
+                        </ElisaButton>
+                    )}
+                </div>
             </motion.div>
 
             <DataTable

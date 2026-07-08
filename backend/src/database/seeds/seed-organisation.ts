@@ -11,7 +11,7 @@
 import { AppDataSource } from '../data-source';
 import { Organisation, TypeOrganisation, StatutOrganisation } from '@modules/organisation/entities/organisation.entity';
 import { UniteOrganisationnelle, TypeUniteOrganisationnelle, StatutUnite } from '@modules/organisation/entities/unite-organisationnelle.entity';
-import { Poste, TypePoste, NiveauResponsabilite, StatutPoste } from '@modules/organisation/entities/poste.entity';
+import { Poste, TypePoste, NiveauResponsabiliteEnum, StatutPoste } from '@modules/organisation/entities/poste.entity';
 import { HierarchiePersonnel, TypeRelationHierarchique, StatutRelation } from '@modules/organisation/entities/hierarchie-personnel.entity';
 import { logger } from '@common/utils/logger.util';
 
@@ -29,7 +29,7 @@ interface PosteSeed {
     code: string;
     intitule: string;
     type: TypePoste;
-    niveau: NiveauResponsabilite;
+            niveau: NiveauResponsabiliteEnum;
     uniteCode: string;
     occupantNom?: string;
     occupantPrenom?: string;
@@ -115,28 +115,28 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
     }
 
     const postesData: PosteSeed[] = [
-        { code: 'PROVISEUR', intitule: 'Proviseur', type: TypePoste.DIRECTION, niveau: NiveauResponsabilite.DIRECTION_GENERALE, uniteCode: 'DIR', occupantNom: 'Jean', occupantPrenom: 'Dupont', nombrePostes: 1, missions: ['Diriger l\'établissement', 'Superviser l\'équipe pédagogique', 'Représenter l\'établissement'], competences: ['Management', 'Pédagogie', 'Gestion'] },
-        { code: 'PROVISEUR-ADJ', intitule: 'Proviseur Adjoint', type: TypePoste.DIRECTION, niveau: NiveauResponsabilite.DIRECTION_ADJOINTE, uniteCode: 'DIR', occupantNom: 'Marie', occupantPrenom: 'Ngo Mback', nombrePostes: 1, missions: ['Assister le proviseur', 'Coordonner les départements'] },
-        { code: 'SECRETAIRE-DIR', intitule: 'Secrétaire de Direction', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'SE-DIR', occupantNom: 'Brigitte', occupantPrenom: 'Ekoa', nombrePostes: 1 },
-        { code: 'CENSEUR-PRINCIPAL', intitule: 'Censeur', type: TypePoste.DIRECTION, niveau: NiveauResponsabilite.RESPONSABLE, uniteCode: 'CENS', occupantNom: 'Pierre', occupantPrenom: 'Mbarga', nombrePostes: 1, missions: ['Organiser les emplois du temps', 'Suivre la discipline', 'Coordonner les conseils de classe'] },
-        { code: 'CD-FRANCAIS', intitule: 'Chef Département Français', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.COORDINATEUR, uniteCode: 'DEP-FR', occupantNom: 'Paul', occupantPrenom: 'Biyé', nombrePostes: 1, missions: ['Coordonner l\'équipe de français', 'Organiser les évaluations'] },
-        { code: 'CD-MATHS', intitule: 'Chef Département Mathématiques', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.COORDINATEUR, uniteCode: 'DEP-MATH', occupantNom: 'Joseph', occupantPrenom: 'Tagne', nombrePostes: 1 },
-        { code: 'CD-ANGLAIS', intitule: 'Chef Département Anglais', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.COORDINATEUR, uniteCode: 'DEP-ANG', occupantNom: 'Susan', occupantPrenom: 'Foncha', nombrePostes: 1 },
-        { code: 'CD-SCIENCES', intitule: 'Chef Département Sciences', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.COORDINATEUR, uniteCode: 'DEP-SCI', occupantNom: 'David', occupantPrenom: 'Ekodo', nombrePostes: 1 },
-        { code: 'CD-HG', intitule: 'Chef Département Histoire-Géo', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.COORDINATEUR, uniteCode: 'DEP-HG', occupantNom: 'François', occupantPrenom: 'Mbida', nombrePostes: 1 },
-        { code: 'PROF-FR1', intitule: 'Professeur de Français', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'DEP-FR', nombrePostes: 5 },
-        { code: 'PROF-MATH1', intitule: 'Professeur de Mathématiques', type: TypePoste.ENSEIGNANT, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'DEP-MATH', nombrePostes: 4 },
-        { code: 'SURV-GEN', intitule: 'Surveillant Général', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.RESPONSABLE, uniteCode: 'SURV', occupantNom: 'Aïcha', occupantPrenom: 'Mahamat', nombrePostes: 1 },
-        { code: 'SURV1', intitule: 'Surveillant', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'SURV', nombrePostes: 6 },
-        { code: 'COMPTABLE', intitule: 'Comptable', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'COMPTA', occupantNom: 'Thomas', occupantPrenom: 'Ndongo', nombrePostes: 1 },
-        { code: 'AGENT-COMPTA', intitule: 'Agent Comptable', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'COMPTA', nombrePostes: 2 },
-        { code: 'CHEF-SCOLARITE', intitule: 'Chef Scolarité', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.RESPONSABLE, uniteCode: 'SCOLARITE', occupantNom: 'Claire', occupantPrenom: 'Onguene', nombrePostes: 1 },
-        { code: 'AGENT-SCOLARITE', intitule: 'Agent Scolarité', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'SCOLARITE', nombrePostes: 3 },
-        { code: 'INTENDANT', intitule: 'Intendant', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.RESPONSABLE, uniteCode: 'INTENDANCE', nombrePostes: 1 },
-        { code: 'RESP-RH', intitule: 'Responsable RH', type: TypePoste.ADMINISTRATIF, niveau: NiveauResponsabilite.RESPONSABLE, uniteCode: 'RH', nombrePostes: 1 },
-        { code: 'TECH-INFO', intitule: 'Technicien Informatique', type: TypePoste.TECHNIQUE, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'INFO', nombrePostes: 2 },
-        { code: 'ANIMATEUR', intitule: 'Animateur Culturel', type: TypePoste.SERVICE, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'ANIM', nombrePostes: 2 },
-        { code: 'COACH-SPORT', intitule: 'Coach Sportif', type: TypePoste.SERVICE, niveau: NiveauResponsabilite.EXECUTANT, uniteCode: 'SPORT', nombrePostes: 3 },
+        { code: 'PROVISEUR', intitule: 'Proviseur', type: TypePoste.DIRECTION,         niveau: NiveauResponsabiliteEnum.DIRECTION_GENERALE, uniteCode: 'DIR', occupantNom: 'Jean', occupantPrenom: 'Dupont', nombrePostes: 1, missions: ['Diriger l\'établissement', 'Superviser l\'équipe pédagogique', 'Représenter l\'établissement'], competences: ['Management', 'Pédagogie', 'Gestion'] },
+        { code: 'PROVISEUR-ADJ', intitule: 'Proviseur Adjoint', type: TypePoste.DIRECTION,         niveau: NiveauResponsabiliteEnum.DIRECTION_ADJOINTE, uniteCode: 'DIR', occupantNom: 'Marie', occupantPrenom: 'Ngo Mback', nombrePostes: 1, missions: ['Assister le proviseur', 'Coordonner les départements'] },
+        { code: 'SECRETAIRE-DIR', intitule: 'Secrétaire de Direction', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'SE-DIR', occupantNom: 'Brigitte', occupantPrenom: 'Ekoa', nombrePostes: 1 },
+        { code: 'CENSEUR-PRINCIPAL', intitule: 'Censeur', type: TypePoste.DIRECTION,         niveau: NiveauResponsabiliteEnum.RESPONSABLE, uniteCode: 'CENS', occupantNom: 'Pierre', occupantPrenom: 'Mbarga', nombrePostes: 1, missions: ['Organiser les emplois du temps', 'Suivre la discipline', 'Coordonner les conseils de classe'] },
+        { code: 'CD-FRANCAIS', intitule: 'Chef Département Français', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.COORDINATEUR, uniteCode: 'DEP-FR', occupantNom: 'Paul', occupantPrenom: 'Biyé', nombrePostes: 1, missions: ['Coordonner l\'équipe de français', 'Organiser les évaluations'] },
+        { code: 'CD-MATHS', intitule: 'Chef Département Mathématiques', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.COORDINATEUR, uniteCode: 'DEP-MATH', occupantNom: 'Joseph', occupantPrenom: 'Tagne', nombrePostes: 1 },
+        { code: 'CD-ANGLAIS', intitule: 'Chef Département Anglais', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.COORDINATEUR, uniteCode: 'DEP-ANG', occupantNom: 'Susan', occupantPrenom: 'Foncha', nombrePostes: 1 },
+        { code: 'CD-SCIENCES', intitule: 'Chef Département Sciences', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.COORDINATEUR, uniteCode: 'DEP-SCI', occupantNom: 'David', occupantPrenom: 'Ekodo', nombrePostes: 1 },
+        { code: 'CD-HG', intitule: 'Chef Département Histoire-Géo', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.COORDINATEUR, uniteCode: 'DEP-HG', occupantNom: 'François', occupantPrenom: 'Mbida', nombrePostes: 1 },
+        { code: 'PROF-FR1', intitule: 'Professeur de Français', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'DEP-FR', nombrePostes: 5 },
+        { code: 'PROF-MATH1', intitule: 'Professeur de Mathématiques', type: TypePoste.ENSEIGNANT,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'DEP-MATH', nombrePostes: 4 },
+        { code: 'SURV-GEN', intitule: 'Surveillant Général', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.RESPONSABLE, uniteCode: 'SURV', occupantNom: 'Aïcha', occupantPrenom: 'Mahamat', nombrePostes: 1 },
+        { code: 'SURV1', intitule: 'Surveillant', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'SURV', nombrePostes: 6 },
+        { code: 'COMPTABLE', intitule: 'Comptable', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'COMPTA', occupantNom: 'Thomas', occupantPrenom: 'Ndongo', nombrePostes: 1 },
+        { code: 'AGENT-COMPTA', intitule: 'Agent Comptable', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'COMPTA', nombrePostes: 2 },
+        { code: 'CHEF-SCOLARITE', intitule: 'Chef Scolarité', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.RESPONSABLE, uniteCode: 'SCOLARITE', occupantNom: 'Claire', occupantPrenom: 'Onguene', nombrePostes: 1 },
+        { code: 'AGENT-SCOLARITE', intitule: 'Agent Scolarité', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'SCOLARITE', nombrePostes: 3 },
+        { code: 'INTENDANT', intitule: 'Intendant', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.RESPONSABLE, uniteCode: 'INTENDANCE', nombrePostes: 1 },
+        { code: 'RESP-RH', intitule: 'Responsable RH', type: TypePoste.ADMINISTRATIF,         niveau: NiveauResponsabiliteEnum.RESPONSABLE, uniteCode: 'RH', nombrePostes: 1 },
+        { code: 'TECH-INFO', intitule: 'Technicien Informatique', type: TypePoste.TECHNIQUE,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'INFO', nombrePostes: 2 },
+        { code: 'ANIMATEUR', intitule: 'Animateur Culturel', type: TypePoste.SERVICE,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'ANIM', nombrePostes: 2 },
+        { code: 'COACH-SPORT', intitule: 'Coach Sportif', type: TypePoste.SERVICE,         niveau: NiveauResponsabiliteEnum.EXECUTANT, uniteCode: 'SPORT', nombrePostes: 3 },
     ];
 
     const postesMap = new Map<string, Poste>();

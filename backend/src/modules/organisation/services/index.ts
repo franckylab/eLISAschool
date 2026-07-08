@@ -10,3 +10,5 @@ export * from './postes-vacants.service';
 export * from './historique-clonage.service';
 export * from './configuration.service';
 export * from './statistiques-optimisees.service';
+export * from './nomenclature.service';
+export * from './generation.service';

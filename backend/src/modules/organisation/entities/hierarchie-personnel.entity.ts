@@ -16,8 +16,11 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    ManyToOne,
+    JoinColumn,
     Index,
 } from 'typeorm';
+import { Poste } from './poste.entity';
 
 /**
  * Type de relation hiérarchique
@@ -48,24 +51,24 @@ export enum StatutRelation {
 @Index(['personnelId'])
 @Index(['superieurId'])
 @Index(['typeRelation'])
-@Index(['etablissementId'])
+@Index(['posteId'])
 export class HierarchiePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    // Personne subordonnée
-    @Column({ type: 'uuid' })
-    personnelId!: string;
+    // Personne subordonnée (nullable — peut être une hiérarchie de poste avant assignation)
+    @Column({ type: 'uuid', nullable: true })
+    personnelId?: string;
 
-    @Column({ type: 'varchar', length: 200 })
-    personnelNom!: string;
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    personnelNom?: string;
 
-    // Supérieur hiérarchique
-    @Column({ type: 'uuid' })
-    superieurId!: string;
+    // Supérieur hiérarchique (nullable)
+    @Column({ type: 'uuid', nullable: true })
+    superieurId?: string;
 
-    @Column({ type: 'varchar', length: 200 })
-    superieurNom!: string;
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    superieurNom?: string;
 
     // Type de relation
     @Column({ type: 'enum', enum: TypeRelationHierarchique, default: TypeRelationHierarchique.SUPERVISE_DIRECT })
@@ -90,9 +93,10 @@ export class HierarchiePersonnel {
     @Column({ type: 'varchar', length: 100, nullable: true })
     uniteNom?: string;
 
-    // Référence à l'établissement (multi-tenancy)
-    @Column({ type: 'uuid' })
-    etablissementId!: string;
+    // Référence au poste (FK — permet de lier sans personnel assigné)
+    @ManyToOne(() => Poste, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'posteId' })
+    poste?: Poste;
 
     // Dates de validité de la relation
     @Column({ type: 'timestamp', nullable: true })

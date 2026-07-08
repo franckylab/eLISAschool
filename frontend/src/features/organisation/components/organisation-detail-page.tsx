@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Edit, Trash2, Building2, Info,
-    Layers, Briefcase, Users, Settings,
+    Layers, Briefcase, Users, Settings, SlidersHorizontal,
     AlertCircle, CheckCircle, XCircle, Globe,
     Mail, Phone, MapPin, Globe2,
 } from 'lucide-react';
@@ -111,6 +111,10 @@ export function OrganisationDetailPage() {
                         </div>
 
                         <div className="flex flex-col gap-2 shrink-0">
+                            <ElisaButton variant="outline" size="sm" icon={<SlidersHorizontal className="h-4 w-4" />}
+                                onClick={() => navigate({ to: '/organisation/nomenclatures' })}>
+                                Nomenclatures
+                            </ElisaButton>
                             {hasPermission('organisation:edit') && (
                                 <>
                                     <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}

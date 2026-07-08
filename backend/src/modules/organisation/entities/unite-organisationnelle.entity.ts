@@ -23,6 +23,7 @@ import {
 } from 'typeorm';
 import { Organisation } from './organisation.entity';
 import { Poste } from './poste.entity';
+import { NiveauOrganisation } from './niveau-organisation.entity';
 
 /**
  * Type d'unité organisationnelle
@@ -68,6 +69,12 @@ export class UniteOrganisationnelle {
 
     @Column({ type: 'text', nullable: true })
     description?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    usageUniteCode?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    niveauOrganisationId?: string;
 
     @Column({ type: 'enum', enum: TypeUniteOrganisationnelle, default: TypeUniteOrganisationnelle.SERVICE })
     type!: TypeUniteOrganisationnelle;
@@ -128,6 +135,10 @@ export class UniteOrganisationnelle {
 
     @OneToMany(() => UniteOrganisationnelle, (unite) => unite.parent)
     enfants?: UniteOrganisationnelle[];
+
+    @ManyToOne(() => NiveauOrganisation, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'niveauOrganisationId' })
+    niveauOrganisation?: NiveauOrganisation;
 
     @OneToMany(() => Poste, (poste) => poste.uniteOrganisationnelle)
     postes?: Poste[];

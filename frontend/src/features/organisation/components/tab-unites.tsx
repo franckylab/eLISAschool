@@ -5,9 +5,9 @@ import { TreeView, type TreeNode } from '@/components/ui/TreeView';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
-import { useArborescence, useUnites, useCreerUnite, useModifierUnite, useSupprimerUnite } from '../hooks/use-organisation';
+import { useArborescence, useUnites, useModifierUnite, useSupprimerUnite } from '../hooks/use-organisation';
 import { UniteFormModal } from './unite-form-modal';
-import type { UniteOrganisationnelle, TypeUnite } from '../types/organisation.types';
+import type { UniteOrganisationnelle } from '../types/organisation.types';
 
 const typeIcons: Record<string, string> = {
     DIRECTION: '🏢', DEPARTEMENT: '📂', SERVICE: '📋', POLE: '🎯',
@@ -56,9 +56,13 @@ export function TabUnites({ organisationId }: Props) {
     const { hasPermission } = usePermissions();
     const { data: arborescence, isLoading } = useArborescence(organisationId);
     const { data: unites } = useUnites({ organisationId });
-    const creer = useCreerUnite();
     const modifier = useModifierUnite();
     const supprimer = useSupprimerUnite();
+
+    console.log('[TabUnites] organisationId:', organisationId);
+    console.log('[TabUnites] arborescence:', arborescence);
+    console.log('[TabUnites] unites:', unites);
+    console.log('[TabUnites] isLoading:', isLoading);
 
     const typesUnite = t('typesUnite', { returnObjects: true }) as Record<string, string>;
 

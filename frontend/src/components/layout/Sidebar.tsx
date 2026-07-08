@@ -190,7 +190,16 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
             { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
-            { label: 'Organisation', path: '/organisation', icon: Building2, module: 'organisation' },
+            {
+                label: 'Organisation',
+                path: '/organisation',
+                icon: Building2,
+                module: 'organisation',
+                children: [
+                    { label: 'Liste', path: '/organisation', icon: LayoutGrid },
+                    { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: Settings },
+                ],
+            },
             {
                 label: 'Structure Académique',
                 path: '/parametres/structure-academique',

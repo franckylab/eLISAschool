@@ -115,6 +115,10 @@ Analyse profonde et développement complet du système programmes (backend + fro
 | `frontend/src/features/enseignants/components/enseignant-detail-page.tsx` | Page détail améliorée |
 | `frontend/src/features/enseignants/components/enseignant-detail/hero-header.tsx` | onEdit callback |
 
+## Done (this session)
+- **Template & Génération Organisation (6 phases)** : 5 entités nomenclature, migration TypeORM, API CRUD (25 endpoints), algorithme génération POST /generer, refonte architecture (7 sous-controllers), frontend complet (6 tabs nomenclatures + route), 22 templates système seedés dans `initial.seed.ts`
+- **Navigation → Nomenclatures** : Sidebar (Organisation → accordéon Liste + Nomenclatures), page liste (bouton outline), page détail (bouton actions)
+
 ## DB Connection
 - Host: localhost:7002
 - User: elisaschool_user

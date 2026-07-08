@@ -38,7 +38,7 @@ export enum TypePoste {
 /**
  * Niveau de responsabilité
  */
-export enum NiveauResponsabilite {
+export enum NiveauResponsabiliteEnum {
     DIRECTION_GENERALE = 'DIRECTION_GENERALE',
     DIRECTION_ADJOINTE = 'DIRECTION_ADJOINTE',
     RESPONSABLE = 'RESPONSABLE',
@@ -80,11 +80,17 @@ export class Poste {
     @Column({ type: 'varchar', length: 50 })
     code!: string;
 
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    categoriePosteCode?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    niveauResponsabiliteCode?: string;
+
     @Column({ type: 'enum', enum: TypePoste, default: TypePoste.ADMINISTRATIF })
     type!: TypePoste;
 
-    @Column({ type: 'enum', enum: NiveauResponsabilite, default: NiveauResponsabilite.EXECUTANT })
-    niveauResponsabilite!: NiveauResponsabilite;
+    @Column({ type: 'enum', enum: NiveauResponsabiliteEnum, default: NiveauResponsabiliteEnum.EXECUTANT })
+    niveauResponsabilite!: NiveauResponsabiliteEnum;
 
     @Column({ type: 'enum', enum: StatutPoste, default: StatutPoste.ACTIF })
     statut!: StatutPoste;

@@ -8,6 +8,9 @@ import type {
     Poste, CreerPosteDto, ModifierPosteDto, PosteFiltres,
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
     OrganigrammeNode, StatistiquesOrganisation, ParametreConfiguration,
+    NiveauOrganisation, UsageUnite, CategoriePoste,
+    NiveauResponsabilite, TemplateOrganisation,
+    GenererOrganisationDto, ResultatGeneration,
 } from '../types/organisation.types';
 
 const ORGA_KEYS = {
@@ -454,5 +457,159 @@ export function useResetConfiguration() {
             toast.success('Configuration réinitialisée');
         },
         onError: (e: any) => handleError(e, 'Erreur réinitialisation configuration'),
+    });
+}
+
+// ─── NOMENCLATURES ───
+
+const NOM_KEYS = {
+    niveaux: ['organisation', 'niveaux-organisation'] as const,
+    usages: ['organisation', 'usages-unite'] as const,
+    categories: ['organisation', 'categories-poste'] as const,
+    niveauxResp: ['organisation', 'niveaux-responsabilite'] as const,
+    templates: ['organisation', 'templates'] as const,
+};
+
+function useNomenclatureList<T>(key: readonly string[], url: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: key,
+        queryFn: async () => {
+            const response = await apiClient.get<T[]>(url);
+            return response.data || [];
+        },
+        enabled: isAuthenticated,
+    });
+}
+
+function useCreerNomenclature<T>(key: readonly string[], url: string, msg: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (dto: any) => {
+            const response = await apiClient.post<T>(url, dto);
+            return response.data;
+        },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        onError: (e: any) => handleError(e, `Erreur création ${msg}`),
+    });
+}
+
+function useModifierNomenclature<T>(key: readonly string[], url: string, msg: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: { id: string } & any) => {
+            const response = await apiClient.patch<T>(`${url}/${id}`, dto);
+            return response.data;
+        },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        onError: (e: any) => handleError(e, `Erreur modification ${msg}`),
+    });
+}
+
+function useSupprimerNomenclature(key: readonly string[], url: string, msg: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => { await apiClient.delete(`${url}/${id}`); return id; },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        onError: (e: any) => handleError(e, `Erreur suppression ${msg}`),
+    });
+}
+
+export function useNiveauxOrganisation() {
+    return useNomenclatureList<NiveauOrganisation>(NOM_KEYS.niveaux, '/api/organisation/niveaux-organisation');
+}
+
+export function useCreerNiveauOrganisation() {
+    return useCreerNomenclature<NiveauOrganisation>(NOM_KEYS.niveaux, '/api/organisation/niveaux-organisation', 'Niveau créé');
+}
+
+export function useModifierNiveauOrganisation() {
+    return useModifierNomenclature<NiveauOrganisation>(NOM_KEYS.niveaux, '/api/organisation/niveaux-organisation', 'Niveau modifié');
+}
+
+export function useSupprimerNiveauOrganisation() {
+    return useSupprimerNomenclature(NOM_KEYS.niveaux, '/api/organisation/niveaux-organisation', 'Niveau supprimé');
+}
+
+export function useUsagesUnite() {
+    return useNomenclatureList<UsageUnite>(NOM_KEYS.usages, '/api/organisation/usages-unite');
+}
+
+export function useCreerUsageUnite() {
+    return useCreerNomenclature<UsageUnite>(NOM_KEYS.usages, '/api/organisation/usages-unite', 'Usage créé');
+}
+
+export function useModifierUsageUnite() {
+    return useModifierNomenclature<UsageUnite>(NOM_KEYS.usages, '/api/organisation/usages-unite', 'Usage modifié');
+}
+
+export function useSupprimerUsageUnite() {
+    return useSupprimerNomenclature(NOM_KEYS.usages, '/api/organisation/usages-unite', 'Usage supprimé');
+}
+
+export function useCategoriesPoste() {
+    return useNomenclatureList<CategoriePoste>(NOM_KEYS.categories, '/api/organisation/categories-poste');
+}
+
+export function useCreerCategoriePoste() {
+    return useCreerNomenclature<CategoriePoste>(NOM_KEYS.categories, '/api/organisation/categories-poste', 'Catégorie créée');
+}
+
+export function useModifierCategoriePoste() {
+    return useModifierNomenclature<CategoriePoste>(NOM_KEYS.categories, '/api/organisation/categories-poste', 'Catégorie modifiée');
+}
+
+export function useSupprimerCategoriePoste() {
+    return useSupprimerNomenclature(NOM_KEYS.categories, '/api/organisation/categories-poste', 'Catégorie supprimée');
+}
+
+export function useNiveauxResponsabilite() {
+    return useNomenclatureList<NiveauResponsabilite>(NOM_KEYS.niveauxResp, '/api/organisation/niveaux-responsabilite');
+}
+
+export function useCreerNiveauResponsabilite() {
+    return useCreerNomenclature<NiveauResponsabilite>(NOM_KEYS.niveauxResp, '/api/organisation/niveaux-responsabilite', 'Niveau créé');
+}
+
+export function useModifierNiveauResponsabilite() {
+    return useModifierNomenclature<NiveauResponsabilite>(NOM_KEYS.niveauxResp, '/api/organisation/niveaux-responsabilite', 'Niveau modifié');
+}
+
+export function useSupprimerNiveauResponsabilite() {
+    return useSupprimerNomenclature(NOM_KEYS.niveauxResp, '/api/organisation/niveaux-responsabilite', 'Niveau supprimé');
+}
+
+export function useTemplatesOrganisation() {
+    return useNomenclatureList<TemplateOrganisation>(NOM_KEYS.templates, '/api/organisation/templates');
+}
+
+export function useCreerTemplateOrganisation() {
+    return useCreerNomenclature<TemplateOrganisation>(NOM_KEYS.templates, '/api/organisation/templates', 'Template créé');
+}
+
+export function useModifierTemplateOrganisation() {
+    return useModifierNomenclature<TemplateOrganisation>(NOM_KEYS.templates, '/api/organisation/templates', 'Template modifié');
+}
+
+export function useSupprimerTemplateOrganisation() {
+    return useSupprimerNomenclature(NOM_KEYS.templates, '/api/organisation/templates', 'Template supprimé');
+}
+
+// ─── GÉNÉRATION ───
+
+export function useGenererOrganisation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (dto: GenererOrganisationDto) => {
+            const response = await apiClient.post<ResultatGeneration>('/api/organisation/generer', dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
+            qc.invalidateQueries({ queryKey: ['organisation', 'postes'] });
+            qc.invalidateQueries({ queryKey: ['organisation', 'hierarchie'] });
+            toast.success('Organisation générée avec succès');
+        },
+        onError: (e: any) => handleError(e, 'Erreur génération organisation'),
     });
 }

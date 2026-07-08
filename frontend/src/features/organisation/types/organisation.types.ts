@@ -235,6 +235,86 @@ export interface ParametreConfiguration {
     modifiable: boolean;
 }
 
+// ==================== NOMENCLATURES ====================
+
+export interface NiveauOrganisation {
+    id: string;
+    niveau: number;
+    label: string;
+    description?: string;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface UsageUnite {
+    id: string;
+    code: string;
+    label: string;
+    description?: string;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CategoriePoste {
+    id: string;
+    code: string;
+    label: string;
+    description?: string;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface NiveauResponsabilite {
+    id: string;
+    niveau: number;
+    code: string;
+    label: string;
+    description?: string;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface TemplateOrganisation {
+    id: string;
+    nom: string;
+    description?: string;
+    structure: any;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    actif: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface GenererOrganisationDto {
+    templateId?: string;
+    structure?: any;
+    organisationId: string;
+    options?: {
+        prefixeCode?: string;
+        creerHierarchie?: boolean;
+        modeConflit?: 'ERROR' | 'SKIP' | 'OVERWRITE';
+    };
+}
+
+export interface ResultatGeneration {
+    unitesCrees: number;
+    postesCrees: number;
+    hierarchiesCrees: number;
+    unites: Array<{ ref: string; id: string; nom: string; code: string }>;
+    postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
+    hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
+    arborescence: any;
+}
+
 // ==================== FILTRES GÉNÉRIQUES ====================
 
 export interface OrganisationFiltres {

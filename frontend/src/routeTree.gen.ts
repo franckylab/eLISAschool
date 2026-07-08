@@ -71,6 +71,7 @@ import { Route as AuthProgrammesChapitresRouteImport } from './routes/_auth.prog
 import { Route as AuthProgrammesIdRouteImport } from './routes/_auth/programmes.$id'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
+import { Route as AuthOrganisationNomenclaturesRouteImport } from './routes/_auth.organisation.nomenclatures'
 import { Route as AuthOrganisationIdRouteImport } from './routes/_auth.organisation.$id'
 import { Route as AuthNiveauxIdRouteImport } from './routes/_auth.niveaux.$id'
 import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
@@ -405,6 +406,12 @@ const AuthPeriodesIdRoute = AuthPeriodesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthPeriodesRoute,
 } as any)
+const AuthOrganisationNomenclaturesRoute =
+  AuthOrganisationNomenclaturesRouteImport.update({
+    id: '/nomenclatures',
+    path: '/nomenclatures',
+    getParentRoute: () => AuthOrganisationRoute,
+  } as any)
 const AuthOrganisationIdRoute = AuthOrganisationIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -570,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/organisation/$id': typeof AuthOrganisationIdRoute
+  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
@@ -637,6 +645,7 @@ export interface FileRoutesByTo {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/organisation/$id': typeof AuthOrganisationIdRoute
+  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
@@ -723,6 +732,7 @@ export interface FileRoutesById {
   '/_auth/matieres/$id': typeof AuthMatieresIdRoute
   '/_auth/niveaux/$id': typeof AuthNiveauxIdRoute
   '/_auth/organisation/$id': typeof AuthOrganisationIdRoute
+  '/_auth/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
   '/_auth/programmes/$id': typeof AuthProgrammesIdRoute
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/organisation/$id'
+    | '/organisation/nomenclatures'
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/organisation/$id'
+    | '/organisation/nomenclatures'
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
@@ -961,6 +973,7 @@ export interface FileRouteTypes {
     | '/_auth/matieres/$id'
     | '/_auth/niveaux/$id'
     | '/_auth/organisation/$id'
+    | '/_auth/organisation/nomenclatures'
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
     | '/_auth/programmes/$id'
@@ -1439,6 +1452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPeriodesIdRouteImport
       parentRoute: typeof AuthPeriodesRoute
     }
+    '/_auth/organisation/nomenclatures': {
+      id: '/_auth/organisation/nomenclatures'
+      path: '/nomenclatures'
+      fullPath: '/organisation/nomenclatures'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesRouteImport
+      parentRoute: typeof AuthOrganisationRoute
+    }
     '/_auth/organisation/$id': {
       id: '/_auth/organisation/$id'
       path: '/$id'
@@ -1755,11 +1775,13 @@ const AuthNiveauxRouteWithChildren = AuthNiveauxRoute._addFileChildren(
 
 interface AuthOrganisationRouteChildren {
   AuthOrganisationIdRoute: typeof AuthOrganisationIdRoute
+  AuthOrganisationNomenclaturesRoute: typeof AuthOrganisationNomenclaturesRoute
   AuthOrganisationIndexRoute: typeof AuthOrganisationIndexRoute
 }
 
 const AuthOrganisationRouteChildren: AuthOrganisationRouteChildren = {
   AuthOrganisationIdRoute: AuthOrganisationIdRoute,
+  AuthOrganisationNomenclaturesRoute: AuthOrganisationNomenclaturesRoute,
   AuthOrganisationIndexRoute: AuthOrganisationIndexRoute,
 }
 
