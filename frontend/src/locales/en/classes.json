@@ -177,7 +177,9 @@
         "sallePlaceholder": "E.g.: Room 101",
         "effectifMax": "Maximum enrollment",
         "effectifMaxHint": "Maximum number of students (1-100)",
-        "actif": "Active"
+        "actif": "Active",
+        "programme": "Curriculum",
+        "selectionnerProgramme": "Select a curriculum"
     },
     "annee": {
         "enCours": "In progress",

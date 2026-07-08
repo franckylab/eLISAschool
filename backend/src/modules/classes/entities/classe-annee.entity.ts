@@ -28,6 +28,7 @@ import { Classe } from './classe.entity';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Salle } from '@modules/salles/entities';
+import { ProgrammePedagogique } from '@modules/programmes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 /**
@@ -133,6 +134,18 @@ export class ClasseAnnee {
      */
     @Column({ type: 'text', nullable: true })
     notes?: string;
+
+    /**
+     * Programme pédagogique suivi par cette classe pour cette année.
+     * Détermine les volumes horaires et coefficients via ProgrammeMatiere.
+     * NULL = pas de programme associé (fallback sur MatiereNiveau uniquement).
+     */
+    @Column({ type: 'uuid', nullable: true })
+    programmeId?: string;
+
+    @ManyToOne(() => ProgrammePedagogique, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'programmeId' })
+    programme?: ProgrammePedagogique;
 
     @CreateDateColumn()
     createdAt!: Date;

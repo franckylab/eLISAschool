@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
+import type { PaginatedResult } from '@shared/types/api.types';
 import type {
     ProgrammePedagogique,
     CreerProgrammeDto,
@@ -10,6 +11,7 @@ import type {
     AddMatiereDto,
     ProgrammeChapitre,
 } from '../types/programme.types';
+import { toast } from 'sonner';
 
 const PROGRAMMES_KEYS = {
     all: ['programmes'] as const,
@@ -33,24 +35,13 @@ export function useProgrammes(filtres?: ProgrammeFiltres) {
                 sortBy: filtres?.sortBy || 'nom',
                 sortOrder: filtres?.sortOrder || 'ASC',
             };
-            if (filtres?.recherche) params.search = filtres.recherche;
+            if (filtres?.search) params.search = filtres.search;
             if (filtres?.cycleId) params.cycleId = filtres.cycleId;
             if (filtres?.niveauId) params.niveauId = filtres.niveauId;
             if (filtres?.type) params.type = filtres.type;
             if (filtres?.actif !== undefined) params.actif = filtres.actif;
 
-            const response = await apiClient.get<{
-                data: ProgrammePedagogique[];
-                meta: {
-                    totalItems: number;
-                    currentPage: number;
-                    totalPages: number;
-                    itemsPerPage: number;
-                    itemCount: number;
-                    hasNextPage: boolean;
-                    hasPrevPage: boolean;
-                };
-            }>('/api/programmes', params);
+            const response = await apiClient.get<PaginatedResult<ProgrammePedagogique>>('/api/programmes', params);
 
             if (!response.data) {
                 throw new Error('Programmes pédagogiques non disponibles');
@@ -68,9 +59,7 @@ export function useProgrammeDetail(id: string) {
     return useQuery({
         queryKey: PROGRAMMES_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: ProgrammePedagogique }>(
-                `/api/programmes/${id}`
-            );
+            const response = await apiClient.get<ProgrammePedagogique>(`/api/programmes/${id}`);
             if (!response.data) {
                 throw new Error('Programme pédagogique non trouvé');
             }
@@ -87,9 +76,7 @@ export function useProgrammeMatieres(id: string) {
     return useQuery({
         queryKey: PROGRAMMES_KEYS.matieres(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: ProgrammeMatiere[] }>(
-                `/api/programmes/${id}/matieres`
-            );
+            const response = await apiClient.get<ProgrammeMatiere[]>(`/api/programmes/${id}/matieres`);
             return response.data || [];
         },
         enabled: isAuthenticated && !!id,
@@ -172,8 +159,26 @@ export function useRetirerMatiereProgramme() {
     });
 }
 
+export function useModifierMatiereProgramme() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
+            const response = await apiClient.patch<ProgrammeMatiere>(`/api/programmes/matieres/${id}`, dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.all });
+            toast.success('Programme matière modifié');
+        },
+    });
+}
+
+// ==== CHAPITRES ====
+
 export function useTousChapitres(filtres?: {
-    matiereNiveauId?: string;
+    programmeMatiereId?: string;
+    programmeId?: string;
     periodeId?: string;
     statut?: string;
     recherche?: string;
@@ -186,15 +191,18 @@ export function useTousChapitres(filtres?: {
         queryKey: [...PROGRAMMES_KEYS.all, 'tous-chapitres', filtres],
         queryFn: async () => {
             const params = new URLSearchParams();
-            if (filtres?.matiereNiveauId) params.set('matiereNiveauId', filtres.matiereNiveauId);
+            if (filtres?.programmeMatiereId) params.set('programmeMatiereId', filtres.programmeMatiereId);
+            if (filtres?.programmeId) params.set('programmeId', filtres.programmeId);
             if (filtres?.periodeId) params.set('periodeId', filtres.periodeId);
             if (filtres?.statut) params.set('statut', filtres.statut);
             if (filtres?.page) params.set('page', String(filtres.page));
             if (filtres?.limit) params.set('limit', String(filtres.limit));
-            const response = await apiClient.get<{ data: ProgrammeChapitre[]; pagination: any }>(
+            const response = await apiClient.get<ProgrammeChapitre[]>(
                 `/api/programmes/chapitres?${params.toString()}`
             );
-            return response;
+            const items = response.data || [];
+            const pagination = (response as any).pagination;
+            return { data: items, pagination };
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
@@ -207,9 +215,7 @@ export function useChapitresProgramme(programmeId: string) {
     return useQuery({
         queryKey: PROGRAMMES_KEYS.chapitres(programmeId),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: ProgrammeChapitre[] }>(
-                `/api/programmes/${programmeId}/chapitres`
-            );
+            const response = await apiClient.get<ProgrammeChapitre[]>(`/api/programmes/${programmeId}/chapitres`);
             return response.data || [];
         },
         enabled: isAuthenticated && !!programmeId,
@@ -222,12 +228,16 @@ export function useCreerChapitre() {
 
     return useMutation({
         mutationFn: async (dto: {
-            matiereNiveauId: string;
+            programmeMatiereId: string;
             titre: string;
             description?: string;
             objectifsPedagogiques?: string;
             ordre?: number;
             dureePrevueHeures?: number;
+            statut?: string;
+            prerequis?: string[];
+            ressourcesPedagogiques?: { type: string; titre: string; url?: string }[];
+            competencesAssociees?: string[];
         }) => {
             const response = await apiClient.post<ProgrammeChapitre>('/api/programmes/chapitres', dto);
             return response.data;

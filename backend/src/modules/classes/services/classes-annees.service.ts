@@ -66,6 +66,7 @@ export class ClassesAnneesService {
             professeurPrincipalId: dto.professeurPrincipalId ?? undefined,
             sallePrincipaleId: dto.sallePrincipaleId ?? undefined,
             effectifMax,
+            programmeId: dto.programmeId ?? undefined,
             notes: dto.notes,
             etablissementId,
             statut: StatutClasseAnnee.ACTIVE,
@@ -208,6 +209,7 @@ export class ClassesAnneesService {
         }
 
         if (dto.professeurPrincipalId !== undefined) classeAnnee.professeurPrincipalId = dto.professeurPrincipalId || undefined;
+        if (dto.programmeId !== undefined) classeAnnee.programmeId = dto.programmeId || undefined;
         if (dto.notes !== undefined) classeAnnee.notes = dto.notes;
 
         await this.classeAnneeRepo.save(classeAnnee);
@@ -262,6 +264,7 @@ export class ClassesAnneesService {
                 sallePrincipaleId: classeSource.sallePrincipaleId,
                 effectifMax: classeSource.effectifMax,
                 effectifActuel: 0,
+                programmeId: (classeSource as any).programmeId,
                 actif: true,
                 statut: StatutClasseAnnee.ACTIVE,
             });

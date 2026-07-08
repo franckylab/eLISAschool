@@ -22,6 +22,7 @@ import { useState, useEffect, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { useCreerClasse, useModifierClasse } from '../hooks/use-classes';
+import { useProgrammes } from '@/features/programmes/hooks/use-programmes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
@@ -69,6 +70,11 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     const { data: anneesScolaires = [] } = useToutesAnneesScolaires();
     const { data: niveaux = [] } = useTousNiveaux();
     const { data: filieres = [] } = useToutesFilieres();
+    const { data: programmesData } = useProgrammes({ limit: 100 });
+    const optionsProgrammes = (programmesData?.items || []).map((p: { id: string; nom: string }) => ({
+        value: p.id,
+        label: p.nom,
+    }));
 
     // État du formulaire
     const [etape, setEtape] = useState<EtapeFormulaire>(1);
@@ -89,6 +95,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     // Données étape 2 : Instance annuelle
     const [instanceData, setInstanceData] = useState<CreerClasseInstanceDto>({
         anneeScolaireId: classe?.anneeScolaireId || '',
+        programmeId: classe?.programmeId || '',
         professeurPrincipalId: classe?.professeurPrincipalId || null,
         sallePrincipaleId: classe?.sallePrincipaleId || '',
         effectifMax: classe?.effectifMax || 50,
@@ -116,6 +123,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
             });
             setInstanceData({
                 anneeScolaireId: classe.anneeScolaireId || '',
+                programmeId: classe.programmeId || '',
                 professeurPrincipalId: classe.professeurPrincipalId || null,
                 sallePrincipaleId: classe.sallePrincipaleId || '',
                 effectifMax: classe.effectifMax || 50,
@@ -223,6 +231,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                     ...modeleData,
                     sallePrincipaleId: instanceData.sallePrincipaleId || null,
                     effectifMax: instanceData.effectifMax,
+                    programmeId: instanceData.programmeId || null,
                 });
             }
             onSuccess();
@@ -559,6 +568,17 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             </div>
                         </div>
 
+                        {/* Programme pédagogique */}
+                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                            <ElisaSelect
+                                label={t('champs.programme')}
+                                value={instanceData.programmeId || ''}
+                                onValueChange={(value) => handleChangeInstance('programmeId', value || null)}
+                                options={optionsProgrammes}
+                                placeholder={t('champs.selectionnerProgramme')}
+                            />
+                        </div>
+
                     </div>
                 )}
 
@@ -656,6 +676,12 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 <div className="flex flex-col">
                                     <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>
                                     <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.effectifMax || '-'}</dd>
+                                </div>
+                                <div className="flex flex-col">
+                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.programme')}</dt>
+                                    <dd className="font-medium text-[var(--color-text-primary)]">
+                                        {optionsProgrammes.find(o => o.value === instanceData.programmeId)?.label || '-'}
+                                    </dd>
                                 </div>
                             </dl>
                         </div>

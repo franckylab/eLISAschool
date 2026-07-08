@@ -2,12 +2,9 @@
  * ==================================
  * eLISAschool - Controller Matières
  * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
+ * Version: 2.1.0
  * 
- * Changements v2.0:
- * - Support multi-tenant avec etablissementId
- * - Toutes les routes passent etablissementId aux services
+ * v2.1: Ajout endpoint programmes-pedagogiques par matière
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -23,7 +20,6 @@ import {
     updateConfigurationMatiereClasseSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters';
 
@@ -82,35 +78,43 @@ router.post('/groupes', authMiddleware, requirePermission('config:edit'), async 
     } catch (error) { next(error); }
 });
 
-// Programmes (Matière-Niveau)
+// GRILLE MATIÈRE PAR NIVEAU (MatiereNiveau)
+// Source de vérité pour configs matière. Ne pas confondre avec ProgrammePedagogique.
 router.get('/programme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
-        const prog = await service.getAllMatieresNiveaux(etablissementId);
-        res.json({ success: true, data: prog });
+        const items = await service.getAllMatieresNiveaux(etablissementId);
+        res.json({ success: true, data: items });
     } catch (error) { next(error); }
 });
 
 router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const prog = await service.getProgrammeNiveau(req.params.niveauId);
-        res.json({ success: true, data: prog });
+        const items = await service.getMatieresParNiveau(req.params.niveauId);
+        res.json({ success: true, data: items });
     } catch (error) { next(error); }
 });
 
 router.post('/programme', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMatiereNiveauSchema, req.body);
-        const prog = await service.addMatiereToNiveau(dto, req.utilisateur?.id!, req.etablissementId);
-        res.status(201).json({ success: true, data: prog });
+        const item = await service.addMatiereToNiveau(dto, req.utilisateur?.id!, req.etablissementId);
+        res.status(201).json({ success: true, data: item });
     } catch (error) { next(error); }
 });
 
 router.patch('/programme/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateMatiereNiveauSchema, req.body);
-        const prog = await service.updateProgramme(req.params.id, dto, req.utilisateur?.id!, req.etablissementId);
-        res.json({ success: true, data: prog });
+        const item = await service.updateMatiereNiveau(req.params.id, dto, req.utilisateur?.id!, req.etablissementId);
+        res.json({ success: true, data: item });
+    } catch (error) { next(error); }
+});
+
+router.delete('/programme/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await service.deleteMatiereNiveau(req.params.id);
+        res.json({ success: true, message: 'Programme matière-niveau supprimé' });
     } catch (error) { next(error); }
 });
 
@@ -123,11 +127,19 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
-// Programme par matière (les sous-routes sont définies après GET /:id car Express les fait correspondre avant /:id sans conflit)
+// Programme par matière (MatiereNiveau)
 router.get('/:id/programme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const prog = await service.findProgrammeByMatiere(req.params.id);
         res.json({ success: true, data: prog });
+    } catch (error) { next(error); }
+});
+
+// Programmes pédagogiques par matière (ProgrammePedagogique via ProgrammeMatiere)
+router.get('/:id/programmes-pedagogiques', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const items = await service.findProgrammesPedagogiquesByMatiere(req.params.id, req.utilisateur!.etablissementId!);
+        res.json({ success: true, data: items });
     } catch (error) { next(error); }
 });
 
@@ -193,12 +205,8 @@ router.delete('/affectations/:id', authMiddleware, requirePermission('config:edi
     } catch (error) { next(error); }
 });
 
-// ==== CONFIGURATIONS MATIERE CLASSE (scoped sous /api/matieres) ====
+// ==== CONFIGURATIONS MATIERE CLASSE ====
 
-/**
- * GET /:matiereId/configurations/effective?classeAnneeId=
- * Retourne la configuration effective (valeurs héritées + overrides)
- */
 router.get('/:matiereId/configurations/effective', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -212,10 +220,6 @@ router.get('/:matiereId/configurations/effective', authMiddleware, async (req: R
     } catch (error) { next(error); }
 });
 
-/**
- * POST /:matiereId/configurations
- * Crée une configuration matière-classe (matiereId depuis l'URL)
- */
 router.post('/:matiereId/configurations', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const scopedSchema = createConfigurationMatiereClasseSchema.omit({ matiereId: true, etablissementId: true });
@@ -230,10 +234,6 @@ router.post('/:matiereId/configurations', authMiddleware, requirePermission('con
     } catch (error) { next(error); }
 });
 
-/**
- * PATCH /:matiereId/configurations/:configId
- * Met à jour une configuration matière-classe
- */
 router.patch('/:matiereId/configurations/:configId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateConfigurationMatiereClasseSchema, req.body);
@@ -242,10 +242,6 @@ router.patch('/:matiereId/configurations/:configId', authMiddleware, requirePerm
     } catch (error) { next(error); }
 });
 
-/**
- * DELETE /:matiereId/configurations/:configId
- * Supprime une configuration matière-classe
- */
 router.delete('/:matiereId/configurations/:configId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await service.deleteConfigurationMatiereClasse(req.params.configId);

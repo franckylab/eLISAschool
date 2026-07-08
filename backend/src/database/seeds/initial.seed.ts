@@ -23,6 +23,7 @@ import { seedMatieresNiveaux } from './seed-matieres-niveaux';
 import { seedElevesExemples } from './seed-eleves-exemples';
 import { seedGroupesEtablissements } from './seed-groupes-etablissements';
 import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
+import { seedOrganisation } from './seed-organisation';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -85,7 +86,11 @@ export async function runSeeds(): Promise<void> {
     // 12. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
     await seedUtilisateursParRole(etablissementPrincipalId, etablissementSecondaireId);
 
-    // 13. Élèves exemples (uniquement pour l'établissement principal)
+    // 13. Structure organisationnelle (unités, postes, hiérarchies)
+    await seedOrganisation(etablissementPrincipalId, 'Lycée Bilingue eLISAschool');
+    await seedOrganisation(etablissementSecondaireId, 'Collège Privé Les Palmiers');
+
+    // 14. Élèves exemples (uniquement pour l'établissement principal)
     if (anneeActivePrincipal) {
         await seedElevesExemples(etablissementPrincipalId, anneeActivePrincipal);
     }

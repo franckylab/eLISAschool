@@ -88,6 +88,8 @@ import securiteFr from '@/locales/fr/securite.json';
 import securiteEn from '@/locales/en/securite.json';
 import groupesEtablissementsFr from '@/locales/fr/groupes-etablissements.json';
 import groupesEtablissementsEn from '@/locales/en/groupes-etablissements.json';
+import programmesFr from '@/locales/fr/programmes.json';
+import programmesEn from '@/locales/en/programmes.json';
 
 i18n
     .use(LanguageDetector)
@@ -134,6 +136,7 @@ i18n
                 'securite-config': securiteConfigFr,
                 securite: securiteFr,
                 'groupes-etablissements': groupesEtablissementsFr,
+                programmes: programmesFr,
             },
             en: {
                 common: commonEn,
@@ -175,11 +178,12 @@ i18n
                 'securite-config': securiteConfigEn,
                 securite: securiteEn,
                 'groupes-etablissements': groupesEtablissementsEn,
+                programmes: programmesEn,
             },
         },
         fallbackLng: 'fr',
         defaultNS: 'common',
-        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements'],
+        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes'],
         interpolation: { escapeValue: false },
         detection: {
             order: ['localStorage', 'navigator'],

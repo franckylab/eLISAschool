@@ -90,16 +90,16 @@ export class NotesService {
                 const configRepo = AppDataSource.getRepository('ConfigurationMatiereClasse') as any;
                 const classeAnneeRepo = AppDataSource.getRepository('AffectationEleve') as any;
 
-                // Trouver le niveau de la classe
+                // Trouver le niveau de la classe et le programme associé
                 const affectation = await classeAnneeRepo.findOne({
                     where: { eleveId: createDto.eleveId, anneeScolaireId: anneeId, actif: true },
-                    relations: ['classe'],
+                    relations: ['classe', 'classeAnnee'],
                 });
 
                 if (affectation?.classe?.niveauId) {
                     const niveauId = affectation.classe.niveauId;
 
-                    // Chercher la configuration par classe
+                    // Chercher la configuration par classe (override prioritaire)
                     const config = await configRepo.findOne({
                         where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
                     });
@@ -111,7 +111,25 @@ export class NotesService {
                         bareme = config?.bareme;
                     }
 
-                    // Fallback sur MatiereNiveau (programme)
+                    // ProgrammeMatiere override (via programme de la ClasseAnnee)
+                    if (coefficient === undefined || bareme === undefined) {
+                        const programmeId = affectation.classeAnnee?.programmeId;
+                        if (programmeId) {
+                            const mn = await matiereNiveauRepo.findOne({
+                                where: { matiereId: createDto.matiereId, niveauId },
+                                select: ['id'],
+                            });
+                            if (mn?.id) {
+                                const pm = await AppDataSource.getRepository('ProgrammeMatiere').findOne({
+                                    where: { programmeId, matiereNiveauId: mn.id },
+                                });
+                                if (coefficient === undefined) coefficient = pm?.coefficient;
+                                if (bareme === undefined) bareme = pm?.bareme;
+                            }
+                        }
+                    }
+
+                    // Fallback sur MatiereNiveau (grille matière-niveau)
                     if (coefficient === undefined || bareme === undefined) {
                         const mn = await matiereNiveauRepo.findOne({
                             where: { matiereId: createDto.matiereId, niveauId },
@@ -272,7 +290,7 @@ export class NotesService {
                     bareme = config?.bareme;
                 }
 
-                // Fallback MatiereNiveau — on prend la première matière associée à cette classe
+                // ProgrammeMatiere override (via programme de la ClasseAnnee)
                 if (coefficient === undefined || bareme === undefined) {
                     const classeAnnee = await AppDataSource.getRepository('ClasseAnnee').findOne({
                         where: { id: createDto.classeAnneeId },
@@ -280,12 +298,32 @@ export class NotesService {
                     });
 
                     if (classeAnnee?.classe?.niveauId) {
-                        const mn = await matiereNiveauRepo.findOne({
-                            where: { matiereId: createDto.matiereId, niveauId: classeAnnee.classe.niveauId },
-                        });
+                        const niveauId = classeAnnee.classe.niveauId;
 
-                        if (coefficient === undefined) coefficient = mn?.coefficient;
-                        if (bareme === undefined) bareme = mn?.bareme;
+                        // ProgrammeMatiere lookup
+                        const programmeId = classeAnnee.programmeId;
+                        if (programmeId) {
+                            const mn = await matiereNiveauRepo.findOne({
+                                where: { matiereId: createDto.matiereId, niveauId },
+                                select: ['id'],
+                            });
+                            if (mn?.id) {
+                                const pm = await AppDataSource.getRepository('ProgrammeMatiere').findOne({
+                                    where: { programmeId, matiereNiveauId: mn.id },
+                                });
+                                if (coefficient === undefined) coefficient = pm?.coefficient;
+                                if (bareme === undefined) bareme = pm?.bareme;
+                            }
+                        }
+
+                        // Fallback MatiereNiveau
+                        if (coefficient === undefined || bareme === undefined) {
+                            const mnResult = await matiereNiveauRepo.findOne({
+                                where: { matiereId: createDto.matiereId, niveauId },
+                            });
+                            if (coefficient === undefined) coefficient = mnResult?.coefficient;
+                            if (bareme === undefined) bareme = mnResult?.bareme;
+                        }
                     }
                 }
             } catch (e) {

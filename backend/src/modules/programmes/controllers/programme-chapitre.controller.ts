@@ -1,35 +1,16 @@
-/**
- * ==================================
- * eLISAschool - Controller ProgrammeChapitre
- * ==================================
- * Module: Programmes Pédagogiques
- */
-
 import { Router, Request, Response, NextFunction } from 'express';
 import { programmeChapitreService } from '../services/programme-chapitre.service';
 import { createProgrammeChapitreSchema, updateProgrammeChapitreSchema, queryProgrammeChapitreSchema } from '../dto/programme-chapitre.dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
-import { AppError } from '@common/filters/error.filter';
+import { validateDto } from '@common/utils';
 
 const router = Router();
 
-// Helper de validation
-function validateDto(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', result.error.errors);
-    }
-    return result.data;
-}
-
-// ==================== ROUTES CRUD ====================
-
-// POST /api/programmes/chapitres - Créer un chapitre
+// POST /api/programmes/chapitres
 router.post(
     '/',
     authMiddleware,
-    requirePermission('config:edit'),
+    requirePermission('programmes:config:write'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createProgrammeChapitreSchema, req.body);
@@ -46,7 +27,7 @@ router.post(
     }
 );
 
-// GET /api/programmes/chapitres - Lister tous les chapitres
+// GET /api/programmes/chapitres
 router.get(
     '/',
     authMiddleware,
@@ -61,7 +42,7 @@ router.get(
     }
 );
 
-// GET /api/programmes/chapitres/:id - Obtenir un chapitre
+// GET /api/programmes/chapitres/:id
 router.get(
     '/:id',
     authMiddleware,
@@ -75,11 +56,11 @@ router.get(
     }
 );
 
-// PATCH /api/programmes/chapitres/:id - Mettre à jour un chapitre
+// PATCH /api/programmes/chapitres/:id
 router.patch(
     '/:id',
     authMiddleware,
-    requirePermission('config:edit'),
+    requirePermission('programmes:config:write'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateProgrammeChapitreSchema, req.body);
@@ -97,11 +78,11 @@ router.patch(
     }
 );
 
-// DELETE /api/programmes/chapitres/:id - Supprimer un chapitre
+// DELETE /api/programmes/chapitres/:id
 router.delete(
     '/:id',
     authMiddleware,
-    requirePermission('config:edit'),
+    requirePermission('programmes:config:write'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const result = await programmeChapitreService.delete(
@@ -117,7 +98,24 @@ router.delete(
     }
 );
 
-// ==================== ROUTES SPÉCIALISÉES ====================
+// GET /api/programmes/chapitres/programme-matiere/:programmeMatiereId
+router.get(
+    '/programme-matiere/:programmeMatiereId',
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { periodeId } = req.query;
+            const chapitres = await programmeChapitreService.getChapitresParProgrammeMatiere(
+                req.params.programmeMatiereId,
+                (req as any).etablissementId,
+                periodeId as string
+            );
+            res.json({ success: true, data: chapitres });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 // GET /api/programmes/chapitres/matiere-niveau/:matiereNiveauId
 router.get(
@@ -155,13 +153,13 @@ router.get(
     }
 );
 
-// GET /api/programmes/chapitres/volume-horaire/:matiereNiveauId
+// GET /api/programmes/chapitres/volume-horaire/:programmeMatiereId
 router.get(
-    '/volume-horaire/:matiereNiveauId',
+    '/volume-horaire/:programmeMatiereId',
     authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const volume = await programmeChapitreService.getVolumeHoraireTotal(req.params.matiereNiveauId);
+            const volume = await programmeChapitreService.getVolumeHoraireTotal(req.params.programmeMatiereId);
             res.json({ success: true, data: volume });
         } catch (error) {
             next(error);

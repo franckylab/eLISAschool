@@ -5,9 +5,8 @@ import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
-import { useTousMatieresNiveaux } from '@/features/matieres';
-import { ProgrammeChapitre } from '../types/programme.types';
-import { useTousChapitres, useCreerChapitre, useModifierChapitre, useSupprimerChapitre } from '../hooks/use-programmes';
+import type { ProgrammeChapitre } from '../types/programme.types';
+import { useTousChapitres, useCreerChapitre, useModifierChapitre, useSupprimerChapitre, useProgrammes, useProgrammeMatieres } from '../hooks/use-programmes';
 import { ChapitreFormModal } from './chapitre-form-modal';
 import type { Column } from '@/components/ui/DataTable';
 
@@ -15,7 +14,7 @@ export function ChapitresCataloguePage() {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [filtreMatiereNiveau, setFiltreMatiereNiveau] = useState('');
+    const [filtreProgrammeId, setFiltreProgrammeId] = useState('');
     const [filtreStatut, setFiltreStatut] = useState('');
     const [showFormModal, setShowFormModal] = useState(false);
     const [chapitreToEdit, setChapitreToEdit] = useState<ProgrammeChapitre | null>(null);
@@ -25,10 +24,11 @@ export function ChapitresCataloguePage() {
     const { data: chapitresData, isLoading } = useTousChapitres({
         page,
         limit,
-        matiereNiveauId: filtreMatiereNiveau || undefined,
+        programmeId: filtreProgrammeId || undefined,
         statut: filtreStatut || undefined,
     });
-    const { data: matieresNiveaux } = useTousMatieresNiveaux();
+    const { data: programmesData } = useProgrammes({ limit: 200 });
+    const programmes = programmesData?.items || [];
 
     const creer = useCreerChapitre();
     const modifier = useModifierChapitre();
@@ -37,6 +37,12 @@ export function ChapitresCataloguePage() {
     const chapitres = chapitresData?.data || [];
     const total = chapitresData?.pagination?.totalItems || 0;
     const totalPages = chapitresData?.pagination?.totalPages || 1;
+
+    // Deux étapes pour la création : d'abord choisir une matière de programme
+    const [createStep, setCreateStep] = useState<'idle' | 'select-matiere' | 'form'>('idle');
+    const [createProgrammeId, setCreateProgrammeId] = useState('');
+    const [createProgrammeMatiereId, setCreateProgrammeMatiereId] = useState('');
+    const { data: programmeMatieres } = useProgrammeMatieres(createProgrammeId);
 
     const handleSubmit = async (dto: {
         titre: string;
@@ -48,13 +54,15 @@ export function ChapitresCataloguePage() {
         if (chapitreToEdit) {
             await modifier.mutateAsync({ id: chapitreToEdit.id, ...dto });
         } else {
+            if (!createProgrammeMatiereId) return;
             await creer.mutateAsync({
+                programmeMatiereId: createProgrammeMatiereId,
                 ...dto,
-                matiereNiveauId: chapitreToEdit?.matiereNiveauId || '',
             });
         }
         setShowFormModal(false);
         setChapitreToEdit(null);
+        setCreateProgrammeMatiereId('');
     };
 
     const handleDelete = async () => {
@@ -76,19 +84,22 @@ export function ChapitresCataloguePage() {
             ),
         },
         {
-            key: 'matiereNiveau',
+            key: 'programmeMatiere',
             header: 'Matière / Niveau',
-            render: (c) => (
-                <div className="text-sm">
-                    <span className="font-medium">
-                        {c.matiereNiveau?.matiere?.nom || '-'}
-                    </span>
-                    <span className="text-gray-500 mx-1">·</span>
-                    <span className="text-gray-500">
-                        {c.matiereNiveau?.niveau?.nom || '-'}
-                    </span>
-                </div>
-            ),
+            render: (c) => {
+                const mn = c.programmeMatiere?.matiereNiveau;
+                return (
+                    <div className="text-sm">
+                        <span className="font-medium">
+                            {mn?.matiere?.nom || '-'}
+                        </span>
+                        <span className="text-gray-500 mx-1">·</span>
+                        <span className="text-gray-500">
+                            {mn?.niveau?.nom || '-'}
+                        </span>
+                    </div>
+                );
+            },
         },
         {
             key: 'programmeNom',
@@ -181,14 +192,11 @@ export function ChapitresCataloguePage() {
                             Vue d&apos;ensemble de tous les chapitres pédagogiques
                         </p>
                     </div>
-                    {hasPermission('programmes:config:write') && (
+                    {hasPermission('programmes:config:write') && createStep === 'idle' && (
                         <ElisaButton
                             variant="primary"
                             size="md"
-                            onClick={() => {
-                                setChapitreToEdit(null);
-                                setShowFormModal(true);
-                            }}
+                            onClick={() => setCreateStep('select-matiere')}
                             leftIcon={<Plus className="h-4 w-4" />}
                         >
                             Nouveau chapitre
@@ -197,20 +205,64 @@ export function ChapitresCataloguePage() {
                 </div>
             </div>
 
+            {/* Étape 1 : sélection de la matière-programme */}
+            {createStep === 'select-matiere' && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
+                    <h3 className="font-semibold text-sm text-blue-800">Nouveau chapitre — sélectionnez la matière</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-blue-700 mb-1">Programme</label>
+                            <select value={createProgrammeId}
+                                onChange={(e) => { setCreateProgrammeId(e.target.value); setCreateProgrammeMatiereId(''); }}
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white"
+                            >
+                                <option value="">Sélectionner...</option>
+                                {programmes.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.nom} ({p.code})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-blue-700 mb-1">Matière</label>
+                            <select value={createProgrammeMatiereId}
+                                onChange={(e) => setCreateProgrammeMatiereId(e.target.value)}
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white"
+                            >
+                                <option value="">Sélectionner...</option>
+                                {(programmeMatieres ?? []).map((pm) => (
+                                    <option key={pm.id} value={pm.id}>
+                                        {pm.matiereNiveau?.matiere?.nom || '?'} — {pm.matiereNiveau?.niveau?.nom || '?'}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <ElisaButton variant="outline" size="sm" onClick={() => setCreateStep('idle')}>
+                            Annuler
+                        </ElisaButton>
+                        <ElisaButton variant="primary" size="sm" disabled={!createProgrammeMatiereId}
+                            onClick={() => { setCreateStep('form'); setShowFormModal(true); }}>
+                            Suivant
+                        </ElisaButton>
+                    </div>
+                </div>
+            )}
+
             {/* Filtres */}
             <div className="bg-white rounded-lg p-4 border border-gray-200">
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
-                        <label className="text-sm font-medium text-foreground mb-2 block">Matière / Niveau</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">Programme</label>
                         <select
-                            value={filtreMatiereNiveau}
-                            onChange={(e) => { setFiltreMatiereNiveau(e.target.value); setPage(1); }}
+                            value={filtreProgrammeId}
+                            onChange={(e) => { setFiltreProgrammeId(e.target.value); setPage(1); }}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                         >
-                            <option value="">Toutes les matières</option>
-                            {matieresNiveaux?.map((mn: any) => (
-                                <option key={mn.id} value={mn.id}>
-                                    {mn.matiere?.nom || '?'} - {mn.niveau?.nom || '?'}
+                            <option value="">Tous les programmes</option>
+                            {programmes.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.nom} ({p.code})
                                 </option>
                             ))}
                         </select>

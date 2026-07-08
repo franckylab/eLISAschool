@@ -59,6 +59,7 @@ export class ClassesService {
                     etablissementId,
                     professeurPrincipalId: dto.professeurPrincipalId ?? undefined,
                     sallePrincipaleId: dto.sallePrincipaleId ?? undefined,
+                    programmeId: dto.programmeId ?? undefined,
                     effectifMax,
                     effectifActuel: 0,
                     actif: true,
@@ -125,6 +126,7 @@ export class ClassesService {
                 salle: ca.sallePrincipale || null,
                 sallePrincipaleId: ca.sallePrincipaleId || null,
                 anneeScolaireId: ca.anneeScolaireId,
+                programmeId: ca.programmeId || null,
                 professeurPrincipalId: ca.professeurPrincipalId,
                 professeurPrincipal: ca.professeurPrincipal || null,
                 anneeScolaire: ca.anneeScolaire || null,
@@ -177,6 +179,7 @@ export class ClassesService {
             salle: classeAnnee.sallePrincipale || null,
             sallePrincipaleId: classeAnnee.sallePrincipaleId || null,
             anneeScolaireId: classeAnnee.anneeScolaireId,
+            programmeId: classeAnnee.programmeId || null,
             professeurPrincipalId: classeAnnee.professeurPrincipalId,
             professeurPrincipal: classeAnnee.professeurPrincipal || null,
             anneeScolaire: classeAnnee.anneeScolaire || null,
@@ -195,7 +198,7 @@ export class ClassesService {
         await this.classeRepo.save(classe);
         logger.info(`[${etablissementId}] Classe modifiée: ${classe.nom}`);
 
-        if (dto.sallePrincipaleId !== undefined || dto.effectifMax !== undefined) {
+        if (dto.sallePrincipaleId !== undefined || dto.effectifMax !== undefined || dto.programmeId !== undefined) {
             const classeAnneeId = (classe as any).classeAnneeId;
             if (classeAnneeId) {
                 const classeAnnee = await this.classeAnneeRepo.findOne({ where: { id: classeAnneeId } });
@@ -209,6 +212,9 @@ export class ClassesService {
                     }
                     if (dto.effectifMax !== undefined) {
                         classeAnnee.effectifMax = Math.min(dto.effectifMax, classeAnnee.effectifMax || Infinity);
+                    }
+                    if (dto.programmeId !== undefined) {
+                        classeAnnee.programmeId = dto.programmeId || undefined;
                     }
                     await this.classeAnneeRepo.save(classeAnnee);
                 }

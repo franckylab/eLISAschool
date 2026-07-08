@@ -50,6 +50,7 @@ export interface Classe {
     effectifActuel?: number;
     effectifMax?: number;
     anneeScolaireId?: string;
+    programmeId?: string;
     professeurPrincipalId?: string;
     professeurPrincipal?: {
         id: string;
@@ -83,6 +84,7 @@ export interface CreerClasseDto {
     description?: string;
     /** Champs d'instance annuelle (optionnels) */
     anneeScolaireId?: string;
+    programmeId?: string;
     professeurPrincipalId?: string | null;
     sallePrincipaleId?: string;
     effectifMax?: number;
@@ -124,6 +126,7 @@ export interface CreerClasseModeleDto {
  */
 export interface CreerClasseInstanceDto {
     anneeScolaireId: string;
+    programmeId?: string;
     professeurPrincipalId?: string | null;
     sallePrincipaleId?: string;
     effectifMax?: number;

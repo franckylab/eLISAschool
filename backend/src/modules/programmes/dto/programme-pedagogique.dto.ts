@@ -14,6 +14,7 @@ export const createProgrammeSchema = z.object({
     periodeId: z.string().uuid('Période invalide').optional().nullable(),
     dateDebut: z.string().optional(),
     dateFin: z.string().optional(),
+    anneeScolaireId: z.string().uuid('Année scolaire invalide').optional().nullable(),
     actif: z.boolean().default(true),
 });
 
@@ -21,7 +22,7 @@ export const updateProgrammeSchema = createProgrammeSchema.partial();
 
 export const queryProgrammesSchema = z.object({
     page: z.coerce.number().int().positive().optional().default(1),
-    limit: z.coerce.number().int().positive().max(100).optional().default(20),
+    limit: z.coerce.number().int().positive().max(200).optional().default(20),
     search: z.string().optional(),
     cycleId: z.string().uuid().optional(),
     niveauId: z.string().uuid().optional(),
@@ -31,18 +32,6 @@ export const queryProgrammesSchema = z.object({
     sortOrder: z.enum(['ASC', 'DESC']).default('ASC').optional(),
 });
 
-export const addMatiereProgrammeSchema = z.object({
-    matiereNiveauId: z.string().uuid('Matière-niveau invalide'),
-    coefficient: z.number().positive().optional(),
-    volumeHoraire: z.number().int().positive().optional(),
-    obligatoire: z.boolean().default(true),
-    ordre: z.number().int().min(0).default(0),
-});
-
-export const updateMatiereProgrammeSchema = addMatiereProgrammeSchema.partial().omit({ matiereNiveauId: true });
-
 export type CreateProgrammeDto = z.infer<typeof createProgrammeSchema>;
 export type UpdateProgrammeDto = z.infer<typeof updateProgrammeSchema>;
 export type QueryProgrammesDto = z.infer<typeof queryProgrammesSchema>;
-export type AddMatiereProgrammeDto = z.infer<typeof addMatiereProgrammeSchema>;
-export type UpdateMatiereProgrammeDto = z.infer<typeof updateMatiereProgrammeSchema>;

@@ -393,10 +393,20 @@ export class ConfigurationOrganisationService {
             );
         }
 
-        // Validation du type
-        this.validerType(valeur, param.type);
+        // Validation et coercion du type
+        let valeurCoerced = valeur;
+        if (param.type === 'number' && typeof valeur === 'string') {
+            const parsed = Number(valeur);
+            if (isNaN(parsed)) {
+                throw new AppError(`Type invalide: nombre attendu pour ${cle}`, 400, 'INVALID_TYPE');
+            }
+            valeurCoerced = parsed;
+        } else if (param.type === 'boolean' && typeof valeur === 'string') {
+            valeurCoerced = valeur === 'true' || valeur === '1';
+        }
+        this.validerType(valeurCoerced, param.type);
 
-        param.valeur = valeur;
+        param.valeur = valeurCoerced;
         this.cache.set(cle, param);
 
         logger.info(`[ConfigurationOrganisation] Paramètre modifié: ${cle} = ${valeur}`);

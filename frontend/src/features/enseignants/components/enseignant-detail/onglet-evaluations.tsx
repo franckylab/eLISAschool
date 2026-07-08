@@ -64,7 +64,7 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                         <div>
                             <p className="text-sm font-medium text-purple-700">Moyenne des évaluations</p>
                             <p className="text-3xl font-bold text-purple-800">
-                                {moy.moyenne.toFixed(1)} <span className="text-base font-normal">/ 5</span>
+                                {moy.moyenne.toFixed(1)} <span className="text-base font-normal">/ 20</span>
                             </p>
                             <p className="text-xs text-purple-600">{moy.total} évaluation(s)</p>
                         </div>

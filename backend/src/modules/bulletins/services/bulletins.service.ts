@@ -106,7 +106,7 @@ export class BulletinsService {
             const bulletins: Bulletin[] = [];
 
             // OPTIMISATION : Charger toutes les moyennes en UNE requête batch
-            const programme = await matieresService.getProgrammeNiveau(classeAnnee.classe.niveauId);
+            const programme = await matieresService.getMatieresParNiveau(classeAnnee.classe.niveauId);
             
             // CHARGEMENT des affectations matières de la classe pour les coefficients spécifiques
             const affectationRepo = AppDataSource.getRepository(AffectationMatiere);

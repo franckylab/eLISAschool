@@ -45,6 +45,9 @@
     "matieres": {
         "titre": "Matières"
     },
+    "organisation": {
+        "titre": "Organisation"
+    },
     "personnel": {
         "titre": "Personnel"
     },

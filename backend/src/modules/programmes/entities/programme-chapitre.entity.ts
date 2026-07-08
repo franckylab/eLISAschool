@@ -1,12 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Entité ProgrammeChapitre
- * ==================================
- * Module: Programmes Pédagogiques
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import {
     Entity,
     PrimaryGeneratedColumn,
@@ -17,13 +8,10 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { MatiereNiveau } from '@modules/matieres/entities';
+import { ProgrammeMatiere } from './programme-matiere.entity';
 import { Periode } from '@modules/periodes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
-/**
- * Statut du chapitre de programme (support workflow de validation)
- */
 export enum StatutChapitre {
     ACTIF = 'ACTIF',
     EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
@@ -31,21 +19,24 @@ export enum StatutChapitre {
 }
 
 @Entity('programme_chapitres')
-@Index(['matiereNiveauId'])
+@Index(['programmeMatiereId'])
 @Index(['periodeId'])
 @Index(['etablissementId'])
-@Index(['matiereNiveauId', 'periodeId'])
+@Index(['programmeMatiereId', 'periodeId'])
 @Index(['ordre'])
 export class ProgrammeChapitre {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
-    matiereNiveauId!: string;
+    @Column({ type: 'uuid', nullable: true })
+    matiereNiveauId?: string;
 
-    @ManyToOne(() => MatiereNiveau, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'matiereNiveauId' })
-    matiereNiveau?: MatiereNiveau;
+    @Column({ type: 'uuid', nullable: true })
+    programmeMatiereId?: string;
+
+    @ManyToOne(() => ProgrammeMatiere, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn({ name: 'programmeMatiereId' })
+    programmeMatiere?: ProgrammeMatiere;
 
     @Column({ type: 'uuid', nullable: true })
     periodeId?: string;
@@ -70,10 +61,10 @@ export class ProgrammeChapitre {
     dureePrevueHeures?: number;
 
     @Column({ type: 'simple-json', nullable: true })
-    prerequis?: string[]; // IDs des chapitres prérequis (optionnel)
+    prerequis?: string[];
 
     @Column({ type: 'int', default: 0 })
-    progressionPourcentage!: number; // 0-100, suivi de l'avancement (validation dans le service)
+    progressionPourcentage!: number;
 
     @Column({ type: 'simple-json', nullable: true })
     ressourcesPedagogiques?: Array<{
@@ -84,7 +75,7 @@ export class ProgrammeChapitre {
     }>;
 
     @Column({ type: 'simple-json', nullable: true })
-    competencesAssociees?: string[]; // IDs des compétences travaillées
+    competencesAssociees?: string[];
 
     @Column({ type: 'varchar', length: 30, default: StatutChapitre.ACTIF })
     statut!: StatutChapitre;

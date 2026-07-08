@@ -1,14 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Route Programmes Pédagogiques
+ * eLISAschool - Route Programmes Pédagogiques (Layout)
  * ==================================
+ * Route layout pour la liste et les détails des programmes
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { ProgrammesPage } from '@/features/programmes';
 
 export const Route = createFileRoute('/_auth/programmes')({
     beforeLoad: () => requireModulePermission('programmes'),
-    component: () => <ProgrammesPage />,
+    component: ProgrammesLayout,
 });
+
+function ProgrammesLayout() {
+    return <Outlet />;
+}

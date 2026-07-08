@@ -2,18 +2,15 @@
  * ==================================
  * eLISAschool - Service Matières
  * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
+ * Version: 2.1.0
  * 
- * Changements v2.0:
- * - Support multi-tenant avec etablissementId
- * - Toutes les requêtes filtrées par établissement
- * - Unicité des matières par établissement
+ * v2.1: Ajout findProgrammesPedagogiquesByMatiere
  */
 
 import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse, StatutAffectationMatiere, StatutMatiereNiveau, StatutConfigurationMatiereClasse } from '../entities';
+import { ProgrammeMatiere } from '@modules/programmes/entities';
 import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, CreateConfigurationMatiereClasseDto, UpdateConfigurationMatiereClasseDto, MoveAffectationDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
@@ -29,6 +26,7 @@ export class MatieresService {
     private niveauRepo: Repository<MatiereNiveau>;
     private affectationRepo: Repository<AffectationMatiere>;
     private configurationMatiereClasseRepo: Repository<ConfigurationMatiereClasse>;
+    private programmeMatiereRepo: Repository<ProgrammeMatiere>;
 
     constructor() {
         this.matiereRepo = AppDataSource.getRepository(Matiere);
@@ -36,13 +34,11 @@ export class MatieresService {
         this.niveauRepo = AppDataSource.getRepository(MatiereNiveau);
         this.affectationRepo = AppDataSource.getRepository(AffectationMatiere);
         this.configurationMatiereClasseRepo = AppDataSource.getRepository(ConfigurationMatiereClasse);
+        this.programmeMatiereRepo = AppDataSource.getRepository(ProgrammeMatiere);
     }
 
     // ==== MATIERES ====
 
-    /**
-     * Trouver une matière par ID (isolée par établissement)
-     */
     async findOne(id: string, etablissementId: string): Promise<Matiere> {
         const matiere = await this.matiereRepo.findOne({
             where: { id, etablissementId },
@@ -51,9 +47,6 @@ export class MatieresService {
         return matiere;
     }
 
-    /**
-     * Créer une matière (isolée par établissement)
-     */
     async create(dto: CreateMatiereDto, etablissementId: string): Promise<Matiere> {
         const existing = await this.matiereRepo.findOne({ 
             where: { nom: dto.nom, etablissementId } 
@@ -69,16 +62,17 @@ export class MatieresService {
         return matiere;
     }
 
-    /**
-     * Rechercher toutes les matières avec pagination (filtré par établissement)
-     */
     async findAll(query: QueryMatieresDto = {} as QueryMatieresDto, etablissementId: string): Promise<PaginatedResult<Matiere>> {
-        const { page = 1, limit = 20, actif, recherche } = query;
+        const { page = 1, limit = 20, actif, recherche, sousSysteme } = query;
 
         const baseWhere: any = { etablissementId };
         
         if (actif !== undefined) {
             baseWhere.actif = actif;
+        }
+
+        if (sousSysteme !== undefined) {
+            baseWhere.sousSysteme = sousSysteme;
         }
 
         let where: any = baseWhere;
@@ -98,9 +92,6 @@ export class MatieresService {
         });
     }
 
-    /**
-     * Mettre à jour une matière (vérification appartenance établissement)
-     */
     async update(id: string, dto: UpdateMatiereDto, etablissementId: string): Promise<Matiere> {
         const matiere = await this.matiereRepo.findOne({ 
             where: { id, etablissementId } 
@@ -111,9 +102,6 @@ export class MatieresService {
         return matiere;
     }
 
-    /**
-     * Supprimer une matière (vérification appartenance établissement)
-     */
     async delete(id: string, etablissementId: string): Promise<void> {
         const matiere = await this.matiereRepo.findOne({ 
             where: { id, etablissementId } 
@@ -131,9 +119,6 @@ export class MatieresService {
         return groupe;
     }
 
-    /**
-     * Rechercher tous les groupes avec pagination
-     */
     async findAllGroupes(page: number = 1, limit: number = 20): Promise<PaginatedResult<GroupeMatiere>> {
         return paginateWithRepository(this.groupeRepo, {
             order: { ordre: 'ASC' },
@@ -142,15 +127,14 @@ export class MatieresService {
         });
     }
 
-    // ==== PROGRAMME (Matière-Niveau) ====
+    // ==== GRILLE MATIÈRE PAR NIVEAU (MatiereNiveau) ====
+    // Source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire
+    // ConfigurationMatiereClasse peut surcharger ces valeurs par classe.
 
     async addMatiereToNiveau(dto: CreateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
-        const existing = await this.niveauRepo.findOne({
-            where: { matiereId: dto.matiereId, niveauId: dto.niveauId }
-        });
-        if (existing) throw new AppError('Matière déjà dans ce niveau', 409, 'MATIERE_IN_LEVEL_EXISTS');
-
-        // Vérifier si la validation est requise
+        // La contrainte d'unicité (matiereId, niveauId) est levée pour permettre
+        // plusieurs MatiereNiveau (ex: un par programme). Chacun sera lié à
+        // un unique programme via ProgrammeMatiere (contrainte d'unicité globale).
         const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
         const prog = this.niveauRepo.create({
@@ -161,7 +145,6 @@ export class MatieresService {
         } as unknown as MatiereNiveau);
         await this.niveauRepo.save(prog);
 
-        // Créer un workflow de validation si requis
         if (requireValidation) {
             await validationWorkflowService.createWorkflow({
                 module: 'matieres',
@@ -179,7 +162,7 @@ export class MatieresService {
         return prog;
     }
 
-    async getProgrammeNiveau(niveauId: string): Promise<MatiereNiveau[]> {
+    async getMatieresParNiveau(niveauId: string): Promise<MatiereNiveau[]> {
         return this.niveauRepo.find({
             where: { niveauId },
             relations: ['matiere', 'groupe'],
@@ -195,13 +178,19 @@ export class MatieresService {
         });
     }
 
-    async updateProgramme(id: string, dto: UpdateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
+    async deleteMatiereNiveau(id: string): Promise<void> {
+        const prog = await this.niveauRepo.findOne({ where: { id } });
+        if (!prog) throw new AppError('Programme matière-niveau non trouvé', 404, 'NOT_FOUND');
+        await this.niveauRepo.remove(prog);
+        logger.info(`Programme matière-niveau supprimé: ${id}`);
+    }
+
+    async updateMatiereNiveau(id: string, dto: UpdateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         const prog = await this.niveauRepo.findOne({ where: { id } });
         if (!prog) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
         Object.assign(prog, dto);
         await this.niveauRepo.save(prog);
 
-        // Créer un workflow de validation si requis (pour suivi des modifications)
         const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
         if (requireValidation) {
             await validationWorkflowService.createWorkflow({
@@ -222,7 +211,6 @@ export class MatieresService {
     // ==== AFFECTATIONS ENSEIGNANTS ====
 
     async affecterEnseignant(dto: AffecterEnseignantDto, createurId: string, etablissementId?: string): Promise<AffectationMatiere> {
-        // Récupérer la classe/année et le niveau
         const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: dto.classeAnneeId },
@@ -233,17 +221,13 @@ export class MatieresService {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
         }
 
-        // Vérifier si matière est enseignée dans ce niveau (programme)
         const prog = await this.niveauRepo.findOne({
             where: { matiereId: dto.matiereId, niveauId: classeAnnee.classe.niveauId }
         });
-        // Warning: Pas obligatoire que ce soit dans le programme pour être enseigné ? Si, logiquement.
         if (!prog) throw new AppError('Cette matière n\'est pas au programme de ce niveau', 400, 'MATIERE_NOT_IN_LEVEL');
 
-        // Vérifier si la validation est requise
         const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
-        // Vérifier doublons
         const existing = await this.affectationRepo.findOne({
             where: {
                 matiereId: dto.matiereId,
@@ -252,7 +236,7 @@ export class MatieresService {
         });
 
         if (existing) {
-            existing.enseignantId = dto.enseignantId; // Mise à jour de l'enseignant
+            existing.enseignantId = dto.enseignantId;
             if (dto.dateDebut) existing.dateDebut = new Date(dto.dateDebut);
             if (dto.dateFin !== undefined) existing.dateFin = new Date(dto.dateFin);
             if (dto.coefficient !== undefined) existing.coefficient = dto.coefficient;
@@ -262,7 +246,6 @@ export class MatieresService {
                 : StatutAffectationMatiere.ACTIVE;
             await this.affectationRepo.save(existing);
 
-            // Créer un workflow si requis
             if (requireValidation) {
                 await validationWorkflowService.createWorkflow({
                     module: 'matieres',
@@ -292,7 +275,6 @@ export class MatieresService {
         });
         await this.affectationRepo.save(affectation);
 
-        // Créer un workflow de validation si requis
         if (requireValidation) {
             await validationWorkflowService.createWorkflow({
                 module: 'matieres',
@@ -358,15 +340,11 @@ export class MatieresService {
 
     // ==== CONFIGURATION MATIERE CLASSE ====
 
-    /**
-     * Créer une configuration matière pour une classe
-     */
     async createConfigurationMatiereClasse(
         dto: CreateConfigurationMatiereClasseDto,
         createurId?: string,
         etablissementId?: string
     ): Promise<ConfigurationMatiereClasse> {
-        // Récupérer la classe/année pour avoir le niveau
         const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: dto.classeAnneeId },
@@ -377,7 +355,6 @@ export class MatieresService {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
         }
 
-        // Vérifier l'unicité
         const existing = await this.configurationMatiereClasseRepo.findOne({
             where: {
                 matiereId: dto.matiereId,
@@ -394,7 +371,6 @@ export class MatieresService {
             );
         }
 
-        // Vérifier que le MatiereNiveau existe (pour héritage)
         const matiereNiveau = await this.niveauRepo.findOne({
             where: {
                 matiereId: dto.matiereId,
@@ -425,7 +401,6 @@ export class MatieresService {
 
         await this.configurationMatiereClasseRepo.save(config);
 
-        // Workflow de validation si activé
         if (createurId && etablissementId) {
             const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
@@ -447,9 +422,6 @@ export class MatieresService {
         return config;
     }
 
-    /**
-     * Lister les configurations matière-classe
-     */
     async findAllConfigurationsMatiereClasse(
         etablissementId: string,
         classeAnneeId?: string
@@ -470,9 +442,6 @@ export class MatieresService {
         });
     }
 
-    /**
-     * Trouver une configuration matière-classe par ID
-     */
     async findOneConfigurationMatiereClasse(id: string): Promise<ConfigurationMatiereClasse> {
         const config = await this.configurationMatiereClasseRepo.findOne({
             where: { id },
@@ -486,9 +455,6 @@ export class MatieresService {
         return config;
     }
 
-    /**
-     * Mettre à jour une configuration matière-classe
-     */
     async updateConfigurationMatiereClasse(
         id: string,
         dto: UpdateConfigurationMatiereClasseDto
@@ -502,13 +468,9 @@ export class MatieresService {
         return config;
     }
 
-    /**
-     * Supprimer une configuration matière-classe
-     */
     async deleteConfigurationMatiereClasse(id: string): Promise<void> {
         const config = await this.findOneConfigurationMatiereClasse(id);
 
-        // Vérifier qu'il n'y a pas d'affectations liées
         const affectations = await this.affectationRepo.find({
             where: { configurationId: id },
         });
@@ -525,21 +487,16 @@ export class MatieresService {
         logger.info(`Configuration matière-classe supprimée: ${config.matiereId} → ${config.classeAnneeId}`);
     }
 
-    /**
-     * Obtenir la configuration effective d'une matière pour une classe-année
-     * (avec héritage depuis MatiereNiveau si override NULL)
-     * Retourne le format attendu par le frontend : config, defaults, effective
-     */
     async getConfigurationEffective(
         matiereId: string,
         classeAnneeId: string,
         etablissementId: string
     ): Promise<{
         config: ConfigurationMatiereClasse | null;
+        programme: { coefficient?: number | null; volumeHoraire?: number | null; obligatoire?: boolean | null; nom?: string | null } | null;
         defaults: { coefficient: number; bareme: number; volumeHoraire: number | null; credits: number | null; obligatoire: boolean; source: string };
         effective: { coefficient: number; bareme: number; volumeHoraireHebdo: number | null; credits: number | null; obligatoire: boolean };
     }> {
-        // Récupérer la ClasseAnnee pour obtenir le niveauId
         const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: classeAnneeId },
@@ -550,7 +507,6 @@ export class MatieresService {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
         }
 
-        // Chercher la configuration spécifique
         const config = await this.configurationMatiereClasseRepo.findOne({
             where: {
                 matiereId,
@@ -559,7 +515,32 @@ export class MatieresService {
             },
         });
 
-        // Récupérer le MatiereNiveau (valeurs par défaut)
+        // Résolution ProgrammeMatiere : si la classe a un programme, cherche
+        // le ProgrammeMatiere dont matiereNiveau.matiereId + niveauId correspondent.
+        let programmeSource: { coefficient?: number | null; volumeHoraire?: number | null; obligatoire?: boolean | null; nom?: string | null } | null = null;
+
+        if (classeAnnee.programmeId) {
+            const pm = await this.programmeMatiereRepo.findOne({
+                where: {
+                    programmeId: classeAnnee.programmeId,
+                    matiereNiveau: {
+                        matiereId,
+                        niveauId: classeAnnee.classe.niveauId,
+                    },
+                },
+                relations: ['matiereNiveau', 'programme'],
+            });
+
+            if (pm) {
+                programmeSource = {
+                    coefficient: pm.coefficient ?? null,
+                    volumeHoraire: pm.volumeHoraire ?? null,
+                    obligatoire: pm.obligatoire,
+                    nom: (pm.programme as any)?.nom ?? null,
+                };
+            }
+        }
+
         const matiereNiveau = await this.niveauRepo.findOne({
             where: {
                 matiereId,
@@ -567,14 +548,14 @@ export class MatieresService {
             },
         }) as any;
 
-        const defaults = matiereNiveau
+        // Fallback : MatiereNiveau → si ProgrammeMatiere définit une valeur, l'utiliser
+        const defaultsMatiereNiveau = matiereNiveau
             ? {
                 coefficient: matiereNiveau.coefficient,
                 bareme: matiereNiveau.bareme,
                 volumeHoraire: matiereNiveau.volumeHoraire ?? null,
                 credits: matiereNiveau.credits ?? null,
                 obligatoire: matiereNiveau.obligatoire,
-                source: 'MatiereNiveau' as const,
             }
             : {
                 coefficient: 1,
@@ -582,8 +563,21 @@ export class MatieresService {
                 volumeHoraire: null,
                 credits: null,
                 obligatoire: true,
-                source: 'MatiereNiveau' as const,
             };
+
+        // Chaîne : ProgrammeMatiere (primaire) → MatiereNiveau (fallback)
+        const coefficient = programmeSource?.coefficient ?? defaultsMatiereNiveau.coefficient;
+        const volumeHoraire = programmeSource?.volumeHoraire ?? defaultsMatiereNiveau.volumeHoraire;
+        const obligatoire = programmeSource?.obligatoire ?? defaultsMatiereNiveau.obligatoire;
+
+        const defaults = {
+            coefficient,
+            bareme: defaultsMatiereNiveau.bareme,
+            volumeHoraire,
+            credits: defaultsMatiereNiveau.credits,
+            obligatoire,
+            source: programmeSource ? 'ProgrammeMatiere' as const : 'MatiereNiveau' as const,
+        };
 
         const effective = {
             coefficient: config?.coefficient ?? defaults.coefficient,
@@ -593,14 +587,11 @@ export class MatieresService {
             obligatoire: config?.obligatoire ?? defaults.obligatoire,
         };
 
-        return { config: config || null, defaults, effective };
+        return { config: config || null, programme: programmeSource, defaults, effective };
     }
 
-    // ==== PROGRAMME PAR MATIERE ====
+    // ==== GRILLE PAR MATIÈRE (MatiereNiveau filtré par matière) ====
 
-    /**
-     * Obtenir le programme (niveaux) d'une matière
-     */
     async findProgrammeByMatiere(matiereId: string): Promise<MatiereNiveau[]> {
         return this.niveauRepo.find({
             where: { matiereId },
@@ -609,16 +600,15 @@ export class MatieresService {
         });
     }
 
+    // ==== PROGRAMMES PEDAGOGIQUES PAR MATIERE ====
+
+    async findProgrammesPedagogiquesByMatiere(matiereId: string, etablissementId: string): Promise<any[]> {
+        const { programmeMatiereService } = await import('@modules/programmes/services/programme-matiere.service');
+        return programmeMatiereService.findByMatiere(matiereId, etablissementId);
+    }
+
     // ==== AFFECTATIONS PAR ENSEIGNANT ====
 
-    /**
-     * Obtenir les affectations matière/classe d'un enseignant
-     * Retourne chaque affectation avec :
-     * - les relations matiere, classeAnnee, classe, anneeScolaire, configuration
-     * - le coefficient effectif (hérité : affectation > config > matiereNiveau)
-     * - le volume horaire hebdo effectif (config > matiereNiveau)
-     * - l'effectif actuel de la classe
-     */
     async getAffectationsByEnseignant(enseignantId: string, etablissementId: string): Promise<any[]> {
         const affectations = await this.affectationRepo.find({
             where: { enseignantId, etablissementId },
@@ -632,7 +622,6 @@ export class MatieresService {
             order: { createdAt: 'DESC' },
         });
 
-        // Batch load MatiereNiveaux pour résoudre coefficients/volumes
         const matiereIds = [...new Set(affectations.map(a => a.matiereId))];
         const niveauIds = [...new Set(affectations.map(a => a.classeAnnee?.classe?.niveauId).filter(Boolean))];
         const matiereNiveaux: Map<string, MatiereNiveau> = new Map();
@@ -647,16 +636,51 @@ export class MatieresService {
             }
         }
 
+        // Collecter les programmeIds pour résolution ProgrammeMatiere
+        const programmeIds = [...new Set(affectations.map(a => (a.classeAnnee as any)?.programmeId).filter(Boolean))];
+        const programmeMatieres: Map<string, ProgrammeMatiere> = new Map();
+        if (programmeIds.length > 0 && matiereIds.length > 0 && niveauIds.length > 0) {
+            const pms = await this.programmeMatiereRepo.find({
+                where: programmeIds.map(pid => ({
+                    programmeId: pid,
+                    matiereNiveau: {
+                        matiereId: matiereIds[0], // fallback — on va charger plus largement
+                    },
+                })),
+                relations: ['matiereNiveau'],
+            }).catch(() => []);
+            // Rechargement plus large si nécessaire
+            const allPMs = programmeIds.length > 0
+                ? await this.programmeMatiereRepo.createQueryBuilder('pm')
+                    .leftJoinAndSelect('pm.matiereNiveau', 'mn')
+                    .where('pm.programmeId IN (:...programmeIds)', { programmeIds })
+                    .andWhere('mn.matiereId IN (:...matiereIds)', { matiereIds })
+                    .getMany()
+                : [];
+            for (const pm of allPMs) {
+                programmeMatieres.set(`${pm.matiereNiveau.matiereId}::${pm.matiereNiveau.niveauId}::${pm.programmeId}`, pm);
+            }
+        }
+
         return affectations.map((aff) => {
             const niveauId = aff.classeAnnee?.classe?.niveauId;
             const key = niveauId ? `${aff.matiereId}::${niveauId}` : '';
             const matiereNiveau = key ? matiereNiveaux.get(key) : null;
             const config = aff.configuration;
 
+            // Résolution ProgrammeMatiere
+            const programmeId = (aff.classeAnnee as any)?.programmeId;
+            const pmKey = programmeId && niveauId ? `${aff.matiereId}::${niveauId}::${programmeId}` : '';
+            const pm = pmKey ? programmeMatieres.get(pmKey) : null;
+
+            // Chaîne : Config → ProgrammeMatiere → MatiereNiveau → Affectation (deprecated)
+            const coefficient = config?.coefficient ?? pm?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1;
+            const volumeHoraireHebdo = config?.volumeHoraireHebdo ?? pm?.volumeHoraire ?? matiereNiveau?.volumeHoraire ?? null;
+
             return {
                 ...aff,
-                coefficient: config?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1,
-                volumeHoraireHebdo: config?.volumeHoraireHebdo ?? matiereNiveau?.volumeHoraire ?? null,
+                coefficient,
+                volumeHoraireHebdo,
                 effectifActuel: aff.classeAnnee?.effectifActuel ?? 0,
             };
         });
@@ -664,9 +688,6 @@ export class MatieresService {
 
     // ==== AFFECTATIONS PAR MATIERE ====
 
-    /**
-     * Obtenir les affectations enseignants d'une matière
-     */
     async findAffectationsByMatiere(matiereId: string, etablissementId: string): Promise<AffectationMatiere[]> {
         return this.affectationRepo.find({
             where: { matiereId, etablissementId },
@@ -677,9 +698,6 @@ export class MatieresService {
 
     // ==== CONFIGURATIONS PAR MATIERE ====
 
-    /**
-     * Obtenir les configurations classe d'une matière
-     */
     async findConfigurationsByMatiere(matiereId: string, etablissementId: string): Promise<ConfigurationMatiereClasse[]> {
         return this.configurationMatiereClasseRepo.find({
             where: { matiereId, etablissementId },

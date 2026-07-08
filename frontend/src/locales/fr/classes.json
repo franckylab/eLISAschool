@@ -177,7 +177,9 @@
         "sallePlaceholder": "Ex: Salle 101",
         "effectifMax": "Effectif maximal",
         "effectifMaxHint": "Nombre maximum d'élèves (1-100)",
-        "actif": "Actif"
+        "actif": "Actif",
+        "programme": "Programme pédagogique",
+        "selectionnerProgramme": "Sélectionner un programme"
     },
     "annee": {
         "enCours": "En cours",

@@ -178,6 +178,7 @@ export const filtrePostesSchema = z.object({
     ]).optional(),
     statut: z.enum(['ACTIF', 'VACANT', 'SUPPRIME', 'EN_ATTENTE']).optional(),
     uniteOrganisationnelleId: z.string().uuid().optional(),
+    organisationId: z.string().uuid().optional(),
     vacant: z.boolean().optional(), // true = postes vacants uniquement
 });
 

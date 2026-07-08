@@ -20,6 +20,7 @@ import {
     DEFAULT_DATATABLE_PREFERENCES,
     validatePreferences,
 } from '@/types/datatable-preferences.types';
+import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
 
 // ============================================
@@ -31,46 +32,25 @@ const AUTO_SAVE_INTERVAL = 30000; // 30 secondes
 const LOCAL_STORAGE_PREFIX = 'datatable.pending.';
 
 // ============================================
-// API Client minimal
+// API Client — utilise apiClient (gère le token, le refresh, et VITE_API_URL)
 // ============================================
 
 async function apiSetPreference(cle: string, valeur: string, etablissementId?: string): Promise<void> {
-    const { accessToken } = useAuthStore.getState();
-    
-    if (!accessToken) {
-        throw new Error('Non authentifié');
-    }
-    
-    const response = await fetch('/api/preferences/set', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ cle, valeur, etablissementId }),
-    });
-
-    if (!response.ok) {
-        if (response.status === 404) {
+    try {
+        await apiClient.post('/api/preferences/set', { cle, valeur, etablissementId });
+    } catch (error: any) {
+        if (error?.status === 404) {
             console.debug('[DataTable] Prefs API not available (404) - skipping save');
             return;
         }
-        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
+        throw new Error(`HTTP ${error?.status || 'ERR'}: ${error?.message || 'Erreur inconnue'}`);
     }
 }
 
 async function apiGetPreference(cle: string): Promise<string | null> {
-    const { accessToken } = useAuthStore.getState();
-    if (!accessToken) return null;
-
     try {
-        const response = await fetch(`/api/preferences/my/${cle}`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` },
-        });
-        if (!response.ok) return null;
-        const json = await response.json();
-        return json?.data?.valeur ?? null;
+        const response = await apiClient.get<{ cle: string; valeur: string }>(`/api/preferences/my/${cle}`);
+        return response?.data?.valeur ?? null;
     } catch {
         return null;
     }

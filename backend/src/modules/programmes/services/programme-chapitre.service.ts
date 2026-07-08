@@ -1,12 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Service ProgrammeChapitre
- * ==================================
- * Module: Programmes Pédagogiques
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ProgrammeChapitre } from '../entities/programme-chapitre.entity';
@@ -24,9 +15,6 @@ export class ProgrammeChapitreService {
         this.repo = AppDataSource.getRepository(ProgrammeChapitre);
     }
 
-    /**
-     * Créer un nouveau chapitre de programme
-     */
     async create(
         dto: CreateProgrammeChapitreDto,
         etablissementId: string,
@@ -39,7 +27,6 @@ export class ProgrammeChapitreService {
         });
         await this.repo.save(entity);
 
-        // Audit trail
         if (createurId) {
             await auditService.log({
                 utilisateurId: createurId,
@@ -56,21 +43,21 @@ export class ProgrammeChapitreService {
         return entity;
     }
 
-    /**
-     * Rechercher tous les chapitres avec filtres et pagination
-     */
     async findAll(query: QueryProgrammeChapitreDto, etablissementId: string) {
         const qb = this.repo.createQueryBuilder('chapitre')
             .where('chapitre.etablissementId = :etablissementId', { etablissementId })
-            .leftJoinAndSelect('chapitre.matiereNiveau', 'matiereNiveau')
+            .leftJoinAndSelect('chapitre.programmeMatiere', 'pm')
+            .leftJoinAndSelect('pm.matiereNiveau', 'matiereNiveau')
             .leftJoinAndSelect('matiereNiveau.matiere', 'matiere')
             .leftJoinAndSelect('matiereNiveau.niveau', 'niveau')
             .leftJoinAndSelect('chapitre.periode', 'periode')
             .orderBy('chapitre.ordre', 'ASC');
 
-        // Filtres
-        if (query.matiereNiveauId) {
-            qb.andWhere('chapitre.matiereNiveauId = :matiereNiveauId', { matiereNiveauId: query.matiereNiveauId });
+        if (query.programmeMatiereId) {
+            qb.andWhere('chapitre.programmeMatiereId = :programmeMatiereId', { programmeMatiereId: query.programmeMatiereId });
+        }
+        if (query.programmeId) {
+            qb.andWhere('pm.programmeId = :programmeId', { programmeId: query.programmeId });
         }
         if (query.periodeId) {
             qb.andWhere('chapitre.periodeId = :periodeId', { periodeId: query.periodeId });
@@ -81,46 +68,40 @@ export class ProgrammeChapitreService {
 
         const result = await paginateWithQueryBuilder(qb, query.page, query.limit);
 
-        // Enrichir chaque chapitre avec le programme associé via la jonction programmes_matieres
         if (result.items.length > 0) {
-            const matiereNiveauIds = [...new Set(result.items.map(c => c.matiereNiveauId))];
+            const programmeMatiereIds = [...new Set(result.items.map(c => c.programmeMatiereId).filter(Boolean))];
             const programmesParMatiere = await AppDataSource
                 .createQueryBuilder()
-                .select('pm.matiereNiveauId', 'matiereNiveauId')
+                .select('pm.id', 'programmeMatiereId')
                 .addSelect('prog.id', 'programmeId')
                 .addSelect('prog.nom', 'programmeNom')
                 .from('programmes_matieres', 'pm')
-                .leftJoin('programmes_pedagogiques', 'prog', 'prog.id = pm.programmeId')
-                .where('pm.matiereNiveauId IN (:...ids)', { ids: matiereNiveauIds })
+                .leftJoin('programmes_pedagogiques', 'prog', 'prog.id = pm."programmeId"')
+                .where('pm.id IN (:...ids)', { ids: programmeMatiereIds })
                 .getRawMany();
 
             const programmeMap = new Map<string, { programmeId: string; programmeNom: string }>();
             for (const row of programmesParMatiere) {
-                if (!programmeMap.has(row.matiereNiveauId)) {
-                    programmeMap.set(row.matiereNiveauId, {
-                        programmeId: row.programmeId,
-                        programmeNom: row.programmeNom,
-                    });
-                }
+                programmeMap.set(row.programmeMatiereId, {
+                    programmeId: row.programmeId,
+                    programmeNom: row.programmeNom,
+                });
             }
 
             result.items = result.items.map(chapitre => ({
                 ...chapitre,
-                programmeId: programmeMap.get(chapitre.matiereNiveauId)?.programmeId || null,
-                programmeNom: programmeMap.get(chapitre.matiereNiveauId)?.programmeNom || null,
+                programmeId: programmeMap.get(chapitre.programmeMatiereId)?.programmeId || null,
+                programmeNom: programmeMap.get(chapitre.programmeMatiereId)?.programmeNom || null,
             })) as any;
         }
 
         return result;
     }
 
-    /**
-     * Rechercher un chapitre par ID
-     */
     async findOne(id: string, etablissementId: string): Promise<ProgrammeChapitre> {
         const entity = await this.repo.findOne({
             where: { id, etablissementId },
-            relations: ['matiereNiveau', 'periode'],
+            relations: ['programmeMatiere', 'periode'],
         });
 
         if (!entity) {
@@ -130,9 +111,6 @@ export class ProgrammeChapitreService {
         return entity;
     }
 
-    /**
-     * Mettre à jour un chapitre
-     */
     async update(
         id: string,
         dto: UpdateProgrammeChapitreDto,
@@ -145,7 +123,6 @@ export class ProgrammeChapitreService {
         Object.assign(entity, dto);
         await this.repo.save(entity);
 
-        // Audit trail
         await auditService.log({
             utilisateurId: userId,
             action: AuditAction.PROGRAMME_CHAPITRE_UPDATE,
@@ -159,15 +136,11 @@ export class ProgrammeChapitreService {
         return entity;
     }
 
-    /**
-     * Supprimer un chapitre
-     */
     async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<{ success: boolean }> {
         const entity = await this.findOne(id, etablissementId);
 
         await this.repo.remove(entity);
 
-        // Audit trail
         await auditService.log({
             utilisateurId: userId,
             action: AuditAction.PROGRAMME_CHAPITRE_DELETE,
@@ -180,16 +153,13 @@ export class ProgrammeChapitreService {
         return { success: true };
     }
 
-    /**
-     * Obtenir tous les chapitres pour une matière-niveau
-     */
-    async getChapitresParMatiereNiveau(
-        matiereNiveauId: string,
+    async getChapitresParProgrammeMatiere(
+        programmeMatiereId: string,
         etablissementId: string,
         periodeId?: string
     ): Promise<ProgrammeChapitre[]> {
         const qb = this.repo.createQueryBuilder('chapitre')
-            .where('chapitre.matiereNiveauId = :matiereNiveauId', { matiereNiveauId })
+            .where('chapitre.programmeMatiereId = :programmeMatiereId', { programmeMatiereId })
             .andWhere('chapitre.etablissementId = :etablissementId', { etablissementId })
             .leftJoinAndSelect('chapitre.periode', 'periode')
             .orderBy('chapitre.ordre', 'ASC');
@@ -201,27 +171,21 @@ export class ProgrammeChapitreService {
         return qb.getMany();
     }
 
-    /**
-     * Obtenir tous les chapitres pour une période
-     */
     async getChapitresParPeriode(
         etablissementId: string,
         periodeId: string
     ): Promise<ProgrammeChapitre[]> {
         return this.repo.find({
             where: { periodeId, etablissementId },
-            relations: ['matiereNiveau'],
+            relations: ['programmeMatiere'],
             order: { ordre: 'ASC' },
         });
     }
 
-    /**
-     * Obtenir le volume horaire total pour une matière-niveau
-     */
-    async getVolumeHoraireTotal(matiereNiveauId: string): Promise<{ prevu: number; chapitreCount: number }> {
+    async getVolumeHoraireTotal(programmeMatiereId: string): Promise<{ prevu: number; chapitreCount: number }> {
         const result = await this.repo
             .createQueryBuilder('chapitre')
-            .where('chapitre.matiereNiveauId = :matiereNiveauId', { matiereNiveauId })
+            .where('chapitre.programmeMatiereId = :programmeMatiereId', { programmeMatiereId })
             .select('SUM(chapitre.dureePrevueHeures)', 'prevu')
             .addSelect('COUNT(chapitre.id)', 'chapitreCount')
             .getRawOne();
@@ -232,10 +196,25 @@ export class ProgrammeChapitreService {
         };
     }
 
-    /**
-     * Calculer la progression réelle basée sur les chapitres
-     * (utilisera les progressions associées aux chapitres)
-     */
+    async getChapitresParMatiereNiveau(
+        matiereNiveauId: string,
+        etablissementId: string,
+        periodeId?: string
+    ): Promise<ProgrammeChapitre[]> {
+        const qb = this.repo.createQueryBuilder('chapitre')
+            .leftJoinAndSelect('chapitre.programmeMatiere', 'pm')
+            .where('pm.matiereNiveauId = :matiereNiveauId', { matiereNiveauId })
+            .andWhere('chapitre.etablissementId = :etablissementId', { etablissementId })
+            .leftJoinAndSelect('chapitre.periode', 'periode')
+            .orderBy('chapitre.ordre', 'ASC');
+
+        if (periodeId) {
+            qb.andWhere('chapitre.periodeId = :periodeId', { periodeId });
+        }
+
+        return qb.getMany();
+    }
+
     async calculerProgressionReelle(
         matiereNiveauId: string,
         classeId: string,
@@ -247,20 +226,10 @@ export class ProgrammeChapitreService {
         pourcentageReel: number;
         chapitresEnRetard: ProgrammeChapitre[];
     }> {
-        // Importer ProgressionProgramme ici pour éviter dépendance circulaire
         const { ProgressionProgramme } = await import('@modules/personnel/entities');
         const progressionRepo = AppDataSource.getRepository(ProgressionProgramme);
 
-        // Récupérer tous les chapitres
-        const chapitresQb = this.repo.createQueryBuilder('chapitre')
-            .where('chapitre.matiereNiveauId = :matiereNiveauId', { matiereNiveauId })
-            .andWhere('chapitre.etablissementId IN (SELECT e.id FROM etablissements e)');
-
-        if (periodeId) {
-            chapitresQb.andWhere('chapitre.periodeId = :periodeId', { periodeId });
-        }
-
-        const chapitres = await chapitresQb.getMany();
+        const chapitres = await this.getChapitresParMatiereNiveau(matiereNiveauId, '', periodeId);
         const chapitresTotal = chapitres.length;
 
         if (chapitresTotal === 0) {
@@ -272,7 +241,6 @@ export class ProgrammeChapitreService {
             };
         }
 
-        // Récupérer les progressions pour ces chapitres
         const chapitreIds = chapitres.map(c => c.id);
         const progressions = await progressionRepo.find({
             where: {
@@ -282,11 +250,9 @@ export class ProgrammeChapitreService {
             },
         });
 
-        // Compter les chapitres réalisés (progression >= 100%)
         const chapitresRealises = progressions.filter(p => Number(p.pourcentageRealise) >= 100).length;
         const pourcentageReel = (chapitresRealises / chapitresTotal) * 100;
 
-        // Identifier les chapitres en retard (pas de progression ou < 100%)
         const chapitresAvecProgression = new Set(progressions.map(p => p.programmeChapitreId));
         const chapitresEnRetard = chapitres.filter(c => !chapitresAvecProgression.has(c.id));
 

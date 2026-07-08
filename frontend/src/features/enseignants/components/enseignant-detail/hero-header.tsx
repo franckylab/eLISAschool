@@ -126,7 +126,7 @@ export function HeroHeader({
                 <StatCard icon={BookOpen} label="Matières"
                     value={nbMatieres ?? '—'} color="blue" loading={!statsLoaded} />
                 <StatCard icon={Star} label="Moyenne éval."
-                    value={moyenneEval?.moyenne != null ? `${moyenneEval.moyenne.toFixed(1)}/5` : '—'}
+                    value={moyenneEval?.moyenne != null ? `${moyenneEval.moyenne.toFixed(1)}/20` : '—'}
                     color="purple" loading={!statsLoaded} />
                 <StatCard icon={Clock} label="Heures"
                     value={totalHeures != null ? `${totalHeures}h` : '—'}

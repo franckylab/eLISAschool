@@ -38,7 +38,7 @@ router.get(
 router.post(
     '/evaluer/:enseignantId',
     authMiddleware,
-    requirePermission('config:edit'),
+    requirePermission('programmes:config:write'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { periodeId } = req.query;
@@ -58,7 +58,7 @@ router.post(
 router.get(
     '/dashboard',
     authMiddleware,
-    requirePermission('config:edit'),
+    requirePermission('programmes:config:write'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { periodeId } = req.query;

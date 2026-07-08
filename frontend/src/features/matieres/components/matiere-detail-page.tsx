@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, BookOpen, Clock, FileText, Users,
     Edit, Trash2, Hash, TrendingUp, AlertCircle,
-    GraduationCap, Layers, CheckCircle, XCircle,
-    Globe, UserCheck, Ban, UserPlus, AlertTriangle, Plus,
+    Layers, CheckCircle, XCircle,
+    Globe, UserCheck, UserPlus, AlertTriangle, Plus,
 } from 'lucide-react';
-import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation, useCreerConfigurationMatiereClasse, useModifierConfigurationMatiereClasse, useSupprimerConfigurationMatiereClasse } from '../hooks/use-matieres';
+import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation, useCreerConfigurationMatiereClasse, useModifierConfigurationMatiereClasse, useSupprimerConfigurationMatiereClasse } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
+import { TabProgramme } from './tab-programme';
+import { TabNiveaux } from './tab-niveaux';
 import { useCreneaux } from '@/features/emploi-du-temps';
 import { EDTCalendar } from '@/features/emploi-du-temps';
 import { AffectationFormModal } from './affectation-form-modal';
@@ -22,7 +24,7 @@ import { usePermissions } from '@/hooks';
 import type { MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
 
-type OngletActif = 'informations' | 'programme' | 'affectations' | 'configurations' | 'emploi-du-temps';
+type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'configurations' | 'emploi-du-temps';
 
 function StatutBadge({ actif }: { actif: boolean }) {
     return (
@@ -84,6 +86,7 @@ export function MatiereDetailPage() {
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
     const programmeQuery = useMatiereProgramme(id);
+    const programmesPedagogiquesQuery = useMatiereProgrammesPedagogiques(id);
     const affectationsQuery = useMatiereAffectations(id);
     const configurationsQuery = useMatiereConfigurations(id);
     const edtQuery = useCreneaux({ matiereId: id, limit: 200 });
@@ -170,7 +173,8 @@ export function MatiereDetailPage() {
 
     const onglets = [
         { id: 'informations' as const, label: 'Informations', icon: BookOpen },
-        { id: 'programme' as const, label: 'Programme', icon: Layers, count: programmeQuery.data?.length, warning: niveauxSansAffectation.length > 0 },
+        { id: 'niveaux' as const, label: 'Niveaux', icon: Layers, count: programmeQuery.data?.length },
+        { id: 'programme' as const, label: 'Programmes', icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
         { id: 'affectations' as const, label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length, warning: affectationsInactives.length > 0 },
         { id: 'configurations' as const, label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
         { id: 'emploi-du-temps' as const, label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.items?.length },
@@ -235,10 +239,11 @@ export function MatiereDetailPage() {
                 </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <StatCard icon={Layers} label="Niveaux" value={programmeQuery.data?.length ?? '-'} color="blue" delay={0.1} />
+                <StatCard icon={BookOpen} label="Programmes" value={programmesPedagogiquesQuery.data?.length ?? '-'} color="purple" delay={0.15} />
                 <StatCard icon={Users} label="Enseignants" value={affectationsQuery.data?.length ?? '-'} color="green" delay={0.2} />
-                <StatCard icon={FileText} label="Configurations" value={configurationsQuery.data?.length ?? '-'} color="purple" delay={0.3} />
+                <StatCard icon={FileText} label="Configurations" value={configurationsQuery.data?.length ?? '-'} color="indigo" delay={0.3} />
                 <StatCard icon={TrendingUp} label={`Couverture ${tauxCouverture}%`} value={`${programmeQuery.data?.length ? programmeQuery.data.length - niveauxSansAffectation.length : '-'}/${programmeQuery.data?.length ?? '-'}`}
                     color={tauxCouverture >= 80 ? 'green' : tauxCouverture >= 50 ? 'yellow' : 'red'} delay={0.4}
                 />
@@ -299,10 +304,20 @@ export function MatiereDetailPage() {
                 {ongletActif === 'informations' && (
                     <InformationsTab matiere={matiere} couleur={couleur} />
                 )}
+                {ongletActif === 'niveaux' && (
+                    <TabNiveaux
+                        matiereNiveaux={programmeQuery.data}
+                        isLoading={programmeQuery.isLoading}
+                        matiereId={id}
+                        matiereNom={matiere.nom}
+                    />
+                )}
                 {ongletActif === 'programme' && (
-                    <ProgrammeTab data={programmeQuery.data} isLoading={programmeQuery.isLoading}
-                        niveauxSansAffectation={niveauxSansAffectation}
-                        affectations={affectationsQuery.data}
+                    <TabProgramme
+                        programmesPedagogiques={programmesPedagogiquesQuery.data}
+                        isLoadingPP={programmesPedagogiquesQuery.isLoading}
+                        matiereId={id}
+                        matiereNom={matiere.nom}
                     />
                 )}
                 {ongletActif === 'affectations' && (
@@ -419,6 +434,7 @@ function StatCard({ icon: Icon, label, value, color, delay }: { icon: any; label
         purple: { bg: 'from-purple-50 to-purple-100 border-purple-200', text: 'text-purple-700', value: 'text-purple-800' },
         yellow: { bg: 'from-yellow-50 to-yellow-100 border-yellow-200', text: 'text-yellow-700', value: 'text-yellow-800' },
         red: { bg: 'from-red-50 to-red-100 border-red-200', text: 'text-red-700', value: 'text-red-800' },
+        indigo: { bg: 'from-indigo-50 to-indigo-100 border-indigo-200', text: 'text-indigo-700', value: 'text-indigo-800' },
         gray: { bg: 'from-gray-50 to-gray-100 border-gray-200', text: 'text-gray-700', value: 'text-gray-800' },
     };
     const c = colors[color] || colors.blue;
@@ -499,107 +515,6 @@ function InformationsTab({ matiere, couleur }: { matiere: any; couleur: string }
                         <dt className="text-sm font-medium text-gray-500">Dernière modification</dt>
                         <dd className="mt-1 text-gray-900">{formatDate(matiere.updatedAt)}</dd>
                     </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function VolumeBar({ value, max }: { value: number; max: number }) {
-    const pct = max > 0 ? (value / max) * 100 : 0;
-    return (
-        <div className="flex items-center gap-2 w-24">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-            </div>
-            <span className="text-xs font-medium text-gray-600 w-8 text-right">{value}h</span>
-        </div>
-    );
-}
-
-function ProgrammeTab({ data, isLoading, niveauxSansAffectation, affectations }: {
-    data: MatiereNiveau[] | undefined;
-    isLoading: boolean;
-    niveauxSansAffectation: MatiereNiveau[];
-    affectations: AffectationMatiere[] | undefined;
-}) {
-    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement du programme..." /></div>;
-    if (!data || data.length === 0) return (
-        <EmptyState icon={Layers} message="Aucun niveau associé" sub="Ajoutez cette matière au programme d'un niveau depuis la section Programmes." />
-    );
-
-    const maxVolume = Math.max(...data.map((p) => p.volumeHoraire || 0));
-    const sansAffectationIds = new Set(niveauxSansAffectation.map((n) => n.id));
-
-    return (
-        <div className="space-y-4">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="text-left px-4 py-3 font-medium text-gray-600">Niveau</th>
-                                <th className="text-left px-4 py-3 font-medium text-gray-600">Groupe</th>
-                                <th className="text-left px-4 py-3 font-medium text-gray-600">Filière</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Couverture</th>
-                                <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {data.map((p) => {
-                                const sansEns = sansAffectationIds.has(p.id);
-                                return (
-                                    <tr key={p.id} className={`hover:bg-gray-50 ${sansEns ? 'bg-amber-50/50' : ''}`}>
-                                        <td className="px-4 py-3 font-medium">{p.niveau?.nom || p.niveauId}</td>
-                                        <td className="px-4 py-3 text-gray-600">{p.groupe?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-600">{p.filiere?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-center font-semibold">{p.coefficient}</td>
-                                        <td className="px-4 py-3 text-center">/ {p.bareme}</td>
-                                        <td className="px-4 py-3 text-center">
-                                            {p.volumeHoraire ? <VolumeBar value={p.volumeHoraire} max={maxVolume} /> : '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            {p.obligatoire ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                                    <CheckCircle className="h-3 w-3" /> Oblig.
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
-                                                    <XCircle className="h-3 w-3" /> Optionnel
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            {sansEns ? (
-                                                <span title="Aucun enseignant assigné à ce niveau"
-                                                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
-                                                >
-                                                    <AlertTriangle className="h-3 w-3" /> Non couvert
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                                    <CheckCircle className="h-3 w-3" /> Couvert
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                p.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
-                                                p.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-gray-100 text-gray-700'
-                                            }`}>
-                                                {p.statut === 'ACTIF' ? 'Actif' : p.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -794,6 +709,18 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function VolumeBar({ value, max }: { value: number; max: number }) {
+    const pct = max > 0 ? (value / max) * 100 : 0;
+    return (
+        <div className="flex items-center gap-2 w-24">
+            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs font-medium text-gray-600 w-8 text-right">{value}h</span>
         </div>
     );
 }

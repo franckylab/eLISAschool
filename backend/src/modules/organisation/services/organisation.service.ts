@@ -12,7 +12,7 @@
  * - Statistiques et analyses organisationnelles
  */
 
-import { Repository, In } from 'typeorm';
+import { Repository, In, Like } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import {
     Organisation,
@@ -142,7 +142,10 @@ export class OrganisationService {
     async findAllOrganisationsPaginated(
         page: number,
         limit: number,
-        etablissementId?: string
+        etablissementId?: string,
+        search?: string,
+        type?: string,
+        statut?: string
     ): Promise<{ data: Organisation[]; total: number }> {
         // Utiliser la limite par défaut configurée
         const defaultLimit = await configurationOrganisationService.getValeur<number>('organisation.pagination_defaut_limit') || 20;
@@ -153,6 +156,15 @@ export class OrganisationService {
         const where: any = {};
         if (etablissementId) {
             where.etablissementId = etablissementId;
+        }
+        if (type) {
+            where.type = type;
+        }
+        if (statut) {
+            where.statut = statut;
+        }
+        if (search) {
+            where.nom = Like(`%${search}%`);
         }
 
         const [data, total] = await this.organisationRepo.findAndCount({
@@ -573,6 +585,18 @@ export class OrganisationService {
 
         if (filtres.vacant === true) {
             where.statut = StatutPoste.VACANT;
+        }
+
+        // Filtres via la relation uniteOrganisationnelle
+        const uniteWhere: any = {};
+        if (etablissementId) {
+            uniteWhere.organisation = { etablissementId };
+        }
+        if (filtres.organisationId) {
+            uniteWhere.organisationId = filtres.organisationId;
+        }
+        if (Object.keys(uniteWhere).length > 0) {
+            where.uniteOrganisationnelle = uniteWhere;
         }
 
         return this.posteRepo.find({

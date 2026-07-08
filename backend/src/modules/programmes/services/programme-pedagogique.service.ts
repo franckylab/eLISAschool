@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ProgrammePedagogique } from '../entities/programme-pedagogique.entity';
 import { ProgrammeMatiere } from '../entities/programme-matiere.entity';
@@ -7,6 +7,7 @@ import { CreateProgrammeDto, UpdateProgrammeDto, QueryProgrammesDto, AddMatiereP
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { programmeMatiereService } from './programme-matiere.service';
 
 export class ProgrammePedagogiqueService {
     private repo: Repository<ProgrammePedagogique>;
@@ -120,74 +121,35 @@ export class ProgrammePedagogiqueService {
         logger.info(`Programme supprimé: ${id}`);
     }
 
+    // Délégué à ProgrammeMatiereService
     async addMatiere(programmeId: string, dto: AddMatiereProgrammeDto, etablissementId: string): Promise<ProgrammeMatiere> {
-        const programme = await this.repo.findOne({ where: { id: programmeId, etablissementId } });
-        if (!programme) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
-
-        const existing = await this.matiereRepo.findOne({
-            where: { programmeId, matiereNiveauId: dto.matiereNiveauId },
-        });
-        if (existing) {
-            throw new AppError('Cette matière est déjà dans le programme', 409, 'MATIERE_ALREADY_IN_PROGRAMME');
-        }
-
-        const pm = this.matiereRepo.create({
-            programmeId,
-            matiereNiveauId: dto.matiereNiveauId,
-            coefficient: dto.coefficient,
-            volumeHoraire: dto.volumeHoraire,
-            obligatoire: dto.obligatoire,
-            ordre: dto.ordre,
-            etablissementId,
-        });
-        await this.matiereRepo.save(pm);
-
-        const saved = await this.matiereRepo.findOne({
-            where: { id: pm.id },
-            relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau'],
-        });
-        return saved!;
+        return programmeMatiereService.add(programmeId, dto, etablissementId);
     }
 
     async updateMatiere(id: string, dto: UpdateMatiereProgrammeDto, etablissementId: string): Promise<ProgrammeMatiere> {
-        const pm = await this.matiereRepo.findOne({ where: { id } });
-        if (!pm) throw new AppError('Matière non trouvée dans le programme', 404, 'NOT_FOUND');
-        Object.assign(pm, dto);
-        await this.matiereRepo.save(pm);
-
-        const saved = await this.matiereRepo.findOne({
-            where: { id: pm.id },
-            relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau'],
-        });
-        return saved!;
+        return programmeMatiereService.update(id, dto, etablissementId);
     }
 
     async removeMatiere(id: string, etablissementId: string): Promise<void> {
-        const pm = await this.matiereRepo.findOne({ where: { id } });
-        if (!pm) throw new AppError('Matière non trouvée dans le programme', 404, 'NOT_FOUND');
-        await this.matiereRepo.remove(pm);
+        return programmeMatiereService.remove(id, etablissementId);
     }
 
     async getMatieres(programmeId: string, etablissementId: string): Promise<ProgrammeMatiere[]> {
-        return this.matiereRepo.find({
-            where: { programmeId, etablissementId },
-            relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau', 'matiereNiveau.groupe'],
-            order: { ordre: 'ASC' },
-        });
+        return programmeMatiereService.findByProgramme(programmeId, etablissementId);
     }
 
     async getChapitresByProgramme(programmeId: string, etablissementId: string): Promise<ProgrammeChapitre[]> {
         const matieres = await this.matiereRepo.find({
             where: { programmeId, etablissementId },
-            select: ['matiereNiveauId'],
+            select: ['id'],
         });
-        const matiereNiveauIds = matieres.map(m => m.matiereNiveauId);
-        if (matiereNiveauIds.length === 0) return [];
+        const programmeMatiereIds = matieres.map(m => m.id);
+        if (programmeMatiereIds.length === 0) return [];
 
         return this.chapitreRepo.find({
-            where: { matiereNiveauId: matiereNiveauIds as any, etablissementId },
-            relations: ['matiereNiveau', 'matiereNiveau.matiere', 'matiereNiveau.niveau'],
-            order: { matiereNiveauId: 'ASC', ordre: 'ASC' },
+            where: { programmeMatiereId: In(programmeMatiereIds), etablissementId },
+            relations: ['programmeMatiere', 'programmeMatiere.matiereNiveau', 'programmeMatiere.matiereNiveau.matiere', 'programmeMatiere.matiereNiveau.niveau'],
+            order: { programmeMatiereId: 'ASC', ordre: 'ASC' },
         });
     }
 }

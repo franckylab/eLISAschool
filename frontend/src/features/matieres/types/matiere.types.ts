@@ -33,6 +33,7 @@ export interface MatiereFiltres {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+    sousSysteme?: SousSysteme | '';
 }
 
 export interface MatiereNiveau {
@@ -97,3 +98,10 @@ export interface ConfigurationMatiereClasse {
         anneeScolaire: { id: string; libelle: string };
     };
 }
+
+// Les types ProgrammePedagogique et ProgrammeMatiere sont définis dans
+// features/programmes/types/programme.types.ts (source unique)
+import type { ProgrammePedagogique as PP, ProgrammeMatiere as PM } from '@/features/programmes/types/programme.types';
+export type ProgrammePedagogique = PP;
+/** @deprecated Utilisez ProgrammeMatiere depuis programme.types.ts */
+export type ProgrammeMatiereExtended = PM;

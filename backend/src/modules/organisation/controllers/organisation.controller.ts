@@ -57,13 +57,19 @@ router.get('/organisations', authMiddleware, async (req: Request, res: Response,
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const search = req.query.search as string | undefined;
+        const type = req.query.type as string | undefined;
+        const statut = req.query.statut as string | undefined;
         
         // Si pagination demandée
         if (req.query.page || req.query.limit) {
             const { data, total } = await organisationService.findAllOrganisationsPaginated(
                 page,
                 limit,
-                req.utilisateur?.etablissementId
+                req.utilisateur?.etablissementId,
+                search,
+                type,
+                statut,
             );
             res.json({
                 success: true,
@@ -91,9 +97,10 @@ router.get('/organisations', authMiddleware, async (req: Request, res: Response,
  * POST /api/organisation/organisations
  * Créer une nouvelle organisation
  */
-router.post('/organisations', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/organisations', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createOrganisationSchema, req.body);
+        dto.etablissementId = req.utilisateur?.etablissementId;
         const created = await organisationService.createOrganisation(dto);
         res.status(201).json({ success: true, data: created });
     } catch (error) {
@@ -121,9 +128,10 @@ router.get('/organisations/:id', authMiddleware, async (req: Request, res: Respo
  * PATCH /api/organisation/organisations/:id
  * Modifier une organisation
  */
-router.patch('/organisations/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/organisations/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateOrganisationSchema, req.body);
+        delete dto.etablissementId;
         const updated = await organisationService.updateOrganisation(req.params.id, dto);
         res.json({ success: true, data: updated });
     } catch (error) {
@@ -135,7 +143,7 @@ router.patch('/organisations/:id', authMiddleware, requirePermission('config:edi
  * DELETE /api/organisation/organisations/:id
  * Supprimer une organisation (avec vérification)
  */
-router.delete('/organisations/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/organisations/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         // Vérifier qu'il n'y a pas d'unités actives
         const organisation = await organisationService.findOrganisationById(
@@ -206,7 +214,7 @@ router.get('/unites', authMiddleware, async (req: Request, res: Response, next: 
  * POST /api/organisation/unites
  * Créer une nouvelle unité
  */
-router.post('/unites', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/unites', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createUniteOrganisationnelleSchema, req.body);
         const created = await organisationService.createUnite(dto);
@@ -236,7 +244,7 @@ router.get('/unites/:id', authMiddleware, async (req: Request, res: Response, ne
  * PATCH /api/organisation/unites/:id
  * Modifier une unité
  */
-router.patch('/unites/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/unites/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateUniteOrganisationnelleSchema, req.body);
         const updated = await organisationService.updateUnite(req.params.id, dto);
@@ -250,7 +258,7 @@ router.patch('/unites/:id', authMiddleware, requirePermission('config:edit'), as
  * DELETE /api/organisation/unites/:id
  * Supprimer une unité
  */
-router.delete('/unites/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/unites/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await organisationService.deleteUnite(req.params.id);
         res.json({ success: true, message: 'Unité supprimée' });
@@ -317,7 +325,7 @@ router.get('/postes', authMiddleware, async (req: Request, res: Response, next: 
  * POST /api/organisation/postes
  * Créer un nouveau poste
  */
-router.post('/postes', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/postes', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createPosteSchema, req.body);
         const created = await organisationService.createPoste(dto);
@@ -347,7 +355,7 @@ router.get('/postes/:id', authMiddleware, async (req: Request, res: Response, ne
  * PATCH /api/organisation/postes/:id
  * Modifier un poste
  */
-router.patch('/postes/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/postes/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updatePosteSchema, req.body);
         const updated = await organisationService.updatePoste(req.params.id, dto);
@@ -361,7 +369,7 @@ router.patch('/postes/:id', authMiddleware, requirePermission('config:edit'), as
  * DELETE /api/organisation/postes/:id
  * Supprimer un poste
  */
-router.delete('/postes/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/postes/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await organisationService.deletePoste(req.params.id);
         res.json({ success: true, message: 'Poste supprimé' });
@@ -374,7 +382,7 @@ router.delete('/postes/:id', authMiddleware, requirePermission('config:edit'), a
  * POST /api/organisation/postes/:id/assigner
  * Assigner un occupant à un poste
  */
-router.post('/postes/:id/assigner', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/postes/:id/assigner', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { occupantId, occupantNom } = req.body;
         if (!occupantId || !occupantNom) {
@@ -391,7 +399,7 @@ router.post('/postes/:id/assigner', authMiddleware, requirePermission('config:ed
  * POST /api/organisation/postes/:id/liberer
  * Libérer un poste (retirer l'occupant)
  */
-router.post('/postes/:id/liberer', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/postes/:id/liberer', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const poste = await organisationService.libererPoste(req.params.id);
         res.json({ success: true, data: poste });
@@ -425,7 +433,7 @@ router.get('/hierarchie', authMiddleware, async (req: Request, res: Response, ne
  * POST /api/organisation/hierarchie
  * Créer une relation hiérarchique
  */
-router.post('/hierarchie', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/hierarchie', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createHierarchiePersonnelSchema, req.body);
         const created = await organisationService.createHierarchie(dto);
@@ -439,7 +447,7 @@ router.post('/hierarchie', authMiddleware, requirePermission('config:edit'), asy
  * PATCH /api/organisation/hierarchie/:id
  * Modifier une relation hiérarchique
  */
-router.patch('/hierarchie/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateHierarchiePersonnelSchema, req.body);
         const updated = await organisationService.updateHierarchie(req.params.id, dto);
@@ -453,7 +461,7 @@ router.patch('/hierarchie/:id', authMiddleware, requirePermission('config:edit')
  * DELETE /api/organisation/hierarchie/:id
  * Supprimer une relation hiérarchique (soft delete)
  */
-router.delete('/hierarchie/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await organisationService.deleteHierarchie(req.params.id);
         res.json({ success: true, message: 'Relation hiérarchique supprimée' });
@@ -635,7 +643,7 @@ router.get('/mouvements-recents', authMiddleware, async (req: Request, res: Resp
  * POST /api/organisation/clone-unite/:uniteId
  * Cloner une unité avec ses postes
  */
-router.post('/clone-unite/:uniteId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/clone-unite/:uniteId', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { nouveauCode, nouveauNom } = req.body;
         
@@ -660,7 +668,7 @@ router.post('/clone-unite/:uniteId', authMiddleware, requirePermission('config:e
  * POST /api/organisation/clone-structure/:uniteId
  * Cloner une structure complète (unité + enfants)
  */
-router.post('/clone-structure/:uniteId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/clone-structure/:uniteId', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { prefixeCode } = req.body;
         
@@ -721,7 +729,7 @@ router.get('/configuration/:cle', authMiddleware, async (req: Request, res: Resp
  * PUT /api/organisation/configuration/:cle
  * Modifier un paramètre
  */
-router.put('/configuration/:cle', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.put('/configuration/:cle', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { valeur } = req.body;
         
@@ -740,7 +748,7 @@ router.put('/configuration/:cle', authMiddleware, requirePermission('config:edit
  * POST /api/organisation/configuration/reset/:cle
  * Réinitialiser un paramètre à sa valeur par défaut
  */
-router.post('/configuration/reset/:cle', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/configuration/reset/:cle', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const param = await configurationOrganisationService.resetParametre(req.params.cle);
         res.json({ success: true, data: param, message: 'Paramètre réinitialisé' });
@@ -753,7 +761,7 @@ router.post('/configuration/reset/:cle', authMiddleware, requirePermission('conf
  * POST /api/organisation/configuration/reset-categorie/:categorie
  * Réinitialiser tous les paramètres d'une catégorie
  */
-router.post('/configuration/reset-categorie/:categorie', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/configuration/reset-categorie/:categorie', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const count = await configurationOrganisationService.resetCategorie(req.params.categorie);
         res.json({ success: true, data: { count, categorie: req.params.categorie }, message: `${count} paramètres réinitialisés` });
@@ -779,7 +787,7 @@ router.post('/configuration/reset-all', authMiddleware, requirePermission('super
  * GET /api/organisation/configuration/export
  * Exporter la configuration courante
  */
-router.get('/configuration/export', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/configuration/export', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const config = await configurationOrganisationService.exporterConfiguration();
         res.json({ success: true, data: config });

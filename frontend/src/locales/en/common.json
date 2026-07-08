@@ -45,6 +45,9 @@
     "matieres": {
         "titre": "Subjects"
     },
+    "organisation": {
+        "titre": "Organisation"
+    },
     "personnel": {
         "titre": "Staff"
     },

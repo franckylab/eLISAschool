@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { Save } from 'lucide-react';
+import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { ProgrammeChapitre } from '../types/programme.types';
+import type { ProgrammeChapitre, StatutChapitre } from '../types/programme.types';
 
 interface ChapitreFormModalProps {
     open: boolean;
@@ -13,17 +14,25 @@ interface ChapitreFormModalProps {
         objectifsPedagogiques?: string;
         ordre?: number;
         dureePrevueHeures?: number;
+        statut?: StatutChapitre;
+        prerequis?: string[];
+        ressourcesPedagogiques?: { type: string; titre: string; url?: string }[];
+        competencesAssociees?: string[];
     }) => Promise<void>;
     chapitre?: ProgrammeChapitre | null;
     isLoading?: boolean;
 }
 
 export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading }: ChapitreFormModalProps) {
+    const { t } = useTranslation('programmes');
     const [titre, setTitre] = useState('');
     const [description, setDescription] = useState('');
     const [objectifsPedagogiques, setObjectifsPedagogiques] = useState('');
     const [ordre, setOrdre] = useState(0);
     const [dureePrevueHeures, setDureePrevueHeures] = useState<number | ''>('');
+    const [statut, setStatut] = useState<StatutChapitre>('ACTIF');
+    const [prerequis, setPrerequis] = useState('');
+    const [competencesAssociees, setCompetencesAssociees] = useState('');
 
     useEffect(() => {
         if (chapitre) {
@@ -32,12 +41,18 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
             setObjectifsPedagogiques(chapitre.objectifsPedagogiques || '');
             setOrdre(chapitre.ordre);
             setDureePrevueHeures(chapitre.dureePrevueHeures ?? '');
+            setStatut(chapitre.statut);
+            setPrerequis(chapitre.prerequis?.join(', ') || '');
+            setCompetencesAssociees(chapitre.competencesAssociees?.join(', ') || '');
         } else {
             setTitre('');
             setDescription('');
             setObjectifsPedagogiques('');
             setOrdre(0);
             setDureePrevueHeures('');
+            setStatut('ACTIF');
+            setPrerequis('');
+            setCompetencesAssociees('');
         }
     }, [chapitre, open]);
 
@@ -50,100 +65,126 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
             objectifsPedagogiques: objectifsPedagogiques.trim() || undefined,
             ordre,
             dureePrevueHeures: dureePrevueHeures || undefined,
+            statut,
+            prerequis: prerequis ? prerequis.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+            competencesAssociees: competencesAssociees ? competencesAssociees.split(',').map(s => s.trim()).filter(Boolean) : undefined,
         });
     };
 
     return (
-        <AnimatePresence>
-            {open && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden"
+        <CustomModal
+            open={open}
+            onOpenChange={(v) => { if (!v) onClose(); }}
+            title={chapitre ? t('modifierChapitre') : t('nouveauChapitre')}
+            size="lg"
+            footer={
+                <>
+                    <ElisaButton variant="outline" onClick={onClose} disabled={isLoading}>
+                        {t('annuler')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        onClick={handleSubmit}
+                        isLoading={isLoading}
+                        disabled={!titre.trim()}
+                        icon={<Save className="h-4 w-4" />}
                     >
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold">
-                                {chapitre ? 'Modifier le chapitre' : 'Nouveau chapitre'}
-                            </h2>
-                            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                                <X className="h-5 w-5 text-gray-500" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
-                                <input
-                                    type="text"
-                                    value={titre}
-                                    onChange={(e) => setTitre(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Titre du chapitre"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    rows={3}
-                                    placeholder="Description du chapitre"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Objectifs pédagogiques</label>
-                                <textarea
-                                    value={objectifsPedagogiques}
-                                    onChange={(e) => setObjectifsPedagogiques(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    rows={3}
-                                    placeholder="Objectifs pédagogiques"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ordre</label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        value={ordre}
-                                        onChange={(e) => setOrdre(Number(e.target.value))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Durée prévue (heures)</label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        value={dureePrevueHeures}
-                                        onChange={(e) => setDureePrevueHeures(e.target.value ? Number(e.target.value) : '')}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="ex: 3"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-2">
-                                <ElisaButton type="button" variant="outline" onClick={onClose}>
-                                    Annuler
-                                </ElisaButton>
-                                <ElisaButton type="submit" variant="primary" isLoading={isLoading} disabled={!titre.trim()}>
-                                    {chapitre ? 'Enregistrer' : 'Créer'}
-                                </ElisaButton>
-                            </div>
-                        </form>
-                    </motion.div>
+                        {chapitre ? t('enregistrer') : t('creer')}
+                    </ElisaButton>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('titre')} <span className="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        value={titre}
+                        onChange={(e) => setTitre(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        placeholder="Titre du chapitre"
+                        required
+                    />
                 </div>
-            )}
-        </AnimatePresence>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('ordre')}</label>
+                        <input
+                            type="number"
+                            min={0}
+                            value={ordre}
+                            onChange={(e) => setOrdre(Number(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('dureePrevue')}</label>
+                        <input
+                            type="number"
+                            min={0}
+                            value={dureePrevueHeures}
+                            onChange={(e) => setDureePrevueHeures(e.target.value ? Number(e.target.value) : '')}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder="ex: 3"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('statut')}</label>
+                        <select value={statut} onChange={(e) => setStatut(e.target.value as StatutChapitre)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
+                            <option value="ACTIF">{t('statutChapitre.ACTIF')}</option>
+                            <option value="EN_ATTENTE_VALIDATION">{t('statutChapitre.EN_ATTENTE_VALIDATION')}</option>
+                            <option value="INACTIF">{t('statutChapitre.INACTIF')}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('prerequis')}</label>
+                        <input
+                            type="text"
+                            value={prerequis}
+                            onChange={(e) => setPrerequis(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder="Ex: Chap1, Chap2"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                        <label className="block text-sm font-medium mb-1">{t('description')}</label>
+                    <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        rows={2}
+                        placeholder="Description du chapitre"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('objectifsPedagogiques')}</label>
+                    <textarea
+                        value={objectifsPedagogiques}
+                        onChange={(e) => setObjectifsPedagogiques(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        rows={2}
+                        placeholder="Objectifs pédagogiques"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('competencesAssociees')}</label>
+                    <input
+                        type="text"
+                        value={competencesAssociees}
+                        onChange={(e) => setCompetencesAssociees(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        placeholder="Ex: C1, C2, C3"
+                    />
+                </div>
+            </form>
+        </CustomModal>
     );
 }

@@ -1,7 +1,22 @@
 /**
  * ==================================
- * eLISAschool - Entités Matière-Niveau (Programme)
+ * eLISAschool - Grille Matière par Niveau (curriculum)
  * ==================================
+ *
+ * RÔLE : Définit la grille curriculaire — quelles matières sont enseignées
+ * à quel niveau. Chaque entrée MatiereNiveau peut être rattachée à un
+ * ProgrammePedagogique via ProgrammeMatiere (relation 1:1 en pratique).
+ *
+ * Les champs coefficient/volumeHoraire/obligatoire servent de FALLBACK
+ * quand ProgrammeMatiere ne définit pas de valeur. La chaîne de résolution:
+ *   ProgrammeMatiere (primaire)
+ *       → MatiereNiveau (fallback)
+ *           → ConfigurationMatiereClasse (override par classe)
+ *
+ * Plusieurs MatiereNiveau peuvent exister pour le même (matiereId, niveauId)
+ * afin de permettre des programmes différents (ex: Scientifique, Littéraire).
+ * Chacun est lié à un unique programme via la contrainte d'unicité sur
+ * ProgrammeMatiere.matiereNiveauId.
  */
 
 import {
@@ -20,7 +35,7 @@ import { Filiere } from '@modules/filieres/entities';
 import { Periode } from '@modules/periodes/entities';
 
 /**
- * Statut du programme matière-niveau (support workflow de validation)
+ * Statut de la grille matière-niveau (support workflow de validation)
  */
 export enum StatutMatiereNiveau {
     ACTIF = 'ACTIF',
@@ -33,7 +48,7 @@ export enum StatutMatiereNiveau {
 @Index(['matiereId'])
 @Index(['filiereId'])
 @Index(['niveauId', 'filiereId']) // Index composite pour filtrage par filière
-@Index(['matiereId', 'niveauId', 'filiereId', 'periodeId'], { unique: true }) // Unicité par matière+niveau+filière+période
+@Index('idx_matieres_niveaux_matiere_niveau_filiere_periode', ['matiereId', 'niveauId', 'filiereId', 'periodeId']) // Non-unique
 export class MatiereNiveau {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

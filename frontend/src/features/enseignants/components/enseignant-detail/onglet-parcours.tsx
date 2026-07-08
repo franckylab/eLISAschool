@@ -42,7 +42,7 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
             events.push({
                 date: e.dateEvaluation,
                 type: 'evaluation',
-                title: `Évaluation: ${e.note?.toFixed(1) || '—'}/5`,
+                title: `Évaluation: ${e.note?.toFixed(1) || '—'}/20`,
                 description: e.categorie || '',
                 icon: Star,
                 color: 'purple',

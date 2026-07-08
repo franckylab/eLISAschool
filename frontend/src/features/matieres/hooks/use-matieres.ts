@@ -5,6 +5,7 @@ import type {
     Matiere, CreerMatiereDto, ModifierMatiereDto, MatiereFiltres,
     MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse,
 } from '../types/matiere.types';
+import type { ProgrammeMatiere } from '@/features/programmes/types/programme.types';
 import { toast } from 'sonner';
 
 const MATIERES_KEYS = {
@@ -14,6 +15,7 @@ const MATIERES_KEYS = {
     details: () => [...MATIERES_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...MATIERES_KEYS.details(), id] as const,
     programme: (id: string) => [...MATIERES_KEYS.all, 'programme', id] as const,
+    programmesPedagogiques: (id: string) => [...MATIERES_KEYS.all, 'programmes-pedagogiques', id] as const,
     affectations: (id: string) => [...MATIERES_KEYS.all, 'affectations', id] as const,
     configurations: (id: string) => [...MATIERES_KEYS.all, 'configurations', id] as const,
     configurationEffective: (matiereId: string, classeAnneeId: string) => [...MATIERES_KEYS.all, 'configurations', matiereId, 'effective', classeAnneeId] as const,
@@ -25,12 +27,14 @@ export function useMatieres(filtres: MatiereFiltres = {}) {
     return useQuery({
         queryKey: MATIERES_KEYS.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.getPaginated<Matiere>('/api/matieres', {
+            const params: Record<string, any> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 50,
                 ...(filtres.recherche ? { recherche: filtres.recherche } : {}),
                 ...(filtres.actif !== undefined ? { actif: String(filtres.actif) } : {}),
-            });
+                ...(filtres.sousSysteme ? { sousSysteme: filtres.sousSysteme } : {}),
+            };
+            const response = await apiClient.getPaginated<Matiere>('/api/matieres', params);
             return response.data;
         },
         enabled: isAuthenticated,
@@ -65,6 +69,24 @@ export function useMatiereProgramme(matiereId: string) {
         queryFn: async () => {
             try {
                 const response = await apiClient.get<MatiereNiveau[]>(`/api/matieres/${matiereId}/programme`);
+                return response.data;
+            } catch {
+                return [];
+            }
+        },
+        enabled: isAuthenticated && !!matiereId,
+    });
+}
+
+export function useMatiereProgrammesPedagogiques(matiereId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: MATIERES_KEYS.programmesPedagogiques(matiereId),
+        queryFn: async () => {
+            try {
+                const response = await apiClient.get<ProgrammeMatiere[]>(
+                    `/api/matieres/${matiereId}/programmes-pedagogiques`
+                );
                 return response.data;
             } catch {
                 return [];
@@ -235,6 +257,57 @@ export function useSupprimerMatiere() {
     });
 }
 
+// ==== MATIERE NIVEAU CRUD ====
+
+export function useAjouterMatiereNiveau() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (dto: { matiereId: string; niveauId: string; coefficient?: number; bareme?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
+            const response = await apiClient.post<MatiereNiveau>('/api/matieres/programme', dto);
+            return response.data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(variables.matiereId) });
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
+            toast.success('Niveau ajouté au programme');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors de l\'ajout'),
+    });
+}
+
+export function useModifierMatiereNiveau() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (params: { id: string; matiereId: string; coefficient?: number; bareme?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
+            const { id, matiereId, ...dto } = params;
+            const response = await apiClient.patch<MatiereNiveau>(`/api/matieres/programme/${id}`, dto);
+            return response.data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(variables.matiereId) });
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
+            toast.success('Programme matière-niveau modifié');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+    });
+}
+
+export function useSupprimerMatiereNiveau() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (params: { id: string; matiereId: string }) => {
+            await apiClient.delete(`/api/matieres/programme/${params.id}`);
+            return params.matiereId;
+        },
+        onSuccess: (matiereId) => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(matiereId) });
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
+            toast.success('Niveau retiré du programme');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+    });
+}
+
 // ==== AFFECTATIONS ====
 
 export interface AffectationPayload {
@@ -287,5 +360,52 @@ export function useSupprimerAffectation() {
             toast.success('Affectation supprimée');
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+    });
+}
+
+// ==== PROGRAMMES PEDAGOGIQUES (via ProgrammeMatiere) ====
+
+export function useAjouterMatiereProgramme() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (dto: { programmeId: string; matiereNiveauId: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
+            const response = await apiClient.post<any>('/api/programmes/matieres', dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
+            toast.success('Matière ajoutée au programme');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors de l\'ajout'),
+    });
+}
+
+export function useRetirerMatiereProgramme() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/programmes/matieres/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
+            toast.success('Matière retirée du programme');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors du retrait'),
+    });
+}
+
+export function useModifierMatiereProgramme() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
+            const response = await apiClient.patch<any>(`/api/programmes/matieres/${id}`, dto);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
+            toast.success('Programme matière modifié');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
     });
 }

@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, BookOpen, Clock, Layers, ArrowUpRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -25,6 +26,7 @@ import {
 import { ProgrammeFormModal } from './programme-form-modal';
 
 export function ProgrammesPage() {
+    const { t } = useTranslation('programmes');
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
@@ -37,7 +39,7 @@ export function ProgrammesPage() {
     const { data, isLoading } = useProgrammes({
         page,
         limit,
-        recherche: recherche || undefined,
+        search: recherche || undefined,
     });
 
     const creer = useCreerProgramme();
@@ -174,7 +176,7 @@ export function ProgrammesPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-[var(--color-texte)]">
-                            Programmes Pédagogiques
+                            {t('titre')}
                         </h1>
                         <p className="text-sm text-[var(--color-texte-secondaire)] mt-1">
                             Gérez les programmes pédagogiques par cycle et niveau
@@ -190,7 +192,7 @@ export function ProgrammesPage() {
                             }}
                             leftIcon={<Plus className="h-4 w-4" />}
                         >
-                            Nouveau programme
+                            {t('nouveauProgramme')}
                         </ElisaButton>
                     )}
                 </div>
@@ -205,10 +207,10 @@ export function ProgrammesPage() {
             >
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
-                        <label className="text-sm font-medium text-foreground mb-2 block">Rechercher</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">{t('rechercher')}</label>
                         <input
                             type="text"
-                            placeholder="Nom, code..."
+                            placeholder={t('rechercher')}
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"

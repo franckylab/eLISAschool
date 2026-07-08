@@ -42,7 +42,7 @@ export function ProgrammeDetailPage() {
     const [showChapitreModal, setShowChapitreModal] = useState(false);
     const [chapitreEdit, setChapitreEdit] = useState<ProgrammeChapitre | null>(null);
     const [chapitreDeleteId, setChapitreDeleteId] = useState<string | null>(null);
-    const [chapitreMatiereNiveauId, setChapitreMatiereNiveauId] = useState<string>('');
+    const [chapitreProgrammeMatiereId, setChapitreProgrammeMatiereId] = useState<string>('');
 
     const { data: programme, isLoading } = useProgrammeDetail(programmeId);
     const { data: cycles } = useTousCycles();
@@ -374,22 +374,22 @@ export function ProgrammeDetailPage() {
                         </div>
                     ) : (
                         (() => {
-                            const grouped: Record<string, { matiereNiveauId: string; chapitres: typeof chapitres }> = {};
+                            const grouped: Record<string, { programmeMatiereId: string; chapitres: typeof chapitres }> = {};
                             for (const ch of chapitres) {
-                                const matiereNom = ch.matiereNiveau?.matiere?.nom || ch.matiereNiveauId;
-                                if (!grouped[matiereNom]) grouped[matiereNom] = { matiereNiveauId: ch.matiereNiveauId, chapitres: [] };
+                                const matiereNom = ch.programmeMatiere?.matiereNiveau?.matiere?.nom || ch.programmeMatiereId;
+                                if (!grouped[matiereNom]) grouped[matiereNom] = { programmeMatiereId: ch.programmeMatiereId, chapitres: [] };
                                 grouped[matiereNom].chapitres.push(ch);
                             }
                             return Object.entries(grouped).map(([matiereNom, g]) => (
                                 <div key={matiereNom} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                                     <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                                         <h3 className="font-semibold text-sm flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.chapitres[0]?.matiereNiveau?.matiere?.couleur || '#6B7280' }} />
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.chapitres[0]?.programmeMatiere?.matiereNiveau?.matiere?.couleur || '#6B7280' }} />
                                             {matiereNom}
                                             <span className="text-xs text-gray-400 font-normal">— {g.chapitres.length} chapitre{g.chapitres.length > 1 ? 's' : ''}</span>
                                         </h3>
                                         {hasPermission('programmes:config:write') && (
-                                            <button onClick={() => { setChapitreMatiereNiveauId(g.matiereNiveauId); setChapitreEdit(null); setShowChapitreModal(true); }}
+                                            <button onClick={() => { setChapitreProgrammeMatiereId(g.programmeMatiereId); setChapitreEdit(null); setShowChapitreModal(true); }}
                                                 className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                             >
                                                 <Plus className="h-3 w-3" /> Ajouter
@@ -541,7 +541,7 @@ export function ProgrammeDetailPage() {
                     if (chapitreEdit) {
                         await modifierChapitre.mutateAsync({ id: chapitreEdit.id, ...dto });
                     } else {
-                        await creerChapitre.mutateAsync({ matiereNiveauId: chapitreMatiereNiveauId, ...dto });
+                        await creerChapitre.mutateAsync({ programmeMatiereId: chapitreProgrammeMatiereId, ...dto });
                     }
                     setShowChapitreModal(false);
                     setChapitreEdit(null);

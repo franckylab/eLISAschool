@@ -90,6 +90,7 @@ export type MoveAffectationDto = z.infer<typeof moveAffectationSchema>;
 export const queryMatieresSchema = paginationSchema.extend({
     actif: z.string().transform((v) => v === 'true').optional(),
     recherche: z.string().max(100).optional(),
+    sousSysteme: z.nativeEnum(SousSysteme).optional(),
 });
 
 export type QueryMatieresDto = z.infer<typeof queryMatieresSchema>;
