@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save } from 'lucide-react';
+import { Save, Plus, Trash2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { ProgrammeChapitre, StatutChapitre } from '../types/programme.types';
+import { useAnneeScolaireActive } from '@/features/annees-scolaires';
+import { usePeriodes } from '@/features/periodes';
+import type { ProgrammeChapitre, StatutChapitre, RessourcePedagogique } from '../types/programme.types';
+
+const TYPE_RESSOURCES = ['MANUEL', 'VIDEO', 'DOCUMENT', 'LIEN'] as const;
 
 interface ChapitreFormModalProps {
     open: boolean;
@@ -15,8 +19,9 @@ interface ChapitreFormModalProps {
         ordre?: number;
         dureePrevueHeures?: number;
         statut?: StatutChapitre;
+        periodeId?: string;
         prerequis?: string[];
-        ressourcesPedagogiques?: { type: string; titre: string; url?: string }[];
+        ressourcesPedagogiques?: RessourcePedagogique[];
         competencesAssociees?: string[];
     }) => Promise<void>;
     chapitre?: ProgrammeChapitre | null;
@@ -25,13 +30,18 @@ interface ChapitreFormModalProps {
 
 export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading }: ChapitreFormModalProps) {
     const { t } = useTranslation('programmes');
+    const { data: anneeActive } = useAnneeScolaireActive();
+    const { data: periodes } = usePeriodes({ anneeId: anneeActive?.id || '' });
+
     const [titre, setTitre] = useState('');
     const [description, setDescription] = useState('');
     const [objectifsPedagogiques, setObjectifsPedagogiques] = useState('');
     const [ordre, setOrdre] = useState(0);
     const [dureePrevueHeures, setDureePrevueHeures] = useState<number | ''>('');
     const [statut, setStatut] = useState<StatutChapitre>('ACTIF');
+    const [periodeId, setPeriodeId] = useState('');
     const [prerequis, setPrerequis] = useState('');
+    const [ressources, setRessources] = useState<RessourcePedagogique[]>([]);
     const [competencesAssociees, setCompetencesAssociees] = useState('');
 
     useEffect(() => {
@@ -42,7 +52,9 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
             setOrdre(chapitre.ordre);
             setDureePrevueHeures(chapitre.dureePrevueHeures ?? '');
             setStatut(chapitre.statut);
+            setPeriodeId(chapitre.periodeId || '');
             setPrerequis(chapitre.prerequis?.join(', ') || '');
+            setRessources(chapitre.ressourcesPedagogiques || []);
             setCompetencesAssociees(chapitre.competencesAssociees?.join(', ') || '');
         } else {
             setTitre('');
@@ -51,7 +63,9 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
             setOrdre(0);
             setDureePrevueHeures('');
             setStatut('ACTIF');
+            setPeriodeId('');
             setPrerequis('');
+            setRessources([]);
             setCompetencesAssociees('');
         }
     }, [chapitre, open]);
@@ -66,9 +80,25 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
             ordre,
             dureePrevueHeures: dureePrevueHeures || undefined,
             statut,
+            periodeId: periodeId || undefined,
             prerequis: prerequis ? prerequis.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+            ressourcesPedagogiques: ressources.length > 0 ? ressources : undefined,
             competencesAssociees: competencesAssociees ? competencesAssociees.split(',').map(s => s.trim()).filter(Boolean) : undefined,
         });
+    };
+
+    const ajouterRessource = () => {
+        setRessources([...ressources, { type: 'DOCUMENT', titre: '', url: '' }]);
+    };
+
+    const modifierRessource = (index: number, field: keyof RessourcePedagogique, value: string) => {
+        const copy = [...ressources];
+        (copy[index] as any)[field] = value;
+        setRessources(copy);
+    };
+
+    const supprimerRessource = (index: number) => {
+        setRessources(ressources.filter((_, i) => i !== index));
     };
 
     return (
@@ -141,6 +171,18 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                         </select>
                     </div>
                     <div>
+                        <label className="block text-sm font-medium mb-1">{t('periode')}</label>
+                        <select value={periodeId} onChange={(e) => setPeriodeId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
+                            <option value="">— Aucune période —</option>
+                            {(periodes || []).map((p: any) => (
+                                <option key={p.id} value={p.id}>{p.nom}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
                         <label className="block text-sm font-medium mb-1">{t('prerequis')}</label>
                         <input
                             type="text"
@@ -150,10 +192,20 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                             placeholder="Ex: Chap1, Chap2"
                         />
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">{t('competencesAssociees')}</label>
+                        <input
+                            type="text"
+                            value={competencesAssociees}
+                            onChange={(e) => setCompetencesAssociees(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder="Ex: C1, C2, C3"
+                        />
+                    </div>
                 </div>
 
                 <div>
-                        <label className="block text-sm font-medium mb-1">{t('description')}</label>
+                    <label className="block text-sm font-medium mb-1">{t('description')}</label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -174,15 +226,48 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                     />
                 </div>
 
+                {/* Ressources pédagogiques */}
                 <div>
-                    <label className="block text-sm font-medium mb-1">{t('competencesAssociees')}</label>
-                    <input
-                        type="text"
-                        value={competencesAssociees}
-                        onChange={(e) => setCompetencesAssociees(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                        placeholder="Ex: C1, C2, C3"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-medium">{t('ressources')}</label>
+                        <button type="button" onClick={ajouterRessource} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                            <Plus className="h-3 w-3" /> Ajouter
+                        </button>
+                    </div>
+                    {ressources.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">Aucune ressource</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {ressources.map((r, i) => (
+                                <div key={i} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                                    <div className="flex-1 grid grid-cols-3 gap-2">
+                                        <select
+                                            value={r.type}
+                                            onChange={(e) => modifierRessource(i, 'type', e.target.value)}
+                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                        >
+                                            {TYPE_RESSOURCES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                        <input
+                                            value={r.titre}
+                                            onChange={(e) => modifierRessource(i, 'titre', e.target.value)}
+                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                            placeholder="Titre"
+                                        />
+                                        <input
+                                            value={r.url || ''}
+                                            onChange={(e) => modifierRessource(i, 'url', e.target.value)}
+                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                            placeholder="URL (optionnel)"
+                                        />
+                                    </div>
+                                    <button type="button" onClick={() => supprimerRessource(i)} className="p-1 hover:bg-red-100 rounded mt-0.5">
+                                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </form>
         </CustomModal>

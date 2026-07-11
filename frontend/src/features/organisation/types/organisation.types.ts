@@ -1,12 +1,10 @@
+import type { Poste } from '@/features/postes/types/poste.types';
+
 export type TypeOrganisation = 'ETABLISSEMENT_SCOLAIRE' | 'GROUPE_SCOLAIRE' | 'ENTREPRISE' | 'ASSOCIATION';
 export type StatutOrganisation = 'ACTIF' | 'EN_CREATION' | 'ARCHIVE';
 
 export type TypeUnite = 'DIRECTION' | 'DEPARTEMENT' | 'SERVICE' | 'POLE' | 'FILIERE' | 'CYCLE' | 'SECTION' | 'COMMISSION' | 'EQUIPE' | 'AUTRE';
 export type StatutUnite = 'ACTIF' | 'EN_CREATION' | 'EN_RESTRUCTURATION' | 'ARCHIVE';
-
-export type TypePoste = 'DIRECTION' | 'ENSEIGNANT' | 'ADMINISTRATIF' | 'TECHNIQUE' | 'SERVICE' | 'STAGE' | 'TEMPORAIRE' | 'AUTRE';
-export type NiveauResponsabilite = 'DIRECTION_GENERALE' | 'DIRECTION_ADJOINTE' | 'RESPONSABLE' | 'COORDINATEUR' | 'SUPERVISEUR' | 'EXECUTANT' | 'STAGIAIRE';
-export type StatutPoste = 'ACTIF' | 'VACANT' | 'SUPPRIME' | 'EN_ATTENTE';
 
 export type TypeRelationHierarchique = 'SUPERVISE_DIRECT' | 'SUPERVISE_INDIRECT' | 'RATTACHEMENT_FONCTIONNEL' | 'COLLABORATION' | 'REMPLACEMENT' | 'INTERIM';
 export type StatutRelation = 'ACTIVE' | 'HISTORIQUE' | 'PLANIFIEE';
@@ -99,58 +97,6 @@ export interface UniteFiltres {
     type?: TypeUnite;
     actif?: boolean;
     parentId?: string | null;
-}
-
-// ==================== POSTE ====================
-
-export interface Poste {
-    id: string;
-    intitulé: string;
-    description?: string;
-    code: string;
-    type: TypePoste;
-    niveauResponsabilite: NiveauResponsabilite;
-    statut: StatutPoste;
-    actif: boolean;
-    uniteOrganisationnelleId: string;
-    occupantId?: string;
-    occupantNom?: string;
-    nombrePostes: number;
-    superviseurId?: string;
-    superviseurNom?: string;
-    competencesRequises?: string[];
-    missions?: string[];
-    metadata?: Record<string, any>;
-    createdAt: string;
-    updatedAt: string;
-    uniteOrganisationnelle?: UniteOrganisationnelle;
-}
-
-export interface CreerPosteDto {
-    intitulé: string;
-    description?: string;
-    code: string;
-    type?: TypePoste;
-    niveauResponsabilite?: NiveauResponsabilite;
-    uniteOrganisationnelleId: string;
-    occupantId?: string;
-    occupantNom?: string;
-    nombrePostes?: number;
-    superviseurId?: string;
-    superviseurNom?: string;
-    competencesRequises?: string[];
-    missions?: string[];
-    metadata?: Record<string, any>;
-}
-
-export type ModifierPosteDto = Partial<CreerPosteDto>;
-
-export interface PosteFiltres {
-    uniteOrganisationnelleId?: string;
-    organisationId?: string;
-    type?: TypePoste;
-    statut?: StatutPoste;
-    vacant?: boolean;
 }
 
 // ==================== HIÉRARCHIE ====================

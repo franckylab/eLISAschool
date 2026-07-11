@@ -16,7 +16,7 @@ interface AssignerClasseModalProps {
 export function AssignerClasseModal({ salleId, salleNom, onClose }: AssignerClasseModalProps) {
     const modifierClasse = useModifierClasse();
 
-    const { data: classesData } = useClasses({ limit: 500, actif: true });
+    const { data: classesData } = useClasses({ limit: 100, actif: true });
 
     const [selectedClasseId, setSelectedClasseId] = useState('');
 

@@ -71,49 +71,6 @@ export const updateUniteOrganisationnelleSchema = createUniteOrganisationnelleSc
 export type CreateUniteOrganisationnelleDto = z.infer<typeof createUniteOrganisationnelleSchema>;
 export type UpdateUniteOrganisationnelleDto = z.infer<typeof updateUniteOrganisationnelleSchema>;
 
-// ==================== Poste ====================
-
-export const createPosteSchema = z.object({
-    intitulé: z.string().min(2).max(100),
-    description: z.string().optional(),
-    code: z.string().min(2).max(50),
-    type: z.enum([
-        'DIRECTION',
-        'ENSEIGNANT',
-        'ADMINISTRATIF',
-        'TECHNIQUE',
-        'SERVICE',
-        'STAGE',
-        'TEMPORAIRE',
-        'AUTRE',
-    ]).default('ADMINISTRATIF'),
-    niveauResponsabilite: z.enum([
-        'DIRECTION_GENERALE',
-        'DIRECTION_ADJOINTE',
-        'RESPONSABLE',
-        'COORDINATEUR',
-        'SUPERVISEUR',
-        'EXECUTANT',
-        'STAGIAIRE',
-    ]).default('EXECUTANT'),
-    uniteOrganisationnelleId: z.string().uuid(),
-    occupantId: z.string().uuid().optional(),
-    occupantNom: z.string().max(200).optional(),
-    nombrePostes: z.number().int().min(1).default(1),
-    superviseurId: z.string().uuid().optional(),
-    superviseurNom: z.string().max(200).optional(),
-    competencesRequises: z.array(z.string()).optional(),
-    missions: z.array(z.string()).optional(),
-    metadata: z.record(z.any()).optional(),
-});
-
-export const updatePosteSchema = createPosteSchema.partial().omit({
-    code: true, // Le code ne peut pas être modifié
-});
-
-export type CreatePosteDto = z.infer<typeof createPosteSchema>;
-export type UpdatePosteDto = z.infer<typeof updatePosteSchema>;
-
 // ==================== Hierarchie Personnel ====================
 
 export const createHierarchiePersonnelSchema = z.object({
@@ -165,22 +122,4 @@ export const filtreUnitesSchema = z.object({
     organisationId: z.string().uuid().optional(),
 });
 
-export const filtrePostesSchema = z.object({
-    type: z.enum([
-        'DIRECTION',
-        'ENSEIGNANT',
-        'ADMINISTRATIF',
-        'TECHNIQUE',
-        'SERVICE',
-        'STAGE',
-        'TEMPORAIRE',
-        'AUTRE',
-    ]).optional(),
-    statut: z.enum(['ACTIF', 'VACANT', 'SUPPRIME', 'EN_ATTENTE']).optional(),
-    uniteOrganisationnelleId: z.string().uuid().optional(),
-    organisationId: z.string().uuid().optional(),
-    vacant: z.boolean().optional(), // true = postes vacants uniquement
-});
-
 export type FiltreUnitesDto = z.infer<typeof filtreUnitesSchema>;
-export type FiltrePostesDto = z.infer<typeof filtrePostesSchema>;

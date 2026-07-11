@@ -143,6 +143,9 @@ export interface CreerChapitreDto {
     ordre?: number;
     dureePrevueHeures?: number;
     statut?: StatutChapitre;
+    prerequis?: string[];
+    ressourcesPedagogiques?: RessourcePedagogique[];
+    competencesAssociees?: string[];
 }
 
 export interface ModifierChapitreDto extends Partial<CreerChapitreDto> {

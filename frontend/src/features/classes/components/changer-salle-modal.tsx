@@ -31,7 +31,7 @@ export function ChangerSalleModal({ classe, onClose }: ChangerSalleModalProps) {
     const { t } = useTranslation('classes');
     const modifierClasse = useModifierClasse();
 
-    const { data: allSallesData, isLoading: loadingSalles } = useSalles({ limit: 500 });
+    const { data: allSallesData, isLoading: loadingSalles } = useSalles({ limit: 100 });
     const allSalles = allSallesData?.data;
 
     const [selectedSalleId, setSelectedSalleId] = useState(classe.sallePrincipaleId || '');

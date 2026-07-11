@@ -72,7 +72,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/membres/:id/contrats/historique
+ * GET /api/personnel/contrats/membres/:id/historique
  * Récupérer l'historique des contrats d'un membre
  */
 router.get(
@@ -89,7 +89,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/membres/:id/contrats/actif
+ * GET /api/personnel/contrats/membres/:id/contrats/actif
  * Récupérer le contrat actif d'un membre
  */
 router.get(

@@ -13,6 +13,7 @@ import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { Eleve } from '@modules/eleves/entities';
 import { Note } from '@modules/notes/entities';
+import { AffectationEleve } from '@modules/classes/entities';
 
 interface BatchResult {
     [key: string]: any[];
@@ -20,6 +21,7 @@ interface BatchResult {
 
 export class DashboardDataLoaderService {
     private eleveRepo: Repository<Eleve>;
+    private affectationRepo: Repository<AffectationEleve>;
     private noteRepo: Repository<Note>;
 
     // Cache de batch
@@ -33,6 +35,7 @@ export class DashboardDataLoaderService {
 
     constructor() {
         this.eleveRepo = AppDataSource.getRepository(Eleve);
+        this.affectationRepo = AppDataSource.getRepository(AffectationEleve);
         this.noteRepo = AppDataSource.getRepository(Note);
     }
 
@@ -57,8 +60,8 @@ export class DashboardDataLoaderService {
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE statut = 'ACTIF') as actifs,
                 COUNT(*) FILTER (WHERE statut = 'INACTIF') as inactifs,
-                COUNT(*) FILTER (WHERE genre = 'M') as masculin,
-                COUNT(*) FILTER (WHERE genre = 'F') as feminin
+                COUNT(*) FILTER (WHERE sexe = 'M') as masculin,
+                COUNT(*) FILTER (WHERE sexe = 'F') as feminin
             FROM eleves
             WHERE etablissement_id = ANY($1)
             GROUP BY etablissement_id
@@ -117,14 +120,15 @@ export class DashboardDataLoaderService {
 
         const query = `
             SELECT 
-                e.classe_id,
+                ae.classe_id,
                 AVG(n.valeur / n.bareme * 20) as moyenne
             FROM notes n
-            INNER JOIN eleves e ON n.eleve_id = e.id
-            WHERE e.classe_id = ANY($1)
+            INNER JOIN affectations_eleves ae ON n.eleve_id = ae.eleve_id
+            WHERE ae.classe_id = ANY($1)
+            AND ae.statut = 'ACTIVE'
             AND n.statut = 'VALIDEE'
             ${periodeId ? 'AND n.periode_id = $2' : ''}
-            GROUP BY e.classe_id
+            GROUP BY ae.classe_id
         `;
 
         const params = periodeId ? [classeIds, periodeId] : [classeIds];
@@ -163,13 +167,13 @@ export class DashboardDataLoaderService {
 
         this.batchStats.totalBatches++;
 
-        const results = await this.eleveRepo
-            .createQueryBuilder('e')
-            .select('e.classeId', 'classeId')
-            .addSelect('COUNT(e.id)', 'effectif')
-            .where('e.classeId IN (:...classeIds)', { classeIds })
-            .andWhere('e.statut = :statut', { statut: 'ACTIF' })
-            .groupBy('e.classeId')
+        const results = await this.affectationRepo
+            .createQueryBuilder('ae')
+            .select('ae.classeId', 'classeId')
+            .addSelect('COUNT(ae.eleveId)', 'effectif')
+            .where('ae.classeId IN (:...classeIds)', { classeIds })
+            .andWhere('ae.statut = :statut', { statut: 'ACTIVE' })
+            .groupBy('ae.classeId')
             .getRawMany();
 
         const effectifsMap = new Map<string, number>();

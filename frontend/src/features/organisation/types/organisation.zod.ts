@@ -29,29 +29,6 @@ export const createUniteSchema = z.object({
 
 export const updateUniteSchema = createUniteSchema.partial().omit({ code: true });
 
-export const createPosteSchema = z.object({
-    intitulé: z.string().min(2, "L'intitulé doit contenir au moins 2 caractères").max(100),
-    description: z.string().optional(),
-    code: z.string().min(2, 'Le code doit contenir au moins 2 caractères').max(50),
-    type: z.enum(['DIRECTION', 'ENSEIGNANT', 'ADMINISTRATIF', 'TECHNIQUE', 'SERVICE', 'STAGE', 'TEMPORAIRE', 'AUTRE']).default('ADMINISTRATIF'),
-    niveauResponsabilite: z.enum(['DIRECTION_GENERALE', 'DIRECTION_ADJOINTE', 'RESPONSABLE', 'COORDINATEUR', 'SUPERVISEUR', 'EXECUTANT', 'STAGIAIRE']).default('EXECUTANT'),
-    uniteOrganisationnelleId: z.string({ required_error: "L'unité est requise" }),
-    occupantId: z.string().optional(),
-    occupantNom: z.string().max(200).optional(),
-    nombrePostes: z.coerce.number().int().min(1).default(1),
-    superviseurId: z.string().optional(),
-    superviseurNom: z.string().max(200).optional(),
-    competencesRequises: z.array(z.string()).optional(),
-    missions: z.array(z.string()).optional(),
-});
-
-export const updatePosteSchema = createPosteSchema.partial().omit({ code: true });
-
-export const assignerOccupantSchema = z.object({
-    occupantId: z.string({ required_error: "L'occupant est requis" }),
-    occupantNom: z.string().min(1, "Le nom de l'occupant est requis").max(200),
-});
-
 export const createHierarchieSchema = z.object({
     personnelId: z.string({ required_error: 'Le subordonné est requis' }),
     personnelNom: z.string().min(2).max(200),
@@ -71,8 +48,5 @@ export type CreateOrganisationFormData = z.infer<typeof createOrganisationSchema
 export type UpdateOrganisationFormData = z.infer<typeof updateOrganisationSchema>;
 export type CreateUniteFormData = z.infer<typeof createUniteSchema>;
 export type UpdateUniteFormData = z.infer<typeof updateUniteSchema>;
-export type CreatePosteFormData = z.infer<typeof createPosteSchema>;
-export type UpdatePosteFormData = z.infer<typeof updatePosteSchema>;
-export type AssignerOccupantFormData = z.infer<typeof assignerOccupantSchema>;
 export type CreateHierarchieFormData = z.infer<typeof createHierarchieSchema>;
 export type UpdateHierarchieFormData = z.infer<typeof updateHierarchieSchema>;

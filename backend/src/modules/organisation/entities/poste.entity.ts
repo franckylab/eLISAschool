@@ -19,7 +19,9 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
+import { Fonction } from '@modules/fonctions/entities';
 
 /**
  * Type de poste
@@ -67,6 +69,8 @@ export enum StatutPoste {
 @Index(['code'])
 @Index(['type'])
 @Index(['statut'])
+@Index(['fonctionId'])
+@Index(['occupantsCount'])
 export class Poste {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -82,6 +86,13 @@ export class Poste {
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     categoriePosteCode?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    fonctionId?: string;
+
+    @ManyToOne(() => Fonction, { nullable: true })
+    @JoinColumn({ name: 'fonctionId' })
+    fonction?: Fonction;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     niveauResponsabiliteCode?: string;
@@ -106,6 +117,10 @@ export class Poste {
     @Column({ type: 'uuid', nullable: true })
     occupantId?: string;
 
+    @ManyToOne(() => MembrePersonnel, { nullable: true })
+    @JoinColumn({ name: 'occupantId' })
+    occupant?: MembrePersonnel;
+
     @Column({ type: 'varchar', length: 200, nullable: true })
     occupantNom?: string;
 
@@ -113,11 +128,11 @@ export class Poste {
     @Column({ type: 'int', default: 1 })
     nombrePostes!: number;
 
-    @Column({ type: 'uuid', nullable: true })
-    superviseurId?: string;
+    @Column({ type: 'int', default: 0 })
+    occupantsCount!: number;
 
-    @Column({ type: 'varchar', length: 200, nullable: true })
-    superviseurNom?: string;
+    @Column({ type: 'varchar', length: 30, nullable: true })
+    modeRemunerationDefaut?: string;
 
     @Column({ type: 'jsonb', nullable: true })
     competencesRequises?: string[];

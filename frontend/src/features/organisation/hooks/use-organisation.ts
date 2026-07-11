@@ -5,7 +5,6 @@ import { apiClient } from '@/lib/api-client';
 import type {
     Organisation, CreerOrganisationDto, ModifierOrganisationDto, OrganisationFiltres,
     UniteOrganisationnelle, CreerUniteDto, ModifierUniteDto, UniteFiltres,
-    Poste, CreerPosteDto, ModifierPosteDto, PosteFiltres,
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
     OrganigrammeNode, StatistiquesOrganisation, ParametreConfiguration,
     NiveauOrganisation, UsageUnite, CategoriePoste,
@@ -25,12 +24,6 @@ const ORGA_KEYS = {
         detail: (id: string) => [...ORGA_KEYS.unites.all, 'detail', id] as const,
         arborescence: (orgId: string) => [...ORGA_KEYS.unites.all, 'arborescence', orgId] as const,
         chemin: (uniteId: string) => [...ORGA_KEYS.unites.all, 'chemin', uniteId] as const,
-    },
-    postes: {
-        all: ['organisation', 'postes'] as const,
-        liste: (filtres: PosteFiltres) => [...ORGA_KEYS.postes.all, filtres] as const,
-        detail: (id: string) => [...ORGA_KEYS.postes.all, 'detail', id] as const,
-        vacants: ['organisation', 'postes-vacants'] as const,
     },
     hierarchie: {
         all: ['organisation', 'hierarchie'] as const,
@@ -225,105 +218,6 @@ export function useArborescence(organisationId: string) {
             return response.data || [];
         },
         enabled: !!organisationId && isAuthenticated,
-    });
-}
-
-// ─── POSTES ───
-
-export function usePostes(filtres: PosteFiltres = {}) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.postes.liste(filtres),
-        queryFn: async () => {
-            const response = await apiClient.get<Poste[]>('/api/organisation/postes', filtres as any);
-            return response.data || [];
-        },
-        enabled: isAuthenticated,
-    });
-}
-
-export function usePoste(id: string) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.postes.detail(id),
-        queryFn: async () => {
-            const response = await apiClient.get<Poste>(`/api/organisation/postes/${id}`);
-            return response.data;
-        },
-        enabled: !!id && isAuthenticated,
-    });
-}
-
-export function useCreerPoste() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (dto: CreerPosteDto) => {
-            const response = await apiClient.post<Poste>('/api/organisation/postes', dto);
-            return response.data;
-        },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.all }); toast.success('Poste créé'); },
-        onError: (e: any) => handleError(e, 'Erreur création poste'),
-    });
-}
-
-export function useModifierPoste() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & ModifierPosteDto) => {
-            const response = await apiClient.patch<Poste>(`/api/organisation/postes/${id}`, dto);
-            return response.data;
-        },
-        onSuccess: (_, vars) => {
-            qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.all });
-            qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.detail(vars.id) });
-            toast.success('Poste modifié');
-        },
-        onError: (e: any) => handleError(e, 'Erreur modification poste'),
-    });
-}
-
-export function useSupprimerPoste() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/postes/${id}`); return id; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.all }); toast.success('Poste supprimé'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression poste'),
-    });
-}
-
-export function useAssignerOccupant() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ posteId, occupantId, occupantNom }: { posteId: string; occupantId: string; occupantNom: string }) => {
-            const response = await apiClient.post<Poste>(`/api/organisation/postes/${posteId}/assigner`, { occupantId, occupantNom });
-            return response.data;
-        },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.all }); toast.success('Occupant assigné'); },
-        onError: (e: any) => handleError(e, 'Erreur assignation'),
-    });
-}
-
-export function useLibererPoste() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (posteId: string) => {
-            const response = await apiClient.post<Poste>(`/api/organisation/postes/${posteId}/liberer`);
-            return response.data;
-        },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.postes.all }); toast.success('Poste libéré'); },
-        onError: (e: any) => handleError(e, 'Erreur libération poste'),
-    });
-}
-
-export function usePostesVacants() {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.postes.vacants,
-        queryFn: async () => {
-            const response = await apiClient.get<Poste[]>('/api/organisation/postes-vacants');
-            return response.data || [];
-        },
-        enabled: isAuthenticated,
     });
 }
 
@@ -621,7 +515,6 @@ export function useGenererOrganisation() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'postes'] });
             qc.invalidateQueries({ queryKey: ['organisation', 'hierarchie'] });
             toast.success('Organisation générée avec succès');
         },

@@ -46,8 +46,10 @@ export const queryPersonnelSchema = paginationWithSortSchema
     .merge(searchSchema)
     .extend({
         typePersonnelId: z.string().uuid().optional(),
+        typeCode: z.string().max(50).optional(),
         etablissementId: z.string().uuid().optional(),
         statut: z.enum(['ACTIF', 'INACTIF', 'CONGE']).optional(),
+        actif: z.coerce.boolean().optional(),
     });
 
 export type QueryPersonnelDto = z.infer<typeof queryPersonnelSchema>;

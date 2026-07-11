@@ -2,8 +2,11 @@
  * ==================================
  * eLISAschool - Formulaire Personnel
  * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
+ * Version: 3.0.0
+ *
+ * NOTE: Poste, Fonction, Type de contrat et rémunération sont gérés
+ * via l'interface contrat (ContratWizardModal). Ce formulaire ne
+ * gère que les informations d'identité et de contact du membre.
  */
 
 import { useState, useEffect } from 'react';
@@ -44,9 +47,6 @@ function buildFormData<M extends MembrePersonnel | undefined>(m: M): Partial<Cre
         email: m?.utilisateur?.email || m?.email || '',
         telephone: m?.utilisateur?.profil?.telephone || m?.telephone || '',
         adresse: m?.utilisateur?.profil?.adresse || m?.adresse || '',
-        poste: m?.poste || '',
-        departement: m?.departement || '',
-        typeContrat: m?.typeContrat || 'cdi',
         dateEntree: formNormalizer.dateEntree(m),
         statut: formNormalizer.statut(m?.statut),
         specialite: formNormalizer.specialite(m),
@@ -85,10 +85,6 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
 
         if (!formData.dateNaissance) {
             nouvellesErreurs.dateNaissance = 'La date de naissance est requise';
-        }
-
-        if (!formData.poste?.trim()) {
-            nouvellesErreurs.poste = 'Le poste est requis';
         }
 
         if (!formData.dateEntree) {
@@ -153,7 +149,6 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         type="submit"
                         isLoading={isMutating}
                         icon={<Save className="h-4 w-4" />}
-                        onClick={handleSubmit}
                     >
                         {mode === 'creation' ? 'Ajouter' : 'Enregistrer'}
                     </ElisaButton>
@@ -223,37 +218,18 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     />
                 </div>
 
-                {/* Poste et Département */}
+                {/* Adresse et Statut */}
                 <div className="grid grid-cols-2 gap-4">
-                    <ElisaInput
-                        label="Poste"
-                        value={formData.poste || ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('poste', e.target.value)}
-                        error={erreurs.poste}
-                        placeholder="Ex: Enseignant, Secrétaire..."
-                        required
-                    />
-                    <ElisaInput
-                        label="Département"
-                        value={formData.departement || ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('departement', e.target.value)}
-                        placeholder="Ex: Sciences, Administration..."
-                    />
-                </div>
-
-                {/* Type de contrat et Statut */}
-                <div className="grid grid-cols-2 gap-4">
-                    <ElisaSelect
-                        label="Type de contrat"
-                        value={formData.typeContrat || 'cdi'}
-                        onValueChange={(value: string) => handleChange('typeContrat', value)}
-                        options={[
-                            { value: 'cdi', label: 'CDI' },
-                            { value: 'cdd', label: 'CDD' },
-                            { value: 'vacataire', label: 'Vacataire' },
-                            { value: 'stage', label: 'Stage' },
-                        ]}
-                    />
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Adresse</label>
+                        <textarea
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            value={formData.adresse || ''}
+                            onChange={(e) => handleChange('adresse', e.target.value)}
+                            placeholder="Adresse complète..."
+                            rows={2}
+                        />
+                    </div>
                     <ElisaSelect
                         label="Statut"
                         value={formData.statut || 'actif'}
@@ -290,18 +266,6 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         value={formData.specialite || ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('specialite', e.target.value)}
                         placeholder="Ex: Mathématiques, Français..."
-                    />
-                </div>
-
-                {/* Adresse */}
-                <div>
-                    <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Adresse</label>
-                    <textarea
-                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                        value={formData.adresse || ''}
-                        onChange={(e) => handleChange('adresse', e.target.value)}
-                        placeholder="Adresse complète..."
-                        rows={2}
                     />
                 </div>
             </form>

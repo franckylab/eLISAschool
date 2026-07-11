@@ -85,7 +85,7 @@ export class TypeContratService {
             .where('1=1');
 
         // Filtre: types système OU types de l'établissement
-        qb.andWhere('(tc.establissementId = :etablissementId OR tc.establissementId IS NULL OR tc.estSysteme = true)', {
+        qb.andWhere('("tc"."etablissementId" = :etablissementId OR "tc"."etablissementId" IS NULL OR "tc"."estSysteme" = true)', {
             etablissementId,
         });
 
@@ -99,7 +99,7 @@ export class TypeContratService {
         }
 
         if (estSysteme !== undefined) {
-            qb.andWhere('tc.estSysteme = :estSysteme', { estSysteme });
+            qb.andWhere('"tc"."estSysteme" = :estSysteme', { estSysteme });
         }
 
         // Recherche textuelle

@@ -18,6 +18,7 @@ interface PersonnelSearchFieldProps {
     label?: string;
     placeholder?: string;
     error?: string;
+    typeCode?: string;
 }
 
 export function PersonnelSearchField({
@@ -26,6 +27,7 @@ export function PersonnelSearchField({
     label,
     placeholder,
     error,
+    typeCode,
 }: PersonnelSearchFieldProps) {
     const { t } = useTranslation('organisation');
     const [query, setQuery] = useState('');
@@ -42,9 +44,9 @@ export function PersonnelSearchField({
         debounceRef.current = setTimeout(async () => {
             setSearching(true);
             try {
-                const response = await apiClient.get<PersonnelSearchResult[]>('/api/personnel',
-                    { search: query.trim(), limit: 10 }
-                );
+                const params: Record<string, any> = { search: query.trim(), limit: 10 };
+                if (typeCode) params.typeCode = typeCode;
+                const response = await apiClient.get<PersonnelSearchResult[]>('/api/personnel', params);
                 setResults(response.data || []);
             } catch {
                 setResults([]);

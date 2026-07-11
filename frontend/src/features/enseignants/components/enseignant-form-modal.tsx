@@ -38,9 +38,6 @@ function buildFormData(e: Enseignant | undefined): Partial<CreerPersonnelDto> {
         email: e?.utilisateur?.email || e?.email || '',
         telephone: e?.utilisateur?.profil?.telephone || e?.telephone || '',
         adresse: e?.utilisateur?.profil?.adresse || e?.adresse || '',
-        poste: e?.poste || 'Enseignant',
-        departement: e?.departement || '',
-        typeContrat: e?.typeContrat || 'cdi',
         dateEntree: formNormalizer.dateEntree(e),
         statut: formNormalizer.statut(e?.statut),
         specialite: formNormalizer.specialite(e),
@@ -70,7 +67,6 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
         if (!formData.nom?.trim()) nouvellesErreurs.nom = 'Le nom est requis';
         if (!formData.prenom?.trim()) nouvellesErreurs.prenom = 'Le prénom est requis';
         if (!formData.dateNaissance) nouvellesErreurs.dateNaissance = 'La date de naissance est requise';
-        if (!formData.poste?.trim()) nouvellesErreurs.poste = 'Le poste est requis';
         if (!formData.dateEntree) nouvellesErreurs.dateEntree = "La date d'entrée est requise";
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             nouvellesErreurs.email = "Format d'email invalide";
@@ -115,7 +111,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={onCancel} type="button">Annuler</ElisaButton>
-                    <ElisaButton variant="primary" type="button" isLoading={isMutating} icon={<Save className="h-4 w-4" />} onClick={handleSubmit}>
+                    <ElisaButton variant="primary" type="submit" isLoading={isMutating} icon={<Save className="h-4 w-4" />}>
                         {mode === 'creation' ? 'Ajouter' : 'Enregistrer'}
                     </ElisaButton>
                 </>
@@ -144,23 +140,15 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
 
                     <div className="grid grid-cols-2 gap-4">
                         <ElisaInput label="Spécialité" value={formData.specialite || ''} onChange={(e) => handleChange('specialite', e.target.value)} placeholder="Ex: Mathématiques, Français..." />
-                        <ElisaInput label="Département" value={formData.departement || ''} onChange={(e) => handleChange('departement', e.target.value)} placeholder="Ex: Sciences, Lettres..." />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect label="Contrat" value={formData.typeContrat || 'cdi'} onValueChange={(value) => handleChange('typeContrat', value)} options={[
-                            { value: 'cdi', label: 'CDI' }, { value: 'cdd', label: 'CDD' },
-                            { value: 'vacataire', label: 'Vacataire' }, { value: 'stage', label: 'Stage' },
-                        ]} />
-                        <ElisaSelect label="Statut" value={formData.statut || 'actif'} onValueChange={(value) => handleChange('statut', value)} options={[
-                            { value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' },
-                            { value: 'en_conge', label: 'En congé' }, { value: 'demission', label: 'Démission' },
-                        ]} />
+                        <ElisaInput label="Qualification" value={formData.qualification || ''} onChange={(e) => handleChange('qualification', e.target.value)} placeholder="Ex: Master, Licence..." />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <ElisaInput label="Date d'entrée" type="date" value={formData.dateEntree || ''} onChange={(e) => handleChange('dateEntree', e.target.value)} error={erreurs.dateEntree} required />
-                        <ElisaInput label="Qualification" value={formData.qualification || ''} onChange={(e) => handleChange('qualification', e.target.value)} placeholder="Ex: Master, Licence..." />
+                        <ElisaSelect label="Statut" value={formData.statut || 'actif'} onValueChange={(value) => handleChange('statut', value)} options={[
+                            { value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' },
+                            { value: 'en_conge', label: 'En congé' }, { value: 'demission', label: 'Démission' },
+                        ]} />
                     </div>
 
                     <div>

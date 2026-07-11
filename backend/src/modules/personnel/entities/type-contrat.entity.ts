@@ -22,6 +22,7 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { ContratPersonnel } from './contrat-personnel.entity';
+import { ModeRemuneration } from './mode-remuneration.enum';
 
 /**
  * Catégorie de contrat (pour organisation et filtrage)
@@ -67,6 +68,9 @@ export class TypeContratPersonnalise {
     ordre!: number; // Pour l'affichage trié
 
     // Configuration par défaut pour ce type de contrat
+    @Column({ type: 'varchar', length: 30, default: ModeRemuneration.MENSUEL })
+    modeRemuneration!: ModeRemuneration;
+
     @Column({ type: 'boolean', default: false })
     renouvellementAutoDefaut!: boolean;
 

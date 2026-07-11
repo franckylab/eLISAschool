@@ -9,7 +9,8 @@ import { useCreerHierarchie, useModifierHierarchie } from '../hooks/use-organisa
 import { createHierarchieSchema, updateHierarchieSchema } from '../types/organisation.zod';
 import { BaseFormModal } from './base-form-modal';
 import { PersonnelSearchField } from './personnel-search-field';
-import type { Poste, HierarchiePersonnel } from '../types/organisation.types';
+import type { HierarchiePersonnel } from '../types/organisation.types';
+import type { Poste } from '@/features/postes/types/poste.types';
 
 interface PersonnelSearchResult {
     id: string;

@@ -10,7 +10,7 @@ import { z } from 'zod';
 export const createElementSalaireSchema = z.object({
     bulletinPaieId: z.string().uuid(),
     type: z.enum(['GAIN', 'RETENUE']),
-    categorie: z.enum(['SALAIRE_BASE', 'PRIME', 'INDEMNITE', 'COTISATION', 'HEURE_SUP', 'RETENUE', 'AUTRE']),
+    categorie: z.enum(['SALAIRE_BASE', 'PRIME', 'INDEMNITE', 'COTISATION', 'HEURE_SUP', 'HEURE_COURS', 'RETENUE', 'AUTRE']),
     libelle: z.string().min(2).max(200),
     montant: z.number().positive(),
     baseCalcul: z.number().optional(),

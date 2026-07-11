@@ -55,11 +55,12 @@ import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
 import { filieresController } from '@modules/filieres';
 import { specialitesController } from '@modules/specialites';
+import { fonctionsController } from '@modules/fonctions';
 import { competencesController } from '@modules/competences';
 import { examensNationauxController } from '@modules/examens-nationaux';
 import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
-import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController } from '@modules/personnel';
+import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController, cotisationsController, typesPrimesController, typesRetenuesController, calculPaieController, membreFonctionController } from '@modules/personnel';
 import { classesController, classesAnneesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
 import { configurationScoringController } from '@modules/scoring';
@@ -81,6 +82,7 @@ import { requireModuleActive } from '@modules/configuration/middlewares/module-a
 import { filterByEtablissement } from '@modules/auth/middlewares/etablissement.middleware';
 import { typesEnumController } from '@modules/types-enum';
 import { organisationController } from '@modules/organisation';
+import { postesController } from '@modules/postes';
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
 import { apparenceController } from '@modules/apparence';
@@ -408,12 +410,16 @@ export function createApp(): Application {
     // Module organisation (critique - toujours actif avec filtrage)
     app.use('/api/organisation', authMiddleware, filterByEtablissement(), organisationController);
 
+    // Module postes
+    app.use('/api/postes', authMiddleware, requireModuleActive('postes'), filterByEtablissement(), postesController);
+
     // Modules académiques multi-établissements avec filtrage
     app.use('/api/etablissements', authMiddleware, filterByEtablissement({ allowSuperAdminOverride: true }), etablissementController);
     app.use('/api/cycles', authMiddleware, filterByEtablissement(), cyclesController);
     app.use('/api/niveaux', authMiddleware, filterByEtablissement(), niveauxController);
     app.use('/api/filieres', authMiddleware, filterByEtablissement(), filieresController);
     app.use('/api/specialites', authMiddleware, filterByEtablissement(), specialitesController);
+    app.use('/api/fonctions', authMiddleware, filterByEtablissement(), fonctionsController);
     app.use('/api/competences', authMiddleware, filterByEtablissement(), competencesController);
     app.use('/api/examens-nationaux', authMiddleware, filterByEtablissement(), examensNationauxController);
     app.use('/api/diplomes-eleves', authMiddleware, filterByEtablissement(), diplomesElevesController);
@@ -429,6 +435,11 @@ export function createApp(): Application {
     app.use('/api/personnel/progressions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), progressionProgrammeController);
     app.use('/api/personnel/bulletins', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), bulletinPaieController);
     app.use('/api/personnel/dashboard', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelDashboardController);
+    app.use('/api/personnel/cotisations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), cotisationsController);
+    app.use('/api/personnel/types-primes', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typesPrimesController);
+    app.use('/api/personnel/types-retenues', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typesRetenuesController);
+    app.use('/api/personnel/paie', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), calculPaieController);
+    app.use('/api/personnel/membres-fonctions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), membreFonctionController);
     // Route générique /:id en dernier
     app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
     app.use('/api/classes', authMiddleware, filterByEtablissement(), classesController);

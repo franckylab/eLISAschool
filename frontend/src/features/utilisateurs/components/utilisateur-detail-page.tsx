@@ -9,7 +9,7 @@
  */
 
 import { useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, User, Mail, Phone, Shield, Calendar, MapPin, 
@@ -27,7 +27,6 @@ type Onglet = 'informations' | 'permissions' | 'activite' | 'parametres';
 
 export function UtilisateurDetailPage() {
     const { id } = useParams({ from: '/_auth/utilisateurs/$id' });
-    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     
     const [ongletActif, setOngletActif] = useState<Onglet>('informations');
@@ -75,7 +74,7 @@ export function UtilisateurDetailPage() {
                         variant="ghost"
                         size="sm"
                         icon={<ArrowLeft className="h-4 w-4" />}
-                        onClick={() => navigate({ to: '/utilisateurs' })}
+                        onClick={() => { window.location.href = '/utilisateurs'; }}
                     >
                         Retour
                     </ElisaButton>
@@ -186,7 +185,7 @@ export function UtilisateurDetailPage() {
                 variant="danger"
                 onConfirm={async () => {
                     await supprimer.mutateAsync(utilisateur.id);
-                    navigate({ to: '/utilisateurs' });
+                    window.location.href = '/utilisateurs';
                 }}
                 onCancel={() => setUtilisateurToDelete(false)}
                 isLoading={supprimer.isPending}

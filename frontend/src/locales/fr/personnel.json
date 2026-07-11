@@ -19,5 +19,28 @@
         "inactif": "Inactif",
         "en_conge": "En congé",
         "demission": "Démission"
+    },
+    "heuresCours": {
+        "mensuel": "Mensuel",
+        "hebdomadaire": "Hebdomadaire",
+        "heuresEffectuees": "Heures effectuées",
+        "heuresPlanifiees": "Heures planifiées",
+        "heuresAnnulees": "Heures annulées",
+        "nombreCours": "Nombre de cours",
+        "detailMatiere": "Détail par matière",
+        "matiere": "Matière",
+        "heures": "Heures",
+        "tarifHoraire": "Tarif horaire",
+        "montant": "Montant",
+        "total": "Total",
+        "aucuneHeure": "Aucune heure de cours pour ce mois",
+        "aucuneHeureDesc": "Les heures de cours apparaîtront ici une fois planifiées ou effectuées",
+        "chargementImpossible": "Impossible de charger les heures de cours",
+        "edtImpossible": "Impossible de charger l'emploi du temps",
+        "semaineDu": "Semaine du",
+        "planifie": "Planifié",
+        "effectue": "Effectué",
+        "annule": "Annulé",
+        "remplace": "Remplacé"
     }
 }

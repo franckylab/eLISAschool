@@ -7,17 +7,18 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
-import { useOrganigramme, usePostes, useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
+import { useOrganigramme, useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
+import { usePostes } from '@/features/postes/hooks/use-postes';
 import { HierarchieFormModal } from './hierarchie-form-modal';
 import type { HierarchiePersonnel } from '../types/organisation.types';
 
-const relationColors: Record<string, 'success' | 'default' | 'warning' | 'info' | 'secondary'> = {
+const relationColors: Record<string, 'success' | 'default' | 'warning' | 'secondary'> = {
     SUPERVISE_DIRECT: 'success',
     SUPERVISE_INDIRECT: 'default',
     RATTACHEMENT_FONCTIONNEL: 'warning',
     COLLABORATION: 'secondary',
-    REMPLACEMENT: 'info',
-    INTERIM: 'info',
+    REMPLACEMENT: 'default',
+    INTERIM: 'default',
 };
 
 interface Props { organisationId: string }
@@ -27,7 +28,8 @@ export function TabHierarchie({ organisationId }: Props) {
     const { hasPermission } = usePermissions();
     const { data: organigramme, isLoading: orgLoading } = useOrganigramme(organisationId);
     const { data: hierarchies, isLoading: hierLoading } = useHierarchies();
-    const { data: postes } = usePostes({ organisationId });
+    const { data: postesData } = usePostes();
+    const postes = postesData?.data || [];
     const supprimer = useSupprimerHierarchie();
 
     const relationLabels = t('typeRelation', { returnObjects: true }) as Record<string, string>;
@@ -38,14 +40,23 @@ export function TabHierarchie({ organisationId }: Props) {
 
     const organigrammeNodes = organigramme || [];
 
+    const compterOccupes = (postes: any[]): number =>
+        postes.reduce((acc, p) => acc + (p.occupantsCount || 0), 0);
+
     const buildOrganigramTree = (nodes: any[]): TreeNode<any>[] => {
-        return nodes.map((n) => ({
-            id: n.id,
-            label: `${n.nom} ${n.code ? `(${n.code})` : ''}`,
-            data: n,
-            icon: <Users className="h-4 w-4 text-gray-500" />,
-            children: n.enfants ? buildOrganigramTree(n.enfants) : [],
-        }));
+        return nodes.map((n) => {
+            const postesLocaux = n.postes || [];
+            const occupes = compterOccupes(postesLocaux);
+            const total = postesLocaux.reduce((acc: number, p: any) => acc + (p.nombrePostes || 1), 0);
+            const capacite = total > 0 ? ` [${occupes}/${total}]` : '';
+            return {
+                id: n.id,
+                label: `${n.nom} ${n.code ? `(${n.code})` : ''}${capacite}`,
+                data: n,
+                icon: <Users className="h-4 w-4 text-gray-500" />,
+                children: n.enfants ? buildOrganigramTree(n.enfants) : [],
+            };
+        });
     };
 
     const hierColumns: Column<HierarchiePersonnel>[] = [
@@ -154,8 +165,9 @@ export function TabHierarchie({ organisationId }: Props) {
                     </div>
 
                     <DataTable
-                        colonnes={hierColumns}
-                        donnees={hierarchies || []}
+                        tableId="hierarchie-table"
+                        columns={hierColumns}
+                        data={hierarchies || []}
                         isLoading={hierLoading}
                         disableClientSearch
                     />

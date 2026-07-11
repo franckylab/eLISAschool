@@ -2,8 +2,14 @@
  * ==================================
  * eLISAschool - Service Calcul Paie
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
+ *
+ * Supporte les 4 modes de rémunération :
+ *   MENSUEL      → Salaire fixe mensuel (salaireBase)
+ *   HORAIRE      → tarifHoraire × heures effectuées (via HeureCours)
+ *   MIXTE        → Fixe + heures sup au-delà de heuresContractuellesMois
+ *   HEBDOMADAIRE → tarifHebdomadaire × 52 / 12
  */
 
 import { Repository } from 'typeorm';
@@ -12,13 +18,28 @@ import { BulletinPaie } from '../entities/bulletin-paie.entity';
 import { ElementSalaire, TypeElementSalaire, CategorieElementSalaire } from '../entities/element-salaire.entity';
 import { Cotisation } from '../entities/cotisation.entity';
 import { TypePrime } from '../entities/type-prime.entity';
-import { MembrePersonnel, ContratPersonnel } from '../entities';
+import { MembrePersonnel, ContratPersonnel, ModeRemuneration } from '../entities';
+import { heureCoursService } from './heure-cours.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+
+export interface DetailMatiereSimulation {
+    matiereNom: string;
+    heures: number;
+    tarifHoraire: number;
+    montant: number;
+}
 
 export interface SimulationResult {
     salaireBase: number;
+    heuresEffectuees: number;
     heuresSup: number;
+    montantHeuresSup: number;
+    detailParMatiere: DetailMatiereSimulation[];
     primes: number;
     cotisationsPatronales: number;
     cotisationsSalariales: number;
@@ -45,25 +66,27 @@ export class CalculPaieService {
         this.contratRepo = AppDataSource.getRepository(ContratPersonnel);
     }
 
-    /**
-     * Calcule le bulletin de paie pour un membre du personnel
-     */
     async calculerBulletin(
         membrePersonnelId: string,
         mois: number,
         annee: number,
-        etablissementId: string
+        etablissementId: string,
+        options?: { userId?: string; req?: any; checkConflict?: 'THROW' | 'UPDATE' | 'AUTO' }
     ): Promise<BulletinPaie> {
-        // Vérifier si le bulletin existe déjà
         const existingBulletin = await this.bulletinRepo.findOne({
             where: { membrePersonnelId, mois, annee },
         });
 
-        if (existingBulletin && existingBulletin.statut === 'PAYE') {
-            throw new AppError('Bulletin déjà payé, non modifiable', 400, 'BULLETIN_DEJA_PAYE');
+        const conflictMode = options?.checkConflict || 'AUTO';
+        if (existingBulletin) {
+            if (conflictMode === 'THROW') {
+                throw new AppError('Bulletin déjà existant', 409, 'CONFLICT');
+            }
+            if (existingBulletin.statut === 'PAYE') {
+                throw new AppError('Bulletin déjà payé, non modifiable', 400, 'BULLETIN_DEJA_PAYE');
+            }
         }
 
-        // Récupérer le membre et son contrat
         const membre = await this.personnelRepo.findOne({
             where: { id: membrePersonnelId, etablissementId },
             relations: ['typePersonnel'],
@@ -76,16 +99,15 @@ export class CalculPaieService {
         const contrat = await this.contratRepo.findOne({
             where: { membrePersonnelId: membrePersonnelId },
             order: { dateDebut: 'DESC' },
+            relations: ['typeContratEntity'],
         });
 
         if (!contrat) {
             throw new AppError('Aucun contrat trouvé pour ce membre', 404, 'NO_CONTRACT');
         }
 
-        // Simulation du calcul
-        const simulation = await this.simulerPaie(membrePersonnelId, etablissementId);
+        const simulation = await this.simulerPaie(membrePersonnelId, etablissementId, mois, annee);
 
-        // Créer ou mettre à jour le bulletin
         let bulletin: BulletinPaie;
 
         if (existingBulletin) {
@@ -101,48 +123,161 @@ export class CalculPaieService {
         }
 
         bulletin.salaireBase = simulation.salaireBase;
-        bulletin.heuresEffectuees = simulation.heuresSup;
-        bulletin.montantHeuresSup = simulation.heuresSup;
+        bulletin.heuresEffectuees = simulation.heuresEffectuees;
+        bulletin.montantHeuresSup = simulation.montantHeuresSup;
         bulletin.primes = simulation.primes;
         bulletin.deductions = simulation.totalRetenues;
         bulletin.salaireNet = simulation.salaireNet;
         bulletin.statut = 'GENERE';
 
         await this.bulletinRepo.save(bulletin);
-
-        // Créer les éléments détaillés
         await this.creerElementsBulletin(bulletin.id, simulation.elements, etablissementId);
+
+        // Workflow validation si requis (uniquement pour création)
+        if (!existingBulletin && options?.userId) {
+            const requireValidation = await getParamBoolean('personnel.paie.require_validation', true);
+            if (requireValidation) {
+                try {
+                    await validationWorkflowService.createWorkflow({
+                        module: 'personnel',
+                        entiteId: bulletin.id,
+                        entiteType: 'BulletinPaie',
+                        niveauxRequis: 2,
+                        etablissementId,
+                    }, options.userId);
+                } catch (error) {
+                    logger.warn(`[Paie] Échec création workflow bulletin (non bloquant)`, error);
+                }
+            }
+        }
+
+        // Audit
+        if (options?.userId) {
+            await auditService.log({
+                utilisateurId: options.userId,
+                action: existingBulletin ? AuditAction.BULLETIN_PAI_UPDATE : AuditAction.BULLETIN_PAI_CREATE,
+                cible: 'BulletinPaie',
+                cibleId: bulletin.id,
+                description: existingBulletin
+                    ? `Recalcul bulletin paie ${bulletin.id} pour ${mois}/${annee}`
+                    : `Création bulletin paie ${bulletin.id} pour ${mois}/${annee}`,
+                nouvellesValeurs: { mois, annee, salaireBase: simulation.salaireBase, salaireNet: simulation.salaireNet },
+                module: 'personnel',
+            }, options.req);
+        }
 
         logger.info(`[Paie] Bulletin calculé: ${membre.matricule} - ${mois}/${annee}`);
         return bulletin;
     }
 
-    /**
-     * Simule le calcul de paie sans persister
-     */
-    async simulerPaie(membrePersonnelId: string, etablissementId: string): Promise<SimulationResult> {
+    async simulerPaie(
+        membrePersonnelId: string,
+        etablissementId: string,
+        mois?: number,
+        annee?: number
+    ): Promise<SimulationResult> {
         const elements: ElementSalaire[] = [];
         let ordre = 0;
 
-        // Récupérer le contrat
         const contrat = await this.contratRepo.findOne({
             where: { membrePersonnelId },
             order: { dateDebut: 'DESC' },
+            relations: ['typeContratEntity'],
         });
 
         if (!contrat) {
             throw new AppError('Aucun contrat trouvé', 404, 'NO_CONTRACT');
         }
 
-        const salaireBase = contrat.salaireBase || 0;
+        const mode = contrat.modeRemuneration
+            || contrat.typeContratEntity?.modeRemuneration
+            || ModeRemuneration.MENSUEL;
 
-        // 1. Salaire de base
-        elements.push(this.creerElement('GAIN', 'SALAIRE_BASE', 'Salaire de base', salaireBase, salaireBase, undefined, ordre++));
+        let salaireBase = 0;
+        let heuresEffectuees = 0;
+        let heuresSup = 0;
+        let montantHeuresSup = 0;
+        let detailParMatiere: DetailMatiereSimulation[] = [];
 
-        // 2. Heures supplémentaires (si applicable)
-        // À implémenter selon les heures cours du mois
+        switch (mode) {
+            case ModeRemuneration.MENSUEL:
+                salaireBase = contrat.salaireBase || 0;
+                elements.push(this.creerElement(
+                    'GAIN', 'SALAIRE_BASE',
+                    'Salaire mensuel fixe',
+                    salaireBase, salaireBase, undefined, ordre++
+                ));
+                break;
 
-        // 3. Primes
+            case ModeRemuneration.HORAIRE: {
+                const tarifHoraire = contrat.tarifHoraire || 0;
+                const resume = mois && annee
+                    ? await heureCoursService.getResumeMensuel(membrePersonnelId, mois, annee, etablissementId)
+                    : { heuresEffectuees: 0, detailParMatiere: [] as any[] };
+                heuresEffectuees = resume.heuresEffectuees || 0;
+                detailParMatiere = resume.detailParMatiere || [];
+                for (const d of detailParMatiere) {
+                    elements.push(this.creerElement(
+                        'GAIN', 'HEURE_COURS', d.matiereNom,
+                        d.montant, d.heures, d.tarifHoraire, ordre++
+                    ));
+                }
+                salaireBase = +(tarifHoraire * heuresEffectuees).toFixed(2);
+                elements.push(this.creerElement(
+                    'GAIN', 'SALAIRE_BASE',
+                    `Total heures (${heuresEffectuees}h × ${tarifHoraire} FCFA)`,
+                    salaireBase, heuresEffectuees, tarifHoraire, ordre++
+                ));
+                break;
+            }
+
+            case ModeRemuneration.MIXTE: {
+                const fixe = contrat.salaireBase || 0;
+                const tarifHoraire = contrat.tarifHoraire || 0;
+                const seuil = contrat.heuresContractuellesMois || 0;
+                const resume = mois && annee
+                    ? await heureCoursService.getResumeMensuel(membrePersonnelId, mois, annee, etablissementId)
+                    : { heuresEffectuees: 0, detailParMatiere: [] as any[] };
+                heuresEffectuees = resume.heuresEffectuees || 0;
+                detailParMatiere = resume.detailParMatiere || [];
+                for (const d of detailParMatiere) {
+                    elements.push(this.creerElement(
+                        'GAIN', 'HEURE_COURS', d.matiereNom,
+                        d.montant, d.heures, d.tarifHoraire, ordre++
+                    ));
+                }
+                heuresSup = Math.max(0, heuresEffectuees - seuil);
+                montantHeuresSup = +(heuresSup * tarifHoraire * 1.5).toFixed(2);
+                salaireBase = fixe + montantHeuresSup;
+
+                elements.push(this.creerElement(
+                    'GAIN', 'SALAIRE_BASE',
+                    'Salaire de base (fixe mensuel)',
+                    fixe, fixe, undefined, ordre++
+                ));
+                if (heuresSup > 0) {
+                    elements.push(this.creerElement(
+                        'GAIN', 'HEURE_SUP',
+                        `Heures sup (${heuresSup}h × ${tarifHoraire} × 1.5)`,
+                        montantHeuresSup, heuresSup, tarifHoraire, ordre++
+                    ));
+                }
+                break;
+            }
+
+            case ModeRemuneration.HEBDOMADAIRE: {
+                const tarifHebdo = contrat.tarifHebdomadaire || contrat.salaireBase || 0;
+                salaireBase = +(tarifHebdo * 52 / 12).toFixed(2);
+                elements.push(this.creerElement(
+                    'GAIN', 'SALAIRE_BASE',
+                    `Salaire hebdomadaire lissé (${tarifHebdo} × 52 / 12)`,
+                    salaireBase, tarifHebdo, undefined, ordre++
+                ));
+                break;
+            }
+        }
+
+        // Primes
         const primes = await this.primeRepo.find({
             where: { etablissementId, actif: true },
         });
@@ -158,11 +293,14 @@ export class CalculPaieService {
 
             if (montantPrime > 0) {
                 totalPrimes += montantPrime;
-                elements.push(this.creerElement('GAIN', 'PRIME', prime.nom, montantPrime, undefined, undefined, ordre++));
+                elements.push(this.creerElement(
+                    'GAIN', 'PRIME', prime.nom,
+                    montantPrime, undefined, undefined, ordre++
+                ));
             }
         }
 
-        // 4. Cotisations
+        // Cotisations
         const cotisations = await this.cotisationRepo.find({
             where: { etablissementId, actif: true },
         });
@@ -171,20 +309,23 @@ export class CalculPaieService {
         let totalCotisationsPatronales = 0;
 
         for (const cotisation of cotisations) {
-            const baseCalcul = cotisation.plafond ? Math.min(salaireBase, cotisation.plafond) : salaireBase;
+            const baseCalcul = cotisation.plafond
+                ? Math.min(salaireBase, cotisation.plafond)
+                : salaireBase;
 
-            // Cotisation salariale
             if (cotisation.type === 'SALARIALE' || cotisation.type === 'MIXTE') {
                 const montantSalarial = baseCalcul * (cotisation.tauxSalarial / 100);
                 totalCotisationsSalariales += montantSalarial;
-                elements.push(this.creerElement('RETENUE', 'COTISATION', `${cotisation.nom} (Salarial)`, montantSalarial, baseCalcul, cotisation.tauxSalarial, ordre++));
+                elements.push(this.creerElement(
+                    'RETENUE', 'COTISATION',
+                    `${cotisation.nom} (Salarial)`,
+                    montantSalarial, baseCalcul, cotisation.tauxSalarial, ordre++
+                ));
             }
 
-            // Cotisation patronale
             if (cotisation.type === 'PATRONALE' || cotisation.type === 'MIXTE') {
                 const montantPatronal = baseCalcul * (cotisation.tauxPatronal / 100);
                 totalCotisationsPatronales += montantPatronal;
-                // Pas ajouté aux retenues salariales
             }
         }
 
@@ -193,7 +334,10 @@ export class CalculPaieService {
 
         return {
             salaireBase,
-            heuresSup: 0,
+            heuresEffectuees,
+            heuresSup,
+            montantHeuresSup,
+            detailParMatiere,
             primes: totalPrimes,
             cotisationsPatronales: totalCotisationsPatronales,
             cotisationsSalariales: totalCotisationsSalariales,
@@ -229,10 +373,8 @@ export class CalculPaieService {
         elements: ElementSalaire[],
         etablissementId: string
     ): Promise<void> {
-        // Supprimer les anciens éléments
         await this.elementRepo.delete({ bulletinPaieId });
 
-        // Créer les nouveaux
         for (const element of elements) {
             element.bulletinPaieId = bulletinPaieId;
             element.etablissementId = etablissementId;

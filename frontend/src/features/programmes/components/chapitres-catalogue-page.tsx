@@ -27,7 +27,7 @@ export function ChapitresCataloguePage() {
         programmeId: filtreProgrammeId || undefined,
         statut: filtreStatut || undefined,
     });
-    const { data: programmesData } = useProgrammes({ limit: 200 });
+    const { data: programmesData } = useProgrammes({ limit: 100 });
     const programmes = programmesData?.items || [];
 
     const creer = useCreerChapitre();

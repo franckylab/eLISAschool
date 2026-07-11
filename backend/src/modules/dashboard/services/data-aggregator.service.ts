@@ -42,7 +42,7 @@ export class DataAggregatorService {
         context: DashboardContext
     ): Promise<WidgetDataResponse> {
         const startTime = Date.now();
-        const cacheKey = `widget:data:${widgetId}:${context.etablissementId || 'global'}:${context.periode || 'all'}`;
+        const cacheKey = `widget:data:${widgetId}:${context.etablissementId || 'global'}:${context.periode || 'all'}:${context.userId || 'anonymous'}`;
 
         // 1. Vérifier le cache
         const cached = await dashboardCacheService.get(cacheKey);
@@ -77,12 +77,14 @@ export class DataAggregatorService {
         // 4. Exécuter le resolver avec timeout
         try {
             const timeout = 5000; // 5 secondes max
-            const data = await Promise.race([
-                service[methodName](context),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), timeout)
-                )
-            ]);
+            const data = await new Promise<any>((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error('Timeout')), timeout);
+                const actual = service[methodName](context);
+                actual.then(
+                    (result: any) => { clearTimeout(timer); resolve(result); },
+                    (error: any) => { clearTimeout(timer); reject(error); }
+                );
+            });
 
             const resolutionTime = Date.now() - startTime;
             this.recordExecutionTime(widgetId, resolutionTime);
@@ -174,6 +176,16 @@ export class DataAggregatorService {
                     // Service à créer
                     logger.warn(`[DataAggregator] Service absencesService non disponible`);
                     return null;
+
+                case 'personnelDashboardService':
+                    const { personnelDashboardService } = require('@modules/personnel/services');
+                    this.registerService('personnelDashboardService', personnelDashboardService);
+                    return personnelDashboardService;
+
+                case 'portalParentService':
+                    const { portalParentService } = require('@modules/responsables-eleves/services');
+                    this.registerService('portalParentService', portalParentService);
+                    return portalParentService;
 
                 case 'dashboardService':
                     // Référencement circulaire - utiliser this

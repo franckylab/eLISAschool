@@ -31,6 +31,7 @@ import {
     FileText,
     TrendingUp,
     Award,
+    Briefcase,
     ScrollText,
     LayoutGrid,
     ChevronDown,
@@ -192,6 +193,7 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
             { label: 'Mon organisation', path: '/organisation', icon: Building2, module: 'organisation' },
             { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: Settings, module: 'organisation' },
+            { label: 'Postes', path: '/postes', icon: Briefcase, module: 'postes' },
             {
                 label: 'Structure Académique',
                 path: '/parametres/structure-academique',
@@ -202,6 +204,7 @@ const NAV_SECTIONS: NavSection[] = [
                     { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
                     { label: 'Filières', path: '/filieres', icon: Award, module: 'filieres' },
                     { label: 'Spécialités', path: '/specialites', icon: BookOpen, module: 'specialites' },
+                    { label: 'Fonctions', path: '/fonctions', icon: Briefcase, module: 'fonctions' },
                     { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileText, module: 'examens-nationaux' },
                     { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: ScrollText, module: 'diplomes-eleves' },
                     { label: 'Compétences', path: '/competences', icon: Target, module: 'competences' },
@@ -233,6 +236,7 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Élèves', path: '/eleves', icon: Users, module: 'eleves' },
             { label: 'Personnel', path: '/personnel', icon: UserRound, module: 'personnel' },
+            { label: 'Contrats & Paie', path: '/contrats', icon: CreditCard, module: 'personnel' },
             { label: 'Enseignants', path: '/enseignants', icon: GraduationCap, module: 'enseignants' },
             { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
             { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
@@ -283,6 +287,8 @@ export function Sidebar() {
     const niveauxPerms = useModulePermissions('niveaux');
     const filieresPerms = useModulePermissions('filieres');
     const specialitesPerms = useModulePermissions('specialites');
+    const fonctionsPerms = useModulePermissions('fonctions');
+    const postesPerms = useModulePermissions('postes');
     const competencesPerms = useModulePermissions('competences');
     const examensNationauxPerms = useModulePermissions('examens-nationaux');
     const diplomesElevesPerms = useModulePermissions('diplomes-eleves');
@@ -317,6 +323,7 @@ export function Sidebar() {
                             niveaux: niveauxPerms,
                             filieres: filieresPerms,
                             specialites: specialitesPerms,
+                            fonctions: fonctionsPerms,
                             competences: competencesPerms,
                             'examens-nationaux': examensNationauxPerms,
                             'diplomes-eleves': diplomesElevesPerms,
@@ -347,6 +354,8 @@ export function Sidebar() {
                     etablissements: etablissementsPerms,
                     'examens-nationaux': examensNationauxPerms,
                     filieres: filieresPerms,
+                    fonctions: fonctionsPerms,
+                    postes: postesPerms,
                     finances: financesPerms,
                     matieres: matieresPerms,
                     anneesScolaires: anneesScolairesPerms,

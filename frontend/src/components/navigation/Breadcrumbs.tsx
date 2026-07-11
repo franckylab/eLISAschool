@@ -17,10 +17,13 @@ const LABEL_MAP: Record<string, string> = {
 
 interface BreadcrumbsProps {
     currentLabel?: string;
+    labelsMap?: Record<string, string>;
 }
 
-export function Breadcrumbs({ currentLabel }: BreadcrumbsProps) {
+export function Breadcrumbs({ currentLabel, labelsMap }: BreadcrumbsProps) {
     const matches = useMatches();
+
+    const mergedLabels = { ...LABEL_MAP, ...labelsMap };
 
     const crumbs = matches
         .filter((m) => m.pathname && m.pathname !== '/' && !m.pathname.includes('_auth'))
@@ -31,7 +34,7 @@ export function Breadcrumbs({ currentLabel }: BreadcrumbsProps) {
                 path: m.pathname,
                 label: isLast && currentLabel
                     ? currentLabel
-                    : LABEL_MAP[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
+                    : mergedLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
             };
         });
 

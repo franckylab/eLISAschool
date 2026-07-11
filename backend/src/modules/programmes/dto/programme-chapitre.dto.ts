@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { StatutChapitre } from '../entities/programme-chapitre.entity';
 
+const ressourcePedagogiqueSchema = z.object({
+    type: z.enum(['MANUEL', 'VIDEO', 'DOCUMENT', 'LIEN']),
+    titre: z.string().min(1, 'Titre requis'),
+    url: z.string().url('URL invalide').optional(),
+    description: z.string().optional(),
+});
+
 export const createProgrammeChapitreSchema = z.object({
     programmeMatiereId: z.string().uuid('ID programme-matière invalide'),
     periodeId: z.string().uuid('ID période invalide').optional(),
@@ -10,6 +17,9 @@ export const createProgrammeChapitreSchema = z.object({
     ordre: z.coerce.number().int().min(0, "L'ordre doit être positif").default(0),
     dureePrevueHeures: z.coerce.number().int().positive('Durée doit être positive').optional(),
     statut: z.nativeEnum(StatutChapitre).default(StatutChapitre.ACTIF),
+    prerequis: z.array(z.string().max(255)).optional(),
+    ressourcesPedagogiques: z.array(ressourcePedagogiqueSchema).optional(),
+    competencesAssociees: z.array(z.string().max(255)).optional(),
 });
 
 export const updateProgrammeChapitreSchema = createProgrammeChapitreSchema.partial().omit({

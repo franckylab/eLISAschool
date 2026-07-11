@@ -83,7 +83,6 @@ export function fromFormToCreateDto(form: Record<string, any>): CreerPersonnelDt
         specialites: form.specialite ? [form.specialite] : form.specialites || undefined,
         diplomes: form.diplomes || form.qualification || undefined,
         typePersonnelId: form.typePersonnelId || undefined,
-        // Infos personnelles (pass-through pour le backend)
         nom: form.nom || undefined,
         prenom: form.prenom || undefined,
         dateNaissance: form.dateNaissance || undefined,
@@ -91,12 +90,173 @@ export function fromFormToCreateDto(form: Record<string, any>): CreerPersonnelDt
         email: form.email || undefined,
         telephone: form.telephone || undefined,
         adresse: form.adresse || undefined,
-        departement: form.departement || undefined,
     };
 }
 
 export interface ModifierPersonnelDto extends Partial<CreerPersonnelDto> {
     id: string;
+}
+
+export type ModeRemuneration = 'MENSUEL' | 'HORAIRE' | 'MIXTE' | 'HEBDOMADAIRE';
+
+export interface ContratPersonnel {
+    id: string;
+    membrePersonnelId: string;
+    typeContrat: string;
+    typeContratId?: string | null;
+    fonctionId?: string | null;
+    fonction?: { id: string; nom: string; code?: string } | null;
+    posteId?: string | null;
+    poste?: PostePartial | null;
+    dateDebut: string;
+    dateFin?: string | null;
+    salaireBase: number;
+    tarifHoraire?: number | null;
+    modeRemuneration?: ModeRemuneration | null;
+    heuresContractuellesMois?: number | null;
+    tarifHebdomadaire?: number | null;
+    statut: string;
+    renouvellementAuto?: boolean;
+    clauses?: string | null;
+    membrePersonnel?: {
+        id: string;
+        matricule: string;
+        utilisateur?: {
+            id: string;
+            email: string;
+            profil?: { nom: string; prenom: string };
+        };
+    };
+    etablissementId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PostePartial {
+    id: string;
+    intitulé: string;
+    code: string;
+    uniteOrganisationnelle?: { id: string; nom: string };
+    fonction?: { id: string; nom: string };
+}
+
+export interface BulletinPaie {
+    id: string;
+    membrePersonnelId: string;
+    contratId: string;
+    mois: number;
+    annee: number;
+    salaireBase: number;
+    heuresEffectuees: number;
+    montantHeuresSup: number;
+    primes: number;
+    deductions: number;
+    salaireNet: number;
+    statut: string;
+    datePaiement?: string;
+    membrePersonnel?: MembrePersonnel | null;
+    createdAt: string;
+}
+
+export interface ElementSalaire {
+    id: string;
+    bulletinPaieId: string;
+    type: 'GAIN' | 'RETENUE';
+    categorie: 'SALAIRE_BASE' | 'PRIME' | 'INDEMNITE' | 'COTISATION' | 'HEURE_SUP' | 'HEURE_COURS' | 'RETENUE' | 'AUTRE';
+    libelle: string;
+    montant: number;
+    baseCalcul?: number | null;
+    taux?: number | null;
+    ordreAffichage: number;
+    createdAt: string;
+}
+
+export interface Cotisation {
+    id: string;
+    code: string;
+    nom: string;
+    type: 'PATRONALE' | 'SALARIALE' | 'MIXTE';
+    tauxPatronal: number;
+    tauxSalarial: number;
+    plafond?: number;
+    description?: string;
+    actif: boolean;
+    etablissementId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface TypePrime {
+    id: string;
+    code: string;
+    nom: string;
+    typeCalcul: 'FIXE' | 'POURCENTAGE' | 'VARIABLE';
+    valeur: number;
+    description?: string;
+    actif: boolean;
+    etablissementId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface TypeRetenue {
+    id: string;
+    code: string;
+    nom: string;
+    frequence: 'PONCTUELLE' | 'RECURRENTE';
+    montantMax?: number;
+    description?: string;
+    etablissementId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface TypeContratPersonnalise {
+    id: string;
+    code: string;
+    nom: string;
+    description?: string;
+    categorie: string;
+    modeRemuneration: ModeRemuneration;
+    actif: boolean;
+    estSysteme: boolean;
+    ordre: number;
+    renouvellementAutoDefaut: boolean;
+    dureeMaxMois?: number;
+    etablissementId?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface DetailMatiereSimulation {
+    matiereNom: string;
+    heures: number;
+    tarifHoraire: number;
+    montant: number;
+}
+
+export interface SimulationResult {
+    salaireBase: number;
+    heuresEffectuees: number;
+    heuresSup: number;
+    montantHeuresSup: number;
+    detailParMatiere: DetailMatiereSimulation[];
+    primes: number;
+    cotisationsPatronales: number;
+    cotisationsSalariales: number;
+    totalRetenues: number;
+    salaireNet: number;
+    coutTotalEmployeur: number;
+    elements: ElementSalaire[];
+}
+
+export interface RapportPaieMensuel {
+    nombreBulletins: number;
+    totalSalairesBase: number;
+    totalHeuresSup: number;
+    totalPrimes: number;
+    totalDeductions: number;
+    totalSalairesNets: number;
 }
 
 export interface PersonnelFiltres {

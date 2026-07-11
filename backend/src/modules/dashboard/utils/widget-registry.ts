@@ -216,7 +216,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
         type: 'stats-cards',
         roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.PERSONNEL, Role.ENSEIGNANT],
         permissions: ['absences:view', 'absences:statistiques:view'],
-        dataResolver: 'absencesService.getAbsencesRetardsJour',
+        dataResolver: 'dashboardDataService.getAbsencesRetardsJour',
         cacheTTL: 180,
         refreshStrategy: 'interval',
         etablissementScope: true,

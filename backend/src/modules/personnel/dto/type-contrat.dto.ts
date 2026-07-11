@@ -7,11 +7,13 @@
 
 import { z } from 'zod';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
+import { modeRemunerationSchema } from './contrat.dto';
 
 export const createTypeContratSchema = z.object({
     code: z.string().min(2).max(50),
     nom: z.string().min(2).max(100),
     description: z.string().optional(),
+    modeRemuneration: modeRemunerationSchema.default('MENSUEL'),
     categorie: z.enum([
         'EMPLOI_PERMANENT',
         'EMPLOI_TEMPORAIRE',

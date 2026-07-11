@@ -777,7 +777,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
     const [motif, setMotif] = useState('');
     const [commentaire, setCommentaire] = useState('');
 
-    const { data: tousElevesData } = useEleves({ page: 1, limit: 200 });
+    const { data: tousElevesData } = useEleves({ page: 1, limit: 100 });
     const { data: elevesAffectesData } = useElevesClasse(classeId, 1, 500);
 
     const elevesDejaAffectes = new Set(

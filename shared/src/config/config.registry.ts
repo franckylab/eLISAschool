@@ -658,6 +658,26 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         },
     },
 
+    [ModuleName.POSTES]: {
+        name: ModuleName.POSTES,
+        label: 'Postes',
+        description: 'Gestion des postes et positions dans l organigramme',
+        icon: 'Briefcase',
+        basePath: '/postes',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.DIRECTEUR, Role.PROVISEUR, Role.PRINCIPAL],
+        permissions: [
+            Permission.POSTES_VIEW,
+            Permission.POSTES_CREATE,
+            Permission.POSTES_EDIT,
+            Permission.POSTES_DELETE,
+            Permission.POSTES_ASSIGNER,
+        ],
+        dependencies: [ModuleName.AUTH, ModuleName.ORGANISATION],
+        defaultSettings: {},
+    },
+
     [ModuleName.RECRUTEMENT]: {
         name: ModuleName.RECRUTEMENT,
         label: 'Recrutement',

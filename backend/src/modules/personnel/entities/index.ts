@@ -1,3 +1,4 @@
+export * from './mode-remuneration.enum';
 export * from './personnel.entity';
 export * from './contrat-personnel.entity';
 export * from './type-contrat.entity';
@@ -12,3 +13,4 @@ export * from './element-salaire.entity';
 export * from './cotisation.entity';
 export * from './type-prime.entity';
 export * from './type-retenue.entity';
+export * from './membre-fonction.entity';

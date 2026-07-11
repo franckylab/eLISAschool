@@ -11,16 +11,96 @@ import { paginateWithQueryBuilder } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { BulletinPaie, StatutBulletinPaie } from '../entities/bulletin-paie.entity';
+import { ElementSalaire } from '../entities/element-salaire.entity';
+import { ContratPersonnel } from '../entities';
 import { CreateBulletinPaieDto, UpdateBulletinPaieDto, QueryBulletinPaieDto } from '../dto/bulletin-paie.dto';
-import { heureCoursService } from './heure-cours.service';
+import { CreateElementSalaireDto, UpdateElementSalaireDto } from '../dto/paie-etendue.dto';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { calculPaieService } from './calcul-paie.service';
 
 export class BulletinPaieService {
     private repo: Repository<BulletinPaie>;
+    private elementRepo: Repository<ElementSalaire>;
+    private contratRepo: Repository<ContratPersonnel>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(BulletinPaie);
+        this.elementRepo = AppDataSource.getRepository(ElementSalaire);
+        this.contratRepo = AppDataSource.getRepository(ContratPersonnel);
+    }
+
+    // ─── ÉLÉMENTS DE SALAIRE ───
+
+    async getElements(bulletinId: string, etablissementId: string): Promise<ElementSalaire[]> {
+        await this.findOne(bulletinId, etablissementId);
+        return this.elementRepo.find({
+            where: { bulletinPaieId: bulletinId },
+            order: { ordreAffichage: 'ASC' },
+        });
+    }
+
+    async addElement(bulletinId: string, dto: CreateElementSalaireDto, etablissementId: string, userId?: string, req?: any): Promise<ElementSalaire> {
+        await this.findOne(bulletinId, etablissementId);
+        const element = this.elementRepo.create({
+            ...dto,
+            bulletinPaieId: bulletinId,
+            etablissementId,
+        });
+        await this.elementRepo.save(element);
+
+        if (userId) {
+            await auditService.log({
+                utilisateurId: userId,
+                action: 'ELEMENT_SALAIRE_CREATE' as any,
+                cible: 'ElementSalaire',
+                cibleId: element.id,
+                description: `Ajout élément salaire ${dto.libelle} au bulletin ${bulletinId}`,
+                nouvellesValeurs: dto,
+                module: 'personnel',
+            }, req);
+        }
+        return element;
+    }
+
+    async updateElement(bulletinId: string, elementId: string, dto: UpdateElementSalaireDto, etablissementId: string, userId?: string, req?: any): Promise<ElementSalaire> {
+        const element = await this.elementRepo.findOne({ where: { id: elementId, bulletinPaieId: bulletinId } });
+        if (!element) throw new AppError('Élément de salaire non trouvé', 404, 'NOT_FOUND');
+
+        const oldValues = { ...element };
+        Object.assign(element, dto);
+        await this.elementRepo.save(element);
+
+        if (userId) {
+            await auditService.log({
+                utilisateurId: userId,
+                action: 'ELEMENT_SALAIRE_UPDATE' as any,
+                cible: 'ElementSalaire',
+                cibleId: elementId,
+                description: `Modification élément salaire ${element.libelle}`,
+                anciennesValeurs: oldValues,
+                nouvellesValeurs: dto,
+                module: 'personnel',
+            }, req);
+        }
+        return element;
+    }
+
+    async deleteElement(bulletinId: string, elementId: string, etablissementId: string, userId?: string, req?: any): Promise<void> {
+        const element = await this.elementRepo.findOne({ where: { id: elementId, bulletinPaieId: bulletinId } });
+        if (!element) throw new AppError('Élément de salaire non trouvé', 404, 'NOT_FOUND');
+        await this.elementRepo.remove(element);
+
+        if (userId) {
+            await auditService.log({
+                utilisateurId: userId,
+                action: 'ELEMENT_SALAIRE_DELETE' as any,
+                cible: 'ElementSalaire',
+                cibleId: elementId,
+                description: `Suppression élément salaire ${element.libelle} du bulletin ${bulletinId}`,
+                module: 'personnel',
+            }, req);
+        }
     }
 
     async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: any) {
@@ -77,6 +157,7 @@ export class BulletinPaieService {
         const qb = this.repo.createQueryBuilder('bulletin')
             .where('bulletin.etablissementId = :etablissementId', { etablissementId })
             .leftJoinAndSelect('bulletin.membrePersonnel', 'membrePersonnel')
+            .leftJoinAndSelect('membrePersonnel.utilisateur', 'u')
             .orderBy('bulletin.annee', 'DESC')
             .addOrderBy('bulletin.mois', 'DESC');
 
@@ -163,68 +244,24 @@ export class BulletinPaieService {
         userId: string,
         req?: any
     ) {
-        // Vérifier si le bulletin existe déjà
-        const existing = await this.repo.findOne({
-            where: {
-                membrePersonnelId: membreId,
-                mois,
-                annee,
-                etablissementId,
-            },
-        });
-
-        if (existing) {
-            throw new AppError(`Le bulletin pour le mois ${mois}/${annee} existe déjà`, 409, 'CONFLICT');
-        }
-
-        // Récupérer le résumé des heures via heureCoursService
-        const resumeHeures = await heureCoursService.getResumeMensuel(membreId, mois, annee, etablissementId);
-
-        // Calculer le salaire (simplifié - à adapter selon contrat)
-        const heuresEffectuees = resumeHeures.heuresEffectuees || 0;
-        const heuresNormales = 120; // Heures mensuelles standard (à récupérer du contrat)
-        const heuresSup = Math.max(0, heuresEffectuees - heuresNormales);
-        
-        // Valeurs par défaut (à récupérer du contrat)
-        const salaireBase = 500000; // Salaire de base
-        const tarifHoraire = salaireBase / heuresNormales;
-        const montantHeuresSup = heuresSup * tarifHoraire * 1.5; // Multiplicateur heures sup
-
-        const primes = 0; // Peut être personnalisé
-        const deductions = 0; // Peut être personnalisé
-
-        const salaireNet = salaireBase + montantHeuresSup + primes - deductions;
-
-        // Créer le bulletin
-        const entity = this.repo.create({
-            membrePersonnelId: membreId,
-            contratId: '', // À récupérer du contrat actif
-            mois,
-            annee,
-            salaireBase,
-            heuresEffectuees,
-            montantHeuresSup,
-            primes,
-            deductions,
-            salaireNet,
-            statut: 'GENERE',
-            etablissementId,
-        });
-
-        await this.repo.save(entity);
+        // Délègue le calcul à CalculPaieService (évite la duplication)
+        const bulletin = await calculPaieService.calculerBulletin(
+            membreId, mois, annee, etablissementId,
+            { userId, req, checkConflict: 'THROW' }
+        );
 
         await auditService.log({
             utilisateurId: userId,
             action: AuditAction.BULLETIN_PAI_GENERER,
             cible: 'BulletinPaie',
-            cibleId: entity.id,
-            description: `Génération bulletin paie ${entity.id} pour ${mois}/${annee}`,
+            cibleId: bulletin.id,
+            description: `Génération bulletin paie ${bulletin.id} pour ${mois}/${annee}`,
             nouvellesValeurs: { mois, annee, membreId },
             module: 'personnel',
         }, req);
 
-        logger.info(`Bulletin généré: ${entity.id} pour ${membreId} - ${mois}/${annee}`);
-        return entity;
+        logger.info(`Bulletin généré: ${bulletin.id} pour ${membreId} - ${mois}/${annee}`);
+        return bulletin;
     }
 
     async getTotalPaiesMensuelles(mois: number, annee: number, etablissementId: string) {

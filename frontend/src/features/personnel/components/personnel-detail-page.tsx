@@ -12,19 +12,30 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase,
     Edit, Trash2, FileText, Award, Clock, Building2,
-    UserCheck, AlertCircle
+    UserCheck, AlertCircle, CheckCircle, XCircle, Building, FileDown
 } from 'lucide-react';
-import { useMembrePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
+import { useMembrePersonnel, useSupprimerPersonnel, usePersonnelContrats, usePersonnelBulletins } from '../hooks/use-personnel';
+import { useAffectationsMembre } from '../hooks/use-affectations';
+import { PersonnelFormModal } from './personnel-form-modal';
+import { TabHeureCours } from './tab-heure-cours';
+import { TabFonctions } from './tab-fonctions';
+import { PosteCapaciteIndicator } from '@/features/postes/components/PosteCapaciteIndicator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { MembrePersonnel } from '../types/personnel.types';
+import { Badge } from '@/components/ui/Badge';
+import type { ContratPersonnel, BulletinPaie } from '../types/personnel.types';
+import type { AffectationPoste } from '../types/affectation.types';
 
-type OngletActif = 'informations' | 'affectations' | 'documents';
+type OngletActif = 'informations' | 'affectations' | 'contrat-salaire' | 'heures-cours' | 'fonctions' | 'documents';
 
 const LABELS_TYPE_CONTRAT: Record<string, string> = {
     cdi: 'CDI',
     cdd: 'CDD',
     vacataire: 'Vacataire',
     stage: 'Stage',
+};
+
+const MODE_LABEL: Record<string, string> = {
+    MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte', HEBDOMADAIRE: 'Hebdo',
 };
 
 const LABELS_STATUT: Record<string, string> = {
@@ -52,9 +63,13 @@ export function PersonnelDetailPage() {
     const navigate = useNavigate();
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
 
-    const { data: membreData, isLoading } = useMembrePersonnel(id);
-    const membre = membreData?.data;
+    const [showEditModal, setShowEditModal] = useState(false);
+
+    const { data: membre, isLoading } = useMembrePersonnel(id);
     const supprimer = useSupprimerPersonnel();
+    const { data: affectations, isLoading: loadingAffectations } = useAffectationsMembre(id);
+    const { data: contrats, isLoading: loadingContrats } = usePersonnelContrats(id);
+    const { data: bulletins, isLoading: loadingBulletins } = usePersonnelBulletins(id);
 
     // Calculer l'ancienneté
     const anciennete = membre ? Math.floor(
@@ -64,6 +79,9 @@ export function PersonnelDetailPage() {
     const onglets = [
         { id: 'informations' as const, label: 'Informations', icon: FileText },
         { id: 'affectations' as const, label: 'Affectations', icon: Briefcase },
+        { id: 'contrat-salaire' as const, label: 'Contrat & Salaire', icon: FileText },
+        { id: 'heures-cours' as const, label: 'Heures de cours', icon: Clock },
+        { id: 'fonctions' as const, label: 'Fonctions', icon: Briefcase },
         { id: 'documents' as const, label: 'Documents', icon: Award },
     ];
 
@@ -146,7 +164,7 @@ export function PersonnelDetailPage() {
                             variant="outline"
                             size="sm"
                             icon={<Edit className="h-4 w-4" />}
-                            onClick={() => navigate({ to: '/personnel' })}
+                            onClick={() => setShowEditModal(true)}
                         >
                             Modifier
                         </ElisaButton>
@@ -409,19 +427,223 @@ export function PersonnelDetailPage() {
                     </div>
                 )}
 
+                {ongletActif === 'contrat-salaire' && (
+                    <div className="space-y-6">
+                        {/* Contrats */}
+                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                            <h3 className="text-lg font-semibold mb-4">Contrats</h3>
+                            {loadingContrats ? (
+                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
+                            ) : contrats && contrats.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200">
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Type</th>
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Poste</th>
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Fonction</th>
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Mode</th>
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Période</th>
+                                                <th className="text-right py-3 px-4 font-medium text-gray-500">Salaire</th>
+                                                <th className="text-center py-3 px-4 font-medium text-gray-500">Statut</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {contrats.map((c: ContratPersonnel) => (
+                                                <tr key={c.id} className="hover:bg-gray-50">
+                                                    <td className="py-3 px-4 font-medium">{c.typeContrat}</td>
+                                                    <td className="py-3 px-4">
+                                                        {c.posteId ? (
+                                                            <a href={`/postes/${c.posteId}`} className="flex items-center gap-1.5 text-blue-600 hover:underline">
+                                                                <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                                                                <span className="truncate max-w-[120px]">{c.poste?.intitulé || c.posteId?.slice(0, 8)}</span>
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-gray-400 italic">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 px-4">
+                                                        {c.fonctionId ? (
+                                                            <span className="px-2 py-0.5 rounded-full bg-primary/5 text-primary text-xs font-medium">
+                                                                {c.fonction?.nom || c.fonctionId?.slice(0, 8)}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-gray-400 italic">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 px-4"><Badge variant={c.statut === 'ACTIF' ? 'success' : 'default'}>{MODE_LABEL[c.modeRemuneration as string] || c.modeRemuneration || '—'}</Badge></td>
+                                                    <td className="py-3 px-4 text-gray-600">
+                                                        <span className="text-xs">{new Date(c.dateDebut).toLocaleDateString('fr-FR')}</span>
+                                                        {c.dateFin && <><span className="text-gray-300 mx-1">→</span><span className="text-xs">{new Date(c.dateFin).toLocaleDateString('fr-FR')}</span></>}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right">
+                                                        <div className="font-medium">{c.salaireBase?.toLocaleString('fr-FR')} F</div>
+                                                        {c.tarifHoraire && <div className="text-xs text-gray-400">{c.tarifHoraire.toLocaleString('fr-FR')} F/h</div>}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-center">
+                                                        <Badge variant={c.statut === 'ACTIF' ? 'success' : 'secondary'}>{c.statut}</Badge>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-center py-8">Aucun contrat enregistré</p>
+                            )}
+                        </div>
+
+                        {/* Bulletins de paie */}
+                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                            <h3 className="text-lg font-semibold mb-4">Bulletins de paie</h3>
+                            {loadingBulletins ? (
+                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
+                            ) : bulletins && bulletins.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200">
+                                                <th className="text-left py-3 px-4 font-medium text-gray-500">Période</th>
+                                                <th className="text-right py-3 px-4 font-medium text-gray-500">Base</th>
+                                                <th className="text-right py-3 px-4 font-medium text-gray-500">Primes</th>
+                                                <th className="text-right py-3 px-4 font-medium text-gray-500">Retenues</th>
+                                                <th className="text-right py-3 px-4 font-medium text-gray-500">Net</th>
+                                                <th className="text-center py-3 px-4 font-medium text-gray-500">Statut</th>
+                                                <th className="text-center py-3 px-4 font-medium text-gray-500">PDF</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {bulletins.map((b: BulletinPaie) => (
+                                                <tr key={b.id} className="hover:bg-gray-50">
+                                                    <td className="py-3 px-4 font-medium">{b.mois}/{b.annee}</td>
+                                                    <td className="py-3 px-4 text-right">{b.salaireBase?.toLocaleString('fr-FR')} F</td>
+                                                    <td className="py-3 px-4 text-right text-green-600">+{b.primes?.toLocaleString('fr-FR')} F</td>
+                                                    <td className="py-3 px-4 text-right text-red-600">−{b.deductions?.toLocaleString('fr-FR')} F</td>
+                                                    <td className="py-3 px-4 text-right font-semibold">{b.salaireNet?.toLocaleString('fr-FR')} F</td>
+                                                    <td className="py-3 px-4 text-center">
+                                                        <Badge variant={b.statut === 'paye' ? 'success' : 'warning'}>{b.statut}</Badge>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-center">
+                                                        <button
+                                                            onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')}
+                                                            className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
+                                                            title="Télécharger le bulletin"
+                                                        >
+                                                            <FileDown className="h-4 w-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-center py-8">Aucun bulletin de paie</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {ongletActif === 'affectations' && (
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold">Historique des affectations</h3>
-                            <ElisaButton variant="primary" size="sm" icon={<Briefcase className="h-4 w-4" />}>
-                                Nouvelle affectation
-                            </ElisaButton>
                         </div>
-                        <div className="text-center py-12 bg-gray-50 rounded-lg">
-                            <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                            <p className="text-gray-600 mb-2">Aucune affectation enregistrée</p>
-                            <p className="text-sm text-gray-500">Les affectations seront visibles ici une fois créées</p>
-                        </div>
+
+                        {loadingAffectations ? (
+                            <div className="flex items-center justify-center h-32">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                            </div>
+                        ) : affectations && affectations.length > 0 ? (
+                            <div className="space-y-3">
+                                {affectations.map((affectation: AffectationPoste) => (
+                                    <div
+                                        key={affectation.id}
+                                        className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                                                    affectation.statut === 'ACTIF'
+                                                        ? 'bg-green-100'
+                                                        : 'bg-gray-100'
+                                                }`}>
+                                                    {affectation.statut === 'ACTIF'
+                                                        ? <CheckCircle className="h-5 w-5 text-green-600" />
+                                                        : <XCircle className="h-5 w-5 text-gray-400" />
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="font-medium text-gray-900">
+                                                            {affectation.poste?.intitulé || 'Poste'}
+                                                        </p>
+                                                        <Badge
+                                                            variant={affectation.statut === 'ACTIF' ? 'success' : 'secondary'}
+                                                        >
+                                                            {affectation.statut === 'ACTIF' ? 'Actif' : 'Terminé'}
+                                                        </Badge>
+                                                        {affectation.poste && (
+                                                            <PosteCapaciteIndicator
+                                                                occupantsCount={affectation.poste.occupantsCount}
+                                                                nombrePostes={affectation.poste.nombrePostes}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar className="h-3.5 w-3.5" />
+                                                            {new Date(affectation.dateDebut).toLocaleDateString('fr-FR')}
+                                                            {affectation.dateFin && (
+                                                                <> → {new Date(affectation.dateFin).toLocaleDateString('fr-FR')}</>
+                                                            )}
+                                                        </span>
+                                                        {affectation.poste?.uniteOrganisationnelle && (
+                                                            <span className="flex items-center gap-1">
+                                                                <Building className="h-3.5 w-3.5" />
+                                                                {affectation.poste.uniteOrganisationnelle.nom}
+                                                            </span>
+                                                        )}
+                                                        {affectation.contrat && (
+                                                            <span className="flex items-center gap-1 text-blue-600">
+                                                                <FileText className="h-3.5 w-3.5" />
+                                                                Contrat {affectation.contrat.typeContrat}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-gray-400">
+                                                            {affectation.typeMutation === 'NOUVELLE' ? 'Nouvelle' :
+                                                             affectation.typeMutation === 'PROMOTION' ? 'Promotion' :
+                                                             affectation.typeMutation === 'TRANSFERT' ? 'Transfert' :
+                                                             affectation.typeMutation === 'INTERIM' ? 'Intérim' : 'Réintégration'}
+                                                        </span>
+                                                    </div>
+                                                    {affectation.commentaire && (
+                                                        <p className="text-sm text-gray-500 mt-1 italic">{affectation.commentaire}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-gray-50 rounded-lg">
+                                <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 mb-2">Aucune affectation enregistrée</p>
+                                <p className="text-sm text-gray-500">Les affectations seront visibles ici une fois créées</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {ongletActif === 'heures-cours' && (
+                    <TabHeureCours enseignantId={id} />
+                )}
+
+                {ongletActif === 'fonctions' && (
+                    <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                        <TabFonctions membreId={id} />
                     </div>
                 )}
 
@@ -441,6 +663,15 @@ export function PersonnelDetailPage() {
                     </div>
                 )}
             </motion.div>
+
+            {showEditModal && (
+                <PersonnelFormModal
+                    mode="edition"
+                    membre={membre}
+                    onSuccess={() => setShowEditModal(false)}
+                    onCancel={() => setShowEditModal(false)}
+                />
+            )}
         </div>
     );
 }

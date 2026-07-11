@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Plus, User, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2, UserMinus, UserCheck, Filter } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+
 import { useUtilisateurs, useToggleStatutUtilisateur } from '../hooks/use-utilisateurs';
 import { UtilisateurFormModal } from './utilisateur-form-modal';
 import { SuppressionUtilisateurModal } from './suppression-utilisateur-modal';
@@ -30,7 +30,6 @@ export function UtilisateursPage() {
     useTranslation();
     const { hasPermission } = usePermissions();
     const { etablissementId } = useAuthStore();
-    const navigate = useNavigate();
     
     const [filtres, setFiltres] = useState<UtilisateurFiltres>({ 
         page: 1, 
@@ -136,7 +135,7 @@ export function UtilisateursPage() {
                         key: 'voir',
                         icon: Eye,
                         label: 'Voir détails',
-                        onClick: () => navigate({ to: `/utilisateurs/${u.id}` }),
+                        onClick: () => { window.location.href = `/utilisateurs/${u.id}`; },
                         permission: 'utilisateurs:view',
                         variant: 'info' as const,
                     },

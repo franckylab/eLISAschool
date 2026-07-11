@@ -23,7 +23,7 @@ export function ProgrammeMatiereModal({
     programmeIds, existingMatieres,
 }: ProgrammeMatiereModalProps) {
     const queryClient = useQueryClient();
-    const { data: programmesData } = useProgrammes({ actif: true, limit: 200 });
+    const { data: programmesData } = useProgrammes({ actif: true, limit: 100 });
     const { data: matieresNiveaux } = useTousMatieresNiveaux();
     const ajouter = useAjouterMatiereProgramme();
 

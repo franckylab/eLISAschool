@@ -1,126 +1,68 @@
 # eLISAschool — Session Context
 
-## Goal
-Analyse profonde et développement complet du système programmes (backend + frontend) dans eLISAschool, avec amélioration de la page détail enseignant.
+## Objective
+Finaliser le module paie RH (4 modes de rémunération, génération bulletins, HeureCours) + vue HeureCours détail personnel, dashboard paie, PDF bulletin, affectations. Audit bugs dashboard.
 
 ## Constraints & Preferences
 - Système multi-tenant avec etablissementId sur toutes les entités
 - TypeORM + Express (backend), TanStack Router + React Query + Zustand (frontend)
-- Synchronisation automatique en dev (synchronize: true)
 - Pagination via paginateWithQueryBuilder, réponses API standardisées { success, data }
 - Pattern module: entities/, dto/, services/, controllers/, index.ts
 - Zod validation pour tous les DTOs, endpoints REST RESTful
 - Frontend: barrel export via index.ts dans chaque feature, hooks React Query par feature
 
 ## Progress
-### Done
-- **BUG CRITIQUE: `response.data?.data` vide** — Tous les hooks du module organisation (et `useTousChapitres`) utilisaient `response.data?.data` alors que le backend retourne `{ success, data: [...array], pagination }`. `response.data` EST déjà l'array. Le `.data` additionnel renvoyait `undefined` → `[]` systématiquement.
-  - Fix: supprimer `.data` redondant, `response.data` = array directement, `response.pagination` = meta (cast `as any` car hors type ApiResponse).
-  - Hooks impactés: useOrganisations, useOrganisation, useCreerOrganisation, useModifierOrganisation, useUnites, useUnite, useCreerUnite, useModifierUnite, useArborescence, usePostes, usePoste, useCreerPoste, useModifierPoste, useAssignerOccupant, useLibererPoste, usePostesVacants, useHierarchies, useSuperieurs, useSubordonnes, useCreerHierarchie, useModifierHierarchie, useOrganigramme, useStatistiquesOrganisation, useTousChapitres
-  - Add `tableId="organisations-page"` au DataTable + `onPageChange={setPage}`
-- Analyse complète architecture backend (programmes, classes, cycles, niveaux, matières, personnel)
-- Analyse complète architecture frontend (programmes, classes, matières, enseignants, API client, routes)
-- Création entité ProgrammePedagogique (programmes_pedagogiques) avec relations Cycle, Niveau, ProgrammeMatiere
-- Création entité ProgrammeMatiere (programmes_matieres, jonction programme ↔ matiere_niveau)
-- Création DTOs: createProgrammeSchema, updateProgrammeSchema, queryProgrammesSchema, addMatiereProgrammeSchema
-- Création service ProgrammePedagogiqueService (CRUD + matieres management avec pagination, recherche, filtres)
-- Création controller programme-pedagogique.controller.ts (routes REST)
-- Mise à jour index.ts du module programmes (fusion des 3 controleurs: chapitres, correlation, programmes)
-- Migration SQL 070-programmes-pedagogiques.sql
-- Frontend: types programme.types.ts enrichis
-- Frontend: hooks use-programmes.ts rebuild (8 hooks)
-- Frontend: programme-form-modal.tsx refactoré (tous champs + cycles/niveaux API)
-- Frontend: programme-detail-page.tsx créée (7 tabs, cards, table matières, ajout/retrait matière)
-- Frontend: route _auth/programmes.$id.tsx
-- Frontend: programmes-page.tsx mise à jour (navigation détail)
-- Backend: GET /api/matieres/programme (liste tous matieres-niveaux) + service getAllMatieresNiveaux
-- Frontend: useTousMatieresNiveaux hook + select dropdown peuplé dans programme-detail
-- enseignant-detail-page: state showEditModal + render EnseignantFormModal + query invalidation
-- hero-header: prop onEdit + bouton Modifier actif
-- Clarification backend: getProgrammeNiveau → getMatieresParNiveau, updateProgramme → updateMatiereNiveau, commentaires section "GRILLE MATIÈRE PAR NIVEAU"
-- Déduplication types frontend: ProgrammePedagogique/ProgrammeMatiereExtended supprimés de matiere.types.ts, import unique depuis programme.types.ts
+### Phase 2 — Contrat-centric refactor ✓
+- **Migration script** — `backend/src/database/migrations/1786000000000-ContratCentricSync.ts` : ajoute colonnes `posteId`/`contratId` (idempotent), lie `AffectationPoste`/`MembreFonction` aux contrats par membre+dates, synchronise `Poste.occupantId` avec contrats, crée les `MembreFonction` manquants
+- **i18n contrat** — `frontend/src/locales/fr/contrat.json` : ~60 clés pour wizard (steps, labels, récap, erreurs)
+- **Wizard contrat** — `frontend/src/features/personnel/components/contrat-wizard-modal.tsx` : 5 étapes (Member&Type → Poste → Fonctions → Rémunération → Récap) avec sélecteur poste filtré (vacants + actuel membre), tags fonctions secondaires. Intégré dans `contrats-paie-page.tsx` en remplacement du formulaire plat
+- **Read-only onglets** — `personnel-detail-page.tsx` : supprimé `AffecterPosteModal`, boutons "Nouvelle affectation"/"Terminer". `tab-fonctions.tsx` : read-only (plus de modal assignation/bouton retrait)
+- **ContratPersonnel type** enrichi (`posteId`, `PostePartial`, `typeContratId`, `renouvellementAuto`, `clauses`)
 
-## Modèle mental — Grille matière vs Programme pédagogique
-- **MatiereNiveau** (grille matière-niveau) = source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire. Définit les matières enseignées dans chaque niveau.
-- **ProgrammePedagogique** (programme pédagogique) = agrégat nommé qui référence des matières via ProgrammeMatiere. Les valeurs coefficient/volumeHoraire sur ProgrammeMatiere sont des surcharges optionnelles ("Hérité" = valeur de MatiereNiveau utilisée).
-- **ConfigurationMatiereClasse** = surcharge par classe réelle (valeurs effectives = cascade MatiereNiveau → ProgrammeMatiere → ConfigurationMatiereClasse).
-- Voir JSDoc dans `matiere-niveau.entity.ts` et `programme-matiere.entity.ts` pour la chaîne de résolution complète.
-
-### Done (this session)
-- **BUG: PUT /configuration/:cle 400 MISSING_VALUE** — `tab-configuration.tsx` avait 3 bugs :
-  1. `onChange={(v) => ...}` → `v` est `ChangeEvent`, pas la string → stockait l'objet event dans le state
-  2. `valeur: values[key] || undefined` → quand `values[key] = ''` ou `undefined`, JSON supprime la clé → body `{}` → 400
-  3. State `values` jamais initialisé → `values[item.key] = undefined` même si l'input affichait la valeur par défaut via `?? item.defaultValue`
-  - Fix: initialiser state avec les defaults, `onChange={(e) => e.target.value}`, envoyer `values[key]` directement
-- **BUG: PUT /configuration/:cle 400 INVALID_TYPE** — La `validerType` attend un `number` (param défini `type: 'number'`), mais le frontend envoie `"300"` (string) depuis l'input HTML. `typeof "300" !== 'number'` → 400.
-  - Fix backend `setParametre` : coerce `string` → `number`/`boolean` selon `param.type` avant la validation. `parsed = Number(valeur)` avec garde `isNaN`.
-- **BUG Persistant: `etablissementId` non injecté à la création** — Le controller POST `/organisations` ne remplissait pas `etablissementId` depuis le JWT. L'entité le stockait `null`. La requête LIST filtrant par `etablissementId`, les organisations créées via l'UI étaient invisibles.
-  - Fix controller: `dto.etablissementId = req.utilisateur?.etablissementId` après validation Zod
-  - Fix controller PATCH: `delete dto.etablissementId` (empêcher changement d'affiliation)
-  - Ajout filtres `search`/`type`/`statut` au service `findAllOrganisationsPaginated` + controller (le frontend les envoyait mais le backend les ignorait)
-  - Ajout `Like` à l'import TypeORM dans le service
-- Fix chapitres-catalogue-page (legacy `matiereNiveauId` → `programmeMatiere.matiereNiveau`, filtre par programme, ajout d'un créateur de chapitre en 2 étapes avec sélection programme + matière)
-- Ajout paramètre `programmeId` au hook `useTousChapitres` (back-end le supportait déjà)
-- Vérification bug useEnseignantMoyenneEvaluations : requête OK, probablement absence de données réelles
-- **Refonte page détail matières**: séparation onglets Niveaux (MatiereNiveau CRUD) et Programmes (ProgrammesPedagogiques) avec nouveau layout 6 tabs
-- Backend: ajout `deleteMatiereNiveau` service + `DELETE /api/matieres/programme/:id` pour CRUD complet MatiereNiveau
-- Frontend: création `tab-niveaux.tsx` — onglet Niveaux avec DataTable, ajout inline, édition inline, suppression avec confirmation, select Niveau depuis API
-- Frontend: refactor `tab-programme.tsx` — ne montre plus que les programmes pédagogiques (Section 2 de l'ancien composant)
-- Frontend: refactor `matiere-detail-page.tsx` — nouveau layout 6 onglets (Infos → Niveaux → Programmes → Enseignants → Configurations → EDT), stats cards à 5 colonnes
-- Frontend: hooks `useAjouterMatiereNiveau`, `useModifierMatiereNiveau`, `useSupprimerMatiereNiveau` dans `use-matieres.ts`
-- Nettoyage imports inutilisés (GraduationCap, Ban, ArrowUpDown)
+### Phase 1 — Paie & HeureCours ✓
+- **Refactor fusion paie** — `genererBulletin` délègue à `calculerBulletin`
+- **Simulation paie** — `simulerPaie` retourne `detailParMatiere`
+- **Frontend paie** — 7 features : Simuler, Régénérer, Masse, filtres, Marquer payé, groupement éléments, 5 stats cards
+- **PDF bulletin** — endpoint HTML print-ready + bouton téléchargement
+- **HeureCours** — `tab-heure-cours.tsx` (toggle mensuel/hebdo, stats, EDT 6 colonnes)
+- **Bug fixes** — `classe` ReferenceError, `genre→sexe`, `'actif'→'ACTIF'`, colonne `actif`, `e.classe`, cache key userId, `Promise.race`
 
 ### Pending
-- Vérifier build frontend (nécessite Node.js — tsc -b pour typecheck)
-- Tester les endpoints programmes avec un vrai token JWT + tester CRUD MatiereNiveau via nouveau onglet
-- Ajouter plus de champs dans ChapitreFormModal (statut, période, ressources, prérequis)
-- Connecter vraies données pour vérifier EDT/Affectations
+- Connecter vraies données EDT/Affectations
 
-## Références (ajouts)
+## Modèle mental — Grille matière vs Programme pédagogique
+- **MatiereNiveau** = source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire
+- **ProgrammePedagogique** = agrégat nommé référençant des matières via ProgrammeMatiere (surcharges optionnelles)
+- **ConfigurationMatiereClasse** = surcharge par classe réelle (cascade MatiereNiveau → ProgrammeMatiere → ConfigurationMatiereClasse)
 
 ## Key Decisions
 - Multi-composants (option B pour détail enseignant)
-- Endpoint matières dans le module matieres (option A)
-- Chargement hybride header + lazy tabs
-- EDT grille + liste (option C)
 - Retour hook = `response.data` (pattern projet)
-- Types frontend calqués sur les entités backend
 - ProgrammePedagogique distinct de ProgrammeChapitre
-- Type "CYCLE" | "NIVEAU" | "PERSONNALISE" pour flexibilité du scope du programme
-- ProgrammeMatiere en jonction dédiée (coefficients/volumes surchargés)
-- Permission "programmes:config:write" pour les actions d'écriture
+- Permission "programmes:config:write" pour actions d'écriture
 
 ## Références
 | Fichier | Rôle |
 |---------|------|
-| `backend/src/modules/programmes/entities/programme-pedagogique.entity.ts` | Entité programmes_pedagogiques |
-| `backend/src/modules/programmes/entities/programme-matiere.entity.ts` | Jonction programmes_matieres |
-| `backend/src/modules/programmes/dto/programme-pedagogique.dto.ts` | Schémas Zod |
-| `backend/src/modules/programmes/services/programme-pedagogique.service.ts` | Service CRUD |
-| `backend/src/modules/programmes/controllers/programme-pedagogique.controller.ts` | Routes REST |
-| `backend/src/modules/programmes/index.ts` | Barrel + fusion routers |
-| `backend/src/modules/matieres/controllers/matieres.controller.ts` | Route GET /programme ajoutée |
-| `backend/src/modules/matieres/services/matieres.service.ts` | getAllMatieresNiveaux() |
-| `backend/src/database/migrations/070-programmes-pedagogiques.sql` | Migration production |
-| `frontend/src/features/programmes/types/programme.types.ts` | Interfaces TypeScript |
-| `frontend/src/features/programmes/hooks/use-programmes.ts` | Hooks React Query |
-| `frontend/src/features/programmes/components/programmes-page.tsx` | Liste + DataTable |
-| `frontend/src/features/programmes/components/programme-form-modal.tsx` | Modal création/édition |
-| `frontend/src/features/programmes/components/programme-detail-page.tsx` | Détail tabbé |
-| `frontend/src/routes/_auth/programmes.$id.tsx` | Route détail |
-| `frontend/src/features/matieres/types/matiere.types.ts` | MatiereNiveau type (réexporte ProgrammePedagogique/ProgrammeMatiere depuis programme.types.ts) |
-| `frontend/src/features/matieres/components/tab-programme.tsx` | Programmes pédagogiques par matière (refactoré: ne montre plus MatiereNiveau) |
-| `frontend/src/features/matieres/components/tab-niveaux.tsx` | Onglet Niveaux: CRUD MatiereNiveau (ajout, édition inline, suppression) |
-| `frontend/src/features/matieres/hooks/use-matieres.ts` | Hooks matières (useTousMatieresNiveaux, useMatiereProgrammesPedagogiques, etc.) + hooks CRUD MatiereNiveau |
-| `frontend/src/features/enseignants/components/enseignant-detail-page.tsx` | Page détail améliorée |
-| `frontend/src/features/enseignants/components/enseignant-detail/hero-header.tsx` | onEdit callback |
-
-## Done (this session)
-- **Template & Génération Organisation (6 phases)** : 5 entités nomenclature, migration TypeORM, API CRUD (25 endpoints), algorithme génération POST /generer, refonte architecture (7 sous-controllers), frontend complet (6 tabs nomenclatures + route), 22 templates système seedés dans `initial.seed.ts`
-- **Navigation → Nomenclatures** : Sidebar (Organisation → accordéon Liste + Nomenclatures), page liste (bouton outline), page détail (bouton actions)
+| `backend/src/modules/personnel/services/calcul-paie.service.ts` | Refactor + audit/workflow/detailParMatiere |
+| `backend/src/modules/personnel/services/bulletin-paie.service.ts` | genererBulletin délègue à calculerBulletin |
+| `backend/src/modules/personnel/controllers/calcul-paie.controller.ts` | simuler + mois/annee |
+| `backend/src/modules/personnel/controllers/bulletin-paie.controller.ts` | Routes génération + éléments + PATCH statut + PDF |
+| `backend/src/modules/bulletins/services/bulletins.service.ts` | Fix ReferenceError classe + getGenerationStatus |
+| `backend/src/modules/dashboard/services/dashboard-data.service.ts` | Fix genre/actif/e.classe/actif-column |
+| `backend/src/modules/dashboard/services/data-aggregator.service.ts` | Fix cacheKey userId, Promise.race |
+| `backend/src/modules/dashboard/services/dashboard-cache.service.ts` | Cache LRU + Redis + invalidation contextuelle |
+| `backend/src/database/migrations/1786000000000-ContratCentricSync.ts` | Migration contrat-centric (posteId/contratId sync) |
+| `backend/src/modules/personnel/services/contrat.service.ts` | Contrat CRUD + syncAffectationPoste + syncFonctions |
+| `frontend/src/features/personnel/hooks/use-paie.ts` | +useSimulerPaie, useRegenererBulletin, useGenererBulletinsMasse, useRapportPaie |
+| `frontend/src/features/personnel/hooks/use-heure-cours.ts` | Hook HeureCours (resume, EDT, volume) |
+| `frontend/src/features/personnel/components/contrats-paie-page.tsx` | Toutes features bulletins + stats paie + wizard intégré |
+| `frontend/src/features/personnel/components/personnel-detail-page.tsx` | Onglets affectations + heures-cours + PDF (read-only) |
+| `frontend/src/features/personnel/components/tab-heure-cours.tsx` | Vue HeureCours mensuel/hebdo |
+| `frontend/src/features/personnel/components/contrat-wizard-modal.tsx` | Wizard 5 steps contrat (poste + fonctions secondaires) |
+| `frontend/src/features/personnel/components/tab-fonctions.tsx` | Read-only (fonctions gérées par contrat) |
+| `frontend/src/locales/fr/contrat.json` | i18n wizard contrat |
+| `frontend/src/features/personnel/types/personnel.types.ts` | +SimulationResult, DetailMatiereSimulation, RapportPaieMensuel |
 
 ## DB Connection
-- Host: localhost:7002
-- User: elisaschool_user
-- Password: elisaschool_password
-- Database: elisaschool
+- Host: localhost:7002 / User: elisaschool_user / Password: elisaschool_password / Database: elisaschool

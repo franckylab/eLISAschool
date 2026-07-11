@@ -19,9 +19,9 @@ import {
 import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { TypeContratPersonnalise } from './type-contrat.entity';
-import { Poste, UniteOrganisationnelle } from '@modules/organisation/entities';
-
-
+import { UniteOrganisationnelle, Poste } from '@modules/organisation/entities';
+import { Fonction } from '@modules/fonctions/entities';
+import { ModeRemuneration } from './mode-remuneration.enum';
 
 /**
  * Statut du contrat
@@ -60,18 +60,25 @@ export class ContratPersonnel {
     typeContratId?: string;
 
     @Column({ type: 'uuid', nullable: true })
-    posteId?: string;
-
-    @ManyToOne(() => Poste, { nullable: true })
-    @JoinColumn({ name: 'posteId' })
-    poste?: Poste;
-
-    @Column({ type: 'uuid', nullable: true })
     uniteOrganisationnelleId?: string;
 
     @ManyToOne(() => UniteOrganisationnelle, { nullable: true })
     @JoinColumn({ name: 'uniteOrganisationnelleId' })
     uniteOrganisationnelle?: UniteOrganisationnelle;
+
+    @Column({ type: 'uuid', nullable: true })
+    fonctionId?: string;
+
+    @ManyToOne(() => Fonction, { nullable: true })
+    @JoinColumn({ name: 'fonctionId' })
+    fonction?: Fonction;
+
+    @Column({ type: 'uuid', nullable: true })
+    posteId?: string;
+
+    @ManyToOne(() => Poste, { nullable: true })
+    @JoinColumn({ name: 'posteId' })
+    poste?: Poste;
 
     @Column({ type: 'date' })
     dateDebut!: Date;
@@ -84,6 +91,15 @@ export class ContratPersonnel {
 
     @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
     tarifHoraire?: number | null;
+
+    @Column({ type: 'varchar', length: 30, nullable: true })
+    modeRemuneration?: ModeRemuneration | null;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    heuresContractuellesMois?: number | null;
+
+    @Column({ type: 'decimal', precision: 12, scale: 0, nullable: true })
+    tarifHebdomadaire?: number | null;
 
     @Column({ type: 'varchar', length: 30, default: StatutContrat.ACTIF })
     statut!: StatutContrat;

@@ -65,7 +65,7 @@ function Badge({ children, variant = 'default', className = '' }: { children: Re
 
 export function SallesStatistiquesPage() {
     const { data: stats, isLoading: statsLoading } = useStatistiquesSalles();
-    const { data: sallesData } = useSalles({ limit: 1000 });
+    const { data: sallesData } = useSalles({ limit: 100 });
 
     if (statsLoading) {
         return <div className="flex items-center justify-center py-20">Chargement...</div>;

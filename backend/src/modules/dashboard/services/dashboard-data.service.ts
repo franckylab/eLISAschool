@@ -45,8 +45,8 @@ export class DashboardDataService {
             const total = await this.eleveRepo.count({ where });
             const actifs = await this.eleveRepo.count({ where: { ...where, statut: 'ACTIF' } });
             const inactifs = await this.eleveRepo.count({ where: { ...where, statut: 'INACTIF' } });
-            const males = await this.eleveRepo.count({ where: { ...where, genre: 'M' } });
-            const females = await this.eleveRepo.count({ where: { ...where, genre: 'F' } });
+            const males = await this.eleveRepo.count({ where: { ...where, sexe: 'M' } });
+            const females = await this.eleveRepo.count({ where: { ...where, sexe: 'F' } });
 
             return {
                 total,
@@ -65,15 +65,16 @@ export class DashboardDataService {
 
     async getElevesRepartitionClasse(context: { etablissementId?: string }): Promise<any> {
         try {
-            const qb = this.eleveRepo
-                .createQueryBuilder('e')
-                .leftJoin('e.classe', 'c')
+            const affectationRepo = AppDataSource.getRepository('AffectationEleve') as any;
+            const qb = affectationRepo
+                .createQueryBuilder('ae')
+                .leftJoin('ae.classe', 'c')
                 .select('c.libelle', 'nom')
-                .addSelect('COUNT(e.id)', 'effectif')
-                .where('e.statut = :statut', { statut: 'ACTIF' });
+                .addSelect('COUNT(ae.id)', 'effectif')
+                .where('ae.statut = :statut', { statut: 'ACTIVE' });
 
             if (context.etablissementId) {
-                qb.andWhere('e.etablissementId = :etablissementId', { etablissementId: context.etablissementId });
+                qb.andWhere('ae.etablissementId = :etablissementId', { etablissementId: context.etablissementId });
             }
 
             qb.groupBy('c.libelle').orderBy('effectif', 'DESC');
@@ -95,7 +96,7 @@ export class DashboardDataService {
         try {
             const qb = this.eleveRepo
                 .createQueryBuilder('e')
-                .leftJoin('e.classe', 'c')
+                .leftJoinAndSelect('e.classeSouhaitee', 'c')
                 .select(['e.id', 'e.matricule', 'e.nom', 'e.prenom', 'e.dateInscription', 'c.libelle'])
                 .where('e.statut = :statut', { statut: 'ACTIF' });
 
@@ -110,10 +111,10 @@ export class DashboardDataService {
                 inscriptions: inscriptions.map(e => ({
                     id: e.id,
                     matricule: e.matricule,
-                    nom: (e as any).nom || '',
-                    prenom: (e as any).prenom || '',
+                    nom: e.nom || '',
+                    prenom: e.prenom || '',
                     dateInscription: e.dateInscription,
-                    classe: (e as any).classe?.libelle,
+                    classe: (e as any).classeSouhaitee?.libelle,
                 }))
             };
         } catch (error) {
@@ -265,7 +266,7 @@ export class DashboardDataService {
     async getMonitoringUtilisateursStats(): Promise<any> {
         try {
             const total = await this.utilisateurRepo.count();
-            const actifs = await this.utilisateurRepo.count({ where: { statut: 'actif' as any } });
+            const actifs = await this.utilisateurRepo.count({ where: { statut: 'ACTIF' as any } });
 
             // Par rôle (approximation)
             const parRole: any = {};
@@ -295,8 +296,7 @@ export class DashboardDataService {
     async getModulesActifs(): Promise<any> {
         try {
             const modules = await this.moduleRepo.find({
-                where: { actif: true },
-                select: ['id', 'moduleNom', 'actif'],
+                select: ['id', 'moduleNom', 'etablissementId'],
             });
 
             return {

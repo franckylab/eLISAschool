@@ -7,7 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-import type { MembrePersonnel, CreerPersonnelDto, ModifierPersonnelDto, PersonnelFiltres } from '../types/personnel.types';
+import type { MembrePersonnel, CreerPersonnelDto, ModifierPersonnelDto, PersonnelFiltres, ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import { fromFormToCreateDto } from '../types/personnel.types';
 import { toast } from 'sonner';
 
@@ -39,6 +39,7 @@ export function usePersonnel(filtres: PersonnelFiltres = {}) {
             if (filtres.recherche) params.search = filtres.recherche;
             if (filtres.typePersonnelId) params.typePersonnelId = filtres.typePersonnelId;
             if (filtres.actif !== undefined) params.actif = filtres.actif;
+            if (filtres.statut) params.statut = filtres.statut;
 
             const response = await apiClient.getPaginated<MembrePersonnel>('/api/personnel', params);
             return response.data;
@@ -127,6 +128,32 @@ export function useModifierPersonnel() {
             }
         },
         onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+    });
+}
+
+// ─── CONTRATS ───
+
+export function usePersonnelContrats(membreId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...PERSONNEL_KEYS.all, 'contrats', membreId],
+        queryFn: async () => {
+            const response = await apiClient.get<ContratPersonnel[]>(`/api/personnel/contrats/membres/${membreId}/historique`);
+            return response.data || [];
+        },
+        enabled: !!membreId && isAuthenticated,
+    });
+}
+
+export function usePersonnelBulletins(membreId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...PERSONNEL_KEYS.all, 'bulletins', membreId],
+        queryFn: async () => {
+            const response = await apiClient.get<{ items: BulletinPaie[] }>(`/api/personnel/bulletins/membres/${membreId}`);
+            return response.data?.items ?? [];
+        },
+        enabled: !!membreId && isAuthenticated,
     });
 }
 

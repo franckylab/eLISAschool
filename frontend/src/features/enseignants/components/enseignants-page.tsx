@@ -88,16 +88,7 @@ export function EnseignantsPage() {
                 <span className="text-sm">{p.specialites?.[0] ?? p.specialite ?? '-'}</span>
             ),
         },
-        {
-            key: 'typeContrat',
-            header: 'Contrat',
-            sortable: true,
-            className: 'text-center',
-            render: (p) => {
-                const contrats: any = { cdi: 'CDI', cdd: 'CDD', vacataire: 'Vacataire', stage: 'Stage' };
-                return <span className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium">{contrats[p.typeContrat] ?? 'CDI'}</span>;
-            },
-        },
+
         {
             key: 'dateEntree',
             header: 'Date entrée',

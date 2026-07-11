@@ -81,7 +81,7 @@ export class PersonnelService {
      * Rechercher tous les membres du personnel avec pagination et filtres
      */
     async findAll(query: QueryPersonnelDto, etablissementId?: string): Promise<PaginatedResult<MembrePersonnel>> {
-        const { page, limit, search, typePersonnelId, statut } = query;
+        const { page, limit, search, typePersonnelId, typeCode, statut } = query;
 
         const qb = this.personnelRepo
             .createQueryBuilder('p')
@@ -100,6 +100,10 @@ export class PersonnelService {
             qb.andWhere('p.typePersonnelId = :typePersonnelId', { typePersonnelId });
         }
 
+        if (typeCode) {
+            qb.andWhere('tp.code = :typeCode', { typeCode });
+        }
+
         if (statut) {
             qb.andWhere('p.statut = :statut', { statut });
         }
@@ -107,7 +111,7 @@ export class PersonnelService {
         // Recherche textuelle
         if (search) {
             qb.andWhere(
-                '(p.matricule ILIKE :search OR p.specialites ILIKE :search OR p.diplomes ILIKE :search)',
+                '(p.matricule ILIKE :search OR p.specialites ILIKE :search OR p.diplomes ILIKE :search OR p.nom ILIKE :search OR p.prenom ILIKE :search OR p.email ILIKE :search)',
                 { search: `%${search}%` }
             );
         }
@@ -121,9 +125,11 @@ export class PersonnelService {
         return paginateWithQueryBuilder(qb, page, limit, false);
     }
 
-    async findOne(id: string): Promise<MembrePersonnel> {
+    async findOne(id: string, etablissementId?: string): Promise<MembrePersonnel> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
         const membre = await this.personnelRepo.findOne({
-            where: { id },
+            where,
             relations: ['utilisateur', 'utilisateur.profil', 'typePersonnel'],
         });
         if (!membre) throw new AppError('Membre non trouvé', 404, 'NOT_FOUND');
@@ -134,8 +140,8 @@ export class PersonnelService {
         return this.personnelRepo.findOne({ where: { utilisateurId: userId }, relations: ['typePersonnel'] });
     }
 
-    async update(id: string, dto: UpdatePersonnelDto): Promise<MembrePersonnel> {
-        const membre = await this.findOne(id);
+    async update(id: string, dto: UpdatePersonnelDto, etablissementId?: string): Promise<MembrePersonnel> {
+        const membre = await this.findOne(id, etablissementId);
 
         if (dto.dateEmbauche) dto.dateEmbauche = new Date(dto.dateEmbauche) as any;
 
@@ -144,8 +150,8 @@ export class PersonnelService {
         return membre;
     }
 
-    async delete(id: string): Promise<void> {
-        const membre = await this.findOne(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const membre = await this.findOne(id, etablissementId);
         await this.personnelRepo.remove(membre);
         logger.info(`Membre personnel supprimé: ${id}`);
     }

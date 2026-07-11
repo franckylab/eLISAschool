@@ -6,7 +6,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { PersonnelService } from '../services';
-import { createPersonnelSchema, updatePersonnelSchema, createTypePersonnelSchema } from '../dto';
+import { createPersonnelSchema, updatePersonnelSchema, createTypePersonnelSchema, queryPersonnelSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
@@ -33,15 +33,19 @@ router.post('/types', authMiddleware, requirePermission('personnel:manage'), asy
 // Membres
 router.get('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const typeId = req.query.typeId as string;
-        const membres = await service.findAll({ page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'DESC', typePersonnelId: typeId }, req.etablissementId);
+        const query = validateDto(queryPersonnelSchema, req.query);
+        // Support frontend `actif` boolean → statut 'ACTIF'
+        if (query.actif === true) {
+            (query as any).statut = 'ACTIF';
+        }
+        const membres = await service.findAll(query, req.etablissementId);
         res.json({ success: true, data: membres });
     } catch (error) { next(error); }
 });
 
 router.get('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const membre = await service.findOne(req.params.id);
+        const membre = await service.findOne(req.params.id, req.etablissementId);
         res.json({ success: true, data: membre });
     } catch (error) { next(error); }
 });
@@ -57,14 +61,14 @@ router.post('/', authMiddleware, requirePermission('personnel:manage'), async (r
 router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePersonnelSchema, req.body);
-        const membre = await service.update(req.params.id, dto);
+        const membre = await service.update(req.params.id, dto, req.etablissementId);
         res.json({ success: true, data: membre });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id);
+        await service.delete(req.params.id, req.etablissementId);
         res.json({ success: true, message: 'Membre supprimé' });
     } catch (error) { next(error); }
 });

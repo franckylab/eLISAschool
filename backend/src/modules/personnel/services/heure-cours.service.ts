@@ -245,6 +245,7 @@ export class HeureCoursService {
         heuresPlanifiees: number;
         heuresAnnulees: number;
         nombreCours: number;
+        detailParMatiere?: Array<{ matiereNom: string; heures: number; tarifHoraire: number; montant: number }>;
     }> {
         const dateDebut = new Date(annee, mois - 1, 1);
         const dateFin = new Date(annee, mois, 0);
@@ -255,11 +256,13 @@ export class HeureCoursService {
                 etablissementId,
                 date: Between(dateDebut, dateFin) as any,
             },
+            relations: ['matiere'],
         });
 
         let heuresEffectuees = 0;
         let heuresPlanifiees = 0;
         let heuresAnnulees = 0;
+        const matiereMap = new Map<string, { matiereNom: string; heures: number; tarifHoraire: number }>();
 
         const toMinutes = (time: string): number => {
             const [h, m] = time.split(':').map(Number);
@@ -268,6 +271,7 @@ export class HeureCoursService {
 
         for (const h of heures) {
             const duree = (toMinutes(h.heureFin) - toMinutes(h.heureDebut)) / 60;
+            const matiereNom = h.matiere?.nom || '—';
 
             switch (h.statutEffectue) {
                 case StatutEffectue.EFFECTUE:
@@ -280,15 +284,30 @@ export class HeureCoursService {
                     heuresAnnulees += duree;
                     break;
             }
+
+            if (h.statutEffectue === StatutEffectue.EFFECTUE) {
+                const existing = matiereMap.get(matiereNom);
+                if (existing) {
+                    existing.heures += duree;
+                } else {
+                    matiereMap.set(matiereNom, { matiereNom, heures: duree, tarifHoraire: h.tarifHoraire || 0 });
+                }
+            }
         }
+
+        const detailParMatiere = Array.from(matiereMap.values()).map(d => ({
+            ...d,
+            montant: +(d.heures * d.tarifHoraire).toFixed(2),
+        }));
 
         return {
             mois,
             annee,
-            heuresEffectuees: Math.round(heuresEffectuees * 100) / 100,
-            heuresPlanifiees: Math.round(heuresPlanifiees * 100) / 100,
-            heuresAnnulees: Math.round(heuresAnnulees * 100) / 100,
+            heuresEffectuees,
+            heuresPlanifiees,
+            heuresAnnulees,
             nombreCours: heures.length,
+            detailParMatiere,
         };
     }
 

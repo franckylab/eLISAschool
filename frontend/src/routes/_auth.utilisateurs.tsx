@@ -1,16 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Route Utilisateurs
+ * eLISAschool - Route Utilisateurs (Layout)
  * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
+ * Route layout pour la liste et les détails des utilisateurs
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireModulePermission } from '@/app/permission-guards';
-import { UtilisateursPage } from '@/features/utilisateurs/components/utilisateurs-page';
 
 export const Route = createFileRoute('/_auth/utilisateurs')({
     beforeLoad: () => requireModulePermission('utilisateurs'),
-    component: UtilisateursPage,
+    component: UtilisateursLayout,
 });
+
+function UtilisateursLayout() {
+    return <Outlet />;
+}

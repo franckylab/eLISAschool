@@ -361,7 +361,7 @@ export class OrganigrammePdfService {
      * Compter les postes occupés
      */
     private compterPostesOccupes(organigramme: any): number {
-        let count = (organigramme.postes || []).filter((p: any) => p.occupantId).length;
+        let count = (organigramme.postes || []).filter((p: any) => (p.occupantsCount || 0) > 0).length;
         if (organigramme.enfants) {
             organigramme.enfants.forEach((enfant: any) => {
                 count += this.compterPostesOccupes(enfant);
@@ -374,7 +374,7 @@ export class OrganigrammePdfService {
      * Compter les postes vacants
      */
     private compterPostesVacants(organigramme: any): number {
-        let count = (organigramme.postes || []).filter((p: any) => !p.occupantId).length;
+        let count = (organigramme.postes || []).filter((p: any) => (p.occupantsCount || 0) < (p.nombrePostes || 1)).length;
         if (organigramme.enfants) {
             organigramme.enfants.forEach((enfant: any) => {
                 count += this.compterPostesVacants(enfant);

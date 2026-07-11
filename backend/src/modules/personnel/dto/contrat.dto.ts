@@ -8,13 +8,22 @@
 import { z } from 'zod';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
 
+export const modeRemunerationSchema = z.enum(['MENSUEL', 'HORAIRE', 'MIXTE', 'HEBDOMADAIRE']);
+
 export const createContratSchema = z.object({
     membrePersonnelId: z.string().uuid(),
     typeContrat: z.enum(['CDD', 'CDI', 'VACATAIRE', 'STAGIAIRE']),
+    typeContratId: z.string().uuid().optional(),
+    fonctionId: z.string().uuid().optional(),
+    posteId: z.string().uuid().optional(),
+    fonctionsSecondairesIds: z.array(z.string().uuid()).optional(),
     dateDebut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     dateFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-    salaireBase: z.coerce.number().positive(),
+    salaireBase: z.coerce.number().min(0).default(0),
     tarifHoraire: z.coerce.number().positive().optional(),
+    modeRemuneration: modeRemunerationSchema.optional(),
+    heuresContractuellesMois: z.coerce.number().positive().optional(),
+    tarifHebdomadaire: z.coerce.number().positive().optional(),
     statut: z.enum(['ACTIF', 'EXPIRE', 'RENEGOCIE', 'ROMPU']).default('ACTIF'),
     renouvellementAuto: z.boolean().default(false),
     clauses: z.string().optional(),

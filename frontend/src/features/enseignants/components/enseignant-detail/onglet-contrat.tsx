@@ -15,6 +15,10 @@ const LABELS_CONTRAT: Record<string, string> = {
     vacataire: 'Vacataire', stage: 'Stage',
 };
 
+const MODE_LABEL: Record<string, string> = {
+    MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte', HEBDOMADAIRE: 'Hebdo',
+};
+
 const COULEURS_CONTRAT: Record<string, string> = {
     ACTIF: 'bg-green-100 text-green-800',
     EXPIRE: 'bg-gray-100 text-gray-600',
@@ -27,10 +31,6 @@ const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 
 export function OngletContrat({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
     const contrats = useEnseignantContrats(enseignantId);
     const bulletins = useEnseignantBulletins(enseignantId);
-
-    if ((contrats.isLoading || bulletins.isLoading) && isActive) {
-        return <div className="py-12"><LoadingState message="Chargement des contrats et salaires..." /></div>;
-    }
 
     const contratsData = isActive ? (contrats.data ?? []) : [];
     const bulletinsData = isActive ? (bulletins.data ?? []) : [];
@@ -47,6 +47,10 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                 return (parseInt(anneeA) - parseInt(anneeB)) || (MOIS.indexOf(moisA) - MOIS.indexOf(moisB));
             });
     }, [bulletinsData]);
+
+    if ((contrats.isLoading || bulletins.isLoading) && isActive) {
+        return <div className="py-12"><LoadingState message="Chargement des contrats et salaires..." /></div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -75,6 +79,7 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-medium text-gray-600">Type</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Mode</th>
                                     <th className="px-4 py-3 text-center font-medium text-gray-600">Début</th>
                                     <th className="px-4 py-3 text-center font-medium text-gray-600">Fin</th>
                                     <th className="px-4 py-3 text-center font-medium text-gray-600">Salaire</th>
@@ -86,6 +91,9 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                                     <tr key={c.id} className="hover:bg-gray-50/80">
                                         <td className="px-4 py-3 font-medium">
                                             {LABELS_CONTRAT[c.typeContrat] || c.typeContrat}
+                                        </td>
+                                        <td className="px-4 py-3 text-center text-gray-600 text-xs">
+                                            {MODE_LABEL[c.modeRemuneration as string] || c.modeRemuneration || '—'}
                                         </td>
                                         <td className="px-4 py-3 text-center text-gray-700">{formatDate(c.dateDebut)}</td>
                                         <td className="px-4 py-3 text-center text-gray-700">{c.dateFin ? formatDate(c.dateFin) : '—'}</td>

@@ -7,6 +7,7 @@ import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { usePermissions } from '@/hooks';
 import { useAjouterMatiereNiveau, useModifierMatiereNiveau, useSupprimerMatiereNiveau } from '../hooks/use-matieres';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
+import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import type { MatiereNiveau } from '../types/matiere.types';
 
 interface TabNiveauxProps {
@@ -19,6 +20,7 @@ interface TabNiveauxProps {
 export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }: TabNiveauxProps) {
     const { hasPermission } = usePermissions();
     const { data: niveaux = [] } = useTousNiveaux();
+    const { data: toutesFilieres = [] } = useToutesFilieres();
     const ajouter = useAjouterMatiereNiveau();
     const modifier = useModifierMatiereNiveau();
     const supprimer = useSupprimerMatiereNiveau();
@@ -29,12 +31,15 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
     const [addNiveauId, setAddNiveauId] = useState('');
     const [addCoeff, setAddCoeff] = useState<number | ''>(1);
     const [addBareme, setAddBareme] = useState<number | ''>(20);
+    const [addCredits, setAddCredits] = useState<number | ''>('');
     const [addVol, setAddVol] = useState<number | ''>('');
     const [addOblig, setAddOblig] = useState(true);
+    const [addFiliereId, setAddFiliereId] = useState('');
 
     const [editId, setEditId] = useState<string | null>(null);
     const [editCoeff, setEditCoeff] = useState<number | ''>('');
     const [editBareme, setEditBareme] = useState<number | ''>('');
+    const [editCredits, setEditCredits] = useState<number | ''>('');
     const [editVol, setEditVol] = useState<number | ''>('');
     const [editOblig, setEditOblig] = useState(true);
 
@@ -50,21 +55,26 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
             niveauId: addNiveauId,
             coefficient: addCoeff !== '' ? Number(addCoeff) : undefined,
             bareme: addBareme !== '' ? Number(addBareme) : undefined,
+            credits: addCredits !== '' ? Number(addCredits) : undefined,
             volumeHoraire: addVol !== '' ? Number(addVol) : undefined,
             obligatoire: addOblig,
+            filiereId: addFiliereId || undefined,
         });
         setShowAddForm(false);
         setAddNiveauId('');
         setAddCoeff(1);
         setAddBareme(20);
+        setAddCredits('');
         setAddVol('');
         setAddOblig(true);
+        setAddFiliereId('');
     };
 
     const handleStartEdit = (mn: MatiereNiveau) => {
         setEditId(mn.id);
         setEditCoeff(mn.coefficient ?? '');
         setEditBareme(mn.bareme ?? '');
+        setEditCredits(mn.credits ?? '');
         setEditVol(mn.volumeHoraire ?? '');
         setEditOblig(mn.obligatoire);
     };
@@ -76,6 +86,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
             matiereId,
             coefficient: editCoeff !== '' ? Number(editCoeff) : undefined,
             bareme: editBareme !== '' ? Number(editBareme) : undefined,
+            credits: editCredits !== '' ? Number(editCredits) : undefined,
             volumeHoraire: editVol !== '' ? Number(editVol) : undefined,
             obligatoire: editOblig,
         });
@@ -128,7 +139,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                             <X className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <ElisaSelect
                             label="Niveau"
                             value={addNiveauId}
@@ -154,6 +165,16 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                             />
                         </div>
                         <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Crédits</label>
+                            <input type="number" min="0" step="1" value={addCredits}
+                                onChange={e => setAddCredits(e.target.value ? Number(e.target.value) : '')}
+                                placeholder="Optionnel"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
                             <label className="block text-xs font-medium text-gray-600 mb-1">Vol. horaire (h)</label>
                             <input type="number" min="0" value={addVol}
                                 onChange={e => setAddVol(e.target.value ? Number(e.target.value) : '')}
@@ -161,6 +182,16 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                         </div>
+                        <ElisaSelect
+                            label="Filière"
+                            value={addFiliereId}
+                            onValueChange={setAddFiliereId}
+                            placeholder="Optionnel"
+                            options={toutesFilieres.map(f => ({
+                                value: f.id,
+                                label: `${f.nom} (${f.code})`,
+                            }))}
+                        />
                         <div className="flex items-end pb-2">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" checked={addOblig}
@@ -203,6 +234,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                     <th className="text-left px-4 py-3 font-medium text-gray-600">Niveau</th>
                                     <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
                                     <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Credits</th>
                                     <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
                                     <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
                                     <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
@@ -234,6 +266,13 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
+                                                        <input type="number" min="0" value={editCredits}
+                                                            onChange={e => setEditCredits(e.target.value ? Number(e.target.value) : '')}
+                                                            placeholder="—"
+                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
                                                         <input type="number" min="0" value={editVol}
                                                             onChange={e => setEditVol(e.target.value ? Number(e.target.value) : '')}
                                                             placeholder="—"
@@ -251,6 +290,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                 <>
                                                     <td className="px-4 py-3 text-center font-semibold">{mn.coefficient}</td>
                                                     <td className="px-4 py-3 text-center">/ {mn.bareme}</td>
+                                                    <td className="px-4 py-3 text-center font-semibold">{mn.credits ?? '-'}</td>
                                                     <td className="px-4 py-3 text-center">
                                                         {mn.volumeHoraire ? (
                                                             <div className="flex items-center gap-2 justify-center">

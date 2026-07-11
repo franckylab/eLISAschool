@@ -47,22 +47,20 @@ export class PostesVacantsService {
         const seuilCritique = await this.getSeuilCritique();
         const seuilAvertissement = await this.getSeuilAvertissement();
 
-        // Requête pour trouver les postes vacants
-        const where: any = {
-            statut: StatutPoste.VACANT,
-        };
+        // Requête pour trouver les postes avec capacité disponible
+        const qb = this.posteRepo.createQueryBuilder('p')
+            .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
+            .leftJoinAndSelect('uo.organisation', 'org')
+            .where('p.actif = :actif', { actif: true })
+            .andWhere('p."occupantsCount" < p."nombrePostes"')
+            .andWhere('p.statut != :supprime', { supprime: StatutPoste.SUPPRIME })
+            .orderBy('p.updatedAt', 'ASC');
 
         if (etablissementId) {
-            where.uniteOrganisationnelle = {
-                organisation: { etablissementId },
-            };
+            qb.andWhere('org.etablissementId = :eid', { eid: etablissementId });
         }
 
-        const postesVacants = await this.posteRepo.find({
-            where,
-            relations: ['uniteOrganisationnelle', 'uniteOrganisationnelle.organisation'],
-            order: { updatedAt: 'ASC' },
-        });
+        const postesVacants = await qb.getMany();
 
         const critiques: any[] = [];
         const avertissements: any[] = [];
@@ -103,17 +101,17 @@ export class PostesVacantsService {
         const maintenant = new Date();
         const seuilCritique = await this.getSeuilCritique();
 
-        const where: any = { statut: StatutPoste.VACANT };
+        const qb = this.posteRepo.createQueryBuilder('p')
+            .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
+            .where('p.actif = :actif', { actif: true })
+            .andWhere('p."occupantsCount" < p."nombrePostes"')
+            .andWhere('p.statut != :supprime', { supprime: StatutPoste.SUPPRIME });
         if (etablissementId) {
-            where.uniteOrganisationnelle = {
-                organisation: { etablissementId },
-            };
+            qb.leftJoin('uo.organisation', 'org')
+                .andWhere('org.etablissementId = :eid', { eid: etablissementId });
         }
 
-        const postesVacants = await this.posteRepo.find({
-            where,
-            relations: ['uniteOrganisationnelle'],
-        });
+        const postesVacants = await qb.getMany();
 
         const joursVacance = postesVacants.map((p) =>
             Math.floor((maintenant.getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24))

@@ -9,3 +9,8 @@ export * from './evaluation.controller';
 export * from './progression-programme.controller';
 export * from './bulletin-paie.controller';
 export * from './personnel-dashboard.controller';
+export * from './cotisations.controller';
+export * from './types-primes.controller';
+export * from './types-retenues.controller';
+export * from './calcul-paie.controller';
+export * from './membre-fonction.controller';

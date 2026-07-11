@@ -7,8 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
 import { PersonnelFormModal } from './personnel-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
@@ -21,7 +20,6 @@ import type { Column } from '@/components/ui/DataTable';
 
 export function PersonnelPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
@@ -70,7 +68,7 @@ export function PersonnelPage() {
                 const tel = p.utilisateur?.profil?.telephone ?? p.telephone ?? '';
                 return (
                     <button
-                        onClick={() => navigate({ to: '/personnel/$id', params: { id: p.id } })}
+                        onClick={() => window.location.href = `/personnel/${p.id}`}
                         className="hover:underline cursor-pointer text-left"
                     >
                         <div>
@@ -79,27 +77,6 @@ export function PersonnelPage() {
                         </div>
                     </button>
                 );
-            },
-        },
-        {
-            key: 'poste',
-            header: 'Poste',
-            sortable: true,
-            render: (p) => (
-                <div>
-                    <p className="font-medium">{p.posteExact ?? p.poste ?? '—'}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{p.service ?? p.departement ?? '-'}</p>
-                </div>
-            ),
-        },
-        {
-            key: 'typeContrat',
-            header: 'Contrat',
-            sortable: true,
-            className: 'text-center',
-            render: (p) => {
-                const contrats: any = { cdi: 'CDI', cdd: 'CDD', vacataire: 'Vacataire', stage: 'Stage' };
-                return <span className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium">{contrats[p.typeContrat] ?? '—'}</span>;
             },
         },
         {
@@ -135,6 +112,13 @@ export function PersonnelPage() {
             header: t('commun.actions'),
             className: 'text-right',
             renderActions: (p) => [
+                {
+                    key: 'voir',
+                    icon: Eye,
+                    label: 'Voir détails',
+                    onClick: () => window.location.href = `/personnel/${p.id}`,
+                    variant: 'info' as const,
+                },
                 {
                     key: 'modifier',
                     icon: Edit,

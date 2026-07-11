@@ -32,6 +32,7 @@ export enum CategorieElementSalaire {
     INDEMNITE = 'INDEMNITE',
     COTISATION = 'COTISATION',
     HEURE_SUP = 'HEURE_SUP',
+    HEURE_COURS = 'HEURE_COURS',
     RETENUE = 'RETENUE',
     AUTRE = 'AUTRE',
 }

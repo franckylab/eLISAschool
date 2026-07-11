@@ -4,7 +4,7 @@
  * ==================================
  */
 
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Bulletin } from '../entities';
 import { GenerateBulletinDto, UpdateBulletinDto } from '../dto';
@@ -179,15 +179,15 @@ export class BulletinsService {
 
                 // Créer ou MAJ Bulletin
                 let bulletin = await this.repo.findOne({
-                    where: { eleveId: eleve.id, classeId: classe.id, periodeId: periode.id }
+                    where: { eleveId: eleve.id, classeAnneeId: dto.classeAnneeId, periodeId: periode.id }
                 });
 
                 if (!bulletin) {
                     bulletin = this.repo.create({
                         eleveId: eleve.id,
-                        classeId: classe.id,
+                        classeAnneeId: dto.classeAnneeId,
                         periodeId: periode.id,
-                        anneeScolaireId: classe.anneeScolaireId,
+                        anneeScolaireId: classeAnnee.anneeScolaireId,
                         etablissementId,
                     });
                 }
@@ -200,15 +200,15 @@ export class BulletinsService {
 
             // Calcul des rangs pour tous les bulletins de la classe/période (si activé)
             if (params.includeRanking) {
-                await this.calculerRangs(classe.id, periode.id, etablissementId, queryRunner);
+                await this.calculerRangs(dto.classeAnneeId, periode.id, etablissementId, queryRunner);
             }
 
             await queryRunner.commitTransaction();
-            logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classe.nom}`);
+            logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classeAnnee.classe?.nom || dto.classeAnneeId}`);
             
             // NOTIFICATION : Envoyer les notifications aux parents (après commit)
             try {
-                await this.envoyerNotificationsBulletins(bulletins, classe, periode, etablissementId);
+                await this.envoyerNotificationsBulletins(bulletins, classeAnnee.classe, periode, etablissementId);
             } catch (error) {
                 logger.warn('[Bulletins] Échec envoi notifications (non bloquant)', error);
             }
@@ -257,10 +257,31 @@ export class BulletinsService {
         logger.info(`[${etablissementId}] Rangs calculés pour ${bulletins.length} bulletins`);
     }
 
+    /**
+     * Statut de génération des bulletins pour le dashboard
+     */
+    async getGenerationStatus(context: { etablissementId?: string; periodeId?: string }): Promise<{
+        total: number;
+        generes: number;
+        enCours: number;
+        progression: number;
+    }> {
+        const where: any = {};
+        if (context.etablissementId) where.etablissementId = context.etablissementId;
+        if (context.periodeId) where.periodeId = context.periodeId;
+
+        const total = await this.repo.count({ where });
+        const generes = await this.repo.count({ where: { ...where, moyenneGenerale: MoreThan(0) } });
+        const enCours = total - generes;
+        const progression = total > 0 ? Math.round((generes / total) * 100) : 0;
+
+        return { total, generes, enCours, progression };
+    }
+
     async findByEleve(eleveId: string): Promise<Bulletin[]> {
         return this.repo.find({
             where: { eleveId },
-            relations: ['periode', 'classe'],
+            relations: ['periode', 'classeAnnee', 'classeAnnee.classe'],
             order: { periode: { dateDebut: 'ASC' } }
         });
     }

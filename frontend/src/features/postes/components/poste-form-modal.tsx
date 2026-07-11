@@ -1,29 +1,40 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Briefcase, X, Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { X, Plus, Briefcase } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
+import { BaseFormModal } from '@/features/organisation/components/base-form-modal';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useCreerPoste, useModifierPoste } from '../hooks/use-organisation';
-import { createPosteSchema, updatePosteSchema } from '../types/organisation.zod';
-import { BaseFormModal } from './base-form-modal';
-import type { Poste, UniteOrganisationnelle, TypePoste, NiveauResponsabilite } from '../types/organisation.types';
+import { useCreerPoste, useModifierPoste } from '../hooks/use-postes';
+import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
+import { createPosteSchema, updatePosteSchema, TYPES_POSTE_OPTIONS, NIVEAUX_RESPONSABILITE_OPTIONS, MODES_REMUNERATION_OPTIONS } from '../types/poste.zod';
+import type { Poste } from '../types/poste.types';
 
 interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    organisationId: string;
-    unites: UniteOrganisationnelle[];
     poste?: Poste | null;
+    onSuccess?: () => void;
 }
 
-export function PosteFormModal({ open, onOpenChange, organisationId, unites, poste }: Props) {
+export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) {
     const { t } = useTranslation('organisation');
     const isEdit = !!poste;
     const creer = useCreerPoste();
     const modifier = useModifierPoste();
+    const { data: fonctions } = useToutesFonctions();
+    const { data: unites } = useQuery({
+        queryKey: ['unites', 'all'],
+        queryFn: async () => {
+            const res = await apiClient.get('/api/organisation/unites');
+            return (res as any).data || [];
+        },
+    });
+
     const [apiError, setApiError] = useState<string | null>(null);
     const [missionText, setMissionText] = useState('');
     const [competenceText, setCompetenceText] = useState('');
@@ -34,30 +45,33 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
         resolver: zodResolver(schema),
         defaultValues: {
             intitulé: poste?.intitulé || '',
-            code: poste?.code || '',
-            type: (poste?.type || 'ADMINISTRATIF') as TypePoste,
-            niveauResponsabilite: (poste?.niveauResponsabilite || 'EXECUTANT') as NiveauResponsabilite,
-            uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
             description: poste?.description || '',
+            code: poste?.code || '',
+            type: (poste?.type || 'ADMINISTRATIF') as any,
+            niveauResponsabilite: (poste?.niveauResponsabilite || 'EXECUTANT') as any,
+            fonctionId: poste?.fonctionId || '',
+            uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
+            occupantId: poste?.occupantId || '',
+            occupantNom: poste?.occupantNom || '',
             nombrePostes: poste?.nombrePostes ?? 1,
-            missions: poste?.missions || [],
+            modeRemunerationDefaut: poste?.modeRemunerationDefaut || '',
             competencesRequises: poste?.competencesRequises || [],
+            missions: poste?.missions || [],
+            metadata: poste?.metadata || undefined,
         },
     });
 
-    const intituleValue = watch('intitulé');
-    const codeValue = watch('code');
-    const uniteValue = watch('uniteOrganisationnelleId');
     const missions = watch('missions') || [];
     const competences = watch('competencesRequises') || [];
-    const intituleValide = typeof intituleValue === 'string' && intituleValue.trim().length >= 2;
-    const codeValide = typeof codeValue === 'string' && codeValue.trim().length >= 2;
 
-    const typesPoste = Object.entries(t('typesPoste', { returnObjects: true }) as Record<string, string>)
-        .map(([value, label]) => ({ value: value as TypePoste, label }));
+    const fonctionOptions = (fonctions || [])
+        .filter((f: any) => f.actif !== false)
+        .map((f: any) => ({ value: f.id, label: `${f.nom} (${f.code})` }));
 
-    const niveaux = Object.entries(t('niveauxResponsabilite', { returnObjects: true }) as Record<string, string>)
-        .map(([value, label]) => ({ value: value as NiveauResponsabilite, label }));
+    const uniteOptions = (unites || []).map((u: any) => ({
+        value: u.id,
+        label: `${u.nom} (${u.code})`,
+    }));
 
     const addMission = () => {
         if (missionText.trim()) {
@@ -81,19 +95,33 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
         setValue('competencesRequises', competences.filter((_, i) => i !== index), { shouldValidate: true });
     };
 
-    const onSubmit = async (data: any) => {
+    const onFormSubmit = async (data: any) => {
         setApiError(null);
         try {
+            const payload = {
+                ...data,
+                occupantId: data.occupantId || undefined,
+                occupantNom: data.occupantNom || undefined,
+                fonctionId: data.fonctionId || undefined,
+                modeRemunerationDefaut: data.modeRemunerationDefaut || undefined,
+            };
             if (isEdit && poste) {
-                await modifier.mutateAsync({ id: poste.id, ...data });
+                await modifier.mutateAsync({ id: poste.id, dto: payload });
             } else {
-                await creer.mutateAsync(data);
+                payload.code = payload.code.toUpperCase();
+                await creer.mutateAsync(payload);
             }
+            onSuccess?.();
             onOpenChange(false);
         } catch (err: any) {
             setApiError(err?.response?.data?.message || err?.message || 'Une erreur est survenue');
         }
     };
+
+    const intituleValide = watch('intitulé')?.trim()?.length >= 2;
+    const codeValide = watch('code')?.trim()?.length >= 2;
+    const uniteValide = watch('uniteOrganisationnelleId');
+    const canSubmit = intituleValide && codeValide && uniteValide;
 
     return (
         <BaseFormModal
@@ -104,9 +132,9 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
             color="purple"
             size="lg"
             submitLabel={isEdit ? t('enregistrer') : t('creer')}
-            loading={isSubmitting}
-            disabled={!intituleValide || !codeValide || !uniteValue}
-            onSubmit={handleSubmit(onSubmit)}
+            loading={isSubmitting || creer.isPending || modifier.isPending}
+            disabled={!canSubmit}
+            onSubmit={handleSubmit(onFormSubmit)}
             apiError={apiError}
         >
             <div className="grid grid-cols-2 gap-4">
@@ -122,20 +150,6 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                 />
             </div>
 
-            <Controller
-                name="uniteOrganisationnelleId"
-                control={control}
-                render={({ field }) => (
-                    <ElisaSelect label={t('unites') + ' *'}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        options={unites.map((u) => ({ value: u.id, label: `${u.nom} (${u.code})` }))}
-                        placeholder={t('selectionner')}
-                        error={errors.uniteOrganisationnelleId?.message as string}
-                    />
-                )}
-            />
-
             <div className="grid grid-cols-2 gap-4">
                 <Controller
                     name="type"
@@ -144,7 +158,7 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                         <ElisaSelect label={t('type')}
                             value={field.value}
                             onValueChange={field.onChange}
-                            options={typesPoste}
+                            options={TYPES_POSTE_OPTIONS}
                             error={errors.type?.message as string}
                         />
                     )}
@@ -156,12 +170,39 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                         <ElisaSelect label={t('niveauResponsabilite')}
                             value={field.value}
                             onValueChange={field.onChange}
-                            options={niveaux}
+                            options={NIVEAUX_RESPONSABILITE_OPTIONS}
                             error={errors.niveauResponsabilite?.message as string}
                         />
                     )}
                 />
             </div>
+
+            <Controller
+                name="fonctionId"
+                control={control}
+                render={({ field }) => (
+                    <ElisaSelect label={t('fonction')}
+                        value={field.value || ''}
+                        onValueChange={field.onChange}
+                        options={fonctionOptions}
+                        placeholder={t('selectionner')}
+                    />
+                )}
+            />
+
+            <Controller
+                name="uniteOrganisationnelleId"
+                control={control}
+                render={({ field }) => (
+                    <ElisaSelect label={t('unites') + ' *'}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={uniteOptions}
+                        placeholder={t('selectionner')}
+                        error={errors.uniteOrganisationnelleId?.message as string}
+                    />
+                )}
+            />
 
             <ElisaInput label={t('description')}
                 {...register('description')}
@@ -174,6 +215,18 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                     {...register('nombrePostes', { valueAsNumber: true })}
                     error={errors.nombrePostes?.message as string}
                 />
+                <Controller
+                    name="modeRemunerationDefaut"
+                    control={control}
+                    render={({ field }) => (
+                        <ElisaSelect label={t('modeRemunerationDefaut')}
+                            value={field.value || ''}
+                            onValueChange={field.onChange}
+                            options={MODES_REMUNERATION_OPTIONS}
+                            placeholder={t('selectionner')}
+                        />
+                    )}
+                />
             </div>
 
             <div>
@@ -181,16 +234,16 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                 <div className="flex gap-2 mb-2">
                     <ElisaInput value={missionText}
                         onChange={(e: any) => setMissionText(e.target.value ?? e)}
-                        placeholder={t('missions')}
+                        placeholder="Ajouter une mission"
                         onKeyDown={(e: any) => e.key === 'Enter' && addMission()}
                     />
                     <ElisaButton variant="outline" size="sm" onClick={addMission}><Plus className="h-4 w-4" /></ElisaButton>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                    {missions.map((m, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs"
+                    {missions.map((m: string, i: number) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
                             onClick={() => removeMission(i)}>
-                            {m} <X className="h-3 w-3 cursor-pointer" />
+                            {m} <X className="h-3 w-3" />
                         </span>
                     ))}
                 </div>
@@ -201,16 +254,16 @@ export function PosteFormModal({ open, onOpenChange, organisationId, unites, pos
                 <div className="flex gap-2 mb-2">
                     <ElisaInput value={competenceText}
                         onChange={(e: any) => setCompetenceText(e.target.value ?? e)}
-                        placeholder={t('competences')}
+                        placeholder="Ajouter une compétence"
                         onKeyDown={(e: any) => e.key === 'Enter' && addCompetence()}
                     />
                     <ElisaButton variant="outline" size="sm" onClick={addCompetence}><Plus className="h-4 w-4" /></ElisaButton>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                    {competences.map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs"
+                    {competences.map((c: string, i: number) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
                             onClick={() => removeCompetence(i)}>
-                            {c} <X className="h-3 w-3 cursor-pointer" />
+                            {c} <X className="h-3 w-3" />
                         </span>
                     ))}
                 </div>

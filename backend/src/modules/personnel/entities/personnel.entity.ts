@@ -11,12 +11,14 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToOne,
+    OneToMany,
     ManyToOne,
     JoinColumn,
     Index
 } from 'typeorm';
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 import { Etablissement } from '@modules/etablissement/entities';
+import type { MembreFonction } from './membre-fonction.entity';
 
 @Entity('types_personnel')
 export class TypePersonnel {
@@ -91,13 +93,6 @@ export class MembrePersonnel {
     @Column({ type: 'varchar', length: 100, nullable: true })
     service?: string;
 
-    @Column({ type: 'uuid', nullable: true })
-    responsableHierarchiqueId?: string;
-
-    @ManyToOne(() => MembrePersonnel, { nullable: true })
-    @JoinColumn({ name: 'responsableHierarchiqueId' })
-    responsableHierarchique?: MembrePersonnel;
-
     @Column({ type: 'simple-json', nullable: true })
     competences?: string[];
 
@@ -157,6 +152,9 @@ export class MembrePersonnel {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
+
+    @OneToMany('MembreFonction', 'membrePersonnel')
+    fonctions?: MembreFonction[];
 
     @CreateDateColumn()
     createdAt!: Date;

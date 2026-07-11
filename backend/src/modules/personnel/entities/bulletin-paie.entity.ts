@@ -13,6 +13,8 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { Poste } from '@modules/organisation/entities';
+import { ContratPersonnel } from './contrat-personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { MembrePersonnel } from './personnel.entity';
 
@@ -45,6 +47,17 @@ export class BulletinPaie {
 
     @Column({ type: 'uuid' })
     contratId!: string;
+
+    @ManyToOne(() => ContratPersonnel)
+    @JoinColumn({ name: 'contratId' })
+    contrat?: ContratPersonnel;
+
+    @Column({ type: 'uuid', nullable: true })
+    posteId?: string;
+
+    @ManyToOne(() => Poste, { nullable: true })
+    @JoinColumn({ name: 'posteId' })
+    poste?: Poste;
 
     @Column({ type: 'int' })
     mois!: number; // 1-12

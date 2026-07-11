@@ -17,12 +17,85 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Poste, StatutPoste } from '@modules/organisation/entities';
 
 export class AffectationService {
     private repo: Repository<AffectationPoste>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(AffectationPoste);
+    }
+
+    /**
+     * Affecter un personnel à un poste (méthode unifiée).
+     * Orchestre en une transaction : Poste.occupantId + AffectationPoste.
+     */
+    async affecterPersonnelAPoste(
+        posteId: string,
+        membrePersonnelId: string,
+        etablissementId: string,
+        options?: {
+            occupantNom?: string;
+            typeMutation?: TypeMutation;
+            contratId?: string;
+            createurId?: string;
+            req?: any;
+        },
+    ): Promise<{ poste: any; affectation: AffectationPoste }> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // 1. Charger le poste avec validation
+            const posteRepo = queryRunner.manager.getRepository(Poste);
+            const poste = await posteRepo.findOne({ where: { id: posteId } });
+            if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+
+            if (poste.occupantId && poste.occupantId !== membrePersonnelId) {
+                throw new AppError('Ce poste est déjà occupé', 409, 'POSTE_DEJA_OCCUPE');
+            }
+
+            // 2. Mettre à jour le poste
+            const membreNom = options?.occupantNom || '';
+            poste.occupantId = membrePersonnelId;
+            poste.occupantNom = membreNom;
+            poste.statut = StatutPoste.ACTIF;
+            await queryRunner.manager.save(poste);
+
+            // 3. Terminer l'ancienne affectation active si existante
+            const ancienneActive = await queryRunner.manager.findOne(AffectationPoste, {
+                where: { membrePersonnelId, etablissementId, statut: StatutAffectation.ACTIF },
+            });
+            if (ancienneActive) {
+                ancienneActive.statut = StatutAffectation.TERMINE;
+                ancienneActive.dateFin = new Date();
+                await queryRunner.manager.save(ancienneActive);
+            }
+
+            // 4. Créer la nouvelle affectation
+            const affectation = queryRunner.manager.create(AffectationPoste, {
+                membrePersonnelId,
+                posteId,
+                contratId: options?.contratId,
+                uniteOrganisationnelleId: poste.uniteOrganisationnelleId,
+                typeMutation: options?.typeMutation || TypeMutation.NOUVELLE,
+                statut: StatutAffectation.ACTIF,
+                dateDebut: new Date(),
+                etablissementId,
+            });
+            const saved = await queryRunner.manager.save(affectation);
+
+            await queryRunner.commitTransaction();
+
+            logger.info(`Personnel ${membrePersonnelId} affecté au poste ${posteId}`, { affectationId: saved.id });
+            return { poste, affectation: saved };
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -39,6 +112,14 @@ export class AffectationService {
         await queryRunner.startTransaction();
 
         try {
+            // Vérifier si le poste existe et n'est pas déjà occupé par un autre membre
+            const posteRepo = queryRunner.manager.getRepository(Poste);
+            const poste = await posteRepo.findOne({ where: { id: dto.posteId } });
+            if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+            if (poste.occupantId && poste.occupantId !== dto.membrePersonnelId) {
+                throw new AppError('Ce poste est déjà occupé', 409, 'POSTE_DEJA_OCCUPE');
+            }
+
             // Vérifier si le membre a déjà une affectation active
             const affectationActive = await this.repo.findOne({
                 where: {
@@ -56,6 +137,11 @@ export class AffectationService {
                 logger.info(`Affectation ${affectationActive.id} terminée automatiquement`);
             }
 
+            // Mettre à jour le poste (occupant)
+            poste.occupantId = dto.membrePersonnelId;
+            poste.statut = StatutPoste.ACTIF;
+            await queryRunner.manager.save(poste);
+
             // Créer la nouvelle affectation
             const affectation = this.repo.create({
                 ...dto,
@@ -63,16 +149,10 @@ export class AffectationService {
                 dateFin: dto.dateFin ? new Date(dto.dateFin) : null,
                 statut: StatutAffectation.ACTIF,
                 etablissementId,
+                uniteOrganisationnelleId: dto.uniteOrganisationnelleId || poste.uniteOrganisationnelleId,
             });
 
             await queryRunner.manager.save(affectation);
-
-            // Mettre à jour le poste (occupant)
-            const posteRepo = AppDataSource.getRepository('Poste');
-            await posteRepo.update(dto.posteId, {
-                occupantId: dto.membrePersonnelId,
-                statut: 'ACTIF',
-            });
 
             await queryRunner.commitTransaction();
 
@@ -193,6 +273,16 @@ export class AffectationService {
                 statut: StatutAffectation.ACTIF,
             },
             relations: ['poste', 'uniteOrganisationnelle', 'contrat'],
+        });
+    }
+
+    async getAffectationActiveByPoste(
+        posteId: string,
+        etablissementId: string
+    ): Promise<AffectationPoste | null> {
+        return this.repo.findOne({
+            where: { posteId, etablissementId, statut: StatutAffectation.ACTIF },
+            relations: ['membrePersonnel'],
         });
     }
 

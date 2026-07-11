@@ -93,6 +93,9 @@ export interface ContratEnseignant {
     tarifHoraire?: number | null;
     statut: string;
     poste?: { id: string; nom: string; code?: string } | null;
+    modeRemuneration?: string | null;
+    heuresContractuellesMois?: number | null;
+    tarifHebdomadaire?: number | null;
     createdAt: string;
     updatedAt: string;
 }

@@ -16,10 +16,6 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
     const absences = useEnseignantAbsences(enseignantId);
     const assiduite = useEnseignantAssiduite(enseignantId);
 
-    if ((absences.isLoading || assiduite.isLoading) && isActive) {
-        return <div className="py-12"><LoadingState message="Chargement des absences..." /></div>;
-    }
-
     const items = isActive ? (absences.data?.items ?? []) : [];
     const assiduiteData = isActive ? assiduite.data : undefined;
     const total = absences.data?.total ?? 0;
@@ -41,6 +37,10 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
         { label: 'Justifiées', value: justifiees, color: '#10B981' },
         { label: 'Non justifiées', value: nonJustifiees, color: '#EF4444' },
     ];
+
+    if ((absences.isLoading || assiduite.isLoading) && isActive) {
+        return <div className="py-12"><LoadingState message="Chargement des absences..." /></div>;
+    }
 
     return (
         <div className="space-y-5">

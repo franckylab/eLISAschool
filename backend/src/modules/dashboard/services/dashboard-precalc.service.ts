@@ -16,9 +16,11 @@ import { Eleve } from '@modules/eleves/entities';
 import { Note } from '@modules/notes/entities';
 import { Utilisateur } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { AffectationEleve } from '@modules/classes/entities';
 
 export class DashboardPrecalcService {
     private eleveRepo: Repository<Eleve>;
+    private affectationRepo: Repository<AffectationEleve>;
     private noteRepo: Repository<Note>;
     private utilisateurRepo: Repository<Utilisateur>;
     private etablissementRepo: Repository<Etablissement>;
@@ -28,6 +30,7 @@ export class DashboardPrecalcService {
 
     constructor() {
         this.eleveRepo = AppDataSource.getRepository(Eleve);
+        this.affectationRepo = AppDataSource.getRepository(AffectationEleve);
         this.noteRepo = AppDataSource.getRepository(Note);
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
         this.etablissementRepo = AppDataSource.getRepository(Etablissement);
@@ -129,8 +132,8 @@ export class DashboardPrecalcService {
             this.eleveRepo.count({ where }),
             this.eleveRepo.count({ where: { ...where, statut: 'ACTIF' } }),
             this.eleveRepo.count({ where: { ...where, statut: 'INACTIF' } }),
-            this.eleveRepo.count({ where: { ...where, genre: 'M' } }),
-            this.eleveRepo.count({ where: { ...where, genre: 'F' } }),
+            this.eleveRepo.count({ where: { ...where, sexe: 'M' } }),
+            this.eleveRepo.count({ where: { ...where, sexe: 'F' } }),
         ]);
 
         return {
@@ -145,13 +148,13 @@ export class DashboardPrecalcService {
      * Calcule la répartition par classe
      */
     private async calculateRepartitionClasse(context: { etablissementId: string }): Promise<any> {
-        const results = await this.eleveRepo
-            .createQueryBuilder('e')
-            .leftJoin('e.classe', 'c')
+        const results = await this.affectationRepo
+            .createQueryBuilder('ae')
+            .leftJoin('ae.classe', 'c')
             .select('c.libelle', 'nom')
-            .addSelect('COUNT(e.id)', 'effectif')
-            .where('e.etablissementId = :etablissementId', { etablissementId: context.etablissementId })
-            .andWhere('e.statut = :statut', { statut: 'ACTIF' })
+            .addSelect('COUNT(ae.eleveId)', 'effectif')
+            .where('ae.etablissementId = :etablissementId', { etablissementId: context.etablissementId })
+            .andWhere('ae.statut = :statut', { statut: 'ACTIVE' })
             .groupBy('c.libelle')
             .orderBy('effectif', 'DESC')
             .getRawMany();
@@ -250,7 +253,7 @@ export class DashboardPrecalcService {
             const stats = {
                 utilisateurs: {
                     total: await this.utilisateurRepo.count(),
-                    actifs: await this.utilisateurRepo.count({ where: { statut: 'actif' as any } }),
+                    actifs: await this.utilisateurRepo.count({ where: { statut: 'ACTIF' as any } }),
                     parRole,
                 },
                 timestamp: new Date().toISOString(),

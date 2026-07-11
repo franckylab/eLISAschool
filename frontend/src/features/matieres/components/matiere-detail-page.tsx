@@ -89,7 +89,7 @@ export function MatiereDetailPage() {
     const programmesPedagogiquesQuery = useMatiereProgrammesPedagogiques(id);
     const affectationsQuery = useMatiereAffectations(id);
     const configurationsQuery = useMatiereConfigurations(id);
-    const edtQuery = useCreneaux({ matiereId: id, limit: 200 });
+    const edtQuery = useCreneaux({ matiereId: id, limit: 100 });
 
     const { niveauxSansAffectation, affectationsInactives, tauxCouverture } = useMemo(() => {
         const programme = programmeQuery.data ?? [];

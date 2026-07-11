@@ -66,6 +66,9 @@ export enum ModuleName {
   // Module organisation
   ORGANISATION = 'organisation',
 
+  // Module postes
+  POSTES = 'postes',
+
   // Module RH & Recrutement
   RECRUTEMENT = 'recrutement',
 
@@ -132,6 +135,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.DASHBOARD]: ModuleCategory.SYSTEME,
   [ModuleName.PERIPHERIQUES]: ModuleCategory.SYSTEME,
   [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
+  [ModuleName.POSTES]: ModuleCategory.CRITIQUES,
   [ModuleName.RECRUTEMENT]: ModuleCategory.CRITIQUES,
   [ModuleName.SALLES]: ModuleCategory.LOGISTIQUES,
   [ModuleName.OPTIONS]: ModuleCategory.ACADEMIQUES,
