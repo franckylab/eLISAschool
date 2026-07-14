@@ -3,9 +3,9 @@ import {
     Shield, CheckCircle, UserCog, Lock, Unlock, Plus, X, Filter,
     Calendar, ArrowRight,
 } from 'lucide-react';
-import { useTousRoles, useToutesPermissions, usePermissionsDirectes, useAssignerPermissionUtilisateur, useRetirerPermissionUtilisateur } from '../hooks/use-roles-permissions';
-import { Card, CardContent } from '@/components/ui/Card';
+import { useToutesPermissions, usePermissionsDirectes, useAssignerPermissionUtilisateur, useRetirerPermissionUtilisateur } from '../hooks/use-roles-permissions';
 import { CardGrid } from '@/components/ui/CardGrid';
+import { CardSection } from '@/components/ui';
 import { StatCard } from '@/components/ui/StatCard';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -21,7 +21,6 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
     const peutChangerRole = hasPermission('utilisateurs:role:change');
     const peutGererPermissions = hasPermission('roles:manage');
 
-    const { data: roles } = useTousRoles({ enabled: peutChangerRole });
     const { data: permissionsGroupes } = useToutesPermissions({ enabled: peutGererPermissions });
     const { data: permissionsDirectes, refetch: refetchDirectes } = usePermissionsDirectes(utilisateur.id, { enabled: peutGererPermissions });
     const assignerPermission = useAssignerPermissionUtilisateur();
@@ -102,11 +101,11 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                 <StatCard icon={Calendar} label="Dernière modif" value={dateMaj} color="gray" />
             </CardGrid>
 
-            <Card className="p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-dominant-600" />
-                    Rôle principal
-                </h3>
+            <CardSection
+                icon={<Shield className="h-5 w-5" />}
+                title="Rôle principal"
+                noAnimation
+            >
                 <div className="flex items-center gap-4">
                     <span className="inline-flex items-center gap-2 rounded-full bg-dominant-100 dark:bg-dominant-900 px-4 py-2 text-sm font-medium text-dominant-800 dark:text-dominant-200">
                         <Shield className="h-4 w-4" />
@@ -123,29 +122,28 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                         </ElisaButton>
                     )}
                 </div>
-            </Card>
+            </CardSection>
 
-            <Card className="p-6">
-                <CardContent className="p-0">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                        Permissions effectives ({permissionsEffectives.length})
-                    </h3>
-                    {peutGererPermissions && (
+            <CardSection
+                icon={<Shield className="h-5 w-5" />}
+                title={`Permissions effectives (${permissionsEffectives.length})`}
+                noAnimation
+            >
+                {peutGererPermissions && (
+                    <div className="flex justify-end mb-4">
                         <ElisaButton variant="outline" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setShowAddModal(true)}>
                             Ajouter une permission
                         </ElisaButton>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <div className="flex gap-2 mb-4 overflow-x-auto">
                     <button
                         onClick={() => setFiltreModule('tous')}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                             filtreModule === 'tous'
-                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-dominant-100 text-dominant-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
                         }`}
                     >
                         <Filter className="h-3.5 w-3.5" />
@@ -157,8 +155,8 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                             onClick={() => setFiltreModule(module)}
                             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                                 filtreModule === module
-                                    ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-dominant-100 text-dominant-700'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
                             }`}
                         >
                             {module}
@@ -173,20 +171,20 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                             <div
                                 key={perm}
                                 className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
-                                    isDirect ? 'bg-blue-50' : 'bg-gray-50'
+                                    isDirect ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-800/40'
                                 }`}
                             >
                                 <div className="flex items-center gap-2 min-w-0">
                                     {isDirect ? (
-                                        <Unlock className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                        <Unlock className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                                     ) : (
                                         <Lock className="h-4 w-4 text-gray-400 flex-shrink-0" />
                                     )}
-                                    <span className={`font-mono text-xs ${isDirect ? 'text-blue-700' : 'text-gray-700'}`}>
+                                    <span className={`font-mono text-xs ${isDirect ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
                                         {perm}
                                     </span>
                                     {isDirect && (
-                                        <span className="text-[10px] font-medium text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                                        <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded">
                                             directe
                                         </span>
                                     )}
@@ -197,7 +195,7 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                                             const pid = permissionIdByCode.get(perm);
                                             if (pid) handleRetirerPermission(pid, perm);
                                         }}
-                                        className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                        className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                         title="Retirer cette permission"
                                     >
                                         <X className="h-3.5 w-3.5" />
@@ -207,13 +205,13 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                         );
                     })}
                     {permissionsFiltrees.length === 0 && (
-                        <div className="text-center py-12 text-gray-500">
-                            <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                             <p>Aucune permission</p>
                         </div>
                     )}
                 </div>
-            </CardContent></Card>
+            </CardSection>
 
             <CustomModal
                 open={showAddModal}
@@ -235,8 +233,8 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                 <div className="space-y-4">
                     {permissionsGroupes?.map((groupe) => (
                         <details key={groupe.module} className="group">
-                            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-50">
-                                <Shield className="h-4 w-4 text-[var(--color-dominant-500)]" />
+                            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <Shield className="h-4 w-4 text-dominant-500" />
                                 {groupe.libelle}
                                 <span className="text-xs text-gray-400 ml-auto">({groupe.permissions.length})</span>
                             </summary>
@@ -251,18 +249,18 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                                             onClick={() => setSelectedNewPermission(perm.id)}
                                             className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs text-left transition-colors ${
                                                 selectedNewPermission === perm.id
-                                                    ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-400'
+                                                    ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-400 dark:bg-blue-900/40 dark:text-blue-300'
                                                     : isAlreadyDirect
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'hover:bg-gray-50 text-gray-700'
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
+                                                        : 'hover:bg-gray-50 text-gray-700 dark:hover:bg-gray-800/60 dark:text-gray-300'
                                             }`}
                                         >
                                             <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
                                                 selectedNewPermission === perm.id
                                                     ? 'bg-blue-600 border-blue-600'
                                                     : isAlreadyDirect
-                                                        ? 'border-gray-300 bg-gray-200'
-                                                        : 'border-gray-300'
+                                                        ? 'border-gray-300 bg-gray-200 dark:border-gray-500 dark:bg-gray-700'
+                                                        : 'border-gray-300 dark:border-gray-500'
                                             }`}>
                                                 {selectedNewPermission === perm.id && (
                                                     <CheckCircle className="h-3 w-3 text-white" />
@@ -273,7 +271,7 @@ export function TabRolesPermissions({ utilisateur }: { utilisateur: Utilisateur 
                                             </div>
                                             <span className="font-mono">{perm.code}</span>
                                             {!isAlreadyEffective && !isAlreadyDirect && (
-                                                <span className="text-[10px] text-orange-600 bg-orange-50 px-1 rounded ml-auto">
+                                                <span className="text-[10px] text-orange-600 bg-orange-50 px-1 rounded ml-auto dark:bg-orange-900/30 dark:text-orange-400">
                                                     nouveau
                                                 </span>
                                             )}

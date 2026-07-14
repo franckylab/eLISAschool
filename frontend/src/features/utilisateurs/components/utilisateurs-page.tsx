@@ -18,6 +18,7 @@ import { UtilisateurFormModal } from './utilisateur-form-modal';
 import { SuppressionUtilisateurModal } from './suppression-utilisateur-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -283,15 +284,16 @@ export function UtilisateursPage() {
             <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <select
+                    <ElisaSelect
                         value={filtres.actifFiltre || 'actif'}
-                        onChange={(e) => setFiltres((prev) => ({ ...prev, actifFiltre: e.target.value as 'tous' | 'actif' | 'inactif', page: 1 }))}
-                        className="rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 px-3 py-2 text-sm dark:text-gray-200 focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
-                    >
-                        <option value="tous">{t('tousStatuts')}</option>
-                        <option value="actif">{t('actifsUniquement')}</option>
-                        <option value="inactif">{t('inactifsUniquement')}</option>
-                    </select>
+                        onValueChange={(value) => setFiltres((prev) => ({ ...prev, actifFiltre: value as 'tous' | 'actif' | 'inactif', page: 1 }))}
+                        options={[
+                            { value: 'tous', label: t('tousStatuts') },
+                            { value: 'actif', label: t('actifsUniquement') },
+                            { value: 'inactif', label: t('inactifsUniquement') },
+                        ]}
+                        className="min-w-[140px]"
+                    />
                 </div>
             </div>
 
@@ -436,7 +438,7 @@ export function UtilisateursPage() {
                                     : 'Ex: Retour de mission, Nouveau contrat, Réintégration...'
                             }
                             rows={4}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
                             required
                             minLength={10}
                             maxLength={500}

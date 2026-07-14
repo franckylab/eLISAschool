@@ -1,29 +1,18 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { User, Shield, Mail, Phone, Calendar, MapPin, Briefcase, ArrowUpRight, Link2, Unlink, Plus, Globe, FileText, Star, Bookmark, MessageSquareText, BadgeCheck, Clock, Eye, QrCode, Key, Building2 } from 'lucide-react';
 import type { Utilisateur } from '../types/utilisateur.types';
 import { apiClient } from '@/lib/api-client';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ImagePreview } from '@/components/ui/ImagePreview';
+import { CardSection, InfoField } from '@/components/ui';
 import { usePersonnelDisponibles, useLinkPersonnelUtilisateur, useUnlinkPersonnelUtilisateur } from '@/features/personnel/hooks/use-personnel';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
 import { InlineEditField, InlineEditActions } from '@/features/personnel/components/InlineEditField';
 import { useQRCode } from '../hooks/use-utilisateurs';
-
-function InfoField({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
-    return (
-        <div className="flex items-start gap-3">
-            {icon && <div className="mt-0.5 text-gray-400 dark:text-gray-500 shrink-0">{icon}</div>}
-            <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{label}</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-0.5 truncate">{value ?? '—'}</p>
-            </div>
-        </div>
-    );
-}
 
 const STATUS_LABELS: Record<string, string> = {
     ACTIF: 'Actif',
@@ -31,10 +20,6 @@ const STATUS_LABELS: Record<string, string> = {
     SUSPENDU: 'Suspendu',
     EN_ATTENTE_VALIDATION: 'En attente',
 };
-
-const CARD_CLASS = 'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm';
-const CARD_TITLE_CLASS = 'text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2';
-const GRID_CLASS = 'grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4';
 
 export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
     const { t, i18n } = useTranslation('utilisateurs');
@@ -89,16 +74,12 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Carte 1 — Identité */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={CARD_CLASS}
+            <CardSection
+                icon={<User className="h-5 w-5" />}
+                title={t('identite')}
+                delay={0}
             >
-                <h3 className={CARD_TITLE_CLASS}>
-                    <User className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                    {t('identite')}
-                </h3>
-                <div className={GRID_CLASS}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                     <InfoField label={t('nom')} value={p?.nom} icon={<Bookmark className="h-3.5 w-3.5" />} />
                     <InfoField label={t('prenom')} value={p?.prenom} icon={<Bookmark className="h-3.5 w-3.5" />} />
                     <InfoField
@@ -114,21 +95,15 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                     <InfoField label={t('lieuNaissance')} value={p?.lieuNaissance} icon={<MapPin className="h-3.5 w-3.5" />} />
                     <InfoField label={t('nationalite')} value={p?.nationalite} icon={<Globe className="h-3.5 w-3.5" />} />
                 </div>
-
-            </motion.div>
+            </CardSection>
 
             {/* Carte 2 — Contact */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className={CARD_CLASS}
+            <CardSection
+                icon={<Mail className="h-5 w-5" />}
+                title={t('contact')}
+                delay={0.05}
             >
-                <h3 className={CARD_TITLE_CLASS}>
-                    <Mail className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                    {t('contact')}
-                </h3>
-                <div className={GRID_CLASS}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                     <InfoField label={t('email')} value={utilisateur.email} icon={<Mail className="h-3.5 w-3.5" />} />
                     <InfoField label="Téléphone" value={utilisateur.telephone || p?.telephone || '—'} icon={<Phone className="h-3.5 w-3.5" />} />
                     <InfoField label={t('telephoneSecondaire')} value={p?.telephoneSecondaire} icon={<Phone className="h-3.5 w-3.5" />} />
@@ -140,27 +115,22 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                         <InfoField label={t('quartier')} value={p?.quartier} icon={<MapPin className="h-3.5 w-3.5" />} />
                     </div>
                 </div>
-            </motion.div>
+            </CardSection>
 
             {/* Carte 3 — Authentification */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className={CARD_CLASS}
+            <CardSection
+                icon={<Key className="h-5 w-5" />}
+                title={t('authentification')}
+                delay={0.1}
             >
-                <h3 className={CARD_TITLE_CLASS}>
-                    <Key className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                    {t('authentification')}
-                </h3>
                 <div className="space-y-4">
-                    <div className={GRID_CLASS}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <InfoField label={t('matricule')} value={utilisateur.matricule} icon={<Key className="h-3.5 w-3.5" />} />
                         <InfoField label={t('pseudonyme')} value={utilisateur.pseudonyme || '—'} icon={<User className="h-3.5 w-3.5" />} />
                     </div>
-                    <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-3 pt-2 border-t border-border">
                         <QrCode className="h-4 w-4 text-gray-400" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('qrCode')}</span>
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('qrCode')}</span>
                         <div className="flex items-center gap-2 ml-auto">
                             {utilisateur.qrCodeId ? (
                                 <>
@@ -192,20 +162,15 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </CardSection>
 
             {/* Carte 4 — Système */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className={CARD_CLASS}
+            <CardSection
+                icon={<Shield className="h-5 w-5" />}
+                title={t('informationsSysteme')}
+                delay={0.15}
             >
-                <h3 className={CARD_TITLE_CLASS}>
-                    <Shield className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                    {t('informationsSysteme')}
-                </h3>
-                <div className={GRID_CLASS}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                     <InfoField label={t('role')} value={utilisateur.role} icon={<Shield className="h-3.5 w-3.5" />} />
                     <InfoField label={t('statutCompte')} value={STATUS_LABELS[utilisateur.statut ?? ''] ?? utilisateur.statut} icon={<BadgeCheck className="h-3.5 w-3.5" />} />
                     <InfoField
@@ -229,7 +194,7 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                         icon={<Calendar className="h-3.5 w-3.5" />}
                     />
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-border">
                     <InlineEditField
                         label={t('maxEtablissements')}
                         value={utilisateur.maxEtablissementsPersonnel === 0
@@ -251,7 +216,7 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                                 max={100}
                                 value={maxEtabValue}
                                 onChange={(e) => setMaxEtabValue(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-gray-200 focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-gray-100 focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
                                 autoFocus
                             />
                             <p className="text-xs text-gray-500 dark:text-gray-400">{t('maxEtablissementsDesc')}</p>
@@ -263,25 +228,20 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                         </div>
                     </InlineEditField>
                 </div>
-            </motion.div>
+            </CardSection>
 
             {/* Carte 5 — Pièces & Notes */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className={CARD_CLASS}
+            <CardSection
+                icon={<FileText className="h-5 w-5" />}
+                title={t('piecesNotes')}
+                delay={0.2}
             >
-                <h3 className={CARD_TITLE_CLASS}>
-                    <FileText className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                    {t('piecesNotes')}
-                </h3>
-                <div className={GRID_CLASS}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                     <InfoField label={t('typePiece')} value={p?.typePieceIdentite} icon={<FileText className="h-3.5 w-3.5" />} />
                     <InfoField label={t('numeroPiece')} value={p?.numeroPieceIdentite} icon={<FileText className="h-3.5 w-3.5" />} />
                 </div>
                 {(p?.pieceRectoUrl || p?.pieceVersoUrl) && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="mt-3 pt-3 border-t border-border space-y-2">
                         {p?.pieceRectoUrl && (
                             <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Recto</p>
@@ -313,26 +273,19 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                     </div>
                 )}
                 {p?.notes && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div className="mt-4 pt-4 border-t border-border">
                         <InfoField label={t('notes')} value={p.notes} icon={<MessageSquareText className="h-3.5 w-3.5" />} />
                     </div>
                 )}
-            </motion.div>
+            </CardSection>
 
             {/* Carte 6 — Dossier Personnel (pleine largeur) */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className={`${CARD_CLASS} lg:col-span-2`}
+            <CardSection
+                icon={<Briefcase className="h-5 w-5" />}
+                title={t('dossierPersonnel')}
+                delay={0.25}
+                className="lg:col-span-2"
             >
-                <div className="flex items-start justify-between mb-4">
-                    <h3 className={CARD_TITLE_CLASS + ' mb-0'}>
-                        <Briefcase className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                        {t('dossierPersonnel')}
-                    </h3>
-                </div>
-
                 {mp ? (
                     <div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -379,18 +332,16 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                     <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('aucunDossierLie')}</p>
                         <div className="flex flex-wrap items-center gap-3">
-                            <select
+                            <ElisaSelect
                                 value={selectedMembreId}
-                                onChange={(e) => setSelectedMembreId(e.target.value)}
-                                className="rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)] dark:border-gray-600 dark:text-gray-200 min-w-[250px]"
-                            >
-                                <option value="">{t('selectionnerPersonnel')}</option>
-                                {personnelDisponibles?.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.matricule} — {p.specialitePrincipale || p.typePersonnel?.nom || '—'}
-                                    </option>
-                                ))}
-                            </select>
+                                onValueChange={setSelectedMembreId}
+                                placeholder={t('selectionnerPersonnel')}
+                                options={personnelDisponibles?.map((p) => ({
+                                    value: p.id,
+                                    label: `${p.matricule} — ${p.specialitePrincipale || p.typePersonnel?.nom || '—'}`,
+                                })) ?? []}
+                                className="min-w-[250px]"
+                            />
                             <ElisaButton
                                 variant="primary"
                                 size="sm"
@@ -419,7 +370,7 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                 )}
 
                 {confirm.ConfirmationModal}
-            </motion.div>
+            </CardSection>
 
             <ImagePreview
                 open={!!imagePreview}

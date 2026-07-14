@@ -141,7 +141,7 @@ export function ConfirmationModal({
                 <div className="flex-1">
                     <p className="text-[var(--color-texte)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>{message}</p>
                     {details && (
-                        <p className="mt-3 text-[var(--color-texte-secondaire)] bg-gray-50 rounded-lg" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)', padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>{details}</p>
+                        <p className="mt-3 text-[var(--color-texte-secondaire)] bg-gray-50 dark:bg-gray-800/60 rounded-lg" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)', padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>{details}</p>
                     )}
                 </div>
             </div>

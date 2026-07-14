@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import {
     User, Shield, Activity, Settings,
     Edit, CheckCircle, XCircle, AlertCircle, Lock, Briefcase, Eye, QrCode, Download, Loader2,
@@ -27,6 +26,8 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TabsBar, TabsContent } from '@/components/ui';
+import type { Tab } from '@/components/ui';
 import { usePermissions } from '@/hooks';
 
 type Onglet = 'informations' | 'roles-permissions' | 'activite' | 'securite';
@@ -36,7 +37,7 @@ export function UtilisateurDetailPage() {
     const navigate = useNavigate();
     const search = useSearch({ from: '/_auth/utilisateurs/$id' });
     const { hasPermission } = usePermissions();
-    const { t, i18n } = useTranslation('utilisateurs');
+    const { t } = useTranslation('utilisateurs');
 
     const ongletActif = (search as any)?.tab || 'informations';
     const setOngletActif = (tab: Onglet) => navigate({ to: '/utilisateurs/$id', params: { id }, search: { tab } as any });
@@ -54,11 +55,11 @@ export function UtilisateurDetailPage() {
     const revokeSessions = useRevokeSessions();
     const confirm = useConfirmation();
 
-    const onglets: { id: Onglet; label: string; icone: React.ReactNode }[] = [
-        { id: 'informations', label: t('tabInformations'), icone: <User className="h-4 w-4" /> },
-        { id: 'roles-permissions', label: t('tabRolesPermissions'), icone: <Shield className="h-4 w-4" /> },
-        { id: 'activite', label: t('tabActivite'), icone: <Activity className="h-4 w-4" /> },
-        { id: 'securite', label: t('tabSecurite'), icone: <Settings className="h-4 w-4" /> },
+    const onglets: Tab[] = [
+        { id: 'informations', label: t('tabInformations'), description: t('tabInformationsDesc'), icon: User },
+        { id: 'roles-permissions', label: t('tabRolesPermissions'), description: t('tabRolesPermissionsDesc'), icon: Shield },
+        { id: 'activite', label: t('tabActivite'), description: t('tabActiviteDesc'), icon: Activity },
+        { id: 'securite', label: t('tabSecurite'), description: t('tabSecuriteDesc'), icon: Settings },
     ];
 
     const handleForcePasswordReset = useCallback(() => {
@@ -201,36 +202,15 @@ export function UtilisateurDetailPage() {
                 </div>
             </PageHeader>
 
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="border-b border-gray-200 dark:border-gray-700"
-            >
-                <nav className="-mb-px flex gap-6">
-                    {onglets.map((onglet) => (
-                        <button
-                            key={onglet.id}
-                            onClick={() => setOngletActif(onglet.id)}
-                            className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
-                                ongletActif === onglet.id
-                                    ? 'border-[var(--color-dominant-500)] text-[var(--color-dominant-600)]'
-                                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
-                            }`}
-                        >
-                            {onglet.icone}
-                            {onglet.label}
-                        </button>
-                    ))}
-                </nav>
-            </motion.div>
+            <TabsBar
+                tabs={onglets}
+                activeTab={ongletActif}
+                onTabChange={(tabId) => setOngletActif(tabId as Onglet)}
+                variant="underline"
+                showHeader
+            />
 
-            <motion.div
-                key={ongletActif}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-            >
+            <TabsContent activeTab={ongletActif}>
                 {ongletActif === 'informations' && <TabInformations utilisateur={utilisateur} />}
                 {ongletActif === 'roles-permissions' && <TabRolesPermissions utilisateur={utilisateur} />}
                 {ongletActif === 'activite' && <TabActivite utilisateur={utilisateur} />}
@@ -250,7 +230,7 @@ export function UtilisateurDetailPage() {
                         }}
                     />
                 )}
-            </motion.div>
+            </TabsContent>
 
             {confirm.ConfirmationModal}
 

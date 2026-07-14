@@ -78,4 +78,40 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = 'CardFooter';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+interface CardSectionProps {
+    icon?: React.ReactNode;
+    title: React.ReactNode;
+    description?: string;
+    children: React.ReactNode;
+    className?: string;
+    delay?: number;
+    noAnimation?: boolean;
+}
+
+const CardSection = React.forwardRef<HTMLDivElement, CardSectionProps>(
+    ({ icon, title, description, children, className, delay, noAnimation }, ref) => {
+        return (
+            <Card
+                ref={ref}
+                noAnimation={noAnimation}
+                className={className}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={delay !== undefined ? { delay, duration: 0.3 } : { duration: 0.3 }}
+            >
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        {icon && <span className="shrink-0 text-dominant-600">{icon}</span>}
+                        <CardTitle>{title}</CardTitle>
+                    </div>
+                    {description && <CardDescription>{description}</CardDescription>}
+                </CardHeader>
+                <div className="border-b border-border mx-4 sm:mx-5" />
+                <CardContent>{children}</CardContent>
+            </Card>
+        );
+    },
+);
+CardSection.displayName = 'CardSection';
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardSection };

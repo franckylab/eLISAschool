@@ -3,7 +3,7 @@ import { User, Mail, Phone, Calendar, MapPin, Globe, FileText, Star, Bookmark } 
 import { useModifierProfil, useModifierSecurite, useUploadPhoto, useDeletePhoto, useUploadPieceRecto, useUploadPieceVerso } from '../hooks/use-utilisateurs';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ElisaInput } from '@/components/ui/ElisaInput';
+import { ElisaInput, ElisaSelect } from '@/components/ui';
 import { FileUpload } from '@/components/ui/FileUpload';
 import type { Utilisateur, UpdateProfilDto } from '../types/utilisateur.types';
 
@@ -81,8 +81,6 @@ export function InfoProfilModal({ open, onOpenChange, utilisateur }: InfoProfilM
 
     const p = utilisateur.profil;
 
-    const selectClasses = 'w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:text-gray-200';
-
     return (
         <CustomModal
             open={open}
@@ -113,15 +111,17 @@ export function InfoProfilModal({ open, onOpenChange, utilisateur }: InfoProfilM
                             icon={<Bookmark className="h-4 w-4" />} />
                         <ElisaInput label="Nom" value={formData.nom || ''} onChange={(e) => set('nom', e.target.value)} error={erreurs.nom}
                             icon={<Bookmark className="h-4 w-4" />} />
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Genre</label>
-                            <select value={formData.genre || ''} onChange={(e) => set('genre', e.target.value || undefined)} className={selectClasses}>
-                                <option value="">Non spécifié</option>
-                                <option value="M">Masculin</option>
-                                <option value="F">Féminin</option>
-                                <option value="A">Autre</option>
-                            </select>
-                        </div>
+                        <ElisaSelect
+                            label="Genre"
+                            value={formData.genre || ''}
+                            onValueChange={(value) => set('genre', value || undefined)}
+                            placeholder="Non spécifié"
+                            options={[
+                                { value: 'M', label: 'Masculin' },
+                                { value: 'F', label: 'Féminin' },
+                                { value: 'A', label: 'Autre' },
+                            ]}
+                        />
                         <ElisaInput label="Date de naissance" type="date" value={formData.dateNaissance ? formData.dateNaissance.split('T')[0] : ''}
                             onChange={(e) => set('dateNaissance', e.target.value || null)} icon={<Calendar className="h-4 w-4" />} />
                         <ElisaInput label="Lieu de naissance" value={formData.lieuNaissance || ''} onChange={(e) => set('lieuNaissance', e.target.value || null)}
@@ -191,16 +191,18 @@ export function InfoProfilModal({ open, onOpenChange, utilisateur }: InfoProfilM
                         Documents
                     </h3>
                     <div className={GRID}>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de pièce</label>
-                            <select value={formData.typePieceIdentite || ''} onChange={(e) => set('typePieceIdentite', e.target.value || null)} className={selectClasses}>
-                                <option value="">Non spécifié</option>
-                                <option value="CNI">CNI</option>
-                                <option value="PASSEPORT">Passeport</option>
-                                <option value="PERMIS">Permis de conduire</option>
-                                <option value="AUTRE">Autre</option>
-                            </select>
-                        </div>
+                        <ElisaSelect
+                            label="Type de pièce"
+                            value={formData.typePieceIdentite || ''}
+                            onValueChange={(value) => set('typePieceIdentite', value || null)}
+                            placeholder="Non spécifié"
+                            options={[
+                                { value: 'CNI', label: 'CNI' },
+                                { value: 'PASSEPORT', label: 'Passeport' },
+                                { value: 'PERMIS', label: 'Permis de conduire' },
+                                { value: 'AUTRE', label: 'Autre' },
+                            ]}
+                        />
                         <ElisaInput label="Numéro de pièce" value={formData.numeroPieceIdentite || ''}
                             onChange={(e) => set('numeroPieceIdentite', e.target.value || null)}
                             placeholder="Ex: 123-456-789"
@@ -236,7 +238,7 @@ export function InfoProfilModal({ open, onOpenChange, utilisateur }: InfoProfilM
                             value={formData.notes || ''}
                             onChange={(e) => set('notes', e.target.value || null)}
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:text-gray-200 resize-y"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:text-gray-100 resize-y"
                             placeholder="Notes internes..."
                         />
                     </div>
@@ -249,11 +251,15 @@ export function InfoProfilModal({ open, onOpenChange, utilisateur }: InfoProfilM
                         Langue
                     </h3>
                     <div className="max-w-xs">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Langue par défaut</label>
-                        <select value={formData.langue || 'fr'} onChange={(e) => set('langue', e.target.value)} className={selectClasses}>
-                            <option value="fr">Français</option>
-                            <option value="en">English</option>
-                        </select>
+                        <ElisaSelect
+                            label="Langue par défaut"
+                            value={formData.langue || 'fr'}
+                            onValueChange={(value) => set('langue', value)}
+                            options={[
+                                { value: 'fr', label: 'Français' },
+                                { value: 'en', label: 'English' },
+                            ]}
+                        />
                     </div>
                 </div>
             </form>

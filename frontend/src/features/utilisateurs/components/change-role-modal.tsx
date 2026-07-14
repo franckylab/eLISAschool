@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, AlertCircle, Check, ArrowLeft, ArrowRight, Loader2, Users } from 'lucide-react';
+import { Shield, AlertCircle, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useTousRoles } from '../hooks/use-roles-permissions';
@@ -111,7 +111,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                             w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
                                             ${isSelected
                                                 ? 'border-blue-500 dark:border-blue-400'
-                                                : 'border-gray-300 dark:border-gray-600'
+                                                : 'border-gray-300 dark:border-gray-500'
                                             }
                                         `}>
                                             {isSelected && (
@@ -166,7 +166,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                                     {t('changerRole.confirmation.roleActuel')}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5">
@@ -177,7 +177,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                 </div>
                             </div>
                             <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
-                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                                     {t('changerRole.confirmation.nouveauRole')}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5">

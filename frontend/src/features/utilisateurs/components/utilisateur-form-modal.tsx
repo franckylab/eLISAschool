@@ -14,7 +14,7 @@ import { useCreerUtilisateur, useModifierUtilisateur } from '../hooks/use-utilis
 import { useTousRoles } from '../hooks/use-roles-permissions';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ElisaInput } from '@/components/ui/ElisaInput';
+import { ElisaInput, ElisaSelect } from '@/components/ui';
 import type { Utilisateur, CreerUtilisateurDto } from '../types/utilisateur.types';
 
 interface UtilisateurFormModalProps {
@@ -218,26 +218,15 @@ export function UtilisateurFormModal({
                         Sécurité et rôle
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
-                                Rôle <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={formData.role}
-                                onChange={(e) => handleChange('role', e.target.value)}
-                                className={`w-full rounded-lg border ${erreurs.role ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-800 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                            >
-                                <option value="">Sélectionner un rôle</option>
-                                {roles?.map((role) => (
-                                    <option key={role.id} value={role.code}>
-                                        {role.nom}
-                                    </option>
-                                ))}
-                            </select>
-                            {erreurs.role && (
-                                <p className="mt-1 text-sm text-red-600">{erreurs.role}</p>
-                            )}
-                        </div>
+                        <ElisaSelect
+                            label="Rôle"
+                            value={formData.role}
+                            onValueChange={(value) => handleChange('role', value)}
+                            placeholder="Sélectionner un rôle"
+                            options={roles?.map((role) => ({ value: role.code, label: role.nom })) ?? []}
+                            error={erreurs.role}
+                            required
+                        />
 
                         {mode === 'creation' && (
                             <ElisaInput
@@ -267,20 +256,16 @@ export function UtilisateurFormModal({
                             onChange={(e) => handleChange('profil', { ...formData.profil, dateNaissance: e.target.value })}
                             icon={<Calendar className="h-4 w-4" />}
                         />
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
-                                Genre
-                            </label>
-                            <select
-                                value={formData.profil?.genre || 'M'}
-                                onChange={(e) => handleChange('profil', { ...formData.profil, genre: e.target.value })}
-                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                            >
-                                <option value="M">Masculin</option>
-                                <option value="F">Féminin</option>
-                                <option value="A">Autre</option>
-                            </select>
-                        </div>
+                        <ElisaSelect
+                            label="Genre"
+                            value={formData.profil?.genre || 'M'}
+                            onValueChange={(value) => handleChange('profil', { ...formData.profil, genre: value })}
+                            options={[
+                                { value: 'M', label: 'Masculin' },
+                                { value: 'F', label: 'Féminin' },
+                                { value: 'A', label: 'Autre' },
+                            ]}
+                        />
                         <div className="md:col-span-2">
                             <ElisaInput
                                 label="Adresse"
