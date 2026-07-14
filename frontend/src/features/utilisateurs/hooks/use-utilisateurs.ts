@@ -16,7 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import type { Utilisateur, CreerUtilisateurDto, ModifierUtilisateurDto, UtilisateurFiltres, Role } from '../types/utilisateur.types';
+import type { Utilisateur, CreerUtilisateurDto, ModifierUtilisateurDto, UpdateProfilDto, UpdateSecurityDto, UtilisateurFiltres, Role } from '../types/utilisateur.types';
 import type { PaginatedResult } from '@shared/types/api.types';
 
 const UTILISATEURS_KEYS = {
@@ -156,6 +156,62 @@ export function useModifierUtilisateur() {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.error?.message || 'Erreur lors de la modification');
+        },
+    });
+}
+
+export function useModifierProfil() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: UpdateProfilDto & { id: string }) => {
+            const response = await apiClient.patch<Utilisateur>(`/api/utilisateurs/${id}/profil`, dto);
+            return response.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(variables.id) });
+            toast.success('Profil mis à jour avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la mise à jour du profil');
+        },
+    });
+}
+
+export function useModifierSecurite() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: UpdateSecurityDto & { id: string }) => {
+            const response = await apiClient.patch<Utilisateur>(`/api/utilisateurs/${id}/security`, dto);
+            return response.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(variables.id) });
+            toast.success('Sécurité mise à jour avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la mise à jour de la sécurité');
+        },
+    });
+}
+
+export function useChangerRole() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, role }: { id: string; role: string }) => {
+            const response = await apiClient.patch<Utilisateur>(`/api/utilisateurs/${id}/role`, { role });
+            return response.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(variables.id) });
+            toast.success('Rôle modifié avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors du changement de rôle');
         },
     });
 }
@@ -532,6 +588,230 @@ export function useVerifierSuppressionUtilisateur() {
 /**
  * Hook pour supprimer un utilisateur (soft delete ou cascade)
  */
+/**
+ * Hook pour forcer la réinitialisation du mot de passe d'un utilisateur
+ * Révoque les sessions actives et journalise l'action côté backend
+ */
+export function useForcePasswordReset() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiClient.post<Utilisateur>(`/api/utilisateurs/${id}/force-password-reset`);
+            return response.data;
+        },
+        onSuccess: (_data, id) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Réinitialisation du mot de passe forcée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la réinitialisation');
+        },
+    });
+}
+
+/**
+ * Hook pour activer/désactiver le 2FA avec mise à jour optimiste
+ */
+export function useToggle2FA() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, actif }: { id: string; actif: boolean }) => {
+            const response = await apiClient.patch<Utilisateur>(`/api/utilisateurs/${id}/security`, {
+                deuxFacteursActif: actif,
+            });
+            return response.data;
+        },
+        onMutate: async ({ id, actif }) => {
+            await queryClient.cancelQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            const previous = queryClient.getQueryData<Utilisateur>(UTILISATEURS_KEYS.detail(id));
+            if (previous) {
+                queryClient.setQueryData<Utilisateur>(UTILISATEURS_KEYS.detail(id), {
+                    ...previous,
+                    deuxFacteursActif: actif,
+                });
+            }
+            return { previous };
+        },
+        onError: (_error, { id }, context) => {
+            if (context?.previous) {
+                queryClient.setQueryData(UTILISATEURS_KEYS.detail(id), context.previous);
+            }
+            toast.error('Erreur lors du changement de l\'authentification à deux facteurs');
+        },
+        onSettled: (_data, _error, { id }) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+        },
+    });
+}
+
+/**
+ * Hook pour suspendre/réactiver un compte utilisateur avec mise à jour optimiste
+ */
+export function useToggleSuspension() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
+            const response = await apiClient.patch<Utilisateur>(`/api/utilisateurs/${id}/statut`, { statut });
+            return response.data;
+        },
+        onMutate: async ({ id, statut }) => {
+            await queryClient.cancelQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            const previous = queryClient.getQueryData<Utilisateur>(UTILISATEURS_KEYS.detail(id));
+            if (previous) {
+                queryClient.setQueryData<Utilisateur>(UTILISATEURS_KEYS.detail(id), {
+                    ...previous,
+                    statut: statut as Utilisateur['statut'],
+                });
+            }
+            return { previous };
+        },
+        onError: (_error, { id }, context) => {
+            if (context?.previous) {
+                queryClient.setQueryData(UTILISATEURS_KEYS.detail(id), context.previous);
+            }
+            toast.error('Erreur lors du changement de statut');
+        },
+        onSettled: (_data, _error, { id }) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.listes() });
+        },
+    });
+}
+
+/**
+ * Hook pour révoquer toutes les sessions actives d'un utilisateur
+ */
+export function useRevokeSessions() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiClient.post<{ sessionsRevokees: number }>(`/api/utilisateurs/${id}/revoke-sessions`);
+            return response.data;
+        },
+        onSuccess: (_data, id) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Sessions révoquées avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la révocation des sessions');
+        },
+    });
+}
+
+// =============================================
+// UPLOAD FILES
+// =============================================
+
+export function useUploadPhoto() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, file }: { id: string; file: File }) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await apiClient.upload<{ photoUrl: string; photoThumbnail: string }>(
+                `/api/utilisateurs/${id}/upload/photo`,
+                formData
+            );
+            return response.data;
+        },
+        onSuccess: (_data, { id }) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Photo uploadée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || "Erreur lors de l'upload de la photo");
+        },
+    });
+}
+
+export function useDeletePhoto() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/utilisateurs/${id}/upload/photo`);
+        },
+        onSuccess: (_data, id) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Photo supprimée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression de la photo');
+        },
+    });
+}
+
+export function useUploadPieceRecto() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, file }: { id: string; file: File }) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await apiClient.upload<{ pieceRectoUrl: string }>(
+                `/api/utilisateurs/${id}/upload/piece-recto`,
+                formData
+            );
+            return response.data;
+        },
+        onSuccess: (_data, { id }) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Pièce recto uploadée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || "Erreur lors de l'upload de la pièce recto");
+        },
+    });
+}
+
+export function useUploadPieceVerso() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, file }: { id: string; file: File }) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await apiClient.upload<{ pieceVersoUrl: string }>(
+                `/api/utilisateurs/${id}/upload/piece-verso`,
+                formData
+            );
+            return response.data;
+        },
+        onSuccess: (_data, { id }) => {
+            queryClient.invalidateQueries({ queryKey: UTILISATEURS_KEYS.detail(id) });
+            toast.success('Pièce verso uploadée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || "Erreur lors de l'upload de la pièce verso");
+        },
+    });
+}
+
+/**
+ * Hook pour récupérer l'URL du QR code d'un utilisateur
+ */
+export function useQRCode(id: string) {
+    return useQuery({
+        queryKey: [...UTILISATEURS_KEYS.detail(id), 'qr-code'],
+        queryFn: async () => {
+            const response = await fetch(`/api/utilisateurs/${id}/qr-code`);
+            if (!response.ok) {
+                if (response.status === 404) return null;
+                throw new Error('Erreur lors de la récupération du QR code');
+            }
+            const blob = await response.blob();
+            return URL.createObjectURL(blob);
+        },
+        enabled: !!id,
+        staleTime: Infinity,
+    });
+}
+
 export function useSupprimerUtilisateur() {
     const queryClient = useQueryClient();
 

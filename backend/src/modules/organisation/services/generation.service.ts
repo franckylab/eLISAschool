@@ -7,7 +7,6 @@ import {
     Poste,
     HierarchiePersonnel,
     TypeUniteOrganisationnelle,
-    TypePoste,
     NiveauResponsabiliteEnum,
     StatutUnite,
     StatutPoste,
@@ -18,6 +17,7 @@ import {
     TemplatePoste,
     TemplateLienHierarchique,
 } from '../entities';
+import { TypePersonnel } from '@modules/personnel/entities';
 import {
     GenererOrganisationDto,
     ResultatGeneration,
@@ -38,13 +38,7 @@ interface GenerationContext {
     niveauOrgMap: Map<string, string>;
     categorieMap: Map<string, string>;
     niveauRespMap: Map<string, string>;
-}
-
-function fallbackTypePoste(valeur?: string): TypePoste {
-    if (valeur && Object.values(TypePoste).includes(valeur as TypePoste)) {
-        return valeur as TypePoste;
-    }
-    return TypePoste.AUTRE;
+    typePersonnelMap: Map<string, string>; // code → id
 }
 
 function fallbackNiveauResponsabilite(valeur?: string): NiveauResponsabiliteEnum {
@@ -150,6 +144,7 @@ export class GenerationService {
             niveauOrgMap: new Map(),
             categorieMap: new Map(),
             niveauRespMap: new Map(),
+            typePersonnelMap: new Map(),
         };
 
         const niveaux = await niveauOrganisationService.findAll(etablissementId);
@@ -165,6 +160,11 @@ export class GenerationService {
         const niveauxResp = await niveauResponsabiliteService.findAll(etablissementId);
         for (const nr of niveauxResp) {
             context.niveauRespMap.set(nr.code, nr.code);
+        }
+
+        const typesPersonnel = await queryRunner.manager.find(TypePersonnel);
+        for (const tp of typesPersonnel) {
+            context.typePersonnelMap.set(tp.code, tp.id);
         }
 
         return context;
@@ -279,10 +279,12 @@ export class GenerationService {
                 ? `${intituleBrut} ${i + 1}`
                 : intituleBrut;
 
+            const typePersonnelId = ctx.typePersonnelMap.get(templatePoste.categoriePoste || '');
+
             const poste = ctx.queryRunner.manager.create(Poste, {
                 intitulé: intitule,
                 code: posteCode,
-                type: fallbackTypePoste(templatePoste.categoriePoste),
+                typePersonnelId,
                 categoriePosteCode: templatePoste.categoriePoste,
                 niveauResponsabilite: fallbackNiveauResponsabilite(templatePoste.niveauResponsabilite),
                 niveauResponsabiliteCode: templatePoste.niveauResponsabilite,

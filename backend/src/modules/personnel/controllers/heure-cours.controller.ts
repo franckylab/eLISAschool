@@ -8,13 +8,33 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { HeureCoursService } from '../services';
-import { createHeureCoursSchema, updateHeureCoursSchema, queryHeureCoursSchema } from '../dto';
+import { createHeureCoursSchema, updateHeureCoursSchema, queryHeureCoursSchema, genererHeuresCoursFromEdtSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new HeureCoursService();
+
+/**
+ * POST /api/personnel/heures-cours/generer-from-edt
+ * Générer des HeureCours depuis les créneaux EDT
+ * Déclarée AVANT POST / pour éviter les conflits Express Router
+ */
+router.post(
+    '/generer-from-edt',
+    authMiddleware,
+    requirePermission('personnel:manage'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const dto = validateDto(genererHeuresCoursFromEdtSchema, req.body);
+            const result = await service.genererHeuresCoursFromEdt(dto, req.etablissementId!, req.utilisateur?.id, req);
+            res.status(201).json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 /**
  * POST /api/personnel/heures-cours
@@ -54,25 +74,9 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/:id
- * Récupérer un créneau par son ID
- */
-router.get(
-    '/:id',
-    authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const heureCours = await service.findOne(req.params.id, req.etablissementId!);
-            res.json({ success: true, data: heureCours });
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
-/**
  * GET /api/personnel/heures-cours/enseignants/:id/edt
  * Obtenir l'emploi du temps hebdomadaire d'un enseignant
+ * DOIT être déclarée AVANT /:id pour éviter que 'enseignants' soit capté comme :id
  */
 router.get(
     '/enseignants/:id/edt',
@@ -153,6 +157,24 @@ router.get(
                 req.etablissementId!
             );
             res.json({ success: true, data: resume });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
+ * GET /api/personnel/heures-cours/:id
+ * Récupérer un créneau par son ID
+ * Doit être APRÈS les routes /enseignants/ pour éviter les conflits
+ */
+router.get(
+    '/:id',
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const heureCours = await service.findOne(req.params.id, req.etablissementId!);
+            res.json({ success: true, data: heureCours });
         } catch (error) {
             next(error);
         }

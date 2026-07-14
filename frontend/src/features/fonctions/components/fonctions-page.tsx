@@ -5,7 +5,7 @@ import { Plus, Eye, Edit, Trash2, Briefcase } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { usePermissions } from '@/hooks';
+import { usePermissions, useDocumentTitle } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
 import type { Fonction } from '../types/fonction.types';
 import {
@@ -23,6 +23,7 @@ type ViewMode = 'list' | 'tree';
 
 export function FonctionsPage() {
     const navigate = useNavigate();
+    useDocumentTitle('eLISAschool | Fonctions');
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [search, setSearch] = useState('');
@@ -106,7 +107,7 @@ export function FonctionsPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir détails',
-                    onClick: () => navigate({ to: '/fonctions/$id', params: { id: f.id } }),
+                    onClick: () => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } }),
                     variant: 'info' as const,
                 },
                 {
@@ -208,7 +209,7 @@ export function FonctionsPage() {
                         isLoading={arbreLoading}
                         onEdit={(f) => { setFonctionToEdit(f); setShowFormModal(true); }}
                         onDelete={(f) => setFonctionToDelete(f)}
-                        onView={(f) => navigate({ to: '/fonctions/$id', params: { id: f.id } })}
+                        onView={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
                     />
                 </motion.div>
             ) : (

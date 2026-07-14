@@ -18,30 +18,22 @@ interface EnseignantFormModalProps {
 }
 
 const formNormalizer = {
-    sexe: (v?: string) => v === 'MASCULIN' ? 'M' : v === 'FEMININ' ? 'F' : v || 'M',
     statut: (v?: string) => {
         if (!v) return 'actif';
         const map: Record<string, string> = { ACTIF: 'actif', INACTIF: 'inactif', CONGE: 'en_conge', DEMISSION: 'demission' };
         return map[v] || v;
     },
-    specialite: (e?: Enseignant) => e?.specialite || e?.specialites?.[0] || e?.specialitePrincipale || '',
-    qualification: (e?: Enseignant) => e?.qualification || e?.educationNiveau || e?.diplomes || '',
-    dateEntree: (e?: Enseignant) => e?.dateEntree?.split('T')[0] || (e?.dateEmbauche ? new Date(e.dateEmbauche).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+    specialite: (e?: Enseignant) => e?.specialites?.[0] || e?.specialitePrincipale || '',
+    diplomes: (e?: Enseignant) => e?.diplomes || '',
+    dateEmbauche: (e?: Enseignant) => e?.dateEmbauche?.split('T')[0] || new Date().toISOString().split('T')[0],
 };
 
-function buildFormData(e: Enseignant | undefined): Partial<CreerPersonnelDto> {
+function buildFormData(e: Enseignant | undefined): Partial<CreerPersonnelDto> & Record<string, any> {
     return {
-        nom: e?.utilisateur?.profil?.nom || e?.nom || '',
-        prenom: e?.utilisateur?.profil?.prenom || e?.prenom || '',
-        dateNaissance: e?.utilisateur?.profil?.dateNaissance?.split('T')[0] || e?.dateNaissance || '',
-        sexe: formNormalizer.sexe(e?.utilisateur?.profil?.genre) || e?.sexe || '',
-        email: e?.utilisateur?.email || e?.email || '',
-        telephone: e?.utilisateur?.profil?.telephone || e?.telephone || '',
-        adresse: e?.utilisateur?.profil?.adresse || e?.adresse || '',
-        dateEntree: formNormalizer.dateEntree(e),
+        dateEmbauche: formNormalizer.dateEmbauche(e),
         statut: formNormalizer.statut(e?.statut),
-        specialite: formNormalizer.specialite(e),
-        qualification: formNormalizer.qualification(e),
+        specialitePrincipale: formNormalizer.specialite(e),
+        diplomes: formNormalizer.diplomes(e),
     };
 }
 
@@ -54,7 +46,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
     const { data: apiData, isLoading: isFetching } = useEnseignant(editId);
     const source = mode === 'edition' && apiData ? apiData : enseignant;
 
-    const [formData, setFormData] = useState<Partial<CreerPersonnelDto>>(buildFormData(source));
+    const [formData, setFormData] = useState<Record<string, any>>(buildFormData(source));
 
     useEffect(() => {
         setFormData(buildFormData(source));
@@ -64,13 +56,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
 
     const valider = (): boolean => {
         const nouvellesErreurs: Record<string, string> = {};
-        if (!formData.nom?.trim()) nouvellesErreurs.nom = 'Le nom est requis';
-        if (!formData.prenom?.trim()) nouvellesErreurs.prenom = 'Le prénom est requis';
-        if (!formData.dateNaissance) nouvellesErreurs.dateNaissance = 'La date de naissance est requise';
-        if (!formData.dateEntree) nouvellesErreurs.dateEntree = "La date d'entrée est requise";
-        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            nouvellesErreurs.email = "Format d'email invalide";
-        }
+        if (!formData.dateEmbauche) nouvellesErreurs.dateEmbauche = "La date d'entrée est requise";
         setErreurs(nouvellesErreurs);
         return Object.keys(nouvellesErreurs).length === 0;
     };
@@ -122,38 +108,16 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Nom" value={formData.nom || ''} onChange={(e) => handleChange('nom', e.target.value)} error={erreurs.nom} placeholder="Nom de famille" required />
-                        <ElisaInput label="Prénom" value={formData.prenom || ''} onChange={(e) => handleChange('prenom', e.target.value)} error={erreurs.prenom} placeholder="Prénom" required />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Date de naissance" type="date" value={formData.dateNaissance || ''} onChange={(e) => handleChange('dateNaissance', e.target.value)} error={erreurs.dateNaissance} required />
-                        <ElisaSelect label="Sexe" value={formData.sexe || 'M'} onValueChange={(value) => handleChange('sexe', value)} options={[
-                            { value: 'M', label: 'Masculin' }, { value: 'F', label: 'Féminin' },
-                        ]} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Email" type="email" value={formData.email || ''} onChange={(e) => handleChange('email', e.target.value)} error={erreurs.email} placeholder="email@exemple.com" />
-                        <ElisaInput label="Téléphone" value={formData.telephone || ''} onChange={(e) => handleChange('telephone', e.target.value)} placeholder="+237 6XX XXX XXX" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Spécialité" value={formData.specialite || ''} onChange={(e) => handleChange('specialite', e.target.value)} placeholder="Ex: Mathématiques, Français..." />
-                        <ElisaInput label="Qualification" value={formData.qualification || ''} onChange={(e) => handleChange('qualification', e.target.value)} placeholder="Ex: Master, Licence..." />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Date d'entrée" type="date" value={formData.dateEntree || ''} onChange={(e) => handleChange('dateEntree', e.target.value)} error={erreurs.dateEntree} required />
                         <ElisaSelect label="Statut" value={formData.statut || 'actif'} onValueChange={(value) => handleChange('statut', value)} options={[
                             { value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' },
                             { value: 'en_conge', label: 'En congé' }, { value: 'demission', label: 'Démission' },
                         ]} />
+                        <ElisaInput label="Date d'entrée" type="date" value={formData.dateEmbauche || ''} onChange={(e) => handleChange('dateEmbauche', e.target.value)} error={erreurs.dateEmbauche} required />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">Adresse</label>
-                        <textarea className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent" value={formData.adresse || ''} onChange={(e) => handleChange('adresse', e.target.value)} placeholder="Adresse complète..." rows={2} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <ElisaInput label="Spécialité" value={formData.specialitePrincipale || ''} onChange={(e) => handleChange('specialitePrincipale', e.target.value)} placeholder="Ex: Mathématiques, Français..." />
+                        <ElisaInput label="Qualification" value={formData.diplomes || ''} onChange={(e) => handleChange('diplomes', e.target.value)} placeholder="Ex: Master, Licence..." />
                     </div>
                 </form>
             )}

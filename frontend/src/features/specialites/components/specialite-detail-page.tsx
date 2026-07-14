@@ -22,7 +22,7 @@ export function SpecialiteDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
             </div>
         );
     }
@@ -60,27 +60,27 @@ export function SpecialiteDetailPage() {
                             <BookOpen className="h-8 w-8 text-teal-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{specialite.nom}</h1>
-                            <p className="text-gray-500 font-mono text-sm">{specialite.code}</p>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{specialite.nom}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{specialite.code}</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations</h2>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 font-mono">{specialite.code}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{specialite.code}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Ordre</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{specialite.ordre}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Ordre</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{specialite.ordre}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Filière</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Filière</dt>
                                     <dd>
                                         {specialite.filiere ? (
                                             <button
@@ -90,12 +90,12 @@ export function SpecialiteDetailPage() {
                                                 {specialite.filiere.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Statut</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
                                     <dd>
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${specialite.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {specialite.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
@@ -106,8 +106,8 @@ export function SpecialiteDetailPage() {
                             </dl>
                             {specialite.description && (
                                 <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <dt className="text-sm text-gray-500 mb-1">Description</dt>
-                                    <dd className="text-sm text-gray-900">{specialite.description}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</dt>
+                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{specialite.description}</dd>
                                 </div>
                             )}
                         </div>
@@ -124,15 +124,15 @@ export function SpecialiteDetailPage() {
                                     {specialite.actif ? 'Actif' : 'Inactif'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                                 {specialite.actif
                                     ? 'Cette spécialité est actuellement active.'
                                     : 'Cette spécialité est actuellement inactive.'}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Filière</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Filière</h3>
                             <div className="flex items-center gap-2">
                                 <Layers className="h-4 w-4 text-indigo-500" />
                                 {specialite.filiere ? (
@@ -143,7 +143,7 @@ export function SpecialiteDetailPage() {
                                         {specialite.filiere.nom} ({specialite.filiere.code})
                                     </button>
                                 ) : (
-                                    <span className="text-sm text-gray-400">Non rattachée</span>
+                                    <span className="text-sm text-gray-400 dark:text-gray-300">Non rattachée</span>
                                 )}
                             </div>
                         </div>

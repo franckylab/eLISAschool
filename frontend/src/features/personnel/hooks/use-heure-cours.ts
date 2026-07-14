@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
 export interface HeureCours {
@@ -61,5 +61,92 @@ export function useVolumeHoraire(enseignantId: string, dateDebut: string, dateFi
             return (response as any).data;
         },
         enabled: !!enseignantId && !!dateDebut && !!dateFin,
+    });
+}
+
+export function useHeureCoursList(query?: Record<string, any>) {
+    return useQuery<{ items: HeureCours[]; total: number }>({
+        queryKey: ['personnel', 'heures-cours', 'list', query],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (query) {
+                for (const [k, v] of Object.entries(query)) {
+                    if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+                }
+            }
+            const response = await apiClient.get(`/api/personnel/heures-cours?${params}`);
+            return (response as any).data;
+        },
+        enabled: true,
+    });
+}
+
+export function useHeureCoursById(id?: string) {
+    return useQuery<HeureCours>({
+        queryKey: ['personnel', 'heures-cours', id],
+        queryFn: async () => {
+            const response = await apiClient.get(`/api/personnel/heures-cours/${id}`);
+            return (response as any).data;
+        },
+        enabled: !!id,
+    });
+}
+
+export function useCreateHeureCours() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: Partial<HeureCours>) => {
+            const response = await apiClient.post('/api/personnel/heures-cours', payload);
+            return (response as any).data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
+        },
+    });
+}
+
+export function useUpdateHeureCours() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...payload }: { id: string } & Partial<HeureCours>) => {
+            const response = await apiClient.patch(`/api/personnel/heures-cours/${id}`, payload);
+            return (response as any).data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
+        },
+    });
+}
+
+export function useDeleteHeureCours() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiClient.delete(`/api/personnel/heures-cours/${id}`);
+            return (response as any).data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
+        },
+    });
+}
+
+export function useGenererHeuresCoursFromEdt() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {
+            enseignantId: string;
+            classeAnneeId?: string;
+            dateDebut: string;
+            dateFin: string;
+            periodeId?: string;
+        }) => {
+            const response = await apiClient.post('/api/personnel/heures-cours/generer-from-edt', payload);
+            return (response as any).data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours', 'resume', variables.enseignantId] });
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours', 'edt', variables.enseignantId] });
+        },
     });
 }

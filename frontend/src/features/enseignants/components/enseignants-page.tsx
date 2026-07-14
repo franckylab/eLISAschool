@@ -60,10 +60,10 @@ export function EnseignantsPage() {
             header: t('commun.nom'),
             sortable: true,
             render: (p) => {
-                const prenom = p.utilisateur?.profil?.prenom ?? p.prenom ?? '';
-                const nom = p.utilisateur?.profil?.nom ?? p.nom ?? '';
-                const email = p.utilisateur?.email ?? p.email ?? '';
-                const tel = p.utilisateur?.profil?.telephone ?? p.telephone ?? '';
+                const prenom = p.utilisateur?.profil?.prenom ?? '';
+                const nom = p.utilisateur?.profil?.nom ?? '';
+                const email = p.utilisateur?.email ?? '';
+                const tel = p.utilisateur?.profil?.telephone ?? '';
                 return (
                     <button
                         onClick={() => navigate({ to: '/enseignants/$id', params: { id: p.id } })}
@@ -85,7 +85,7 @@ export function EnseignantsPage() {
             header: 'Spécialité',
             sortable: true,
             render: (p) => (
-                <span className="text-sm">{p.specialites?.[0] ?? p.specialite ?? '-'}</span>
+                <span className="text-sm">{p.specialites?.[0] ?? '-'}</span>
             ),
         },
 
@@ -94,7 +94,7 @@ export function EnseignantsPage() {
             header: 'Date entrée',
             sortable: true,
             render: (p) => {
-                const d = p.dateEmbauche ?? p.dateEntree;
+                const d = p.dateEmbauche;
                 return d ? new Date(d).toLocaleDateString('fr-FR') : '-';
             },
         },
@@ -209,7 +209,7 @@ export function EnseignantsPage() {
             <ConfirmationModal
                 isOpen={!!enseignantToDelete}
                 title="Supprimer cet enseignant"
-                message={`Êtes-vous sûr de vouloir supprimer ${enseignantToDelete?.utilisateur?.profil?.prenom || enseignantToDelete?.prenom || ''} ${enseignantToDelete?.utilisateur?.profil?.nom || enseignantToDelete?.nom || ''} ?`}
+                message={`Êtes-vous sûr de vouloir supprimer ${enseignantToDelete?.utilisateur?.profil?.prenom || ''} ${enseignantToDelete?.utilisateur?.profil?.nom || ''} ?`}
                 details="Cette action est irréversible et supprimera toutes les données associées."
                 variant="danger"
                 onConfirm={async () => {

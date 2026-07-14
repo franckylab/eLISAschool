@@ -12,6 +12,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useExamens, useSupprimerExamen, useStatistiquesExamens } from '../hooks/use-examens';
 import type { Examen } from '../types/examens.types';
+import { CardGrid, StatCard } from '@/components/ui';
 
 export function ExamensPage() {
     const { t } = useTranslation('examens');
@@ -159,57 +160,12 @@ export function ExamensPage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total examens</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.totalExamens}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <Award className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Moyenne générale</p>
-                                <p className="text-lg font-bold text-green-600">{stats.moyenneGenerale?.toFixed(2) || '-'}/20</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <TrendingUp className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Taux de réussite</p>
-                                <p className="text-lg font-bold text-purple-600">{stats.tauxReussite?.toFixed(1) || 0}%</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Calendar className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Types</p>
-                                <p className="text-lg font-bold text-orange-600">{stats.parType?.length || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={FileText} label="Total examens" value={stats.totalExamens} tone="accent" />
+                    <StatCard icon={Award} label="Moyenne générale" value={`${stats.moyenneGenerale?.toFixed(2) || '-'}/20`} tone="success" />
+                    <StatCard icon={TrendingUp} label="Taux de réussite" value={`${stats.tauxReussite?.toFixed(1) || 0}%`} tone="purple" />
+                    <StatCard icon={Calendar} label="Types" value={stats.parType?.length || 0} tone="orange" />
+                </CardGrid>
             )}
 
             <DataTable

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Edit, Trash2, Briefcase, Building2, Target, ListChecks, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Briefcase, Building2, Target, ListChecks, ChevronRight, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -10,7 +10,9 @@ import { usePermissions } from '@/hooks';
 import { usePoste, useSupprimerPoste } from '../hooks/use-postes';
 import { PosteFormModal } from './poste-form-modal';
 import { PosteCapaciteIndicator } from './PosteCapaciteIndicator';
-import { TYPES_POSTE_OPTIONS, NIVEAUX_RESPONSABILITE_OPTIONS, STATUT_POSTE_OPTIONS } from '../types/poste.zod';
+import { BreadcrumbLabelProvider } from '@/components/navigation/breadcrumb-context';
+import { NIVEAUX_RESPONSABILITE_OPTIONS, STATUT_POSTE_OPTIONS } from '../types/poste.zod';
+import { getTypeColor, getTypeIcon } from '@/features/personnel/constants/type-personnel-colors';
 
 const statutColors: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
     ACTIF: 'success', VACANT: 'warning', SUPPRIME: 'danger', EN_ATTENTE: 'default',
@@ -18,7 +20,7 @@ const statutColors: Record<string, 'success' | 'warning' | 'danger' | 'default'>
 
 export function PosteDetailPage() {
     const { t } = useTranslation('organisation');
-    const { id } = useParams({ from: '/_auth/postes/$id' });
+    const { id } = useParams({ from: '/_auth/organisation/postes/$id' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const { data: poste, isLoading } = usePoste(id);
@@ -28,7 +30,10 @@ export function PosteDetailPage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const statutLabel = STATUT_POSTE_OPTIONS.find((o) => o.value === poste?.statut)?.label || poste?.statut;
-    const typeLabel = TYPES_POSTE_OPTIONS.find((o) => o.value === poste?.type)?.label || poste?.type;
+    const typeNom = poste?.typePersonnel?.nom || poste?.typePersonnelId || '-';
+    const typeCode = poste?.typePersonnel?.code;
+    const TypeIcon = typeCode ? getTypeIcon(typeCode) : UserRound;
+    const typeColor = typeCode ? getTypeColor(typeCode) : undefined;
     const niveauLabel = NIVEAUX_RESPONSABILITE_OPTIONS.find((o) => o.value === poste?.niveauResponsabilite)?.label || poste?.niveauResponsabilite;
 
     if (isLoading) {
@@ -44,16 +49,17 @@ export function PosteDetailPage() {
             <div className="text-center py-12">
                 <Briefcase className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold mb-2">Poste non trouvé</h2>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/postes' })}>Retour aux postes</ElisaButton>
+                <ElisaButton variant="outline" onClick={() => navigate({ to: '/organisation/postes' })}>Retour aux postes</ElisaButton>
             </div>
         );
     }
 
     return (
+        <BreadcrumbLabelProvider value={poste?.intitulé}>
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => navigate({ to: '/postes' })} className="p-2 rounded-lg hover:bg-muted transition-colors">
+                    <button onClick={() => navigate({ to: '/organisation/postes' })} className="p-2 rounded-lg hover:bg-muted transition-colors">
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <div>
@@ -89,7 +95,10 @@ export function PosteDetailPage() {
                             </div>
                             <div>
                                 <span className="text-muted-foreground">{t('type')}</span>
-                                <p className="font-medium text-foreground">{typeLabel}</p>
+                                <p className="font-medium text-foreground flex items-center gap-2">
+                                    <TypeIcon className="h-4 w-4" style={{ color: typeColor }} />
+                                    {typeNom}
+                                </p>
                             </div>
                             <div>
                                 <span className="text-muted-foreground">{t('niveauResponsabilite')}</span>
@@ -190,9 +199,10 @@ export function PosteDetailPage() {
                 open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}
                 title={t('supprimerPoste')} description={t('confirmerSuppressionPoste')}
                 confirmText={t('supprimer')} variant="danger"
-                onConfirm={async () => { await supprimer.mutateAsync(poste.id); navigate({ to: '/postes' }); }}
+                onConfirm={async () => { await supprimer.mutateAsync(poste.id); navigate({ to: '/organisation/postes' }); }}
                 isLoading={supprimer.isPending}
             />
         </div>
+        </BreadcrumbLabelProvider>
     );
 }

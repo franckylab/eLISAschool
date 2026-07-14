@@ -143,8 +143,8 @@ export class AffectationService {
             await queryRunner.manager.save(poste);
 
             // Créer la nouvelle affectation
-            const affectation = this.repo.create({
-                ...dto,
+            const affectation = new AffectationPoste();
+            Object.assign(affectation, dto, {
                 dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : new Date(),
                 dateFin: dto.dateFin ? new Date(dto.dateFin) : null,
                 statut: StatutAffectation.ACTIF,
@@ -157,7 +157,7 @@ export class AffectationService {
             await queryRunner.commitTransaction();
 
             // Workflow validation si requis pour mutations
-            const requireValidation = await getParamBoolean('personnel.affectation_require_validation', false);
+            const requireValidation = await getParamBoolean('personnel.affectation_require_validation', { defaultValue: false });
             if (requireValidation && createurId && dto.typeMutation !== TypeMutation.NOUVELLE) {
                 await validationWorkflowService.createWorkflow({
                     module: 'personnel',

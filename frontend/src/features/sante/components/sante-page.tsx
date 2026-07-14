@@ -5,11 +5,12 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Heart, Plus, Eye, FileText, Activity, Thermometer } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 import { useVisitesInfirmerie, useStatistiquesSante } from '../hooks/use-sante';
 import type { VisiteInfirmerie } from '../types/sante.types';
 
@@ -120,11 +121,7 @@ export function SantePage() {
 
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
+            <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
                     <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
@@ -137,64 +134,15 @@ export function SantePage() {
                 >
                     {t('enregistrer')}
                 </ElisaButton>
-            </motion.div>
+            </div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <Heart className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total visites</p>
-                                <p className="text-lg font-bold text-red-600">{stats.totalVisites}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Dossiers médicaux</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.totalDossiers}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Thermometer className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Motif fréquent</p>
-                                <p className="text-lg font-bold text-orange-600">
-                                    {stats.motifsFrequents?.[0]?.motif || '-'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <Activity className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Retour classe</p>
-                                <p className="text-lg font-bold text-green-600">
-                                    {stats.parOrientation?.find(o => o.orientation === 'retour_classe')?.nombre || 0}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Heart} label="Total visites" value={stats.totalVisites} tone="danger" />
+                    <StatCard icon={FileText} label="Dossiers médicaux" value={stats.totalDossiers} tone="accent" />
+                    <StatCard icon={Thermometer} label="Motif fréquent" value={stats.motifsFrequents?.[0]?.motif || '-'} tone="orange" />
+                    <StatCard icon={Activity} label="Retour classe" value={stats.parOrientation?.find(o => o.orientation === 'retour_classe')?.nombre || 0} tone="success" />
+                </CardGrid>
             )}
 
             <DataTable

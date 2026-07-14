@@ -12,6 +12,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useAbsences, useJustifierAbsence, useStatistiquesAbsences } from '../hooks/use-absences';
 import type { Absence } from '../types/absences.types';
+import { CardGrid, StatCard } from '@/components/ui';
 
 export function AbsencesPage() {
     const { t } = useTranslation('absences');
@@ -170,59 +171,12 @@ export function AbsencesPage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <XCircle className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total absences</p>
-                                <p className="text-lg font-bold text-red-600">{stats.totalAbsences}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-yellow-100 rounded-lg">
-                                <Clock className="h-5 w-5 text-yellow-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Retards</p>
-                                <p className="text-lg font-bold text-yellow-600">{stats.totalRetards}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Justifiées</p>
-                                <p className="text-lg font-bold text-green-600">
-                                    {stats.parStatut?.find(s => s.statut === 'justifiee')?.nombre || 0}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <AlertCircle className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Taux absentéisme</p>
-                                <p className="text-lg font-bold text-purple-600">{stats.tauxAbsentéisme?.toFixed(1) || 0}%</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={XCircle} label="Total absences" value={stats.totalAbsences} tone="danger" />
+                    <StatCard icon={Clock} label="Retards" value={stats.totalRetards} tone="warning" />
+                    <StatCard icon={CheckCircle} label="Justifiées" value={stats.parStatut?.find(s => s.statut === 'justifiee')?.nombre || 0} tone="success" />
+                    <StatCard icon={AlertCircle} label="Taux absentéisme" value={`${stats.tauxAbsentéisme?.toFixed(1) || 0}%`} tone="purple" />
+                </CardGrid>
             )}
 
             <DataTable

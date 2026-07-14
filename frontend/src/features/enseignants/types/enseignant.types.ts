@@ -1,10 +1,6 @@
 import type { MembrePersonnel } from '@/features/personnel/types/personnel.types';
 
 export interface Enseignant extends MembrePersonnel {
-    typePersonnelId?: string;
-    typePersonnel?: { id: string; code: string; nom: string };
-    specialite?: string;
-    qualification?: string;
 }
 
 export interface EnseignantFiltres {

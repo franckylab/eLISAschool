@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Mail, Plus, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { CardGrid, StatCard } from '@/components/ui';
 import { useCourriers, useMarquerCommeLu, useSupprimerCourrier, useStatistiquesCourriers } from '../hooks/use-courriers';
 import type { Courrier } from '../types/courriers.types';
 
@@ -155,44 +156,12 @@ export function CourriersPage() {
             </motion.div>
 
             {stats && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg"><Mail className="h-5 w-5 text-blue-600" /></div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total courriers</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.totalCourriers}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg"><AlertCircle className="h-5 w-5 text-orange-600" /></div>
-                            <div>
-                                <p className="text-xs text-gray-500">Non lus</p>
-                                <p className="text-lg font-bold text-orange-600">{stats.nonLus}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg"><MailOpen className="h-5 w-5 text-green-600" /></div>
-                            <div>
-                                <p className="text-xs text-gray-500">Traité s</p>
-                                <p className="text-lg font-bold text-green-600">{stats.parStatut?.find(s => s.statut === 'traite')?.nombre || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 rounded-lg"><Clock className="h-5 w-5 text-red-600" /></div>
-                            <div>
-                                <p className="text-xs text-gray-500">Urgents</p>
-                                <p className="text-lg font-bold text-red-600">{stats.parPriorite?.find(p => p.priorite === 'urgente')?.nombre || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Mail} label="Total courriers" value={stats.totalCourriers} tone="accent" />
+                    <StatCard icon={AlertCircle} label="Non lus" value={stats.nonLus} tone="orange" />
+                    <StatCard icon={MailOpen} label="Traités" value={stats.parStatut?.find(s => s.statut === 'traite')?.nombre || 0} tone="success" />
+                    <StatCard icon={Clock} label="Urgents" value={stats.parPriorite?.find(p => p.priorite === 'urgente')?.nombre || 0} tone="danger" />
+                </CardGrid>
             )}
 
 

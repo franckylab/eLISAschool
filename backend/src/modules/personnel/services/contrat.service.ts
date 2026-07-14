@@ -9,7 +9,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { Poste, StatutPoste, TypePoste } from '@modules/organisation/entities';
+import { Poste, StatutPoste } from '@modules/organisation/entities';
 import { Fonction } from '@modules/fonctions/entities';
 import { HierarchiePersonnel, TypeRelationHierarchique, StatutRelation } from '@modules/organisation/entities';
 
@@ -227,8 +227,11 @@ export class ContratService {
 
         // Valider la compatibilité type poste ↔ type membre
         if (dto.posteId) {
-            const poste = await this.posteRepo.findOne({ where: { id: dto.posteId } });
-            if (poste && poste.type === TypePoste.ENSEIGNANT) {
+            const poste = await this.posteRepo.findOne({
+                where: { id: dto.posteId },
+                relations: ['typePersonnel'],
+            });
+            if (poste?.typePersonnel?.code === 'ENSEIGNANT') {
                 const membre = await this.membrePersonnelRepo.findOne({
                     where: { id: dto.membrePersonnelId },
                     relations: ['typePersonnel'],

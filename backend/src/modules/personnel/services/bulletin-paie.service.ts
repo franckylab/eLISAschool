@@ -42,11 +42,8 @@ export class BulletinPaieService {
 
     async addElement(bulletinId: string, dto: CreateElementSalaireDto, etablissementId: string, userId?: string, req?: any): Promise<ElementSalaire> {
         await this.findOne(bulletinId, etablissementId);
-        const element = this.elementRepo.create({
-            ...dto,
-            bulletinPaieId: bulletinId,
-            etablissementId,
-        });
+        const element = new ElementSalaire();
+        Object.assign(element, dto, { bulletinPaieId: bulletinId, etablissementId });
         await this.elementRepo.save(element);
 
         if (userId) {
@@ -105,7 +102,7 @@ export class BulletinPaieService {
 
     async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: any) {
         // Vérifier si validation requise
-        const requireValidation = await getParamBoolean('personnel.paie.require_validation', true);
+            const requireValidation = await getParamBoolean('personnel.paie.require_validation', { defaultValue: true });
         
         // Calculer le salaire net
         const salaireNet = this.calculerSalaireNet(dto);

@@ -12,6 +12,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useOuvrages, usePrets, useSupprimerOuvrage, useStatistiquesBibliotheque } from '../hooks/use-bibliotheque';
 import type { Ouvrage } from '../types/bibliotheque.types';
+import { CardGrid, StatCard } from '@/components/ui';
 
 export function BibliothequePage() {
     const { t } = useTranslation('bibliotheque');
@@ -156,57 +157,12 @@ export function BibliothequePage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <Book className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total ouvrages</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.totalOuvrages}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <BookOpen className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Disponibles</p>
-                                <p className="text-lg font-bold text-green-600">{stats.exemplairesDisponibles}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Clock className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Prêts en cours</p>
-                                <p className="text-lg font-bold text-orange-600">{stats.pretsEnCours}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <AlertCircle className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Retards</p>
-                                <p className="text-lg font-bold text-red-600">{stats.pretsEnRetard}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Book} label="Total ouvrages" value={stats.totalOuvrages} tone="accent" />
+                    <StatCard icon={BookOpen} label="Disponibles" value={stats.exemplairesDisponibles} tone="success" />
+                    <StatCard icon={Clock} label="Prêts en cours" value={stats.pretsEnCours} tone="orange" />
+                    <StatCard icon={AlertCircle} label="Retards" value={stats.pretsEnRetard} tone="danger" />
+                </CardGrid>
             )}
 
 

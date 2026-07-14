@@ -179,7 +179,7 @@ export class ClonageService {
             // Préparer tous les postes pour insertion batch
             const postesData = uniteSource.postes.map((posteSource) => ({
                 intitulé: posteSource.intitulé,
-                type: posteSource.type,
+                typePersonnelId: posteSource.typePersonnelId,
                 code: `${posteSource.code}-COPY`,
                 description: posteSource.description,
                 uniteOrganisationnelleId: uniteSauvegardee.id,
@@ -192,7 +192,7 @@ export class ClonageService {
             }));
 
             // INSERTION BATCH - Une seule requête SQL pour tous les postes
-            await this.posteRepo.insert(postesData);
+            await this.posteRepo.insert(postesData as any);
 
             // Récupérer les postes insérés pour retour
             postesClones.push(

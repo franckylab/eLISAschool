@@ -1,8 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { requireModulePermission } from '@/app/permission-guards';
-import { EnseignantsPage } from '@/features/enseignants/components/enseignants-page';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/enseignants/')({
-    beforeLoad: () => requireModulePermission('personnel'),
-    component: EnseignantsPage,
+    beforeLoad: () => {
+        throw redirect({ to: '/personnel' });
+    },
 });

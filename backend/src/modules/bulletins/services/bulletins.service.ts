@@ -17,7 +17,7 @@ import { StatutPeriode } from '@modules/periodes/entities';
 import { notesService } from '@modules/notes/services';
 import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
 import { matieresService } from '@modules/matieres/services';
-import { AffectationMatiere } from '@modules/matieres/entities';
+import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
@@ -34,12 +34,12 @@ export class BulletinsService {
      */
     private async getBulletinsParams() {
         return {
-            includeRanking: await getParamBoolean('bulletins.include_ranking', true),
-            showAppreciations: await getParamBoolean('bulletins.show_appreciations', true),
-            validationThreshold: await getParamNumber('bulletins.validation_threshold', 10),
-            calculationMethod: await getParam<string>('bulletins.calculation_method', 'ponderee'),
-            displayCoefficients: await getParamBoolean('bulletins.display_coefficients', true),
-            templateId: await getParam<string>('bulletins.template_id', 'default'),
+            includeRanking: await getParamBoolean('bulletins.include_ranking', { defaultValue: true }),
+            showAppreciations: await getParamBoolean('bulletins.show_appreciations', { defaultValue: true }),
+            validationThreshold: await getParamNumber('bulletins.validation_threshold', { defaultValue: 10 }),
+            calculationMethod: await getParam<string>('bulletins.calculation_method', { defaultValue: 'ponderee' }),
+            displayCoefficients: await getParamBoolean('bulletins.display_coefficients', { defaultValue: true }),
+            templateId: await getParam<string>('bulletins.template_id', { defaultValue: 'default' }),
         };
     }
 
@@ -113,7 +113,7 @@ export class BulletinsService {
             const affectationsClasse = await affectationRepo.find({
                 where: { 
                     classeAnneeId: dto.classeAnneeId,
-                    statut: 'ACTIVE'
+                    statut: StatutAffectationMatiere.ACTIVE
                 }
             });
             
@@ -183,7 +183,8 @@ export class BulletinsService {
                 });
 
                 if (!bulletin) {
-                    bulletin = this.repo.create({
+                    bulletin = new Bulletin();
+                    Object.assign(bulletin, {
                         eleveId: eleve.id,
                         classeAnneeId: dto.classeAnneeId,
                         periodeId: periode.id,

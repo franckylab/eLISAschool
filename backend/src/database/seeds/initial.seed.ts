@@ -23,8 +23,10 @@ import { seedMatieresNiveaux } from './seed-matieres-niveaux';
 import { seedElevesExemples } from './seed-eleves-exemples';
 import { seedGroupesEtablissements } from './seed-groupes-etablissements';
 import { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
+import { seedTypePersonnel } from './seed-type-personnel';
 import { seedOrganisation } from './seed-organisation';
 import { seedTemplatesOrganisation } from './seed-templates';
+import { seedHeuresCoursEtEdt } from './seed-heures-cours-edt';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -87,6 +89,9 @@ export async function runSeeds(): Promise<void> {
     // 12. Utilisateurs de test par rôle (liés au principal + chef lié aux 2 établissements)
     await seedUtilisateursParRole(etablissementPrincipalId, etablissementSecondaireId);
 
+    // 12-bis. Types de personnel (nécessaires pour les postes)
+    await seedTypePersonnel();
+
     // 13. Structure organisationnelle (unités, postes, hiérarchies)
     await seedOrganisation(etablissementPrincipalId, 'Lycée Bilingue eLISAschool');
     await seedOrganisation(etablissementSecondaireId, 'Collège Privé Les Palmiers');
@@ -99,6 +104,9 @@ export async function runSeeds(): Promise<void> {
     if (anneeActivePrincipal) {
         await seedElevesExemples(etablissementPrincipalId, anneeActivePrincipal);
     }
+
+    // 16. HeuresCours & EDT pour l'établissement principal
+    await seedHeuresCoursEtEdt(etablissementPrincipalId);
 
     logger.info('✅ Seeds exécutés avec succès');
     logger.info(`🏫 Établissement principal: ${etablissementPrincipalId}`);

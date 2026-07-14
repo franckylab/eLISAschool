@@ -6,11 +6,11 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { usePermissions } from '@/hooks';
+import { usePermissions, useDocumentTitle } from '@/hooks';
 import { usePostes, useSupprimerPoste } from '../hooks/use-postes';
 import { PosteFormModal } from './poste-form-modal';
 import { PosteCapaciteIndicator } from './PosteCapaciteIndicator';
-import { STATUT_POSTE_OPTIONS, TYPES_POSTE_OPTIONS } from '../types/poste.zod';
+import { STATUT_POSTE_OPTIONS } from '../types/poste.zod';
 import type { Poste } from '../types/poste.types';
 
 const statutColors: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
@@ -31,7 +31,8 @@ export function PostesPage() {
     const { t } = useTranslation('organisation');
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const [filtres, setFiltres] = useState<{ type?: string; statut?: string }>({});
+    useDocumentTitle('eLISAschool | Postes');
+    const [filtres, setFiltres] = useState<{ typePersonnelId?: string; statut?: string }>({});
     const { data, isLoading, isError, refetch } = usePostes({ limit: 50, ...filtres } as any);
     const supprimer = useSupprimerPoste();
     const postes = data?.data || [];
@@ -47,7 +48,7 @@ export function PostesPage() {
             header: t('intitulePoste'),
             sortable: true,
             render: (p) => (
-                <div className="cursor-pointer" onClick={() => navigate({ to: '/postes/$id', params: { id: p.id } })}>
+                <div className="cursor-pointer" onClick={() => navigate({ to: '/organisation/postes/$id', params: { id: p.id } })}>
                     <p className="font-medium text-foreground">{p.intitulé}</p>
                     <p className="text-xs text-muted-foreground font-mono">{p.code}</p>
                 </div>
@@ -68,12 +69,11 @@ export function PostesPage() {
             ),
         },
         {
-            key: 'type',
+            key: 'typePersonnel',
             header: t('type'),
-            render: (p) => {
-                const opt = TYPES_POSTE_OPTIONS.find((o) => o.value === p.type);
-                return <span className="text-sm text-muted-foreground">{opt?.label || p.type}</span>;
-            },
+            render: (p) => (
+                <span className="text-sm text-muted-foreground">{p.typePersonnel?.nom || p.typePersonnelId || '-'}</span>
+            ),
         },
         {
             key: 'statut',
@@ -101,7 +101,7 @@ export function PostesPage() {
                     key: 'voir',
                     icon: Eye,
                     label: 'Voir',
-                    onClick: () => navigate({ to: '/postes/$id', params: { id: p.id } }),
+                    onClick: () => navigate({ to: '/organisation/postes/$id', params: { id: p.id } }),
                 });
                 if (hasPermission('postes:edit')) {
                     actions.push({
@@ -152,11 +152,6 @@ export function PostesPage() {
                     tableId="postes-list"
                     searchPlaceholder={t('rechercherPoste')}
                     filtres={[
-                        {
-                            key: 'type', label: t('type'),
-                            options: TYPES_POSTE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-                            allOptionLabel: t('tousLesTypes'),
-                        },
                         {
                             key: 'statut', label: t('statut'),
                             options: STATUT_POSTE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),

@@ -3,9 +3,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
-    Building2, Plus, Edit, Trash2, Info,
-    Layers, Briefcase, Users, Settings,
-    AlertCircle, CheckCircle, XCircle,
+    Building2, Edit, Trash2, Info,
+    Layers, Briefcase, GitBranch, Users, Settings,
+    CheckCircle, XCircle,
     SlidersHorizontal, ArrowRight,
 } from 'lucide-react';
 import { useOrganisationMine, useCreerOrganisation, useSupprimerOrganisation, useStatistiquesOrganisation } from '../hooks/use-organisation';
@@ -13,15 +13,17 @@ import { OrganisationFormModal } from './organisation-form-modal';
 import { TabInfos } from './tab-infos';
 import { TabUnites } from './tab-unites';
 import { TabPostes } from './tab-postes';
+import { TabFonctions } from './tab-fonctions';
 import { TabHierarchie } from './tab-hierarchie';
 import { TabConfiguration } from './tab-configuration';
+import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { LoadingState } from '@/components/feedback';
-import { usePermissions } from '@/hooks';
+import { usePermissions, useDocumentTitle } from '@/hooks';
 import type { Organisation, CreerOrganisationDto } from '../types/organisation.types';
-type Onglet = 'infos' | 'unites' | 'postes' | 'hierarchie' | 'configuration';
+type Onglet = 'infos' | 'unites' | 'postes' | 'fonctions' | 'hierarchie' | 'configuration';
 
 function CreateOrganisation({ onCreated }: { onCreated: () => void }) {
     const { t } = useTranslation('organisation');
@@ -104,6 +106,7 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
     const navigate = useNavigate();
     const search = useSearch({ from: '/_auth/organisation/' });
     const { hasPermission } = usePermissions();
+    useDocumentTitle(`eLISAschool | ${organisation.nom}`);
     const stats = useStatistiquesOrganisation(organisation.id);
     const supprimer = useSupprimerOrganisation();
 
@@ -117,6 +120,7 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
         { id: 'infos', label: t('informations'), icon: Info },
         { id: 'unites', label: t('unites'), icon: Layers },
         { id: 'postes', label: t('postes'), icon: Briefcase },
+        { id: 'fonctions', label: t('fonctions'), icon: GitBranch },
         { id: 'hierarchie', label: t('hierarchie'), icon: Users },
         { id: 'configuration', label: t('configuration'), icon: Settings },
     ];
@@ -192,15 +196,15 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
                 </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <StatCard icon={Building2} label={t('titre')} value={organisation.nom} color="blue" delay={0} />
-                <StatCard icon={Layers} label={t('unites')} value={stats.data?.totalUnites ?? '-'} color="indigo" delay={0.1} />
-                <StatCard icon={Briefcase} label={t('postes')} value={stats.data?.totalPostes ?? '-'} color="purple" delay={0.15} />
+            <CardGrid columns={{ default: 1, md: 5 }}>
+                <StatCard icon={Building2} label={t('titre')} value={organisation.nom} color="blue" />
+                <StatCard icon={Layers} label={t('unites')} value={stats.data?.totalUnites ?? '-'} color="purple" />
+                <StatCard icon={Briefcase} label={t('postes')} value={stats.data?.totalPostes ?? '-'} color="purple" />
                 <StatCard icon={CheckCircle} label={t('occupation', { taux: stats.data?.tauxOccupation ?? '-' })}
                     value={`${stats.data?.postesActifs ?? '-'}/${stats.data?.totalPostes ?? '-'}`}
-                    color={((stats.data?.tauxOccupation ?? 0) >= 80) ? 'green' : ((stats.data?.tauxOccupation ?? 0) >= 50) ? 'yellow' : 'red'} delay={0.2} />
-                <StatCard icon={Users} label={t('postesVacants')} value={stats.data?.postesVacants ?? '-'} color="orange" delay={0.25} />
-            </div>
+                    color={((stats.data?.tauxOccupation ?? 0) >= 80) ? 'green' : ((stats.data?.tauxOccupation ?? 0) >= 50) ? 'yellow' : 'red'} />
+                <StatCard icon={Users} label={t('postesVacants')} value={stats.data?.postesVacants ?? '-'} color="orange" />
+            </CardGrid>
 
             <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="-mb-px flex gap-6 overflow-x-auto">
@@ -224,6 +228,7 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
             {ongletActif === 'infos' && <TabInfos organisation={organisation} />}
             {ongletActif === 'unites' && <TabUnites organisationId={organisation.id} />}
             {ongletActif === 'postes' && <TabPostes organisationId={organisation.id} />}
+            {ongletActif === 'fonctions' && <TabFonctions organisationId={organisation.id} />}
             {ongletActif === 'hierarchie' && <TabHierarchie organisationId={organisation.id} />}
             {ongletActif === 'configuration' && <TabConfiguration organisationId={organisation.id} />}
 

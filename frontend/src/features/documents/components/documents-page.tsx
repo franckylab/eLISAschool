@@ -12,6 +12,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useDocuments, useSupprimerDocument, useTelechargerDocument, useStatistiquesDocuments } from '../hooks/use-documents';
 import type { Document } from '../types/document.types';
+import { CardGrid, StatCard } from '@/components/ui';
 
 export function DocumentsPage() {
     const { t } = useTranslation('documents');
@@ -179,57 +180,12 @@ export function DocumentsPage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total documents</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.total}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <HardDrive className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Taille totale</p>
-                                <p className="text-lg font-bold text-green-600">{formatTaille(stats.tailleTotale)}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Download className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Téléchargements</p>
-                                <p className="text-lg font-bold text-orange-600">{stats.totalTelechargements}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <FileText className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Catégories</p>
-                                <p className="text-lg font-bold text-purple-600">{stats.parCategorie?.length || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={FileText} label="Total documents" value={stats.total} tone="accent" />
+                    <StatCard icon={HardDrive} label="Taille totale" value={formatTaille(stats.tailleTotale)} tone="success" />
+                    <StatCard icon={Download} label="Téléchargements" value={stats.totalTelechargements} tone="orange" />
+                    <StatCard icon={FileText} label="Catégories" value={stats.parCategorie?.length || 0} tone="purple" />
+                </CardGrid>
             )}
 
 

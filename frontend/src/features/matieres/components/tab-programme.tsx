@@ -68,12 +68,12 @@ export function TabProgramme({
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-200">
                         Programmes pédagogiques qui incluent cette matière (avec surcharges éventuelles)
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    <span className="text-sm text-gray-500 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
                         {programmesPedagogiques?.length || 0} programme(s)
                     </span>
                     {canWrite && (
@@ -90,10 +90,10 @@ export function TabProgramme({
             {isLoadingPP ? (
                 <LoadingState message="Chargement des programmes pédagogiques..." />
             ) : !programmesPedagogiques || programmesPedagogiques.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                    <BookMarked className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium mb-1">Aucun programme pédagogique</p>
-                    <p className="text-sm text-gray-500">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+                    <BookMarked className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">Aucun programme pédagogique</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">
                         Cette matière n'est incluse dans aucun programme pédagogique.
                         Utilisez le bouton "Ajouter" pour l'inclure.
                     </p>
@@ -106,7 +106,7 @@ export function TabProgramme({
 
                         return (
                             <div key={pm.id}
-                                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-sm transition-shadow"
+                                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-sm transition-shadow"
                             >
                                 <div className="p-4">
                                     <div className="flex items-start justify-between">
@@ -116,15 +116,15 @@ export function TabProgramme({
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h4 className="font-semibold text-gray-900">
+                                                    <h4 className="font-semibold text-gray-900 dark:text-gray-200">
                                                         {pm.programme?.nom || pm.programmeId}
                                                     </h4>
-                                                    <span className="text-xs font-mono text-gray-400">{pm.programme?.code}</span>
+                                                    <span className="text-xs font-mono text-gray-400 dark:text-gray-100">{pm.programme?.code}</span>
                                                     {pm.programme?.actif === false && (
-                                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Inactif</span>
+                                                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">Inactif</span>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-gray-500 mt-0.5">
+                                                <p className="text-sm text-gray-500 dark:text-gray-200 mt-0.5">
                                                     {niveau?.nom || ''} {pm.matiereNiveau?.groupe ? `- ${pm.matiereNiveau.groupe.nom}` : ''}
                                                     {pm.matiereNiveau?.filiere ? ` (${pm.matiereNiveau.filiere.nom})` : ''}
                                                 </p>
@@ -134,13 +134,13 @@ export function TabProgramme({
                                         {canWrite && !isEditing && (
                                             <div className="flex items-center gap-1">
                                                 <button onClick={() => handleEdit(pm)}
-                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                    className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                                     title="Modifier les surcharges"
                                                 >
                                                     <Edit className="h-4 w-4" />
                                                 </button>
                                                 <button onClick={() => setDeletePmId(pm.id)}
-                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                    className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-red-50 hover:text-red-600 transition-colors"
                                                     title="Retirer du programme"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -150,31 +150,31 @@ export function TabProgramme({
                                     </div>
 
                                     {isEditing ? (
-                                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                            <h5 className="text-sm font-medium text-gray-700 mb-3">
+                                        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-400 mb-3">
                                                 Modifier les surcharges pour ce programme
                                             </h5>
                                             <div className="grid grid-cols-3 gap-4 mb-3">
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-200 mb-1">
                                                         Coefficient
                                                     </label>
                                                     <input type="number" step="0.5" min="0"
                                                         value={editCoeff}
                                                         onChange={(e) => setEditCoeff(e.target.value ? Number(e.target.value) : '')}
                                                         placeholder="Hérité"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-200 mb-1">
                                                         Volume horaire
                                                     </label>
                                                     <input type="number" step="1" min="0"
                                                         value={editVol}
                                                         onChange={(e) => setEditVol(e.target.value ? Number(e.target.value) : '')}
                                                         placeholder="Hérité"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                     />
                                                 </div>
                                                 <div className="flex items-end pb-2">
@@ -182,9 +182,9 @@ export function TabProgramme({
                                                         <input type="checkbox"
                                                             checked={editOblig}
                                                             onChange={(e) => setEditOblig(e.target.checked)}
-                                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                                                         />
-                                                        <span className="text-sm font-medium text-gray-700">Obligatoire</span>
+                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-400">Obligatoire</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -205,19 +205,19 @@ export function TabProgramme({
                                     ) : (
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             <div className="flex items-center gap-1.5 text-sm">
-                                                <span className="text-gray-500">Coeff:</span>
-                                                <span className={`font-semibold ${pm.coefficient != null ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                <span className="text-gray-500 dark:text-gray-200">Coeff:</span>
+                                                <span className={`font-semibold ${pm.coefficient != null ? 'text-blue-600' : 'text-gray-400 dark:text-gray-100'}`}>
                                                     {pm.coefficient ?? 'Hérité'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-sm">
-                                                <span className="text-gray-500">Volume:</span>
-                                                <span className={`font-semibold ${pm.volumeHoraire != null ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                <span className="text-gray-500 dark:text-gray-200">Volume:</span>
+                                                <span className={`font-semibold ${pm.volumeHoraire != null ? 'text-blue-600' : 'text-gray-400 dark:text-gray-100'}`}>
                                                     {pm.volumeHoraire ? `${pm.volumeHoraire}h` : 'Hérité'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-sm">
-                                                <span className="text-gray-500">Statut:</span>
+                                                <span className="text-gray-500 dark:text-gray-200">Statut:</span>
                                                 {pm.obligatoire ? (
                                                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
                                                         <CheckCircle className="h-3 w-3" /> Obligatoire
@@ -229,8 +229,8 @@ export function TabProgramme({
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1.5 text-sm">
-                                                <span className="text-gray-500">Ordre:</span>
-                                                <span className="font-mono text-xs text-gray-600">#{pm.ordre}</span>
+                                                <span className="text-gray-500 dark:text-gray-200">Ordre:</span>
+                                                <span className="font-mono text-xs text-gray-600 dark:text-gray-300">#{pm.ordre}</span>
                                             </div>
                                         </div>
                                     )}

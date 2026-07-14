@@ -47,7 +47,7 @@ export function DiplomeEleveDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
             </div>
         );
     }
@@ -87,11 +87,11 @@ export function DiplomeEleveDetailPage() {
                             <GraduationCap className="h-8 w-8 text-cyan-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">
                                 {diplome.eleve ? `${diplome.eleve.prenom} ${diplome.eleve.nom}` : 'Diplôme'}
                             </h1>
                             {diplome.numeroDiplome && (
-                                <p className="text-gray-500 font-mono text-sm">N° {diplome.numeroDiplome}</p>
+                                <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">N° {diplome.numeroDiplome}</p>
                             )}
                         </div>
                     </div>
@@ -108,11 +108,11 @@ export function DiplomeEleveDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations</h2>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Élève</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Élève</dt>
                                     <dd>
                                         {diplome.eleve ? (
                                             <button
@@ -122,15 +122,15 @@ export function DiplomeEleveDetailPage() {
                                                 {diplome.eleve.prenom} {diplome.eleve.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                                         )}
                                         {diplome.eleve?.matricule && (
-                                            <p className="text-xs text-gray-400 font-mono">{diplome.eleve.matricule}</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-300 font-mono">{diplome.eleve.matricule}</p>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Examen national</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Examen national</dt>
                                     <dd>
                                         {diplome.examenNational ? (
                                             <button
@@ -140,16 +140,16 @@ export function DiplomeEleveDetailPage() {
                                                 {diplome.examenNational.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Date d'obtention</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{formatDate(diplome.dateObtention)}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Date d'obtention</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{formatDate(diplome.dateObtention)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Résultat</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Résultat</dt>
                                     <dd>
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${resultatStyle.bg} ${resultatStyle.text}`}>
                                             {resultatStyle.label}
@@ -157,18 +157,18 @@ export function DiplomeEleveDetailPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Note obtenue</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{diplome.noteObtenue ?? '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Note obtenue</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{diplome.noteObtenue ?? '-'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Mention</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{diplome.mention || '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Mention</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{diplome.mention || '-'}</dd>
                                 </div>
                             </dl>
                             {diplome.observations && (
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <dt className="text-sm text-gray-500 mb-1">Observations</dt>
-                                    <dd className="text-sm text-gray-900">{diplome.observations}</dd>
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Observations</dt>
+                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{diplome.observations}</dd>
                                 </div>
                             )}
                         </div>
@@ -181,26 +181,26 @@ export function DiplomeEleveDetailPage() {
                                 <span className={`font-semibold ${resultatStyle.text}`}>{resultatStyle.label}</span>
                             </div>
                             {diplome.mention && (
-                                <p className="text-sm text-gray-600">Mention: {diplome.mention}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Mention: {diplome.mention}</p>
                             )}
                             {diplome.noteObtenue !== undefined && (
-                                <p className="text-sm text-gray-600">Note: {diplome.noteObtenue}/20</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Note: {diplome.noteObtenue}/20</p>
                             )}
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Récapitulatif</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Récapitulatif</h3>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Diplôme</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Diplôme</span>
                                     <span className="font-medium">{diplome.examenNational?.diplomeDelivre || diplome.examenNational?.nom || '-'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Date</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Date</span>
                                     <span className="font-medium">{formatDate(diplome.dateObtention)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Résultat</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Résultat</span>
                                     <span className={`font-medium ${resultatStyle.text}`}>{resultatStyle.label}</span>
                                 </div>
                             </div>

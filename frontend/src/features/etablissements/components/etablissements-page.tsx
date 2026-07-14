@@ -50,7 +50,7 @@ export function EtablissementsPage() {
             'ACTIF': 'bg-green-100 text-green-800',
             'EN_ATTENTE_VALIDATION': 'bg-yellow-100 text-yellow-800',
             'EN_ATTENTE_DESACTIVATION': 'bg-orange-100 text-orange-800',
-            'INACTIF': 'bg-gray-100 text-gray-800',
+            'INACTIF': 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
         };
         const labels: Record<string, string> = {
             'ACTIF': 'Actif',
@@ -59,7 +59,7 @@ export function EtablissementsPage() {
             'INACTIF': 'Inactif',
         };
         return statut ? (
-            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${styles[statut] || 'bg-gray-100 text-gray-800'}`}>
+            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${styles[statut] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
                 {labels[statut] || statut}
             </span>
         ) : '—';
@@ -74,7 +74,7 @@ export function EtablissementsPage() {
             render: (e) => (
                 <div>
                     <span className="font-semibold">{e.nom}</span>
-                    {e.slogan && <p className="text-xs text-gray-500 italic">{e.slogan}</p>}
+                    {e.slogan && <p className="text-xs text-gray-500 dark:text-gray-400 italic">{e.slogan}</p>}
                 </div>
             ),
         },
@@ -83,7 +83,7 @@ export function EtablissementsPage() {
             header: 'Ville',
             sortable: true,
             render: (e) => (
-                <span className="flex items-center gap-1 text-sm text-gray-600">
+                <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
                     <MapPin className="h-3 w-3" />
                     {e.ville || '—'}
                 </span>
@@ -93,7 +93,7 @@ export function EtablissementsPage() {
             key: 'telephone',
             header: 'Téléphone',
             render: (e) => (
-                <span className="flex items-center gap-1 text-sm text-gray-600">
+                <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
                     <Phone className="h-3 w-3" />
                     {e.telephone || '—'}
                 </span>
@@ -152,7 +152,7 @@ export function EtablissementsPage() {
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
                     <h1 className="text-3xl font-bold">Établissements</h1>
-                    <p className="text-sm text-gray-600">{data?.meta?.totalItems || 0} établissement(s)</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{data?.meta?.totalItems || 0} établissement(s)</p>
                 </div>
                 {hasPermission('etablissements:create') && (
                     <ElisaButton
@@ -279,8 +279,8 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-6 border-b">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
                     <div className="flex items-center gap-3">
                         <div className="p-3 rounded-full bg-[var(--color-dominant-100)]">
                             <Building2 className="h-6 w-6 text-[var(--color-dominant-600)]" />
@@ -289,7 +289,7 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                             {isEditMode ? "Modifier l'établissement" : 'Nouvel établissement'}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                         <AlertTriangle className="h-6 w-6" />
                     </button>
                 </div>
@@ -297,91 +297,91 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
                             <input
                                 type="text"
                                 value={nom}
                                 onChange={(e) => setNom(e.target.value)}
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.nom ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.nom ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
                                 placeholder="Ex: Complexe Scolaire Les Brillants"
                             />
                             {errors.nom && <p className="text-red-600 text-xs mt-1">{errors.nom}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
                             <input
                                 type="text"
                                 value={code}
                                 onChange={(e) => setCode(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                                 placeholder="Ex: csl_brillants"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Slogan</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slogan</label>
                             <input
                                 type="text"
                                 value={slogan}
                                 onChange={(e) => setSlogan(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                                 placeholder="Ex: L'excellence éducative"
                             />
                         </div>
 
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
                             <input
                                 type="text"
                                 value={adresse}
                                 onChange={(e) => setAdresse(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                                 placeholder="Adresse complète..."
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ville *</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ville *</label>
                             <input
                                 type="text"
                                 value={ville}
                                 onChange={(e) => setVille(e.target.value)}
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.ville ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.ville ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
                                 placeholder="Ex: Douala"
                             />
                             {errors.ville && <p className="text-red-600 text-xs mt-1">{errors.ville}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
                             <input
                                 type="tel"
                                 value={telephone}
                                 onChange={(e) => setTelephone(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                                 placeholder="+237 6XX XXX XXX"
                             />
                         </div>
 
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
                                 placeholder="contact@etablissement.com"
                             />
                             {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Type d'établissement</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type d'établissement</label>
                             <select
                                 value={typeEtablissement}
                                 onChange={(e) => setTypeEtablissement(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                             >
                                 <option value="LAIC">Laïc</option>
                                 <option value="CONFESSIONNEL_CATHOLIQUE">Catholique</option>
@@ -392,11 +392,11 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Sous-système</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-système</label>
                             <select
                                 value={sousSysteme}
                                 onChange={(e) => setSousSysteme(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                             >
                                 <option value="FRANCOPHONE">Francophone</option>
                                 <option value="ANGLOPHONE">Anglophone</option>
@@ -405,11 +405,11 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                         </div>
                     </div>
 
-                    <div className="flex gap-3 justify-end pt-4 border-t">
+                    <div className="flex gap-3 justify-end pt-4 border-t dark:border-gray-700">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             Annuler
                         </button>
@@ -436,17 +436,17 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }: {
 }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 rounded-full bg-red-100">
                             <AlertTriangle className="h-6 w-6 text-red-600" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-200">{title}</h3>
                     </div>
-                    <p className="text-gray-600 mb-6">{message}</p>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6">{message}</p>
                     <div className="flex gap-3 justify-end">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                             Annuler
                         </button>
                         <button onClick={onConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">

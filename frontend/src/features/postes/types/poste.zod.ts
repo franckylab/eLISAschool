@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import type { TypePoste, NiveauResponsabilite } from './poste.types';
+import type { NiveauResponsabilite } from './poste.types';
 
 export const createPosteSchema = z.object({
     intitulé: z.string().min(2, "L'intitulé doit contenir au moins 2 caractères").max(100),
     description: z.string().optional(),
     code: z.string().min(2, 'Le code doit contenir au moins 2 caractères').max(50).transform((v) => v.toUpperCase()),
-    type: z.enum(['DIRECTION', 'ENSEIGNANT', 'ADMINISTRATIF', 'TECHNIQUE', 'SERVICE', 'STAGE', 'TEMPORAIRE', 'AUTRE'] as const).default('ADMINISTRATIF'),
+    typePersonnelId: z.string().uuid().optional(),
     niveauResponsabilite: z.enum(['DIRECTION_GENERALE', 'DIRECTION_ADJOINTE', 'RESPONSABLE', 'COORDINATEUR', 'SUPERVISEUR', 'EXECUTANT', 'STAGIAIRE'] as const).default('EXECUTANT'),
     fonctionId: z.string().optional(),
     uniteOrganisationnelleId: z.string({ required_error: "L'unité est requise" }),
@@ -28,17 +28,6 @@ export const assignerOccupantSchema = z.object({
 export type CreatePosteFormData = z.infer<typeof createPosteSchema>;
 export type UpdatePosteFormData = z.infer<typeof updatePosteSchema>;
 export type AssignerOccupantFormData = z.infer<typeof assignerOccupantSchema>;
-
-export const TYPES_POSTE_OPTIONS = [
-    { value: 'DIRECTION' as TypePoste, label: 'Direction' },
-    { value: 'ENSEIGNANT' as TypePoste, label: 'Enseignant' },
-    { value: 'ADMINISTRATIF' as TypePoste, label: 'Administratif' },
-    { value: 'TECHNIQUE' as TypePoste, label: 'Technique' },
-    { value: 'SERVICE' as TypePoste, label: 'Service' },
-    { value: 'STAGE' as TypePoste, label: 'Stage' },
-    { value: 'TEMPORAIRE' as TypePoste, label: 'Temporaire' },
-    { value: 'AUTRE' as TypePoste, label: 'Autre' },
-];
 
 export const NIVEAUX_RESPONSABILITE_OPTIONS = [
     { value: 'DIRECTION_GENERALE' as NiveauResponsabilite, label: 'Direction générale' },

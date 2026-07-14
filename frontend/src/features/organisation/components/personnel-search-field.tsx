@@ -9,7 +9,7 @@ interface PersonnelSearchResult {
     prenom: string;
     matricule?: string;
     email?: string;
-    poste?: string;
+    posteExact?: string;
 }
 
 interface PersonnelSearchFieldProps {
@@ -123,7 +123,7 @@ export function PersonnelSearchField({
                                 <p className="font-medium text-gray-900 dark:text-gray-100">{p.prenom} {p.nom}</p>
                                 <p className="text-xs text-gray-500">
                                     {p.matricule && <span>{p.matricule}</span>}
-                                    {p.poste && <span>{p.matricule ? ' · ' : ''}{p.poste}</span>}
+                                    {p.posteExact && <span>{p.matricule ? ' · ' : ''}{p.posteExact}</span>}
                                 </p>
                             </div>
                         </button>

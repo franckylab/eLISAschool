@@ -1,7 +1,7 @@
 import { Repository, Not } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Poste, StatutPoste } from '@modules/organisation/entities';
-import { AffectationPoste, StatutAffectation } from '@modules/personnel/entities';
+import { AffectationPoste, StatutAffectation, TypePersonnel } from '@modules/personnel/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import type { CreatePosteDto, UpdatePosteDto, QueryPostesDto } from '../dto/poste.dto';
@@ -23,24 +23,18 @@ export class PostesService {
             throw new AppError('Un poste avec ce code existe déjà dans cette unité', 409, 'POSTE_CODE_EXISTS');
         }
 
-        if (!dto.modeRemunerationDefaut) {
-            const modeParType: Record<string, string> = {
-                ENSEIGNANT: 'MIXTE',
-                DIRECTION: 'MENSUEL',
-                ADMINISTRATIF: 'MENSUEL',
-                TECHNIQUE: 'HORAIRE',
-                SERVICE: 'HORAIRE',
-                STAGE: 'STAGE',
-                TEMPORAIRE: 'HORAIRE',
-            };
-            dto.modeRemunerationDefaut = modeParType[dto.type] || 'MENSUEL';
+        if (!dto.modeRemunerationDefaut && dto.typePersonnelId) {
+            const tp = await AppDataSource.getRepository(TypePersonnel).findOne({ where: { id: dto.typePersonnelId } });
+            if (tp?.modeRemunerationDefaut) {
+                dto.modeRemunerationDefaut = tp.modeRemunerationDefaut;
+            }
         }
 
         const poste = this.posteRepo.create({
             intitulé: dto.intitulé,
             description: dto.description,
             code: dto.code,
-            type: dto.type as any,
+            typePersonnelId: dto.typePersonnelId,
             niveauResponsabilite: dto.niveauResponsabilite as any,
             fonctionId: dto.fonctionId,
             uniteOrganisationnelleId: dto.uniteOrganisationnelleId,
@@ -63,7 +57,8 @@ export class PostesService {
     async findAll(query: QueryPostesDto, etablissementId?: string): Promise<{ data: Poste[]; total: number; page: number; limit: number }> {
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
-            .leftJoinAndSelect('p.fonction', 'f');
+            .leftJoinAndSelect('p.fonction', 'f')
+            .leftJoinAndSelect('p.typePersonnel', 'tp');
 
         if (etablissementId) {
             qb.leftJoin('uo.organisation', 'org')
@@ -72,8 +67,8 @@ export class PostesService {
         if (query.search) {
             qb.andWhere('(p.intitulé ILIKE :search OR p.code ILIKE :search)', { search: `%${query.search}%` });
         }
-        if (query.type) {
-            qb.andWhere('p.type = :type', { type: query.type });
+        if (query.typePersonnelId) {
+            qb.andWhere('p.typePersonnelId = :typePersonnelId', { typePersonnelId: query.typePersonnelId });
         }
         if (query.statut) {
             qb.andWhere('p.statut = :statut', { statut: query.statut });
@@ -130,6 +125,7 @@ export class PostesService {
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
             .leftJoinAndSelect('p.fonction', 'f')
+            .leftJoinAndSelect('p.typePersonnel', 'tp')
             .where('p.id = :id', { id });
         if (etablissementId) {
             qb.leftJoin('uo.organisation', 'org')

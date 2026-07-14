@@ -16,7 +16,8 @@ export class TypePrimeService {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) throw new AppError('Un type de prime avec ce code existe déjà', 409, 'PRIME_EXISTS');
 
-        const entity = this.repo.create({ ...dto, etablissementId });
+        const entity = new TypePrime();
+        Object.assign(entity, dto, { etablissementId });
         await this.repo.save(entity);
 
         if (userId) {

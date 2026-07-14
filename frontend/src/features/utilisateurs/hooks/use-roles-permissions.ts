@@ -72,12 +72,11 @@ export function useRole(id: string) {
     });
 }
 
-export function useTousRoles() {
+export function useTousRoles(options?: { enabled?: boolean }) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: [...ROLES_KEYS.all, 'tous'],
         queryFn: async () => {
-            // Utiliser le endpoint correct: /api/rbac/roles (pas /tous)
             const response = await apiClient.get<Role[]>('/api/rbac/roles');
             
             if (!response.data) {
@@ -86,8 +85,8 @@ export function useTousRoles() {
             
             return response.data;
         },
-        enabled: isAuthenticated,
-        staleTime: 15 * 60 * 1000, // 15 minutes
+        enabled: options?.enabled !== undefined ? options.enabled : isAuthenticated,
+        staleTime: 15 * 60 * 1000,
     });
 }
 
@@ -193,19 +192,18 @@ export function usePermissionsByModule(module: string) {
     });
 }
 
-export function useToutesPermissions() {
+export function useToutesPermissions(options?: { enabled?: boolean }) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: [...ROLES_KEYS.permissions(), 'groupes'],
         queryFn: async () => {
             const response = await apiClient.get<Record<string, Permission[]>>(
-                '/api/rbac/permissions/modules'  // ← Retourne Record<string, Permission[]>
+                '/api/rbac/permissions/modules'
             );
             if (!response.data) {
                 throw new Error('Permissions non disponibles');
             }
             
-            // Transformer l'objet Record<string, Permission[]> en tableau PermissionGroupe[]
             const permissionsGroupes: PermissionGroupe[] = Object.entries(response.data).map(([module, permissions]) => ({
                 module,
                 libelle: module.charAt(0).toUpperCase() + module.slice(1).replace(/[-_]/g, ' '),
@@ -221,8 +219,96 @@ export function useToutesPermissions() {
             
             return permissionsGroupes;
         },
-        enabled: isAuthenticated,
+        enabled: options?.enabled !== undefined ? options.enabled : isAuthenticated,
         staleTime: 30 * 60 * 1000,
+    });
+}
+
+// ==================== HOOKS PERMISSIONS UTILISATEUR (RBAC) ====================
+
+interface UtilisateurPermissionResponse {
+    id: string;
+    utilisateurId: string;
+    permissionId: string;
+    type: 'GRANTED' | 'DENIED';
+    motif?: string;
+    attribuePar?: string;
+    dateAttribution: string;
+    createdAt: string;
+    permission: {
+        id: string;
+        code: string;
+        libelle: string;
+        module: string;
+    };
+}
+
+export function usePermissionsDirectes(userId: string, options?: { enabled?: boolean }) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.all, 'utilisateur', userId, 'permissions-directes'],
+        queryFn: async () => {
+            const response = await apiClient.get<UtilisateurPermissionResponse[]>(
+                `/api/rbac/users/${userId}/permissions`
+            );
+            return response.data || [];
+        },
+        enabled: (options?.enabled !== undefined ? options.enabled : true) && isAuthenticated && !!userId,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+interface AssignerPermissionDto {
+    userId: string;
+    permissionId: string;
+    type: 'GRANTED' | 'DENIED';
+    motif?: string;
+}
+
+export function useAssignerPermissionUtilisateur() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, ...dto }: AssignerPermissionDto) => {
+            const response = await apiClient.post<UtilisateurPermissionResponse>(
+                `/api/rbac/users/${userId}/permissions`,
+                dto
+            );
+            return response.data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: [...ROLES_KEYS.all, 'utilisateur', variables.userId, 'permissions-directes'],
+            });
+            toast.success('Permission assignée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'assignation');
+        },
+    });
+}
+
+interface RetirerPermissionDto {
+    userId: string;
+    permissionId: string;
+}
+
+export function useRetirerPermissionUtilisateur() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, permissionId }: RetirerPermissionDto) => {
+            await apiClient.delete(`/api/rbac/users/${userId}/permissions/${permissionId}`);
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: [...ROLES_KEYS.all, 'utilisateur', variables.userId, 'permissions-directes'],
+            });
+            toast.success('Permission retirée avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors du retrait');
+        },
     });
 }
 

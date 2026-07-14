@@ -4,10 +4,7 @@ export const createPosteSchema = z.object({
     intitulé: z.string().min(2).max(100),
     description: z.string().optional(),
     code: z.string().min(2).max(50),
-    type: z.enum([
-        'DIRECTION', 'ENSEIGNANT', 'ADMINISTRATIF', 'TECHNIQUE',
-        'SERVICE', 'STAGE', 'TEMPORAIRE', 'AUTRE',
-    ]).default('ADMINISTRATIF'),
+    typePersonnelId: z.string().uuid().optional(),
     niveauResponsabilite: z.enum([
         'DIRECTION_GENERALE', 'DIRECTION_ADJOINTE', 'RESPONSABLE',
         'COORDINATEUR', 'SUPERVISEUR', 'EXECUTANT', 'STAGIAIRE',
@@ -31,10 +28,7 @@ export const queryPostesSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     search: z.string().optional(),
-    type: z.enum([
-        'DIRECTION', 'ENSEIGNANT', 'ADMINISTRATIF', 'TECHNIQUE',
-        'SERVICE', 'STAGE', 'TEMPORAIRE', 'AUTRE',
-    ]).optional(),
+    typePersonnelId: z.string().uuid().optional(),
     statut: z.enum(['ACTIF', 'VACANT', 'SUPPRIME', 'EN_ATTENTE']).optional(),
     fonctionId: z.string().uuid().optional(),
     uniteOrganisationnelleId: z.string().uuid().optional(),

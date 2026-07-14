@@ -70,6 +70,23 @@
         "recapDateDebut": "Date de début",
         "recapDateFin": "Date de fin",
         "recapAucun": "Aucun",
-        "recapAucune": "Aucune"
+        "recapAucune": "Aucune",
+        "modeHerite": "— Hérité du type de contrat —",
+        "modeMensuel": "Mensuel (fixe)",
+        "modeHoraire": "Horaire (taux × heures)",
+        "modeMixte": "Mixte (fixe + heures sup)",
+        "modeHebdomadaire": "Hebdomadaire (taux × 52/12)",
+        "labelCapacite": "Capacité :",
+        "clausesPlaceholder": "Clauses particulières (optionnel)",
+        "recapModeMensuel": "Mensuel",
+        "recapModeHoraire": "Horaire",
+        "recapModeMixte": "Mixte + HS",
+        "recapModeHebdomadaire": "Hebdo lissé",
+        "recapVerifier": "Vérifiez les informations avant de créer le contrat",
+        "oui": "Oui",
+        "fallbackTypeCDI": "CDI",
+        "fallbackTypeCDD": "CDD",
+        "fallbackTypeVacataire": "Vacataire",
+        "fallbackTypeStagiaire": "Stagiaire"
     }
 }

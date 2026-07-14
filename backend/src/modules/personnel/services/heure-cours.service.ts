@@ -6,15 +6,17 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { HeureCours, StatutEffectue } from '../entities';
-import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto } from '../dto';
+import { HeureCours, StatutEffectue, ContratPersonnel, StatutContrat } from '../entities';
+import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto, GenererHeuresCoursFromEdtDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { EmploiDuTemps, JourSemaine } from '@modules/emploi-du-temps/entities';
+import { ClasseAnnee } from '@modules/classes/entities';
 
 export class HeureCoursService {
     private repo: Repository<HeureCours>;
@@ -35,8 +37,8 @@ export class HeureCoursService {
         // Vérifier les conflits de créneaux pour l'enseignant
         await this.verifierConflitCreneau(dto);
 
-        const heureCours = this.repo.create({
-            ...dto,
+        const heureCours = new HeureCours();
+        Object.assign(heureCours, dto, {
             statutEffectue: dto.statutEffectue as any,
             date: new Date(dto.date),
             etablissementId,
@@ -259,6 +261,13 @@ export class HeureCoursService {
             relations: ['matiere'],
         });
 
+        // Récupérer le tarif horaire depuis le contrat actif de l'enseignant
+        const contratRepo = AppDataSource.getRepository(ContratPersonnel);
+        const contratActif = await contratRepo.findOne({
+            where: { membrePersonnelId: enseignantId, etablissementId, statut: StatutContrat.ACTIF },
+        });
+        const tarifHoraireContrat = contratActif?.tarifHoraire || 0;
+
         let heuresEffectuees = 0;
         let heuresPlanifiees = 0;
         let heuresAnnulees = 0;
@@ -290,7 +299,7 @@ export class HeureCoursService {
                 if (existing) {
                     existing.heures += duree;
                 } else {
-                    matiereMap.set(matiereNom, { matiereNom, heures: duree, tarifHoraire: h.tarifHoraire || 0 });
+                    matiereMap.set(matiereNom, { matiereNom, heures: duree, tarifHoraire: tarifHoraireContrat });
                 }
             }
         }
@@ -445,6 +454,146 @@ export class HeureCoursService {
         }, req);
 
         logger.info(`Créneau cours supprimé: ${id}`);
+    }
+
+    /**
+     * Générer des HeureCours depuis les créneaux EDT d'un enseignant
+     * Crée un HeureCours par semaine pour chaque créneau EDT dans la période
+     */
+    async genererHeuresCoursFromEdt(
+        dto: GenererHeuresCoursFromEdtDto,
+        etablissementId: string,
+        createurId?: string,
+        req?: any
+    ): Promise<{ created: number; skipped: number }> {
+        const { enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
+        const dateD = new Date(dateDebut);
+        const dateF = new Date(dateFin);
+
+        // Résoudre classeAnneeId → classeId si fourni
+        let filtreClasseAnnee: string | undefined = classeAnneeId;
+
+        // Chercher les EDT slots
+        const edtRepo = AppDataSource.getRepository(EmploiDuTemps);
+        const edtQuery = edtRepo
+            .createQueryBuilder('e')
+            .leftJoinAndSelect('e.classeAnnee', 'ca')
+            .leftJoinAndSelect('e.matiere', 'm')
+            .where('e.enseignantId = :enseignantId', { enseignantId })
+            .andWhere('e.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('e.actif = true');
+
+        if (filtreClasseAnnee) {
+            edtQuery.andWhere('e.classeAnneeId = :classeAnneeId', { classeAnneeId: filtreClasseAnnee });
+        }
+
+        const edtSlots = await edtQuery.getMany();
+
+        if (edtSlots.length === 0) {
+            logger.info(`Aucun créneau EDT trouvé pour l'enseignant ${enseignantId}`);
+            return { created: 0, skipped: 0 };
+        }
+
+        // Résoudre les ClasseAnnee → classeId mapping
+        const classeAnneeIds = [...new Set(edtSlots.map(s => s.classeAnneeId))];
+        const caRepo = AppDataSource.getRepository(ClasseAnnee);
+        const classeAnnees = await caRepo.find({
+            where: { id: In(classeAnneeIds) },
+            select: ['id', 'classeId'],
+        });
+        const classeAnneeToClasseId = new Map(classeAnnees.map(ca => [ca.id, ca.classeId]));
+
+        // Map jour string → getDay()
+        const jourSemaineIndex: Record<string, number> = {
+            [JourSemaine.LUNDI]: 1,
+            [JourSemaine.MARDI]: 2,
+            [JourSemaine.MERCREDI]: 3,
+            [JourSemaine.JEUDI]: 4,
+            [JourSemaine.VENDREDI]: 5,
+            [JourSemaine.SAMEDI]: 6,
+        };
+
+        let created = 0;
+        let skipped = 0;
+
+        // Pour chaque semaine dans la période
+        const current = new Date(dateD);
+        // Avancer au lundi de la première semaine
+        const dayOfWeek = current.getDay();
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        current.setDate(current.getDate() + diffToMonday);
+        current.setHours(0, 0, 0, 0);
+
+        while (current <= dateF) {
+            const semaineStart = new Date(current);
+
+            // Pour chaque EDT slot
+            for (const slot of edtSlots) {
+                const targetDayIndex = jourSemaineIndex[slot.jour];
+                if (targetDayIndex === undefined) continue;
+
+                // Calculer la date exacte pour ce jour de la semaine
+                const courseDate = new Date(semaineStart);
+                courseDate.setDate(semaineStart.getDate() + (targetDayIndex - 1));
+
+                // Skip si hors période
+                if (courseDate < dateD || courseDate > dateF) continue;
+
+                const classeId = classeAnneeToClasseId.get(slot.classeAnneeId);
+                if (!classeId) continue;
+
+                // Vérifier si un HeureCours existe déjà pour ce créneau à cette date
+                const existing = await this.repo.findOne({
+                    where: {
+                        enseignantId,
+                        date: courseDate as any,
+                        heureDebut: slot.heureDebut,
+                        creneauId: slot.id,
+                    },
+                });
+
+                if (existing) {
+                    skipped++;
+                    continue;
+                }
+
+                // Créer le HeureCours
+                const hc = this.repo.create({
+                    enseignantId,
+                    classeId,
+                    matiereId: slot.matiereId,
+                    periodeId: periodeId || slot.periodeId,
+                    creneauId: slot.id,
+                    salleId: slot.salleId,
+                    date: courseDate,
+                    heureDebut: slot.heureDebut,
+                    heureFin: slot.heureFin,
+                    statutEffectue: StatutEffectue.PLANIFIE,
+                    etablissementId,
+                });
+
+                await this.repo.save(hc);
+                created++;
+            }
+
+            // Passer à la semaine suivante
+            current.setDate(current.getDate() + 7);
+        }
+
+        logger.info(`HeureCours générés depuis EDT: ${created} créés, ${skipped} ignorés pour enseignant ${enseignantId}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.HEURE_COURS_CREATE,
+                cible: 'HeureCours',
+                description: `Génération HeureCours depuis EDT: ${created} créés, ${skipped} ignorés`,
+                nouvellesValeurs: dto,
+                module: 'personnel',
+            }, req);
+        }
+
+        return { created, skipped };
     }
 }
 

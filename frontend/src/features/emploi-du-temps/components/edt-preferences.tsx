@@ -113,7 +113,7 @@ export function EDTPreferencesPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Jours travaillés */}
                 <motion.div
-                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm"
+                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm dark:bg-gray-800 dark:border-gray-700"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -132,7 +132,7 @@ export function EDTPreferencesPage() {
                                 className={`p-3 rounded-lg border-2 transition-all ${
                                     formData.joursOuvrables.includes(jour.value)
                                         ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-50)]'
-                                        : 'border-[var(--color-border)] hover:border-gray-300'
+                                        : 'border-[var(--color-border)] hover:border-gray-300 dark:hover:border-gray-600'
                                 }`}
                             >
                                 <div className="flex items-center justify-between">
@@ -148,7 +148,7 @@ export function EDTPreferencesPage() {
 
                 {/* Horaires */}
                 <motion.div
-                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm"
+                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm dark:bg-gray-800 dark:border-gray-700"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -165,7 +165,7 @@ export function EDTPreferencesPage() {
                                 type="time"
                                 value={formData.heureDebutCours}
                                 onChange={(e) => setFormData(prev => ({ ...prev, heureDebutCours: e.target.value }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 required
                             />
                         </div>
@@ -175,7 +175,7 @@ export function EDTPreferencesPage() {
                                 type="time"
                                 value={formData.heureFinCours}
                                 onChange={(e) => setFormData(prev => ({ ...prev, heureFinCours: e.target.value }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 required
                             />
                         </div>
@@ -185,7 +185,7 @@ export function EDTPreferencesPage() {
                                 type="number"
                                 value={formData.dureeCreneauStandard}
                                 onChange={(e) => setFormData(prev => ({ ...prev, dureeCreneauStandard: parseInt(e.target.value) }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 min="30" max="120" required
                             />
                         </div>
@@ -197,7 +197,7 @@ export function EDTPreferencesPage() {
                                 type="number"
                                 value={formData.dureeRecreation}
                                 onChange={(e) => setFormData(prev => ({ ...prev, dureeRecreation: parseInt(e.target.value) }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 min="5" max="30" required
                             />
                         </div>
@@ -207,7 +207,7 @@ export function EDTPreferencesPage() {
                                     type="checkbox"
                                     checked={formData.repartitionEquilibree}
                                     onChange={(e) => setFormData(prev => ({ ...prev, repartitionEquilibree: e.target.checked }))}
-                                    className="w-5 h-5 rounded border-gray-300"
+                                    className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
                                 />
                                 <span className="text-sm font-medium">Répartition équilibrée des matières</span>
                             </label>
@@ -217,7 +217,7 @@ export function EDTPreferencesPage() {
 
                 {/* Contraintes */}
                 <motion.div
-                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm"
+                    className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm dark:bg-gray-800 dark:border-gray-700"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
@@ -234,7 +234,7 @@ export function EDTPreferencesPage() {
                                 type="number"
                                 value={formData.maxCreneauxParJour}
                                 onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxParJour: parseInt(e.target.value) }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 min="4" max="12" required
                             />
                         </div>
@@ -244,7 +244,7 @@ export function EDTPreferencesPage() {
                                 type="number"
                                 value={formData.maxCreneauxMatiereParJour}
                                 onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxMatiereParJour: parseInt(e.target.value) }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 min="1" max="4" required
                             />
                         </div>
@@ -254,7 +254,7 @@ export function EDTPreferencesPage() {
                                 type="number"
                                 value={formData.maxCreneauxConsecutifs}
                                 onChange={(e) => setFormData(prev => ({ ...prev, maxCreneauxConsecutifs: parseInt(e.target.value) }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                                 min="1" max="3" required
                             />
                         </div>

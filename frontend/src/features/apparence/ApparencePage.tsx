@@ -326,8 +326,8 @@ export function ApparencePage() {
     return (
         <div className="min-h-screen">
             <PageHeader
-                titre="Apparence"
-                sousTitre="Gérez les fonds d'écran et la rotation automatique"
+                title="Apparence"
+                subtitle="Gérez les fonds d'écran et la rotation automatique"
                 actions={
                     <ElisaButton
                         variant="primary"

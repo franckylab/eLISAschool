@@ -53,7 +53,7 @@ export function ExamenNationalDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
             </div>
         );
     }
@@ -91,8 +91,8 @@ export function ExamenNationalDetailPage() {
                             <FileText className="h-8 w-8 text-amber-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{examen.nom}</h1>
-                            <p className="text-gray-500 font-mono text-sm">{examen.code}</p>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{examen.nom}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{examen.code}</p>
                         </div>
                     </div>
                     {hasPermission('examens-nationaux:edit') && (
@@ -108,19 +108,19 @@ export function ExamenNationalDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations</h2>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 font-mono">{examen.code}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{examen.code}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Type</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{TYPE_LABELS[examen.type] || examen.type}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Type</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{TYPE_LABELS[examen.type] || examen.type}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Niveau</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Niveau</dt>
                                     <dd>
                                         {examen.niveau ? (
                                             <button
@@ -130,32 +130,32 @@ export function ExamenNationalDetailPage() {
                                                 {examen.niveau.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Sous-système</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{SOUS_SYSTEME_LABELS[examen.sousSysteme] || examen.sousSysteme}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Sous-système</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{SOUS_SYSTEME_LABELS[examen.sousSysteme] || examen.sousSysteme}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Obligatoire</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{examen.estObligatoire ? 'Oui' : 'Non'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Obligatoire</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.estObligatoire ? 'Oui' : 'Non'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Diplôme délivré</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{examen.diplomeDelivre || '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Diplôme délivré</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.diplomeDelivre || '-'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Coefficient</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{examen.coefficient ?? '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Coefficient</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.coefficient ?? '-'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Date programmation</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{formatDate(examen.dateProgrammation)}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Date programmation</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{formatDate(examen.dateProgrammation)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Statut</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
                                     <dd>
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${examen.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {examen.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
@@ -165,9 +165,9 @@ export function ExamenNationalDetailPage() {
                                 </div>
                             </dl>
                             {examen.description && (
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <dt className="text-sm text-gray-500 mb-1">Description</dt>
-                                    <dd className="text-sm text-gray-900">{examen.description}</dd>
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</dt>
+                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{examen.description}</dd>
                                 </div>
                             )}
                         </div>
@@ -184,30 +184,30 @@ export function ExamenNationalDetailPage() {
                                     {examen.actif ? 'Actif' : 'Inactif'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                                 {examen.actif
                                     ? 'Cet examen est actuellement actif.'
                                     : 'Cet examen est actuellement inactif.'}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Configuration</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Configuration</h3>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Type</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Type</span>
                                     <span className="font-medium">{TYPE_LABELS[examen.type] || examen.type}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Niveau</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Niveau</span>
                                     <span className="font-medium">{examen.niveau?.nom || '-'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Coefficient</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Coefficient</span>
                                     <span className="font-medium">{examen.coefficient ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Obligatoire</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Obligatoire</span>
                                     <span className="font-medium">{examen.estObligatoire ? 'Oui' : 'Non'}</span>
                                 </div>
                             </div>

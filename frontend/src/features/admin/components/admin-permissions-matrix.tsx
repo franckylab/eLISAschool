@@ -12,7 +12,9 @@
 import { useState, useMemo } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { RequireRole } from '@/components/permissions';
-import { Check, X, Search, Download } from 'lucide-react';
+import { Check, X, Search, Download, Shield, LayoutGrid, Users, Target } from 'lucide-react';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 
 // ==================================
 // TYPES
@@ -103,8 +105,8 @@ export function AdminPermissionsMatrixPage() {
                 {/* Header */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Matrice des Permissions</h1>
-                        <p className="text-gray-600 mt-1">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">Matrice des Permissions</h1>
+                        <p className="text-gray-600 dark:text-gray-300 mt-1">
                             Visualisation complète des accès par rôle et module
                         </p>
                     </div>
@@ -121,20 +123,20 @@ export function AdminPermissionsMatrixPage() {
                 {/* Filtres */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                         <input
                             type="text"
                             placeholder="Rechercher..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                         />
                     </div>
 
                     <select
                         value={selectedRole}
                         onChange={(e) => setSelectedRole(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg"
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                     >
                         <option value="all">Tous les rôles</option>
                         {ROLES_INFO.map(role => (
@@ -145,7 +147,7 @@ export function AdminPermissionsMatrixPage() {
                     <select
                         value={selectedModule}
                         onChange={(e) => setSelectedModule(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg"
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                     >
                         <option value="all">Tous les modules</option>
                         {MODULES_LIST.map(mod => (
@@ -159,7 +161,7 @@ export function AdminPermissionsMatrixPage() {
                             className={`flex-1 px-4 py-2 rounded-lg ${
                                 viewMode === 'matrix'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-200 text-gray-700'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                             }`}
                         >
                             Matrice
@@ -169,7 +171,7 @@ export function AdminPermissionsMatrixPage() {
                             className={`flex-1 px-4 py-2 rounded-lg ${
                                 viewMode === 'list'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-200 text-gray-700'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                             }`}
                         >
                             Liste
@@ -179,32 +181,32 @@ export function AdminPermissionsMatrixPage() {
 
                 {/* Vue Matrice */}
                 {viewMode === 'matrix' && (
-                    <div className="overflow-x-auto bg-white rounded-lg shadow">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Module / Permission
                                     </th>
                                     {(selectedRole === 'all' ? ROLES_INFO : ROLES_INFO.filter(r => r.code === selectedRole)).map(role => (
                                         <th key={role.code} className="px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <div className={`w-3 h-3 rounded-full ${role.color}`} />
-                                                <span className="text-xs font-medium text-gray-700">{role.label}</span>
+                                                <span className="text-xs font-medium text-gray-700 dark:text-gray-400">{role.label}</span>
                                             </div>
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {filteredModules.map(module => {
                                     const modulePerms = rolePermissions[module] || [];
                                     return modulePerms.map((perm, idx) => (
-                                        <tr key={`${module}-${perm.code}`} className={idx === 0 ? 'bg-gray-50' : ''}>
+                                        <tr key={`${module}-${perm.code}`} className={idx === 0 ? 'bg-gray-50 dark:bg-gray-800/50' : ''}>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {idx === 0 && <span className="text-xs text-gray-500 block">{module}</span>}
-                                                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">{perm.code}</code>
+                                                <div className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                                                    {idx === 0 && <span className="text-xs text-gray-500 dark:text-gray-400 block">{module}</span>}
+                                                    <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{perm.code}</code>
                                                 </div>
                                             </td>
                                             {(selectedRole === 'all' ? ROLES_INFO : ROLES_INFO.filter(r => r.code === selectedRole)).map(role => (
@@ -230,20 +232,20 @@ export function AdminPermissionsMatrixPage() {
                         {filteredModules.map(module => {
                             const modulePerms = rolePermissions[module] || [];
                             return (
-                                <div key={module} className="bg-white rounded-lg shadow p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 capitalize">
+                                <div key={module} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 capitalize">
                                         {module}
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {modulePerms.map(perm => (
-                                            <div key={perm.code} className="border border-gray-200 rounded-lg p-4">
-                                                <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded block mb-3">
+                                            <div key={perm.code} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                                <code className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded block mb-3">
                                                     {perm.code}
                                                 </code>
                                                 <div className="space-y-1">
                                                     {(selectedRole === 'all' ? ROLES_INFO : ROLES_INFO.filter(r => r.code === selectedRole)).map(role => (
                                                         <div key={role.code} className="flex items-center justify-between text-sm">
-                                                            <span className="text-gray-600">{role.label}</span>
+                                                            <span className="text-gray-600 dark:text-gray-300">{role.label}</span>
                                                             {perm.roles[role.code] ? (
                                                                 <Check className="w-4 h-4 text-green-600" />
                                                             ) : (
@@ -261,33 +263,12 @@ export function AdminPermissionsMatrixPage() {
                     </div>
                 )}
 
-                {/* Statistiques */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h4 className="text-sm font-medium text-gray-500">Total Permissions</h4>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {Object.values(rolePermissions).flat().length}
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h4 className="text-sm font-medium text-gray-500">Modules</h4>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {MODULES_LIST.length}
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h4 className="text-sm font-medium text-gray-500">Rôles</h4>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {ROLES_INFO.length}
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h4 className="text-sm font-medium text-gray-500">Couverture Moyenne</h4>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {calculateAverageCoverage(rolePermissions)}%
-                        </p>
-                    </div>
-                </div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Shield} label="Total Permissions" value={Object.values(rolePermissions).flat().length} tone="accent" />
+                    <StatCard icon={LayoutGrid} label="Modules" value={MODULES_LIST.length} tone="info" />
+                    <StatCard icon={Users} label="Rôles" value={ROLES_INFO.length} tone="purple" />
+                    <StatCard icon={Target} label="Couverture Moyenne" value={`${calculateAverageCoverage(rolePermissions)}%`} tone="success" />
+                </CardGrid>
             </div>
         </RequireRole>
     );

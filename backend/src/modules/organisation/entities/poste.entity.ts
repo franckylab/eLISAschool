@@ -19,7 +19,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { MembrePersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel, TypePersonnel } from '@modules/personnel/entities';
 import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
 import { Fonction } from '@modules/fonctions/entities';
 
@@ -68,6 +68,7 @@ export enum StatutPoste {
 @Index(['uniteOrganisationnelleId'])
 @Index(['code'])
 @Index(['type'])
+@Index(['typePersonnelId'])
 @Index(['statut'])
 @Index(['fonctionId'])
 @Index(['occupantsCount'])
@@ -99,6 +100,13 @@ export class Poste {
 
     @Column({ type: 'enum', enum: TypePoste, default: TypePoste.ADMINISTRATIF })
     type!: TypePoste;
+
+    @Column({ type: 'uuid', nullable: true })
+    typePersonnelId?: string;
+
+    @ManyToOne(() => TypePersonnel, { nullable: true })
+    @JoinColumn({ name: 'typePersonnelId' })
+    typePersonnel?: TypePersonnel;
 
     @Column({ type: 'enum', enum: NiveauResponsabiliteEnum, default: NiveauResponsabiliteEnum.EXECUTANT })
     niveauResponsabilite!: NiveauResponsabiliteEnum;

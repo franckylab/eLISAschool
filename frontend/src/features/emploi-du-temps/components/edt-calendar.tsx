@@ -91,7 +91,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
     }
 
     return (
-        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-sm dark:bg-gray-800">
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="bg-[var(--color-dominant-600)] text-white">
@@ -109,12 +109,12 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                     {heures.map((heure, index) => (
                         <motion.tr
                             key={heure}
-                            className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                            className={index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'}
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.03 }}
                         >
-                            <td className="px-4 py-3 text-sm font-mono font-semibold text-gray-700 border-r border-gray-200 bg-gray-100">
+                            <td className="px-4 py-3 text-sm font-mono font-semibold text-gray-700 border-r border-gray-200 bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:bg-gray-900">
                                 {heure}
                             </td>
                             {joursActifs.map(jour => {
@@ -122,7 +122,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                 
                                 if (!creneau) {
                                     return (
-                                        <td key={jour} className="px-2 py-3 border-r border-gray-200 last:border-r-0 min-h-[80px]">
+                                        <td key={jour} className="px-2 py-3 border-r border-gray-200 last:border-r-0 min-h-[80px] dark:border-gray-700">
                                             <div className="h-full min-h-[60px]" />
                                         </td>
                                     );
@@ -131,7 +131,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                 const couleurClass = obtenirCouleur(creneau.matiere?.nom);
 
                                 return (
-                                    <td key={jour} className="px-2 py-2 border-r border-gray-200 last:border-r-0">
+                                    <td key={jour} className="px-2 py-2 border-r border-gray-200 last:border-r-0 dark:border-gray-700">
                                         <motion.div
                                             className={`p-3 rounded-lg border-l-4 ${couleurClass} shadow-sm`}
                                             whileHover={{ scale: 1.02 }}

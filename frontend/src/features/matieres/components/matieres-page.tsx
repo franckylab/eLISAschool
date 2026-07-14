@@ -90,7 +90,7 @@ export function MatieresPage() {
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: m.couleur }} />
                         <p className="font-medium">{m.nom}</p>
-                        {m.nomAnglais && <span className="text-xs text-gray-400">({m.nomAnglais})</span>}
+                        {m.nomAnglais && <span className="text-xs text-gray-400 dark:text-gray-100">({m.nomAnglais})</span>}
                     </div>
                 </button>
             ),
@@ -102,7 +102,7 @@ export function MatieresPage() {
             className: 'text-center',
             render: (m) => (
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                    !m.sousSysteme ? 'bg-gray-100 text-gray-700' :
+                    !m.sousSysteme ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400' :
                     m.sousSysteme === 'FRANCOPHONE' ? 'bg-blue-100 text-blue-700' :
                     m.sousSysteme === 'ANGLOPHONE' ? 'bg-green-100 text-green-700' :
                     'bg-purple-100 text-purple-700'
@@ -117,7 +117,7 @@ export function MatieresPage() {
             sortable: true,
             className: 'text-center',
             render: (m) => (
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
                     {m.actif ? 'Actif' : 'Inactif'}
                 </span>
             ),
@@ -193,14 +193,14 @@ export function MatieresPage() {
                 <StatMini icon={TrendingUp} label="Actifs" value={stats.countActif} color={stats.countActif > 0 ? 'green' : 'gray'} />
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <div className="flex items-center gap-3">
-                    <Filter className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-600">Filtres</span>
+                    <Filter className="h-4 w-4 text-gray-400 dark:text-gray-100" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filtres</span>
                     <select
                         value={filtres.sousSysteme || ''}
                         onChange={(e) => setFiltres(prev => ({ ...prev, sousSysteme: e.target.value as any, page: 1 }))}
-                        className="ml-2 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white"
+                        className="ml-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white dark:bg-gray-800"
                     >
                         {sousSystemeOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -209,7 +209,7 @@ export function MatieresPage() {
                     <select
                         value={filtres.actif === undefined ? '' : String(filtres.actif)}
                         onChange={(e) => setFiltres(prev => ({ ...prev, actif: e.target.value === '' ? undefined : e.target.value === 'true', page: 1 }))}
-                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white"
+                        className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white dark:bg-gray-800"
                     >
                         <option value="">Tous les statuts</option>
                         <option value="true">Actifs</option>
@@ -276,7 +276,7 @@ function StatMini({ icon: Icon, label, value, color }: { icon: any; label: strin
         blue: 'bg-blue-50 text-blue-700 border-blue-200',
         green: 'bg-green-50 text-green-700 border-green-200',
         purple: 'bg-purple-50 text-purple-700 border-purple-200',
-        gray: 'bg-gray-50 text-gray-700 border-gray-200',
+        gray: 'bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200',
         yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
         red: 'bg-red-50 text-red-700 border-red-200',
     };

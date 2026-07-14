@@ -32,10 +32,28 @@ export class TypePersonnel {
     nom!: string;
 
     @Column({ type: 'simple-json', nullable: true })
-    permissionsDefaut?: string[]; // Liste des codes permissions
+    permissionsDefaut?: string[];
+
+    @Column({ type: 'uuid', nullable: true })
+    roleIdParDefaut?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    description?: string;
+
+    @Column({ type: 'varchar', length: 30, nullable: true })
+    modeRemunerationDefaut?: string;
+
+    @Column({ type: 'boolean', default: true })
+    actif!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    estSysteme!: boolean;
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
 }
 
 /**
@@ -55,10 +73,10 @@ export class MembrePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', nullable: true, unique: true })
     utilisateurId?: string;
 
-    @OneToOne(() => Utilisateur, { nullable: true })
+    @OneToOne(() => Utilisateur, u => u.membrePersonnel, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur?: Utilisateur;
 
@@ -100,28 +118,7 @@ export class MembrePersonnel {
     @Column({ type: 'varchar', length: 200, nullable: true })
     specialitePrincipale?: string;
 
-    // Infos personnelles dénormalisées (fallback quand utilisateur.profil est absent)
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    nom?: string;
-
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    prenom?: string;
-
-    @Column({ type: 'date', nullable: true })
-    dateNaissance?: string;
-
-    @Column({ type: 'varchar', length: 10, nullable: true })
-    sexe?: string; // M / F
-
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    email?: string;
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    telephone?: string;
-
-    @Column({ type: 'text', nullable: true })
-    adresse?: string;
-
+    // Champs professionnels (non dupliqués depuis ProfilUtilisateur)
     @Column({ type: 'varchar', length: 200, nullable: true })
     departement?: string;
 
@@ -130,9 +127,6 @@ export class MembrePersonnel {
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     educationNiveau?: string; // LICENCE, MASTER, DOCTORAT, AUTRE
-
-    @Column({ type: 'varchar', length: 200, nullable: true })
-    etablissementOrigine?: string;
 
     @Column({ type: 'simple-json', nullable: true })
     disponibilites?: Record<string, any>;

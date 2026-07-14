@@ -122,9 +122,9 @@ export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; column
  */
 export function StatsCardSkeleton({ count = 4 }: { count?: number }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: count }).map((_, index) => (
-                <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+                <div key={index} className="bg-card rounded-xl border border-border p-5 space-y-3">
                     <div className="flex items-center gap-3">
                         <Skeleton variant="circular" width="w-10" height="h-10" />
                         <Skeleton className="w-24 h-4" />

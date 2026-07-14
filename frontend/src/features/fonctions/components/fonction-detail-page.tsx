@@ -8,12 +8,12 @@ import {
 import { useFonction, useModifierFonction } from '../hooks/use-fonctions';
 import { FonctionFormModal } from './fonction-form-modal';
 import { FonctionArbre } from './fonction-arbre';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { BreadcrumbLabelProvider } from '@/components/navigation/breadcrumb-context';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 
 export function FonctionDetailPage() {
-    const { id } = useParams({ from: '/_auth/fonctions/$id' });
+    const { id } = useParams({ from: '/_auth/organisation/fonctions/$id' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const { data: fonction, isLoading, error } = useFonction(id);
@@ -39,23 +39,25 @@ export function FonctionDetailPage() {
             <div className="flex flex-col items-center justify-center py-20">
                 <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
                 <p className="text-red-600 mb-4">Fonction non trouvée</p>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/fonctions' })}>
+                <ElisaButton variant="outline" onClick={() => navigate({ to: '/organisation/fonctions' })}>
                     Retour à la liste
                 </ElisaButton>
             </div>
         );
     }
 
+    const breadcrumbLabel = fonction?.nom;
+
     return (
+        <BreadcrumbLabelProvider value={breadcrumbLabel}>
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <Breadcrumbs currentLabel={fonction.nom} />
                 <ElisaButton
                     variant="ghost"
-                    onClick={() => navigate({ to: '/fonctions' })}
+                    onClick={() => navigate({ to: '/organisation/fonctions' })}
                     icon={<ArrowLeft className="h-4 w-4" />}
                     className="mb-6"
                 >
@@ -101,7 +103,7 @@ export function FonctionDetailPage() {
                                     <dd>
                                         {fonction.parent ? (
                                             <button
-                                                onClick={() => navigate({ to: '/fonctions/$id', params: { id: fonction.parent!.id } })}
+                                                onClick={() => navigate({ to: '/organisation/fonctions/$id', params: { id: fonction.parent!.id } })}
                                                 className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
                                             >
                                                 {fonction.parent.nom}
@@ -150,7 +152,7 @@ export function FonctionDetailPage() {
                                     fonctions={fonction.enfants.map(e => ({ ...e, enfants: [] }))}
                                     onEdit={() => {}}
                                     onDelete={() => {}}
-                                    onView={(f) => navigate({ to: '/fonctions/$id', params: { id: f.id } })}
+                                    onView={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
                                     compact
                                 />
                             </div>
@@ -229,5 +231,6 @@ export function FonctionDetailPage() {
                 />
             )}
         </div>
+        </BreadcrumbLabelProvider>
     );
 }

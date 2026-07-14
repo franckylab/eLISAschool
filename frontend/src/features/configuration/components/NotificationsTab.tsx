@@ -108,7 +108,7 @@ export function NotificationsTab() {
                                     'flex items-center gap-3 p-4 rounded-lg border transition-all',
                                     canal.actif
                                         ? 'border-[var(--color-dominante)] bg-[var(--color-dominante)]/5'
-                                        : 'border-[var(--color-bordure)] hover:border-gray-300'
+                                        : 'border-[var(--color-bordure)] hover:border-gray-300 dark:hover:border-gray-600'
                                 )}
                             >
                                 <Icon
@@ -116,7 +116,7 @@ export function NotificationsTab() {
                                         'h-6 w-6',
                                         canal.actif
                                             ? 'text-[var(--color-dominante)]'
-                                            : 'text-gray-400'
+                                            : 'text-gray-400 dark:text-gray-500'
                                     )}
                                 />
                                 <div className="flex-1 text-left">
@@ -132,7 +132,7 @@ export function NotificationsTab() {
                                         'w-12 h-6 rounded-full relative transition-colors',
                                         canal.actif
                                             ? 'bg-[var(--color-dominante)]'
-                                            : 'bg-gray-300'
+                                            : 'bg-gray-300 dark:bg-gray-600'
                                     )}
                                 >
                                     <div
@@ -165,14 +165,14 @@ export function NotificationsTab() {
                     }).map(([key, label]) => (
                         <label
                             key={key}
-                            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         >
                             <span className="text-sm text-[var(--color-texte)]">{label}</span>
                             <input
                                 type="checkbox"
                                 checked={preferences[key as keyof typeof preferences]}
                                 onChange={() => togglePreference(key as keyof typeof preferences)}
-                                className="w-5 h-5 text-[var(--color-dominante)] border-gray-300 rounded focus:ring-[var(--color-dominante)]"
+                                className="w-5 h-5 text-[var(--color-dominante)] border-gray-300 dark:border-gray-600 rounded focus:ring-[var(--color-dominante)]"
                             />
                         </label>
                     ))}

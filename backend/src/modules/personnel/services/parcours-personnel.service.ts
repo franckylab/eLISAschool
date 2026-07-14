@@ -11,7 +11,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, ContratPersonnel, AffectationPoste, EvaluationEnseignant, AbsencePersonnel } from '../entities';
+import { MembrePersonnel, ContratPersonnel, AffectationPoste, EvaluationEnseignant, AbsencePersonnel, StatutContrat, StatutAffectation } from '../entities';
 import { AppError } from '@common/filters/error.filter';
 
 export interface ParcoursProfessionnel {
@@ -218,12 +218,12 @@ export class ParcoursPersonnelService {
         ]);
 
         const contratActif = await this.contratRepo.findOne({
-            where: { membrePersonnelId: membreId, etablissementId, statut: 'ACTIF' },
+            where: { membrePersonnelId: membreId, etablissementId, statut: StatutContrat.ACTIF },
             select: ['salaireBase'],
         });
 
         const affectationActive = await this.affectationRepo.findOne({
-            where: { membrePersonnelId: membreId, etablissementId, statut: 'ACTIF' },
+            where: { membrePersonnelId: membreId, etablissementId, statut: StatutAffectation.ACTIF },
             relations: ['poste'],
         });
 

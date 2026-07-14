@@ -79,7 +79,7 @@ export class EmploiDuTempsService {
                 const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
                 return {
                     ...hc,
-                    jour: dayNames[(hc.date as Date).getDay()],
+                    jour: dayNames[new Date(hc.date).getDay()],
                     classeAnnee: null,
                     typeSource: 'heure_cours',
                 };

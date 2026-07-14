@@ -28,7 +28,7 @@ import { swaggerSpec } from '@config/swagger.config';
 import { authController, preferencesController } from '@modules/auth';
 import { authMiddleware } from '@modules/auth/middlewares';
 import utilisateurEtablissementController from '@modules/auth/controllers/utilisateur-etablissement.controller';
-import { utilisateursController } from '@modules/utilisateurs';
+import { utilisateursController, uploadController } from '@modules/utilisateurs';
 import { configurationController, backupController } from '@modules/configuration';
 import { ElevesService } from '@modules/eleves/services';
 import { notificationsController, notificationProviderController } from '@modules/notifications';
@@ -357,6 +357,7 @@ export function createApp(): Application {
     app.use('/api/preferences', authMiddleware, filterByEtablissement(), preferencesController);
     app.use('/api/utilisateurs', authMiddleware, utilisateurEtablissementController); // Multi-établissements (v2.0)
     app.use('/api/utilisateurs', authMiddleware, filterByEtablissement(), utilisateursController);
+    app.use('/api/utilisateurs', authMiddleware, uploadController); // Pas de filterByEtablissement pour upload (préserve body pour multer)
     app.use('/api/configuration', configurationController);
     app.use('/api/backups', authMiddleware, filterByEtablissement(), backupController);
     app.use('/api/notifications', authMiddleware, filterByEtablissement(), notificationsController);

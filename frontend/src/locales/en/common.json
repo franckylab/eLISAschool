@@ -136,6 +136,13 @@
         "obligatoire": "Required",
         "optionnel": "Optional"
     },
+    "visionneuse": {
+        "apercu": "Preview",
+        "zoomAvant": "Zoom in",
+        "zoomArriere": "Zoom out",
+        "reinitialiser": "Reset",
+        "pivoter": "Rotate"
+    },
     "modalEtablissement": {
         "titre": "Choose an establishment",
         "description": "You belong to multiple establishments. Select the one you want to work in.",

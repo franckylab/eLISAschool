@@ -173,7 +173,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
 
                     {/* Nom */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
                             Nom du rôle <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -181,7 +181,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                             value={nom}
                             onChange={(e) => setNom(e.target.value)}
                             placeholder="Ex: Gestionnaire de notes"
-                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:border-gray-600 ${
                                 errors.nom ? 'border-red-500' : 'border-gray-300'
                             }`}
                         />
@@ -195,7 +195,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
 
                     {/* Code */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
                             Code <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -203,7 +203,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                             value={code}
                             onChange={(e) => setCode(e.target.value.toLowerCase().replace(/[^a-z_]/g, ''))}
                             placeholder="Ex: gestionnaire_notes"
-                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:border-gray-600 ${
                                 errors.code ? 'border-red-500' : 'border-gray-300'
                             }`}
                         />
@@ -213,14 +213,14 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                                 {errors.code}
                             </p>
                         )}
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Lettres minuscules et underscores uniquement
                         </p>
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
                             Description
                         </label>
                         <textarea
@@ -228,7 +228,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Description du rôle et de ses responsabilités..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
                         />
                     </div>
                 </div>
@@ -236,7 +236,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                 {/* Permissions */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 flex items-center gap-2">
                             <Check className="h-5 w-5 text-green-600" />
                             Permissions
                         </h3>
@@ -247,13 +247,13 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
 
                     {/* Recherche */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                         <input
                             type="text"
                             value={recherchePermission}
                             onChange={(e) => setRecherchePermission(e.target.value)}
                             placeholder="Rechercher une permission..."
-                            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 pl-10 pr-4 text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
                         />
                     </div>
 
@@ -261,11 +261,11 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                     {loadingPermissions ? (
                         <div className="space-y-2">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="animate-pulse h-12 bg-gray-200 rounded" />
+                                <div key={i} className="animate-pulse h-12 bg-gray-200 dark:bg-gray-700 rounded" />
                             ))}
                         </div>
                     ) : filteredPermissions.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                             Aucune permission trouvée
                         </div>
                     ) : (
@@ -278,23 +278,23 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                                 const allSelected = selectedCount === perms.length;
 
                                 return (
-                                    <div key={module} className="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div key={module} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                                         {/* Header du module */}
                                         <button
                                             type="button"
                                             onClick={() => toggleModule(module)}
-                                            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
                                                 {isExpanded ? (
-                                                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                                                    <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                                 ) : (
-                                                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                                                    <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                                 )}
-                                                <span className="font-medium text-gray-900 capitalize">
+                                                <span className="font-medium text-gray-900 dark:text-gray-200 capitalize">
                                                     {module.replace(/_/g, ' ')}
                                                 </span>
-                                                <span className="text-sm text-gray-500">
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">
                                                     {selectedCount}/{perms.length}
                                                 </span>
                                             </div>
@@ -319,31 +319,31 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
 
                                         {/* Permissions du module */}
                                         {isExpanded && (
-                                            <div className="p-4 space-y-2 bg-white">
+                                            <div className="p-4 space-y-2 bg-white dark:bg-gray-800">
                                                 {groupe.permissions.map((perm) => {
                                                     const isSelected = permissionsSelectionnees.has(perm.code);
                                                     return (
                                                         <label
                                                             key={perm.code}
-                                                            className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                                                            className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                                                         >
                                                             <input
                                                                 type="checkbox"
                                                                 checked={isSelected}
                                                                 onChange={() => togglePermission(perm.code)}
-                                                                className="w-4 h-4 rounded border-gray-300 text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-500)]"
+                                                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-500)]"
                                                             />
                                                             <div className="flex-1">
-                                                                <p className="text-sm font-medium text-gray-900">
+                                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
                                                                     {perm.libelle}
                                                                 </p>
                                                                 {perm.description && (
-                                                                    <p className="text-xs text-gray-500">
+                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                                                         {perm.description}
                                                                     </p>
                                                                 )}
                                                             </div>
-                                                            <code className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                                                            <code className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                                                                 {perm.code}
                                                             </code>
                                                         </label>

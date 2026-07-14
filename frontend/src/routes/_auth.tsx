@@ -87,4 +87,5 @@ export const Route = createFileRoute('/_auth')({
     },
     component: AuthLayout,
     notFoundComponent: AuthNotFound,
+
 });

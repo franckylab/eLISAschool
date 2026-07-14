@@ -239,7 +239,7 @@ export function EnseignantDetailPage() {
                 onOpenChange={(v) => { if (!v) setShowDeleteConfirm(false); }}
                 onConfirm={handleDelete}
                 title="Supprimer l'enseignant"
-                description={`Êtes-vous sûr de vouloir supprimer ${enseignant.prenom ?? ''} ${enseignant.nom ?? ''} ? Cette action est irréversible.`}
+                description={`Êtes-vous sûr de vouloir supprimer ${enseignant.utilisateur?.profil?.prenom ?? ''} ${enseignant.utilisateur?.profil?.nom ?? ''} ? Cette action est irréversible.`}
                 confirmText="Supprimer"
                 variant="danger"
                 isLoading={supprimer.isPending}

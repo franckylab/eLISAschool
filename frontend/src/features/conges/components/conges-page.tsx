@@ -4,10 +4,10 @@
  * ==================================
  */
 
-import { motion } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Plus, Eye } from 'lucide-react';
 import { useConges, useStatistiquesConges } from '../hooks/use-conges';
 import { DataTable } from '@/components/ui/DataTable';
+import { CardGrid, StatCard } from '@/components/ui';
 
 const typesConges: any = {
     annuel: { label: 'Annuel', color: 'blue' },
@@ -60,40 +60,12 @@ export function CongesPage() {
                 </button>
             </div>
 
-            {/* Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <AlertCircle className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">En attente</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.enAttente || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Acceptés</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.acceptes || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Total demandes</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalDemandes || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Clock className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Jours total</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">{conges.reduce((sum, c) => sum + c.nombreJours, 0)}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={AlertCircle} label="En attente" value={stats?.enAttente || 0} tone="warning" />
+                <StatCard icon={CheckCircle} label="Acceptés" value={stats?.acceptes || 0} tone="success" />
+                <StatCard icon={Calendar} label="Total demandes" value={stats?.totalDemandes || 0} tone="accent" />
+                <StatCard icon={Clock} label="Jours total" value={conges.reduce((sum, c) => sum + c.nombreJours, 0)} tone="purple" />
+            </CardGrid>
 
             <DataTable
                 data={conges}

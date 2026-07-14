@@ -4,10 +4,11 @@
  * ==================================
  */
 
-import { motion } from 'framer-motion';
 import { Star, TrendingUp, Award, AlertCircle, Plus, Eye } from 'lucide-react';
 import { useEvaluations, useStatistiquesEvaluations } from '../hooks/use-evaluations';
 import { DataTable } from '@/components/ui/DataTable';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 
 const statuts: any = {
     brouillon: { label: 'Brouillon', color: 'gray' },
@@ -47,39 +48,12 @@ export function EvaluationsPage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Star className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">Moyenne générale</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.moyenneGenerale ? `${stats.moyenneGenerale.toFixed(1)}/20` : '-'}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Award className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Excellent (≥16)</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.distribution?.excellent || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Total évaluations</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalEvaluations || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <AlertCircle className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Insuffisant (&lt;8)</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">{stats?.distribution?.insuffisant || 0}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={Star} label="Moyenne générale" value={stats?.moyenneGenerale ? `${stats.moyenneGenerale.toFixed(1)}/20` : '-'} tone="warning" />
+                <StatCard icon={Award} label="Excellent (≥16)" value={stats?.distribution?.excellent || 0} tone="success" />
+                <StatCard icon={TrendingUp} label="Total évaluations" value={stats?.totalEvaluations || 0} tone="accent" />
+                <StatCard icon={AlertCircle} label="Insuffisant (<8)" value={stats?.distribution?.insuffisant || 0} tone="purple" />
+            </CardGrid>
 
             <DataTable
                 data={evaluations}

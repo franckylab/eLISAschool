@@ -41,11 +41,10 @@ export function UtilisateurFormModal({
         telephone: '',
         role: '',
         motDePasse: '',
-        etablissementId: '',
         profil: {
             adresse: '',
             dateNaissance: '',
-            sexe: 'M',
+            genre: 'M',
         },
     });
 
@@ -61,11 +60,10 @@ export function UtilisateurFormModal({
                 telephone: utilisateur.telephone || '',
                 role: utilisateur.role,
                 motDePasse: '', // Ne pas pré-remplir le mot de passe
-                etablissementId: utilisateur.etablissementId,
                 profil: {
                     adresse: utilisateur.profil?.adresse || '',
                     dateNaissance: utilisateur.profil?.dateNaissance || '',
-                    sexe: utilisateur.profil?.sexe || 'M',
+                    genre: (utilisateur.profil?.genre as 'M' | 'F' | 'A') || 'M',
                 },
             });
         }
@@ -161,7 +159,7 @@ export function UtilisateurFormModal({
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Section Informations */}
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <User className="h-5 w-5" />
                         Informations personnelles
                     </h3>
@@ -187,7 +185,7 @@ export function UtilisateurFormModal({
 
                 {/* Section Contact */}
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <Mail className="h-5 w-5" />
                         Contact
                     </h3>
@@ -215,19 +213,19 @@ export function UtilisateurFormModal({
 
                 {/* Section Sécurité */}
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <Shield className="h-5 w-5" />
                         Sécurité et rôle
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
                                 Rôle <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={formData.role}
                                 onChange={(e) => handleChange('role', e.target.value)}
-                                className={`w-full rounded-lg border ${erreurs.role ? 'border-red-500' : 'border-gray-300'} bg-white py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                className={`w-full rounded-lg border ${erreurs.role ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-800 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                             >
                                 <option value="">Sélectionner un rôle</option>
                                 {roles?.map((role) => (
@@ -257,7 +255,7 @@ export function UtilisateurFormModal({
 
                 {/* Section Profil */}
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
                         Profil (optionnel)
                     </h3>
@@ -270,16 +268,17 @@ export function UtilisateurFormModal({
                             icon={<Calendar className="h-4 w-4" />}
                         />
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Sexe
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
+                                Genre
                             </label>
                             <select
-                                value={formData.profil?.sexe || 'M'}
-                                onChange={(e) => handleChange('profil', { ...formData.profil, sexe: e.target.value })}
-                                className="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                value={formData.profil?.genre || 'M'}
+                                onChange={(e) => handleChange('profil', { ...formData.profil, genre: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             >
                                 <option value="M">Masculin</option>
                                 <option value="F">Féminin</option>
+                                <option value="A">Autre</option>
                             </select>
                         </div>
                         <div className="md:col-span-2">

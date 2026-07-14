@@ -74,8 +74,8 @@ export function useCreerPersonnel() {
             queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
             if (data) {
                 queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
-                const nom = (data as any).nom || data.utilisateur?.profil?.nom || '';
-                const prenom = (data as any).prenom || data.utilisateur?.profil?.prenom || '';
+                const nom = data.utilisateur?.profil?.nom || '';
+                const prenom = data.utilisateur?.profil?.prenom || '';
                 toast.success(`${prenom} ${nom} ajouté(e) au personnel`);
             }
         },
@@ -87,33 +87,9 @@ export function useModifierPersonnel() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (dto: ModifierPersonnelDto | Record<string, any>) => {
-            const { id, ...rest } = dto;
-            const payload: Record<string, any> = ('dateEmbauche' in rest || 'matricule' in rest)
-                ? rest
-                : {
-                    dateEmbauche: rest.dateEntree || rest.dateEmbauche,
-                    statut: rest.statut?.toUpperCase(),
-                    specialites: rest.specialite ? [rest.specialite] : rest.specialites,
-                    diplomes: rest.diplomes || rest.qualification,
-                    nom: rest.nom,
-                    prenom: rest.prenom,
-                    dateNaissance: rest.dateNaissance,
-                    sexe: rest.sexe,
-                    email: rest.email,
-                    telephone: rest.telephone,
-                    adresse: rest.adresse,
-                    poste: rest.poste,
-                    departement: rest.departement,
-                    typeContrat: rest.typeContrat,
-                    posteExact: rest.posteExact,
-                    service: rest.service,
-                    specialitePrincipale: rest.specialitePrincipale,
-                    educationNiveau: rest.educationNiveau,
-                    typePersonnelId: rest.typePersonnelId,
-                };
-            // Remove undefined to avoid overwriting existing values with nothing
-            Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-            const response = await apiClient.patch<MembrePersonnel>(`/api/personnel/${id}`, payload);
+            const { id, ...rest } = dto as Record<string, any>;
+            Object.keys(rest).forEach(k => rest[k] === undefined && delete rest[k]);
+            const response = await apiClient.patch<MembrePersonnel>(`/api/personnel/${id}`, rest);
             return response.data;
         },
         onSuccess: (data) => {
@@ -122,8 +98,8 @@ export function useModifierPersonnel() {
             if (data) {
                 queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
                 queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
-                const nom = (data as any).nom || data.utilisateur?.profil?.nom || '';
-                const prenom = (data as any).prenom || data.utilisateur?.profil?.prenom || '';
+                const nom = data.utilisateur?.profil?.nom || '';
+                const prenom = data.utilisateur?.profil?.prenom || '';
                 toast.success(`${prenom} ${nom} modifié(e) avec succès`);
             }
         },
@@ -154,6 +130,71 @@ export function usePersonnelBulletins(membreId: string) {
             return response.data?.items ?? [];
         },
         enabled: !!membreId && isAuthenticated,
+    });
+}
+
+export function usePersonnelDisponibles() {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...PERSONNEL_KEYS.all, 'disponibles'],
+        queryFn: async () => {
+            const response = await apiClient.getPaginated<MembrePersonnel>('/api/personnel', { limit: 100, page: 1, actif: true });
+            const items = response.data?.items || [];
+            return items.filter(p => !p.utilisateurId);
+        },
+        enabled: isAuthenticated,
+        staleTime: 3 * 60 * 1000,
+    });
+}
+
+// ─── Link/Unlink Utilisateur ───
+
+export function useLinkPersonnelUtilisateur() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ membreId, utilisateurId }: { membreId: string; utilisateurId: string }) => {
+            const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${membreId}/link-user`, { utilisateurId });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            if (!data) return;
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
+            if (data.utilisateurId) {
+                queryClient.invalidateQueries({ queryKey: ['utilisateurs', 'detail', data.utilisateurId] });
+            }
+            toast.success('Utilisateur lié au dossier personnel');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors du lien utilisateur'),
+    });
+}
+
+export function useUnlinkPersonnelUtilisateur() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (membreId: string) => {
+            const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${membreId}/unlink-user`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            if (!data) return;
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
+            toast.success('Utilisateur délié du dossier personnel');
+        },
+        onError: (error: any) => toast.error(error?.message || 'Erreur lors du déliement utilisateur'),
+    });
+}
+
+export function usePersonnelSansCompte() {
+    return useQuery({
+        queryKey: [...PERSONNEL_KEYS.stats(), 'sans-compte'],
+        queryFn: async () => {
+            const response = await apiClient.get<{ count: number; total: number; pourcentage: number }>('/api/personnel/stats/sans-compte');
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000,
     });
 }
 

@@ -47,6 +47,28 @@ export const updateUtilisateurSchema = z.object({
     statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU', 'EN_ATTENTE_VALIDATION']).optional(),
     langue: z.string().optional(),
     etablissementId: z.string().uuid().optional().nullable(),
+    maxEtablissementsPersonnel: z.number().int().min(0).max(100).optional(),
+});
+
+/**
+ * Schéma de mise à jour de la sécurité d'un utilisateur
+ * (password, 2FA, statut, langue — le rôle est géré par changeRoleSchema)
+ */
+export const updateSecuritySchema = z.object({
+    statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU', 'EN_ATTENTE_VALIDATION']).optional(),
+    langue: z.string().optional(),
+    motDePasse: z.string()
+        .min(8, 'Le mot de passe doit faire au moins 8 caractères')
+        .max(128)
+        .optional(),
+    deuxFacteursActif: z.boolean().optional(),
+});
+
+/**
+ * Schéma de changement de rôle utilisateur
+ */
+export const changeRoleSchema = z.object({
+    role: z.string().min(1, 'Le rôle est requis'),
 });
 
 /**
@@ -64,6 +86,13 @@ export const updateProfilSchema = z.object({
     adresse: z.string().max(500).optional().nullable(),
     ville: z.string().max(100).optional().nullable(),
     quartier: z.string().max(100).optional().nullable(),
+    photoUrl: z.string().optional().nullable(),
+    photoThumbnail: z.string().optional().nullable(),
+    pieceRectoUrl: z.string().optional().nullable(),
+    pieceVersoUrl: z.string().optional().nullable(),
+    typePieceIdentite: z.enum(['CNI', 'PASSEPORT', 'PERMIS', 'AUTRE']).optional().nullable(),
+    numeroPieceIdentite: z.string().max(50).optional().nullable(),
+    notes: z.string().max(2000).optional().nullable(),
 });
 
 /**
@@ -84,7 +113,9 @@ export const queryUtilisateursSchema = paginationWithSortSchema
 export type CreateUtilisateurDto = z.infer<typeof createUtilisateurSchema>;
 export type UpdateUtilisateurDto = z.infer<typeof updateUtilisateurSchema>;
 export type UpdateProfilDto = z.infer<typeof updateProfilSchema>;
+export type UpdateSecurityDto = z.infer<typeof updateSecuritySchema>;
 export type QueryUtilisateursDto = z.infer<typeof queryUtilisateursSchema>;
+export type ChangeRoleDto = z.infer<typeof changeRoleSchema>;
 
 /**
  * Schéma de changement de statut d'affectation (désactiver/réactiver)
@@ -120,6 +151,10 @@ export interface UtilisateurResponseDto {
     statut: string;
     emailVerifie: boolean;
     langue: string;
+    deuxFacteursActif?: boolean;
+    pseudonyme?: string;
+    qrCodeId?: string;
+    maxEtablissementsPersonnel?: number;
     // NOTE: etablissementId supprimé - géré via utilisateur_etablissements
     etablissements?: Array<{
         etablissementId: string;
@@ -131,13 +166,27 @@ export interface UtilisateurResponseDto {
     derniereConnexion?: Date;
     createdAt: Date;
     updatedAt: Date;
+    /** Liste des codes de permission effectifs (rôle + directes) */
+    permissions?: string[];
     profil?: {
         nom: string;
         prenom: string;
         telephone?: string;
         genre?: string;
         dateNaissance?: Date;
-        photo?: string;
+        lieuNaissance?: string;
+        nationalite?: string;
+        telephoneSecondaire?: string;
+        adresse?: string;
+        ville?: string;
+        quartier?: string;
+        photoUrl?: string;
+        photoThumbnail?: string;
+        pieceRectoUrl?: string;
+        pieceVersoUrl?: string;
+        typePieceIdentite?: string;
+        numeroPieceIdentite?: string;
+        notes?: string;
     };
     /**
      * Rôle de l'utilisateur dans l'établissement courant
@@ -149,11 +198,26 @@ export interface UtilisateurResponseDto {
      * (true = actif dans cet établissement, false = inactif/désactivé)
      */
     actifDansEtablissement?: boolean;
+    /**
+     * Dossier personnel lié (si utilisateur est membre du personnel)
+     */
+    membrePersonnel?: {
+        id: string;
+        matricule: string;
+        statut: string;
+        dateEmbauche: Date;
+        typePersonnelId?: string;
+        typePersonnel?: { id: string; code: string; nom: string };
+        specialitePrincipale?: string;
+        departement?: string;
+    };
 }
 
 export default {
     createUtilisateurSchema,
     updateUtilisateurSchema,
     updateProfilSchema,
+    updateSecuritySchema,
+    changeRoleSchema,
     queryUtilisateursSchema,
 };

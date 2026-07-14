@@ -42,14 +42,14 @@ export function OngletMatieresPlanning({ enseignantId, isActive }: Props) {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Planning hebdomadaire</span>
-                    <span className="text-xs text-gray-400">
+                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Planning hebdomadaire</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                         Semaine du {new Date(semaine).toLocaleDateString('fr-FR')}
                     </span>
-                    <span className="text-xs text-gray-400">· {totalCreneaux} créneau{totalCreneaux > 1 ? 'x' : ''}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">· {totalCreneaux} créneau{totalCreneaux > 1 ? 'x' : ''}</span>
                 </div>
                 <ElisaButton variant="ghost" size="sm" onClick={() => refetch()}>
                     Actualiser
@@ -57,34 +57,34 @@ export function OngletMatieresPlanning({ enseignantId, isActive }: Props) {
             </div>
 
             {jours.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16">
-                    <Calendar className="mb-3 h-12 w-12 text-gray-300" />
-                    <p className="font-medium text-gray-600">Aucun cours cette semaine</p>
-                    <p className="mt-1 text-sm text-gray-500">Le planning hebdomadaire est vide.</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16 dark:border-gray-600 dark:bg-gray-800">
+                    <Calendar className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Aucun cours cette semaine</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">Le planning hebdomadaire est vide.</p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                    <div className="grid auto-cols-fr grid-flow-col border-b border-gray-200">
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    <div className="grid auto-cols-fr grid-flow-col border-b border-gray-200 dark:border-gray-700">
                         {jours.map(j => (
                             <div
                                 key={j.id}
-                                className="border-r border-gray-200 bg-gray-50 p-3 text-center last:border-r-0"
+                                className="border-r border-gray-200 bg-gray-50 p-3 text-center last:border-r-0 dark:border-gray-700 dark:bg-gray-900"
                             >
-                                <p className="text-sm font-semibold text-gray-700">{j.nom}</p>
-                                <p className="text-xs text-gray-400">{j.creneaux.length} cours</p>
+                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{j.nom}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500">{j.creneaux.length} cours</p>
                             </div>
                         ))}
-                        <div className="border-r border-gray-200 bg-gray-50 p-3 text-center last:border-r-0">
-                            <p className="text-sm font-semibold text-gray-700">Résumé</p>
-                            <p className="text-xs text-gray-400">{totalCreneaux} total</p>
+                        <div className="border-r border-gray-200 bg-gray-50 p-3 text-center last:border-r-0 dark:border-gray-700 dark:bg-gray-900">
+                            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Résumé</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">{totalCreneaux} total</p>
                         </div>
                     </div>
 
                     {jours.map(j => (
-                        <div key={j.id} className="border-b border-gray-100 last:border-b-0">
+                        <div key={j.id} className="border-b border-gray-100 last:border-b-0 dark:border-gray-700">
                             <div className="space-y-1 p-3">
                                 {j.creneaux.length === 0 ? (
-                                    <p className="py-4 text-center text-xs text-gray-400">—</p>
+                                    <p className="py-4 text-center text-xs text-gray-400 dark:text-gray-500">—</p>
                                 ) : (
                                     j.creneaux.map(c => (
                                         <CreneauCard key={c.id} creneau={c} />
@@ -101,25 +101,25 @@ export function OngletMatieresPlanning({ enseignantId, isActive }: Props) {
 
 function CreneauCard({ creneau }: { creneau: EdtCreneau }) {
     return (
-        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
+        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: '#3b82f6' }}
                     />
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {creneau.matiere?.nom || creneau.matiereId.slice(0, 8)}
                     </span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                     <Clock className="h-3 w-3" />
                     {creneau.heureDebut?.slice(0, 5)} - {creneau.heureFin?.slice(0, 5)}
                 </span>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                 {creneau.classe?.nom && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                         {creneau.classe.nom}
                     </span>
                 )}

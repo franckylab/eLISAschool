@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { Archive, Plus, Download, Trash2, FileText, Image, Video, Music } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 import { useArchives, useTelechargerArchive, useSupprimerArchive, useStatistiquesArchives } from '../hooks/use-archives';
 import type { Archive as ArchiveType } from '../types/archives.types';
 
@@ -63,12 +65,12 @@ export function ArchivesPage() {
             </motion.div>
 
             {stats && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-blue-100 rounded-lg"><Archive className="h-5 w-5 text-blue-600" /></div><div><p className="text-xs text-gray-500">Total archives</p><p className="text-lg font-bold text-blue-600">{stats.totalArchives}</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-green-100 rounded-lg"><FileText className="h-5 w-5 text-green-600" /></div><div><p className="text-xs text-gray-500">Taille totale</p><p className="text-lg font-bold text-green-600">{formatTaille(stats.tailleTotale)}</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-purple-100 rounded-lg"><Image className="h-5 w-5 text-purple-600" /></div><div><p className="text-xs text-gray-500">Catégories</p><p className="text-lg font-bold text-purple-600">{stats.parCategorie?.length || 0}</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-orange-100 rounded-lg"><FileText className="h-5 w-5 text-orange-600" /></div><div><p className="text-xs text-gray-500">Documents</p><p className="text-lg font-bold text-orange-600">{stats.parCategorie?.find(c => c.categorie === 'document')?.nombre || 0}</p></div></div></div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Archive} label="Total archives" value={stats.totalArchives} tone="accent" />
+                    <StatCard icon={FileText} label="Taille totale" value={formatTaille(stats.tailleTotale)} tone="success" />
+                    <StatCard icon={Image} label="Catégories" value={stats.parCategorie?.length || 0} tone="purple" />
+                    <StatCard icon={FileText} label="Documents" value={stats.parCategorie?.find(c => c.categorie === 'document')?.nombre || 0} tone="orange" />
+                </CardGrid>
             )}
 
             <DataTable

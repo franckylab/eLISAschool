@@ -62,7 +62,7 @@ export function ProgrammesPage() {
                         <span className="font-semibold">{p.nom}</span>
                     </div>
                     {p.description && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-1">{p.description}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{p.description}</p>
                     )}
                 </div>
             ),
@@ -71,7 +71,7 @@ export function ProgrammesPage() {
             key: 'code',
             header: 'Code',
             render: (p) => (
-                <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
                     {p.code}
                 </code>
             ),
@@ -81,7 +81,7 @@ export function ProgrammesPage() {
             header: 'Cycle',
             render: (p) => (
                 <div className="flex items-center gap-1">
-                    <Layers className="h-3 w-3 text-gray-500" />
+                    <Layers className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm">{p.cycle?.nom || p.cycleNom || '-'}</span>
                 </div>
             ),
@@ -98,7 +98,7 @@ export function ProgrammesPage() {
             header: 'Heures/sem.',
             render: (p) => (
                 <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-gray-500" />
+                    <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm font-medium">
                         {p.nbHeuresCalculees || p.nbHeuresHebdo || 0}h
                     </span>
@@ -113,7 +113,7 @@ export function ProgrammesPage() {
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         p.actif
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-800'
                     }`}
                 >
                     {p.actif ? 'Actif' : 'Inactif'}
@@ -203,7 +203,7 @@ export function ProgrammesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="bg-white rounded-lg p-4 border border-gray-200"
+                className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 dark:border-gray-700"
             >
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
@@ -225,11 +225,11 @@ export function ProgrammesPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
-                    className="bg-white rounded-lg p-4 border border-gray-200"
+                    className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 dark:border-gray-700"
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Programmes</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Total Programmes</p>
                             <p className="text-2xl font-bold text-[var(--color-dominante)] mt-1">
                                 {total}
                             </p>
@@ -242,11 +242,11 @@ export function ProgrammesPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.2 }}
-                    className="bg-white rounded-lg p-4 border border-gray-200"
+                    className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 dark:border-gray-700"
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Actifs</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Actifs</p>
                             <p className="text-2xl font-bold text-green-600 mt-1">
                                 {programmes.filter((p) => p.actif).length}
                             </p>

@@ -12,6 +12,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useEvenements, useSupprimerEvenement, useStatistiquesEvenements } from '../hooks/use-evenements';
 import type { Evenement } from '../types/evenement.types';
+import { CardGrid, StatCard } from '@/components/ui';
 
 export function EvenementsPage() {
     const { t } = useTranslation('evenements');
@@ -183,57 +184,12 @@ export function EvenementsPage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <Calendar className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.total}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <Clock className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">En cours</p>
-                                <p className="text-lg font-bold text-green-600">{stats.enCours}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <Calendar className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Programmés</p>
-                                <p className="text-lg font-bold text-purple-600">{stats.programmes}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Users className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Participants</p>
-                                <p className="text-lg font-bold text-orange-600">{stats.totalParticipants}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Calendar} label="Total" value={stats.total} tone="accent" />
+                    <StatCard icon={Clock} label="En cours" value={stats.enCours} tone="success" />
+                    <StatCard icon={Calendar} label="Programmés" value={stats.programmes} tone="purple" />
+                    <StatCard icon={Users} label="Participants" value={stats.totalParticipants} tone="orange" />
+                </CardGrid>
             )}
 
 

@@ -11,4 +11,5 @@ import { PersonnelDetailPage } from '@/features/personnel/components/personnel-d
 export const Route = createFileRoute('/_auth/personnel/$id')({
     beforeLoad: () => requireModulePermission('personnel'),
     component: PersonnelDetailPage,
+
 });

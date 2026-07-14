@@ -207,10 +207,10 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
             <form onSubmit={handleSubmit} className="space-y-6 py-4">
                 {/* Section Identité */}
                 <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Identité</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Identité</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Code <span className="text-red-500">*</span>
                             </label>
                             <ElisaInput
@@ -221,10 +221,10 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                                 disabled={isLoading || isEdit}
                                 error={errors.code}
                             />
-                            <p className="text-xs text-gray-400">Unique, ex: S101, LABO_CHIM</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">Unique, ex: S101, LABO_CHIM</p>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Nom <span className="text-red-500">*</span>
                             </label>
                             <ElisaInput
@@ -239,17 +239,17 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                     </div>
                 </div>
 
-                <hr className="border-gray-100" />
+                <hr className="border-gray-100 dark:border-gray-700" />
 
                 {/* Section Caractéristiques */}
                 <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Caractéristiques</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Caractéristiques</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Type de salle</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Type de salle</label>
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-gray-100">
-                                    <TypeIcon className="h-5 w-5 text-gray-600" />
+                                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                                    <TypeIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                                 </div>
                                 <ElisaSelect
                                     value={typeSalle}
@@ -264,7 +264,7 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Capacité</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Capacité</label>
                             <ElisaInput
                                 type="number"
                                 min={CAPACITE_MIN}
@@ -274,7 +274,7 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                                 disabled={isLoading}
                             />
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
                                     <div
                                         className={`h-full rounded-full transition-all duration-300 ${
                                             capacityPercent > 80 ? 'bg-red-400' :
@@ -284,12 +284,12 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                                         style={{ width: `${capacityPercent}%` }}
                                     />
                                 </div>
-                                <span className="text-[10px] text-gray-400 font-medium">{capacite}/{CAPACITE_MAX}</span>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{capacite}/{CAPACITE_MAX}</span>
                             </div>
                         </div>
                     </div>
                     <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-700">Localisation</label>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Localisation</label>
                         <ElisaInput
                             value={localisation}
                             onChange={(e) => setLocalisation(e.target.value)}
@@ -300,11 +300,11 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                     </div>
                 </div>
 
-                <hr className="border-gray-100" />
+                <hr className="border-gray-100 dark:border-gray-700" />
 
                 {/* Section Équipements */}
                 <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Équipements</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Équipements</h4>
                     <div className="flex items-center gap-2 mb-3">
                         <div className="relative flex-1">
                             <input
@@ -315,7 +315,7 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                                 placeholder="Ajouter un équipement..."
                                 disabled={isLoading}
                                 list="equipement-suggestions"
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
                             />
                             <datalist id="equipement-suggestions">
                                 {EQUIPEMENT_PRESETS.filter(e => !equipementList.includes(e)).map(e => (
@@ -366,15 +366,15 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                             })}
                         </div>
                     ) : (
-                        <p className="text-xs text-gray-400 italic">Aucun équipement ajouté</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun équipement ajouté</p>
                     )}
                 </div>
 
-                <hr className="border-gray-100" />
+                <hr className="border-gray-100 dark:border-gray-700" />
 
                 {/* Section Statut */}
                 <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Statut</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Statut</h4>
                     <div className="space-y-3">
                         <ElisaSelect
                             value={statut}
@@ -397,13 +397,13 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
                     </div>
                 </div>
 
-                <hr className="border-gray-100" />
+                <hr className="border-gray-100 dark:border-gray-700" />
 
                 {/* Description */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Description</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                     <textarea
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none resize-none"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none resize-none"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Description optionnelle de la salle..."

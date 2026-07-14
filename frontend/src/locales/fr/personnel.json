@@ -20,6 +20,26 @@
         "en_conge": "En congé",
         "demission": "Démission"
     },
+    "statut": "Statut",
+    "typePersonnel": "Type de personnel",
+    "form": {
+        "titreCreation": "Ajouter un membre du personnel",
+        "titreEdition": "Modifier le membre du personnel",
+        "description": "Renseignez les informations du membre du personnel",
+        "compteUtilisateur": "Compte utilisateur",
+        "delier": "Délier",
+        "lier": "Lier",
+        "lierUtilisateur": "Lier un utilisateur...",
+        "lierUtilisateurOptionnel": "Optionnel : lier un utilisateur existant...",
+        "selectionnerType": "Sélectionner un type...",
+        "dateEntreeRequise": "La date d'entrée est requise",
+        "placeholderQualification": "Ex: Master, Licence...",
+        "placeholderSpecialite": "Ex: Mathématiques, Français...",
+        "ajouter": "Ajouter",
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer",
+        "chargement": "Chargement des données..."
+    },
     "heuresCours": {
         "mensuel": "Mensuel",
         "hebdomadaire": "Hebdomadaire",

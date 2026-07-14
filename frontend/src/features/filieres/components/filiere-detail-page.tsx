@@ -42,7 +42,7 @@ export function FiliereDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
             </div>
         );
     }
@@ -81,8 +81,8 @@ export function FiliereDetailPage() {
                             <Award className="h-8 w-8 text-indigo-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{filiere.nom}</h1>
-                            <p className="text-gray-500 font-mono text-sm">{filiere.code}</p>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{filiere.nom}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{filiere.code}</p>
                         </div>
                     </div>
                     {hasPermission('filieres:edit') && (
@@ -98,19 +98,19 @@ export function FiliereDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations</h2>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 font-mono">{filiere.code}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{filiere.code}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Sous-système</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{SOUS_SYSTEME_LABELS[filiere.sousSysteme] || filiere.sousSysteme}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Sous-système</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{SOUS_SYSTEME_LABELS[filiere.sousSysteme] || filiere.sousSysteme}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Cycle</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Cycle</dt>
                                     <dd>
                                         {filiere.cycle ? (
                                             <button
@@ -120,16 +120,16 @@ export function FiliereDetailPage() {
                                                 {filiere.cycle.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Coefficient frais</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{filiere.coefficientFrais ?? '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Coefficient frais</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{filiere.coefficientFrais ?? '-'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Statut</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
                                     <dd>
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${filiere.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {filiere.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
@@ -139,9 +139,9 @@ export function FiliereDetailPage() {
                                 </div>
                             </dl>
                             {filiere.description && (
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <dt className="text-sm text-gray-500 mb-1">Description</dt>
-                                    <dd className="text-sm text-gray-900">{filiere.description}</dd>
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</dt>
+                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{filiere.description}</dd>
                                 </div>
                             )}
                         </div>
@@ -158,22 +158,22 @@ export function FiliereDetailPage() {
                                     {filiere.actif ? 'Actif' : 'Inactif'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                                 {filiere.actif
                                     ? 'Cette filière est actuellement active.'
                                     : 'Cette filière est actuellement inactive.'}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Informations</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Informations</h3>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Cycle</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Cycle</span>
                                     <span className="font-medium">{filiere.cycle?.nom || '-'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Sous-système</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Sous-système</span>
                                     <span className="font-medium">{SOUS_SYSTEME_LABELS[filiere.sousSysteme] || filiere.sousSysteme}</span>
                                 </div>
                             </div>

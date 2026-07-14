@@ -22,7 +22,7 @@ function formatDateTime(dateStr: string): string {
 }
 
 function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
+    return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className || ''}`} />;
 }
 
 export function CycleDetailPage() {
@@ -62,7 +62,7 @@ export function CycleDetailPage() {
             <div className="flex flex-col items-center justify-center py-20">
                 <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
                 <p className="text-xl font-semibold text-red-600 mb-2">Cycle non trouvé</p>
-                <p className="text-gray-500 mb-6">Le cycle demandé n'existe pas ou a été supprimé.</p>
+                <p className="text-gray-500 dark:text-gray-200 mb-6">Le cycle demandé n'existe pas ou a été supprimé.</p>
                 <ElisaButton variant="outline" onClick={() => navigate({ to: '/cycles' })}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Retour à la liste
@@ -158,15 +158,15 @@ export function CycleDetailPage() {
                             key={stat.label}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className={`p-2.5 rounded-xl ${stat.iconBg}`}>
                                     <stat.icon className={`h-5 w-5 ${stat.color}`} />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                            <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-gray-200">{stat.value}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-200 mt-0.5">{stat.label}</p>
                         </motion.div>
                     ))}
                 </div>
@@ -177,40 +177,40 @@ export function CycleDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                         >
-                            <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-5 flex items-center gap-2">
                                 <BookOpen className="h-5 w-5 text-purple-500" />
                                 Informations générales
                             </h2>
                             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                                 <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Code</dt>
-                                    <dd className="text-sm font-semibold text-gray-900 font-mono">{cycle.code}</dd>
+                                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Code</dt>
+                                    <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200 font-mono">{cycle.code}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ordre</dt>
-                                    <dd className="text-sm font-semibold text-gray-900">{cycle.ordre}</dd>
+                                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Ordre</dt>
+                                    <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{cycle.ordre}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Durée</dt>
-                                    <dd className="text-sm font-semibold text-gray-900">{cycle.dureeAnnees || '-'} an{(cycle.dureeAnnees || 0) > 1 ? 's' : ''}</dd>
+                                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Durée</dt>
+                                    <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{cycle.dureeAnnees || '-'} an{(cycle.dureeAnnees || 0) > 1 ? 's' : ''}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Diplôme sanctionnant</dt>
-                                    <dd className="text-sm font-semibold text-gray-900">
+                                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Diplôme sanctionnant</dt>
+                                    <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">
                                         {cycle.diplomeSanctionnant ? (
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 font-semibold">
                                                 <Award className="h-4 w-4" />
                                                 {cycle.diplomeSanctionnant}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 italic">Aucun</span>
+                                            <span className="text-gray-400 dark:text-gray-100 italic">Aucun</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div className="sm:col-span-2">
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Statut</dt>
+                                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Statut</dt>
                                     <dd>
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                                             cycle.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -222,8 +222,8 @@ export function CycleDetailPage() {
                                 </div>
                                 {cycle.description && (
                                     <div className="sm:col-span-2">
-                                        <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Description</dt>
-                                        <dd className="text-sm text-gray-700 leading-relaxed">{cycle.description}</dd>
+                                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">Description</dt>
+                                        <dd className="text-sm text-gray-700 dark:text-gray-400 leading-relaxed">{cycle.description}</dd>
                                     </div>
                                 )}
                             </dl>
@@ -234,18 +234,18 @@ export function CycleDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                             >
                                 <div className="flex items-center gap-2 mb-6">
                                     <Layers className="h-5 w-5 text-purple-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Niveaux du cycle</h2>
-                                    <span className="text-sm text-gray-400">({niveaux.length})</span>
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Niveaux du cycle</h2>
+                                    <span className="text-sm text-gray-400 dark:text-gray-100">({niveaux.length})</span>
                                 </div>
                                 <div className="space-y-0">
                                     {niveaux.map((n, index) => (
                                         <div
                                             key={n.id}
-                                            className={`flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer group ${
+                                            className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50 transition-colors cursor-pointer group ${
                                                 index < niveaux.length - 1 ? 'border-b border-gray-100' : ''
                                             }`}
                                             onClick={() => navigate({ to: '/niveaux/$id', params: { id: n.id } })}
@@ -260,9 +260,9 @@ export function CycleDetailPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-gray-900">{n.nom}</span>
+                                                    <span className="font-medium text-gray-900 dark:text-gray-200">{n.nom}</span>
                                                     {n.code && (
-                                                        <span className="font-mono text-xs text-gray-400">{n.code}</span>
+                                                        <span className="font-mono text-xs text-gray-400 dark:text-gray-100">{n.code}</span>
                                                     )}
                                                     {n.estClasseExamen && (
                                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">
@@ -271,12 +271,12 @@ export function CycleDetailPage() {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-gray-500 dark:text-gray-200">
                                                         {n.sousSysteme === 'FRANCOPHONE' ? 'Francophone' : n.sousSysteme === 'ANGLOPHONE' ? 'Anglophone' : n.sousSysteme}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+                                            <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-400 group-hover:text-gray-500 transition-colors flex-shrink-0" />
                                         </div>
                                     ))}
                                 </div>
@@ -288,34 +288,34 @@ export function CycleDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                             >
                                 <div className="flex items-center gap-2 mb-6">
                                     <Award className="h-5 w-5 text-indigo-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Filières du cycle</h2>
-                                    <span className="text-sm text-gray-400">({filieres.length})</span>
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Filières du cycle</h2>
+                                    <span className="text-sm text-gray-400 dark:text-gray-100">({filieres.length})</span>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {filieres.map((f) => (
                                         <div
                                             key={f.id}
                                             onClick={() => navigate({ to: '/filieres/$id', params: { id: f.id } })}
-                                            className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
+                                            className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
                                         >
                                             <div className="p-2.5 rounded-xl bg-indigo-50">
                                                 <Award className="h-5 w-5 text-indigo-600" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900">{f.nom}</p>
+                                                <p className="font-medium text-gray-900 dark:text-gray-200">{f.nom}</p>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="font-mono text-xs text-gray-400">{f.code}</span>
-                                                    <span className="text-gray-300">•</span>
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="font-mono text-xs text-gray-400 dark:text-gray-100">{f.code}</span>
+                                                    <span className="text-gray-300 dark:text-gray-400">•</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-200">
                                                         {f.sousSysteme === 'FRANCOPHONE' ? 'Francophone' : 'Anglophone'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+                                            <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-400 group-hover:text-gray-500 transition-colors flex-shrink-0" />
                                         </div>
                                     ))}
                                 </div>
@@ -341,7 +341,7 @@ export function CycleDetailPage() {
                                     {cycle.actif ? 'Actif' : 'Inactif'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                                 {cycle.actif
                                     ? 'Ce cycle est actuellement actif et utilisable dans toute l\'application.'
                                     : 'Ce cycle est actuellement inactif et masqué dans l\'application.'}
@@ -352,28 +352,28 @@ export function CycleDetailPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.25 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                         >
-                            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <Layers className="h-4 w-4 text-gray-400" />
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <Layers className="h-4 w-4 text-gray-400 dark:text-gray-100" />
                                 Aperçu
                             </h3>
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Niveaux</span>
-                                    <span className="text-sm font-semibold text-gray-900">{niveaux?.length ?? 0}</span>
+                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                                    <span className="text-sm text-gray-600 dark:text-gray-300">Niveaux</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{niveaux?.length ?? 0}</span>
                                 </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Filières</span>
-                                    <span className="text-sm font-semibold text-gray-900">{filieres?.length ?? 0}</span>
+                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                                    <span className="text-sm text-gray-600 dark:text-gray-300">Filières</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{filieres?.length ?? 0}</span>
                                 </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Durée</span>
-                                    <span className="text-sm font-semibold text-gray-900">{cycle.dureeAnnees || 0} an(s)</span>
+                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                                    <span className="text-sm text-gray-600 dark:text-gray-300">Durée</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{cycle.dureeAnnees || 0} an(s)</span>
                                 </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Ordre</span>
-                                    <span className="text-sm font-semibold text-gray-900">{cycle.ordre}</span>
+                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                                    <span className="text-sm text-gray-600 dark:text-gray-300">Ordre</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{cycle.ordre}</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -382,20 +382,20 @@ export function CycleDetailPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.35 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                         >
-                            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-gray-400" />
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-100" />
                                 Informations système
                             </h3>
                             <div className="space-y-3 text-sm">
                                 <div>
-                                    <p className="text-gray-500 text-xs">Créé le</p>
-                                    <p className="font-medium text-gray-900">{formatDateTime(cycle.createdAt)}</p>
+                                    <p className="text-gray-500 dark:text-gray-200 text-xs">Créé le</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-200">{formatDateTime(cycle.createdAt)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 text-xs">Modifié le</p>
-                                    <p className="font-medium text-gray-900">{formatDateTime(cycle.updatedAt)}</p>
+                                    <p className="text-gray-500 dark:text-gray-200 text-xs">Modifié le</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-200">{formatDateTime(cycle.updatedAt)}</p>
                                 </div>
                             </div>
                         </motion.div>

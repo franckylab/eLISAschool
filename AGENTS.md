@@ -1,7 +1,7 @@
 # eLISAschool — Session Context
 
 ## Objective
-Finaliser le module paie RH (4 modes de rémunération, génération bulletins, HeureCours) + vue HeureCours détail personnel, dashboard paie, PDF bulletin, affectations. Audit bugs dashboard.
+Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Connecter vraies données EDT/Affectations.
 
 ## Constraints & Preferences
 - Système multi-tenant avec etablissementId sur toutes les entités
@@ -11,35 +11,162 @@ Finaliser le module paie RH (4 modes de rémunération, génération bulletins, 
 - Zod validation pour tous les DTOs, endpoints REST RESTful
 - Frontend: barrel export via index.ts dans chaque feature, hooks React Query par feature
 
-## Progress
-### Phase 2 — Contrat-centric refactor ✓
-- **Migration script** — `backend/src/database/migrations/1786000000000-ContratCentricSync.ts` : ajoute colonnes `posteId`/`contratId` (idempotent), lie `AffectationPoste`/`MembreFonction` aux contrats par membre+dates, synchronise `Poste.occupantId` avec contrats, crée les `MembreFonction` manquants
-- **i18n contrat** — `frontend/src/locales/fr/contrat.json` : ~60 clés pour wizard (steps, labels, récap, erreurs)
-- **Wizard contrat** — `frontend/src/features/personnel/components/contrat-wizard-modal.tsx` : 5 étapes (Member&Type → Poste → Fonctions → Rémunération → Récap) avec sélecteur poste filtré (vacants + actuel membre), tags fonctions secondaires. Intégré dans `contrats-paie-page.tsx` en remplacement du formulaire plat
-- **Read-only onglets** — `personnel-detail-page.tsx` : supprimé `AffecterPosteModal`, boutons "Nouvelle affectation"/"Terminer". `tab-fonctions.tsx` : read-only (plus de modal assignation/bouton retrait)
-- **ContratPersonnel type** enrichi (`posteId`, `PostePartial`, `typeContratId`, `renouvellementAuto`, `clauses`)
-
-### Phase 1 — Paie & HeureCours ✓
-- **Refactor fusion paie** — `genererBulletin` délègue à `calculerBulletin`
-- **Simulation paie** — `simulerPaie` retourne `detailParMatiere`
-- **Frontend paie** — 7 features : Simuler, Régénérer, Masse, filtres, Marquer payé, groupement éléments, 5 stats cards
-- **PDF bulletin** — endpoint HTML print-ready + bouton téléchargement
-- **HeureCours** — `tab-heure-cours.tsx` (toggle mensuel/hebdo, stats, EDT 6 colonnes)
-- **Bug fixes** — `classe` ReferenceError, `genre→sexe`, `'actif'→'ACTIF'`, colonne `actif`, `e.classe`, cache key userId, `Promise.race`
-
-### Pending
-- Connecter vraies données EDT/Affectations
-
-## Modèle mental — Grille matière vs Programme pédagogique
-- **MatiereNiveau** = source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire
-- **ProgrammePedagogique** = agrégat nommé référençant des matières via ProgrammeMatiere (surcharges optionnelles)
-- **ConfigurationMatiereClasse** = surcharge par classe réelle (cascade MatiereNiveau → ProgrammeMatiere → ConfigurationMatiereClasse)
+## Modèle Mental — Typage du Personnel
+- **`TypePersonnel`** = pivot central unique pour déterminer le type d'un membre (ENSEIGNANT, DIRECTION, ADMINISTRATIF, etc.)
+- **`Poste.typePersonnelId`** = FK vers TypePersonnel (remplace l'ancien enum `TypePoste`) — synchronisé depuis TypePersonnel
+- **`Role` RBAC** = permissions (suggéré par défaut via `TypePersonnel.roleIdParDefaut`)
+- **`Fonction`** = rôle fonctionnel hiérarchique libre (ex: "Professeur Principal"), indépendant du type
+- **Données personnelles** = toujours via `ProfilUtilisateur` (pas de duplication sur `MembrePersonnel`)
+- **Une seule page frontend** : `/personnel/*` avec onglets conditionnels selon `TypePersonnel.code` ; `/enseignants/*` redirige vers `/personnel/*`
 
 ## Key Decisions
-- Multi-composants (option B pour détail enseignant)
+- `MembrePersonnel` ne duplique plus les champs de `ProfilUtilisateur` (nom, prenom, email, téléphone, adresse, dateNaissance, sexe supprimés)
+- `TypePoste` enum supprimé → remplacé par FK `Poste.typePersonnelId` → `TypePersonnel`
+- Page enseignant fusionnée dans page personnel (route `/enseignants/*` → redirect vers `/personnel/*`)
+- `Enseignant` type frontend = alias vide de `MembrePersonnel` (specialite/qualification déplacés dans la classe de base)
 - Retour hook = `response.data` (pattern projet)
-- ProgrammePedagogique distinct de ProgrammeChapitre
-- Permission "programmes:config:write" pour actions d'écriture
+- Deux api-clients coexistent : `@/lib/api-client` (54 features) et `@/lib/api` (18 features) — ce dernier est un ré-export fonctionnellement équivalent mais avec des types génériques différents
+- Dark mode exigé sur toutes les nouvelles pages/composants (classes `dark:`)
+- i18n obligatoire pour tout texte visible (aucune chaîne hardcodée)
+
+## Progress
+### Phase 4 — Refactor fusion Personnel/Enseignant + types ✓
+- **Entités** — `TypePersonnel` enrichi (roleIdParDefaut, actif, description, modeRemunerationDefaut) ; `MembrePersonnel` nettoyé (colonnes dupliquées supprimées) ; `Poste.typePersonnelId` FK ajoutée
+- **DTOs** — `createPersonnelSchema` allégé (fins nom/prenom/email/telephone/adresse/dateNaissance/sexe) ; `createPosteSchema` passe de `type` enum à `typePersonnelId` UUID ; `createTypePersonnelSchema` enrichi
+- **Services** — `postes.service.ts` : `modeParType` remplacé par lookup TypePersonnel.modeRemunerationDefaut ; `contrat.service.ts` : validation via `poste.typePersonnel.code` ; `personnel.service.ts` : recherche textuelle sur ProfilUtilisateur/Utilisateur ; `generation.service.ts` + `historique-clonage.service.ts` : typePersonnelId
+- **Migrations (3)** — A: `1790000000000-EnrichTypePersonnel.ts` (colonnes + 8 entrées par défaut) ; B: `1791000000000-CleanMembrePersonnelDuplicates.ts` (backfill ProfilUtilisateur + DROP colonnes) ; C: `1792000000000-PosteTypeToTypePersonnel.ts` (add typePersonnelId + backfill + DROP type enum column)
+- **Frontend types** — `MembrePersonnel` nettoyé ; `Enseignant` = extension vide ; `Poste.type` → `typePersonnelId` ; `TYPES_POSTE_OPTIONS` supprimé
+- **Forms** — `personnel-form-modal.tsx` et `enseignant-form-modal.tsx` : champs personnels retirés
+- **Pages détail/liste** — fallback `membre.xxx ?? membre.utilisateur?.profil?.xxx` → `profil.xxx` uniquement ; `sexe` → `genre` ; `departement` conservé
+- **Routes** — `/enseignants/*` redirige vers `/personnel/*` ; sidebar "Enseignants" retiré
+- **Contrat wizard** — `isPosteCompatible` simplifié (validation backend uniquement)
+- **Pages détail** — `personnel-detail-page.tsx` : onglets pédagogiques enseignant intégrés (Matières & Classes, EDT, Évaluations, Absences, Parcours) affichés conditionnellement selon `TypePersonnel.code === 'ENSEIGNANT'` ; composants réutilisés depuis `@/features/enseignants/components/enseignant-detail/`
+
+### Phase 2 — Contrat-centric refactor ✓
+- Migration contrat-centric, i18n wizard, read-only onglets, ContratPersonnel type enrichi
+
+### Phase 1 — Paie & HeureCours ✓
+- Refactor fusion paie, simulation paie, frontend paie 7 features, PDF bulletin, HeureCours, bug fixes
+
+### Phase 5 — Refactor sécurité utilisateur (modal↔inline) ✓
+- **Analyse** : `SecuriteModal` (via bouton header "Sécurité & Rôle") et `OngletParametres` (panel inline "Sécurité") géraient les mêmes champs (password, 2FA, statut) avec des UX différentes — le panel était décoratif (boutons sans handlers)
+- **Backend** :
+  - `audit-utilisateurs.ts` helper réutilisable (`auditUtilisateur`) avec méthodes `profilModifie`, `securiteModifiee`, `motDePasseForce`, `sessionsRevokees`, `statutModifie` — pattern identique à `audit-helpers.ts`
+  - `changeStatut()` accepte `req` optionnel + audit log (USER_SUSPEND / USER_ACTIVATE / USER_UPDATE selon transition)
+  - `forcePasswordReset(id, req)` → révoque sessions `tokenService.revokeAllUserTokens()` + audit `PASSWORD_RESET`
+  - `revokeSessions(id, req)` → `revokeAllUserTokens()` + audit `USER_UPDATE`
+  - 2 nouvelles routes : `POST /:id/force-password-reset`, `POST /:id/revoke-sessions` (perm `utilisateurs:security:update`)
+- **Frontend** :
+  - `SecuriteModal` → `RoleEtStatutModal` (role + statut + langue uniquement ; password/2FA retirés)
+  - Bouton header renommé "Rôle & Statut"
+  - `use-utilisateurs.ts` : 4 hooks dédiés — `useForcePasswordReset`, `useToggle2FA` (optimistic update), `useToggleSuspension` (optimistic update + confirmation), `useRevokeSessions`
+  - `OngletParametres` : 4 `ParametreItem` câblés (Réinitialiser mot de passe, 2FA toggle via `ElisaToggle`, Suspendre/Réactiver avec `useConfirmation`, Déconnecter sessions), état loading/disabled géré, permissions checkées
+  - `supprimer.mutateAsync` corrigé (passait 2 args au lieu d'un objet)
+- **Audit** : toutes les actions (password reset, suspension/réactivation, révocation sessions, changement statut) sont tracées dans `audit_logs` avec module='utilisateurs', severity appropriée (WARNING/CRITICAL)
+
+### Phase 6 — TypePersonnel CRUD complet + UI nomenclature + cache + couleurs/icônes ✓
+- **Backend — Entité** — `TypePersonnel.estSysteme` colonne ajoutée pour protéger les types par défaut
+- **Backend — Constantes** — `backend/src/shared/constants/personnel.constants.ts` : `TYPE_PERSONNEL_CODES` pour éliminer les strings magiques
+- **Backend — Cache** — `getTypes()` implémente un cache in-memory (TTL 5 min) avec invalidation sur create/update/delete
+- **Backend — CRUD complet** — nouveau endpoints : `GET /types/:id`, `PATCH /types/:id`, `DELETE /types/:id` ; service `findTypeById`, `updateType`, `deleteType` avec vérification d'intégrité référentielle (membres + postes) + protection `estSysteme`
+- **Backend — DTO** — `updateTypePersonnelSchema` (partial + actif/estSysteme)
+- **Backend — Postes** — `postes.service.ts` : `findAll` et `findById` chargent désormais `typePersonnel` relation pour afficher le label
+- **Migration** — `1793000000000-AddEstSystemeToTypePersonnel.ts` : ajoute `estSysteme` + marque les 8 types par défaut comme système
+- **Frontend — Types** — interface `TypePersonnel` (avec `estSysteme`) ajoutée dans `personnel.types.ts` ; `TypePersonnelLite` ajoutée dans `poste.types.ts` ; relation `typePersonnel` ajoutée à `Poste`
+- **Frontend — Hook** — `use-types-personnel.ts` : `useTypesPersonnel` (staleTime 5min), `useTypePersonnelOptions`, `useCreerTypePersonnel`, `useModifierTypePersonnel`, `useSupprimerTypePersonnel`
+- **Frontend — Constantes** — `constants/type-personnel-colors.ts` : `TYPE_PERSONNEL_COLORS`, `TYPE_PERSONNEL_BADGE_VARIANTS`, `TYPE_PERSONNEL_ICONS` avec mapping par code + helpers `getTypeColor`, `getTypeBadgeVariant`, `getTypeIcon`
+- **Frontend — Nomenclatures** — onglet "Types personnel" ajouté dans `nomenclatures-page.tsx` avec `TabTypesPersonnel`, `TypePersonnelAddForm` (pattern identique aux autres tabs : `InlineEdit`, `BadgeSysteme`, `ConfirmationModal`, `!tp.estSysteme` pour protéger les types système)
+- **Frontend — Postes** — `postes-page.tsx` : colonne `typePersonnel` affiche `p.typePersonnel?.nom` au lieu de l'UUID brut ; `poste-detail-page.tsx` : icône + couleur contextuelle du type
+- **Frontend — Personnel form** — `personnel-form-modal.tsx` : sélecteur `typePersonnelId` ajouté (via `useTypePersonnelOptions`)
+- **Frontend — Détail personnel** — badge coloré avec icône contextuelle affiché à côté du nom/statut
+- **Frontend — Filtre** — filtre par type de personnel ajouté dans `personnel-page.tsx` (select avec icône Users)
+- **i18n** — clés `typePersonnel`, `typesPersonnel`, `nouveauTypePersonnel`, etc. ajoutées dans `organisation.json` (fr + en)
+
+### Phase 8 — PageHeader gradient + glass-morphism actions ✓
+- **`gradientActionStyle()` récursif** : traverse les conteneurs (div) pour appliquer le glass-morphism directement sur chaque bouton, pas sur le conteneur
+- **Conteneur actions** : glass panel `bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-2` autour de toutes les actions
+- Bouton normal → `!bg-white/20 hover:!bg-white/35 !text-white !border-white/25 active:!scale-[0.97]` (contraste renforcé)
+- Bouton danger → `!bg-red-500/55 hover:!bg-red-500/70 !text-white !border-red-300/25` (alerte dosée sans clash)
+- `!backdrop-blur-sm` + `!shadow-sm` + `transition-all duration-150` pour l'effet frost profond
+- `active:!scale-[0.97]` feedback tactile au clic
+- Conteneur actions flex-wrap responsive, isolé du layout titre
+- Les tons `dominant`/`accent` utilisent les alias de thème (`--color-dominante`/`--color-accent`) via inline `style` (contourne Tailwind v4 qui ne génère pas `from-*` pour les vars `@layer base`)
+- **Responsivité extrême** : tous les sizes utilisent `clamp()`
+  - Padding conteneur : `p-[clamp(1rem,4vw,2rem)]` (de `p-8` fixe)
+  - Icône : `h-[clamp(1.75rem,6vw,2.5rem)]` (de `h-10` fixe)
+  - Titre : `text-[var(--text-3xl)]` via clamp CSS variable (de `text-3xl` fixe)
+  - Sous-titre : `text-[var(--text-sm)]` via clamp CSS variable
+  - Gaps : `gap-[clamp(0.75rem,3vw,1.25rem)]` partout (de `gap-5`/`gap-4` fixes)
+  - Bouton retour : `p-[clamp(0.375rem,1.5vw,0.5rem)]` (de `p-2`/`p-1.5` fixes)
+  - Actions : `w-full sm:w-auto` pour stack vertical sur mobile
+  - SVG décoratif : `w-[clamp(12rem,40vw,16rem)]` (de `w-64` fixe)
+
+### Phase 7 — Liaison Utilisateur↔MembrePersonnel + dark mode + i18n ✓
+- **Backend — Relation inverse** : `Utilisateur.membrePersonnel` ajouté (@OneToOne lazy 'MembrePersonnel') ; `MembrePersonnel.utilisateurId` passe `unique: true` + `onDelete: 'SET NULL'` ; migration `1795000000000-AddUniqueUtilisateurIdToMembrePersonnel` avec nettoyage doublons
+- **Backend — Endpoints** : 3 nouvelles routes — `POST /:id/link-user`, `POST /:id/unlink-user`, `GET /stats/sans-compte` ; service `linkUser`, `unlinkUser`, `getPersonnelSansCompte` avec audit logging
+- **Backend — Utilisateurs** : `findOne()` charge `membrePersonnel` + `typePersonnel` ; `formatUtilisateurResponse` inclut `membrePersonnel` ; `removeCascade` ne DELETE plus les membres_personnel (SET NULL)
+- **Backend — DTOs** : `linkUtilisateurSchema` (Zod) dans personnel.dto.ts ; `membrePersonnel?` dans `UtilisateurResponseDto`
+- **Backend — Modules index** : `export * from './postes'` ajouté (manquant)
+- **Frontend — Types** : `Utilisateur.membrePersonnel?` ajouté dans `utilisateur.types.ts`
+- **Frontend — Hooks** : `useLinkPersonnelUtilisateur`, `useUnlinkPersonnelUtilisateur`, `usePersonnelSansCompte` dans `use-personnel.ts`
+- **Frontend — Personnel form** : section "Compte utilisateur" avec sélecteur utilisateur (link/unlink) + i18n
+- **Frontend — Tab infos utilisateur** : carte "Dossier Personnel" si `utilisateur.membrePersonnel` existe (matricule, type, statut, lien)
+- **Frontend — Header personnel** : badge email cliquable → lien vers `/utilisateurs/$id`
+- **Dark mode** : 373 `dark:` classes ajoutées sur personnel-detail-page, contrats-paie-page, contrat-wizard-modal, personnel-form-modal, tab-informations, utilisateur-detail-page
+- **i18n** : `en/contrat.json` créé (90 clés) ; hardcoded strings remplacées dans personnel-form-modal (16 → clés `form.*` dans personnel.json) et contrat-wizard-modal (7 → clés dans contrat.json)
+- **Loading/error states** : personnel-detail-page upgrade (LoadingState + `error!` guard)
+
+### Phase 7c — Exposition complète ProfilUtilisateur + UI restructurée + bugs ✓
+- **Décision (grill-me)** : Analyse d'impact → **pas de merge** ProfilUtilisateur↔Utilisateur (séparation gardée)
+- **Backend DTO** : `updateProfilSchema` enrichi (`photo`, `pieceIdentite`, `numeroPieceIdentite`, `notes`) ; `UtilisateurResponseDto.profil` expose maintenant les 16 champs du profil
+- **Backend service** : `formatUtilisateurResponse` retourne tous les champs (lieuNaissance, nationalite, telephoneSecondaire, adresse, ville, quartier, pieceIdentite, numeroPieceIdentite, notes)
+- **Frontend types** : `Utilisateur.profil` complet (10 champs ajoutés) ; `UpdateProfilDto` complet ; `SexeUtilisateur` supprimé ; `etablissementId` supprimé du type
+- **Frontend tab-informations** : restructuré en 5 cartes responsives (Identité / Contact / Système / Pièces & Notes / Dossier Personnel) — i18n complète via 20 nouvelles clés
+- **Frontend info-profil-modal** : 5 sections (Identité / Contact / Photo / Documents / Langue) — bug fix `sexe→genre`
+- **Frontend header** : avatar circulaire avec photo si disponible, initiales sinon (gradient dominant→purple)
+- **i18n** : 20 nouvelles clés dans `fr/utilisateurs.json` et `en/utilisateurs.json`
+- **Suppression ligne "Établissement ID"** dans tab-informations (champ backend supprimé v4.0)
+
+### Phase 7d — Upload fichiers (photos + pièces identité) via multer + sharp WebP ✓
+- **Grill-me upload** : 6 décisions alignées (stockage fichier + thumbnail, multer, sharp WebP, 5 endpoints REST dédiés, composant FileUpload réutilisable, séparation upload/métadonnées)
+- **Backend — Entity** : `ProfilUtilisateur` — `photo`→`photoUrl`, `pieceIdentite`→`pieceRectoUrl`, nouvelles colonnes `photoThumbnail`, `pieceVersoUrl`, `typePieceIdentite` (enum CNI/PASSEPORT/PERMIS/AUTRE)
+- **Backend — Migration** : `1797000000000-AddUploadColumnsToProfilUtilisateur` avec renommage + ajout colonnes
+- **Backend — Image processor** : `traiterPhotoProfil` (500px main + 150px thumb WebP), `traiterPieceIdentite` (2000px max WebP), `validerMimeUpload`
+- **Backend — Upload service** : `UploadService` (uploadPhoto, deletePhoto, uploadPieceRecto, uploadPieceVerso)
+- **Backend — Upload controller** : 5 endpoints POST `/:id/upload/{photo,piece-recto,piece-verso}`, DELETE `/:id/upload/photo` — multer memoryStorage 5MB max
+- **Backend — DTOs** : `updateProfilSchema` mis à jour (photo→photoUrl, pieceIdentite→pieceRectoUrl, +photoThumbnail/pieceVersoUrl/typePieceIdentite) ; `UtilisateurResponseDto.profil` idem
+- **Backend — Routes** : upload controller monté sur `/api/utilisateurs` (sans filterByEtablissement pour préserver body multer)
+- **Frontend — Types** : `Utilisateur.profil` mis à jour (photoUrl, photoThumbnail, pieceRectoUrl, pieceVersoUrl, typePieceIdentite) ; `UpdateProfilDto` idem
+- **Frontend — Hooks** : 4 hooks upload — `useUploadPhoto`, `useDeletePhoto`, `useUploadPieceRecto`, `useUploadPieceVerso`
+- **Frontend — FileUpload component** : drag & drop, preview, remove, loading state, accept filter, max size
+- **Frontend — info-profil-modal** : sections Photo (FileUpload) + Documents (FileUpload recto/verso + select typePieceIdentite) ; retiré champ URL textuel
+- **Frontend — tab-informations** : affichage photoThumbnail (fallback photoUrl) ; affichage pieceRectoUrl/pieceVersoUrl avec liens cliquables
+- **Frontend — Header** : `photo`→`photoThumbnail ?? photoUrl`
+
+### Phase 7b — Nettoyage champs legacy sur les types et composants frontend ✓
+- **Types corrigés** — `utilisateur.types.ts` : supprimé `actif`, `nbConnexions`, `nomComplet`, `motDePasseExpire` ; corrigé forme de `profil` (uniquement `nom`, `prenom`, `telephone?`, `genre?`, `dateNaissance?`, `photo?`) ; `personnel.types.ts` : supprimé `specialite`, `qualification`, `poste`, `dateEntree`, `dateSortie`, `etablissementOrigine`, `typeContrat` de `MembrePersonnel` ; `Enseignant` aligné
+- **Fonctions de mapping** — `fromFormToCreateDto` utilise `specialitePrincipale`/`diplomes` ; `useModifierPersonnel` simplifié (plus de mapping legacy) ; `buildFormData` uniformisé vers les nouveaux noms
+- **Composants fixes (13 fichiers)** — `personnel-detail-page.tsx`, `personnel-form-modal.tsx`, `personnel-page.tsx`, `personnel-search-field.tsx`, `enseignant-form-modal.tsx`, `enseignants-page.tsx`, `hero-header.tsx`, `onglet-infos.tsx`, `tab-activite.tsx` — retiré toutes les références à `specialite`, `qualification`, `poste` (string), `dateEntree`, `dateSortie`, `typeContrat`, `educationNiveau` sur MembrePersonnel/Enseignant
+- **Single Source of Truth** — `ProfilUtilisateur` = données perso (nom, prénom, téléphone, dateNaissance, genre) ; `MembrePersonnel` = données pro (matricule, diplomes, specialitePrincipale, posteExact, dateEmbauche, specialites[], departement, service) ; `Utilisateur` = identité système (email, role, statut, 2FA, langue)
+- **Backward compat** — ContratPersonnel et Poste entity inchangés (`typeContrat`, `poste` relation gardés)
+
+### Phase 7e — Refactor Design System (Card, StatCard, KpiCard, StatPill, CardGrid) ✓
+- **Grill-me décisions** : CSS variables et tons sémantiques (dominant/accent/success/danger/warning/info/muted/purple/orange) adoptés ; backward compat `StatCard.color` → `tone` ; eLISAschool-first naming
+- **`globals.css`** : `@custom-variant dark (&:where([data-theme="dark"] *))` aligne `dark:` avec `data-theme` ; `--color-card`/`--color-card-foreground` ; toutes les couleurs enregistrées dans `@theme` pour modificateurs d'opacité (`/10`, `/20`)
+- **`Card` compound** : Card/CardHeader/CardTitle/CardDescription/CardContent/CardFooter — fond quadrillé subtil + fade-in framer-motion
+- **`StatCard`** : refactorisé avec `bg-{tone}-600/10`, icône décorative, hover lift, badge tendance (+/-%), backward compat `color`→`tone`, 9 tons
+- **`KpiCard`** : compact CVA (`sm`/`md`), typographie `clamp()`, écart réel/prévu, fond gradient
+- **`StatPill` / `StatPillScrollable`** : pilules bouton avec icône + valeur + sous-titre, scroll horizontal
+- **`CardGrid`** : grilles responsives avec stagger animation (`staggerChildren: 0.08`), squelette chargement intégré, élimine `delay` manuels
+- **`card-variants.ts`** : source unique pour tons, classes CSS, types partagés
+- **`Skeleton.tsx`** : `StatsCardSkeleton` aligné avec classes CSS variables (`bg-card border-border`)
+- **Fichiers migrés (29)** : tab-roles-permissions, tab-postes, tab-fonctions, organisation-page, analytics-page, hero-header (x2), +22 pages feature (absences, examens, evenements, documents, bibliotheque, parking, stage, courriers, atelier, laboratoire, discipline, conges, inventaire, archives, finances, securite, maintenance, pointages, evaluations, sante, rapports, tab-heure-cours, admin-permissions-matrix) — remplacement inline gradient cards → StatCard + CardGrid
+- **Typecheck** : 0 nouvelle erreur sur les composants et fichiers migrés
+
+### Pending
+- Appliquer dark mode aux pages restantes
+- Appliquer i18n aux pages restantes
+- Connecter vraies données EDT/Affectations
 
 ## Références
 | Fichier | Rôle |
@@ -57,12 +184,64 @@ Finaliser le module paie RH (4 modes de rémunération, génération bulletins, 
 | `frontend/src/features/personnel/hooks/use-paie.ts` | +useSimulerPaie, useRegenererBulletin, useGenererBulletinsMasse, useRapportPaie |
 | `frontend/src/features/personnel/hooks/use-heure-cours.ts` | Hook HeureCours (resume, EDT, volume) |
 | `frontend/src/features/personnel/components/contrats-paie-page.tsx` | Toutes features bulletins + stats paie + wizard intégré |
-| `frontend/src/features/personnel/components/personnel-detail-page.tsx` | Onglets affectations + heures-cours + PDF (read-only) |
+| `frontend/src/features/personnel/components/personnel-detail-page.tsx` | Onglets affectations + heures-cours + PDF + onglets pédagogiques enseignant (conditionnels) |
 | `frontend/src/features/personnel/components/tab-heure-cours.tsx` | Vue HeureCours mensuel/hebdo |
 | `frontend/src/features/personnel/components/contrat-wizard-modal.tsx` | Wizard 5 steps contrat (poste + fonctions secondaires) |
 | `frontend/src/features/personnel/components/tab-fonctions.tsx` | Read-only (fonctions gérées par contrat) |
 | `frontend/src/locales/fr/contrat.json` | i18n wizard contrat |
 | `frontend/src/features/personnel/types/personnel.types.ts` | +SimulationResult, DetailMatiereSimulation, RapportPaieMensuel |
+| `frontend/src/features/organisation/components/tab-postes.tsx` | Mini-dashboard postes (StatCards, preview) |
+| `frontend/src/features/organisation/components/tab-fonctions.tsx` | Mini-dashboard fonctions (StatCards, preview, arbre) |
+| `frontend/src/features/organisation/components/tab-hierarchie.tsx` | Onglet hiérarchie (unites organisationnelles) |
+| `frontend/src/features/organisation/components/tab-configuration.tsx` | Onglet configuration organisation |
+| `frontend/src/locales/{fr,en}/organisation.json` | i18n organisation (postes + fonctions) |
+| `backend/src/shared/constants/personnel.constants.ts` | Constantes TYPE_PERSONNEL_CODES |
+| `backend/src/database/migrations/1793000000000-AddEstSystemeToTypePersonnel.ts` | Migration estSysteme |
+| `frontend/src/features/personnel/hooks/use-types-personnel.ts` | Hook CRUD TypePersonnel (useTypesPersonnel, useTypePersonnelOptions, mutations) |
+| `frontend/src/features/personnel/constants/type-personnel-colors.ts` | Mapping couleurs/badges/icônes par code TypePersonnel |
+| `frontend/src/features/personnel/types/personnel.types.ts` | TypePersonnel interface avec estSysteme |
+| `frontend/src/features/postes/types/poste.types.ts` | TypePersonnelLite + relation typePersonnel sur Poste |
+| `backend/src/modules/auth/entities/utilisateur.entity.ts` | Relation inverse membrePersonnel ajoutée |
+| `backend/src/modules/personnel/controllers/personnel.controller.ts` | Routes link/unlink/stats sans-compte |
+| `backend/src/modules/personnel/services/personnel.service.ts` | linkUser, unlinkUser, getPersonnelSansCompte |
+| `backend/src/modules/personnel/dto/personnel.dto.ts` | linkUtilisateurSchema Zod |
+| `backend/src/modules/utilisateurs/services/utilisateurs.service.ts` | findOne charge membrePersonnel, removeCascade sans DELETE manuel |
+| `backend/src/modules/utilisateurs/dto/utilisateur.dto.ts` | membrePersonnel dans UtilisateurResponseDto |
+| `backend/src/modules/index.ts` | export postes ajouté |
+| `backend/src/database/migrations/1795000000000-AddUniqueUtilisateurIdToMembrePersonnel.ts` | UNIQUE + onDelete SET NULL |
+| `frontend/src/features/utilisateurs/types/utilisateur.types.ts` | membrePersonnel ajouté |
+| `frontend/src/features/personnel/hooks/use-personnel.ts` | 3 nouveaux hooks link/unlink/sans-compte |
+| `frontend/src/features/personnel/components/personnel-form-modal.tsx` | sélecteur utilisateur + i18n |
+| `frontend/src/features/utilisateurs/components/tab-informations.tsx` | carte dossier personnel + dark mode |
+| `frontend/src/features/utilisateurs/components/utilisateur-detail-page.tsx` | dark mode |
+| `frontend/src/locales/en/contrat.json` | créé (90 clés) |
+| `frontend/src/locales/fr/personnel.json` + `en/personnel.json` | clés form.* ajoutées |
+| `frontend/src/components/ui/Card.tsx` | Card compound component |
+| `frontend/src/components/ui/StatCard.tsx` | StatCard avec tons sémantiques + tendance |
+| `frontend/src/components/ui/KpiCard.tsx` | KPI card compact avec CVA |
+| `frontend/src/components/ui/StatPill.tsx` | StatPill + StatPillScrollable |
+| `frontend/src/components/ui/CardGrid.tsx` | Grille stagger + skeleton |
+| `frontend/src/components/ui/card-variants.ts` | Source unique tons CSS |
 
-## DB Connection
-- Host: localhost:7002 / User: elisaschool_user / Password: elisaschool_password / Database: elisaschool
+### Phase 3 — Routes restructurées Organisation ✓
+- **Postes/Fonctions sous Organisation** — routes déplacées de `/_auth/postes*` et `/_auth/fonctions*` vers `/_auth/organisation/{postes, fonctions}*`
+- **Layouts avec breadcrumb** — `_auth.organisation.postes.tsx` et `_auth.organisation.fonctions.tsx` intègrent `Breadcrumbs` (avec prop `labelsMap` i18n) + bouton retour vers `/organisation`
+- **Breadcrumb Context** — `BreadcrumbLabelProvider` dans `components/navigation/breadcrumb-context.tsx` permet aux pages détail de passer le nom de l'entité au breadcrumb du layout parent
+- **Sidebar simplifié** — supprimé les entrées Postes, Fonctions, Nomenclatures. Seule "Mon organisation" reste
+- **`Breadcrumbs.tsx`** — ajout prop `labelsMap` pour l'i18n des segments
+- **TabPostes mini-dashboard** — `tab-postes.tsx` : 4 StatCards (total/occupés/vacants/taux), liste derniers postes avec capacité
+- **TabFonctions mini-dashboard** — `tab-fonctions.tsx` : 4 StatCards (total/actives/inactives/profondeur max), preview fonctions, arbre condensé
+- **i18n organisation** — clés fonctions (totalFonctions, fonctionsActives, fonctionsInactives, profondeurMax, fonctionsRecentes, arbreFonctions, voirToutesFonctions) + clés postes (totalPostes, postesActifs, tauxOccupation, derniersPostes, voirTousPostes)
+
+## Route Tree (frontend)
+```
+/_auth/organisation/postes      — layout (breadcrumb + back)
+/_auth/organisation/postes/     — PostesPage
+/_auth/organisation/postes/$id  — PosteDetailPage
+/_auth/organisation/fonctions   — layout (breadcrumb + back)
+/_auth/organisation/fonctions/  — FonctionsPage
+/_auth/organisation/fonctions/$id — FonctionDetailPage
+/_auth/organisation/nomenclatures — NomenclaturesPage
+```
+
+

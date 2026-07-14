@@ -83,8 +83,8 @@ export function RolesPage() {
                         }`} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900">{r.nom}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-medium text-gray-900 dark:text-gray-200">{r.nom}</p>
                             {r.estSysteme && (
                                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                                     <Lock className="h-3 w-3 mr-1" />
@@ -92,9 +92,9 @@ export function RolesPage() {
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-gray-500">{r.code}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{r.code}</p>
                         {r.description && (
-                            <p className="text-xs text-gray-400 mt-1">{r.description}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{r.description}</p>
                         )}
                     </div>
                 </div>
@@ -110,7 +110,7 @@ export function RolesPage() {
                     <span className="text-2xl font-bold text-[var(--color-dominant-600)]">
                         {r.permissions?.length || 0}
                     </span>
-                    <span className="text-xs text-gray-500">permissions</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">permissions</span>
                 </div>
             ),
         },
@@ -121,8 +121,8 @@ export function RolesPage() {
             className: 'text-center',
             render: (r) => (
                 <div className="flex items-center justify-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-900">
+                    <Users className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
                         {r.nbUtilisateurs || 0}
                     </span>
                 </div>
@@ -216,8 +216,8 @@ export function RolesPage() {
                 animate={{ opacity: 1, y: 0 }}
             >
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gestion des Rôles</h1>
-                    <p className="text-sm text-gray-600">Gérez les rôles et permissions du système</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">Gestion des Rôles</h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Gérez les rôles et permissions du système</p>
                 </div>
                 {hasPermission('roles:create') && (
                     <ElisaButton 
@@ -242,12 +242,12 @@ export function RolesPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="bg-white rounded-lg border border-gray-200 p-6"
+                        className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6"
                     >
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">{stat.titre}</p>
-                                <p className="text-3xl font-bold text-gray-900 mt-2">{stat.valeur}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">{stat.titre}</p>
+                                <p className="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-2">{stat.valeur}</p>
                             </div>
                             <div className={`p-3 rounded-full bg-${stat.couleur}-100`}>
                                 <stat.icone className={`h-6 w-6 text-${stat.couleur}-600`} />

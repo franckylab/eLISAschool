@@ -136,6 +136,13 @@
         "obligatoire": "Obligatoire",
         "optionnel": "Optionnel"
     },
+    "visionneuse": {
+        "apercu": "Aperçu",
+        "zoomAvant": "Zoom avant",
+        "zoomArriere": "Zoom arrière",
+        "reinitialiser": "Réinitialiser",
+        "pivoter": "Pivoter"
+    },
     "modalEtablissement": {
         "titre": "Choisir un établissement",
         "description": "Vous appartenez à plusieurs établissements. Sélectionnez celui dans lequel vous souhaitez travailler.",

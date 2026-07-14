@@ -50,3 +50,6 @@ export type { DataTablePreferences, DataTablePreferencesPartial } from '@/types/
 
 // Contrôle rotation des fonds d'écran
 export { useRotationControle } from './use-rotation-controle';
+
+// Document title
+export { useDocumentTitle } from './use-document-title';

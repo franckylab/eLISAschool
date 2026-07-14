@@ -9,18 +9,22 @@
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurPermission, TypePermission, Permission as PermissionEntity, Role as RoleEntity } from '@modules/auth/entities';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Role } from '@shared/enums/roles.enum';
 import {
     CreateUtilisateurDto,
     UpdateUtilisateurDto,
     UpdateProfilDto,
+    UpdateSecurityDto,
+    ChangeRoleDto,
     QueryUtilisateursDto,
     UtilisateurResponseDto,
 } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { auditService, AuditAction } from '@modules/auth';
+import { auditService, AuditAction, tokenService } from '@modules/auth';
+import { auditUtilisateur } from '@modules/auth/utils/audit-utilisateurs';
 
 /**
  * Interface de résultat paginé
@@ -42,10 +46,16 @@ interface PaginatedResult<T> {
 export class UtilisateursService {
     private utilisateurRepository: Repository<Utilisateur>;
     private profilRepository: Repository<ProfilUtilisateur>;
+    private roleEntityRepository: Repository<RoleEntity>;
+    private permissionEntityRepository: Repository<import('@modules/auth/entities').Permission>;
+    private utilisateurPermissionRepository: Repository<UtilisateurPermission>;
 
     constructor() {
         this.utilisateurRepository = AppDataSource.getRepository(Utilisateur);
         this.profilRepository = AppDataSource.getRepository(ProfilUtilisateur);
+        this.roleEntityRepository = AppDataSource.getRepository(RoleEntity);
+        this.permissionEntityRepository = AppDataSource.getRepository(PermissionEntity);
+        this.utilisateurPermissionRepository = AppDataSource.getRepository(UtilisateurPermission);
     }
 
     /**
@@ -129,6 +139,11 @@ export class UtilisateursService {
             .addSelect('p.nom', 'p_nom')
             .addSelect('p.prenom', 'p_prenom');
 
+        // LEFT JOIN sur membrePersonnel pour afficher la liaison dans la colonne Personnel
+        queryBuilder
+            .leftJoinAndSelect('u.membrePersonnel', 'mp_list')
+            .leftJoinAndSelect('mp_list.typePersonnel', 'tp_list');
+
         // Si filtrage par établissement, utiliser la table de jointure
         if (etablissementId) {
             queryBuilder
@@ -202,7 +217,7 @@ export class UtilisateursService {
         }
 
         // Tri - validation du champ de tri (inclut 'nom' via profil)
-        const allowedSortFields = ['createdAt', 'updatedAt', 'email', 'matricule', 'role', 'statut', 'nom'];
+        const allowedSortFields = ['createdAt', 'updatedAt', 'email', 'matricule', 'role', 'statut', 'nom', 'pseudonyme', 'maxEtablissementsPersonnel'];
         if (sortBy === 'nom') {
             // Tri par nom du profil (NULLS LAST pour les profils manquants)
             queryBuilder.orderBy('p.nom', sortOrder, 'NULLS LAST');
@@ -252,6 +267,7 @@ export class UtilisateursService {
     async findOne(id: string): Promise<UtilisateurResponseDto> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id },
+            relations: ['membrePersonnel', 'membrePersonnel.typePersonnel', 'utilisateurPermissions', 'utilisateurPermissions.permission'],
         });
 
         if (!utilisateur) {
@@ -262,7 +278,47 @@ export class UtilisateursService {
             where: { utilisateurId: id },
         });
 
-        return this.formatUtilisateurResponse(utilisateur, profil || undefined);
+        // Calculer les permissions effectives
+        const permissions = await this.computeEffectivePermissions(utilisateur.role, (utilisateur as any).utilisateurPermissions);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined, undefined, undefined, permissions);
+    }
+
+    /**
+     * Calcule les permissions effectives d'un utilisateur
+     * (permissions du rôle + permissions directes GRANTED - permissions directes DENIED)
+     */
+    private async computeEffectivePermissions(
+        roleCode: string,
+        directPermissions?: UtilisateurPermission[]
+    ): Promise<string[]> {
+        // 1. Récupérer les permissions du rôle depuis la DB
+        const roleEntity = await this.roleEntityRepository.findOne({
+            where: { code: roleCode },
+            relations: ['permissions'],
+        });
+
+        const rolePermissions = new Set<string>();
+        if (roleEntity?.permissions) {
+            for (const p of roleEntity.permissions) {
+                rolePermissions.add(p.code);
+            }
+        }
+
+        // 2. Appliquer les permissions directes (GRANTED ajoute, DENIED retire)
+        if (directPermissions) {
+            for (const up of directPermissions) {
+                const code = up.permission?.code;
+                if (!code) continue;
+                if (up.type === TypePermission.GRANTED) {
+                    rolePermissions.add(code);
+                } else if (up.type === TypePermission.DENIED) {
+                    rolePermissions.delete(code);
+                }
+            }
+        }
+
+        return Array.from(rolePermissions).sort();
     }
 
     /**
@@ -304,6 +360,10 @@ export class UtilisateursService {
 
         if (updateDto.langue) {
             utilisateur.langue = updateDto.langue;
+        }
+
+        if (updateDto.maxEtablissementsPersonnel !== undefined) {
+            utilisateur.maxEtablissementsPersonnel = updateDto.maxEtablissementsPersonnel;
         }
 
         if (updateDto.etablissementId !== undefined) {
@@ -353,7 +413,11 @@ export class UtilisateursService {
         });
 
         if (!profil) {
-            profil = this.profilRepository.create({ utilisateurId });
+            profil = this.profilRepository.create({
+                utilisateurId,
+                nom: updateDto.nom ?? utilisateur.email.split('@')[0] ?? 'Utilisateur',
+                prenom: updateDto.prenom ?? '',
+            });
         }
 
         // Mise à jour des champs
@@ -364,6 +428,109 @@ export class UtilisateursService {
         logger.info(`Profil mis à jour: ${utilisateur.email}`);
 
         return this.formatUtilisateurResponse(utilisateur, profil);
+    }
+
+    /**
+     * Mettre à jour les informations de sécurité d'un utilisateur
+     */
+    async updateSecurity(id: string, updateDto: UpdateSecurityDto, req?: Request): Promise<UtilisateurResponseDto> {
+        const utilisateur = await this.utilisateurRepository.findOne({
+            where: { id },
+        });
+
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const anciennesValeurs: Record<string, any> = {};
+
+        if (updateDto.statut) {
+            anciennesValeurs.statut = utilisateur.statut;
+            utilisateur.statut = updateDto.statut as StatutUtilisateur;
+        }
+
+        if (updateDto.langue) {
+            anciennesValeurs.langue = utilisateur.langue;
+            utilisateur.langue = updateDto.langue;
+        }
+
+        if (updateDto.motDePasse) {
+            utilisateur.motDePasse = updateDto.motDePasse;
+        }
+
+        if (updateDto.deuxFacteursActif !== undefined) {
+            anciennesValeurs.deuxFacteursActif = utilisateur.deuxFacteursActif;
+            utilisateur.deuxFacteursActif = updateDto.deuxFacteursActif;
+        }
+
+        await this.utilisateurRepository.save(utilisateur);
+
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.USER_UPDATE,
+                cible: 'Utilisateur',
+                cibleId: utilisateur.id,
+                description: `Mise à jour sécurité: ${utilisateur.email}`,
+                anciennesValeurs,
+                nouvellesValeurs: updateDto,
+                module: 'utilisateurs',
+            }, req);
+        }
+
+        const profil = await this.profilRepository.findOne({
+            where: { utilisateurId: id },
+        });
+
+        logger.info(`Sécurité mise à jour: ${utilisateur.email}`);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined);
+    }
+
+    async changeRole(id: string, changeDto: ChangeRoleDto, req?: Request): Promise<UtilisateurResponseDto> {
+        const utilisateur = await this.utilisateurRepository.findOne({
+            where: { id },
+        });
+
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const roleEntity = await this.roleEntityRepository.findOne({
+            where: { code: changeDto.role },
+        });
+
+        if (!roleEntity) {
+            throw new AppError('Rôle introuvable', 404, 'ROLE_NOT_FOUND');
+        }
+
+        const ancienRole = utilisateur.role;
+        utilisateur.role = changeDto.role as Role;
+
+        await this.utilisateurRepository.save(utilisateur);
+
+        if (req?.utilisateur?.id) {
+            const severity = changeDto.role === 'SUPER_ADMIN' ? 'CRITICAL' as const : 'WARNING' as const;
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ROLE_CHANGE,
+                cible: 'Utilisateur',
+                cibleId: utilisateur.id,
+                description: `Changement de rôle: ${utilisateur.email} (${ancienRole} → ${changeDto.role})`,
+                anciennesValeurs: { role: ancienRole },
+                nouvellesValeurs: { role: changeDto.role },
+                module: 'utilisateurs',
+                severity,
+            }, req);
+        }
+
+        const profil = await this.profilRepository.findOne({
+            where: { utilisateurId: id },
+        });
+
+        logger.info(`Rôle changé: ${utilisateur.email} ${ancienRole} → ${changeDto.role}`);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined);
     }
 
     /**
@@ -505,10 +672,8 @@ export class UtilisateursService {
             // =========================================================================
             
             // 2a. MembrePersonnel (lié par utilisateurId)
-            await queryRunner.manager.query(
-                `DELETE FROM membres_personnel WHERE "utilisateurId" = $1`,
-                [id]
-            );
+            // SET NULL géré automatiquement par la FK ON DELETE SET NULL
+            // Les dossiers personnel sont conservés pour l'historique
 
             // 2b. ResponsableEleve (lié par utilisateurId)
             await queryRunner.manager.query(
@@ -562,7 +727,7 @@ export class UtilisateursService {
     /**
      * Changer le statut d'un utilisateur
      */
-    async changeStatut(id: string, statut: StatutUtilisateur): Promise<UtilisateurResponseDto> {
+    async changeStatut(id: string, statut: StatutUtilisateur, req?: Request): Promise<UtilisateurResponseDto> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id },
         });
@@ -571,6 +736,7 @@ export class UtilisateursService {
             throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
         }
 
+        const ancienStatut = utilisateur.statut;
         utilisateur.statut = statut;
         await this.utilisateurRepository.save(utilisateur);
 
@@ -578,9 +744,76 @@ export class UtilisateursService {
             where: { utilisateurId: id },
         });
 
+        await auditUtilisateur.statutModifie(
+            req?.utilisateur?.id || 'system',
+            utilisateur.id,
+            utilisateur.email,
+            ancienStatut,
+            statut,
+            req,
+        );
+
         logger.info(`Statut changé pour ${utilisateur.email}: ${statut}`);
 
         return this.formatUtilisateurResponse(utilisateur, profil || undefined);
+    }
+
+    /**
+     * Forcer la réinitialisation du mot de passe d'un utilisateur
+     * Révoque les sessions actives et journalise l'action
+     */
+    async forcePasswordReset(id: string, req?: Request): Promise<UtilisateurResponseDto> {
+        const utilisateur = await this.utilisateurRepository.findOne({
+            where: { id },
+        });
+
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const nbSessions = await tokenService.revokeAllUserTokens(id);
+
+        await auditUtilisateur.motDePasseForce(
+            req?.utilisateur?.id || 'system',
+            utilisateur.id,
+            utilisateur.email,
+            req,
+        );
+
+        const profil = await this.profilRepository.findOne({
+            where: { utilisateurId: id },
+        });
+
+        logger.info(`Mot de passe réinitialisé pour ${utilisateur.email} (${nbSessions} sessions révoquées)`);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined);
+    }
+
+    /**
+     * Révoquer toutes les sessions actives d'un utilisateur
+     */
+    async revokeSessions(id: string, req?: Request): Promise<{ sessionsRevokees: number }> {
+        const utilisateur = await this.utilisateurRepository.findOne({
+            where: { id },
+        });
+
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const nbSessions = await tokenService.revokeAllUserTokens(id);
+
+        await auditUtilisateur.sessionsRevokees(
+            req?.utilisateur?.id || 'system',
+            utilisateur.id,
+            utilisateur.email,
+            nbSessions,
+            req,
+        );
+
+        logger.info(`${nbSessions} sessions révoquées pour ${utilisateur.email}`);
+
+        return { sessionsRevokees: nbSessions };
     }
 
     /**
@@ -590,8 +823,10 @@ export class UtilisateursService {
         utilisateur: Utilisateur,
         profil?: ProfilUtilisateur,
         roleEtablissement?: string,
-        actifDansEtablissement?: boolean
+        actifDansEtablissement?: boolean,
+        permissions?: string[]
     ): UtilisateurResponseDto {
+        const mp = (utilisateur as any).membrePersonnel;
         return {
             id: utilisateur.id,
             email: utilisateur.email,
@@ -603,22 +838,54 @@ export class UtilisateursService {
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
             langue: utilisateur.langue,
+            deuxFacteursActif: utilisateur.deuxFacteursActif,
+            pseudonyme: utilisateur.pseudonyme,
+            qrCodeId: utilisateur.qrCodeId,
+            maxEtablissementsPersonnel: utilisateur.maxEtablissementsPersonnel,
             // NOTE: etablissementId supprimé - géré via utilisateur_etablissements
             derniereConnexion: utilisateur.derniereConnexion,
             createdAt: utilisateur.createdAt,
             updatedAt: utilisateur.updatedAt,
+            permissions,
             profil: profil ? {
                 nom: profil.nom,
                 prenom: profil.prenom,
                 telephone: profil.telephone,
                 genre: profil.genre,
                 dateNaissance: profil.dateNaissance,
-                photo: profil.photo,
+                lieuNaissance: profil.lieuNaissance,
+                nationalite: profil.nationalite,
+                telephoneSecondaire: profil.telephoneSecondaire,
+                adresse: profil.adresse,
+                ville: profil.ville,
+                quartier: profil.quartier,
+                photoUrl: profil.photoUrl,
+                photoThumbnail: profil.photoThumbnail,
+                pieceRectoUrl: profil.pieceRectoUrl,
+                pieceVersoUrl: profil.pieceVersoUrl,
+                typePieceIdentite: profil.typePieceIdentite,
+                numeroPieceIdentite: profil.numeroPieceIdentite,
+                notes: profil.notes,
             } : undefined,
             // Rôle dans l'établissement (si fourni)
             roleEtablissement,
             // Statut d'affectation dans l'établissement (si fourni)
             actifDansEtablissement,
+            // Dossier personnel lié
+            membrePersonnel: mp ? {
+                id: mp.id,
+                matricule: mp.matricule,
+                statut: mp.statut,
+                dateEmbauche: mp.dateEmbauche,
+                typePersonnelId: mp.typePersonnelId,
+                typePersonnel: mp.typePersonnel ? {
+                    id: mp.typePersonnel.id,
+                    code: mp.typePersonnel.code,
+                    nom: mp.typePersonnel.nom,
+                } : undefined,
+                specialitePrincipale: mp.specialitePrincipale,
+                departement: mp.departement,
+            } : undefined,
         };
     }
 }

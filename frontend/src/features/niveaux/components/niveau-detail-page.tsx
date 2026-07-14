@@ -35,7 +35,7 @@ export function NiveauDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
             </div>
         );
     }
@@ -74,8 +74,8 @@ export function NiveauDetailPage() {
                             <GraduationCap className="h-8 w-8 text-orange-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{niveau.nom}</h1>
-                            {niveau.code && <p className="text-gray-500 font-mono text-sm">{niveau.code}</p>}
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{niveau.nom}</h1>
+                            {niveau.code && <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{niveau.code}</p>}
                         </div>
                     </div>
                     {hasPermission('niveaux:edit') && (
@@ -91,27 +91,27 @@ export function NiveauDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations</h2>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 font-mono">{niveau.code || '-'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{niveau.code || '-'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Ordre</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{niveau.ordre}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Ordre</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{niveau.ordre}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Sous-système</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{SOUS_SYSTEME_LABELS[niveau.sousSysteme] || niveau.sousSysteme}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Sous-système</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{SOUS_SYSTEME_LABELS[niveau.sousSysteme] || niveau.sousSysteme}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Classe d'examen</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{niveau.estClasseExamen ? 'Oui' : 'Non'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Classe d'examen</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{niveau.estClasseExamen ? 'Oui' : 'Non'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Cycle</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Cycle</dt>
                                     <dd>
                                         {niveau.cycle ? (
                                             <button
@@ -121,12 +121,12 @@ export function NiveauDetailPage() {
                                                 {niveau.cycle.nom}
                                             </button>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                                         )}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Statut</dt>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
                                     <dd>
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${niveau.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {niveau.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
@@ -138,10 +138,10 @@ export function NiveauDetailPage() {
                         </div>
 
                         {niveau.examenNational && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Link2 className="h-5 w-5 text-orange-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Examen national lié</h2>
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Examen national lié</h2>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-orange-50 rounded-lg">
@@ -154,7 +154,7 @@ export function NiveauDetailPage() {
                                         >
                                             {niveau.examenNational.nom}
                                         </button>
-                                        <p className="text-xs text-gray-500 font-mono">{niveau.examenNational.code}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{niveau.examenNational.code}</p>
                                     </div>
                                 </div>
                             </div>
@@ -172,26 +172,26 @@ export function NiveauDetailPage() {
                                     {niveau.actif ? 'Actif' : 'Inactif'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                                 {niveau.actif
                                     ? 'Ce niveau est actuellement actif.'
                                     : 'Ce niveau est actuellement inactif.'}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Informations</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Informations</h3>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Sous-système</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Sous-système</span>
                                     <span className="font-medium">{SOUS_SYSTEME_LABELS[niveau.sousSysteme] || niveau.sousSysteme}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Cycle</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Cycle</span>
                                     <span className="font-medium">{niveau.cycle?.nom || '-'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Examen national</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Examen national</span>
                                     <span className="font-medium">{niveau.examenNational?.nom || '-'}</span>
                                 </div>
                             </div>

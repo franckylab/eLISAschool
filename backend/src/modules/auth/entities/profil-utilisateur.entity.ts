@@ -67,11 +67,20 @@ export class ProfilUtilisateur {
     @Column({ type: 'varchar', length: 100, nullable: true })
     quartier?: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    photo?: string;
+    @Column({ type: 'text', nullable: true })
+    photoUrl?: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    pieceIdentite?: string;
+    @Column({ type: 'text', nullable: true })
+    photoThumbnail?: string;
+
+    @Column({ type: 'text', nullable: true })
+    pieceRectoUrl?: string;
+
+    @Column({ type: 'text', nullable: true })
+    pieceVersoUrl?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    typePieceIdentite?: string;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     numeroPieceIdentite?: string;

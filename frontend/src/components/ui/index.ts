@@ -1,4 +1,5 @@
 // Barrel exports - UI Components
+export { ImagePreview } from './ImagePreview';
 export { ElisaButton } from './ElisaButton';
 export { ElisaInput } from './ElisaInput';
 export { ElisaSelect } from './ElisaSelect';
@@ -7,6 +8,14 @@ export { ColorPicker } from './ColorPicker';
 export { RowActions } from './RowActions';
 export { Badge } from './Badge';
 export { StatCard } from './StatCard';
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card';
+export { KpiCard } from './KpiCard';
+export { StatPill, StatPillScrollable } from './StatPill';
+export { CardGrid } from './CardGrid';
 export type { ActionConfig, ActionVariant } from './RowActions';
 export type { BadgeProps } from './Badge';
 export type { StatCardProps } from './StatCard';
+export type { CardTone } from './card-variants';
+export type { KpiCardProps } from './KpiCard';
+export type { StatPillItem, StatPillProps } from './StatPill';
+export type { CardGridProps, CardGridColumns } from './CardGrid';

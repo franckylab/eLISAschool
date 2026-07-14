@@ -63,16 +63,16 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
             {items.length > 0 && (
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     {absencesParMois.length > 1 && (
-                        <div className="rounded-xl border border-gray-200 bg-white p-5">
-                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 <TrendingUp className="h-4 w-4 text-orange-500" />
                                 Tendance des absences
                             </h4>
                             <MiniBarChart data={absencesParMois} height={160} />
                         </div>
                     )}
-                    <div className="rounded-xl border border-gray-200 bg-white p-5">
-                        <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+                        <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                             <AlertTriangle className="h-4 w-4 text-red-500" />
                             Répartition justifiées / non justifiées
                         </h4>
@@ -90,27 +90,27 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
                     <p className="mt-1 text-sm text-green-600">Cet enseignant a un excellent taux de présence.</p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-                        <span className="text-sm font-medium text-gray-700">Liste des absences ({total})</span>
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Liste des absences ({total})</span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Type</th>
-                                    <th className="px-4 py-3 text-left font-medium text-gray-600">Motif</th>
-                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Justifiée</th>
-                                    <th className="px-4 py-3 text-center font-medium text-gray-600">Horaire</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Date</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Type</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Motif</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-400">Justifiée</th>
+                                    <th className="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-400">Horaire</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {items.map((a: AbsenceEnseignant) => (
-                                    <tr key={a.id} className="hover:bg-gray-50/80">
-                                        <td className="px-4 py-3 text-gray-700">{formatDate(a.date)}</td>
+                                    <tr key={a.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700">
+                                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{formatDate(a.date)}</td>
                                         <td className="px-4 py-3">
-                                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{a.type}</span>
+                                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">{a.type}</span>
                                         </td>
                                         <td className="px-4 py-3">{a.motif || '—'}</td>
                                         <td className="px-4 py-3 text-center">
@@ -120,7 +120,7 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
                                                 <XCircle className="mx-auto h-4 w-4 text-red-500" />
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-center text-gray-600 text-xs">
+                                        <td className="px-4 py-3 text-center text-gray-600 text-xs dark:text-gray-400">
                                             {a.heureDebut ? `${a.heureDebut.slice(0, 5)}-${a.heureFin?.slice(0, 5) || ''}` : '—'}
                                         </td>
                                     </tr>

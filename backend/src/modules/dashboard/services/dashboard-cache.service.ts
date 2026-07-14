@@ -164,12 +164,12 @@ export class DashboardCacheService {
     /**
      * Invalider une entrée spécifique
      */
-    invalidate(key: string): void {
+    async invalidate(key: string): Promise<void> {
         const prefixedKey = this.CACHE_PREFIX + key;
         
         // Supprimer de Redis
         if (this.useRedis) {
-            redisService.del(prefixedKey);
+            try { await redisService.del(prefixedKey); } catch (e) { logger.warn('[DashboardCache] Redis del échec', e); }
         }
 
         this.cache.delete(prefixedKey);
@@ -181,16 +181,21 @@ export class DashboardCacheService {
      * Invalider toutes les entrées d'un contexte
      * Ex: "user123:etab456" invalide tout le dashboard de cet utilisateur/établissement
      */
-    invalidateByContext(context: string): void {
+    async invalidateByContext(context: string): Promise<void> {
         let count = 0;
         const prefixedContext = this.CACHE_PREFIX + context;
         
         // Invalider dans Redis
         if (this.useRedis) {
-            redisService.keys(`${this.CACHE_PREFIX}*${context}*`).then(keys => {
-                keys.forEach(key => redisService.del(key));
-                logger.info(`[DashboardCache] Redis invalidation contexte "${context}": ${keys.length} entrées`);
-            });
+            try {
+                const keys = await redisService.keys(`${this.CACHE_PREFIX}*${context}*`);
+                if (keys?.length) {
+                    await Promise.all(keys.map(k => redisService.del(k)));
+                }
+                logger.info(`[DashboardCache] Redis invalidation contexte "${context}": ${keys?.length || 0} entrées`);
+            } catch (e) {
+                logger.warn('[DashboardCache] Redis invalidation échec', e);
+            }
         }
 
         // Invalider en mémoire
@@ -208,16 +213,22 @@ export class DashboardCacheService {
     /**
      * Invalider par pattern (ex: "widget:data:*")
      */
-    invalidateByPattern(pattern: string): void {
-        const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    async invalidateByPattern(pattern: string): Promise<void> {
+        const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+        const regex = new RegExp('^' + escaped + '$');
         let count = 0;
         const prefixedPattern = this.CACHE_PREFIX + pattern;
         
         // Invalider dans Redis
         if (this.useRedis) {
-            redisService.keys(prefixedPattern).then(keys => {
-                keys.forEach(key => redisService.del(key));
-            });
+            try {
+                const keys = await redisService.keys(prefixedPattern);
+                if (keys?.length) {
+                    await Promise.all(keys.map(k => redisService.del(k)));
+                }
+            } catch (e) {
+                logger.warn('[DashboardCache] Redis pattern invalidation échec', e);
+            }
         }
         
         // Invalider en mémoire
@@ -235,18 +246,19 @@ export class DashboardCacheService {
     /**
      * Invalider tous les widgets d'un module
      */
-    invalidateModule(moduleName: string, etablissementId?: string): void {
+    async invalidateModule(moduleName: string, etablissementId?: string): Promise<void> {
         const context = etablissementId ? `:${etablissementId}` : '';
-        this.invalidateByPattern(`widget:data:${moduleName}:*${context}`);
+        await this.invalidateByPattern(`widget:data:${moduleName}:*${context}`);
         logger.info(`[DashboardCache] Module invalidé: ${moduleName}${context}`);
     }
 
     /**
      * Nettoyer le cache (entrées expirées)
      */
-    clean(): void {
+    async clean(): Promise<void> {
         let cleaned = 0;
         const now = Date.now();
+        const redisDeletes: Promise<any>[] = [];
         
         for (const [key, entry] of this.cache.entries()) {
             const age = (now - entry.timestamp) / 1000;
@@ -256,10 +268,12 @@ export class DashboardCacheService {
                 
                 // Nettoyer aussi dans Redis
                 if (this.useRedis) {
-                    redisService.del(key);
+                    redisDeletes.push(redisService.del(key).catch(() => {}));
                 }
             }
         }
+        
+        if (redisDeletes.length) await Promise.all(redisDeletes);
         
         if (cleaned > 0) {
             logger.info(`[DashboardCache] Nettoyage: ${cleaned} entrées expirées supprimées`);
@@ -305,9 +319,17 @@ export class DashboardCacheService {
     /**
      * Vider tout le cache
      */
-    clear(): void {
+    async clear(): Promise<void> {
         const size = this.cache.size;
         this.cache.clear();
+        if (this.useRedis) {
+            try {
+                const keys = await redisService.keys(`${this.CACHE_PREFIX}*`);
+                if (keys?.length) await Promise.all(keys.map(k => redisService.del(k)));
+            } catch (e) {
+                logger.warn('[DashboardCache] Redis clear échec', e);
+            }
+        }
         logger.warn(`[DashboardCache] Cache vidé complètement (${size} entrées)`);
     }
 
@@ -317,7 +339,7 @@ export class DashboardCacheService {
     startAutoClean(intervalMs: number = 300000): void {
         this.stopAutoClean(); // Arrêter l'ancien intervalle avant d'en créer un nouveau
         this.autoCleanInterval = setInterval(() => {
-            this.clean();
+            this.clean().catch(e => logger.warn('[DashboardCache] Auto-clean échec', e));
         }, intervalMs);
         
         logger.info(`[DashboardCache] Auto-clean activé (intervalle: ${intervalMs}ms)`);

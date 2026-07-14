@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
     Layers, Tag, Briefcase, Star, FileText, Play,
-    Plus, Edit, Trash2, Save, X, Shield,
+    Plus, Edit, Trash2, Save, X, Shield, Users,
 } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -18,9 +18,10 @@ import { useOrganisations, useNiveauxOrganisation, useCreerNiveauOrganisation, u
     useTemplatesOrganisation, useCreerTemplateOrganisation, useModifierTemplateOrganisation, useSupprimerTemplateOrganisation,
     useGenererOrganisation,
 } from '../hooks/use-organisation';
+import { useTypesPersonnel, useCreerTypePersonnel, useModifierTypePersonnel, useSupprimerTypePersonnel } from '@/features/personnel/hooks/use-types-personnel';
 import type { NiveauOrganisation, UsageUnite, CategoriePoste, NiveauResponsabilite, TemplateOrganisation, ResultatGeneration } from '../types/organisation.types';
 
-type Onglet = 'niveaux' | 'usages' | 'categories' | 'niveaux-resp' | 'templates' | 'generation';
+type Onglet = 'niveaux' | 'usages' | 'categories' | 'niveaux-resp' | 'templates' | 'generation' | 'types-personnel';
 
 function InlineEdit({ value, onSave, onCancel, type = 'text' }: { value: string; onSave: (v: string) => void; onCancel: () => void; type?: string }) {
     const [val, setVal] = useState(value);
@@ -77,6 +78,7 @@ export function NomenclaturesPage() {
                         { id: 'niveaux' as Onglet, label: 'Niveaux', icon: Layers },
                         { id: 'usages' as Onglet, label: 'Usages', icon: Tag },
                         { id: 'categories' as Onglet, label: 'Catégories', icon: Briefcase },
+                        { id: 'types-personnel' as Onglet, label: 'Types personnel', icon: Users },
                         { id: 'niveaux-resp' as Onglet, label: 'Resp.', icon: Star },
                         { id: 'templates' as Onglet, label: 'Templates', icon: FileText },
                         { id: 'generation' as Onglet, label: 'Génération', icon: Play },
@@ -100,6 +102,7 @@ export function NomenclaturesPage() {
             {ongletActif === 'niveaux' && <TabNiveaux canEdit={canEdit} />}
             {ongletActif === 'usages' && <TabUsages canEdit={canEdit} />}
             {ongletActif === 'categories' && <TabCategories canEdit={canEdit} />}
+            {ongletActif === 'types-personnel' && <TabTypesPersonnel canEdit={canEdit} />}
             {ongletActif === 'niveaux-resp' && <TabNiveauxResp canEdit={canEdit} />}
             {ongletActif === 'templates' && <TabTemplates canEdit={canEdit} />}
             {ongletActif === 'generation' && <TabGeneration />}
@@ -482,6 +485,108 @@ function TemplateAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCan
                 <button onClick={handleSave} className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Créer</button>
                 <button onClick={onCancel} className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300">Annuler</button>
             </div>
+        </div>
+    );
+}
+
+// ─── TAB: Types de Personnel ───
+
+function TabTypesPersonnel({ canEdit }: { canEdit: boolean }) {
+    const { data, isLoading } = useTypesPersonnel();
+    const creer = useCreerTypePersonnel();
+    const modifier = useModifierTypePersonnel();
+    const supprimer = useSupprimerTypePersonnel();
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [adding, setAdding] = useState(false);
+    const [editing, setEditing] = useState<string | null>(null);
+    const [editVal, setEditVal] = useState('');
+
+    if (isLoading) return <LoadingState message="Chargement..." />;
+
+    const columns: Column<any>[] = [
+        {
+            key: 'code', header: 'Code',
+            render: (tp) => <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{tp.code}</span>,
+        },
+        {
+            key: 'nom', header: 'Nom',
+            render: (tp) => editing === tp.id
+                ? <InlineEdit value={editVal} onSave={(v) => { modifier.mutate({ id: tp.id, nom: v }); setEditing(null); }} onCancel={() => setEditing(null)} />
+                : <span>{tp.nom}</span>,
+        },
+        {
+            key: 'description', header: 'Description',
+            render: (tp) => tp.description || '-',
+        },
+        {
+            key: 'modeRemunerationDefaut', header: 'Mode rémunération',
+            render: (tp) => tp.modeRemunerationDefaut
+                ? <Badge variant="outline" size="sm">{tp.modeRemunerationDefaut}</Badge>
+                : '-',
+        },
+        {
+            key: 'actif', header: 'Statut',
+            render: (tp) => tp.actif
+                ? <Badge variant="success" size="sm">Actif</Badge>
+                : <Badge variant="secondary" size="sm">Inactif</Badge>,
+        },
+        { key: 'systeme', header: '', render: (tp) => <BadgeSysteme estSysteme={tp.estSysteme} /> },
+        ...(canEdit ? [{
+            key: 'actions' as string, header: '',
+            render: (tp: any) => (
+                <div className="flex gap-2">
+                    {!tp.estSysteme && <>
+                        <button onClick={() => { setEditing(tp.id); setEditVal(tp.nom); }} className="p-1 text-blue-600 hover:text-blue-800"><Edit className="h-4 w-4" /></button>
+                        <button onClick={() => setDeleteId(tp.id)} className="p-1 text-red-600 hover:text-red-800"><Trash2 className="h-4 w-4" /></button>
+                    </>}
+                </div>
+            ),
+        }] : []),
+    ];
+
+    return (
+        <Card>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Types de personnel</h2>
+                {canEdit && <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setAdding(true)}>Ajouter</ElisaButton>}
+            </div>
+            <DataTable columns={columns} data={data || []} tableId="types-personnel-nomenclature" />
+            {adding && <div className="mt-2"><TypePersonnelAddForm onSave={(v) => { creer.mutate(v); setAdding(false); }} onCancel={() => setAdding(false)} /></div>}
+            <ConfirmationModal isOpen={!!deleteId} onCancel={() => setDeleteId(null)} onConfirm={() => { supprimer.mutate(deleteId!); setDeleteId(null); }}
+                title="Supprimer" message="Supprimer ce type de personnel ?" confirmLabel="Supprimer" cancelLabel="Annuler" variant="danger" />
+        </Card>
+    );
+}
+
+function TypePersonnelAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCancel: () => void }) {
+    const [code, setCode] = useState('');
+    const [nom, setNom] = useState('');
+    const [description, setDescription] = useState('');
+    const [modeRemuneration, setModeRemuneration] = useState('');
+    const [error, setError] = useState('');
+    const doSave = () => {
+        if (!code || code.trim().length < 2) { setError('Code : minimum 2 caractères'); return; }
+        if (!nom || nom.trim().length < 2) { setError('Nom : minimum 2 caractères'); return; }
+        onSave({
+            code: code.toUpperCase(),
+            nom,
+            description: description || undefined,
+            modeRemunerationDefaut: modeRemuneration || undefined,
+        });
+    };
+    return (
+        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded flex-wrap">
+            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+                className="px-2 py-1 text-sm border rounded w-24 dark:bg-gray-800" />
+            <input placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)}
+                className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
+            <input placeholder="Mode rémunération" value={modeRemuneration} onChange={(e) => setModeRemuneration(e.target.value)}
+                className="px-2 py-1 text-sm border rounded w-36 dark:bg-gray-800" />
+            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}
+                className="px-2 py-1 text-sm border rounded w-48 dark:bg-gray-800" />
+            <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
+            <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
+            {error && <span className="text-xs text-red-500">{error}</span>}
         </div>
     );
 }

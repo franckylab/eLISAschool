@@ -93,8 +93,8 @@ export function ChapitresCataloguePage() {
                         <span className="font-medium">
                             {mn?.matiere?.nom || '-'}
                         </span>
-                        <span className="text-gray-500 mx-1">·</span>
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-400 mx-1">·</span>
+                        <span className="text-gray-500 dark:text-gray-400">
                             {mn?.niveau?.nom || '-'}
                         </span>
                     </div>
@@ -115,7 +115,7 @@ export function ChapitresCataloguePage() {
                         {progNom}
                     </button>
                 ) : (
-                    <span className="text-sm text-gray-400">-</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
                 );
             },
         },
@@ -131,7 +131,7 @@ export function ChapitresCataloguePage() {
             header: 'Durée',
             render: (c) => (
                 <div className="flex items-center gap-1 text-sm">
-                    <Clock className="h-3 w-3 text-gray-500" />
+                    <Clock className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                     <span>{c.dureePrevueHeures ?? '-'}h</span>
                 </div>
             ),
@@ -146,7 +146,7 @@ export function ChapitresCataloguePage() {
                             ? 'bg-green-100 text-green-800'
                             : c.statut === 'EN_ATTENTE_VALIDATION'
                                 ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-800'
                     }`}
                 >
                     {c.statut === 'ACTIF' ? 'Actif' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
@@ -207,14 +207,14 @@ export function ChapitresCataloguePage() {
 
             {/* Étape 1 : sélection de la matière-programme */}
             {createStep === 'select-matiere' && (
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
-                    <h3 className="font-semibold text-sm text-blue-800">Nouveau chapitre — sélectionnez la matière</h3>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 space-y-3">
+                    <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-200">Nouveau chapitre — sélectionnez la matière</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-blue-700 mb-1">Programme</label>
+                            <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Programme</label>
                             <select value={createProgrammeId}
                                 onChange={(e) => { setCreateProgrammeId(e.target.value); setCreateProgrammeMatiereId(''); }}
-                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white"
+                                className="w-full px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-lg text-sm bg-white dark:bg-gray-800"
                             >
                                 <option value="">Sélectionner...</option>
                                 {programmes.map((p) => (
@@ -223,10 +223,10 @@ export function ChapitresCataloguePage() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-blue-700 mb-1">Matière</label>
+                            <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Matière</label>
                             <select value={createProgrammeMatiereId}
                                 onChange={(e) => setCreateProgrammeMatiereId(e.target.value)}
-                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white"
+                                className="w-full px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-lg text-sm bg-white dark:bg-gray-800"
                             >
                                 <option value="">Sélectionner...</option>
                                 {(programmeMatieres ?? []).map((pm) => (
@@ -237,6 +237,7 @@ export function ChapitresCataloguePage() {
                             </select>
                         </div>
                     </div>
+
                     <div className="flex justify-end gap-2">
                         <ElisaButton variant="outline" size="sm" onClick={() => setCreateStep('idle')}>
                             Annuler
@@ -250,7 +251,7 @@ export function ChapitresCataloguePage() {
             )}
 
             {/* Filtres */}
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                         <label className="text-sm font-medium text-foreground mb-2 block">Programme</label>

@@ -16,7 +16,8 @@ export class CotisationService {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) throw new AppError('Une cotisation avec ce code existe déjà', 409, 'COTISATION_EXISTS');
 
-        const entity = this.repo.create({ ...dto, etablissementId });
+        const entity = new Cotisation();
+        Object.assign(entity, dto, { etablissementId });
         await this.repo.save(entity);
 
         if (userId) {

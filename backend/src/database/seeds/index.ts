@@ -18,6 +18,7 @@ export { seedMatieresNiveaux } from './seed-matieres-niveaux';
 export { seedUtilisateursParRole } from './seed-utilisateurs-par-role';
 export { seedElevesExemples } from './seed-eleves-exemples';
 export { seedGroupesEtablissements } from './seed-groupes-etablissements';
+export { seedTypePersonnel } from './seed-type-personnel';
 
 // Orchestration
 export { runSeeds } from './initial.seed';

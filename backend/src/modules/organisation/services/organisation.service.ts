@@ -532,7 +532,7 @@ export class OrganisationService {
         let currentId: string | undefined = uniteId;
 
         while (currentId && unitesMap.has(currentId)) {
-            const current = unitesMap.get(currentId)!;
+            const current: UniteOrganisationnelle = unitesMap.get(currentId)!;
             chemin.unshift(current);
             currentId = current.parentId;
         }
@@ -619,7 +619,7 @@ export class OrganisationService {
 
             // Ajouter les supérieurs à la pile
             for (const rel of relations) {
-                stack.push(rel.superieurId);
+                if (rel.superieurId) stack.push(rel.superieurId);
             }
         }
     }
@@ -667,7 +667,7 @@ export class OrganisationService {
 
         // Si on change le supérieur, vérifier les cycles
         if (dto.superieurId && dto.superieurId !== hierarchie.superieurId) {
-            await this.verifierPasDeCycle(hierarchie.personnelId, dto.superieurId, hierarchie.etablissementId);
+            await this.verifierPasDeCycle(hierarchie.personnelId!, dto.superieurId, hierarchie.etablissementId!);
         }
 
         Object.assign(hierarchie, dto);

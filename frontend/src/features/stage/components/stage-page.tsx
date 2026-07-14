@@ -4,10 +4,10 @@
  * ==================================
  */
 
-import { motion } from 'framer-motion';
 import { Briefcase, Building, CheckCircle, Award } from 'lucide-react';
 import { useStages, useStatistiquesStages } from '../hooks/use-stage';
 import { DataTable } from '@/components/ui/DataTable';
+import { CardGrid, StatCard } from '@/components/ui';
 
 const statuts: any = {
     en_recherche: { label: 'En recherche', color: 'yellow' },
@@ -45,39 +45,12 @@ export function StagePage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Briefcase className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Total stages</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalStages || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">En cours</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.stagesEnCours || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Award className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Terminés</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">{stats?.stagesTermines || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Building className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">Entreprises</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.entreprisesPartenaires || 0}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={Briefcase} label="Total stages" value={stats?.totalStages || 0} tone="accent" />
+                <StatCard icon={CheckCircle} label="En cours" value={stats?.stagesEnCours || 0} tone="success" />
+                <StatCard icon={Award} label="Terminés" value={stats?.stagesTermines || 0} tone="purple" />
+                <StatCard icon={Building} label="Entreprises" value={stats?.entreprisesPartenaires || 0} tone="warning" />
+            </CardGrid>
 
             <DataTable
                 data={stages}

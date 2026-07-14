@@ -206,7 +206,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [name]: e.target.checked })}
                     className="peer sr-only"
                 />
-                <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                <div className="peer h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 dark:after:border-gray-600 after:bg-white dark:after:bg-gray-800 after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>
         </div>
     );
@@ -361,7 +361,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                     ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-600)] text-white'
                                     : index === etapeActuelle
                                     ? 'border-[var(--color-dominant-600)] text-[var(--color-dominant-600)]'
-                                    : 'border-gray-300 text-gray-400'
+                                    : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-300'
                             }`}
                         >
                             {index < etapeActuelle ? <Check className="h-5 w-5" /> : index + 1}
@@ -371,7 +371,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                 className={`flex-1 border-t-2 transition-all ${
                                     index < etapeActuelle
                                         ? 'border-[var(--color-dominant-600)]'
-                                        : 'border-gray-300'
+                                        : 'border-gray-300 dark:border-gray-600'
                                 }`}
                             />
                         )}

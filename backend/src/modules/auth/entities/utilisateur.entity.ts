@@ -26,6 +26,7 @@ import { Etablissement } from '@modules/etablissement/entities';
 import { UtilisateurPermission } from './utilisateur-permission.entity';
 import { UtilisateurEtablissement } from './utilisateur-etablissement.entity';
 import { ProfilUtilisateur } from './profil-utilisateur.entity';
+import { MembrePersonnel } from '@modules/personnel/entities/personnel.entity';
 import { Role } from '@shared/enums/roles.enum';
 
 // Ré-exporter l'enum Role pour compatibilité
@@ -99,6 +100,9 @@ export class Utilisateur {
     @Column({ type: 'varchar', length: 10, default: 'fr' })
     langue!: string;
 
+    @Column({ type: 'boolean', default: false })
+    deuxFacteursActif!: boolean;
+
     /**
      * NOUVEAU v3.0 - Nombre maximum d'établissements actifs
      * 0 = illimité (généralement pour super_admin)
@@ -113,6 +117,9 @@ export class Utilisateur {
 
     @OneToOne(() => ProfilUtilisateur, profil => profil.utilisateur, { nullable: true })
     profil?: ProfilUtilisateur;
+
+    @OneToOne(() => MembrePersonnel, mp => mp.utilisateur, { nullable: true })
+    membrePersonnel?: MembrePersonnel;
 
     /**
      * Relations RBAC v3.0 (Multi-tenant strict)

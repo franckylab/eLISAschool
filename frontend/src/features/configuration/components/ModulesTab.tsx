@@ -132,7 +132,7 @@ function ModuleSearchBar({
     return (
         <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <input
                     type="text"
                     placeholder="Rechercher un module..."
@@ -190,23 +190,23 @@ function CategoryHeader({
         <div
             className={cn(
                 'flex items-center justify-between px-4 py-3 rounded-lg border cursor-pointer transition-colors',
-                CATEGORY_HEADER_BG[category] || 'bg-gray-50/50 border-gray-100'
+                CATEGORY_HEADER_BG[category] || 'bg-gray-50/50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'
             )}
             onClick={onToggle}
         >
             <div className="flex items-center gap-3">
                 {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                    <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 )}
                 <span className={cn(
                     'px-2.5 py-0.5 rounded-full text-xs font-semibold',
-                    CATEGORY_COLORS[category] || 'border-gray-200 bg-gray-50 text-gray-700'
+                    CATEGORY_COLORS[category] || 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
                 )}>
                     {CATEGORY_LABELS[category] || category}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                     {count}/{total} actifs
                 </span>
             </div>
@@ -220,8 +220,8 @@ function CategoryHeader({
                     className={cn(
                         'px-3 py-1 rounded-md text-xs font-medium border transition-colors',
                         allActive
-                            ? 'border-red-200 text-red-600 hover:bg-red-50'
-                            : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50',
+                            ? 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'
+                            : 'border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30',
                         isBulkToggling && 'opacity-50 cursor-not-allowed'
                     )}
                 >
@@ -276,7 +276,7 @@ function ModuleCard({
                 'flex items-center justify-center w-10 h-10 rounded-lg shrink-0',
                 actif
                     ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
-                    : 'bg-gray-100 text-gray-400'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
             )}>
                 <Icon className="h-5 w-5" />
             </div>
@@ -287,12 +287,12 @@ function ModuleCard({
                         {entry.label}
                     </h3>
                     {entry.premium && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 uppercase">
                             Premium
                         </span>
                     )}
                     {hasDeps && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                             {entry.dependencies.length} dépendance{entry.dependencies.length > 1 ? 's' : ''}
                         </span>
                     )}
@@ -303,21 +303,21 @@ function ModuleCard({
                 </p>
 
                 {showToggleImpact && impact && impact.modulesAActiver.length > 0 && (
-                    <div className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 bg-emerald-50/80 rounded px-2 py-1.5">
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/30 rounded px-2 py-1.5">
                         <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                         <span>Activera aussi : {impact.modulesAActiver.join(', ')}</span>
                     </div>
                 )}
 
                 {showDeactivateImpact && impact && impact.modulesADesactiver.length > 0 && (
-                    <div className="mt-2 flex items-start gap-1.5 text-xs text-red-600 bg-red-50/80 rounded px-2 py-1.5">
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/30 rounded px-2 py-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                         <span>Désactivera aussi : {impact.modulesADesactiver.join(', ')}</span>
                     </div>
                 )}
 
                 {isImpactLoading && (
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         <span>Analyse d'impact...</span>
                     </div>
@@ -329,8 +329,8 @@ function ModuleCard({
                     className={cn(
                         'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                         actif
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     )}
                 >
                     {actif ? 'Actif' : 'Inactif'}
@@ -343,7 +343,7 @@ function ModuleCard({
                         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/30',
                         actif
                             ? 'bg-[var(--color-dominante)]'
-                            : 'bg-gray-300',
+                            : 'bg-gray-300 dark:bg-gray-600',
                         (isToggling || !canToggle) && 'cursor-not-allowed opacity-50'
                     )}
                     role="switch"
@@ -397,9 +397,9 @@ function ActivateConfirmDialog({
                         actif ? 'bg-emerald-100' : 'bg-red-100'
                     )}>
                         {actif ? (
-                            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                            <AlertTriangle className="h-5 w-5 text-red-600" />
+                            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                         )}
                     </div>
                     <div>
@@ -418,8 +418,8 @@ function ActivateConfirmDialog({
                     <div className={cn(
                         'rounded-lg p-3 mb-4 text-sm',
                         actif
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                     )}>
                         {actif && impact && (
                             <>
@@ -445,7 +445,7 @@ function ActivateConfirmDialog({
                 )}
 
                 {impact && impact.conflits && impact.conflits.length > 0 && !actif && (
-                    <div className="rounded-lg p-3 mb-4 bg-red-50 text-red-800 border border-red-200 text-sm">
+                    <div className="rounded-lg p-3 mb-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 text-sm">
                         <p className="font-medium mb-1">Conflits détectés :</p>
                         <ul className="list-disc list-inside space-y-0.5">
                             {impact.conflits.map((c, i) => (
@@ -600,7 +600,7 @@ export function ModulesTab() {
     if (!states || states.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Blocks className="h-12 w-12 text-gray-300 mb-4" />
+                <Blocks className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
                 <p className="text-[var(--color-texte-secondaire)]">Aucun module disponible</p>
             </div>
         );
@@ -624,15 +624,15 @@ export function ModulesTab() {
             </div>
 
             {!canToggle && (
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 text-sm">
+                <div className="flex items-start gap-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-sm">
                     <Shield className="h-4 w-4 mt-0.5 shrink-0" />
                     <span>Vous êtes en mode lecture. Seuls les administrateurs peuvent modifier l'activation des modules.</span>
                 </div>
             )}
 
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50">
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-sm text-amber-800">
+                <div className="text-sm text-amber-800 dark:text-amber-300">
                     <p className="font-medium">Attention</p>
                     <p>La désactivation d'un module peut affecter d'autres fonctionnalités dépendantes. Un dialogue de confirmation vous informera des impacts.</p>
                 </div>

@@ -4,10 +4,10 @@
  * ==================================
  */
 
-import { motion } from 'framer-motion';
 import { Beaker, Calendar, Clock, CheckCircle, XCircle, FlaskConical } from 'lucide-react';
 import { useReservations, useStatistiquesLaboratoire } from '../hooks/use-laboratoire';
 import { DataTable } from '@/components/ui/DataTable';
+import { CardGrid, StatCard } from '@/components/ui';
 
 const statuts: any = {
     en_attente: { label: 'En attente', color: 'yellow', icon: Clock },
@@ -43,39 +43,12 @@ export function LaboratoirePage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <FlaskConical className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Laboratoires</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalLaboratoires || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Calendar className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Réservations</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.totalReservations || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Clock className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">Actives</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.reservationsActives || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Beaker className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Taux occupation</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">{stats?.tauxOccupation ? `${stats.tauxOccupation.toFixed(1)}%` : '-'}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={FlaskConical} label="Laboratoires" value={stats?.totalLaboratoires || 0} tone="accent" />
+                <StatCard icon={Calendar} label="Réservations" value={stats?.totalReservations || 0} tone="success" />
+                <StatCard icon={Clock} label="Actives" value={stats?.reservationsActives || 0} tone="warning" />
+                <StatCard icon={Beaker} label="Taux occupation" value={stats?.tauxOccupation ? `${stats.tauxOccupation.toFixed(1)}%` : '-'} tone="purple" />
+            </CardGrid>
 
             <DataTable
                 data={reservations}

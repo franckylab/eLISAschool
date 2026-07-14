@@ -103,7 +103,8 @@ export class DataAggregatorService {
             };
 
             // 6. Cache le résultat
-            await dashboardCacheService.set(cacheKey, response, widgetDef.cacheTTL, context.etablissementId || 'global');
+            const cacheContext = [context.userId, context.etablissementId].filter(Boolean).join(':') || 'global';
+            await dashboardCacheService.set(cacheKey, response, widgetDef.cacheTTL, cacheContext);
 
             logger.info(`[DataAggregator] Widget ${widgetId} résolu en ${resolutionTime}ms`);
 

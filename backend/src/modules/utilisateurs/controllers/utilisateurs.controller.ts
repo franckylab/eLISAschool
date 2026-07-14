@@ -13,6 +13,8 @@ import {
     createUtilisateurSchema,
     updateUtilisateurSchema,
     updateProfilSchema,
+    updateSecuritySchema,
+    changeRoleSchema,
     queryUtilisateursSchema,
     toggleStatutSchema,
     supprimerUtilisateurSchema,
@@ -23,6 +25,7 @@ import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 import { utilisateurEtablissementService } from '@modules/auth/services';
+import QRCode from 'qrcode';
 
 const router = Router();
 const utilisateursService = new UtilisateursService();
@@ -101,7 +104,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  * Mettre à jour un utilisateur
  * Réservé aux admins
  */
-router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', requirePermission('utilisateurs:security:update'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const updateDto = validateDto(updateUtilisateurSchema, req.body);
@@ -123,14 +126,9 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
  * Mettre à jour le profil d'un utilisateur
  * L'utilisateur peut modifier son propre profil, les admins peuvent modifier tous
  */
-router.patch('/:id/profil', async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id/profil', requirePermission('utilisateurs:profil:update'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-
-        // Vérification des permissions
-        if (req.utilisateur!.id !== id && ![Role.SUPER_ADMIN, Role.ADMIN].includes(req.utilisateur!.role as unknown as Role)) {
-            throw new AppError('Accès non autorisé', 403, 'FORBIDDEN');
-        }
 
         const updateDto = validateDto(updateProfilSchema, req.body);
         const utilisateur = await utilisateursService.updateProfil(id, updateDto);
@@ -151,7 +149,7 @@ router.patch('/:id/profil', async (req: Request, res: Response, next: NextFuncti
  * Changer le statut d'un utilisateur
  * Réservé aux admins
  */
-router.patch('/:id/statut', async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id/statut', requirePermission('utilisateurs:statut:change'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { statut } = req.body;
@@ -160,12 +158,99 @@ router.patch('/:id/statut', async (req: Request, res: Response, next: NextFuncti
             throw new AppError('Statut invalide', 400, 'INVALID_STATUS');
         }
 
-        const utilisateur = await utilisateursService.changeStatut(id, statut);
+        const utilisateur = await utilisateursService.changeStatut(id, statut, req);
 
         res.status(200).json({
             success: true,
             data: utilisateur,
             message: `Statut changé en ${statut}`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/utilisateurs/:id/force-password-reset
+ * Forcer la réinitialisation du mot de passe d'un utilisateur
+ * Révoque les sessions actives et journalise l'action
+ * Permission: utilisateurs:security:update
+ */
+router.post('/:id/force-password-reset', requirePermission('utilisateurs:security:update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const utilisateur = await utilisateursService.forcePasswordReset(id, req);
+
+        res.status(200).json({
+            success: true,
+            data: utilisateur,
+            message: 'Réinitialisation du mot de passe forcée avec succès',
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/utilisateurs/:id/revoke-sessions
+ * Révoquer toutes les sessions actives d'un utilisateur
+ * Permission: utilisateurs:security:update
+ */
+router.post('/:id/revoke-sessions', requirePermission('utilisateurs:security:update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const result = await utilisateursService.revokeSessions(id, req);
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: `${result.sessionsRevokees} session(s) révoquée(s) avec succès`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * PATCH /api/utilisateurs/:id/security
+ * Mettre à jour la sécurité d'un utilisateur (rôle, statut, langue, mot de passe, 2FA)
+ * Permission: utilisateurs:security:update
+ */
+router.patch('/:id/security', requirePermission('utilisateurs:security:update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const updateDto = validateDto(updateSecuritySchema, req.body);
+        const utilisateur = await utilisateursService.updateSecurity(id, updateDto, req);
+
+        res.status(200).json({
+            success: true,
+            data: utilisateur,
+            message: 'Sécurité mise à jour',
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * PATCH /api/utilisateurs/:id/role
+ * Changer le rôle d'un utilisateur
+ * Permission: utilisateurs:role:change
+ */
+router.patch('/:id/role', requirePermission('utilisateurs:role:change'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const changeDto = validateDto(changeRoleSchema, req.body);
+        const utilisateur = await utilisateursService.changeRole(id, changeDto, req);
+
+        res.status(200).json({
+            success: true,
+            data: utilisateur,
+            message: 'Rôle modifié avec succès',
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
@@ -315,6 +400,43 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
             mode,
             timestamp: new Date().toISOString(),
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/utilisateurs/:id/qr-code
+ * Génère et retourne l'image QR code de l'utilisateur
+ * Permission: utilisateurs:view
+ */
+router.get('/:id/qr-code', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+
+        if (req.utilisateur!.id !== id && ![Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT].includes(req.utilisateur!.role as unknown as Role)) {
+            throw new AppError('Accès non autorisé', 403, 'FORBIDDEN');
+        }
+
+        const utilisateur = await utilisateursService.findOne(id);
+
+        if (!utilisateur.qrCodeId) {
+            throw new AppError('Aucun QR code associé à cet utilisateur', 404, 'QR_CODE_NOT_FOUND');
+        }
+
+        const qrBuffer = await QRCode.toBuffer(utilisateur.qrCodeId, {
+            type: 'png',
+            width: 400,
+            margin: 2,
+            color: {
+                dark: '#1e293b',
+                light: '#ffffff',
+            },
+        });
+
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `inline; filename="qr-${utilisateur.id}.png"`);
+        res.status(200).send(qrBuffer);
     } catch (error) {
         next(error);
     }

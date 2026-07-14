@@ -14,7 +14,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { BulletinPaie } from '../entities/bulletin-paie.entity';
+import { BulletinPaie, StatutBulletinPaie } from '../entities/bulletin-paie.entity';
 import { ElementSalaire, TypeElementSalaire, CategorieElementSalaire } from '../entities/element-salaire.entity';
 import { Cotisation } from '../entities/cotisation.entity';
 import { TypePrime } from '../entities/type-prime.entity';
@@ -128,14 +128,14 @@ export class CalculPaieService {
         bulletin.primes = simulation.primes;
         bulletin.deductions = simulation.totalRetenues;
         bulletin.salaireNet = simulation.salaireNet;
-        bulletin.statut = 'GENERE';
+        bulletin.statut = StatutBulletinPaie.GENERE;
 
         await this.bulletinRepo.save(bulletin);
         await this.creerElementsBulletin(bulletin.id, simulation.elements, etablissementId);
 
         // Workflow validation si requis (uniquement pour création)
         if (!existingBulletin && options?.userId) {
-            const requireValidation = await getParamBoolean('personnel.paie.require_validation', true);
+            const requireValidation = await getParamBoolean('personnel.paie.require_validation', { defaultValue: true });
             if (requireValidation) {
                 try {
                     await validationWorkflowService.createWorkflow({
@@ -203,7 +203,7 @@ export class CalculPaieService {
             case ModeRemuneration.MENSUEL:
                 salaireBase = contrat.salaireBase || 0;
                 elements.push(this.creerElement(
-                    'GAIN', 'SALAIRE_BASE',
+                    TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
                     'Salaire mensuel fixe',
                     salaireBase, salaireBase, undefined, ordre++
                 ));
@@ -218,13 +218,13 @@ export class CalculPaieService {
                 detailParMatiere = resume.detailParMatiere || [];
                 for (const d of detailParMatiere) {
                     elements.push(this.creerElement(
-                        'GAIN', 'HEURE_COURS', d.matiereNom,
+                        TypeElementSalaire.GAIN, CategorieElementSalaire.HEURE_COURS, d.matiereNom,
                         d.montant, d.heures, d.tarifHoraire, ordre++
                     ));
                 }
                 salaireBase = +(tarifHoraire * heuresEffectuees).toFixed(2);
                 elements.push(this.creerElement(
-                    'GAIN', 'SALAIRE_BASE',
+                    TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
                     `Total heures (${heuresEffectuees}h × ${tarifHoraire} FCFA)`,
                     salaireBase, heuresEffectuees, tarifHoraire, ordre++
                 ));
@@ -242,7 +242,7 @@ export class CalculPaieService {
                 detailParMatiere = resume.detailParMatiere || [];
                 for (const d of detailParMatiere) {
                     elements.push(this.creerElement(
-                        'GAIN', 'HEURE_COURS', d.matiereNom,
+                        TypeElementSalaire.GAIN, CategorieElementSalaire.HEURE_COURS, d.matiereNom,
                         d.montant, d.heures, d.tarifHoraire, ordre++
                     ));
                 }
@@ -251,13 +251,13 @@ export class CalculPaieService {
                 salaireBase = fixe + montantHeuresSup;
 
                 elements.push(this.creerElement(
-                    'GAIN', 'SALAIRE_BASE',
+                    TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
                     'Salaire de base (fixe mensuel)',
                     fixe, fixe, undefined, ordre++
                 ));
                 if (heuresSup > 0) {
                     elements.push(this.creerElement(
-                        'GAIN', 'HEURE_SUP',
+                        TypeElementSalaire.GAIN, CategorieElementSalaire.HEURE_SUP,
                         `Heures sup (${heuresSup}h × ${tarifHoraire} × 1.5)`,
                         montantHeuresSup, heuresSup, tarifHoraire, ordre++
                     ));
@@ -269,7 +269,7 @@ export class CalculPaieService {
                 const tarifHebdo = contrat.tarifHebdomadaire || contrat.salaireBase || 0;
                 salaireBase = +(tarifHebdo * 52 / 12).toFixed(2);
                 elements.push(this.creerElement(
-                    'GAIN', 'SALAIRE_BASE',
+                    TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
                     `Salaire hebdomadaire lissé (${tarifHebdo} × 52 / 12)`,
                     salaireBase, tarifHebdo, undefined, ordre++
                 ));
@@ -294,7 +294,7 @@ export class CalculPaieService {
             if (montantPrime > 0) {
                 totalPrimes += montantPrime;
                 elements.push(this.creerElement(
-                    'GAIN', 'PRIME', prime.nom,
+                    TypeElementSalaire.GAIN, CategorieElementSalaire.PRIME, prime.nom,
                     montantPrime, undefined, undefined, ordre++
                 ));
             }
@@ -317,7 +317,7 @@ export class CalculPaieService {
                 const montantSalarial = baseCalcul * (cotisation.tauxSalarial / 100);
                 totalCotisationsSalariales += montantSalarial;
                 elements.push(this.creerElement(
-                    'RETENUE', 'COTISATION',
+                    TypeElementSalaire.RETENUE, CategorieElementSalaire.COTISATION,
                     `${cotisation.nom} (Salarial)`,
                     montantSalarial, baseCalcul, cotisation.tauxSalarial, ordre++
                 ));

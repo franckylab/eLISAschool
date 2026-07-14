@@ -16,8 +16,14 @@ import { logger } from '@common/utils/logger.util';
 // Constantes de configuration
 // ==================================
 
-/** Taille maximale du fichier original (1 MB) */
+/** Taille maximale du fichier original (1 MB) — logos */
 const TAILLE_MAX_OCTETS = 1_048_576;
+
+/** Taille maximale photo de profil (3 MB) */
+const TAILLE_MAX_PHOTO = 3 * 1_048_576;
+
+/** Taille maximale pièce d'identité (5 MB — correspond à la limite multer) */
+const TAILLE_MAX_PIECE = 5 * 1_048_576;
 
 /** Dimensions maximales après redimensionnement */
 const DIMENSION_MAX = 500;
@@ -85,11 +91,12 @@ function extraireDonneesBase64(dataUri: string): { mime: string; buffer: Buffer 
 /**
  * Valide la taille du fichier original
  * @param taille Taille en octets
+ * @param maxOctets Taille maximale autorisée (défaut: 1 MB)
  */
-function validerTaille(taille: number): void {
-  if (taille > TAILLE_MAX_OCTETS) {
+function validerTaille(taille: number, maxOctets: number = TAILLE_MAX_OCTETS): void {
+  if (taille > maxOctets) {
     throw new AppError(
-      `Image trop volumineuse: ${(taille / 1024 / 1024).toFixed(2)} MB. Maximum: 1 MB`,
+      `Image trop volumineuse: ${(taille / 1024 / 1024).toFixed(2)} MB. Maximum: ${(maxOctets / 1024 / 1024).toFixed(0)} MB`,
       400,
       'IMAGE_TROP_LOURDE'
     );
@@ -216,4 +223,112 @@ export function validerLogoBase64(base64Input: string): boolean {
   const { buffer } = extraireDonneesBase64(base64Input);
   validerTaille(buffer.length);
   return true;
+}
+
+// ==================================
+// Traitement photo de profil
+// ==================================
+
+/** Dimensions max pour photo de profil */
+const PHOTO_PROFIL_MAX = 500;
+const PHOTO_PROFIL_THUMB = 150;
+
+export interface PhotoProfilTraitee {
+  url: string;
+  thumbnailUrl: string;
+  type: string;
+  dimensions: { largeur: number; hauteur: number };
+}
+
+/**
+ * Traite une photo de profil : redimensionne + thumbnail WebP
+ */
+export async function traiterPhotoProfil(buffer: Buffer, mime: string): Promise<PhotoProfilTraitee> {
+  validerTaille(buffer.length, TAILLE_MAX_PHOTO);
+
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+
+  // Photo principale 500px
+  const mainBuffer = await image
+    .resize({ width: PHOTO_PROFIL_MAX, height: PHOTO_PROFIL_MAX, fit: 'cover', withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  // Thumbnail 150px
+  const thumbBuffer = await sharp(buffer)
+    .resize({ width: PHOTO_PROFIL_THUMB, height: PHOTO_PROFIL_THUMB, fit: 'cover', withoutEnlargement: true })
+    .webp({ quality: 70 })
+    .toBuffer();
+
+  const mainMeta = await sharp(mainBuffer).metadata();
+
+  const url = `data:image/webp;base64,${mainBuffer.toString('base64')}`;
+  const thumbnailUrl = `data:image/webp;base64,${thumbBuffer.toString('base64')}`;
+
+  logger.info(
+    `Photo profil traitée: ${metadata.width}x${metadata.height} → ${mainMeta.width}x${mainMeta.height} + thumb`
+  );
+
+  return {
+    url,
+    thumbnailUrl,
+    type: 'webp',
+    dimensions: { largeur: mainMeta.width || 0, hauteur: mainMeta.height || 0 },
+  };
+}
+
+// ==================================
+// Traitement pièce d'identité
+// ==================================
+
+/** Dimensions max pour pièce d'identité */
+const PIECE_MAX = 2000;
+
+export interface PieceIdentiteTraitee {
+  url: string;
+  type: string;
+  dimensions: { largeur: number; hauteur: number };
+}
+
+/**
+ * Traite une pièce d'identité (recto/verso) : redimensionnement WebP
+ */
+export async function traiterPieceIdentite(buffer: Buffer, mime: string): Promise<PieceIdentiteTraitee> {
+  validerTaille(buffer.length, TAILLE_MAX_PIECE);
+
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+
+  const outputBuffer = await image
+    .resize({ width: PIECE_MAX, height: PIECE_MAX, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  const outputMeta = await sharp(outputBuffer).metadata();
+
+  const url = `data:image/webp;base64,${outputBuffer.toString('base64')}`;
+
+  logger.info(`Pièce identité traitée: ${metadata.width}x${metadata.height} → ${outputMeta.width}x${outputMeta.height}`);
+
+  return {
+    url,
+    type: 'webp',
+    dimensions: { largeur: outputMeta.width || 0, hauteur: outputMeta.height || 0 },
+  };
+}
+
+/**
+ * Valide le type MIME d'un fichier uploadé
+ */
+const MIMES_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+export function validerMimeUpload(mime: string): void {
+  if (!MIMES_ACCEPTES.includes(mime)) {
+    throw new AppError(
+      `Format non supporté: ${mime}. Formats acceptés: JPEG, PNG, WEBP, AVIF`,
+      400,
+      'FORMAT_NON_SUPPORTE'
+    );
+  }
 }

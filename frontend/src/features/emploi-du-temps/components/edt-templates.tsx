@@ -87,7 +87,7 @@ export function EDTTemplatesPage() {
                     {templates.map((template: { id: string; nom: string; description?: string; actif: boolean; configuration?: any; creneauxTypes?: any[]; estPartage?: boolean }, index: number) => (
                         <motion.div
                             key={template.id}
-                            className="p-6 bg-white rounded-xl border border-[var(--color-border)] shadow-sm hover:shadow-md transition-shadow"
+                            className="p-6 bg-white dark:bg-gray-800 rounded-xl border border-[var(--color-border)] shadow-sm hover:shadow-md transition-shadow"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
@@ -107,14 +107,14 @@ export function EDTTemplatesPage() {
 
                                 {/* Badge partagé */}
                                 {template.estPartage && (
-                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
                                         Partagé
                                     </span>
                                 )}
                             </div>
 
                             {/* Stats */}
-                            <div className="space-y-2 text-sm text-gray-600 mb-4">
+                            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
                                 <div className="flex justify-between">
                                     <span>Créneaux types :</span>
                                     <span className="font-semibold">
@@ -142,7 +142,7 @@ export function EDTTemplatesPage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t border-gray-200">
+                            <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                                 <ElisaButton
                                     variant="outline"
                                     size="xs"
@@ -186,7 +186,7 @@ export function EDTTemplatesPage() {
                 size="lg"
             >
                 <div className="p-6 text-center">
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
                         La création de templates sera bientôt disponible.
                         <br />
                         En attendant, utilisez les templates par défaut fournis.

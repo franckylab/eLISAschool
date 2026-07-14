@@ -110,12 +110,12 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-200">
                         Niveaux dans lesquels <strong>{matiereNom}</strong> est enseignée
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    <span className="text-sm text-gray-500 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
                         {matiereNiveaux?.length || 0} niveau(x)
                     </span>
                     {canWrite && !showAddForm && (
@@ -151,35 +151,35 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                             }))}
                         />
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Coefficient</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Coefficient</label>
                             <input type="number" step="0.5" min="0" value={addCoeff}
                                 onChange={e => setAddCoeff(e.target.value ? Number(e.target.value) : '')}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Barème</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Barème</label>
                             <input type="number" min="1" value={addBareme}
                                 onChange={e => setAddBareme(e.target.value ? Number(e.target.value) : '')}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Crédits</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Crédits</label>
                             <input type="number" min="0" step="1" value={addCredits}
                                 onChange={e => setAddCredits(e.target.value ? Number(e.target.value) : '')}
                                 placeholder="Optionnel"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Vol. horaire (h)</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Vol. horaire (h)</label>
                             <input type="number" min="0" value={addVol}
                                 onChange={e => setAddVol(e.target.value ? Number(e.target.value) : '')}
                                 placeholder="Optionnel"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                             />
                         </div>
                         <ElisaSelect
@@ -196,9 +196,9 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" checked={addOblig}
                                     onChange={e => setAddOblig(e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                                 />
-                                <span className="text-sm font-medium text-gray-700">Obligatoire</span>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-400">Obligatoire</span>
                             </label>
                         </div>
                     </div>
@@ -218,71 +218,71 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
             )}
 
             {!matiereNiveaux || matiereNiveaux.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                    <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium mb-1">Aucun niveau associé</p>
-                    <p className="text-sm text-gray-500">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+                    <GraduationCap className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">Aucun niveau associé</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">
                         Ajoutez cette matière au programme d'un niveau en cliquant sur "Ajouter".
                     </p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Niveau</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Credits</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
-                                    {canWrite && <th className="text-center px-4 py-3 font-medium text-gray-600">Actions</th>}
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Niveau</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Coeff.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Barème</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Credits</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Vol. horaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Oblig.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Statut</th>
+                                    {canWrite && <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {matiereNiveaux.map(mn => {
                                     const isEditing = editId === mn.id;
                                     return (
-                                        <tr key={mn.id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={mn.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50 transition-colors">
                                             <td className="px-4 py-3 font-medium">
                                                 {mn.niveau?.nom || mn.niveauId}
-                                                {mn.filiere && <span className="text-gray-400 ml-1">({mn.filiere.nom})</span>}
-                                                {mn.groupe && <span className="text-gray-400 ml-1">- {mn.groupe.nom}</span>}
+                                                {mn.filiere && <span className="text-gray-400 dark:text-gray-100 ml-1">({mn.filiere.nom})</span>}
+                                                {mn.groupe && <span className="text-gray-400 dark:text-gray-100 ml-1">- {mn.groupe.nom}</span>}
                                             </td>
                                             {isEditing ? (
                                                 <>
                                                     <td className="px-4 py-3 text-center">
                                                         <input type="number" step="0.5" min="0" value={editCoeff}
                                                             onChange={e => setEditCoeff(e.target.value ? Number(e.target.value) : '')}
-                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                            className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <input type="number" min="1" value={editBareme}
                                                             onChange={e => setEditBareme(e.target.value ? Number(e.target.value) : '')}
-                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                            className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <input type="number" min="0" value={editCredits}
                                                             onChange={e => setEditCredits(e.target.value ? Number(e.target.value) : '')}
                                                             placeholder="—"
-                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                            className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <input type="number" min="0" value={editVol}
                                                             onChange={e => setEditVol(e.target.value ? Number(e.target.value) : '')}
                                                             placeholder="—"
-                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                            className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <input type="checkbox" checked={editOblig}
                                                             onChange={e => setEditOblig(e.target.checked)}
-                                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                                                         />
                                                     </td>
                                                 </>
@@ -294,11 +294,11 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                     <td className="px-4 py-3 text-center">
                                                         {mn.volumeHoraire ? (
                                                             <div className="flex items-center gap-2 justify-center">
-                                                                <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                                <div className="w-16 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                                                                     <div className="h-full bg-blue-500 rounded-full transition-all"
                                                                         style={{ width: `${maxVolume > 0 ? (mn.volumeHoraire / maxVolume) * 100 : 0}%` }} />
                                                                 </div>
-                                                                <span className="text-xs font-medium text-gray-600">{mn.volumeHoraire}h</span>
+                                                                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{mn.volumeHoraire}h</span>
                                                             </div>
                                                         ) : '-'}
                                                     </td>
@@ -319,7 +319,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                                     mn.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
                                                     mn.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-gray-100 text-gray-700'
+                                                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
                                                 }`}>
                                                     {mn.statut === 'ACTIF' ? 'Actif' : mn.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
                                                 </span>
@@ -335,7 +335,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                                 <Save className="h-4 w-4" />
                                                             </button>
                                                             <button onClick={() => setEditId(null)}
-                                                                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 transition-colors"
+                                                                className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors"
                                                                 title="Annuler"
                                                             >
                                                                 <X className="h-4 w-4" />
@@ -344,13 +344,13 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                     ) : (
                                                         <div className="flex items-center justify-center gap-1">
                                                             <button onClick={() => handleStartEdit(mn)}
-                                                                className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                                className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                                                 title="Modifier"
                                                             >
                                                                 <Edit className="h-4 w-4" />
                                                             </button>
                                                             <button onClick={() => setDeleteId(mn.id)}
-                                                                className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                                className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-red-50 hover:text-red-600 transition-colors"
                                                                 title="Supprimer"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />

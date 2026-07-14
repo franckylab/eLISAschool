@@ -6,9 +6,10 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
+import { useTypesPersonnel } from '../hooks/use-types-personnel';
 import { PersonnelFormModal } from './personnel-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -22,6 +23,8 @@ export function PersonnelPage() {
     const { t } = useTranslation();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });
+    const { data: typesData } = useTypesPersonnel();
+    const typeOptions = (typesData || []).map((tp: any) => ({ value: tp.id, label: `${tp.nom} (${tp.code})` }));
     const [modalOpen, setModalOpen] = useState(false);
     const [membreSelected, setMembreSelected] = useState<MembrePersonnel | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
@@ -62,10 +65,10 @@ export function PersonnelPage() {
             header: t('commun.nom'),
             sortable: true,
             render: (p) => {
-                const prenom = p.utilisateur?.profil?.prenom ?? p.prenom ?? '';
-                const nom = p.utilisateur?.profil?.nom ?? p.nom ?? '';
-                const email = p.utilisateur?.email ?? p.email ?? '';
-                const tel = p.utilisateur?.profil?.telephone ?? p.telephone ?? '';
+                const prenom = p.utilisateur?.profil?.prenom ?? '';
+                const nom = p.utilisateur?.profil?.nom ?? '';
+                const email = p.utilisateur?.email ?? '';
+                const tel = p.utilisateur?.profil?.telephone ?? '';
                 return (
                     <button
                         onClick={() => window.location.href = `/personnel/${p.id}`}
@@ -84,7 +87,7 @@ export function PersonnelPage() {
             header: 'Date entrée',
             sortable: true,
             render: (p) => {
-                const d = p.dateEmbauche ?? p.dateEntree;
+                const d = p.dateEmbauche;
                 return d ? new Date(d).toLocaleDateString('fr-FR') : '-';
             },
         },
@@ -161,15 +164,33 @@ export function PersonnelPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">{t('personnel.titre', { defaultValue: 'Personnel' })}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} membre(s)</p>
+            <PageHeader
+                title={t('personnel.titre', { defaultValue: 'Personnel' })}
+                subtitle={`${data?.meta?.totalItems || 0} membre(s)`}
+                icon={Users}
+                variant="gradient"
+                actions={hasPermission('personnel:create') ? (
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}
+                        onClick={handleCreation}>{t('boutons.nouveau')}</ElisaButton>
+                ) : undefined}
+            />
+
+            {/* Filtre par type de personnel */}
+            <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <select
+                        value={filtres.typePersonnelId || ''}
+                        onChange={(e) => setFiltres((prev) => ({ ...prev, typePersonnelId: e.target.value || undefined, page: 1 }))}
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Tous les types</option>
+                        {typeOptions.map((opt: { value: string; label: string }) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
                 </div>
-                {hasPermission('personnel:create') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>{t('boutons.nouveau')}</ElisaButton>
-                )}
-            </motion.div>
+            </div>
 
             <DataTable
                 data={data?.items || []}
@@ -208,7 +229,7 @@ export function PersonnelPage() {
             <ConfirmationModal
                 isOpen={!!membreToDelete}
                 title="Supprimer ce membre du personnel"
-                message={`Êtes-vous sûr de vouloir supprimer ${membreToDelete?.utilisateur?.profil?.prenom || membreToDelete?.prenom || ''} ${membreToDelete?.utilisateur?.profil?.nom || membreToDelete?.nom || ''} ?`}
+                message={`Êtes-vous sûr de vouloir supprimer ${membreToDelete?.utilisateur?.profil?.prenom || ''} ${membreToDelete?.utilisateur?.profil?.nom || ''} ?`}
                 details="Cette action est irréversible et supprimera toutes les données associées."
                 variant="danger"
                 onConfirm={async () => {

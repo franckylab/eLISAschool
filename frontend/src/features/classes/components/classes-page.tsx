@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { Plus, Users, Edit, Trash2, Eye, Power, GraduationCap, School, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import { useClasses, useSupprimerClasse, useToggleActifClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -12,7 +15,7 @@ import { usePermissions } from '@/hooks';
 import type { Classe, ClasseFiltres } from '../types/classe.types';
 
 function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
+    return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className || ''}`} />;
 }
 
 export function ClassesPage() {
@@ -97,8 +100,8 @@ export function ClassesPage() {
                     onClick={() => handleVoirDetail(classe)}
                     className="hover:underline cursor-pointer text-left"
                 >
-                    <p className="font-medium text-gray-900 text-sm">{classe.nom}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="font-medium text-gray-900 dark:text-gray-200 text-sm">{classe.nom}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-200">
                         {classe.niveau?.nom}
                         {classe.filiere && ` - ${classe.filiere.code}`}
                     </p>
@@ -112,8 +115,8 @@ export function ClassesPage() {
             className: 'text-center',
             render: (classe) => (
                 <div className="flex items-center justify-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-gray-400" />
-                    <span className="font-medium text-sm text-gray-900">
+                    <Users className="h-3.5 w-3.5 text-gray-400 dark:text-gray-100" />
+                    <span className="font-medium text-sm text-gray-900 dark:text-gray-200">
                         {classe.effectifActuel || 0} / {classe.effectifMax || '∞'}
                     </span>
                 </div>
@@ -123,7 +126,7 @@ export function ClassesPage() {
             key: 'salle',
             header: t('colonnes.salle'),
             render: (classe) => (
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-400">
                     {classe.salle?.nom || classe.sallePrincipaleId?.substring(0, 8) || '-'}
                 </span>
             ),
@@ -132,7 +135,7 @@ export function ClassesPage() {
             key: 'principal',
             header: t('colonnes.principal'),
             render: (classe) => (
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-400">
                     {classe.professeurPrincipal
                         ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
                         : '-'}
@@ -157,7 +160,7 @@ export function ClassesPage() {
                     INTERNATIONALE: t('types.internationale'),
                 };
                 return (
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-gray-100 text-gray-800'}`}>
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
                         {typeLabels[classe.typeClasse] || classe.typeClasse}
                     </span>
                 );
@@ -174,7 +177,7 @@ export function ClassesPage() {
                     JOURNEE_COMPLETE: t('creneaux.journeeComplete'),
                 };
                 return (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-200">
                         {creneauLabels[classe.creneauHoraire] || classe.creneauHoraire}
                     </span>
                 );
@@ -189,7 +192,7 @@ export function ClassesPage() {
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     classe.actif
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                 }`}>
                     {classe.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                     {classe.actif ? t('statut.actif') : t('statut.inactif')}
@@ -235,13 +238,6 @@ export function ClassesPage() {
         },
     ];
 
-    const statCards = [
-        { icon: School, label: t('stats.total') || 'Total', value: computedStats.total, color: 'text-blue-600', iconBg: 'bg-blue-100' },
-        { icon: CheckCircle, label: t('stats.actives') || 'Actives', value: computedStats.actives, color: 'text-green-600', iconBg: 'bg-green-100' },
-        { icon: Users, label: t('stats.effectifTotal') || 'Effectif total', value: computedStats.effectifTotal, color: 'text-purple-600', iconBg: 'bg-purple-100' },
-        { icon: BookOpen, label: t('stats.niveaux') || 'Niveaux', value: computedStats.niveaux, color: 'text-amber-600', iconBg: 'bg-amber-100' },
-    ];
-
     if (isLoading && !data?.items?.length) {
         return (
             <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -268,52 +264,24 @@ export function ClassesPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 mb-8">
-                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
-                        <GraduationCap className="w-full h-full" />
-                    </div>
-                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-5">
-                            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
-                                <GraduationCap className="h-10 w-10 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-bold text-white mb-1">{t('titre')}</h1>
-                                <p className="text-sm text-blue-200">
-                                    {data?.meta?.totalItems || 0} {t('sousTitre.classesActives')}
-                                </p>
-                            </div>
-                        </div>
-                        {hasPermission('classes:create') && (
-                            <ElisaButton
-                                onClick={handleCreation}
-                                icon={<Plus className="h-4 w-4" />}
-                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-                            >
-                                {t('boutons.nouveau')}
-                            </ElisaButton>
-                        )}
-                    </div>
-                </div>
+                <PageHeader
+                    variant="gradient"
+                    icon={GraduationCap}
+                    title={t('titre')}
+                    subtitle={`${data?.meta?.totalItems || 0} ${t('sousTitre.classesActives')}`}
+                    actions={hasPermission('classes:create') ? (
+                        <ElisaButton onClick={handleCreation} icon={<Plus className="h-4 w-4" />}>
+                            {t('boutons.nouveau')}
+                        </ElisaButton>
+                    ) : undefined}
+                />
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                    {statCards.map((card) => (
-                        <motion.div
-                            key={card.label}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex items-start justify-between mb-3">
-                                <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
-                                    <card.icon className={`h-5 w-5 ${card.color}`} />
-                                </div>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                            <p className="text-sm text-gray-500 mt-0.5">{card.label}</p>
-                        </motion.div>
-                    ))}
-                </div>
+                <CardGrid columns={{ default: 1, sm: 2, lg: 4 }} className="mb-8">
+                    <StatCard icon={School} label={t('stats.total') || 'Total'} value={computedStats.total} tone="dominant" />
+                    <StatCard icon={CheckCircle} label={t('stats.actives') || 'Actives'} value={computedStats.actives} tone="success" />
+                    <StatCard icon={Users} label={t('stats.effectifTotal') || 'Effectif total'} value={computedStats.effectifTotal} tone="purple" />
+                    <StatCard icon={BookOpen} label={t('stats.niveaux') || 'Niveaux'} value={computedStats.niveaux} tone="info" />
+                </CardGrid>
 
                 <DataTable
                     tableId="classes"

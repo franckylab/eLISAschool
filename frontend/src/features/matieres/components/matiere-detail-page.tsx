@@ -29,7 +29,7 @@ type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | '
 function StatutBadge({ actif }: { actif: boolean }) {
     return (
         <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${
-            actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
         }`}>
             {actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
             {actif ? 'Active' : 'Inactive'}
@@ -44,8 +44,8 @@ const sousSystemeConfig: Record<string, { label: string; bg: string; text: strin
 };
 
 function SousSystemeBadge({ value }: { value: string | null }) {
-    if (!value) return <span className="text-xs text-gray-500">Commun</span>;
-    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-gray-100', text: 'text-gray-700' };
+    if (!value) return <span className="text-xs text-gray-500 dark:text-gray-200">Commun</span>;
+    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-gray-100', text: 'text-gray-700 dark:text-gray-400' };
     return (
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.text}`}>
             <Globe className="h-3 w-3" />
@@ -160,8 +160,8 @@ export function MatiereDetailPage() {
     if (error || !matiere) {
         return (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <AlertCircle className="h-16 w-16 text-gray-400" />
-                <p className="text-lg text-gray-600">Matière non trouvée</p>
+                <AlertCircle className="h-16 w-16 text-gray-400 dark:text-gray-100" />
+                <p className="text-lg text-gray-600 dark:text-gray-300">Matière non trouvée</p>
                 <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })}>
                     Retour à la liste
                 </ElisaButton>
@@ -185,7 +185,7 @@ export function MatiereDetailPage() {
             <Breadcrumbs currentLabel={matiere.nom} />
 
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
                 <div className="h-2 w-full" style={{ backgroundColor: couleur }} />
 
@@ -200,12 +200,12 @@ export function MatiereDetailPage() {
 
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <h1 className="text-3xl font-bold text-gray-900 truncate">{matiere.nom}</h1>
+                                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 truncate">{matiere.nom}</h1>
                                     <StatutBadge actif={matiere.actif} />
                                     <SousSystemeBadge value={matiere.sousSysteme} />
                                 </div>
 
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                                <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-200">
                                     <div className="flex items-center gap-2">
                                         <Hash className="h-4 w-4" />
                                         <span className="font-mono">{matiere.code || '-'}</span>
@@ -267,7 +267,7 @@ export function MatiereDetailPage() {
                 />
             )}
 
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="-mb-px flex gap-6 overflow-x-auto">
                     {onglets.map((o) => {
                         const Icon = o.icon;
@@ -276,13 +276,13 @@ export function MatiereDetailPage() {
                                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                                     ongletActif === o.id
                                         ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        : 'border-transparent text-gray-500 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
                                 <Icon className="h-4 w-4" />
                                 {o.label}
                                 {o.count !== undefined && (
-                                    <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                                    <span className="ml-1 rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
                                         {o.count}
                                     </span>
                                 )}
@@ -346,10 +346,10 @@ export function MatiereDetailPage() {
                         {edtQuery.isLoading ? (
                             <div className="py-12"><LoadingState message="Chargement de l'emploi du temps..." /></div>
                         ) : !edtQuery.data?.items?.length ? (
-                            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 font-medium mb-1">Aucun créneau pour cette matière</p>
-                                <p className="text-sm text-gray-500">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+                                <Clock className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
+                                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">Aucun créneau pour cette matière</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-200">
                                     Les créneaux apparaîtront ici une fois l'emploi du temps généré.
                                 </p>
                             </div>
@@ -435,7 +435,7 @@ function StatCard({ icon: Icon, label, value, color, delay }: { icon: any; label
         yellow: { bg: 'from-yellow-50 to-yellow-100 border-yellow-200', text: 'text-yellow-700', value: 'text-yellow-800' },
         red: { bg: 'from-red-50 to-red-100 border-red-200', text: 'text-red-700', value: 'text-red-800' },
         indigo: { bg: 'from-indigo-50 to-indigo-100 border-indigo-200', text: 'text-indigo-700', value: 'text-indigo-800' },
-        gray: { bg: 'from-gray-50 to-gray-100 border-gray-200', text: 'text-gray-700', value: 'text-gray-800' },
+        gray: { bg: 'from-gray-50 to-gray-100 border-gray-200', text: 'text-gray-700 dark:text-gray-400', value: 'text-gray-800 dark:text-gray-300' },
     };
     const c = colors[color] || colors.blue;
     return (
@@ -454,66 +454,66 @@ function StatCard({ icon: Icon, label, value, color, delay }: { icon: any; label
 function InformationsTab({ matiere, couleur }: { matiere: any; couleur: string }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-blue-600" />
                     Informations générales
                 </h3>
                 <dl className="space-y-4">
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Nom</dt>
-                        <dd className="mt-1 text-lg font-medium text-gray-900">{matiere.nom}</dd>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Nom</dt>
+                        <dd className="mt-1 text-lg font-medium text-gray-900 dark:text-gray-200">{matiere.nom}</dd>
                     </div>
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Code</dt>
-                        <dd className="mt-1 font-mono text-gray-900">{matiere.code || '-'}</dd>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Code</dt>
+                        <dd className="mt-1 font-mono text-gray-900 dark:text-gray-200">{matiere.code || '-'}</dd>
                     </div>
                     {matiere.nomAnglais && (
                         <div>
-                            <dt className="text-sm font-medium text-gray-500">Nom anglais</dt>
-                            <dd className="mt-1 text-gray-900">{matiere.nomAnglais}</dd>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Nom anglais</dt>
+                            <dd className="mt-1 text-gray-900 dark:text-gray-200">{matiere.nomAnglais}</dd>
                         </div>
                     )}
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Sous-système</dt>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Sous-système</dt>
                         <dd className="mt-1"><SousSystemeBadge value={matiere.sousSysteme} /></dd>
                     </div>
                 </dl>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     Configuration
                 </h3>
                 <dl className="space-y-4">
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Couleur</dt>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Couleur</dt>
                         <dd className="mt-1 flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg border-2 border-gray-200 shadow-sm" style={{ backgroundColor: couleur }} />
+                            <div className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm" style={{ backgroundColor: couleur }} />
                             <span className="font-mono text-sm">{couleur}</span>
                         </dd>
                     </div>
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Statut</dt>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Statut</dt>
                         <dd className="mt-1"><StatutBadge actif={matiere.actif} /></dd>
                     </div>
                 </dl>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6 md:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-orange-600" />
                     Métadonnées
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Créée le</dt>
-                        <dd className="mt-1 text-gray-900">{formatDate(matiere.createdAt)}</dd>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Créée le</dt>
+                        <dd className="mt-1 text-gray-900 dark:text-gray-200">{formatDate(matiere.createdAt)}</dd>
                     </div>
                     <div>
-                        <dt className="text-sm font-medium text-gray-500">Dernière modification</dt>
-                        <dd className="mt-1 text-gray-900">{formatDate(matiere.updatedAt)}</dd>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Dernière modification</dt>
+                        <dd className="mt-1 text-gray-900 dark:text-gray-200">{formatDate(matiere.updatedAt)}</dd>
                     </div>
                 </div>
             </div>
@@ -530,7 +530,7 @@ function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreat
     onCreate: () => void;
     hasPermission: boolean;
 }) {
-    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement des affectations..." /></div>;
+    if (isLoading) return <div className="py-12 text-center text-gray-500 dark:text-gray-200"><LoadingState message="Chargement des affectations..." /></div>;
 
     return (
         <div className="space-y-4">
@@ -545,31 +545,31 @@ function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreat
             {!data || data.length === 0 ? (
                 <EmptyState icon={Users} message="Aucun enseignant assigné" sub="Utilisez le bouton ci-dessus pour affecter un enseignant à cette matière." />
             ) : (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Enseignant</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Période</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
-                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600">Actions</th>}
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Enseignant</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Classe</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Année scolaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Période</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Statut</th>
+                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {data.map((a) => (
-                                    <tr key={a.id} className="hover:bg-gray-50">
+                                    <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                <UserCheck className="h-4 w-4 text-gray-400" />
+                                                <UserCheck className="h-4 w-4 text-gray-400 dark:text-gray-100" />
                                                 <span className="font-medium">{a.enseignant ? `${a.enseignant.prenom} ${a.enseignant.nom}` : a.enseignantId}</span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">{a.classeAnnee?.classe?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-600">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
-                                        <td className="px-4 py-3 text-center text-xs text-gray-500">
+                                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-200">
                                             {a.dateDebut ? formatDate(a.dateDebut) : '-'}
                                             {a.dateFin ? ` → ${formatDate(a.dateFin)}` : ''}
                                         </td>
@@ -579,7 +579,7 @@ function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreat
                                                     <CheckCircle className="h-3 w-3" /> Actif
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400">
                                                     <XCircle className="h-3 w-3" /> Inactif
                                                 </span>
                                             )}
@@ -615,7 +615,7 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
     onCreate: () => void;
     hasPermission: boolean;
 }) {
-    if (isLoading) return <div className="py-12 text-center text-gray-500"><LoadingState message="Chargement des configurations..." /></div>;
+    if (isLoading) return <div className="py-12 text-center text-gray-500 dark:text-gray-200"><LoadingState message="Chargement des configurations..." /></div>;
 
     const maxVolume = data && data.length > 0 ? Math.max(...data.map((c) => c.volumeHoraireHebdo || 0)) : 0;
 
@@ -632,26 +632,26 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
             {!data || data.length === 0 ? (
                 <EmptyState icon={FileText} message="Aucune configuration spécifique" sub="Les configurations par classe héritent des valeurs du programme par défaut. Utilisez le bouton ci-dessus pour surcharger une classe." />
             ) : (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50 dark:bg-gray-800/50">
                                 <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Classe</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600">Année scolaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Coeff.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Barème</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Vol. horaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Oblig.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
-                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600">Actions</th>}
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Classe</th>
+                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Année scolaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Coeff.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Barème</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Vol. horaire</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Oblig.</th>
+                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Statut</th>
+                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {data.map((c) => (
-                                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50 transition-colors">
                                         <td className="px-4 py-3 font-medium">{c.classeAnnee?.classe?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-600">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
                                         <td className="px-4 py-3 text-center">
                                             <InheritedValue value={c.coefficient} unit="" />
                                         </td>
@@ -661,7 +661,7 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
                                         <td className="px-4 py-3 text-center">
                                             {c.volumeHoraireHebdo
                                                 ? <VolumeBar value={c.volumeHoraireHebdo} max={maxVolume} />
-                                                : <span className="text-xs text-gray-400 italic">Hérité</span>
+                                                : <span className="text-xs text-gray-400 dark:text-gray-100 italic">Hérité</span>
                                             }
                                         </td>
                                         <td className="px-4 py-3 text-center">
@@ -679,7 +679,7 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
                                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                                 c.statut === 'ACTIVE' ? 'bg-green-100 text-green-700' :
                                                 c.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-gray-100 text-gray-700'
+                                                'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
                                             }`}>
                                                 {c.statut === 'ACTIVE' ? 'Active' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactive'}
                                             </span>
@@ -688,13 +688,13 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
                                             <td className="px-4 py-3 text-center">
                                                 <div className="flex items-center justify-center gap-1">
                                                     <button onClick={() => onEdit(c)}
-                                                        className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                                         title="Modifier"
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </button>
                                                     <button onClick={() => onDelete(c.id)}
-                                                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                        className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-red-50 hover:text-red-600 transition-colors"
                                                         title="Supprimer"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -717,25 +717,25 @@ function VolumeBar({ value, max }: { value: number; max: number }) {
     const pct = max > 0 ? (value / max) * 100 : 0;
     return (
         <div className="flex items-center gap-2 w-24">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
-            <span className="text-xs font-medium text-gray-600 w-8 text-right">{value}h</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-8 text-right">{value}h</span>
         </div>
     );
 }
 
 function InheritedValue({ value, unit, prefix }: { value: number | null | undefined; unit: string; prefix?: string }) {
-    if (value == null) return <span className="text-xs text-gray-400 italic">Hérité</span>;
+    if (value == null) return <span className="text-xs text-gray-400 dark:text-gray-100 italic">Hérité</span>;
     return <span className="font-semibold">{prefix ?? ''}{value}{unit}</span>;
 }
 
 function EmptyState({ icon: Icon, message, sub }: { icon: any; message: string; sub: string }) {
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <Icon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 font-medium mb-1">{message}</p>
-            <p className="text-sm text-gray-500">{sub}</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <Icon className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
+            <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">{message}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-200">{sub}</p>
         </div>
     );
 }

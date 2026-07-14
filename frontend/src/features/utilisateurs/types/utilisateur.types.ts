@@ -2,14 +2,19 @@
  * ==================================
  * eLISAschool - Types Utilisateur, Rôle et Permission
  * ==================================
- * Version: 2.0.0
+ * Version: 2.1.0
  * Auteur: franck arlos chendjou
  * 
  * Types complets pour la gestion des utilisateurs, rôles et permissions
+ * 
+ * NOTE v2.1 — Single Source of Truth :
+ * - Utilisateur (auth) et ProfilUtilisateur (données perso) sont SÉPARÉS
+ * - nom/prenom/telephone sont APLATIS au top-level par formatUtilisateurResponse
+ * - profil contient aussi ces champs + genre, dateNaissance, photo
+ * - MembrePersonnel ne porte QUE les champs professionnels (matricule, diplomes...)
  */
 
 export type StatutUtilisateur = 'ACTIF' | 'INACTIF' | 'SUSPENDU' | 'EN_ATTENTE_VALIDATION';
-export type SexeUtilisateur = 'M' | 'F';
 
 export interface Utilisateur {
     id: string;
@@ -17,37 +22,55 @@ export interface Utilisateur {
     nom: string;
     prenom: string;
     telephone?: string;
-    matricule?: string;
+    matricule: string;
     role: string;
-    // NOTE v4.0: etablissementId SUPPRIMÉ - géré via utilisateur_etablissements
-    // Pour connaître les établissements, utiliser le endpoint dédié
-    actif?: boolean;
     statut?: StatutUtilisateur;
+    emailVerifie?: boolean;
+    langue?: string;
+    deuxFacteursActif?: boolean;
+    pseudonyme?: string;
+    qrCodeId?: string;
+    maxEtablissementsPersonnel?: number;
     derniereConnexion?: string;
     createdAt: string;
     updatedAt: string;
     permissions?: string[];
     profil?: {
-        avatar?: string;
-        adresse?: string;
+        nom: string;
+        prenom: string;
+        telephone?: string;
+        genre?: string;
         dateNaissance?: string;
-        sexe?: SexeUtilisateur;
+        lieuNaissance?: string;
+        nationalite?: string;
+        telephoneSecondaire?: string;
+        adresse?: string;
+        ville?: string;
+        quartier?: string;
+        photoUrl?: string;
+        photoThumbnail?: string;
+        pieceRectoUrl?: string;
+        pieceVersoUrl?: string;
+        typePieceIdentite?: string;
+        numeroPieceIdentite?: string;
+        notes?: string;
     };
-    /**
-     * Rôle de l'utilisateur dans l'établissement courant
-     * (peut être différent du rôle global)
-     */
     roleEtablissement?: string;
-    /**
-     * Statut d'affectation dans l'établissement courant
-     * (true = actif dans cet établissement, false = inactif/désactivé)
-     */
     actifDansEtablissement?: boolean;
-    // Méta donné es
-    nomComplet?: string;
-    nbConnexions?: number;
-    motDePasseExpire?: boolean;
-    deuxFacteursActif?: boolean;
+    membrePersonnel?: {
+        id: string;
+        matricule: string;
+        statut: string;
+        dateEmbauche: string;
+        typePersonnel?: {
+            id: string;
+            code: string;
+            nom: string;
+        };
+        typePersonnelId?: string;
+        specialitePrincipale?: string;
+        departement?: string;
+    };
 }
 
 export interface CreerUtilisateurDto {
@@ -57,17 +80,47 @@ export interface CreerUtilisateurDto {
     telephone?: string;
     role: string;
     motDePasse: string;
-    etablissementId: string;
+    etablissementId?: string;
     statut?: StatutUtilisateur;
     profil?: {
         adresse?: string;
         dateNaissance?: string;
-        sexe?: SexeUtilisateur;
+        genre?: 'M' | 'F' | 'A';
     };
 }
 
 export interface ModifierUtilisateurDto extends Partial<CreerUtilisateurDto> {
     id: string;
+    maxEtablissementsPersonnel?: number;
+}
+
+export interface UpdateProfilDto {
+    nom?: string;
+    prenom?: string;
+    telephone?: string | null;
+    telephoneSecondaire?: string | null;
+    genre?: 'M' | 'F' | 'A';
+    dateNaissance?: string | null;
+    lieuNaissance?: string | null;
+    nationalite?: string | null;
+    adresse?: string | null;
+    ville?: string | null;
+    quartier?: string | null;
+    photoUrl?: string | null;
+    photoThumbnail?: string | null;
+    pieceRectoUrl?: string | null;
+    pieceVersoUrl?: string | null;
+    typePieceIdentite?: string | null;
+    numeroPieceIdentite?: string | null;
+    notes?: string | null;
+}
+
+export interface UpdateSecurityDto {
+    role?: string;
+    statut?: StatutUtilisateur;
+    langue?: string;
+    motDePasse?: string;
+    deuxFacteursActif?: boolean;
 }
 
 export interface UtilisateurFiltres {

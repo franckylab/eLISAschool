@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Plus, Eye, Trash2, Shield, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { CardGrid, StatCard } from '@/components/ui';
 import { useSanctions, useSupprimerSanction, useAmnistierSanction, useStatistiquesDiscipline } from '../hooks/use-discipline';
 import type { Sanction } from '../types/discipline.types';
 
@@ -186,61 +187,12 @@ export function DisciplinePage() {
             </motion.div>
 
             {stats && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <AlertTriangle className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Total sanctions</p>
-                                <p className="text-lg font-bold text-red-600">{stats.totalItemsSanctions}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <AlertCircle className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Graves</p>
-                                <p className="text-lg font-bold text-orange-600">
-                                    {stats.parGravite?.find(g => g.gravite === 'grave' || g.gravite === 'tres_grave')?.nombre || 0}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <Shield className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Amnistiées</p>
-                                <p className="text-lg font-bold text-green-600">
-                                    {stats.parStatut?.find(s => s.statut === 'amnistiee')?.nombre || 0}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <AlertTriangle className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500">Types</p>
-                                <p className="text-lg font-bold text-blue-600">{stats.parType?.length || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={AlertTriangle} label="Total sanctions" value={stats.totalItemsSanctions} tone="danger" />
+                    <StatCard icon={AlertCircle} label="Graves" value={stats.parGravite?.find(g => g.gravite === 'grave' || g.gravite === 'tres_grave')?.nombre || 0} tone="orange" />
+                    <StatCard icon={Shield} label="Amnistiées" value={stats.parStatut?.find(s => s.statut === 'amnistiee')?.nombre || 0} tone="success" />
+                    <StatCard icon={AlertTriangle} label="Types" value={stats.parType?.length || 0} tone="accent" />
+                </CardGrid>
             )}
 
             <DataTable

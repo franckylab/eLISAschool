@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { Eleve } from '@modules/eleves/entities';
+import { AffectationEleve } from '@modules/classes/entities';
 import { Note } from '@modules/notes/entities';
 import { Utilisateur } from '@modules/auth/entities';
 import { ConfigurationModule } from '@modules/configuration/entities';
@@ -65,7 +66,7 @@ export class DashboardDataService {
 
     async getElevesRepartitionClasse(context: { etablissementId?: string }): Promise<any> {
         try {
-            const affectationRepo = AppDataSource.getRepository('AffectationEleve') as any;
+            const affectationRepo = AppDataSource.getRepository(AffectationEleve);
             const qb = affectationRepo
                 .createQueryBuilder('ae')
                 .leftJoin('ae.classe', 'c')

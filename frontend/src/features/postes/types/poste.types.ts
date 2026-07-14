@@ -1,13 +1,21 @@
-export type TypePoste = 'DIRECTION' | 'ENSEIGNANT' | 'ADMINISTRATIF' | 'TECHNIQUE' | 'SERVICE' | 'STAGE' | 'TEMPORAIRE' | 'AUTRE';
 export type NiveauResponsabilite = 'DIRECTION_GENERALE' | 'DIRECTION_ADJOINTE' | 'RESPONSABLE' | 'COORDINATEUR' | 'SUPERVISEUR' | 'EXECUTANT' | 'STAGIAIRE';
 export type StatutPoste = 'ACTIF' | 'VACANT' | 'SUPPRIME' | 'EN_ATTENTE';
+
+export interface TypePersonnelLite {
+    id: string;
+    code: string;
+    nom: string;
+    estSysteme: boolean;
+    actif: boolean;
+}
 
 export interface Poste {
     id: string;
     intitulé: string;
     description?: string;
     code: string;
-    type: TypePoste;
+    typePersonnelId?: string;
+    typePersonnel?: TypePersonnelLite;
     niveauResponsabilite: NiveauResponsabilite;
     statut: StatutPoste;
     actif: boolean;
@@ -32,7 +40,7 @@ export interface CreatePosteDto {
     intitulé: string;
     description?: string;
     code: string;
-    type?: TypePoste;
+    typePersonnelId?: string;
     niveauResponsabilite?: NiveauResponsabilite;
     fonctionId?: string;
     uniteOrganisationnelleId: string;
@@ -51,7 +59,7 @@ export interface PosteFiltres {
     page?: number;
     limit?: number;
     search?: string;
-    type?: TypePoste;
+    typePersonnelId?: string;
     statut?: StatutPoste;
     fonctionId?: string;
     uniteOrganisationnelleId?: string;

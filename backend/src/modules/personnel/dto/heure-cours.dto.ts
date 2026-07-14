@@ -35,6 +35,15 @@ export const queryHeureCoursSchema = paginationWithSortSchema
         statutEffectue: z.enum(['PLANIFIE', 'EFFECTUE', 'ANNULE', 'REMPLACE']).optional(),
     });
 
+export const genererHeuresCoursFromEdtSchema = z.object({
+    enseignantId: z.string().uuid(),
+    classeAnneeId: z.string().uuid().optional(),
+    dateDebut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    dateFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    periodeId: z.string().uuid().optional(),
+});
+
 export type CreateHeureCoursDto = z.infer<typeof createHeureCoursSchema>;
 export type UpdateHeureCoursDto = z.infer<typeof updateHeureCoursSchema>;
 export type QueryHeureCoursDto = z.infer<typeof queryHeureCoursSchema>;
+export type GenererHeuresCoursFromEdtDto = z.infer<typeof genererHeuresCoursFromEdtSchema>;

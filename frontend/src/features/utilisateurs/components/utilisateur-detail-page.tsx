@@ -1,61 +1,119 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Utilisateur
- * ==================================
- * Version: 2.0.0
- * Auteur: franck arlos chendjou
- * 
- * Page de détail d'un utilisateur avec onglets multiples
- */
-
-import { useState } from 'react';
-import { useParams } from '@tanstack/react-router';
+import { useState, useCallback } from 'react';
+import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { 
-    ArrowLeft, User, Mail, Phone, Shield, Calendar, MapPin, 
-    Activity, Key, Settings, Edit, Trash2, Lock, Unlock,
-    CheckCircle, XCircle, AlertCircle
+import {
+    User, Shield, Activity, Settings,
+    Edit, CheckCircle, XCircle, AlertCircle, Lock, Briefcase, Eye, QrCode, Download, Loader2,
 } from 'lucide-react';
-import { useUtilisateur, useSupprimerUtilisateur } from '../hooks/use-utilisateurs';
+import {
+    useUtilisateur,
+    useForcePasswordReset,
+    useToggle2FA,
+    useToggleSuspension,
+    useRevokeSessions,
+    useQRCode,
+} from '../hooks/use-utilisateurs';
+import { ChangeRoleModal } from './change-role-modal';
+import { InfoProfilModal } from './info-profil-modal';
+import { TabInformations } from './tab-informations';
+import { TabRolesPermissions } from './tab-roles-permissions';
+import { TabActivite } from './tab-activite';
+import { TabSecurite } from './tab-securite';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ImagePreview } from '@/components/ui/ImagePreview';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { useConfirmation } from '@/components/ui/ConfirmationModal';
+import { CustomModal } from '@/components/modals/CustomModal';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { usePermissions } from '@/hooks';
 
-type Onglet = 'informations' | 'permissions' | 'activite' | 'parametres';
+type Onglet = 'informations' | 'roles-permissions' | 'activite' | 'securite';
 
 export function UtilisateurDetailPage() {
     const { id } = useParams({ from: '/_auth/utilisateurs/$id' });
+    const navigate = useNavigate();
+    const search = useSearch({ from: '/_auth/utilisateurs/$id' });
     const { hasPermission } = usePermissions();
-    
-    const [ongletActif, setOngletActif] = useState<Onglet>('informations');
-    const [utilisateurToDelete, setUtilisateurToDelete] = useState(false);
+    const { t, i18n } = useTranslation('utilisateurs');
+
+    const ongletActif = (search as any)?.tab || 'informations';
+    const setOngletActif = (tab: Onglet) => navigate({ to: '/utilisateurs/$id', params: { id }, search: { tab } as any });
+
+    const [profilModalOpen, setProfilModalOpen] = useState(false);
+    const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [qrPreviewOpen, setQrPreviewOpen] = useState(false);
 
     const { data: utilisateur, isLoading, error, refetch } = useUtilisateur(id);
-    const supprimer = useSupprimerUtilisateur();
+    const { data: qrCodeUrl } = useQRCode(id);
+    const forceReset = useForcePasswordReset();
+    const toggle2FA = useToggle2FA();
+    const toggleSuspension = useToggleSuspension();
+    const revokeSessions = useRevokeSessions();
+    const confirm = useConfirmation();
 
     const onglets: { id: Onglet; label: string; icone: React.ReactNode }[] = [
-        { id: 'informations', label: 'Informations', icone: <User className="h-4 w-4" /> },
-        { id: 'permissions', label: 'Permissions', icone: <Shield className="h-4 w-4" /> },
-        { id: 'activite', label: 'Activité', icone: <Activity className="h-4 w-4" /> },
-        { id: 'parametres', label: 'Paramètres', icone: <Settings className="h-4 w-4" /> },
+        { id: 'informations', label: t('tabInformations'), icone: <User className="h-4 w-4" /> },
+        { id: 'roles-permissions', label: t('tabRolesPermissions'), icone: <Shield className="h-4 w-4" /> },
+        { id: 'activite', label: t('tabActivite'), icone: <Activity className="h-4 w-4" /> },
+        { id: 'securite', label: t('tabSecurite'), icone: <Settings className="h-4 w-4" /> },
     ];
 
-    // Affichage skeleton
+    const handleForcePasswordReset = useCallback(() => {
+        confirm.ask({
+            title: 'Réinitialiser le mot de passe',
+            message: `Forcer la réinitialisation du mot de passe pour ${utilisateur?.prenom} ${utilisateur?.nom} ?`,
+            details: 'Les sessions actives seront révoquées. L\'utilisateur devra créer un nouveau mot de passe.',
+            variant: 'warning',
+            onConfirm: () => forceReset.mutateAsync(id),
+        });
+    }, [id, utilisateur, confirm, forceReset]);
+
+    const handleToggle2FA = useCallback((actif: boolean) => {
+        toggle2FA.mutate({ id, actif });
+    }, [id, toggle2FA]);
+
+    const handleToggleSuspension = useCallback(() => {
+        if (!utilisateur) return;
+        const estActif = utilisateur.statut === 'ACTIF';
+        const nouveauStatut = estActif ? 'SUSPENDU' : 'ACTIF';
+        confirm.ask({
+            title: estActif ? 'Suspendre le compte' : 'Réactiver le compte',
+            message: estActif
+                ? `Suspendre le compte de ${utilisateur.prenom} ${utilisateur.nom} ?`
+                : `Réactiver le compte de ${utilisateur.prenom} ${utilisateur.nom} ?`,
+            details: estActif
+                ? 'L\'utilisateur ne pourra plus se connecter jusqu\'à la réactivation.'
+                : 'L\'utilisateur pourra à nouveau se connecter.',
+            variant: estActif ? 'danger' : 'info',
+            onConfirm: () => toggleSuspension.mutateAsync({ id, statut: nouveauStatut }),
+        });
+    }, [id, utilisateur, confirm, toggleSuspension]);
+
+    const handleRevokeSessions = useCallback(() => {
+        confirm.ask({
+            title: 'Révoquer les sessions',
+            message: `Déconnecter toutes les sessions actives de ${utilisateur?.prenom} ${utilisateur?.nom} ?`,
+            details: 'L\'utilisateur sera déconnecté de tous ses appareils et devra se reconnecter.',
+            variant: 'warning',
+            onConfirm: () => revokeSessions.mutateAsync(id),
+        });
+    }, [id, utilisateur, confirm, revokeSessions]);
+
     if (isLoading) {
         return <PageSkeleton showHeader />;
     }
 
-    // Affichage erreur
     if (error || !utilisateur) {
         return (
             <div className="p-6">
                 <ErrorMessage
-                    title="Utilisateur non trouvé"
-                    message={error?.message || "Impossible de charger les détails de l'utilisateur"}
+                    title={t('utilisateurNonTrouve')}
+                    message={error?.message || t('impossibleChargerDetails')}
                     onRetry={() => refetch()}
-                    retryLabel="Réessayer"
+                    retryLabel={t('reessayer')}
                 />
             </div>
         );
@@ -63,87 +121,91 @@ export function UtilisateurDetailPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            {/* Header avec navigation */}
-            <motion.div 
-                className="flex items-center justify-between"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
+            <PageHeader
+                variant="gradient"
+                showBreadcrumbs
+                breadcrumbLabel={`${utilisateur.prenom} ${utilisateur.nom}`}
+                onBack={() => navigate({ to: '/utilisateurs' })}
+                actions={
+                    <div className="flex gap-2">
+                        {hasPermission('utilisateurs:profil:update') && (
+                            <ElisaButton variant="primary" size="sm" icon={<Edit className="h-4 w-4" />}
+                                onClick={() => setProfilModalOpen(true)}>{t('modifierProfil')}</ElisaButton>
+                        )}
+                    </div>
+                }
             >
-                <div className="flex items-center gap-4">
-                    <ElisaButton
-                        variant="ghost"
-                        size="sm"
-                        icon={<ArrowLeft className="h-4 w-4" />}
-                        onClick={() => { window.location.href = '/utilisateurs'; }}
-                    >
-                        Retour
-                    </ElisaButton>
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                <div className="flex items-start gap-3 sm:gap-4 md:gap-6">
+                    {utilisateur.profil?.photoUrl || utilisateur.profil?.photoThumbnail ? (
+                        <button onClick={() => setImagePreview(utilisateur.profil!.photoUrl!)}
+                            className="group relative shrink-0">
+                            <img src={utilisateur.profil.photoThumbnail || utilisateur.profil.photoUrl}
+                                alt="Photo de profil"
+                                className="h-[clamp(3rem,10vw,8rem)] w-[clamp(3rem,10vw,8rem)] rounded-full object-cover border-[clamp(2px,0.3vw,4px)] border-white/30 shadow-sm group-hover:brightness-75 transition-all" />
+                            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Eye className="h-[clamp(1rem,3vw,2.5rem)] w-[clamp(1rem,3vw,2.5rem)] text-white drop-shadow-lg" />
+                            </div>
+                        </button>
+                    ) : (
+                        <div className="h-[clamp(3rem,10vw,8rem)] w-[clamp(3rem,10vw,8rem)] rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-[clamp(0.875rem,3vw,2.5rem)] font-bold text-white shadow-md shrink-0">
+                            {(utilisateur.prenom?.charAt(0) ?? '') + (utilisateur.nom?.charAt(0) ?? '') || '?'}
+                        </div>
+                    )}
+                    <div className="space-y-2">
+                        <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">
                             {utilisateur.prenom} {utilisateur.nom}
                         </h1>
-                        <p className="text-sm text-gray-600">{utilisateur.email}</p>
+                        <p className="text-[clamp(0.75rem,2vw,1.125rem)] text-white/70">{utilisateur.email}</p>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[clamp(0.65rem,1.4vw,0.8rem)] font-medium ${
+                                utilisateur.statut === 'ACTIF' ? 'bg-green-500/20 text-green-200' :
+                                utilisateur.statut === 'SUSPENDU' ? 'bg-red-500/20 text-red-200' :
+                                'bg-gray-500/20 text-gray-200'
+                            }`}>
+                                {utilisateur.statut === 'ACTIF' ? <CheckCircle className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" /> :
+                                 utilisateur.statut === 'SUSPENDU' ? <XCircle className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" /> :
+                                 <AlertCircle className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" />}
+                                {utilisateur.statut === 'ACTIF' ? t('actif') :
+                                 utilisateur.statut === 'SUSPENDU' ? t('suspendu') : t('inactif')}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[clamp(0.65rem,1.4vw,0.8rem)] font-medium text-white/80">
+                                <Shield className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" />
+                                {utilisateur.role}
+                            </span>
+                            {utilisateur.deuxFacteursActif && (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 px-3 py-1 text-[clamp(0.65rem,1.4vw,0.8rem)] font-medium text-blue-200">
+                                    <Lock className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" />
+                                    2FA
+                                </span>
+                            )}
+                            {utilisateur.membrePersonnel && (
+                                <button
+                                    onClick={() => navigate({ to: '/personnel/$id' as any, params: { id: utilisateur.membrePersonnel!.id } } as any)}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-3 py-1 text-[clamp(0.65rem,1.4vw,0.8rem)] font-medium text-purple-200 hover:bg-purple-500/30 transition-colors"
+                                >
+                                    <Briefcase className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" />
+                                    {utilisateur.membrePersonnel.matricule}
+                                </button>
+                            )}
+                            {utilisateur.qrCodeId && (
+                                <button
+                                    onClick={() => setQrPreviewOpen(true)}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 px-3 py-1 text-[clamp(0.65rem,1.4vw,0.8rem)] font-medium text-blue-200 hover:bg-blue-500/30 transition-colors"
+                                >
+                                    <QrCode className="h-[clamp(0.7rem,1.2vw,0.85rem)] w-[clamp(0.7rem,1.2vw,0.85rem)]" />
+                                    QR
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    {hasPermission('utilisateurs:edit') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<Edit className="h-4 w-4" />}
-                        >
-                            Modifier
-                        </ElisaButton>
-                    )}
-                    {hasPermission('utilisateurs:delete') && (
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            icon={<Trash2 className="h-4 w-4" />}
-                            onClick={() => setUtilisateurToDelete(true)}
-                        >
-                            Supprimer
-                        </ElisaButton>
-                    )}
-                </div>
-            </motion.div>
+            </PageHeader>
 
-            {/* Badge statut et rôle */}
-            <motion.div 
-                className="flex items-center gap-4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-            >
-                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${
-                    utilisateur.statut === 'ACTIF' ? 'bg-green-100 text-green-800' :
-                    utilisateur.statut === 'SUSPENDU' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                }`}>
-                    {utilisateur.statut === 'ACTIF' ? <CheckCircle className="h-4 w-4" /> :
-                     utilisateur.statut === 'SUSPENDU' ? <XCircle className="h-4 w-4" /> :
-                     <AlertCircle className="h-4 w-4" />}
-                    {utilisateur.statut === 'ACTIF' ? 'Actif' :
-                     utilisateur.statut === 'SUSPENDU' ? 'Suspendu' : 'Inactif'}
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-dominant-100)] px-4 py-2 text-sm font-medium text-[var(--color-dominant-800)]">
-                    <Shield className="h-4 w-4" />
-                    {utilisateur.role}
-                </span>
-                {utilisateur.deuxFacteursActif && (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800">
-                        <Lock className="h-4 w-4" />
-                        2FA activé
-                    </span>
-                )}
-            </motion.div>
-
-            {/* Onglets */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="border-b border-gray-200"
+                className="border-b border-gray-200 dark:border-gray-700"
             >
                 <nav className="-mb-px flex gap-6">
                     {onglets.map((onglet) => (
@@ -153,7 +215,7 @@ export function UtilisateurDetailPage() {
                             className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
                                 ongletActif === onglet.id
                                     ? 'border-[var(--color-dominant-500)] text-[var(--color-dominant-600)]'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
                             }`}
                         >
                             {onglet.icone}
@@ -163,287 +225,92 @@ export function UtilisateurDetailPage() {
                 </nav>
             </motion.div>
 
-            {/* Contenu des onglets */}
             <motion.div
                 key={ongletActif}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2 }}
             >
-                {ongletActif === 'informations' && <OngletInformations utilisateur={utilisateur} />}
-                {ongletActif === 'permissions' && <OngletPermissions utilisateur={utilisateur} />}
-                {ongletActif === 'activite' && <OngletActivite utilisateur={utilisateur} />}
-                {ongletActif === 'parametres' && <OngletParametres utilisateur={utilisateur} />}
-            </motion.div>
-
-            {/* Modal Confirmation Suppression */}
-            <ConfirmationModal
-                isOpen={utilisateurToDelete}
-                title="Supprimer cet utilisateur"
-                message={`Êtes-vous sûr de vouloir supprimer ${utilisateur.prenom} ${utilisateur.nom} ?`}
-                details="Cette action est irréversible et désactivera tous les accès associés."
-                variant="danger"
-                onConfirm={async () => {
-                    await supprimer.mutateAsync(utilisateur.id);
-                    window.location.href = '/utilisateurs';
-                }}
-                onCancel={() => setUtilisateurToDelete(false)}
-                isLoading={supprimer.isPending}
-            />
-        </div>
-    );
-}
-
-// ==================== ONGLET INFORMATIONS ====================
-
-function OngletInformations({ utilisateur }: { utilisateur: any }) {
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Informations personnelles */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg border border-gray-200 p-6"
-            >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <User className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                    Informations personnelles
-                </h3>
-                <div className="space-y-4">
-                    <InfoField label="Prénom" value={utilisateur.prenom} />
-                    <InfoField label="Nom" value={utilisateur.nom} />
-                    <InfoField label="Email" value={utilisateur.email} icon={<Mail className="h-4 w-4" />} />
-                    <InfoField label="Téléphone" value={utilisateur.telephone || 'Non renseigné'} icon={<Phone className="h-4 w-4" />} />
-                    <InfoField 
-                        label="Date de naissance" 
-                        value={utilisateur.profil?.dateNaissance 
-                            ? new Date(utilisateur.profil.dateNaissance).toLocaleDateString('fr-FR')
-                            : 'Non renseignée'} 
-                        icon={<Calendar className="h-4 w-4" />} 
+                {ongletActif === 'informations' && <TabInformations utilisateur={utilisateur} />}
+                {ongletActif === 'roles-permissions' && <TabRolesPermissions utilisateur={utilisateur} />}
+                {ongletActif === 'activite' && <TabActivite utilisateur={utilisateur} />}
+                {ongletActif === 'securite' && (
+                    <TabSecurite
+                        utilisateur={utilisateur}
+                        hasPermission={hasPermission}
+                        onForcePasswordReset={handleForcePasswordReset}
+                        onToggle2FA={handleToggle2FA}
+                        onToggleSuspension={handleToggleSuspension}
+                        onRevokeSessions={handleRevokeSessions}
+                        isLoading={{
+                            forceReset: forceReset.isPending,
+                            toggle2FA: toggle2FA.isPending,
+                            toggleSuspension: toggleSuspension.isPending,
+                            revokeSessions: revokeSessions.isPending,
+                        }}
                     />
-                    <InfoField label="Adresse" value={utilisateur.profil?.adresse || 'Non renseignée'} icon={<MapPin className="h-4 w-4" />} />
-                </div>
-            </motion.div>
-
-            {/* Informations système */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white rounded-lg border border-gray-200 p-6"
-            >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                    Informations système
-                </h3>
-                <div className="space-y-4">
-                    <InfoField label="Rôle" value={utilisateur.role} />
-                    <InfoField label="Statut" value={utilisateur.statut} />
-                    <InfoField 
-                        label="Dernière connexion" 
-                        value={utilisateur.derniereConnexion 
-                            ? new Date(utilisateur.derniereConnexion).toLocaleString('fr-FR')
-                            : 'Jamais connecté'} 
-                    />
-                    <InfoField 
-                        label="Date de création" 
-                        value={new Date(utilisateur.createdAt).toLocaleDateString('fr-FR')} 
-                    />
-                    <InfoField 
-                        label="Dernière modification" 
-                        value={new Date(utilisateur.updatedAt).toLocaleDateString('fr-FR')} 
-                    />
-                    <InfoField label="Établissement ID" value={utilisateur.etablissementId} />
-                </div>
-            </motion.div>
-        </div>
-    );
-}
-
-// ==================== ONGLET PERMISSIONS ====================
-
-function OngletPermissions({ utilisateur }: { utilisateur: any }) {
-    const permissions = utilisateur.permissions || [];
-    const permissionsGroupedByModule = permissions.reduce((acc: any, perm: string) => {
-        const [module] = perm.split(':');
-        if (!acc[module]) acc[module] = [];
-        acc[module].push(perm);
-        return acc;
-    }, {} as Record<string, string[]>);
-
-    return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                Permissions effectives ({permissions.length})
-            </h3>
-            <div className="space-y-6">
-                {Object.entries(permissionsGroupedByModule).map(([module, perms]) => (
-                    <div key={module}>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3 capitalize">
-                            {module.replace(/-/g, ' ')}
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {(perms as string[]).map((perm) => (
-                                <div key={perm} className="flex items-center gap-2 p-2 rounded bg-gray-50">
-                                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                                    <span className="text-sm text-gray-700">{perm}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-                {permissions.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p>Aucune permission attribuée</p>
-                    </div>
                 )}
-            </div>
-        </div>
-    );
-}
+            </motion.div>
 
-// ==================== ONGLET ACTIVITÉ ====================
+            {confirm.ConfirmationModal}
 
-function OngletActivite({ utilisateur }: { utilisateur: any }) {
-    return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                Historique d'activité
-            </h3>
-            <div className="space-y-4">
-                <ActiviteItem
-                    icone={<Key className="h-4 w-4" />}
-                    titre="Dernière connexion"
-                    description={utilisateur.derniereConnexion 
-                        ? new Date(utilisateur.derniereConnexion).toLocaleString('fr-FR')
-                        : 'Jamais connecté'}
-                    couleur="blue"
-                />
-                <ActiviteItem
-                    icone={<Unlock className="h-4 w-4" />}
-                    titre="Mot de passe"
-                    description={utilisateur.motDePasseExpire ? 'Expiré - nécessite changement' : 'Valide'}
-                    couleur={utilisateur.motDePasseExpire ? 'red' : 'green'}
-                />
-                <ActiviteItem
-                    icone={<Shield className="h-4 w-4" />}
-                    titre="Authentification 2FA"
-                    description={utilisateur.deuxFacteursActif ? 'Activée' : 'Non activée'}
-                    couleur={utilisateur.deuxFacteursActif ? 'green' : 'gray'}
-                />
-            </div>
-        </div>
-    );
-}
+            <InfoProfilModal
+                open={profilModalOpen}
+                onOpenChange={setProfilModalOpen}
+                utilisateur={utilisateur}
+            />
 
-// ==================== ONGLET PARAMÈTRES ====================
+            <ChangeRoleModal
+                open={showChangeRoleModal}
+                onOpenChange={setShowChangeRoleModal}
+                utilisateur={utilisateur}
+            />
 
-function OngletParametres({ utilisateur }: { utilisateur: any }) {
-    return (
-        <div className="space-y-6">
-            {/* Sécurité */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Lock className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                    Sécurité
-                </h3>
-                <div className="space-y-4">
-                    <ParametreItem
-                        titre="Changer le mot de passe"
-                        description="Forcer l'utilisateur à changer son mot de passe"
-                        action={<ElisaButton variant="outline" size="sm">Réinitialiser</ElisaButton>}
-                    />
-                    <ParametreItem
-                        titre="Authentification à deux facteurs"
-                        description={utilisateur.deuxFacteursActif ? 'Actuellement activée' : 'Actuellement désactivée'}
-                        action={
-                            <ElisaButton 
-                                variant={utilisateur.deuxFacteursActif ? 'danger' : 'primary'} 
-                                size="sm"
-                            >
-                                {utilisateur.deuxFacteursActif ? 'Désactiver' : 'Activer'}
-                            </ElisaButton>
-                        }
-                    />
-                    <ParametreItem
-                        titre="Suspendre le compte"
-                        description={utilisateur.statut === 'SUSPENDU' ? 'Compte actuellement suspendu' : 'Compte actuellement actif'}
-                        action={
-                            <ElisaButton 
-                                variant={utilisateur.statut === 'SUSPENDU' ? 'primary' : 'warning'} 
-                                size="sm"
-                            >
-                                {utilisateur.statut === 'SUSPENDU' ? 'Réactiver' : 'Suspendre'}
-                            </ElisaButton>
-                        }
-                    />
+            <ImagePreview
+                open={!!imagePreview}
+                onClose={() => setImagePreview(null)}
+                imageUrl={imagePreview ?? ''}
+                title={'Photo de profil'}
+                filename={'photo-profil'}
+            />
+
+            <CustomModal
+                open={qrPreviewOpen}
+                onOpenChange={setQrPreviewOpen}
+                title={t('qrCode')}
+                size="sm"
+                footer={
+                    qrCodeUrl ? (
+                        <a
+                            href={qrCodeUrl}
+                            download={`qr-${utilisateur.id}.png`}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-[var(--color-dominant-600)] hover:bg-[var(--color-dominant-700)] transition-colors"
+                        >
+                            <Download className="h-4 w-4" />
+                            {t('telechargerQR') || 'Télécharger'}
+                        </a>
+                    ) : undefined
+                }
+            >
+                <div className="flex flex-col items-center gap-4 py-4">
+                    {qrCodeUrl ? (
+                        <img
+                            src={qrCodeUrl}
+                            alt="QR Code"
+                            className="w-64 h-64 object-contain rounded-xl border border-gray-200 dark:border-gray-700"
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center w-64 h-64 rounded-xl bg-gray-100 dark:bg-gray-800">
+                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                        </div>
+                    )}
+                    {utilisateur.qrCodeId && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                            ID: {utilisateur.qrCodeId}
+                        </p>
+                    )}
                 </div>
-            </div>
-
-            {/* Zone dangereuse */}
-            <div className="bg-white rounded-lg border border-red-200 p-6">
-                <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    Zone dangereuse
-                </h3>
-                <div className="space-y-4">
-                    <ParametreItem
-                        titre="Supprimer le compte"
-                        description="Cette action est irréversible. Toutes les données associées seront perdues."
-                        action={<ElisaButton variant="danger" size="sm">Supprimer définitivement</ElisaButton>}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ==================== COMPOSANTS UTILITAIRES ====================
-
-function InfoField({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
-    return (
-        <div className="flex items-start gap-3">
-            {icon && <div className="mt-0.5 text-gray-400">{icon}</div>}
-            <div className="flex-1">
-                <p className="text-sm text-gray-500">{label}</p>
-                <p className="text-sm font-medium text-gray-900">{value}</p>
-            </div>
-        </div>
-    );
-}
-
-function ActiviteItem({ icone, titre, description, couleur }: any) {
-    const couleurs: any = {
-        blue: 'bg-blue-100 text-blue-600',
-        green: 'bg-green-100 text-green-600',
-        red: 'bg-red-100 text-red-600',
-        gray: 'bg-gray-100 text-gray-600',
-    };
-    
-    return (
-        <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
-            <div className={`p-2 rounded-full ${couleurs[couleur]}`}>
-                {icone}
-            </div>
-            <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{titre}</p>
-                <p className="text-sm text-gray-600">{description}</p>
-            </div>
-        </div>
-    );
-}
-
-function ParametreItem({ titre, description, action }: any) {
-    return (
-        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
-            <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{titre}</p>
-                <p className="text-sm text-gray-600">{description}</p>
-            </div>
-            <div>{action}</div>
+            </CustomModal>
         </div>
     );
 }

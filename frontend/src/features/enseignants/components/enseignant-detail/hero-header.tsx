@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import type { Enseignant } from '../../types/enseignant.types';
 
@@ -42,11 +43,11 @@ function formatAnciennete(anciennete: number) {
 }
 
 function nomPrenom(e: Enseignant): string {
-    return e.utilisateur?.profil?.prenom ?? e.prenom ?? '';
+    return e.utilisateur?.profil?.prenom ?? '';
 }
 
 function nomFamille(e: Enseignant): string {
-    return e.utilisateur?.profil?.nom ?? e.nom ?? '';
+    return e.utilisateur?.profil?.nom ?? '';
 }
 
 export function HeroHeader({
@@ -57,7 +58,7 @@ export function HeroHeader({
     const nom = nomFamille(enseignant);
     const nomComplet = `${prenom} ${nom}`.trim() || 'Enseignant';
     const initials = `${prenom.charAt(0)}${nom.charAt(0)}`;
-    const dateEmbauche = enseignant.dateEmbauche ?? enseignant.dateEntree;
+    const dateEmbauche = enseignant.dateEmbauche;
     const anciennete = dateEmbauche
         ? (Date.now() - new Date(dateEmbauche).getTime()) / (1000 * 60 * 60 * 24 * 365)
         : 0;
@@ -70,7 +71,7 @@ export function HeroHeader({
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm"
             >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-5">
@@ -79,15 +80,15 @@ export function HeroHeader({
                         </div>
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="text-2xl font-bold text-gray-900">{nomComplet}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200">{nomComplet}</h1>
                                 <span className={`rounded-full border px-3 py-0.5 text-xs font-medium ${COULEURS_STATUT[enseignant.statut]}`}>
                                     {LABELS_STATUT[enseignant.statut] || enseignant.statut}
                                 </span>
                             </div>
-                            <p className="mt-1 text-gray-600">
-                                {enseignant.specialite ?? enseignant.posteExact ?? enseignant.poste ?? 'Enseignant'}
+                            <p className="mt-1 text-gray-600 dark:text-gray-300">
+                                {enseignant.posteExact ?? 'Enseignant'}
                             </p>
-                            <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                            <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                                 <span className="inline-flex items-center gap-1.5">
                                     <Clock className="h-3.5 w-3.5" />
                                     Ancienneté: {formatAnciennete(anciennete)}
@@ -100,7 +101,7 @@ export function HeroHeader({
                                 {enseignant.service && (
                                     <span className="inline-flex items-center gap-1.5">{enseignant.service}</span>
                                 )}
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
                                     Enseignant
                                 </span>
                             </div>
@@ -122,7 +123,7 @@ export function HeroHeader({
                 </div>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <CardGrid columns={{ default: 2, md: 4 }}>
                 <StatCard icon={BookOpen} label="Matières"
                     value={nbMatieres ?? '—'} color="blue" loading={!statsLoaded} />
                 <StatCard icon={Star} label="Moyenne éval."
@@ -133,7 +134,7 @@ export function HeroHeader({
                     color="green" loading={!statsLoaded} />
                 <StatCard icon={Ban} label="Absences"
                     value={nbAbsences ?? '—'} color="orange" loading={!statsLoaded} />
-            </div>
+            </CardGrid>
         </div>
     );
 }

@@ -73,18 +73,18 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
             )}
 
             {evals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16">
-                    <Star className="mb-3 h-12 w-12 text-gray-300" />
-                    <p className="font-medium text-gray-600">Aucune évaluation</p>
-                    <p className="mt-1 text-sm text-gray-500">Les évaluations pédagogiques apparaîtront ici une fois soumises.</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16 dark:border-gray-600 dark:bg-gray-800">
+                    <Star className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Aucune évaluation</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">Les évaluations pédagogiques apparaîtront ici une fois soumises.</p>
                 </div>
             ) : (
                 <>
                     {/* Charts row */}
                     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                         {evolutionData.length > 1 && (
-                            <div className="rounded-xl border border-gray-200 bg-white p-5">
-                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                                     <TrendingUp className="h-4 w-4 text-blue-500" />
                                     Évolution de la note moyenne
                                 </h4>
@@ -92,8 +92,8 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                             </div>
                         )}
                         {categorieData.length > 0 && (
-                            <div className="rounded-xl border border-gray-200 bg-white p-5">
-                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                                     <Star className="h-4 w-4 text-purple-500" />
                                     Répartition par catégorie
                                 </h4>
@@ -105,22 +105,22 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-gray-50 dark:bg-gray-900">
                                     <tr>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Catégorie</th>
-                                        <th className="px-4 py-3 text-center font-medium text-gray-600">Note</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Évaluateur</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Commentaire</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Date</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Catégorie</th>
+                                        <th className="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-400">Note</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Évaluateur</th>
+                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Commentaire</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                     {evals.map((e: EvaluationEnseignant) => (
-                                        <tr key={e.id} className="hover:bg-gray-50/80">
-                                            <td className="px-4 py-3 text-gray-600">{formatDate(e.dateEvaluation)}</td>
+                                        <tr key={e.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700">
+                                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(e.dateEvaluation)}</td>
                                             <td className="px-4 py-3">
                                                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                                                     {e.categorie}
@@ -134,7 +134,7 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">{e.evaluateur ? `${e.evaluateur.prenom} ${e.evaluateur.nom}` : '-'}</td>
-                                            <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600">{e.commentaire || '-'}</td>
+                                            <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{e.commentaire || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>

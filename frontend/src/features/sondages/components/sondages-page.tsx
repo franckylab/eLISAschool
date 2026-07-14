@@ -74,14 +74,14 @@ export function SondagesPage() {
             sortable: true,
             render: (s) => (
                 <div>
-                    <p className="font-medium text-gray-900">{s.titre}</p>
-                    <p className="text-xs text-gray-500 line-clamp-1">{s.question}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-200">{s.titre}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{s.question}</p>
                     <div className="flex items-center gap-2 mt-1">
                         <span className={`text-xs px-1.5 py-0.5 rounded bg-${types[s.type]?.color}-100 text-${types[s.type]?.color}-800`}>
                             {types[s.type]?.label}
                         </span>
                         {s.estAnonyme && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-800">
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                                 Anonyme
                             </span>
                         )}
@@ -95,11 +95,11 @@ export function SondagesPage() {
             className: 'w-40',
             render: (s) => (
                 <div className="text-sm">
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 dark:text-gray-400">
                         {s.dateDebut ? new Date(s.dateDebut).toLocaleDateString('fr-FR') : 'Non défini'}
                     </p>
                     {s.dateFin && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                             au {new Date(s.dateFin).toLocaleDateString('fr-FR')}
                         </p>
                     )}
@@ -113,7 +113,7 @@ export function SondagesPage() {
             render: (s) => (
                 <div className="flex items-center justify-center gap-1">
                     <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-bold text-gray-900">{s.totalVotes || 0}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-200">{s.totalVotes || 0}</span>
                 </div>
             ),
         },
@@ -172,8 +172,8 @@ export function SondagesPage() {
                 className="flex items-center justify-between"
             >
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200">{t('titre')}</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('description')}</p>
                 </div>
                 <ElisaButton
                     variant="primary"
@@ -192,12 +192,12 @@ export function SondagesPage() {
                 className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200"
             >
                 <div className="flex items-start gap-4">
-                    <div className="p-3 bg-white rounded-lg shadow-sm">
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                         <BarChart3 className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">Créez et analysez vos sondages</h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Créez et analysez vos sondages</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                             Posez vos questions, collectez les avis de la communauté éducative et exportez les résultats en CSV ou PDF.
                         </p>
                         <div className="flex gap-3 mt-3">

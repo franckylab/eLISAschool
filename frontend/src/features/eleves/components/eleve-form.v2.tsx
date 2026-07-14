@@ -347,7 +347,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         className="peer sr-only"
                         aria-label={label}
                     />
-                    <div className="peer h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-[var(--color-dominant-500)]/20"></div>
+                    <div className="peer h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 dark:after:border-gray-600 after:bg-white dark:after:bg-gray-800 after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-[var(--color-dominant-500)]/20"></div>
                 </label>
             </div>
         );
@@ -662,7 +662,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                     ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-600)] text-white hover:bg-[var(--color-dominant-700)]'
                                     : index === etapeActuelle
                                     ? 'border-[var(--color-dominant-600)] text-[var(--color-dominant-600)] ring-2 ring-[var(--color-dominant-500)]/20'
-                                    : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                                    : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-300 cursor-not-allowed'
                             }`}
                             aria-label={`Étape ${index + 1}: ${etape.label}`}
                             aria-current={index === etapeActuelle ? 'step' : undefined}
@@ -674,7 +674,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                 className={`flex-1 border-t-2 transition-all ${
                                     index < etapeActuelle
                                         ? 'border-[var(--color-dominant-600)]'
-                                        : 'border-gray-300'
+                                        : 'border-gray-300 dark:border-gray-600'
                                 }`}
                             />
                         )}

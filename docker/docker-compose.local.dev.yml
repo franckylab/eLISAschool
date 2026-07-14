@@ -145,8 +145,8 @@ services:
         if [ ! -d 'node_modules' ] || [ ! -f 'node_modules/.package-lock.json' ]; then
           echo '📦 Installation dépendances...' && npm install;
         fi &&
-        echo '✅ Backend prêt - Lancement avec ts-node...' &&
-        exec sh -c 'TS_NODE_TRANSPILE_ONLY=true npx ts-node -r tsconfig-paths/register ./src/index.ts'
+        echo '✅ Backend prêt - Lancement avec nodemon (hot-reload)...' &&
+        exec npx nodemon --config nodemon.json
       "
 
   # ==================================

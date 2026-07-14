@@ -66,15 +66,15 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
         .filter((t: any) => t.actif)
         .map((t: any) => ({ value: t.code, label: `${t.code} — ${t.nom}` }))];
     if (typeOptions.length <= 1) {
-        typeOptions.push({ value: 'CDI', label: 'CDI' }, { value: 'CDD', label: 'CDD' }, { value: 'VACATAIRE', label: 'Vacataire' }, { value: 'STAGIAIRE', label: 'Stagiaire' });
+        typeOptions.push({ value: 'CDI', label: t('fallbackTypeCDI') }, { value: 'CDD', label: t('fallbackTypeCDD') }, { value: 'VACATAIRE', label: t('fallbackTypeVacataire') }, { value: 'STAGIAIRE', label: t('fallbackTypeStagiaire') });
     }
 
     const modeOptions = [
-        { value: '', label: '— Hérité du type de contrat —' },
-        { value: 'MENSUEL', label: 'Mensuel (fixe)' },
-        { value: 'HORAIRE', label: 'Horaire (taux × heures)' },
-        { value: 'MIXTE', label: 'Mixte (fixe + heures sup)' },
-        { value: 'HEBDOMADAIRE', label: 'Hebdomadaire (taux × 52/12)' },
+        { value: '', label: t('modeHerite') },
+        { value: 'MENSUEL', label: t('modeMensuel') },
+        { value: 'HORAIRE', label: t('modeHoraire') },
+        { value: 'MIXTE', label: t('modeMixte') },
+        { value: 'HEBDOMADAIRE', label: t('modeHebdomadaire') },
     ];
 
     const mode = form.modeRemuneration as string;
@@ -90,9 +90,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
     const membreSelectionne = membres.find((m) => m.id === form.membrePersonnelId);
     const membreTypeCode = membreSelectionne?.typePersonnel?.code;
 
-    const isPosteCompatible = (poste: Poste): boolean => {
-        if (!membreTypeCode) return true;
-        if (poste.type === 'ENSEIGNANT') return membreTypeCode === 'ENSEIGNANT';
+    const isPosteCompatible = (_poste: Poste): boolean => {
         return true;
     };
 
@@ -210,11 +208,11 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
             case 1:
                 return (
                     <div className="space-y-4">
-                        <p className="text-sm text-gray-500">{t('posteDescription') || 'Sélectionnez le poste à assigner au membre via ce contrat.'}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('posteDescription') || 'Sélectionnez le poste à assigner au membre via ce contrat.'}</p>
                         {posteActuelDuMembre && (
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                                <span className="font-medium text-blue-700">{t('posteActuel')} :</span>{' '}
-                                <span className="text-blue-600">{posteActuelDuMembre.intitulé} ({posteActuelDuMembre.code})</span>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg text-sm">
+                                <span className="font-medium text-blue-700 dark:text-blue-300">{t('posteActuel')} :</span>{' '}
+                                <span className="text-blue-600 dark:text-blue-400">{posteActuelDuMembre.intitulé} ({posteActuelDuMembre.code})</span>
                             </div>
                         )}
                         <ElisaSelect label={t('poste')} options={[
@@ -224,14 +222,14 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                         {form.posteId && (() => {
                             const p = tousPostes?.find((x: Poste) => x.id === form.posteId);
                             return p ? (
-                                <div className="flex items-center gap-3 p-2 px-3 bg-gray-50 rounded-lg">
-                                    <span className="text-xs text-gray-500">Capacité :</span>
+                                <div className="flex items-center gap-3 p-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{t('labelCapacite')}</span>
                                     <PosteCapaciteIndicator occupantsCount={p.occupantsCount} nombrePostes={p.nombrePostes} size="md" />
                                 </div>
                             ) : null;
                         })()}
                         {posteOptions.length === 0 && !posteActuelDuMembre && (
-                            <p className="text-xs text-gray-400">{t('aucunPosteVacant')}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">{t('aucunPosteVacant')}</p>
                         )}
                     </div>
                 );
@@ -300,7 +298,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                         <label className="flex items-center gap-2 text-sm cursor-pointer py-2">
                             <input type="checkbox" checked={form.renouvellementAuto}
                                 onChange={(e) => setForm({ ...form, renouvellementAuto: e.target.checked })}
-                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary" />
                             {t('renouvellementAuto')}
                         </label>
                         <div>
@@ -308,33 +306,33 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                             <textarea value={form.clauses}
                                 onChange={(e) => setForm({ ...form, clauses: e.target.value })}
                                 className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm min-h-[80px] resize-y"
-                                placeholder="Clauses particulières (optionnel)" />
+                                placeholder={t('clausesPlaceholder')} />
                         </div>
                     </div>
                 );
             case 4:
-                const modeLabel: Record<string, string> = { MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte + HS', HEBDOMADAIRE: 'Hebdo lissé' };
+                const modeLabel: Record<string, string> = { MENSUEL: t('recapModeMensuel'), HORAIRE: t('recapModeHoraire'), MIXTE: t('recapModeMixte'), HEBDOMADAIRE: t('recapModeHebdomadaire') };
                 return (
                     <div className="space-y-4">
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4 text-center">
                             <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                            <p className="font-medium text-green-800">Vérifiez les informations avant de créer le contrat</p>
+                            <p className="font-medium text-green-800 dark:text-green-300">{t('recapVerifier')}</p>
                         </div>
-                        <div className="divide-y divide-gray-100 text-sm">
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapMembre')}</span><span className="font-medium">{getMembreLabel(form.membrePersonnelId)}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapTypeContrat')}</span><span className="font-medium">{form.typeContrat}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapPoste')}</span><span className="font-medium">{form.posteId ? (tousPostes?.find((p: Poste) => p.id === form.posteId)?.intitulé || form.posteId) : t('recapAucun')}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapFonctionPrincipale')}</span><span className="font-medium">{form.fonctionId ? getFonctionName(form.fonctionId) : t('recapAucune')}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapFonctionsSecondaires')}</span><span className="font-medium">{form.fonctionsSecondairesIds.length > 0 ? form.fonctionsSecondairesIds.map(getFonctionName).join(', ') : t('recapAucune')}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapModeRemuneration')}</span><span className="font-medium">{modeLabel[form.modeRemuneration as string] || form.modeRemuneration}</span></div>
-                            {form.salaireBase > 0 && <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapSalaireBase')}</span><span className="font-medium">{form.salaireBase.toLocaleString('fr-FR')} F</span></div>}
-                            {form.tarifHoraire > 0 && <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapTarifHoraire')}</span><span className="font-medium">{form.tarifHoraire.toLocaleString('fr-FR')} F/h</span></div>}
-                            {form.heuresContractuellesMois > 0 && <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapHeuresContractuelles')}</span><span className="font-medium">{form.heuresContractuellesMois}h/mois</span></div>}
-                            {form.tarifHebdomadaire > 0 && <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapTarifHebdomadaire')}</span><span className="font-medium">{form.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem</span></div>}
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapDateDebut')}</span><span className="font-medium">{new Date(form.dateDebut).toLocaleDateString('fr-FR')}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500">{t('recapDateFin')}</span><span className="font-medium">{form.dateFin ? new Date(form.dateFin).toLocaleDateString('fr-FR') : t('recapAucun')}</span></div>
-                            {form.renouvellementAuto && <div className="flex justify-between py-2"><span className="text-gray-500">{t('renouvellementAuto')}</span><span className="font-medium text-green-600">Oui</span></div>}
-                            {form.clauses && <div className="flex justify-between py-2"><span className="text-gray-500">{t('clauses')}</span><span className="font-medium text-xs max-w-[200px] text-right">{form.clauses}</span></div>}
+                        <div className="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapMembre')}</span><span className="font-medium">{getMembreLabel(form.membrePersonnelId)}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapTypeContrat')}</span><span className="font-medium">{form.typeContrat}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapPoste')}</span><span className="font-medium">{form.posteId ? (tousPostes?.find((p: Poste) => p.id === form.posteId)?.intitulé || form.posteId) : t('recapAucun')}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionPrincipale')}</span><span className="font-medium">{form.fonctionId ? getFonctionName(form.fonctionId) : t('recapAucune')}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionsSecondaires')}</span><span className="font-medium">{form.fonctionsSecondairesIds.length > 0 ? form.fonctionsSecondairesIds.map(getFonctionName).join(', ') : t('recapAucune')}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapModeRemuneration')}</span><span className="font-medium">{modeLabel[form.modeRemuneration as string] || form.modeRemuneration}</span></div>
+                            {form.salaireBase > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapSalaireBase')}</span><span className="font-medium">{form.salaireBase.toLocaleString('fr-FR')} F</span></div>}
+                            {form.tarifHoraire > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapTarifHoraire')}</span><span className="font-medium">{form.tarifHoraire.toLocaleString('fr-FR')} F/h</span></div>}
+                            {form.heuresContractuellesMois > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapHeuresContractuelles')}</span><span className="font-medium">{form.heuresContractuellesMois}h/mois</span></div>}
+                            {form.tarifHebdomadaire > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapTarifHebdomadaire')}</span><span className="font-medium">{form.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem</span></div>}
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapDateDebut')}</span><span className="font-medium">{new Date(form.dateDebut).toLocaleDateString('fr-FR')}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapDateFin')}</span><span className="font-medium">{form.dateFin ? new Date(form.dateFin).toLocaleDateString('fr-FR') : t('recapAucun')}</span></div>
+                            {form.renouvellementAuto && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('renouvellementAuto')}</span><span className="font-medium text-green-600 dark:text-green-400">{t('oui')}</span></div>}
+                            {form.clauses && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('clauses')}</span><span className="font-medium text-xs max-w-[200px] text-right">{form.clauses}</span></div>}
                         </div>
                     </div>
                 );
@@ -353,7 +351,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-1">
                         {STEPS.map((_, i) => (
-                            <div key={i} className={`h-1.5 w-8 rounded-full transition-colors ${i <= step ? 'bg-blue-500' : 'bg-gray-200'}`} />
+                            <div key={i} className={`h-1.5 w-8 rounded-full transition-colors ${i <= step ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
                         ))}
                     </div>
                     <div className="flex items-center gap-3">
@@ -387,7 +385,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                         return (
                             <button key={s} onClick={() => i <= step && setStep(i)}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                    i === step ? 'bg-blue-100 text-blue-700' : i < step ? 'text-blue-600 hover:bg-blue-50' : 'text-gray-400'
+                                    i === step ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : i < step ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-gray-400 dark:text-gray-500'
                                 }`}
                             >
                                 <Icon className="h-3.5 w-3.5" />

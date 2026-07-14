@@ -88,7 +88,7 @@ class UsageUniteService {
     }
 
     async create(dto: CreateUsageUniteDto): Promise<UsageUnite> {
-        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? null } });
+        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? undefined } });
         if (existing) throw new AppError('Ce code d\'usage existe déjà', 409, 'USAGE_CODE_EXISTS');
         const entity = this.repo.create(dto);
         return this.repo.save(entity);
@@ -142,7 +142,7 @@ class CategoriePosteService {
     }
 
     async create(dto: CreateCategoriePosteDto): Promise<CategoriePoste> {
-        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? null } });
+        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? undefined } });
         if (existing) throw new AppError('Ce code de catégorie existe déjà', 409, 'CATEGORIE_CODE_EXISTS');
         const entity = this.repo.create(dto);
         return this.repo.save(entity);
@@ -196,7 +196,7 @@ class NiveauResponsabiliteService {
     }
 
     async create(dto: CreateNiveauResponsabiliteDto): Promise<NiveauResponsabilite> {
-        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? null } });
+        const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? undefined } });
         if (existing) throw new AppError('Ce code de niveau existe déjà', 409, 'NIVEAU_RESP_CODE_EXISTS');
         const entity = this.repo.create(dto);
         return this.repo.save(entity);

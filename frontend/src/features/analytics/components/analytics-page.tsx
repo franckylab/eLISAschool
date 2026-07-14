@@ -7,6 +7,8 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Plus, Activity } from 'lucide-react';
 import { useDashboardAnalytics, useStatistiquesAnalytics } from '../hooks/use-analytics';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 
 const statutsKPI: any = {
     bon: { label: 'Bon', color: 'green', icon: CheckCircle },
@@ -32,7 +34,7 @@ export function AnalyticsPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">Analytics & KPIs</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200">Analytics & KPIs</h1>
                 <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     <Plus className="w-4 h-4" />
                     Nouveau KPI
@@ -41,14 +43,14 @@ export function AnalyticsPage() {
 
             {/* Alertes */}
             {alertes.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-red-800 mb-2">Alertes actives ({alertes.length})</h3>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">Alertes actives ({alertes.length})</h3>
                     <div className="space-y-2">
                         {alertes.slice(0, 3).map((alerte: any) => (
                             <div key={alerte.id} className="flex items-center gap-2 text-sm">
                                 <AlertTriangle className="w-4 h-4 text-red-600" />
                                 <span className="font-medium">{alerte.kpiNom}</span>
-                                <span className="text-red-700">{alerte.message}</span>
+                                <span className="text-red-700 dark:text-red-400">{alerte.message}</span>
                             </div>
                         ))}
                     </div>
@@ -56,39 +58,12 @@ export function AnalyticsPage() {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Activity className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Total KPIs</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalKPIs || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">KPIs bons</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.parStatut?.find((s: any) => s.statut === 'bon')?.nombre || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">Alertes</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.alertesActives || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                        <span className="text-sm font-medium text-red-700">Critiques</span>
-                    </div>
-                    <p className="text-3xl font-bold text-red-800">{stats?.kpisCritiques || 0}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={Activity} label="Total KPIs" value={stats?.totalKPIs || 0} tone="accent" />
+                <StatCard icon={CheckCircle} label="KPIs bons" value={stats?.parStatut?.find((s: any) => s.statut === 'bon')?.nombre || 0} tone="success" />
+                <StatCard icon={AlertTriangle} label="Alertes" value={stats?.alertesActives || 0} tone="warning" />
+                <StatCard icon={AlertTriangle} label="Critiques" value={stats?.kpisCritiques || 0} tone="danger" />
+            </CardGrid>
 
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -97,16 +72,16 @@ export function AnalyticsPage() {
                     const tendance = tendances[kpi.tendance] || { label: kpi.tendance, color: 'gray' };
 
                     return (
-                        <motion.div key={kpi.id} className={`bg-white rounded-lg p-4 border border-${statut.color}-200`}>
+                        <motion.div key={kpi.id} className={`bg-white dark:bg-gray-800 rounded-lg p-4 border border-${statut.color}-200`}>
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-gray-900">{kpi.nom}</h3>
+                                <h3 className="font-semibold text-gray-900 dark:text-gray-200">{kpi.nom}</h3>
                                 <statut.icon className={`w-5 h-5 text-${statut.color}-600`} />
                             </div>
-                            <p className="text-3xl font-bold text-gray-900 mb-1">
+                            <p className="text-3xl font-bold text-gray-900 dark:text-gray-200 mb-1">
                                 {kpi.valeur}{kpi.unite}
                             </p>
                             {kpi.objectif && (
-                                <p className="text-xs text-gray-600 mb-2">Objectif: {kpi.objectif}{kpi.unite}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">Objectif: {kpi.objectif}{kpi.unite}</p>
                             )}
                             <div className="flex items-center justify-between">
                                 <span className={`text-xs text-${tendance.color}-600`}>{tendance.label} ({kpi.evolution > 0 ? '+' : ''}{kpi.evolution}%)</span>

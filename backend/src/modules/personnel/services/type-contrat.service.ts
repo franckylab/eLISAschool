@@ -32,7 +32,7 @@ export class TypeContratService {
     async create(
         dto: CreateTypeContratDto,
         etablissementId: string,
-        userId: string,
+        userId?: string,
         req?: any
     ): Promise<TypeContratPersonnalise> {
         // Vérifier l'unicité du code pour cet établissement
@@ -47,11 +47,8 @@ export class TypeContratService {
             throw new AppError('Un type de contrat avec ce code existe déjà', 409, 'TYPE_CONTRAT_EXISTS');
         }
 
-        const typeContrat = this.repo.create({
-            ...dto,
-            etablissementId,
-            estSysteme: false,
-        });
+        const typeContrat = new TypeContratPersonnalise();
+        Object.assign(typeContrat, dto, { etablissementId, estSysteme: false });
 
         await this.repo.save(typeContrat);
         this.invalidateCache(etablissementId);
@@ -312,7 +309,7 @@ export class TypeContratService {
                     ...typeData,
                     estSysteme: true,
                     actif: true,
-                    etablissementId: null,
+                    etablissementId: undefined,
                 });
                 await this.repo.save(typeContrat);
                 logger.info(`Type système créé: ${typeData.code}`);

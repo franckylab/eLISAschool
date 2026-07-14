@@ -69,10 +69,10 @@ export class HeureCours {
     @JoinColumn({ name: 'matiereId' })
     matiere?: Matiere;
 
-    @Column({ type: 'uuid' })
-    periodeId!: string;
+    @Column({ type: 'uuid', nullable: true })
+    periodeId?: string;
 
-    @ManyToOne(() => Periode)
+    @ManyToOne(() => Periode, { nullable: true })
     @JoinColumn({ name: 'periodeId' })
     periode?: Periode;
 

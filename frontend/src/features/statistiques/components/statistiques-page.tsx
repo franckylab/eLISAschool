@@ -19,9 +19,9 @@ export function StatistiquesPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">Statistiques Globales</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200">Statistiques Globales</h1>
                 <div className="flex gap-2">
-                    <select value={periode} onChange={(e) => setPeriode(e.target.value)} className="px-3 py-2 border rounded-lg">
+                    <select value={periode} onChange={(e) => setPeriode(e.target.value)} className="px-3 py-2 border dark:border-gray-700 rounded-lg">
                         <option value="jour">Jour</option>
                         <option value="semaine">Semaine</option>
                         <option value="mois">Mois</option>
@@ -75,37 +75,37 @@ export function StatistiquesPage() {
 
             {/* Vie scolaire */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <motion.div className="bg-white rounded-lg p-4 border border-gray-200">
+                <motion.div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3 mb-2">
                         <AlertCircle className="w-5 h-5 text-red-600" />
-                        <span className="text-sm font-medium text-gray-700">Absences</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Absences</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.vieScolaire?.totalAbsences || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-200">{stats?.vieScolaire?.totalAbsences || 0}</p>
                 </motion.div>
 
-                <motion.div className="bg-white rounded-lg p-4 border border-gray-200">
+                <motion.div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3 mb-2">
                         <AlertCircle className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-gray-700">Retards</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Retards</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.vieScolaire?.totalRetards || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-200">{stats?.vieScolaire?.totalRetards || 0}</p>
                 </motion.div>
 
-                <motion.div className="bg-white rounded-lg p-4 border border-gray-200">
+                <motion.div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3 mb-2">
                         <AlertCircle className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-medium text-gray-700">Sanctions</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sanctions</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.vieScolaire?.totalSanctions || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-200">{stats?.vieScolaire?.totalSanctions || 0}</p>
                 </motion.div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold mb-4">Répartition par classe</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {stats?.eleves?.parClasse?.slice(0, 8).map((classe, index) => (
-                        <div key={index} className="text-center p-3 bg-gray-50 rounded">
-                            <p className="text-sm font-medium text-gray-700">{classe.classe}</p>
+                        <div key={index} className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded">
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{classe.classe}</p>
                             <p className="text-2xl font-bold text-blue-600">{classe.nombre}</p>
                         </div>
                     ))}

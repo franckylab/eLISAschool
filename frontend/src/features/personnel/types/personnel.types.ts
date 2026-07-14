@@ -2,15 +2,31 @@
  * ==================================
  * eLISAschool - Types Personnel
  * ==================================
- * Version: 2.0.0
+ * Version: 2.1.0
  * Auteur: franck arlos chendjou
  *
- * NOTE: Le backend stocke les infos personnelles (nom, prenom, email) sur
- * Utilisateur + ProfilUtilisateur. Les champs legacy ci-dessous (nom, prenom,
- * email, poste, ...) sont conservés pour compatibilité d'affichage côté
- * frontend ; ils sont undefinied tant que l'affichage n'est pas migré vers
- * les relations utilisateur.profil.
+ * NOTE — Single Source of Truth :
+ * - MembrePersonnel porte UNIQUEMENT les champs professionnels
+ * - Les données personnelles (nom, prenom, telephone, adresse, dateNaissance, genre)
+ *   sont sur Utilisateur.profil OU aplaties sur Utilisateur
+ * - Les champs specialite, qualification, poste, dateEntree, dateSortie,
+ *   etablissementOrigine, typeContrat ont été SUPPRIMÉS (legacy)
+ *   → utiliser specialitePrincipale, diplomes, posteExact, dateEmbauche
  */
+
+export interface TypePersonnel {
+    id: string;
+    code: string;
+    nom: string;
+    permissionsDefaut?: string[];
+    roleIdParDefaut?: string;
+    description?: string;
+    modeRemunerationDefaut?: string;
+    actif: boolean;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
 
 export interface MembrePersonnel {
     id: string;
@@ -33,7 +49,7 @@ export interface MembrePersonnel {
         };
     };
     typePersonnelId?: string;
-    typePersonnel?: { id: string; code: string; nom: string };
+    typePersonnel?: TypePersonnel;
     matricule: string;
     dateEmbauche: string;
     statut: string;
@@ -44,22 +60,7 @@ export interface MembrePersonnel {
     specialitePrincipale?: string;
     anneesExperience?: number;
     educationNiveau?: string;
-    etablissementOrigine?: string;
-    // Champs legacy pour compatibilité d'affichage
-    nom?: string;
-    prenom?: string;
-    dateNaissance?: string;
-    sexe?: string;
-    email?: string;
-    telephone?: string;
-    adresse?: string;
-    poste?: string;
     departement?: string;
-    typeContrat?: string;
-    dateEntree?: string;
-    dateSortie?: string;
-    specialite?: string;
-    qualification?: string;
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
@@ -78,18 +79,12 @@ export interface CreerPersonnelDto {
 export function fromFormToCreateDto(form: Record<string, any>): CreerPersonnelDto & Record<string, any> {
     return {
         matricule: form.matricule || `EMP-${Date.now().toString(36).toUpperCase()}`,
-        dateEmbauche: form.dateEntree || form.dateEmbauche || new Date().toISOString().split('T')[0],
+        dateEmbauche: form.dateEmbauche || new Date().toISOString().split('T')[0],
         statut: ((form.statut || 'actif') === 'en_conge' ? 'CONGE' : (form.statut || 'actif').toUpperCase()) as 'ACTIF' | 'INACTIF' | 'CONGE',
-        specialites: form.specialite ? [form.specialite] : form.specialites || undefined,
-        diplomes: form.diplomes || form.qualification || undefined,
+        specialites: form.specialitePrincipale ? [form.specialitePrincipale] : form.specialites || undefined,
+        diplomes: form.diplomes || undefined,
         typePersonnelId: form.typePersonnelId || undefined,
-        nom: form.nom || undefined,
-        prenom: form.prenom || undefined,
-        dateNaissance: form.dateNaissance || undefined,
-        sexe: form.sexe || undefined,
-        email: form.email || undefined,
-        telephone: form.telephone || undefined,
-        adresse: form.adresse || undefined,
+        departement: form.departement || undefined,
     };
 }
 

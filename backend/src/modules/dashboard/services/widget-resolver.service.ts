@@ -14,13 +14,14 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { WidgetDefinition, UserWidgetConfig, DashboardLayout } from '../types/dashboard.types';
+import { WidgetDefinition, UserWidgetConfig } from '../types/dashboard.types';
 import { WIDGET_REGISTRY, getWidgetById } from '../utils/widget-registry';
 import { PermissionResolverService } from '@modules/auth/services/permission-resolver.service';
 import { dashboardCacheService } from './dashboard-cache.service';
 import { logger } from '@common/utils/logger.util';
 import { Utilisateur } from '@modules/auth/entities';
 import { permissionResolverService } from '@modules/auth/services';
+import { DashboardLayout } from '../entities';
 
 export class WidgetResolverService {
     private permissionResolver: PermissionResolverService;
@@ -30,7 +31,7 @@ export class WidgetResolverService {
     constructor() {
         // Utiliser le singleton plutôt que de créer une nouvelle instance
         this.permissionResolver = permissionResolverService;
-        this.layoutRepo = AppDataSource.getRepository('DashboardLayout');
+        this.layoutRepo = AppDataSource.getRepository(DashboardLayout);
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     }
 

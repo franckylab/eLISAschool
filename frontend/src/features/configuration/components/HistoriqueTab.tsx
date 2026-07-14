@@ -76,13 +76,13 @@ export function HistoriqueTab() {
             </div>
 
             {/* Filtres */}
-            <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex flex-wrap gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500" />
+                    <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <select
                         value={filtres.action}
                         onChange={(e) => setFiltres((prev) => ({ ...prev, action: e.target.value, page: 1 }))}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)]"
+                        className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)]"
                     >
                         <option value="">Toutes les actions</option>
                         {Object.entries(ACTIONS_CONFIG).map(([key, config]) => (
@@ -97,7 +97,7 @@ export function HistoriqueTab() {
             {/* Timeline */}
             <div className="space-y-4">
                 {historique.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                         <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
                         <p>Aucune modification dans l'historique</p>
                     </div>
@@ -111,7 +111,7 @@ export function HistoriqueTab() {
                         return (
                             <div
                                 key={entry.id}
-                                className="relative pl-8 pb-6 border-l-2 border-gray-200 last:border-l-0"
+                                className="relative pl-8 pb-6 border-l-2 border-gray-200 dark:border-gray-700 last:border-l-0"
                             >
                                 {/* Point sur la timeline */}
                                 <div
@@ -122,7 +122,7 @@ export function HistoriqueTab() {
                                 />
 
                                 {/* Contenu */}
-                                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                                     <div className="flex items-start justify-between mb-2">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
@@ -156,7 +156,7 @@ export function HistoriqueTab() {
                                         </ElisaButton>
                                     </div>
 
-                                    <div className="flex items-center gap-4 text-xs text-gray-500 mt-3">
+                                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mt-3">
                                         <div className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
                                             {formatDate(entry.creeAt)}
@@ -177,8 +177,8 @@ export function HistoriqueTab() {
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                         Page {meta.currentPage} sur {meta.totalPages} ({meta.totalItems} entrées)
                     </p>
                     <div className="flex gap-2">

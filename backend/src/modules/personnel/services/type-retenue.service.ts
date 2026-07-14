@@ -16,7 +16,8 @@ export class TypeRetenueService {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) throw new AppError('Un type de retenue avec ce code existe déjà', 409, 'RETENUE_EXISTS');
 
-        const entity = this.repo.create({ ...dto, etablissementId });
+        const entity = new TypeRetenue();
+        Object.assign(entity, dto, { etablissementId });
         await this.repo.save(entity);
 
         if (userId) {

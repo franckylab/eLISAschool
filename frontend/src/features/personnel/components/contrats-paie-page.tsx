@@ -54,11 +54,11 @@ function ContratsTab() {
     const hasPoste = (c: ContratPersonnel) => c.posteId || c.poste;
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold">Tous les contrats</h3>
-                    <p className="text-sm text-gray-500 mt-1">Les affectations poste et fonctions sont synchronisées automatiquement</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Les affectations poste et fonctions sont synchronisées automatiquement</p>
                 </div>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
                     Nouveau contrat
@@ -71,36 +71,36 @@ function ContratsTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Membre</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Type</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Poste</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Fonction</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Mode</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Période</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Rémunération</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500">Statut</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Membre</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Type</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Poste</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fonction</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Mode</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Rémunération</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {contrats.map((c: ContratPersonnel) => (
-                                <tr key={c.id} className="hover:bg-gray-50">
+                                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4">
-                                        <a href={`/personnel/${c.membrePersonnelId}`} className="flex items-center gap-2 text-blue-600 hover:underline">
-                                            <User className="h-4 w-4 text-gray-400 shrink-0" />
+                                        <a href={`/personnel/${c.membrePersonnelId}`} className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+                                            <User className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
                                             <span className="truncate max-w-[160px]">{getMembreLabel(c)}</span>
                                         </a>
                                     </td>
                                     <td className="py-3 px-4 font-medium">{c.typeContrat}</td>
                                     <td className="py-3 px-4">
                                         {hasPoste(c) ? (
-                                            <a href={`/postes/${c.posteId}`} className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600">
-                                                <Briefcase className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                            <a href={`/organisation/postes/${c.posteId}`} className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300 hover:text-blue-600">
+                                                <Briefcase className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
                                                 <span className="truncate max-w-[140px]">{c.poste?.intitulé || c.posteId?.slice(0, 8)}</span>
                                             </a>
                                         ) : (
-                                            <span className="text-gray-400 italic">—</span>
+                                            <span className="text-gray-400 dark:text-gray-500 italic">—</span>
                                         )}
                                     </td>
                                     <td className="py-3 px-4">
@@ -109,18 +109,18 @@ function ContratsTab() {
                                                 {c.fonction?.nom || c.fonctionId?.slice(0, 8)}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 italic">—</span>
+                                            <span className="text-gray-400 dark:text-gray-500 italic">—</span>
                                         )}
                                     </td>
                                     <td className="py-3 px-4">
                                         <Badge variant="default">{modeDisplay[c.modeRemuneration as string] || c.modeRemuneration || '—'}</Badge>
                                     </td>
-                                    <td className="py-3 px-4 text-gray-600">
+                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                                         <div className="flex items-center gap-1">
                                             <span className="text-xs">{new Date(c.dateDebut).toLocaleDateString('fr-FR')}</span>
                                             {c.dateFin && (
                                                 <>
-                                                    <span className="text-gray-300">→</span>
+                                                    <span className="text-gray-300 dark:text-gray-600">→</span>
                                                     <span className="text-xs">{new Date(c.dateFin).toLocaleDateString('fr-FR')}</span>
                                                 </>
                                             )}
@@ -129,16 +129,16 @@ function ContratsTab() {
                                     <td className="py-3 px-4">
                                         <div className="text-right font-medium">{c.salaireBase?.toLocaleString('fr-FR')} F</div>
                                         {c.modeRemuneration === 'HORAIRE' && c.tarifHoraire && (
-                                            <div className="text-right text-xs text-gray-400">{c.tarifHoraire?.toLocaleString('fr-FR')} F/h</div>
+                                            <div className="text-right text-xs text-gray-400 dark:text-gray-500">{c.tarifHoraire?.toLocaleString('fr-FR')} F/h</div>
                                         )}
                                         {c.modeRemuneration === 'MIXTE' && (
-                                            <div className="text-right text-xs text-gray-400">
+                                            <div className="text-right text-xs text-gray-400 dark:text-gray-500">
                                                 Base {c.salaireBase?.toLocaleString('fr-FR')} F
                                                 {c.tarifHoraire ? ` + ${c.tarifHoraire.toLocaleString('fr-FR')} F/h` : ''}
                                             </div>
                                         )}
                                         {c.modeRemuneration === 'HEBDOMADAIRE' && c.tarifHebdomadaire && (
-                                            <div className="text-right text-xs text-gray-400">{c.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem</div>
+                                            <div className="text-right text-xs text-gray-400 dark:text-gray-500">{c.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem</div>
                                         )}
                                     </td>
                                     <td className="py-3 px-4 text-center">
@@ -146,10 +146,10 @@ function ContratsTab() {
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Modifier">
-                                                <Edit className="h-4 w-4 text-gray-500" />
+                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Modifier">
+                                                <Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                             </button>
-                                            <button onClick={() => { if (confirm('Supprimer ce contrat ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg" title="Supprimer">
+                                            <button onClick={() => { if (confirm('Supprimer ce contrat ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title="Supprimer">
                                                 <Trash2 className="h-4 w-4 text-red-400" />
                                             </button>
                                         </div>
@@ -160,10 +160,10 @@ function ContratsTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Aucun contrat enregistré</p>
-                    <p className="text-sm text-gray-400 mt-1">Créez un contrat pour lier un membre à un poste et gérer sa rémunération</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <FileText className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-300">Aucun contrat enregistré</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Créez un contrat pour lier un membre à un poste et gérer sa rémunération</p>
                 </div>
             )}
 
@@ -222,7 +222,7 @@ function TypesContratTab() {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Types de contrat personnalisés</h3>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
@@ -236,39 +236,39 @@ function TypesContratTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Code</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Nom</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Catégorie</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500">Mode</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500">Actif</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500">Système</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Ordre</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Catégorie</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Mode</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Système</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Ordre</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {types.map((t: TypeContratPersonnalise) => (
-                                <tr key={t.id} className="hover:bg-gray-50">
+                                <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4 font-mono font-medium">{t.code}</td>
                                     <td className="py-3 px-4">{t.nom}</td>
-                                    <td className="py-3 px-4 text-gray-600">{t.categorie}</td>
+                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{t.categorie}</td>
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{modeLabel[t.modeRemuneration] || t.modeRemuneration}</Badge></td>
                                     <td className="py-3 px-4 text-center">{t.actif ? <Badge variant="success">Oui</Badge> : <Badge variant="secondary">Non</Badge>}</td>
                                     <td className="py-3 px-4 text-center">{t.estSysteme ? <Badge variant="warning">Système</Badge> : '—'}</td>
-                                    <td className="py-3 px-4 text-right text-gray-600">{t.ordre}</td>
+                                    <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{t.ordre}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             {!t.estSysteme && (
-                                                <button onClick={() => toggle.mutate(t.id)} className="p-1.5 hover:bg-gray-100 rounded-lg" title={t.actif ? 'Désactiver' : 'Activer'}>
-                                                    {t.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400" />}
+                                                <button onClick={() => toggle.mutate(t.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t.actif ? 'Désactiver' : 'Activer'}>
+                                                    {t.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
                                                 </button>
                                             )}
                                             {!t.estSysteme && (
-                                                <button onClick={() => openEdit(t)} className="p-1.5 hover:bg-gray-100 rounded-lg"><Edit className="h-4 w-4 text-gray-500" /></button>
+                                                <button onClick={() => openEdit(t)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
                                             )}
                                             {!t.estSysteme && (
-                                                <button onClick={() => { if (confirm('Supprimer ce type de contrat ?')) supprimer.mutate(t.id); }} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                                <button onClick={() => { if (confirm('Supprimer ce type de contrat ?')) supprimer.mutate(t.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                             )}
                                         </div>
                                     </td>
@@ -278,9 +278,9 @@ function TypesContratTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Aucun type de contrat personnalisé</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <Building className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-300">Aucun type de contrat personnalisé</p>
                 </div>
             )}
 
@@ -325,7 +325,7 @@ function TypesContratTab() {
                         <ElisaInput label="Durée max (mois, 0 = illimité)" type="number" value={String(form.dureeMaxMois)} onChange={(e) => setForm({ ...form, dureeMaxMois: Number(e.target.value) })} />
                     </div>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="checkbox" checked={form.renouvellementAutoDefaut} onChange={(e) => setForm({ ...form, renouvellementAutoDefaut: e.target.checked })} className="rounded border-gray-300" />
+                        <input type="checkbox" checked={form.renouvellementAutoDefaut} onChange={(e) => setForm({ ...form, renouvellementAutoDefaut: e.target.checked })} className="rounded border-gray-300 dark:border-gray-600" />
                         Renouvellement automatique par défaut
                     </label>
                 </div>
@@ -423,30 +423,30 @@ function BulletinsTab() {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Bulletins de paie</h3>
                 {rapport && rapport.nombreBulletins > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3 w-full max-w-3xl">
-                        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
-                            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Bulletins</p>
-                            <p className="text-xl font-bold text-blue-800 mt-1">{rapport.nombreBulletins}</p>
+                        <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 p-3">
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Bulletins</p>
+                            <p className="text-xl font-bold text-blue-800 dark:text-blue-300 mt-1">{rapport.nombreBulletins}</p>
                         </div>
-                        <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-                            <p className="text-xs font-medium text-green-600 uppercase tracking-wide">Masse salariale</p>
-                            <p className="text-xl font-bold text-green-800 mt-1">{rapport.totalSalairesNets.toLocaleString('fr-FR')} F</p>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 p-3">
+                            <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Masse salariale</p>
+                            <p className="text-xl font-bold text-green-800 dark:text-green-300 mt-1">{rapport.totalSalairesNets.toLocaleString('fr-FR')} F</p>
                         </div>
-                        <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-3">
-                            <p className="text-xs font-medium text-indigo-600 uppercase tracking-wide">Salaire moyen</p>
-                            <p className="text-xl font-bold text-indigo-800 mt-1">{rapport.nombreBulletins > 0 ? Math.round(rapport.totalSalairesNets / rapport.nombreBulletins).toLocaleString('fr-FR') : 0} F</p>
+                        <div className="rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 p-3">
+                            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Salaire moyen</p>
+                            <p className="text-xl font-bold text-indigo-800 dark:text-indigo-300 mt-1">{rapport.nombreBulletins > 0 ? Math.round(rapport.totalSalairesNets / rapport.nombreBulletins).toLocaleString('fr-FR') : 0} F</p>
                         </div>
-                        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                            <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Primes</p>
-                            <p className="text-xl font-bold text-amber-800 mt-1">+{rapport.totalPrimes.toLocaleString('fr-FR')} F</p>
+                        <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 p-3">
+                            <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Primes</p>
+                            <p className="text-xl font-bold text-amber-800 dark:text-amber-300 mt-1">+{rapport.totalPrimes.toLocaleString('fr-FR')} F</p>
                         </div>
-                        <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                            <p className="text-xs font-medium text-red-600 uppercase tracking-wide">Déductions</p>
-                            <p className="text-xl font-bold text-red-800 mt-1">−{rapport.totalDeductions.toLocaleString('fr-FR')} F</p>
+                        <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-3">
+                            <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">Déductions</p>
+                            <p className="text-xl font-bold text-red-800 dark:text-red-300 mt-1">−{rapport.totalDeductions.toLocaleString('fr-FR')} F</p>
                         </div>
                     </div>
                 )}
@@ -475,7 +475,7 @@ function BulletinsTab() {
                 <ElisaInput type="number" value={filters.annee} onChange={(e) => setFilters({ ...filters, annee: e.target.value })} className="w-24" placeholder="Année" />
                 <ElisaSelect options={statutOptions} value={filters.statut} onValueChange={(v) => setFilters({ ...filters, statut: v })} className="w-44" />
                 {(filters.mois || filters.annee !== String(new Date().getFullYear()) || filters.statut) && (
-                    <button onClick={() => setFilters({ mois: '', annee: String(new Date().getFullYear()), statut: '' })} className="text-xs text-blue-600 hover:underline">Réinitialiser</button>
+                    <button onClick={() => setFilters({ mois: '', annee: String(new Date().getFullYear()), statut: '' })} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Réinitialiser</button>
                 )}
             </div>
 
@@ -485,38 +485,38 @@ function BulletinsTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Période</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500">Membre</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Base</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Heures sup</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Primes</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Retenues</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Net</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500">Statut</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Membre</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Base</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Heures sup</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Primes</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Retenues</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Net</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {bulletins.map((b: any) => (
-                                <tr key={b.id} className="hover:bg-gray-50">
+                                <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4 font-medium">{b.mois}/{b.annee}</td>
-                                    <td className="py-3 px-4 text-gray-600">{getMembreBulletinLabel(b)}</td>
+                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{getMembreBulletinLabel(b)}</td>
                                     <td className="py-3 px-4 text-right">{Number(b.salaireBase).toLocaleString('fr-FR')}</td>
                                     <td className="py-3 px-4 text-right">{Number(b.montantHeuresSup || 0).toLocaleString('fr-FR')}</td>
-                                    <td className="py-3 px-4 text-right text-green-600">+{Number(b.primes || 0).toLocaleString('fr-FR')}</td>
-                                    <td className="py-3 px-4 text-right text-red-600">−{Number(b.deductions || 0).toLocaleString('fr-FR')}</td>
+                                    <td className="py-3 px-4 text-right text-green-600 dark:text-green-400">+{Number(b.primes || 0).toLocaleString('fr-FR')}</td>
+                                    <td className="py-3 px-4 text-right text-red-600 dark:text-red-400">−{Number(b.deductions || 0).toLocaleString('fr-FR')}</td>
                                     <td className="py-3 px-4 text-right font-semibold">{Number(b.salaireNet).toLocaleString('fr-FR')} F</td>
                                     <td className="py-3 px-4 text-center">
                                         <Badge variant={statutVariant[b.statut] || 'secondary'}>{b.statut}</Badge>
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => { setDetailBulletin(b); setShowDetail(true); }} className="p-1.5 hover:bg-blue-50 rounded-lg" title="Voir détail"><Eye className="h-4 w-4 text-blue-500" /></button>
-                                            <button onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')} className="p-1.5 hover:bg-green-50 rounded-lg" title="PDF"><FileDown className="h-4 w-4 text-green-600" /></button>
-                                            <button onClick={() => openEdit(b)} className="p-1.5 hover:bg-gray-100 rounded-lg"><Edit className="h-4 w-4 text-gray-500" /></button>
-                                            <button onClick={() => regenerer.mutate({ id: b.id, membreId: b.membrePersonnelId, mois: b.mois, annee: b.annee })} className="p-1.5 hover:bg-amber-50 rounded-lg" title="Régénérer"><CreditCard className="h-4 w-4 text-amber-500" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce bulletin ?')) supprimer.mutate(b.id); }} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => { setDetailBulletin(b); setShowDetail(true); }} className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg" title="Voir détail"><Eye className="h-4 w-4 text-blue-500" /></button>
+                                            <button onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')} className="p-1.5 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg" title="PDF"><FileDown className="h-4 w-4 text-green-600 dark:text-green-400" /></button>
+                                            <button onClick={() => openEdit(b)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
+                                            <button onClick={() => regenerer.mutate({ id: b.id, membreId: b.membrePersonnelId, mois: b.mois, annee: b.annee })} className="p-1.5 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg" title="Régénérer"><CreditCard className="h-4 w-4 text-amber-500" /></button>
+                                            <button onClick={() => { if (confirm('Supprimer ce bulletin ?')) supprimer.mutate(b.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -525,9 +525,9 @@ function BulletinsTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Aucun bulletin de paie</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <CreditCard className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-300">Aucun bulletin de paie</p>
                 </div>
             )}
 
@@ -598,17 +598,17 @@ function BulletinsTab() {
                 {simulationData && (
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-blue-50 p-3 rounded-lg"><span className="text-blue-600 text-xs">Salaire base</span><p className="font-semibold">{Number(simulationData.salaireBase).toLocaleString('fr-FR')} F</p></div>
-                            <div className="bg-amber-50 p-3 rounded-lg"><span className="text-amber-600 text-xs">Heures sup</span><p className="font-semibold">{simulationData.heuresSup > 0 ? `${Number(simulationData.montantHeuresSup).toLocaleString('fr-FR')} F (${simulationData.heuresSup}h)` : '—'}</p></div>
-                            <div className="bg-green-50 p-3 rounded-lg"><span className="text-green-600 text-xs">Primes</span><p className="font-semibold">{Number(simulationData.primes).toLocaleString('fr-FR')} F</p></div>
-                            <div className="bg-red-50 p-3 rounded-lg"><span className="text-red-600 text-xs">Retenues</span><p className="font-semibold">−{Number(simulationData.totalRetenues).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg"><span className="text-blue-600 dark:text-blue-400 text-xs">Salaire base</span><p className="font-semibold">{Number(simulationData.salaireBase).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg"><span className="text-amber-600 dark:text-amber-400 text-xs">Heures sup</span><p className="font-semibold">{simulationData.heuresSup > 0 ? `${Number(simulationData.montantHeuresSup).toLocaleString('fr-FR')} F (${simulationData.heuresSup}h)` : '—'}</p></div>
+                            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg"><span className="text-green-600 dark:text-green-400 text-xs">Primes</span><p className="font-semibold">{Number(simulationData.primes).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg"><span className="text-red-600 dark:text-red-400 text-xs">Retenues</span><p className="font-semibold">−{Number(simulationData.totalRetenues).toLocaleString('fr-FR')} F</p></div>
                         </div>
                         {simulationData.detailParMatiere?.length > 0 && (
                             <>
-                                <h4 className="font-medium text-gray-700">Détail par matière</h4>
+                                <h4 className="font-medium text-gray-700 dark:text-gray-300">Détail par matière</h4>
                                 <div className="space-y-1">
                                     {simulationData.detailParMatiere.map((d: any, i: number) => (
-                                        <div key={i} className="flex justify-between py-1.5 px-3 rounded bg-gray-50">
+                                        <div key={i} className="flex justify-between py-1.5 px-3 rounded bg-gray-50 dark:bg-gray-800">
                                             <span>{d.matiereNom} — {d.heures}h × {Number(d.tarifHoraire).toLocaleString('fr-FR')} F/h</span>
                                             <span className="font-medium">{Number(d.montant).toLocaleString('fr-FR')} F</span>
                                         </div>
@@ -631,17 +631,17 @@ function BulletinsTab() {
                 {detailBulletin && (
                     <div className="space-y-5">
                         <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div><span className="text-gray-500">Période</span><p className="font-medium">{detailBulletin.mois}/{detailBulletin.annee}</p></div>
-                            <div><span className="text-gray-500">Statut</span><p className="font-medium"><Badge variant={statutVariant[detailBulletin.statut] || 'secondary'}>{detailBulletin.statut}</Badge></p></div>
-                            <div><span className="text-gray-500">Membre</span><p className="font-medium">{getMembreBulletinLabel(detailBulletin)}</p></div>
-                            <div><span className="text-gray-500">ID Contrat</span><p className="font-mono text-xs truncate max-w-[180px]" title={detailBulletin.contratId}>{detailBulletin.contratId}</p></div>
-                            {detailBulletin.datePaiement && <div><span className="text-gray-500">Date paiement</span><p className="font-medium">{new Date(detailBulletin.datePaiement).toLocaleDateString('fr-FR')}</p></div>}
+                            <div><span className="text-gray-500 dark:text-gray-400">Période</span><p className="font-medium">{detailBulletin.mois}/{detailBulletin.annee}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Statut</span><p className="font-medium"><Badge variant={statutVariant[detailBulletin.statut] || 'secondary'}>{detailBulletin.statut}</Badge></p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Membre</span><p className="font-medium">{getMembreBulletinLabel(detailBulletin)}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">ID Contrat</span><p className="font-mono text-xs truncate max-w-[180px]" title={detailBulletin.contratId}>{detailBulletin.contratId}</p></div>
+                            {detailBulletin.datePaiement && <div><span className="text-gray-500 dark:text-gray-400">Date paiement</span><p className="font-medium">{new Date(detailBulletin.datePaiement).toLocaleDateString('fr-FR')}</p></div>}
                         </div>
 
-                        <hr className="border-gray-200" />
+                        <hr className="border-gray-200 dark:border-gray-700" />
 
-                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                            Éléments de paie <span className="text-xs font-normal text-gray-400">({elements.length} ligne{elements.length > 1 ? 's' : ''})</span>
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                            Éléments de paie <span className="text-xs font-normal text-gray-400 dark:text-gray-500">({elements.length} ligne{elements.length > 1 ? 's' : ''})</span>
                         </h4>
 
                         {elements.length > 0 ? (
@@ -650,20 +650,20 @@ function BulletinsTab() {
                                     const sousTotal = items.reduce((s: number, i: ElementSalaire) => s + Number(i.montant), 0);
                                     return (
                                         <div key={categorie}>
-                                            <div className="flex items-center justify-between py-1.5 px-2 bg-gray-100 rounded-t-md text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                            <div className="flex items-center justify-between py-1.5 px-2 bg-gray-100 dark:bg-gray-700 rounded-t-md text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                                                 <span>{categorieLabels[categorie] || categorie}</span>
                                                 <span>{Number(sousTotal).toLocaleString('fr-FR')} F</span>
                                             </div>
                                             {items.map((e: ElementSalaire) => (
-                                                <div key={e.id} className="flex items-center justify-between py-1.5 px-3 text-sm even:bg-gray-50">
+                                                <div key={e.id} className="flex items-center justify-between py-1.5 px-3 text-sm even:bg-gray-50 dark:even:bg-gray-800 dark:bg-gray-800">
                                                     <div className="flex items-center gap-2 min-w-0">
                                                         <span className={`w-2 h-2 rounded-full shrink-0 ${e.type === 'GAIN' ? 'bg-green-500' : 'bg-red-500'}`} />
                                                         <span className="truncate">{e.libelle}</span>
                                                         {e.baseCalcul != null && e.taux != null && (
-                                                            <span className="text-xs text-gray-400 shrink-0">({e.taux} × {Number(e.baseCalcul).toLocaleString('fr-FR')} F)</span>
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">({e.taux} × {Number(e.baseCalcul).toLocaleString('fr-FR')} F)</span>
                                                         )}
                                                     </div>
-                                                    <span className={`font-medium shrink-0 ml-4 ${e.type === 'GAIN' ? 'text-green-700' : 'text-red-600'}`}>
+                                                    <span className={`font-medium shrink-0 ml-4 ${e.type === 'GAIN' ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>
                                                         {e.type === 'GAIN' ? '+' : '−'}{Number(e.montant).toLocaleString('fr-FR')} F
                                                     </span>
                                                 </div>
@@ -673,24 +673,24 @@ function BulletinsTab() {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-400 italic">Aucun élément détaillé enregistré pour ce bulletin.</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">Aucun élément détaillé enregistré pour ce bulletin.</p>
                         )}
 
-                        <hr className="border-gray-200" />
+                        <hr className="border-gray-200 dark:border-gray-700" />
 
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div><span className="text-gray-500">Total heures effectuées</span><p className="font-medium">{detailBulletin.heuresEffectuees || 0}h</p></div>
-                            <div><span className="text-gray-500">Dont heures sup</span><p className="font-medium text-amber-600">{detailBulletin.montantHeuresSup > 0 ? `${Number(detailBulletin.montantHeuresSup).toLocaleString('fr-FR')} F` : '—'}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Total heures effectuées</span><p className="font-medium">{detailBulletin.heuresEffectuees || 0}h</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Dont heures sup</span><p className="font-medium text-amber-600 dark:text-amber-400">{detailBulletin.montantHeuresSup > 0 ? `${Number(detailBulletin.montantHeuresSup).toLocaleString('fr-FR')} F` : '—'}</p></div>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
-                            <span className="font-semibold text-gray-900">Net à payer</span>
-                            <span className="text-lg font-bold text-gray-900">{Number(detailBulletin.salaireNet).toLocaleString('fr-FR')} F</span>
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">Net à payer</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{Number(detailBulletin.salaireNet).toLocaleString('fr-FR')} F</span>
                         </div>
 
                         {detailBulletin.statut !== 'PAYE' && (
                             <>
-                                <hr className="border-gray-200" />
+                                <hr className="border-gray-200 dark:border-gray-700" />
                                 <div className="flex items-center gap-3">
                                     <ElisaInput type="date" value={paiementDate} onChange={(e) => setPaiementDate(e.target.value)} className="flex-1" placeholder="Date de paiement" />
                                     <ElisaButton variant="primary" size="sm"
@@ -729,7 +729,7 @@ function CotisationsTab() {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Cotisations sociales</h3>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
@@ -739,18 +739,18 @@ function CotisationsTab() {
             ) : cotisations && cotisations.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead><tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500">Type</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Taux patronal</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Taux salarial</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500">Actif</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                        <thead><tr className="border-b border-gray-200 dark:border-gray-700">
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Type</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Taux patronal</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Taux salarial</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                         </tr></thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {cotisations.map((c: Cotisation) => (
-                                <tr key={c.id} className="hover:bg-gray-50">
+                                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4 font-mono font-medium">{c.code}</td>
                                     <td className="py-3 px-4">{c.nom}</td>
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{c.type}</Badge></td>
@@ -759,8 +759,8 @@ function CotisationsTab() {
                                     <td className="py-3 px-4 text-center">{c.actif ? <Badge variant="success">Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 rounded-lg"><Edit className="h-4 w-4 text-gray-500" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer cette cotisation ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
+                                            <button onClick={() => { if (confirm('Supprimer cette cotisation ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -769,7 +769,7 @@ function CotisationsTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg"><Percent className="h-12 w-12 text-gray-400 mx-auto mb-3" /><p className="text-gray-600">Aucune cotisation</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Percent className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucune cotisation</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
@@ -810,7 +810,7 @@ function PrimesTab() {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Types de primes</h3>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
@@ -820,17 +820,17 @@ function PrimesTab() {
             ) : primes && primes.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead><tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500">Calcul</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Valeur</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500">Actif</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                        <thead><tr className="border-b border-gray-200 dark:border-gray-700">
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Calcul</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Valeur</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                         </tr></thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {primes.map((p: TypePrime) => (
-                                <tr key={p.id} className="hover:bg-gray-50">
+                                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4 font-mono font-medium">{p.code}</td>
                                     <td className="py-3 px-4">{p.nom}</td>
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{p.typeCalcul}</Badge></td>
@@ -838,8 +838,8 @@ function PrimesTab() {
                                     <td className="py-3 px-4 text-center">{p.actif ? <Badge variant="success">Oui</Badge> : <Badge variant="secondary">Non</Badge>}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gray-100 rounded-lg"><Edit className="h-4 w-4 text-gray-500" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce type de prime ?')) supprimer.mutate(p.id); }} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
+                                            <button onClick={() => { if (confirm('Supprimer ce type de prime ?')) supprimer.mutate(p.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -848,7 +848,7 @@ function PrimesTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg"><Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" /><p className="text-gray-600">Aucun type de prime</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Gift className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucun type de prime</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
@@ -887,7 +887,7 @@ function RetenuesTab() {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Types de retenues</h3>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
@@ -897,24 +897,24 @@ function RetenuesTab() {
             ) : retenues && retenues.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead><tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500">Fréquence</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Montant max</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                        <thead><tr className="border-b border-gray-200 dark:border-gray-700">
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fréquence</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Montant max</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
                         </tr></thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {retenues.map((r: TypeRetenue) => (
-                                <tr key={r.id} className="hover:bg-gray-50">
+                                <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td className="py-3 px-4 font-mono font-medium">{r.code}</td>
                                     <td className="py-3 px-4">{r.nom}</td>
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{r.frequence}</Badge></td>
                                     <td className="py-3 px-4 text-right">{r.montantMax ? `${r.montantMax.toLocaleString('fr-FR')} F` : '—'}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(r)} className="p-1.5 hover:bg-gray-100 rounded-lg"><Edit className="h-4 w-4 text-gray-500" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce type de retenue ?')) supprimer.mutate(r.id); }} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => openEdit(r)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
+                                            <button onClick={() => { if (confirm('Supprimer ce type de retenue ?')) supprimer.mutate(r.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -923,7 +923,7 @@ function RetenuesTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg"><Ban className="h-12 w-12 text-gray-400 mx-auto mb-3" /><p className="text-gray-600">Aucun type de retenue</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Ban className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucun type de retenue</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
@@ -949,12 +949,12 @@ export function ContratsPaiePage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des contrats & paie</h1>
-                <p className="text-gray-500">Gérez les contrats, bulletins de paie, cotisations, primes et retenues du personnel</p>
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des contrats & paie</h1>
+                <p className="text-gray-500 dark:text-gray-400">Gérez les contrats, bulletins de paie, cotisations, primes et retenues du personnel</p>
             </div>
 
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="-mb-px flex gap-6 overflow-x-auto">
                     {ONGLETS.map((o) => {
                         const Icon = o.icon;
@@ -962,8 +962,8 @@ export function ContratsPaiePage() {
                             <button key={o.id} onClick={() => setOngletActif(o.id)}
                                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                                     ongletActif === o.id
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                                 }`}
                             >
                                 <Icon className="h-4 w-4" />

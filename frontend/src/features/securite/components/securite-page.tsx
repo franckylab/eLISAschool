@@ -4,10 +4,11 @@
  * ==================================
  */
 
-import { motion } from 'framer-motion';
 import { Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useIncidents, useStatistiquesSecurite } from '../hooks/use-securite';
 import { DataTable } from '@/components/ui/DataTable';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 
 const gravites: any = {
     mineure: { label: 'Mineure', color: 'yellow' },
@@ -50,39 +51,12 @@ export function SecuritePage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <motion.div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Shield className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Incidents</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-800">{stats?.totalIncidents || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Clock className="w-5 h-5 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-700">En cours</span>
-                    </div>
-                    <p className="text-3xl font-bold text-yellow-800">{stats?.incidentsEnCours || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Résolus</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-800">{stats?.parStatut?.find((s: any) => s.statut === 'resolu')?.nombre || 0}</p>
-                </motion.div>
-
-                <motion.div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <AlertTriangle className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Délai moyen</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-800">{stats?.delaiMoyenResolution ? `${stats.delaiMoyenResolution.toFixed(1)}h` : '-'}</p>
-                </motion.div>
-            </div>
+            <CardGrid columns={{ default: 1, md: 4 }}>
+                <StatCard icon={Shield} label="Incidents" value={stats?.totalIncidents || 0} tone="accent" />
+                <StatCard icon={Clock} label="En cours" value={stats?.incidentsEnCours || 0} tone="warning" />
+                <StatCard icon={CheckCircle} label="Résolus" value={stats?.parStatut?.find((s: any) => s.statut === 'resolu')?.nombre || 0} tone="success" />
+                <StatCard icon={AlertTriangle} label="Délai moyen" value={stats?.delaiMoyenResolution ? `${stats.delaiMoyenResolution.toFixed(1)}h` : '-'} tone="purple" />
+            </CardGrid>
 
             <DataTable
                 data={incidents}

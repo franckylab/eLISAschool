@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { Package, Plus, AlertTriangle, TrendingUp, DollarSign, Trash2 } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
 import { useMateriels, useSupprimerMateriel, useStatistiquesInventaire } from '../hooks/use-inventaire';
 import type { Materiel } from '../types/inventaire.types';
 
@@ -62,12 +64,12 @@ export function InventairePage() {
             </motion.div>
 
             {stats && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-blue-100 rounded-lg"><Package className="h-5 w-5 text-blue-600" /></div><div><p className="text-xs text-gray-500">Total matériel</p><p className="text-lg font-bold text-blue-600">{stats.totalMateriel}</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-green-100 rounded-lg"><TrendingUp className="h-5 w-5 text-green-600" /></div><div><p className="text-xs text-gray-500">Valeur totale</p><p className="text-lg font-bold text-green-600">{stats.valeurTotale?.toLocaleString('fr-FR')} FCFA</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-red-100 rounded-lg"><AlertTriangle className="h-5 w-5 text-red-600" /></div><div><p className="text-xs text-gray-500">Hors service</p><p className="text-lg font-bold text-red-600">{stats.materielsHorsService}</p></div></div></div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200"><div className="flex items-center gap-3"><div className="p-2 bg-purple-100 rounded-lg"><DollarSign className="h-5 w-5 text-purple-600" /></div><div><p className="text-xs text-gray-500">Catégories</p><p className="text-lg font-bold text-purple-600">{stats.parCategorie?.length || 0}</p></div></div></div>
-                </motion.div>
+                <CardGrid columns={{ default: 1, md: 4 }}>
+                    <StatCard icon={Package} label="Total matériel" value={stats.totalMateriel} tone="accent" />
+                    <StatCard icon={TrendingUp} label="Valeur totale" value={`${stats.valeurTotale?.toLocaleString('fr-FR')} FCFA`} tone="success" />
+                    <StatCard icon={AlertTriangle} label="Hors service" value={stats.materielsHorsService} tone="danger" />
+                    <StatCard icon={DollarSign} label="Catégories" value={stats.parCategorie?.length || 0} tone="purple" />
+                </CardGrid>
             )}
 
             <DataTable

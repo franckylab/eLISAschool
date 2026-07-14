@@ -11,7 +11,7 @@ import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerPoste, useModifierPoste } from '../hooks/use-postes';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
-import { createPosteSchema, updatePosteSchema, TYPES_POSTE_OPTIONS, NIVEAUX_RESPONSABILITE_OPTIONS, MODES_REMUNERATION_OPTIONS } from '../types/poste.zod';
+import { createPosteSchema, updatePosteSchema, NIVEAUX_RESPONSABILITE_OPTIONS, MODES_REMUNERATION_OPTIONS } from '../types/poste.zod';
 import type { Poste } from '../types/poste.types';
 
 interface Props {
@@ -34,6 +34,13 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             return (res as any).data || [];
         },
     });
+    const { data: typesPersonnel } = useQuery({
+        queryKey: ['types-personnel'],
+        queryFn: async () => {
+            const res = await apiClient.get('/api/personnel/types');
+            return (res as any).data || [];
+        },
+    });
 
     const [apiError, setApiError] = useState<string | null>(null);
     const [missionText, setMissionText] = useState('');
@@ -47,7 +54,7 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             intitulé: poste?.intitulé || '',
             description: poste?.description || '',
             code: poste?.code || '',
-            type: (poste?.type || 'ADMINISTRATIF') as any,
+            typePersonnelId: poste?.typePersonnelId || '',
             niveauResponsabilite: (poste?.niveauResponsabilite || 'EXECUTANT') as any,
             fonctionId: poste?.fonctionId || '',
             uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
@@ -152,14 +159,18 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
 
             <div className="grid grid-cols-2 gap-4">
                 <Controller
-                    name="type"
+                    name="typePersonnelId"
                     control={control}
                     render={({ field }) => (
-                        <ElisaSelect label={t('type')}
-                            value={field.value}
+                        <ElisaSelect label={t('typePersonnel')}
+                            value={field.value || ''}
                             onValueChange={field.onChange}
-                            options={TYPES_POSTE_OPTIONS}
-                            error={errors.type?.message as string}
+                            options={(typesPersonnel || []).map((tp: any) => ({
+                                value: tp.id,
+                                label: `${tp.nom} (${tp.code})`,
+                            }))}
+                            placeholder={t('selectionner')}
+                            error={errors.typePersonnelId?.message as string}
                         />
                     )}
                 />

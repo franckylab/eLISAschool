@@ -19,5 +19,25 @@
         "inactif": "Inactive",
         "en_conge": "On leave",
         "demission": "Resigned"
+    },
+    "statut": "Status",
+    "typePersonnel": "Staff type",
+    "form": {
+        "titreCreation": "Add a staff member",
+        "titreEdition": "Edit staff member",
+        "description": "Fill in the staff member's information",
+        "compteUtilisateur": "User account",
+        "delier": "Unlink",
+        "lier": "Link",
+        "lierUtilisateur": "Link a user...",
+        "lierUtilisateurOptionnel": "Optional: link an existing user...",
+        "selectionnerType": "Select a type...",
+        "dateEntreeRequise": "Entry date is required",
+        "placeholderQualification": "E.g. Master's, Bachelor's...",
+        "placeholderSpecialite": "E.g. Mathematics, French...",
+        "ajouter": "Add",
+        "annuler": "Cancel",
+        "enregistrer": "Save",
+        "chargement": "Loading data..."
     }
 }
