@@ -33,7 +33,7 @@ export function StagePage() {
         { key: 'evaluation', header: 'Note', className: 'w-20', render: (s: any) => <span className="text-sm font-bold">{s.evaluation?.note ? `${s.evaluation.note}/20` : '-'}</span> },
     ];
 
-    if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !stagesData) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
 
     return (
         <div className="space-y-6">

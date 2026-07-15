@@ -37,6 +37,7 @@ export function useCourrier(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -113,5 +114,6 @@ export function useStatistiquesCourriers() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

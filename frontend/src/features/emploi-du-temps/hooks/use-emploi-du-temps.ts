@@ -123,6 +123,7 @@ export function useCreneau(id: string) {
             return response.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 

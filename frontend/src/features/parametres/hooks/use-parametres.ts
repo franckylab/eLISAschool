@@ -109,6 +109,7 @@ export function useParametresByCategorie(categorie: string) {
         },
         enabled: isAuthenticated && !!categorie,
         staleTime: 5 * 60 * 1000, // 5 minutes
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -134,6 +135,7 @@ export function useParametresByModule(module: string) {
         },
         enabled: isAuthenticated && !!module,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -168,6 +170,7 @@ export function useParametreByCle(cle: string) {
         },
         enabled: isAuthenticated && !!cle,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -193,6 +196,7 @@ export function useCategoriesParametres() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000, // 10 minutes
+        placeholderData: (previousData) => previousData,
     });
 }
 

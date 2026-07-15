@@ -105,6 +105,7 @@ export function useCompetences(filtres: CompetenceFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -120,6 +121,7 @@ export function useCompetence(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -135,6 +137,7 @@ export function useCompetencesParNiveau(niveauId: string) {
         },
         enabled: !!niveauId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -150,6 +153,7 @@ export function useCompetencesParMatiere(matiereId: string) {
         },
         enabled: !!matiereId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -165,6 +169,7 @@ export function useCompetencesParDomaine(domaine: string) {
         },
         enabled: !!domaine && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

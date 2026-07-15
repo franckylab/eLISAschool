@@ -1,0 +1,67 @@
+{
+    "titre": "Establishments",
+    "sousTitre": "{{count}} establishment(s)",
+    "nouvelEtablissement": "New establishment",
+    "rechercher": "Search for an establishment...",
+    "modifierTitre": "Edit establishment",
+    "supprimerTitre": "Delete establishment",
+    "supprimerMessage": "Are you sure you want to delete the establishment \"{{nom}}\"?",
+    "supprimerConfirm": "Delete",
+    "annuler": "Cancel",
+    "enregistrement": "Saving...",
+    "enregistrer": "Save",
+    "creer": "Create",
+    "nomRequis": "Name is required",
+    "villeRequise": "City is required",
+    "emailInvalide": "Invalid email",
+    "colonnes": {
+        "etablissement": "Establishment",
+        "ville": "City",
+        "telephone": "Phone",
+        "type": "Type",
+        "systeme": "System",
+        "statut": "Status",
+        "actions": "Actions"
+    },
+    "types": {
+        "LAIC": "Secular",
+        "CONFESSIONNEL_CATHOLIQUE": "Catholic",
+        "CONFESSIONNEL_PROTESTANT": "Protestant",
+        "CONFESSIONNEL_ISLAMIQUE": "Islamic",
+        "AUTRE": "Other"
+    },
+    "sousSystemes": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone",
+        "BICULTUREL": "Bicultural"
+    },
+    "statuts": {
+        "ACTIF": "Active",
+        "EN_ATTENTE_VALIDATION": "Pending",
+        "EN_ATTENTE_DESACTIVATION": "Deactivation",
+        "INACTIF": "Inactive"
+    },
+    "form": {
+        "nom": "Name",
+        "code": "Code",
+        "slogan": "Slogan",
+        "adresse": "Address",
+        "ville": "City",
+        "telephone": "Phone",
+        "email": "Email",
+        "type": "Establishment type",
+        "sousSysteme": "Sub-system",
+        "exempleNom": "E.g.: Les Brillants School Complex",
+        "exempleCode": "E.g.: csl_brillants",
+        "exempleSlogan": "E.g.: Educational excellence",
+        "exempleVille": "E.g.: Douala",
+        "exempleTelephone": "+237 6XX XXX XXX",
+        "exempleEmail": "contact@establishment.com",
+        "placeholderAdresse": "Full address..."
+    },
+    "actions": {
+        "voir": "View details",
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    }
+}

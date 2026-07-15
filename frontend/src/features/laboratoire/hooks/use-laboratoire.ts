@@ -27,6 +27,7 @@ export function useLaboratoires() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -55,6 +56,7 @@ export function useExperiences() {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -115,5 +117,6 @@ export function useStatistiquesLaboratoire() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

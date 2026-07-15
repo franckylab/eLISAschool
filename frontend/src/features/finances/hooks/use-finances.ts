@@ -38,6 +38,7 @@ export function useFraisScolaires(filtres: FraisFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -70,6 +71,7 @@ export function useStatistiquesFinancieres() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

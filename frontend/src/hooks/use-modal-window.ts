@@ -128,9 +128,10 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const margin = getViewportMargin();
+        const needsAdapt = vw < initialWidth || vh < initialHeight;
         // Sur petits écrans, modal occupe presque tout l'écran
-        const adaptedWidth = vw < 480 ? vw - margin * 2 : initialWidth;
-        const adaptedHeight = vw < 480 ? Math.min(vh - margin * 2, initialHeight) : initialHeight;
+        const adaptedWidth = needsAdapt ? vw - margin * 2 : initialWidth;
+        const adaptedHeight = needsAdapt ? Math.min(vh - margin * 2, initialHeight) : initialHeight;
         return {
             x: Math.max(margin, (vw - adaptedWidth) / 2),
             y: Math.max(margin, (vh - adaptedHeight) / 2),
@@ -139,7 +140,7 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
 
     const [state, setState] = useState<ModalWindowState>(initialState);
     const [position, setPosition] = useState<Position>(computeInitialPosition);
-    const initialWidthAdapted = typeof window !== 'undefined' && window.innerWidth < 480
+    const initialWidthAdapted = typeof window !== 'undefined' && window.innerWidth < initialWidth
         ? window.innerWidth - getViewportMargin() * 2
         : initialWidth;
     const [size, setSize] = useState<Size>({ width: initialWidthAdapted, height: initialHeight });
@@ -259,7 +260,7 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
         toggleMaximize();
     }, [toggleMaximize]);
 
-    // ─── Global mouse listeners (mousemove / mouseup) ──────────
+    // ─── Global mouse (mousemove/mouseup) + resize listeners ──
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging.current && !isResizing.current) return;
@@ -322,19 +323,42 @@ export function useModalWindow(options: UseModalWindowOptions = {}): UseModalWin
         // Utilisation de listeners passifs pour améliorer les performances
         document.addEventListener('mousemove', handleMouseMove, { passive: true });
         document.addEventListener('mouseup', handleMouseUp);
+
+        const handleResize = () => {
+            const margin = getViewportMargin();
+            const maxW = window.innerWidth - margin * 2;
+            const maxH = window.innerHeight - margin * 2;
+            const newW = Math.min(size.width, maxW);
+            const newH = Math.min(size.height, maxH);
+            if (newW !== size.width || newH !== size.height) {
+                setSize({ width: newW, height: newH });
+            }
+            // Re-clamp position to keep modal fully visible after viewport change
+            setPosition(prev => ({
+                x: Math.max(margin, Math.min(prev.x, window.innerWidth - newW - margin)),
+                y: Math.max(margin, Math.min(prev.y, window.innerHeight - newH - margin)),
+            }));
+        };
+        window.addEventListener('resize', handleResize, { passive: true });
+
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('resize', handleResize);
         };
     }, [size, minWidth, minHeight, getMaxWidth, getMaxHeight, clampPosition]);
 
     // ─── CSS inline à appliquer ─────────────────────────────────
+    const margin = getViewportMargin();
     const style: React.CSSProperties = {
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.width}px`,
         height: state === 'minimized' ? `${MINIMIZED_HEIGHT}px` : `${size.height}px`,
+        // Safety net: never exceed viewport bounds regardless of state
+        maxWidth: `calc(100vw - ${margin * 2}px)`,
+        maxHeight: `calc(100vh - ${margin * 2}px)`,
         zIndex: 1000,
     };
 

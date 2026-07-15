@@ -34,6 +34,7 @@ export function usePostes(filtres?: PosteFiltres) {
             return { data: d.data as Poste[], total: d.total || 0, page: d.page || 1, limit: d.limit || 20 };
         },
         enabled: isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -46,6 +47,7 @@ export function useTousPostes() {
             return (res as any).data as Poste[];
         },
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         enabled: isAuthenticated,
     });
 }
@@ -59,6 +61,7 @@ export function usePostesVacants() {
             return (res as any).data as Poste[];
         },
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         enabled: isAuthenticated,
     });
 }
@@ -72,6 +75,7 @@ export function usePostesParFonction(fonctionId: string) {
             return (res as any).data as Poste[];
         },
         enabled: !!fonctionId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -84,6 +88,7 @@ export function usePoste(id: string) {
             return (res as any).data as Poste;
         },
         enabled: !!id && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 

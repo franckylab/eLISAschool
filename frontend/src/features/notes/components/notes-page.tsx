@@ -21,10 +21,10 @@ export function NotesPage() {
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
 
-    const { data, isLoading, error } = useNotes(filtres);
+    const { data, isLoading, isFetching, error } = useNotes(filtres);
     const supprimer = useSupprimerNote();
 
-    if (isLoading) {
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des notes..." />
@@ -158,7 +158,8 @@ export function NotesPage() {
             <DataTable
                 data={data?.data || []}
                 columns={colonnes}
-                isLoading={false}
+                isLoading={isLoading}
+                isFetching={isFetching}
                 searchPlaceholder="Rechercher..."
                 enableReordering
                 enablePinning

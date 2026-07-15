@@ -28,7 +28,7 @@ function InlineEdit({ value, onSave, onCancel, type = 'text' }: { value: string;
     return (
         <div className="flex items-center gap-2">
             <input type={type} value={val} onChange={(e) => setVal(e.target.value)}
-                className="w-32 px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+                className="w-32 px-2 py-1 text-sm border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]"
                 autoFocus onKeyDown={(e) => e.key === 'Enter' && onSave(val)} />
             <button onClick={() => onSave(val)} className="p-1 text-green-600 hover:text-green-800"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
@@ -45,7 +45,7 @@ function InlineAdd({ onSave, onCancel, fields }: { onSave: (vals: Record<string,
                     {fields.map((f) => (
                         <input key={f.key} type={f.type || 'text'} placeholder={f.label}
                             value={vals[f.key] || ''} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })}
-                            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600 w-32" />
+                            className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)] w-32" />
                     ))}
                     <button onClick={() => onSave(vals)} className="p-1 text-green-600 hover:text-green-800"><Save className="h-4 w-4" /></button>
                     <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
@@ -122,7 +122,7 @@ function TabNiveaux({ canEdit }: { canEdit: boolean }) {
     const [adding, setAdding] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<NiveauOrganisation>[] = [
         { key: 'niveau', header: 'Niveau', render: (n) => <span className="font-mono">{n.niveau}</span> },
@@ -169,9 +169,9 @@ function NiveauAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCance
     };
     return (
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
-            <input type="number" placeholder="Niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} className="px-2 py-1 text-sm border rounded w-20 dark:bg-gray-800" />
-            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border rounded w-60 dark:bg-gray-800" />
+            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input type="number" placeholder="Niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-20 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-60 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
             {error && <span className="text-xs text-red-500">{error}</span>}
@@ -191,10 +191,10 @@ function TabUsages({ canEdit }: { canEdit: boolean }) {
     const [editing, setEditing] = useState<string | null>(null);
     const [editVal, setEditVal] = useState('');
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<UsageUnite>[] = [
-        { key: 'code', header: 'Code', render: (u) => <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{u.code}</span> },
+        { key: 'code', header: 'Code', render: (u) => <span className="font-mono text-xs bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] px-2 py-0.5 rounded">{u.code}</span> },
         { key: 'label', header: 'Label', render: (u) => editing === u.id
             ? <InlineEdit value={editVal} onSave={(v) => { modifier.mutate({ id: u.id, label: v }); setEditing(null); }} onCancel={() => setEditing(null)} />
             : <span>{u.label}</span> },
@@ -239,9 +239,9 @@ function UsageAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCancel
     };
     return (
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border rounded w-24 dark:bg-gray-800" />
-            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
-            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border rounded w-60 dark:bg-gray-800" />
+            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-24 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-60 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
             {error && <span className="text-xs text-red-500">{error}</span>}
@@ -261,10 +261,10 @@ function TabCategories({ canEdit }: { canEdit: boolean }) {
     const [editing, setEditing] = useState<string | null>(null);
     const [editVal, setEditVal] = useState('');
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<CategoriePoste>[] = [
-        { key: 'code', header: 'Code', render: (c) => <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{c.code}</span> },
+        { key: 'code', header: 'Code', render: (c) => <span className="font-mono text-xs bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] px-2 py-0.5 rounded">{c.code}</span> },
         { key: 'label', header: 'Label', render: (c) => editing === c.id
             ? <InlineEdit value={editVal} onSave={(v) => { modifier.mutate({ id: c.id, label: v }); setEditing(null); }} onCancel={() => setEditing(null)} />
             : <span>{c.label}</span> },
@@ -309,9 +309,9 @@ function CategorieAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCa
     };
     return (
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border rounded w-24 dark:bg-gray-800" />
-            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
-            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border rounded w-60 dark:bg-gray-800" />
+            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-24 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-60 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
             {error && <span className="text-xs text-red-500">{error}</span>}
@@ -331,10 +331,10 @@ function TabNiveauxResp({ canEdit }: { canEdit: boolean }) {
     const [editing, setEditing] = useState<string | null>(null);
     const [editVal, setEditVal] = useState('');
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<NiveauResponsabilite>[] = [
-        { key: 'code', header: 'Code', render: (n) => <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{n.code}</span> },
+        { key: 'code', header: 'Code', render: (n) => <span className="font-mono text-xs bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] px-2 py-0.5 rounded">{n.code}</span> },
         { key: 'label', header: 'Label', render: (n) => editing === n.id
             ? <InlineEdit value={editVal} onSave={(v) => { modifier.mutate({ id: n.id, label: v }); setEditing(null); }} onCancel={() => setEditing(null)} />
             : <span>{n.label}</span> },
@@ -380,10 +380,10 @@ function NiveauRespAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onC
     };
     return (
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border rounded w-24 dark:bg-gray-800" />
-            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
-            <input type="number" placeholder="Niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} className="px-2 py-1 text-sm border rounded w-20 dark:bg-gray-800" />
-            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
+            <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-24 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input type="number" placeholder="Niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-20 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
             {error && <span className="text-xs text-red-500">{error}</span>}
@@ -404,7 +404,7 @@ function TabTemplates({ canEdit }: { canEdit: boolean }) {
     const [editVal, setEditVal] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<TemplateOrganisation>[] = [
         { key: 'nom', header: 'Nom', render: (t) => editing === t.id
@@ -437,7 +437,7 @@ function TabTemplates({ canEdit }: { canEdit: boolean }) {
             </div>
             <DataTable columns={columns} data={data || []} />
             {expanded && data?.find(t => t.id === expanded) && (
-                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded border text-xs font-mono overflow-auto max-h-48">
+                <div className="mt-3 p-3 bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] rounded text-xs font-mono overflow-auto max-h-48">
                     <pre>{JSON.stringify(data.find(t => t.id === expanded)?.structure, null, 2)}</pre>
                 </div>
             )}
@@ -475,11 +475,11 @@ function TemplateAddForm({ onSave, onCancel }: { onSave: (v: any) => void; onCan
     return (
         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded space-y-2">
             <div className="flex items-center gap-2">
-                <input placeholder="Nom du template" value={nom} onChange={(e) => setNom(e.target.value)} className="px-2 py-1 text-sm border rounded w-60 dark:bg-gray-800" />
-                <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border rounded w-80 dark:bg-gray-800" />
+                <input placeholder="Nom du template" value={nom} onChange={(e) => setNom(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-60 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
+                <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-80 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             </div>
             <textarea value={structure} onChange={(e) => { setStructure(e.target.value); setError(''); }}
-                className="w-full h-32 px-2 py-1 text-xs font-mono border rounded dark:bg-gray-800 dark:border-gray-600" />
+                className="w-full h-32 px-2 py-1 text-xs font-mono border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             {error && <p className="text-xs text-red-500">{error}</p>}
             <div className="flex gap-2">
                 <button onClick={handleSave} className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Créer</button>
@@ -501,12 +501,12 @@ function TabTypesPersonnel({ canEdit }: { canEdit: boolean }) {
     const [editing, setEditing] = useState<string | null>(null);
     const [editVal, setEditVal] = useState('');
 
-    if (isLoading) return <LoadingState message="Chargement..." />;
+    if (isLoading && !data) return <LoadingState message="Chargement..." />;
 
     const columns: Column<any>[] = [
         {
             key: 'code', header: 'Code',
-            render: (tp) => <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{tp.code}</span>,
+            render: (tp) => <span className="font-mono text-xs bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] px-2 py-0.5 rounded">{tp.code}</span>,
         },
         {
             key: 'nom', header: 'Nom',
@@ -577,13 +577,13 @@ function TypePersonnelAddForm({ onSave, onCancel }: { onSave: (v: any) => void; 
     return (
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded flex-wrap">
             <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="px-2 py-1 text-sm border rounded w-24 dark:bg-gray-800" />
+                className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-24 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <input placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)}
-                className="px-2 py-1 text-sm border rounded w-40 dark:bg-gray-800" />
+                className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-40 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <input placeholder="Mode rémunération" value={modeRemuneration} onChange={(e) => setModeRemuneration(e.target.value)}
-                className="px-2 py-1 text-sm border rounded w-36 dark:bg-gray-800" />
+                className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-36 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}
-                className="px-2 py-1 text-sm border rounded w-48 dark:bg-gray-800" />
+                className="px-2 py-1 text-sm border border-[var(--color-bordure)] rounded w-48 bg-[var(--color-surface)] text-[var(--color-text-primary)]" />
             <button onClick={doSave} className="p-1 text-green-600"><Save className="h-4 w-4" /></button>
             <button onClick={onCancel} className="p-1 text-gray-400"><X className="h-4 w-4" /></button>
             {error && <span className="text-xs text-red-500">{error}</span>}
@@ -626,7 +626,7 @@ function TabGeneration() {
                 <div>
                     <label className="block text-sm font-medium mb-1">Template</label>
                     <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
-                        className="w-full px-3 py-2 border rounded dark:bg-gray-800 dark:border-gray-600">
+                        className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]">
                         <option value="">Sélectionner un template...</option>
                         {(templates || []).map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
                     </select>
@@ -634,7 +634,7 @@ function TabGeneration() {
                 <div>
                     <label className="block text-sm font-medium mb-1">Organisation cible</label>
                     <select value={organisationId} onChange={(e) => setOrganisationId(e.target.value)}
-                        className="w-full px-3 py-2 border rounded dark:bg-gray-800 dark:border-gray-600">
+                        className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]">
                         <option value="">Sélectionner une organisation...</option>
                         {(organisations?.items || []).map((o) => <option key={o.id} value={o.id}>{o.nom}</option>)}
                     </select>
@@ -643,12 +643,12 @@ function TabGeneration() {
                     <div>
                         <label className="block text-sm font-medium mb-1">Préfixe code</label>
                         <input value={prefixeCode} onChange={(e) => setPrefixeCode(e.target.value)}
-                            className="w-full px-3 py-2 border rounded dark:bg-gray-800 dark:border-gray-600" placeholder="Optionnel" />
+                            className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]" placeholder="Optionnel" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Mode conflit</label>
                         <select value={modeConflit} onChange={(e) => setModeConflit(e.target.value as any)}
-                            className="w-full px-3 py-2 border rounded dark:bg-gray-800 dark:border-gray-600">
+                            className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]">
                             <option value="ERROR">Erreur</option>
                             <option value="SKIP">Ignorer</option>
                             <option value="OVERWRITE">Écraser</option>
@@ -671,22 +671,22 @@ function TabGeneration() {
                     <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded space-y-3">
                         <h3 className="font-semibold text-green-800 dark:text-green-300">Résultat de la génération</h3>
                         <div className="grid grid-cols-3 gap-4">
-                            <div className="p-3 bg-white dark:bg-gray-800 rounded shadow-sm text-center">
+                            <div className="p-3 bg-[var(--color-surface)] border border-[var(--color-bordure)] rounded shadow-sm text-center">
                                 <p className="text-2xl font-bold text-blue-600">{result.unitesCrees}</p>
                                 <p className="text-xs text-gray-500">Unités créées</p>
                             </div>
-                            <div className="p-3 bg-white dark:bg-gray-800 rounded shadow-sm text-center">
+                            <div className="p-3 bg-[var(--color-surface)] border border-[var(--color-bordure)] rounded shadow-sm text-center">
                                 <p className="text-2xl font-bold text-purple-600">{result.postesCrees}</p>
                                 <p className="text-xs text-gray-500">Postes créés</p>
                             </div>
-                            <div className="p-3 bg-white dark:bg-gray-800 rounded shadow-sm text-center">
+                            <div className="p-3 bg-[var(--color-surface)] border border-[var(--color-bordure)] rounded shadow-sm text-center">
                                 <p className="text-2xl font-bold text-green-600">{result.hierarchiesCrees}</p>
                                 <p className="text-xs text-gray-500">Hiérarchies créées</p>
                             </div>
                         </div>
                         <details>
                             <summary className="text-sm cursor-pointer text-gray-600 hover:text-gray-800">Voir le détail</summary>
-                            <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono overflow-auto max-h-48">
+                            <pre className="mt-2 p-2 bg-[var(--color-surface-alt)] border border-[var(--color-bordure)] rounded text-xs font-mono overflow-auto max-h-48">
                                 {JSON.stringify(result, null, 2)}
                             </pre>
                         </details>

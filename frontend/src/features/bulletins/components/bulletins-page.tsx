@@ -17,11 +17,11 @@ import type { Column } from '@/components/ui/DataTable';
 export function BulletinsPage() {
     const [filtres, setFiltres] = useState<BulletinFiltres>({ page: 1, limit: 20 });
 
-    const { data, isLoading, error } = useBulletins(filtres);
+    const { data, isLoading, isFetching, error } = useBulletins(filtres);
     const supprimer = useSupprimerBulletin();
     const exporter = useExporterBulletin();
 
-    if (isLoading) {
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des bulletins..." />
@@ -138,7 +138,8 @@ export function BulletinsPage() {
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
-                isLoading={false}
+                isLoading={isLoading}
+                isFetching={isFetching}
                 searchPlaceholder="Rechercher..."
                 enableReordering
                 enablePinning

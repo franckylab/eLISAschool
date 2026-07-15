@@ -28,7 +28,7 @@ export function AnneesScolairesPage() {
     const [anneeToCloturer, setAnneeToCloturer] = useState<AnneeScolaire | null>(null);
     const [anneeToReouvrir, setAnneeToReouvrir] = useState<AnneeScolaire | null>(null);
 
-    const { data, isLoading, error, refetch } = useAnneesScolaires(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useAnneesScolaires(filtres);
     const activer = useActiverAnneeScolaire();
     const supprimer = useSupprimerAnneeScolaire();
     const cloturer = useCloturerAnneeScolaire();
@@ -188,8 +188,8 @@ export function AnneesScolairesPage() {
         },
     ];
 
-    // Affichage loading pendant le chargement
-    if (isLoading) {
+    // Affichage loading uniquement au premier chargement
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des années scolaires..." />
@@ -239,6 +239,7 @@ export function AnneesScolairesPage() {
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                isFetching={isFetching}
                 enableReordering
                 enablePinning
                 enableColumnVisibility

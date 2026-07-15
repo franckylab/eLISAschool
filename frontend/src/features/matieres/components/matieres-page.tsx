@@ -1,36 +1,34 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Globe, BookOpen, Layers, Users, TrendingUp, Filter } from 'lucide-react';
-import { useMatieres, useSupprimerMatiere, useCreerMatiere, useModifierMatiere, useMatiereProgramme } from '../hooks/use-matieres';
+import { Plus, Edit, Trash2, Eye, Globe, BookOpen, TrendingUp, Filter } from 'lucide-react';
+import { useMatieres, useSupprimerMatiere, useCreerMatiere, useModifierMatiere } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { LoadingState, ErrorState } from '@/components/feedback';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { StatCard } from '@/components/ui/StatCard';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { useConfirmation } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { Matiere, MatiereFiltres } from '../types/matiere.types';
 import type { Column } from '@/components/ui/DataTable';
 
-const sousSystemeOptions = [
-    { value: '', label: 'Tous les systèmes' },
-    { value: 'FRANCOPHONE', label: 'Francophone' },
-    { value: 'ANGLOPHONE', label: 'Anglophone' },
-    { value: 'BICULTUREL', label: 'Biculturel' },
-];
-
 export function MatieresPage() {
-    const { t } = useTranslation();
+    const { t } = useTranslation('matieres');
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<MatiereFiltres>({ page: 1, limit: 50 });
     const [formOpen, setFormOpen] = useState(false);
     const [matiereToEdit, setMatiereToEdit] = useState<Matiere | null>(null);
-    const [matiereToDelete, setMatiereToDelete] = useState<Matiere | null>(null);
 
-    const { data, isLoading, error, refetch } = useMatieres(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useMatieres(filtres);
     const creer = useCreerMatiere();
     const modifier = useModifierMatiere();
     const supprimer = useSupprimerMatiere();
+    const { ask: askDelete, ConfirmationModal: DeleteConfirmModal } = useConfirmation();
 
     const stats = useMemo(() => {
         const items = data?.items || [];
@@ -64,8 +62,15 @@ export function MatieresPage() {
         setFormOpen(true);
     };
 
+    const sousSystemeOptions = [
+        { value: '', label: t('tousSystemes') },
+        { value: 'FRANCOPHONE', label: t('francophone') },
+        { value: 'ANGLOPHONE', label: t('anglophone') },
+        { value: 'BICULTUREL', label: t('commun') },
+    ];
+
     const sousSystemeLabel = (v: string | null) => {
-        if (!v) return 'Commun';
+        if (!v) return t('commun');
         const opt = sousSystemeOptions.find(o => o.value === v);
         return opt ? opt.label : v;
     };
@@ -73,14 +78,14 @@ export function MatieresPage() {
     const colonnes: Column<Matiere>[] = [
         {
             key: 'code',
-            header: 'Code',
+            header: t('code'),
             sortable: true,
-            render: (m) => <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">{m.code  || '-'}</span>,
+            render: (m) => <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">{m.code || '-'}</span>,
         },
         {
             key: 'nom',
             pinned: 'left' as const,
-            header: t('commun.nom'),
+            header: t('nom'),
             sortable: true,
             render: (m) => (
                 <button
@@ -97,7 +102,7 @@ export function MatieresPage() {
         },
         {
             key: 'sousSysteme',
-            header: 'Système',
+            header: t('sousSysteme'),
             sortable: false,
             className: 'text-center',
             render: (m) => (
@@ -113,18 +118,18 @@ export function MatieresPage() {
         },
         {
             key: 'actif',
-            header: t('commun.statut'),
+            header: t('statut'),
             sortable: true,
             className: 'text-center',
             render: (m) => (
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
-                    {m.actif ? 'Actif' : 'Inactif'}
+                    {m.actif ? t('statutActif') : t('statutInactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: t('commun.actions'),
+            header: t('actions'),
             className: 'text-right',
             renderActions: (m) => [
                 {
@@ -137,15 +142,22 @@ export function MatieresPage() {
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('modifier'),
                     onClick: () => handleEdition(m),
                     permission: 'config:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
-                    onClick: () => setMatiereToDelete(m),
+                    label: t('supprimer'),
+                    onClick: () => askDelete({
+                        title: t('supprimerConfirmation'),
+                        message: t('supprimerConfirmationMessage', { nom: m.nom }),
+                        details: t('retirerNiveauDetails'),
+                        onConfirm: async () => {
+                            await supprimer.mutateAsync(m.id);
+                        },
+                    }),
                     permission: 'config:edit',
                     variant: 'danger' as const,
                 },
@@ -153,19 +165,15 @@ export function MatieresPage() {
         },
     ];
 
-    if (isLoading) {
-        return (
-            <div className="p-6">
-                <LoadingState message="Chargement des matières..." />
-            </div>
-        );
+    if (isLoading && !data) {
+        return <PageSkeleton showHeader showTable />;
     }
 
     if (error) {
         return (
             <div className="p-6">
-                <ErrorState
-                    message={error.message || "Impossible de charger les matières"}
+                <ErrorMessage
+                    message={error.message || t('chargement')}
                     onRetry={() => refetch()}
                 />
             </div>
@@ -174,73 +182,80 @@ export function MatieresPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div className="flex justify-between items-start" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">{t('matieres.titre', { defaultValue: 'Matières' })}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{stats.total} matière(s)</p>
-                </div>
-                {hasPermission('matieres:create') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>{t('boutons.nouveau')}</ElisaButton>
-                )}
-            </motion.div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <StatMini icon={BookOpen} label="Total" value={stats.total} color="blue" />
-                <StatMini icon={Globe} label="Francophone" value={stats.countFR} color="blue" />
-                <StatMini icon={Globe} label="Anglophone" value={stats.countAN} color="green" />
-                <StatMini icon={Globe} label="Commun" value={stats.countCO} color="gray" />
-                <StatMini icon={TrendingUp} label="Actifs" value={stats.countActif} color={stats.countActif > 0 ? 'green' : 'gray'} />
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <div className="flex items-center gap-3">
-                    <Filter className="h-4 w-4 text-gray-400 dark:text-gray-100" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filtres</span>
-                    <select
-                        value={filtres.sousSysteme || ''}
-                        onChange={(e) => setFiltres(prev => ({ ...prev, sousSysteme: e.target.value as any, page: 1 }))}
-                        className="ml-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white dark:bg-gray-800"
-                    >
-                        {sousSystemeOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={filtres.actif === undefined ? '' : String(filtres.actif)}
-                        onChange={(e) => setFiltres(prev => ({ ...prev, actif: e.target.value === '' ? undefined : e.target.value === 'true', page: 1 }))}
-                        className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white dark:bg-gray-800"
-                    >
-                        <option value="">Tous les statuts</option>
-                        <option value="true">Actifs</option>
-                        <option value="false">Inactifs</option>
-                    </select>
-                </div>
-            </div>
-
-            <DataTable
-                data={data?.items || []}
-                columns={colonnes}
-                isLoading={isLoading}
-                enableReordering
-                enablePinning
-                enableColumnVisibility
-                searchPlaceholder={t('filtres.recherche')}
-                onSearchChange={(recherche) =>
-                    setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
-                }
-                disableClientSearch
-                pagination={data?.meta ? {
-                    page: data.meta.currentPage,
-                    limit: data.meta.itemsPerPage,
-                    total: data.meta.totalItems,
-                    totalPages: data.meta.totalPages,
-                    hasNext: data.meta.currentPage < data.meta.totalPages,
-                    hasPrev: data.meta.currentPage > 1,
-                } : undefined}
-                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
-                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+            <PageHeader
+                variant="gradient"
+                icon={BookOpen}
+                title={t('titre')}
+                subtitle={t('sousTitre')}
+                showBreadcrumbs
+                actions={hasPermission('matieres:create') ? (
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>
+                        {t('nouvelleMatiere')}
+                    </ElisaButton>
+                ) : undefined}
             />
+
+            <div className="flex flex-wrap gap-3">
+                <StatCard icon={BookOpen} label={t('totalMatieres')} value={stats.total} tone="info" />
+                <StatCard icon={Globe} label={t('francophone')} value={stats.countFR} tone="accent" />
+                <StatCard icon={Globe} label={t('anglophone')} value={stats.countAN} tone="success" />
+                <StatCard icon={Globe} label={t('commun')} value={stats.countCO} tone="muted" />
+                <StatCard icon={TrendingUp} label={t('actifs')} value={stats.countActif} tone={stats.countActif > 0 ? 'success' : 'muted'} />
+            </div>
+
+            <Card>
+                <CardHeader><CardTitle>{t('filtresLabel')}</CardTitle></CardHeader>
+                <div className="border-b border-border mx-4 sm:mx-5" />
+                <CardContent>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <ElisaSelect
+                            value={filtres.sousSysteme || ''}
+                            onValueChange={(value) => setFiltres(prev => ({ ...prev, sousSysteme: value as any, page: 1 }))}
+                            options={sousSystemeOptions}
+                            className="min-w-[160px]"
+                        />
+                        <ElisaSelect
+                            value={filtres.actif === undefined ? '' : String(filtres.actif)}
+                            onValueChange={(value) => setFiltres(prev => ({ ...prev, actif: value === '' ? undefined : value === 'true', page: 1 }))}
+                            options={[
+                                { value: '', label: t('tousStatuts') },
+                                { value: 'true', label: t('statutsActif') },
+                                { value: 'false', label: t('statutsInactif') },
+                            ]}
+                            className="min-w-[140px]"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <DataTable
+                    data={data?.items || []}
+                    columns={colonnes}
+                    isLoading={isLoading}
+                isFetching={isFetching}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    searchPlaceholder={t('code')}
+                    onSearchChange={(recherche) =>
+                        setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                    }
+                    disableClientSearch
+                    pagination={data?.meta ? {
+                        page: data.meta.currentPage,
+                        limit: data.meta.itemsPerPage,
+                        total: data.meta.totalItems,
+                        totalPages: data.meta.totalPages,
+                        hasNext: data.meta.currentPage < data.meta.totalPages,
+                        hasPrev: data.meta.currentPage > 1,
+                    } : undefined}
+                    onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                    onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                    tableId="matieres"
+                />
+            </motion.div>
 
             {formOpen && (
                 <MatiereFormModal
@@ -252,42 +267,7 @@ export function MatieresPage() {
                 />
             )}
 
-            <ConfirmationModal
-                isOpen={!!matiereToDelete}
-                title="Supprimer cette matière"
-                message={`Êtes-vous sûr de vouloir supprimer la matière "${matiereToDelete?.nom}" ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées."
-                variant="danger"
-                onConfirm={async () => {
-                    if (matiereToDelete) {
-                        await supprimer.mutateAsync(matiereToDelete.id);
-                        setMatiereToDelete(null);
-                    }
-                }}
-                onCancel={() => setMatiereToDelete(null)}
-                isLoading={supprimer.isPending}
-            />
-        </div>
-    );
-}
-
-function StatMini({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
-    const colors: Record<string, string> = {
-        blue: 'bg-blue-50 text-blue-700 border-blue-200',
-        green: 'bg-green-50 text-green-700 border-green-200',
-        purple: 'bg-purple-50 text-purple-700 border-purple-200',
-        gray: 'bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-200',
-        yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        red: 'bg-red-50 text-red-700 border-red-200',
-    };
-    const c = colors[color] || colors.gray;
-    return (
-        <div className={`rounded-lg border p-3 ${c}`}>
-            <div className="flex items-center gap-2 mb-1">
-                <Icon className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">{label}</span>
-            </div>
-            <p className="text-xl font-bold">{value}</p>
+            {DeleteConfirmModal}
         </div>
     );
 }

@@ -75,6 +75,7 @@ export function useGroupesEtablissements(filtres: GroupeEtablissementFiltres = {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -117,6 +118,7 @@ export function useEtablissementsAssignesIds(groupeId: string, enabled: boolean 
         },
         enabled: isAuthenticated && !!groupeId && enabled,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -243,6 +245,7 @@ export function useGroupeEtablissementDetail(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -380,6 +383,7 @@ export function useListerEtablissementsGroupe(groupeId: string, enabled: boolean
         },
         enabled: isAuthenticated && !!groupeId && enabled,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -397,6 +401,7 @@ export function useListerAdmins(groupeId: string, enabled: boolean = true) {
         },
         enabled: isAuthenticated && !!groupeId && enabled,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

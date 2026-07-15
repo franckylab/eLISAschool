@@ -42,6 +42,7 @@ export function useListeEnseignants(filtres: EnseignantFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -54,6 +55,7 @@ export function useEnseignant(id: string) {
             return response.data;
         },
         enabled: !!id && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -68,6 +70,7 @@ export function useEnseignantAffectationsMatiere(enseignantId: string) {
             return response.data;
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -101,6 +104,7 @@ export function useEnseignantEvaluations(enseignantId: string) {
             return response.data?.items ?? [];
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -135,6 +139,7 @@ export function useEnseignantMoyenneEvaluations(enseignantId: string) {
             };
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -178,6 +183,7 @@ export function useEnseignantAssiduite(enseignantId: string) {
             } satisfies AssiduiteStats;
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -195,6 +201,7 @@ export function useEnseignantAbsences(enseignantId: string) {
             };
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -209,6 +216,7 @@ export function useEnseignantContrats(enseignantId: string) {
             return response.data;
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -223,6 +231,7 @@ export function useEnseignantBulletins(enseignantId: string) {
             return response.data?.items ?? [];
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -237,6 +246,7 @@ export function useEnseignantParcours(enseignantId: string) {
             return response.data;
         },
         enabled: !!enseignantId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 

@@ -21,6 +21,7 @@ export type { CardTone } from './card-variants';
 export type { KpiCardProps } from './KpiCard';
 export type { StatPillItem, StatPillProps } from './StatPill';
 export type { CardGridProps, CardGridColumns } from './CardGrid';
+export { SearchInput } from './SearchInput';
 export { InfoField } from './InfoField';
 export { ActivityItem } from './ActivityItem';
 export { SettingsRow } from './SettingsRow';

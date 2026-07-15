@@ -1,0 +1,47 @@
+{
+    "titre": "Responsables d'Élèves",
+    "description": "Gérez les liens de parenté et responsables légaux",
+    "sousTitre": "Gérez les liens de parenté et responsables légaux",
+    "totalResponsables": "Total Responsables",
+    "responsablesLegaux": "Responsables Légaux",
+    "nouveauResponsable": "Nouveau responsable",
+    "aucunResponsable": "Aucun responsable d'élève trouvé",
+    "supprimerTitre": "Supprimer le responsable",
+    "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce responsable ? Cette action est irréversible.",
+    "supprimerConfirm": "Supprimer",
+    "colonnes": {
+        "eleve": "Élève",
+        "lienParente": "Lien de parenté",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "actions": "Actions"
+    },
+    "liens": {
+        "PERE": "Père",
+        "MERE": "Mère",
+        "TUTEUR": "Tuteur",
+        "AUTRE": "Autre"
+    },
+    "actions": {
+        "voir": "Voir détails",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    },
+    "informations": "Informations",
+    "telephone": "Téléphone",
+    "email": "Email",
+    "adresse": "Adresse",
+    "lienParente": "Lien de parenté",
+    "responsableLegal": "Responsable légal",
+    "eleves": "Élèves liés",
+    "chargement": "Chargement...",
+    "introuvable": "Responsable d'élève introuvable",
+    "oui": "Oui",
+    "non": "Non",
+    "detailsResponsable": "Détails du responsable",
+    "detailsEleve": "Élève lié",
+    "eleveNom": "Nom",
+    "elevePrenom": "Prénom",
+    "profession": "Profession",
+    "retourListe": "Retour à la liste"
+}

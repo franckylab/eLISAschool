@@ -1,0 +1,52 @@
+{
+    "titre": "Academic Structure",
+    "description": "Complete configuration of the institution's educational structure",
+    "organisationHierarchique": "Hierarchical Organization",
+    "systemesSupportes": "Supported Systems",
+    "systemeFrancophone": "Francophone System",
+    "statsFrancophone": "16 levels • 4 exams (CEP, BEPC, Probatoire, BAC) • 5 streams",
+    "systemeAnglophone": "Anglophone System",
+    "statsAnglophone": "14 levels • 2 exams (GCE O Level, GCE A Level)",
+    "infoTitre": "Information",
+    "infoDescription": "The academic structure follows the Cameroonian bilingual education system. Modules must be configured in hierarchical order: Cycle Types → Cycles → Levels → Streams.",
+    "infoDescription2": "National exams are automatically associated with exam levels (CM2→CEP, 3ème→BEPC, 1ère→Probatoire, Terminale→BAC, Form 5→GCE OL, Upper 6th→GCE AL).",
+    "modules": {
+        "cycles": {
+            "titre": "Teaching Cycles",
+            "description": "Teaching types and cycles (Preschool, Primary, Secondary 1 & 2)"
+        },
+        "niveaux": {
+            "titre": "Levels",
+            "description": "Classes and levels (PS to Terminale, Nursery to Upper 6th)"
+        },
+        "filieres": {
+            "titre": "Streams",
+            "description": "Upper secondary specializations (C, D, E, A, A1, F1, F2, F3, F4, G1, G2, H, I, K, L)"
+        },
+        "specialites": {
+            "titre": "Specialties",
+            "description": "Technical stream options (Maintenance, Electrical Engineering, Civil Engineering, etc.)"
+        },
+        "examensNationaux": {
+            "titre": "National Exams",
+            "description": "Official exams (CEP, BEPC, Probatoire, BAC, GCE)"
+        },
+        "diplomesEleves": {
+            "titre": "Student Diplomas",
+            "description": "Diplomas obtained by students"
+        },
+        "competences": {
+            "titre": "Competencies",
+            "description": "Competency-Based Approach (APC) - Competency framework by level and subject"
+        }
+    },
+    "chips": {
+        "cycles": "Cycles",
+        "niveaux": "Levels",
+        "filieres": "Streams",
+        "specialites": "Specialties"
+    },
+    "examensNationauxDescription": "National Exams → Associated with exam levels",
+    "diplomesElevesDescription": "Student Diplomas → Recording obtained diplomas",
+    "competencesDescription": "Competencies → APC framework for competency-based assessment"
+}

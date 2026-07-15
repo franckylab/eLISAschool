@@ -47,6 +47,7 @@ export function useSanction(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -126,5 +127,6 @@ export function useStatistiquesDiscipline() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

@@ -1,0 +1,16 @@
+{
+    "titre": "Analytics & KPIs",
+    "nouveauKPI": "Nouveau KPI",
+    "alertesActives": "Alertes actives",
+    "totalKPIs": "Total KPIs",
+    "kpisBons": "KPIs bons",
+    "alertes": "Alertes",
+    "critiques": "Critiques",
+    "objectif": "Objectif",
+    "bon": "Bon",
+    "attention": "Attention",
+    "critique": "Critique",
+    "hausse": "↗ Hausse",
+    "baisse": "↘ Baisse",
+    "stable": "→ Stable"
+}

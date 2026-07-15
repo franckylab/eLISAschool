@@ -136,6 +136,7 @@ export function usePeriode(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -153,6 +154,7 @@ export function useCompositions(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -170,6 +172,7 @@ export function useEnfantsDisponibles(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -187,6 +190,7 @@ export function useVerifierImpacts(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 1 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -204,6 +208,7 @@ export function useProgressionEnfants(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -839,6 +844,7 @@ export function usePeriodeActive() {
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         retry: false,
     });
 }

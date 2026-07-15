@@ -37,6 +37,7 @@ export function useEvaluation(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -98,5 +99,6 @@ export function useStatistiquesEvaluations() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

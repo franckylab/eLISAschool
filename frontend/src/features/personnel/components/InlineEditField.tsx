@@ -1,17 +1,20 @@
 import { type ReactNode } from 'react';
 import { Edit2, Save, X, Loader2, type LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/cn';
 
 export interface InlineEditFieldProps {
     label: string;
     value: string | ReactNode;
     icon: LucideIcon;
-    color: string;
+    /** @deprecated Utilise désormais les tons du thème */
+    color?: string;
     editable: boolean;
     loading?: boolean;
     children?: ReactNode;
     onStartEdit?: () => void;
     editing?: boolean;
+    className?: string;
 }
 
 export function InlineEditField({
@@ -24,70 +27,81 @@ export function InlineEditField({
     children,
     onStartEdit,
     editing,
+    className,
 }: InlineEditFieldProps) {
     const isStringValue = typeof value === 'string';
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative rounded-xl p-4 border transition-all duration-200 hover:shadow-sm"
-            style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}
+            className={cn(
+                'relative rounded-xl border border-border bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200 px-[clamp(0.625rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)]',
+                editing && 'bg-card shadow-sm',
+                className,
+            )}
         >
-            <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${color}15`, color }}
+            <div className="flex items-center justify-between gap-[clamp(0.375rem,1.25vw,0.75rem)]">
+                <div className="flex items-center gap-[clamp(0.375rem,1vw,0.5rem)] min-w-0 flex-1">
+                    <div
+                        className="h-[clamp(1.5rem,4vw,1.75rem)] w-[clamp(1.5rem,4vw,1.75rem)] rounded-lg flex items-center justify-center shrink-0 bg-[var(--color-surface-alt)]"
+                        style={color ? { backgroundColor: `${color}15` } : undefined}
                     >
-                        <Icon className="w-4 h-4" />
+                        <Icon
+                            className="h-[clamp(0.75rem,2vw,0.875rem)] w-[clamp(0.75rem,2vw,0.875rem)] text-muted-foreground"
+                            style={color ? { color } : undefined}
+                        />
                     </div>
-                    <span className="text-xs font-semibold uppercase tracking-wider"
-                        style={{ color: `${color}cc` }}
-                    >
+                    <span className="text-[clamp(0.5625rem,1.25vw,0.6875rem)] font-semibold uppercase tracking-wider text-text-muted truncate leading-tight">
                         {label}
                     </span>
                 </div>
-                {!editing && editable && (
-                    <button
-                        onClick={onStartEdit}
-                        className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-all shrink-0"
-                        style={{ color: `${color}99` }}
-                        title={`Modifier ${label.toLowerCase()}`}
-                    >
-                        <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+
+                {!editing && (
+                    <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] shrink-0">
+                        {loading ? (
+                            <Loader2 className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)] animate-spin text-muted-foreground" />
+                        ) : (
+                            <>
+                                {isStringValue ? (
+                                    <span className="text-[clamp(0.75rem,1.5vw,0.875rem)] font-medium text-card-foreground truncate max-w-[clamp(4rem,15vw,10rem)] leading-tight">
+                                        {value}
+                                    </span>
+                                ) : (
+                                    <div className="flex items-center">{value}</div>
+                                )}
+                                {editable && (
+                                    <button
+                                        onClick={onStartEdit}
+                                        className="p-[clamp(0.1875rem,0.5vw,0.25rem)] rounded-md hover:bg-surface-alt transition-colors text-muted-foreground hover:text-foreground"
+                                        title={`Modifier ${label.toLowerCase()}`}
+                                    >
+                                        <Edit2 className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
                 )}
             </div>
 
-            {loading ? (
-                <div className="flex items-center gap-2 py-1">
-                    <Loader2 className="w-4 h-4 animate-spin" style={{ color }} />
-                    <span className="text-sm text-gray-400 dark:text-gray-300">Mise à jour...</span>
-                </div>
-            ) : editing ? (
+            {editing && (
                 <AnimatePresence>
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
+                        className="mt-[clamp(0.5rem,1.5vw,0.75rem)] pt-[clamp(0.5rem,1.5vw,0.75rem)] border-t border-border"
                     >
                         {children}
                     </motion.div>
                 </AnimatePresence>
-            ) : isStringValue ? (
-                <div className="text-lg font-bold truncate" style={{ color: `${color}dd` }}>
-                    {value}
-                </div>
-            ) : (
-                <div className="min-h-[2rem] flex items-center">
-                    {value}
-                </div>
             )}
         </motion.div>
     );
 }
 
-interface InlineEditActionsProps {
+export interface InlineEditActionsProps {
     onSave: () => void;
     onCancel: () => void;
     saving?: boolean;
@@ -96,23 +110,22 @@ interface InlineEditActionsProps {
 
 export function InlineEditActions({ onSave, onCancel, saving, disabled }: InlineEditActionsProps) {
     return (
-        <div className="flex items-center gap-2 mt-3">
-            <button
-                onClick={onSave}
-                disabled={disabled || saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-                style={{ backgroundColor: disabled ? '#9ca3af' : '#22c55e' }}
-            >
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Valider
-            </button>
+        <div className="flex items-center justify-end gap-[clamp(0.375rem,1vw,0.5rem)] mt-[clamp(0.375rem,1vw,0.5rem)]">
             <button
                 onClick={onCancel}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="inline-flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.25rem,0.75vw,0.375rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium text-text-secondary bg-surface-alt hover:bg-surface-hover rounded-lg transition-colors disabled:opacity-50"
             >
-                <X className="w-3.5 h-3.5" />
+                <X className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />
                 Annuler
+            </button>
+            <button
+                onClick={onSave}
+                disabled={disabled || saving}
+                className="inline-flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.25rem,0.75vw,0.375rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium text-white bg-success hover:opacity-90 rounded-lg transition-all disabled:opacity-50 active:scale-[0.97]"
+            >
+                {saving ? <Loader2 className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)] animate-spin" /> : <Save className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
+                Valider
             </button>
         </div>
     );

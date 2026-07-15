@@ -93,6 +93,7 @@ export function useModuleImpact(moduleNom: string, actif: boolean) {
         },
         enabled: isAuthenticated && !!moduleNom,
         staleTime: 30 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -109,6 +110,7 @@ export function useConfigModules() {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -250,6 +252,7 @@ export function useBackups() {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

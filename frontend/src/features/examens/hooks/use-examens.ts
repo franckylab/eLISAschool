@@ -36,6 +36,7 @@ export function useExamens(filtres?: ExamenFiltres) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -47,6 +48,7 @@ export function useExamen(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -108,6 +110,7 @@ export function useResultatsExamen(examenId: string) {
         },
         enabled: !!examenId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -140,5 +143,6 @@ export function useStatistiquesExamens() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

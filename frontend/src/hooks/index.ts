@@ -53,3 +53,6 @@ export { useRotationControle } from './use-rotation-controle';
 
 // Document title
 export { useDocumentTitle } from './use-document-title';
+
+// Tab state management (URL-driven or local)
+export { useTabState } from './useTabState';

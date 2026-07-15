@@ -64,6 +64,7 @@ export function useSalles(filtres?: FiltresSalles) {
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000, // 3 minutes
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -80,6 +81,7 @@ export function useSalle(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000, // 5 minutes
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -114,6 +116,7 @@ export function useStatistiquesSalles() {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -130,6 +133,7 @@ export function useSalleStats(salleId: string) {
         },
         enabled: isAuthenticated && !!salleId,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -146,6 +150,7 @@ export function useSalleEmploiDuTemps(salleId: string) {
         },
         enabled: isAuthenticated && !!salleId,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -161,6 +166,7 @@ export function useSalleClasses(salleId: string) {
         },
         enabled: isAuthenticated && !!salleId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

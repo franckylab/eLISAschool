@@ -2,10 +2,10 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
-    ArrowLeft, BookOpen, Clock, FileText, Users,
-    Edit, Trash2, Hash, TrendingUp, AlertCircle,
+    BookOpen, Clock, FileText, Users,
+    Edit, Trash2, TrendingUp,
     Layers, CheckCircle, XCircle,
-    Globe, UserCheck, UserPlus, AlertTriangle, Plus,
+    Globe, UserCheck, UserPlus, Plus,
 } from 'lucide-react';
 import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation, useCreerConfigurationMatiereClasse, useModifierConfigurationMatiereClasse, useSupprimerConfigurationMatiereClasse } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
@@ -15,39 +15,44 @@ import { useCreneaux } from '@/features/emploi-du-temps';
 import { EDTCalendar } from '@/features/emploi-du-temps';
 import { AffectationFormModal } from './affectation-form-modal';
 import { ConfigurationFormModal } from './configuration-form-modal';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { LoadingState } from '@/components/feedback';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { usePermissions } from '@/hooks';
-import type { MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage, LoadingState } from '@/components/ui/ErrorMessage';
+import { usePermissions, useTabState } from '@/hooks';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { TabsBar } from '@/components/ui';
+import type { Tab } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { InfoField } from '@/components/ui/InfoField';
+import { StatCard } from '@/components/ui/StatCard';
+import { useConfirmation } from '@/components/ui/ConfirmationModal';
+import type { AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
 
 type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'configurations' | 'emploi-du-temps';
 
 function StatutBadge({ actif }: { actif: boolean }) {
     return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${
-            actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${
+            actif ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted-foreground'
         }`}>
-            {actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+            {actif ? <CheckCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" /> : <XCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
             {actif ? 'Active' : 'Inactive'}
         </span>
     );
 }
 
 const sousSystemeConfig: Record<string, { label: string; bg: string; text: string }> = {
-    FRANCOPHONE: { label: 'Francophone', bg: 'bg-blue-100', text: 'text-blue-700' },
-    ANGLOPHONE: { label: 'Anglophone', bg: 'bg-green-100', text: 'text-green-700' },
-    BICULTUREL: { label: 'Biculturel', bg: 'bg-purple-100', text: 'text-purple-700' },
+    FRANCOPHONE: { label: 'Francophone', bg: 'bg-info/10', text: 'text-info' },
+    ANGLOPHONE: { label: 'Anglophone', bg: 'bg-success/10', text: 'text-success' },
+    BICULTUREL: { label: 'Biculturel', bg: 'bg-purple/10', text: 'text-purple' },
 };
 
 function SousSystemeBadge({ value }: { value: string | null }) {
     if (!value) return <span className="text-xs text-gray-500 dark:text-gray-200">Commun</span>;
-    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-gray-100', text: 'text-gray-700 dark:text-gray-400' };
+    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-muted/10', text: 'text-text-secondary' };
     return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.25rem,0.75vw,0.375rem)] py-[clamp(0.0625rem,0.25vw,0.125rem)] text-[clamp(0.625rem,1vw,0.75rem)] font-medium ${cfg.bg} ${cfg.text}`}>
             <Globe className="h-3 w-3" />
             {cfg.label}
         </span>
@@ -65,9 +70,11 @@ export function MatiereDetailPage() {
 
     const { data: matiere, isLoading, error } = useMatiere(id);
     const [formOpen, setFormOpen] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
     const modifier = useModifierMatiere();
     const supprimer = useSupprimerMatiere();
+    const { ask: askDelete, ConfirmationModal: DeleteConfirmModal } = useConfirmation();
+    const { ask: askDeleteAffectation, ConfirmationModal: DeleteAffectationConfirmModal } = useConfirmation();
+    const { ask: askDeleteConfig, ConfirmationModal: DeleteConfigConfirmModal } = useConfirmation();
 
     const [affectationModalOpen, setAffectationModalOpen] = useState(false);
     const [affectationToEdit, setAffectationToEdit] = useState<AffectationMatiere | null>(null);
@@ -83,7 +90,7 @@ export function MatiereDetailPage() {
     const modifierConfig = useModifierConfigurationMatiereClasse();
     const supprimerConfig = useSupprimerConfigurationMatiereClasse();
 
-    const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
+    const [ongletActif, setOngletActif] = useTabState<OngletActif>('informations');
 
     const programmeQuery = useMatiereProgramme(id);
     const programmesPedagogiquesQuery = useMatiereProgrammesPedagogiques(id);
@@ -91,19 +98,15 @@ export function MatiereDetailPage() {
     const configurationsQuery = useMatiereConfigurations(id);
     const edtQuery = useCreneaux({ matiereId: id, limit: 100 });
 
-    const { niveauxSansAffectation, affectationsInactives, tauxCouverture } = useMemo(() => {
+    const { niveauxSansAffectation, affectationsInactives } = useMemo(() => {
         const programme = programmeQuery.data ?? [];
         const affectations = affectationsQuery.data ?? [];
         const affectes = new Set(affectations.map((a) => a.classeAnneeId));
         const sansAffectation = programme.filter((p) => !affectes.has(p.niveauId));
         const inactives = affectations.filter((a) => !a.actif);
-        const couverture = programme.length > 0
-            ? Math.round(((programme.length - sansAffectation.length) / programme.length) * 100)
-            : 0;
         return {
             niveauxSansAffectation: sansAffectation,
             affectationsInactives: inactives,
-            tauxCouverture: couverture,
         };
     }, [programmeQuery.data, affectationsQuery.data]);
 
@@ -150,159 +153,98 @@ export function MatiereDetailPage() {
     };
 
     if (isLoading) {
-        return (
-            <div className="p-6">
-                <LoadingState message="Chargement de la matière..." />
-            </div>
-        );
+        return <PageSkeleton showHeader />;
     }
 
     if (error || !matiere) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <AlertCircle className="h-16 w-16 text-gray-400 dark:text-gray-100" />
-                <p className="text-lg text-gray-600 dark:text-gray-300">Matière non trouvée</p>
-                <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })}>
-                    Retour à la liste
-                </ElisaButton>
+            <div className="p-6">
+                <div className="flex flex-col items-center justify-center h-64 gap-4">
+                    <div className="flex flex-col items-center gap-4">
+                        <p className="text-lg text-gray-600 dark:text-gray-300">Matière non trouvée</p>
+                        <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })}>
+                            Retour à la liste
+                        </ElisaButton>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    const couleur = matiere.couleur || '#3B82F6';
-
-    const onglets = [
-        { id: 'informations' as const, label: 'Informations', icon: BookOpen },
-        { id: 'niveaux' as const, label: 'Niveaux', icon: Layers, count: programmeQuery.data?.length },
-        { id: 'programme' as const, label: 'Programmes', icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
-        { id: 'affectations' as const, label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length, warning: affectationsInactives.length > 0 },
-        { id: 'configurations' as const, label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
-        { id: 'emploi-du-temps' as const, label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.items?.length },
+    const onglets: Tab[] = [
+        { id: 'informations', label: 'Informations', icon: BookOpen },
+        { id: 'niveaux', label: 'Niveaux', icon: Layers, count: programmeQuery.data?.length },
+        { id: 'programme', label: 'Programmes', icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
+        { id: 'affectations', label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length },
+        { id: 'configurations', label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
+        { id: 'emploi-du-temps', label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.data?.items?.length },
     ];
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <Breadcrumbs currentLabel={matiere.nom} />
-
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
-            >
-                <div className="h-2 w-full" style={{ backgroundColor: couleur }} />
-
-                <div className="p-6">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-6">
-                            <div className="w-20 h-20 rounded-lg flex items-center justify-center shadow-lg shrink-0"
-                                style={{ backgroundColor: `${couleur}20` }}
-                            >
-                                <BookOpen className="h-10 w-10" style={{ color: couleur }} />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 truncate">{matiere.nom}</h1>
-                                    <StatutBadge actif={matiere.actif} />
-                                    <SousSystemeBadge value={matiere.sousSysteme} />
-                                </div>
-
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-200">
-                                    <div className="flex items-center gap-2">
-                                        <Hash className="h-4 w-4" />
-                                        <span className="font-mono">{matiere.code || '-'}</span>
-                                    </div>
-                                    {matiere.nomAnglais && (
-                                        <div className="flex items-center gap-2">
-                                            <Globe className="h-4 w-4" />
-                                            <span>{matiere.nomAnglais}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 shrink-0">
-                            {hasPermission('config:edit') && (
-                                <>
-                                    <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
-                                        Modifier
-                                    </ElisaButton>
-                                    <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteOpen(true)}>
-                                        Supprimer
-                                    </ElisaButton>
-                                </>
-                            )}
-                            <ElisaButton variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate({ to: '/matieres' })}>
-                                Retour
+            <PageHeader
+                variant="gradient"
+                showBreadcrumbs
+                breadcrumbLabel={matiere.nom}
+                onBack={() => navigate({ to: '/matieres' })}
+                actions={
+                    <div className="flex gap-2">
+                        {hasPermission('config:edit') && (
+                            <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
+                                Modifier
                             </ElisaButton>
+                        )}
+                        {hasPermission('config:edit') && (
+                            <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => askDelete({
+                                title: 'Supprimer cette matière',
+                                message: `Êtes-vous sûr de vouloir supprimer "${matiere.nom}" ?`,
+                                details: 'Cette action est irréversible et supprimera toutes les données associées (programme, affectations, configurations).',
+                                onConfirm: handleDelete,
+                            })}>
+                                Supprimer
+                            </ElisaButton>
+                        )}
+                    </div>
+                }
+            >
+                <div className="flex items-start gap-3 sm:gap-4 md:gap-6">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 p-[clamp(0.75rem,2.5vw,1rem)]">
+                        <BookOpen className="h-[clamp(1.75rem,6vw,2.5rem)] w-[clamp(1.75rem,6vw,2.5rem)] text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                        <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{matiere.nom}</h1>
+                        {matiere.code && <p className="text-[clamp(0.75rem,2vw,1.125rem)] text-white/70">{matiere.code}</p>}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <StatutBadge actif={matiere.actif} />
+                            {matiere.sousSysteme && <SousSystemeBadge value={matiere.sousSysteme} />}
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </PageHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <StatCard icon={Layers} label="Niveaux" value={programmeQuery.data?.length ?? '-'} color="blue" delay={0.1} />
-                <StatCard icon={BookOpen} label="Programmes" value={programmesPedagogiquesQuery.data?.length ?? '-'} color="purple" delay={0.15} />
-                <StatCard icon={Users} label="Enseignants" value={affectationsQuery.data?.length ?? '-'} color="green" delay={0.2} />
-                <StatCard icon={FileText} label="Configurations" value={configurationsQuery.data?.length ?? '-'} color="indigo" delay={0.3} />
-                <StatCard icon={TrendingUp} label={`Couverture ${tauxCouverture}%`} value={`${programmeQuery.data?.length ? programmeQuery.data.length - niveauxSansAffectation.length : '-'}/${programmeQuery.data?.length ?? '-'}`}
-                    color={tauxCouverture >= 80 ? 'green' : tauxCouverture >= 50 ? 'yellow' : 'red'} delay={0.4}
-                />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-[clamp(0.5rem,1.5vw,1rem)]">
+                <StatCard icon={Layers} label="Niveaux" value={programmeQuery.data?.length ?? 0} tone="info" />
+                <StatCard icon={Users} label="Enseignants" value={affectationsQuery.data?.length ?? 0} tone="success" />
+                <StatCard icon={BookOpen} label="Programmes" value={programmesPedagogiquesQuery.data?.length ?? 0} tone="purple" />
             </div>
 
             {niveauxSansAffectation.length > 0 && (
                 <ErrorMessage
-                    variant="warning"
                     message={`${niveauxSansAffectation.length} niveau(x) sans enseignant assigné`}
-                    description="Ajoutez des affectations pour les niveaux du programme qui n'ont pas encore d'enseignant."
-                    autoDismissMs={30000}
                 />
             )}
 
             {affectationsInactives.length > 0 && (
                 <ErrorMessage
-                    variant="warning"
                     message={`${affectationsInactives.length} affectation(s) inactive(s)`}
-                    description="Certaines affectations sont marquées comme inactives. Vérifiez leur état dans l'onglet Enseignants."
-                    autoDismissMs={30000}
                 />
             )}
 
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex gap-6 overflow-x-auto">
-                    {onglets.map((o) => {
-                        const Icon = o.icon;
-                        return (
-                            <button key={o.id} onClick={() => setOngletActif(o.id)}
-                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    ongletActif === o.id
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300'
-                                }`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {o.label}
-                                {o.count !== undefined && (
-                                    <span className="ml-1 rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                        {o.count}
-                                    </span>
-                                )}
-                                {o.warning && (
-                                    <span title={o.id === 'programme' ? 'Niveaux sans enseignant' : 'Affectations inactives'}
-                                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
-                                    >
-                                        <AlertTriangle className="h-3 w-3" />
-                                        {o.id === 'programme' ? niveauxSansAffectation.length : affectationsInactives.length}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
+            <TabsBar tabs={onglets} activeTab={ongletActif} onTabChange={(tabId) => setOngletActif(tabId as OngletActif)} variant="underline" />
 
             <motion.div key={ongletActif} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {ongletActif === 'informations' && (
-                    <InformationsTab matiere={matiere} couleur={couleur} />
+                    <InformationsTab matiere={matiere} />
                 )}
                 {ongletActif === 'niveaux' && (
                     <TabNiveaux
@@ -326,7 +268,15 @@ export function MatiereDetailPage() {
                         isLoading={affectationsQuery.isLoading}
                         matiereId={id}
                         onEdit={(a) => { setAffectationToEdit(a); setAffectationModalOpen(true); }}
-                        onDelete={(id) => setDeleteAffectationId(id)}
+                        onDelete={(id) => {
+                            setDeleteAffectationId(id);
+                            askDeleteAffectation({
+                                title: 'Supprimer cette affectation',
+                                message: 'Êtes-vous sûr de vouloir supprimer cette affectation ?',
+                                details: 'Cette action est irréversible.',
+                                onConfirm: handleDeleteAffectation,
+                            });
+                        }}
                         onCreate={() => { setAffectationToEdit(null); setAffectationModalOpen(true); }}
                         hasPermission={hasPermission('config:edit')}
                     />
@@ -336,7 +286,15 @@ export function MatiereDetailPage() {
                         data={configurationsQuery.data}
                         isLoading={configurationsQuery.isLoading}
                         onEdit={(c) => { setConfigToEdit(c); setConfigModalOpen(true); }}
-                        onDelete={(id) => setDeleteConfigId(id)}
+                        onDelete={(id) => {
+                            setDeleteConfigId(id);
+                            askDeleteConfig({
+                                title: 'Supprimer cette configuration',
+                                message: 'Êtes-vous sûr de vouloir supprimer cette configuration matière-classe ?',
+                                details: 'Cette action est irréversible.',
+                                onConfirm: handleDeleteConfig,
+                            });
+                        }}
                         onCreate={() => { setConfigToEdit(null); setConfigModalOpen(true); }}
                         hasPermission={hasPermission('config:edit')}
                     />
@@ -345,16 +303,14 @@ export function MatiereDetailPage() {
                     <div className="space-y-4">
                         {edtQuery.isLoading ? (
                             <div className="py-12"><LoadingState message="Chargement de l'emploi du temps..." /></div>
-                        ) : !edtQuery.data?.items?.length ? (
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-                                <Clock className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
-                                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">Aucun créneau pour cette matière</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-200">
-                                    Les créneaux apparaîtront ici une fois l'emploi du temps généré.
-                                </p>
-                            </div>
+                        ) : !edtQuery.data?.data?.items?.length ? (
+                        <div className="bg-[var(--color-card)] rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
+                            <Clock className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-text-muted mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
+                            <p className="text-text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">Aucun créneau pour cette matière</p>
+                            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-text-muted">Les créneaux apparaîtront ici une fois l'emploi du temps généré.</p>
+                        </div>
                         ) : (
-                            <EDTCalendar creneaux={edtQuery.data.items} />
+                            <EDTCalendar creneaux={edtQuery.data.data.items} />
                         )}
                     </div>
                 )}
@@ -381,28 +337,6 @@ export function MatiereDetailPage() {
                 />
             )}
 
-            <ConfirmationModal
-                isOpen={deleteOpen}
-                title="Supprimer cette matière"
-                message={`Êtes-vous sûr de vouloir supprimer "${matiere.nom}" ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées (programme, affectations, configurations)."
-                variant="danger"
-                onConfirm={handleDelete}
-                onCancel={() => setDeleteOpen(false)}
-                isLoading={supprimer.isPending}
-            />
-
-            <ConfirmationModal
-                isOpen={!!deleteAffectationId}
-                title="Supprimer cette affectation"
-                message="Êtes-vous sûr de vouloir supprimer cette affectation ?"
-                details="Cette action est irréversible."
-                variant="danger"
-                onConfirm={handleDeleteAffectation}
-                onCancel={() => setDeleteAffectationId(null)}
-                isLoading={supprimerAffectation.isPending}
-            />
-
             <ConfigurationFormModal
                 open={configModalOpen}
                 onOpenChange={(v) => { if (!v) { setConfigModalOpen(false); setConfigToEdit(null); } }}
@@ -413,115 +347,78 @@ export function MatiereDetailPage() {
                 isLoading={creerConfig.isPending || modifierConfig.isPending}
             />
 
-            <ConfirmationModal
-                isOpen={!!deleteConfigId}
-                title="Supprimer cette configuration"
-                message="Êtes-vous sûr de vouloir supprimer cette configuration matière-classe ?"
-                details="Cette action est irréversible."
-                variant="danger"
-                onConfirm={handleDeleteConfig}
-                onCancel={() => setDeleteConfigId(null)}
-                isLoading={supprimerConfig.isPending}
-            />
+            {DeleteConfirmModal}
+            {DeleteAffectationConfirmModal}
+            {DeleteConfigConfirmModal}
         </div>
     );
 }
 
-function StatCard({ icon: Icon, label, value, color, delay }: { icon: any; label: string; value: string | number; color: string; delay: number }) {
-    const colors: Record<string, { bg: string; text: string; value: string }> = {
-        blue: { bg: 'from-blue-50 to-blue-100 border-blue-200', text: 'text-blue-700', value: 'text-blue-800' },
-        green: { bg: 'from-green-50 to-green-100 border-green-200', text: 'text-green-700', value: 'text-green-800' },
-        purple: { bg: 'from-purple-50 to-purple-100 border-purple-200', text: 'text-purple-700', value: 'text-purple-800' },
-        yellow: { bg: 'from-yellow-50 to-yellow-100 border-yellow-200', text: 'text-yellow-700', value: 'text-yellow-800' },
-        red: { bg: 'from-red-50 to-red-100 border-red-200', text: 'text-red-700', value: 'text-red-800' },
-        indigo: { bg: 'from-indigo-50 to-indigo-100 border-indigo-200', text: 'text-indigo-700', value: 'text-indigo-800' },
-        gray: { bg: 'from-gray-50 to-gray-100 border-gray-200', text: 'text-gray-700 dark:text-gray-400', value: 'text-gray-800 dark:text-gray-300' },
-    };
-    const c = colors[color] || colors.blue;
-    return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-            className={`bg-gradient-to-br ${c.bg} rounded-lg p-4 border`}
-        >
-            <div className="flex items-center gap-3 mb-2">
-                <Icon className={`w-5 h-5 ${c.text}`} />
-                <span className={`text-sm font-medium ${c.text}`}>{label}</span>
-            </div>
-            <p className={`text-3xl font-bold ${c.value}`}>{value}</p>
-        </motion.div>
-    );
-}
-
-function InformationsTab({ matiere, couleur }: { matiere: any; couleur: string }) {
+function InformationsTab({ matiere }: { matiere: any }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-blue-600" />
-                    Informations générales
-                </h3>
-                <dl className="space-y-4">
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Nom</dt>
-                        <dd className="mt-1 text-lg font-medium text-gray-900 dark:text-gray-200">{matiere.nom}</dd>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                        Informations générales
+                    </CardTitle>
+                </CardHeader>
+                <div className="border-b border-border mx-4 sm:mx-5" />
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <InfoField label="Nom" value={matiere.nom} />
+                        <InfoField label="Code" value={matiere.code || '-'} />
+                        {matiere.nomAnglais && <InfoField label="Nom anglais" value={matiere.nomAnglais} />}
+                        <InfoField label="Sous-système" value={<SousSystemeBadge value={matiere.sousSysteme} />} />
                     </div>
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Code</dt>
-                        <dd className="mt-1 font-mono text-gray-900 dark:text-gray-200">{matiere.code || '-'}</dd>
-                    </div>
-                    {matiere.nomAnglais && (
-                        <div>
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Nom anglais</dt>
-                            <dd className="mt-1 text-gray-900 dark:text-gray-200">{matiere.nomAnglais}</dd>
-                        </div>
-                    )}
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Sous-système</dt>
-                        <dd className="mt-1"><SousSystemeBadge value={matiere.sousSysteme} /></dd>
-                    </div>
-                </dl>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    Configuration
-                </h3>
-                <dl className="space-y-4">
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Couleur</dt>
-                        <dd className="mt-1 flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm" style={{ backgroundColor: couleur }} />
-                            <span className="font-mono text-sm">{couleur}</span>
-                        </dd>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                        Configuration
+                    </CardTitle>
+                </CardHeader>
+                <div className="border-b border-border mx-4 sm:mx-5" />
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <InfoField
+                            label="Couleur"
+                            value={
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm" style={{ backgroundColor: matiere.couleur || '#3B82F6' }} />
+                                    <span className="font-mono text-sm">{matiere.couleur}</span>
+                                </div>
+                            }
+                        />
+                        <InfoField label="Statut" value={<StatutBadge actif={matiere.actif} />} />
                     </div>
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Statut</dt>
-                        <dd className="mt-1"><StatutBadge actif={matiere.actif} /></dd>
-                    </div>
-                </dl>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-orange-600" />
-                    Métadonnées
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Créée le</dt>
-                        <dd className="mt-1 text-gray-900 dark:text-gray-200">{formatDate(matiere.createdAt)}</dd>
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                        Métadonnées
+                    </CardTitle>
+                </CardHeader>
+                <div className="border-b border-border mx-4 sm:mx-5" />
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <InfoField label="Créée le" value={formatDate(matiere.createdAt)} />
+                        <InfoField label="Dernière modification" value={formatDate(matiere.updatedAt)} />
                     </div>
-                    <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-200">Dernière modification</dt>
-                        <dd className="mt-1 text-gray-900 dark:text-gray-200">{formatDate(matiere.updatedAt)}</dd>
-                    </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
 
-function AffectationsTab({ data, isLoading, matiereId, onEdit, onDelete, onCreate, hasPermission }: {
+function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermission }: {
     data: AffectationMatiere[] | undefined;
     isLoading: boolean;
     matiereId: string;
@@ -716,26 +613,26 @@ function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPer
 function VolumeBar({ value, max }: { value: number; max: number }) {
     const pct = max > 0 ? (value / max) * 100 : 0;
     return (
-        <div className="flex items-center gap-2 w-24">
-            <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] w-[clamp(4rem,12vw,6rem)]">
+            <div className="flex-1 h-[clamp(0.375rem,0.75vw,0.5rem)] bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+                <div className="h-full bg-[var(--color-accent)] rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-8 text-right">{value}h</span>
+            <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary w-[clamp(1.5rem,4vw,2rem)] text-right">{value}h</span>
         </div>
     );
 }
 
 function InheritedValue({ value, unit, prefix }: { value: number | null | undefined; unit: string; prefix?: string }) {
-    if (value == null) return <span className="text-xs text-gray-400 dark:text-gray-100 italic">Hérité</span>;
-    return <span className="font-semibold">{prefix ?? ''}{value}{unit}</span>;
+    if (value == null) return <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] text-text-muted italic">Hérité</span>;
+    return <span className="font-semibold text-[clamp(0.75rem,1.25vw,0.875rem)]">{prefix ?? ''}{value}{unit}</span>;
 }
 
 function EmptyState({ icon: Icon, message, sub }: { icon: any; message: string; sub: string }) {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-            <Icon className="h-12 w-12 text-gray-400 dark:text-gray-100 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">{message}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-200">{sub}</p>
+        <div className="bg-[var(--color-card)] rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
+            <Icon className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-text-muted mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
+            <p className="text-text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">{message}</p>
+            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-text-muted">{sub}</p>
         </div>
     );
 }

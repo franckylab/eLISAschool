@@ -47,6 +47,7 @@ export function useAnnonce(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -61,6 +62,7 @@ export function useStatistiquesAnnonces() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

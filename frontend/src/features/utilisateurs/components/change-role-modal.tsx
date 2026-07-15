@@ -54,21 +54,21 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
             closeOnOverlayClick={!changerRole.isPending}
         >
             <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+                    <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30 shrink-0">
                         <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             {t('changerRole.titre')}
                         </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                             {utilisateur.nom} {utilisateur.prenom} &mdash; {utilisateur.email}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                         <Shield className="h-3.5 w-3.5" />
                         <span className="font-medium">{currentRoleData?.nom ?? utilisateur.role}</span>
@@ -85,7 +85,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                 </div>
 
                 {step === 'select' && (
-                    <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                    <>
                         {rolesLoading ? (
                             <div className="flex items-center justify-center py-8">
                                 <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
@@ -142,7 +142,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                 );
                             })
                         )}
-                    </div>
+                    </>
                 )}
 
                 {step === 'confirm' && (
@@ -164,7 +164,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
                                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                                     {t('changerRole.confirmation.roleActuel')}
@@ -190,40 +190,39 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                         </div>
                     </div>
                 )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-5">
-                <ElisaButton
-                    variant="outline"
-                    onClick={() => {
-                        if (step === 'confirm') {
-                            setStep('select');
-                        } else {
-                            onOpenChange(false);
-                        }
-                    }}
-                    disabled={changerRole.isPending}
-                >
-                    {step === 'confirm' ? t('changerRole.retour') : t('changerRole.annuler')}
-                </ElisaButton>
-
-                {step === 'select' ? (
+                <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <ElisaButton
-                        variant="primary"
-                        onClick={() => setStep('confirm')}
-                        disabled={!hasChanged}
+                        variant="outline"
+                        onClick={() => {
+                            if (step === 'confirm') {
+                                setStep('select');
+                            } else {
+                                onOpenChange(false);
+                            }
+                        }}
+                        disabled={changerRole.isPending}
                     >
-                        {t('changerRole.suivant')}
+                        {step === 'confirm' ? t('changerRole.retour') : t('changerRole.annuler')}
                     </ElisaButton>
-                ) : (
-                    <ElisaButton
-                        variant="primary"
-                        onClick={handleConfirm}
-                        isLoading={changerRole.isPending}
-                    >
-                        {t('changerRole.confirmer')}
-                    </ElisaButton>
-                )}
+
+                    {step === 'select' ? (
+                        <ElisaButton
+                            variant="primary"
+                            onClick={() => setStep('confirm')}
+                            disabled={!hasChanged}
+                        >
+                            {t('changerRole.suivant')}
+                        </ElisaButton>
+                    ) : (
+                        <ElisaButton
+                            variant="primary"
+                            onClick={handleConfirm}
+                            isLoading={changerRole.isPending}
+                        >
+                            {t('changerRole.confirmer')}
+                        </ElisaButton>
+                    )}
+                </div>
             </div>
         </CustomModal>
     );

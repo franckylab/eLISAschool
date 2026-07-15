@@ -50,6 +50,7 @@ export function useProgrammes(filtres?: ProgrammeFiltres) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -67,6 +68,7 @@ export function useProgrammeDetail(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -81,6 +83,7 @@ export function useProgrammeMatieres(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -206,6 +209,7 @@ export function useTousChapitres(filtres?: {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -220,6 +224,7 @@ export function useChapitresProgramme(programmeId: string) {
         },
         enabled: isAuthenticated && !!programmeId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

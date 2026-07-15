@@ -31,5 +31,6 @@ export function useToutesClasses(etablissementId?: string) {
         },
         enabled: isAuthenticated,
         staleTime: 15 * 60 * 1000, // 15 min
+        placeholderData: (previousData) => previousData,
     });
 }

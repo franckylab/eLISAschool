@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { UserPlus, Save, Search } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -20,6 +21,7 @@ interface AffectationFormModalProps {
 }
 
 export function AffectationFormModal({ open, onOpenChange, matiereId, affectation, onSave, isLoading }: AffectationFormModalProps) {
+    const { t } = useTranslation('matieres');
     const [enseignantId, setEnseignantId] = useState('');
     const [classeAnneeId, setClasseAnneeId] = useState('');
     const [dateDebut, setDateDebut] = useState(new Date().toISOString().split('T')[0]);
@@ -62,19 +64,19 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
         });
     };
 
-    const titre = affectation ? "Modifier l'affectation" : 'Affecter un enseignant';
+    const titre = affectation ? t('affectationModifier') : t('affectationNouvelle');
 
     return (
         <CustomModal
             open={open}
             onOpenChange={onOpenChange}
             title={titre}
-            description={affectation ? "Modifier les informations de l'affectation" : 'Affecter un enseignant à cette matière'}
+            description={affectation ? t('affectationModifierDescription') : t('affectationDescription')}
             size="2xl"
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)} type="button">
-                        Annuler
+                        {t('annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
@@ -84,44 +86,44 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
                         disabled={!enseignantId || !classeAnneeId}
                         onClick={handleSubmit}
                     >
-                        {affectation ? 'Enregistrer' : 'Affecter'}
+                        {affectation ? t('enregistrer') : t('affecterEnseignant')}
                     </ElisaButton>
                 </>
             }
         >
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Enseignant</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('enseignant')}</label>
                     <div className="relative mb-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Rechercher un enseignant..."
+                            placeholder={t('rechercherEnseignant')}
                             value={rechercheEnseignant}
                             onChange={(e) => setRechercheEnseignant(e.target.value)}
                             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                         />
                     </div>
                     {personnelLoading ? (
-                        <div className="py-2 text-sm text-gray-500">Chargement...</div>
+                        <div className="py-2 text-sm text-gray-500">{t('chargementEnseignants')}</div>
                     ) : (
                         <ElisaSelect
                             value={enseignantId}
                             onValueChange={setEnseignantId}
-                            placeholder="Sélectionner un enseignant"
+                            placeholder={t('selectionnerEnseignant')}
                             options={enseignants.map((e) => ({
                                 value: e.id,
-                                label: `${e.nom} ${e.prenom}${e.matricule ? ` (${e.matricule})` : ''}`,
+                                label: `${e.utilisateur?.profil?.prenom ?? ''} ${e.utilisateur?.profil?.nom ?? ''}${e.matricule ? ` (${e.matricule})` : ''}`,
                             }))}
                         />
                     )}
                 </div>
 
                 <ElisaSelect
-                    label="Classe"
+                    label={t('classe')}
                     value={classeAnneeId}
                     onValueChange={setClasseAnneeId}
-                    placeholder="Sélectionner une classe"
+                    placeholder={t('selectionnerClasse')}
                     disabled={classesLoading}
                     options={classesList
                         .filter((c) => c.actif && c.classeAnneeId)
@@ -133,7 +135,7 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date de début</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateDebut')}</label>
                         <input
                             type="date"
                             value={dateDebut}
@@ -143,7 +145,7 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date de fin (optionnelle)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateFin')}</label>
                         <input
                             type="date"
                             value={dateFin}
@@ -156,7 +158,7 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
 
                 <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
                     <UserPlus className="h-4 w-4 shrink-0" />
-                    <span>L&apos;enseignant doit être déjà enregistré dans le système. Les affectations sont validées selon la configuration de l&apos;établissement.</span>
+                    <span>{t('infoAffectation')}</span>
                 </div>
             </form>
         </CustomModal>

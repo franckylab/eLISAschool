@@ -46,6 +46,7 @@ export function useBulletin(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

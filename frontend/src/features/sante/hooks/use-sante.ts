@@ -95,5 +95,6 @@ export function useStatistiquesSante() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

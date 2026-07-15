@@ -55,5 +55,6 @@ export function useToutesAnneesScolaires() {
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 15 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

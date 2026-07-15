@@ -1,0 +1,52 @@
+{
+    "titre": "Fonctions",
+    "description": "Catalogue hiérarchique des fonctions et rôles métier",
+    "rechercher": "Rechercher",
+    "rechercherPlaceholder": "Nom, code...",
+    "creerFonction": "Créer une fonction",
+    "vueArbre": "Arbre",
+    "vueListe": "Liste",
+    "aucuneFonction": "Aucune fonction trouvée",
+    "supprimerTitre": "Supprimer la fonction",
+    "supprimerMessage": "Êtes-vous sûr de vouloir supprimer la fonction \"{{nom}}\" ?",
+    "supprimerConfirm": "Supprimer",
+    "nonTrouvee": "Fonction non trouvée",
+    "retourListe": "Retour à la liste",
+    "retourFonctions": "Retour aux fonctions",
+    "chargement": "Chargement...",
+    "informations": "Informations",
+    "hierarchie": "Hiérarchie",
+    "paie": "Paie",
+    "sousFonctions": "Sous-fonctions ({{count}})",
+    "racine": "Racine",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "actifLong": "Cette fonction est actuellement active.",
+    "inactifLong": "Cette fonction est actuellement inactive.",
+    "majorationDefaut": "Majoration défaut",
+    "primesDefaut": "Primes par défaut",
+    "colonnes": {
+        "code": "Code",
+        "nom": "Nom",
+        "parent": "Fonction parente",
+        "niveau": "Niveau",
+        "statut": "Statut",
+        "actions": "Actions"
+    },
+    "detail": {
+        "code": "Code",
+        "niveau": "Niveau",
+        "fonctionParente": "Fonction parente",
+        "statut": "Statut",
+        "majorationDefaut": "Majoration défaut",
+        "ordre": "Ordre",
+        "description": "Description",
+        "parent": "Parent",
+        "sousFonctions": "Sous-fonctions"
+    },
+    "actions": {
+        "voir": "Voir détails",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    }
+}

@@ -44,67 +44,64 @@ export function StatCard({
     const tone = toneProp || (color ? (COLOR_TO_TONE[color] ?? 'muted') : 'muted');
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5 }}
-            transition={{ delay, duration: 0.5, ease: 'easeOut' }}
+            transition={{ delay, duration: 0.4, ease: 'easeOut' }}
         >
             <Card className={cn(
-                'transition-shadow duration-500 hover:shadow-md',
+                'transition-shadow duration-300 hover:shadow-sm',
                 loading && 'animate-pulse',
                 className,
             )}>
-                <div className="absolute top-0 right-0 p-[clamp(0.75rem,2cqi+0.25rem,1.5rem)] opacity-[0.05] group-hover:opacity-[0.10] transition-opacity pointer-events-none">
-                    <Icon className="h-[clamp(3.5rem,12cqi+0.5rem,6rem)] w-[clamp(3.5rem,12cqi+0.5rem,6rem)] -mr-[clamp(1rem,4cqi+0.25rem,2rem)] -mt-[clamp(1rem,4cqi+0.25rem,2rem)] rotate-12" />
+                <div className="absolute top-0 right-0 p-[clamp(0.375rem,1cqi+0.25rem,0.75rem)] opacity-[0.04] group-hover:opacity-[0.08] transition-opacity pointer-events-none">
+                    <Icon className="h-[clamp(2rem,6cqi+0.5rem,3.5rem)] w-[clamp(2rem,6cqi+0.5rem,3.5rem)] -mr-[clamp(0.375rem,1.5cqi+0.25rem,0.75rem)] -mt-[clamp(0.375rem,1.5cqi+0.25rem,0.75rem)] rotate-12" />
                 </div>
-
-                <CardContent className="p-[clamp(0.75rem,2cqi+0.25rem,1.5rem)]">
-                    <div className="flex items-center justify-between mb-[clamp(0.5rem,1.5cqi+0.125rem,1.25rem)]">
+                <CardContent className="p-[clamp(0.5rem,1.5cqi+0.25rem,0.75rem)]">
+                    <div className="flex items-start gap-[clamp(0.375rem,1cqi+0.125rem,0.5rem)]">
                         <div className={cn(
-                            'h-[clamp(2.25rem,6cqi+0.5rem,3rem)] w-[clamp(2.25rem,6cqi+0.5rem,3rem)] rounded-xl flex items-center justify-center shadow-sm transition-all duration-500',
+                            'h-[clamp(1.25rem,3cqi+0.25rem,1.625rem)] w-[clamp(1.25rem,3cqi+0.25rem,1.625rem)] rounded-lg flex items-center justify-center shrink-0 mt-0.5',
                             TONE_CLASSES[tone],
                             'group-hover:bg-dominant-600 group-hover:text-white group-hover:border-dominant-600',
                         )}>
-                            <Icon className="h-[clamp(0.875rem,2cqi+0.25rem,1.125rem)] w-[clamp(0.875rem,2cqi+0.25rem,1.125rem)]" />
+                            <Icon className="h-[clamp(0.625rem,1.5cqi+0.125rem,0.875rem)] w-[clamp(0.625rem,1.5cqi+0.125rem,0.875rem)]" />
                         </div>
-                        {trend && (
-                            <div
-                                title={`${trend.isPositive ? 'Hausse' : 'Baisse'} de ${Math.abs(trend.value).toFixed(1)}%`}
-                                className={cn(
-                                    'flex items-center gap-1 px-[clamp(0.375rem,1cqi+0.125rem,0.75rem)] py-[clamp(0.25rem,0.5cqi+0.125rem,0.375rem)] rounded-full text-[clamp(0.625rem,1.5cqi+0.125rem,0.75rem)] font-semibold tracking-tight border',
-                                    trend.isPositive
-                                        ? 'bg-success/10 text-success border-success/20'
-                                        : 'bg-danger/10 text-danger border-danger/20',
+                        <div className="min-w-0 flex-1 space-y-[clamp(0.0625rem,0.25cqi+0.0625rem,0.125rem)]">
+                            <div className="flex items-center justify-between gap-1">
+                                <p className="text-[clamp(0.625rem,1.5cqi+0.125rem,0.75rem)] font-semibold text-text-secondary uppercase tracking-wider group-hover:text-dominant-600 transition-colors leading-tight truncate">
+                                    {label}
+                                </p>
+                                {trend && (
+                                    <div
+                                        title={`${trend.isPositive ? 'Hausse' : 'Baisse'} de ${Math.abs(trend.value).toFixed(1)}%`}
+                                        className={cn(
+                                            'flex items-center gap-[clamp(0.125rem,0.375cqi+0.0625rem,0.25rem)] px-[clamp(0.1875rem,0.5cqi+0.0625rem,0.375rem)] py-[clamp(0.0625rem,0.25cqi+0.0625rem,0.125rem)] rounded-full text-[clamp(0.4375rem,0.75cqi+0.0625rem,0.5625rem)] font-semibold tracking-tight border shrink-0',
+                                            trend.isPositive
+                                                ? 'bg-success/10 text-success border-success/20'
+                                                : 'bg-danger/10 text-danger border-danger/20',
+                                        )}
+                                    >
+                                        {trend.isPositive
+                                            ? <TrendingUp className="h-[clamp(0.375rem,0.5cqi+0.0625rem,0.5rem)] w-[clamp(0.375rem,0.5cqi+0.0625rem,0.5rem)]" />
+                                            : <TrendingDown className="h-[clamp(0.375rem,0.5cqi+0.0625rem,0.5rem)] w-[clamp(0.375rem,0.5cqi+0.0625rem,0.5rem)]" />}
+                                        {Math.abs(trend.value).toFixed(1)}%
+                                    </div>
                                 )}
-                            >
-                                {trend.isPositive
-                                    ? <TrendingUp className="h-[clamp(0.625rem,1cqi+0.125rem,0.75rem)] w-[clamp(0.625rem,1cqi+0.125rem,0.75rem)]" />
-                                    : <TrendingDown className="h-[clamp(0.625rem,1cqi+0.125rem,0.75rem)] w-[clamp(0.625rem,1cqi+0.125rem,0.75rem)]" />}
-                                {Math.abs(trend.value).toFixed(1)}%
                             </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-1">
-                        <p className="text-[clamp(0.625rem,1.5cqi+0.125rem,0.75rem)] font-semibold text-text-secondary uppercase tracking-wider group-hover:text-dominant-600 transition-colors">
-                            {label}
-                        </p>
-                        {loading ? (
-                            <div className="h-[clamp(1.5rem,3cqi+0.25rem,2rem)] w-[clamp(4rem,10cqi+0.5rem,6rem)] bg-surface-alt rounded animate-pulse mt-1" />
-                        ) : (
-                            <>
-                                <div className="flex items-baseline gap-[clamp(0.25rem,0.75cqi+0.125rem,0.5rem)]">
-                                    <h3 className="text-[clamp(1.125rem,4cqi+0.25rem,1.75rem)] font-bold text-text-primary">
+                            {loading ? (
+                                <div className="h-[clamp(0.75rem,1.5cqi+0.25rem,1rem)] w-[clamp(2rem,6cqi+0.5rem,3rem)] bg-surface-alt rounded animate-pulse" />
+                            ) : (
+                                <div className="flex items-baseline gap-[clamp(0.125rem,0.375cqi+0.0625rem,0.25rem)]">
+                                    <h3 className="text-[clamp(0.8125rem,2.5cqi+0.25rem,1.125rem)] font-bold text-text-primary leading-tight">
                                         {value}
                                     </h3>
                                     {subtitle && (
-                                        <span className="text-[clamp(0.625rem,1.5cqi+0.125rem,0.75rem)] text-text-muted font-semibold tracking-tight">
+                                        <span className="text-[clamp(0.5rem,0.75cqi+0.125rem,0.625rem)] text-text-muted font-semibold tracking-tight leading-tight truncate">
                                             {subtitle}
                                         </span>
                                     )}
                                 </div>
-                            </>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>

@@ -104,6 +104,7 @@ export function useAnneesScolaires(filtres: AnneeScolaireFiltres = {}) {
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 15 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -116,6 +117,7 @@ export function useAnneeScolaire(id: string) {
             return response.data ? mapperAnneeScolaire(response.data) : undefined;
         },
         enabled: !!id && !!etablissementId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -130,6 +132,7 @@ export function useAnneeScolaireActive() {
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 30 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

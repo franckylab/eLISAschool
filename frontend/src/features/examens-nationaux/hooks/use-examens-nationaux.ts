@@ -67,6 +67,7 @@ export function useExamenNational(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

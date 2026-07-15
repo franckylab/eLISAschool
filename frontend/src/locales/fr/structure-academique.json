@@ -1,0 +1,52 @@
+{
+    "titre": "Structure Académique",
+    "description": "Configuration complète de la structure pédagogique de l'établissement",
+    "organisationHierarchique": "Organisation Hiérarchique",
+    "systemesSupportes": "Systèmes Supportés",
+    "systemeFrancophone": "Système Francophone",
+    "statsFrancophone": "16 niveaux • 4 examens (CEP, BEPC, Probatoire, BAC) • 5 filières",
+    "systemeAnglophone": "Système Anglophone",
+    "statsAnglophone": "14 niveaux • 2 examens (GCE O Level, GCE A Level)",
+    "infoTitre": "Information",
+    "infoDescription": "La structure académique suit le système éducatif camerounais bilingue. Les modules doivent être configurés dans l'ordre hiérarchique : Types de Cycles → Cycles → Niveaux → Filières.",
+    "infoDescription2": "Les examens nationaux sont automatiquement associés aux niveaux d'examen (CM2→CEP, 3ème→BEPC, 1ère→Probatoire, Terminale→BAC, Form 5→GCE OL, Upper 6th→GCE AL).",
+    "modules": {
+        "cycles": {
+            "titre": "Cycles Pédagogiques",
+            "description": "Types et cycles d'enseignement (Maternelle, Primaire, Secondaire 1 & 2)"
+        },
+        "niveaux": {
+            "titre": "Niveaux",
+            "description": "Classes et niveaux (PS à Terminale, Nursery à Upper 6th)"
+        },
+        "filieres": {
+            "titre": "Filières",
+            "description": "Spécialités du second cycle (C, D, E, A, A1, F1, F2, F3, F4, G1, G2, H, I, K, L)"
+        },
+        "specialites": {
+            "titre": "Spécialités",
+            "description": "Options par filière technique (Maintenance, Électrotechnique, Génie Civil, etc.)"
+        },
+        "examensNationaux": {
+            "titre": "Examens Nationaux",
+            "description": "Examens officiels (CEP, BEPC, Probatoire, BAC, GCE)"
+        },
+        "diplomesEleves": {
+            "titre": "Diplômes Élèves",
+            "description": "Diplômes obtenus par les élèves"
+        },
+        "competences": {
+            "titre": "Compétences",
+            "description": "Approche Par Compétences (APC) - Référentiel de compétences par niveau et matière"
+        }
+    },
+    "chips": {
+        "cycles": "Cycles",
+        "niveaux": "Niveaux",
+        "filieres": "Filières",
+        "specialites": "Spécialités"
+    },
+    "examensNationauxDescription": "Examens Nationaux → Associés aux niveaux d'examen",
+    "diplomesElevesDescription": "Diplômes Élèves → Enregistrement des diplômes obtenus",
+    "competencesDescription": "Compétences → Référentiel APC pour l'évaluation par compétences"
+}

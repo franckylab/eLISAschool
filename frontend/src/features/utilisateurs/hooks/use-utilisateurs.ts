@@ -58,6 +58,7 @@ export function useUtilisateurs(filtres: UtilisateurFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         gcTime: 10 * 60 * 1000,
         retry: 2,
         refetchOnWindowFocus: false,
@@ -75,6 +76,7 @@ export function useUtilisateur(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         gcTime: 10 * 60 * 1000,
         retry: 1,
     });
@@ -105,6 +107,7 @@ export function useUtilisateursDisponibles(etablissementId?: string) {
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
         gcTime: 5 * 60 * 1000,
     });
 }
@@ -120,6 +123,7 @@ export function useRoles() {
         },
         enabled: isAuthenticated,
         staleTime: 30 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

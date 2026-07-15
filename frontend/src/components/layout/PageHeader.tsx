@@ -1,4 +1,4 @@
-import { type ReactNode, Children, isValidElement, cloneElement } from 'react';
+import { type ReactNode, Children, Fragment, isValidElement, cloneElement } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { ChevronLeft } from 'lucide-react';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
@@ -113,6 +113,12 @@ function gradientActionStyle(element: ReactNode): ReactNode {
             ...props,
             children: newChildren,
         });
+    }
+
+    // Fragment (<>...</>) → récursion directe dans les enfants (évite de coller des classes à un Fragment)
+    if (element.type === Fragment) {
+        const children = props?.children;
+        return children ? Children.map(children, gradientActionStyle) : children;
     }
 
     // Composant React (ElisaButton) → appliquer le glass-morphism

@@ -37,6 +37,7 @@ export function useConge(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -102,5 +103,6 @@ export function useStatistiquesConges() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

@@ -53,6 +53,7 @@ export function useFonction(id: string) {
             return (res as any).data as Fonction;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 

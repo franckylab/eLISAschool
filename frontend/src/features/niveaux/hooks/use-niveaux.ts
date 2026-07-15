@@ -43,6 +43,7 @@ export function useNiveaux(filtres: NiveauFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -76,6 +77,7 @@ export function useNiveau(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

@@ -29,6 +29,7 @@ export function useMembreFonctions(membrePersonnelId: string) {
             return (res as any).data as MembreFonction[];
         },
         enabled: !!membrePersonnelId,
+        placeholderData: (previousData) => previousData,
     });
 }
 

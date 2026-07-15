@@ -64,6 +64,7 @@ export function useClasses(filtres: ClasseFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -86,6 +87,7 @@ export function useClasse(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -115,6 +117,7 @@ export function useElevesClasse(classeId: string, page: number = 1, limit: numbe
         },
         enabled: !!classeId && isAuthenticated,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -134,6 +137,7 @@ export function useClassesStats(etablissementId?: string) {
             return response.data;
         },
         enabled: !!etablissementId,
+        placeholderData: (previousData) => previousData,
     });
 }
 

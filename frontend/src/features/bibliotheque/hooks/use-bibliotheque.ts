@@ -36,6 +36,7 @@ export function useOuvrages(filtres?: BibliothequeFiltres) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -47,6 +48,7 @@ export function useOuvrage(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -108,6 +110,7 @@ export function usePrets() {
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -173,5 +176,6 @@ export function useStatistiquesBibliotheque() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

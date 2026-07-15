@@ -36,7 +36,7 @@ export function ParkingPage() {
         { key: 'tarif', header: 'Tarif horaire', className: 'w-28', render: (p: any) => <span className="text-sm">{p.tarifHoraire ? `${p.tarifHoraire.toLocaleString('fr-FR')} FCFA` : '-'}</span> },
     ];
 
-    if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !places) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
 
     return (
         <div className="space-y-6">

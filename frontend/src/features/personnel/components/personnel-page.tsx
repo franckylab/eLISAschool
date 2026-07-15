@@ -31,7 +31,7 @@ export function PersonnelPage() {
     const [modalKey, setModalKey] = useState(0);
     const [membreToDelete, setMembreToDelete] = useState<MembrePersonnel | null>(null);
 
-    const { data, isLoading, error, refetch } = usePersonnel(filtres);
+    const { data, isLoading, isFetching, error, refetch } = usePersonnel(filtres);
     const supprimer = useSupprimerPersonnel();
 
     const handleCreation = () => {
@@ -141,8 +141,8 @@ export function PersonnelPage() {
         },
     ];
 
-    // Affichage loading pendant le chargement
-    if (isLoading) {
+    // Affichage loading uniquement au premier chargement
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement du personnel..." />
@@ -196,6 +196,7 @@ export function PersonnelPage() {
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                isFetching={isFetching}
                 enableReordering
                 enablePinning
                 enableColumnVisibility

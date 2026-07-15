@@ -37,6 +37,7 @@ export function useSondages(filtres: SondageFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -51,6 +52,7 @@ export function useSondage(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -111,6 +113,7 @@ export function useStatistiquesSondage(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

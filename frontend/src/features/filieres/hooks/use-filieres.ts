@@ -57,6 +57,7 @@ export function useFilieres(filtres: FiliereFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000, // 5 minutes
+        placeholderData: (previousData) => previousData,
         gcTime: 10 * 60 * 1000,   // 10 minutes
         refetchOnWindowFocus: false,
         refetchOnMount: false,
@@ -94,6 +95,7 @@ export function useToutesFilieres() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000, // 10 minutes
+        placeholderData: (previousData) => previousData,
         gcTime: 15 * 60 * 1000,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
@@ -117,6 +119,7 @@ export function useFiliere(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 3 * 60 * 1000, // 3 minutes
+        placeholderData: (previousData) => previousData,
         gcTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         refetchOnMount: false,

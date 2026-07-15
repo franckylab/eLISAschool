@@ -63,6 +63,7 @@ export function useEtablissement(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

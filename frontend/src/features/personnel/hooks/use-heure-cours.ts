@@ -50,6 +50,7 @@ export function useEdtEnseignant(enseignantId: string, semaine?: string) {
             return (response as any).data;
         },
         enabled: !!enseignantId && !!semaine,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -61,6 +62,7 @@ export function useVolumeHoraire(enseignantId: string, dateDebut: string, dateFi
             return (response as any).data;
         },
         enabled: !!enseignantId && !!dateDebut && !!dateFin,
+        placeholderData: (previousData) => previousData,
     });
 }
 

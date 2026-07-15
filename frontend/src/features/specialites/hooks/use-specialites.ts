@@ -91,6 +91,7 @@ export function useSpecialites(filtres: SpecialiteFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -106,6 +107,7 @@ export function useSpecialite(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -121,6 +123,7 @@ export function useSpecialitesParFiliere(filiereId: string) {
         },
         enabled: !!filiereId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

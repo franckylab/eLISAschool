@@ -68,6 +68,7 @@ export function useDiplomesEleve(eleveId: string) {
         },
         enabled: isAuthenticated && !!eleveId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -90,6 +91,7 @@ export function useDiplomeEleve(id: string) {
         },
         enabled: isAuthenticated && !!id,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

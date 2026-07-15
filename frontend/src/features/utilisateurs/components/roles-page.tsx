@@ -37,7 +37,7 @@ export function RolesPage() {
     const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
     const [filtreType, setFiltreType] = useState<'all' | 'systeme' | 'personnalise'>('all');
 
-    const { data, isLoading, error, refetch } = useRoles(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useRoles(filtres);
     const { data: statsApi } = useStatsRoles();
     const supprimer = useSupprimerRole();
 
@@ -188,8 +188,8 @@ export function RolesPage() {
         },
     ];
 
-    // Affichage skeleton
-    if (isLoading) {
+    // Affichage skeleton au premier chargement uniquement
+    if (isLoading && !data) {
         return <PageSkeleton showStats showTable />;
     }
 
@@ -267,6 +267,7 @@ export function RolesPage() {
                     data={dataFiltree}
                     columns={colonnes}
                     isLoading={isLoading}
+                isFetching={isFetching}
                 enableReordering
                 enablePinning
                 enableColumnVisibility

@@ -60,8 +60,6 @@ import {
     ArrowDown,
     GripVertical,
     Settings2,
-    Search,
-    X,
     Check,
     Rows3,
     Pin,
@@ -71,6 +69,7 @@ import {
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { RowActions } from '@/components/ui/RowActions';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { usePermissions, useDataTablePreferences } from '@/hooks';
 import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -121,6 +120,8 @@ interface DataTableProps<T> {
     data: T[];
     columns: Column<T>[];
     isLoading?: boolean;
+    /** Indique qu'une refetch est en cours (arrière-plan) — affiche une barre subtile */
+    isFetching?: boolean;
     pagination?: {
         page: number;
         limit: number;
@@ -1016,26 +1017,11 @@ function BarreOutils({
     return (
         <div className="flex flex-wrap items-center gap-[var(--gap-sm)] border-b border-[var(--color-bordure)]" style={{ padding: 'var(--padding-toolbar)' }}>
             {searchable && (
-                <div className="relative flex-1" style={{ minWidth: 'clamp(120px, 30vw, 384px)', maxWidth: 'clamp(200px, 40vw, 512px)' }}>
-                    <Search className="absolute left-[clamp(0.5rem,0.4rem+0.2vw,0.625rem)] top-1/2 h-[var(--icon-sm)] w-[var(--icon-sm)] -translate-y-1/2 text-[var(--color-text-muted)]" />
-                    <input
-                        type="text"
-                        placeholder={searchPlaceholder || t('tableau.rechercher', { defaultValue: 'Rechercher...' })}
-                        value={recherche}
-                        onChange={(e) => onRechercheChange(e.target.value)}
-                        className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] pl-9 pr-[clamp(1.5rem,1.2rem+0.5vw,2rem)] text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                    />
-                    {recherche && (
-                        <button
-                            onClick={() => onRechercheChange('')}
-                            className="absolute right-[clamp(0.5rem,0.4rem+0.2vw,0.625rem)] top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                            aria-label="Effacer la recherche"
-                        >
-                            <X className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                        </button>
-                    )}
-                </div>
+                <SearchInput
+                    value={recherche}
+                    onChange={onRechercheChange}
+                    placeholder={searchPlaceholder || t('tableau.rechercher', { defaultValue: 'Rechercher...' })}
+                />
             )}
             {/* Filtres rapides */}
             {filtres && filtres.length > 0 && (
@@ -1101,6 +1087,7 @@ export function DataTable<T>({
     data,
     columns,
     isLoading = false,
+    isFetching = false,
     pagination,
     onPageChange,
     onLimitChange,
@@ -1238,12 +1225,20 @@ export function DataTable<T>({
     const [recherche, setRechercheInterne] = useState('');
     const rechercheDebounce = useDebounce(recherche, 300); // 300ms de délai
 
-    // Wrapper pour la recherche — émet le callback serveur + filtre client
+    const onSearchChangeRef = useRef(onSearchChange);
+    useEffect(() => {
+        onSearchChangeRef.current = onSearchChange;
+    });
+
+    // Wrapper local uniquement — pas de callback serveur immédiat
     const setRecherche = useCallback((valeur: string) => {
         setRechercheInterne(valeur);
-        // Callback serveur immédiat (pour API backend)
-        onSearchChange?.(valeur);
-    }, [onSearchChange]);
+    }, []);
+
+    // Callback serveur différé via la valeur debouncée (300ms)
+    useEffect(() => {
+        onSearchChangeRef.current?.(rechercheDebounce);
+    }, [rechercheDebounce]);
 
     // État des filtres
     const [valeurFiltres, setValeurFiltres] = useState<Record<string, string>>(() => {
@@ -1645,7 +1640,20 @@ export function DataTable<T>({
     const limits = [10, 20, 50, 100];
 
     return (
-        <div className="rounded-[var(--radius-xl)] border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm">
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm relative overflow-hidden">
+            {/* Barre de progression subtile pour les refetches en arrière-plan */}
+            {isFetching && !isLoading && (
+                <motion.div
+                    className="absolute top-0 left-0 h-[2px] z-20"
+                    style={{
+                        background: 'linear-gradient(90deg, var(--color-dominant-500), var(--color-accent-500))',
+                        borderRadius: '1px',
+                    }}
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+            )}
             {/* Barre d'outils */}
             <BarreOutils
                 recherche={recherche}

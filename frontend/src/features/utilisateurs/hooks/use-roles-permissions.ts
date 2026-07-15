@@ -53,6 +53,7 @@ export function useRoles(filtres: RoleFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000, // 10 minutes
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -69,6 +70,7 @@ export function useRole(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -87,6 +89,7 @@ export function useTousRoles(options?: { enabled?: boolean }) {
         },
         enabled: options?.enabled !== undefined ? options.enabled : isAuthenticated,
         staleTime: 15 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -171,6 +174,7 @@ export function usePermissions() {
         },
         enabled: isAuthenticated,
         staleTime: 30 * 60 * 1000, // 30 minutes - permissions changent rarement
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -189,6 +193,7 @@ export function usePermissionsByModule(module: string) {
         },
         enabled: !!module && isAuthenticated,
         staleTime: 30 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -255,6 +260,7 @@ export function usePermissionsDirectes(userId: string, options?: { enabled?: boo
         },
         enabled: (options?.enabled !== undefined ? options.enabled : true) && isAuthenticated && !!userId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

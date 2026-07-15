@@ -25,7 +25,7 @@ export function EnseignantsPage() {
     const [modalKey, setModalKey] = useState(0);
     const [enseignantToDelete, setEnseignantToDelete] = useState<Enseignant | null>(null);
 
-    const { data, isLoading, error, refetch } = useListeEnseignants(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useListeEnseignants(filtres);
     const supprimer = useSupprimerPersonnel();
 
     const handleCreation = () => {
@@ -141,7 +141,7 @@ export function EnseignantsPage() {
         },
     ];
 
-    if (isLoading) {
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des enseignants..." />
@@ -176,6 +176,7 @@ export function EnseignantsPage() {
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
+                isFetching={isFetching}
                 enableReordering
                 enablePinning
                 enableColumnVisibility

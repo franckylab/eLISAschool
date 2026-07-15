@@ -17,6 +17,7 @@ export function useAffectationsMembre(membreId: string) {
             return response.data || [];
         },
         enabled: !!membreId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -28,6 +29,7 @@ export function useAffectationActiveMembre(membreId: string) {
             return response.data;
         },
         enabled: !!membreId,
+        placeholderData: (previousData) => previousData,
     });
 }
 

@@ -56,6 +56,7 @@ export function useEtablissements(filtres: EtablissementFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -75,6 +76,7 @@ export function useEtablissement(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -96,6 +98,7 @@ export function useEtablissementConfig(etablissementId: string) {
         },
         enabled: !!etablissementId && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -115,6 +118,7 @@ export function useEtablissementStats() {
         },
         enabled: isAuthenticated,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -136,6 +140,7 @@ export function useEtablissementDetailStats(etablissementId: string) {
         },
         enabled: !!etablissementId && isAuthenticated,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -357,5 +362,6 @@ export function useGetLogo(etablissementId: string) {
         },
         enabled: !!etablissementId && isAuthenticated,
         staleTime: 10 * 60 * 1000, // 10 minutes
+        placeholderData: (previousData) => previousData,
     });
 }

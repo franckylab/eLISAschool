@@ -10,7 +10,7 @@
  * Toutes les capacités sont activées par défaut.
  */
 
-import { type ReactNode, useCallback, useRef } from 'react';
+import { type ReactNode, useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, Minus, Maximize2, Minimize2 } from 'lucide-react';
@@ -83,8 +83,44 @@ export function CustomModal({
     initialWidth,
     initialHeight,
 }: CustomModalProps) {
-    const resolvedWidth = initialWidth ?? sizeToWidth[size] ?? 448;
-    const resolvedMinWidth = sizeToMinWidth[size] ?? 280;
+    // ── Viewport tracking pour responsive size ──────────────────
+    const [viewportWidth, setViewportWidth] = useState(0);
+    useEffect(() => {
+        const onResize = () => setViewportWidth(window.innerWidth);
+        onResize();
+        window.addEventListener('resize', onResize, { passive: true });
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    // ── Downscale automatique du size selon viewport ────────────
+    // Ne jamais agrandir au-dessus du size demandé, mais réduire
+    // si l'écran ne peut pas contenir le size demandé.
+    const effectiveSize = useMemo(() => {
+        if (size === 'full') return 'full';
+        if (viewportWidth === 0 || viewportWidth >= 1024) return size;
+
+        const SIZE_RANK: Record<string, number> = {
+            sm: 1, md: 2, lg: 3, xl: 4, '2xl': 5, '3xl': 6, full: 7,
+        };
+        const requestedRank = SIZE_RANK[size] ?? 7;
+
+        // Calculer le rank maximum que le viewport peut contenir
+        const margin = viewportWidth < 480 ? 16 : viewportWidth < 768 ? 24 : 32;
+        let maxRank = 1;
+        for (const [s, w] of Object.entries(sizeToWidth)) {
+            if (s === 'full') continue; // full suit son propre dimensionnement
+            if (w + margin <= viewportWidth) {
+                maxRank = Math.max(maxRank, SIZE_RANK[s] ?? 1);
+            }
+        }
+
+        const rank = Math.min(requestedRank, maxRank);
+        const entry = Object.entries(SIZE_RANK).find(([_, r]) => r === rank);
+        return (entry?.[0] ?? 'sm') as typeof size;
+    }, [size, viewportWidth]);
+
+    const resolvedWidth = initialWidth ?? sizeToWidth[effectiveSize] ?? 448;
+    const resolvedMinWidth = sizeToMinWidth[effectiveSize] ?? 280;
 
     const {
         state,

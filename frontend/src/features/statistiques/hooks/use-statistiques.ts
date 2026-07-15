@@ -30,6 +30,7 @@ export function useStatistiquesGlobales(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -44,6 +45,7 @@ export function useStatistiquesPeriodiques(periode: string) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -63,6 +65,7 @@ export function useStatistiquesEleves(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -82,6 +85,7 @@ export function useStatistiquesPersonnel(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -101,6 +105,7 @@ export function useStatistiquesFinances(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -120,6 +125,7 @@ export function useStatistiquesPedagogique(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -139,6 +145,7 @@ export function useStatistiquesVieScolaire(filtres?: FiltresStatistiques) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

@@ -36,6 +36,7 @@ export function useMateriels(filtres?: InventaireFiltres) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -47,6 +48,7 @@ export function useMateriel(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -109,6 +111,7 @@ export function useMouvementsStock(materielId?: string) {
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -157,5 +160,6 @@ export function useStatistiquesInventaire() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

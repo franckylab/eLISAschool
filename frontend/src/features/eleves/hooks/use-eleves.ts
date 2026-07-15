@@ -57,6 +57,7 @@ export function useEleve(id: string) {
         },
         enabled: !!id,
         staleTime: 10 * 60 * 1000, // 10 min
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -70,6 +71,7 @@ export function useElevesStats(etablissementId?: string) {
         },
         enabled: !!etablissementId,
         staleTime: 15 * 60 * 1000, // 15 min
+        placeholderData: (previousData) => previousData,
     });
 }
 

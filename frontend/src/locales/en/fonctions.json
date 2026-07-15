@@ -1,0 +1,52 @@
+{
+    "titre": "Functions",
+    "description": "Hierarchical catalog of functions and business roles",
+    "rechercher": "Search",
+    "rechercherPlaceholder": "Name, code...",
+    "creerFonction": "Create function",
+    "vueArbre": "Tree",
+    "vueListe": "List",
+    "aucuneFonction": "No function found",
+    "supprimerTitre": "Delete function",
+    "supprimerMessage": "Are you sure you want to delete the function \"{{nom}}\"?",
+    "supprimerConfirm": "Delete",
+    "nonTrouvee": "Function not found",
+    "retourListe": "Back to list",
+    "retourFonctions": "Back to functions",
+    "chargement": "Loading...",
+    "informations": "Information",
+    "hierarchie": "Hierarchy",
+    "paie": "Payroll",
+    "sousFonctions": "Sub-functions ({{count}})",
+    "racine": "Root",
+    "actif": "Active",
+    "inactif": "Inactive",
+    "actifLong": "This function is currently active.",
+    "inactifLong": "This function is currently inactive.",
+    "majorationDefaut": "Default increment",
+    "primesDefaut": "Default allowances",
+    "colonnes": {
+        "code": "Code",
+        "nom": "Name",
+        "parent": "Parent function",
+        "niveau": "Level",
+        "statut": "Status",
+        "actions": "Actions"
+    },
+    "detail": {
+        "code": "Code",
+        "niveau": "Level",
+        "fonctionParente": "Parent function",
+        "statut": "Status",
+        "majorationDefaut": "Default increment",
+        "ordre": "Order",
+        "description": "Description",
+        "parent": "Parent",
+        "sousFonctions": "Sub-functions"
+    },
+    "actions": {
+        "voir": "View details",
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    }
+}

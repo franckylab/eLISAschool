@@ -1,0 +1,67 @@
+{
+    "titre": "Établissements",
+    "sousTitre": "{{count}} établissement(s)",
+    "nouvelEtablissement": "Nouvel établissement",
+    "rechercher": "Rechercher un établissement...",
+    "modifierTitre": "Modifier l'établissement",
+    "supprimerTitre": "Supprimer l'établissement",
+    "supprimerMessage": "Êtes-vous sûr de vouloir supprimer l'établissement \"{{nom}}\" ?",
+    "supprimerConfirm": "Supprimer",
+    "annuler": "Annuler",
+    "enregistrement": "Enregistrement...",
+    "enregistrer": "Enregistrer",
+    "creer": "Créer",
+    "nomRequis": "Le nom est requis",
+    "villeRequise": "La ville est requise",
+    "emailInvalide": "Email invalide",
+    "colonnes": {
+        "etablissement": "Établissement",
+        "ville": "Ville",
+        "telephone": "Téléphone",
+        "type": "Type",
+        "systeme": "Système",
+        "statut": "Statut",
+        "actions": "Actions"
+    },
+    "types": {
+        "LAIC": "Laïc",
+        "CONFESSIONNEL_CATHOLIQUE": "Catholique",
+        "CONFESSIONNEL_PROTESTANT": "Protestant",
+        "CONFESSIONNEL_ISLAMIQUE": "Islamique",
+        "AUTRE": "Autre"
+    },
+    "sousSystemes": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone",
+        "BICULTUREL": "Biculturel"
+    },
+    "statuts": {
+        "ACTIF": "Actif",
+        "EN_ATTENTE_VALIDATION": "En attente",
+        "EN_ATTENTE_DESACTIVATION": "Désactivation",
+        "INACTIF": "Inactif"
+    },
+    "form": {
+        "nom": "Nom",
+        "code": "Code",
+        "slogan": "Slogan",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "type": "Type d'établissement",
+        "sousSysteme": "Sous-système",
+        "exempleNom": "Ex: Complexe Scolaire Les Brillants",
+        "exempleCode": "Ex: csl_brillants",
+        "exempleSlogan": "Ex: L'excellence éducative",
+        "exempleVille": "Ex: Douala",
+        "exempleTelephone": "+237 6XX XXX XXX",
+        "exempleEmail": "contact@etablissement.com",
+        "placeholderAdresse": "Adresse complète..."
+    },
+    "actions": {
+        "voir": "Voir détails",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    }
+}

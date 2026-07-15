@@ -37,6 +37,7 @@ export function useRapports(filtres?: FiltresRapports) {
         },
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -48,6 +49,7 @@ export function useRapport(id: string) {
             return response.data?.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -62,6 +64,7 @@ export function useTemplatesRapports() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -144,5 +147,6 @@ export function useStatistiquesRapports() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

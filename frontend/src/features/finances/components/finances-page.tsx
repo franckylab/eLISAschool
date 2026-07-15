@@ -22,7 +22,7 @@ export function FinancesPage() {
     const limit = 20;
     const [recherche, setRecherche] = useState('');
 
-    const { data, isLoading, error } = usePaiements({
+    const { data, isLoading, isFetching, error } = usePaiements({
         page,
         limit,
         recherche: recherche || undefined,
@@ -34,7 +34,7 @@ export function FinancesPage() {
         // Le refetch sera géré par react-query automatiquement
     };
 
-    if (isLoading) {
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des données financières..." />
@@ -205,7 +205,8 @@ export function FinancesPage() {
             <DataTable
                 columns={colonnes}
                 data={data?.items || []}
-                isLoading={false}
+                isLoading={isLoading}
+                isFetching={isFetching}
                 emptyMessage={t('aucuneDonnee')}
                 pagination={{
                     page,

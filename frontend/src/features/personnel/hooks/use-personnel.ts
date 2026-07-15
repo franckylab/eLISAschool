@@ -46,6 +46,7 @@ export function usePersonnel(filtres: PersonnelFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -57,6 +58,7 @@ export function useMembrePersonnel(id: string) {
             return response.data;
         },
         enabled: !!id,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -118,6 +120,7 @@ export function usePersonnelContrats(membreId: string) {
             return response.data || [];
         },
         enabled: !!membreId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -130,6 +133,7 @@ export function usePersonnelBulletins(membreId: string) {
             return response.data?.items ?? [];
         },
         enabled: !!membreId && isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 

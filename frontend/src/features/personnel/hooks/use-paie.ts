@@ -120,6 +120,7 @@ export function useElementsBulletin(bulletinId: string | null) {
             return (response as any).data || [];
         },
         enabled: !!bulletinId,
+        placeholderData: (previousData) => previousData,
     });
 }
 

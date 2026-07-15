@@ -42,5 +42,6 @@ export function useEleveResponsables(eleveId: string) {
         },
         enabled: !!eleveId && isAuthenticated,
         staleTime: 5 * 60 * 1000, // 5 min
+        placeholderData: (previousData) => previousData,
     });
 }

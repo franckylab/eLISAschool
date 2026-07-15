@@ -20,7 +20,23 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 - **Une seule page frontend** : `/personnel/*` avec onglets conditionnels selon `TypePersonnel.code` ; `/enseignants/*` redirige vers `/personnel/*`
 
 ## Key Decisions
-- `MembrePersonnel` ne duplique plus les champs de `ProfilUtilisateur` (nom, prenom, email, téléphone, adresse, dateNaissance, sexe supprimés)
+### CustomModal — Responsive Viewport Adaptation
+- **Ne JAMAIS hardcoder `size` fixe** — `CustomModal` downscale automatiquement via `effectiveSize` : `3xl`→`2xl`→`xl`→`lg`→`md`→`sm` selon `viewportWidth`. Utiliser `size` pour la taille *souhaitée*, le viewport décide de la taille *réelle*.
+- **Trois couches de sécurité** contre le débordement :
+  1. **`useModalWindow` `initialWidthAdapted`** (`vw < initialWidth`) → taille adaptée dès le premier render
+  2. **`useModalWindow` `handleResize`** écoute `window.resize` → réduit taille + reclamp position en direct
+  3. **`maxWidth`/`maxHeight`** dans le `style` inline (`calc(100vw - margin*2)`) → filet de sécurité CSS
+- **`change-role-modal.tsx`** = exemple à suivre : plus de viewport tracking manuel, simple `size="lg"` délégué à `CustomModal`
+- **Toute nouvelle modale** doit utiliser `CustomModal` (pas de modal ad-hoc) pour bénéficier automatiquement du responsive système
+- **Ne PAS ajouter de `useEffect`/`useState` de viewport** dans les modales consommatrices — c'est géré centralement dans `CustomModal` et `useModalWindow`
+- **`placeholderData: (prev) => prev`** requis sur TOUS les hooks `useQuery` avec `queryKey` dynamique (filtres/pagination) — empêche `isLoading` de passer à `true` lors des changements de filtre, évitant le démontage du DataTable
+- **Guards `isLoading`** doivent être conditionnels : `if (isLoading && !data)` au lieu de `if (isLoading)` — ne s'affiche qu'au premier chargement, pas lors des refetches
+- **Callback serveur différé** : `onSearchChange` n'est plus appelé immédiatement mais via `useEffect` sur `rechercheDebounce` (300ms) — réduit les appels API pendant la saisie
+- **Touche Escape** : efface la recherche — géré dans `SearchInput.tsx` et DataTable
+- **`SearchInput`** composant réutilisable (`@/components/ui/SearchInput`) avec debounce, clear button, Escape, icône Search, responsive — utilisé par DataTable, disponible pour tous les filtres
+- **Ne pas hardcoder `isLoading={false}`** sur DataTable — toujours passer `isLoading={isLoading}` pour permettre l'affichage du spinner interne
+
+### Typage du Personnel
 - `TypePoste` enum supprimé → remplacé par FK `Poste.typePersonnelId` → `TypePersonnel`
 - Page enseignant fusionnée dans page personnel (route `/enseignants/*` → redirect vers `/personnel/*`)
 - `Enseignant` type frontend = alias vide de `MembrePersonnel` (specialite/qualification déplacés dans la classe de base)
@@ -164,9 +180,20 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 - **Typecheck** : 0 nouvelle erreur sur les composants et fichiers migrés
 
 ### Pending
-- Appliquer dark mode aux pages restantes
-- Appliquer i18n aux pages restantes
 - Connecter vraies données EDT/Affectations
+
+### Phase 8l — Harmonisation 8 features (PageHeader + Card + InfoField + border-t) ✓
+- **Matières** : `StatMini` custom → `StatCard` design system ; `border-b` séparateurs après CardTitle ; PageSkeleton/ErrorMessage ; useConfirmation → ConfirmDialog
+- **Programmes** : motion.div custom → `StatCard` ; `border-b` séparateurs ; PageSkeleton/ErrorMessage ; useConfirmation → ConfirmDialog ; i18n colonnes DataTable
+- **Contrats** (`contrats-paie-page.tsx`) : PageHeader gradient `FileSignature` ajouté ; 6 sous-tabs wrappés dans `Card/CardHeader/CardTitle/border-b/CardContent`
+- **Élèves** : PageHeader gradient `Users` ; 5 cartes Informations → `Card/CardHeader/CardTitle/border-b/CardContent` avec `InfoField` ; tab Scolarité/Finances → CardSection ; page liste loading/error → PageSkeleton/ErrorMessage
+- **Périodes** : PageHeader gradient `CalendarRange` ; arbre visuel conservé ; 4 stat cards → `StatCard` ; tab contenu dl/dt/dd → `Card/InfoField` + border-b ; PageSkeleton/ErrorMessage
+- **EDT** : PageHeader gradient `Calendar` ; TabsBar + contenu natif conservé ; PageSkeleton/ErrorMessage
+- **Responsables-élèves** : PageHeader gradient `Users` + `StatCard` + DataTable motion.div + useConfirmation ; **nouvelle page détail** 2 tabs (Informations + Élèves liés) avec Card/InfoField
+- **Notes** : PageHeader gradient `ClipboardList` + filter bar + DataTable motion.div ; **nouvelle page détail** 2 tabs (Informations + Statistiques) avec Card/InfoField et StatCard distribution ; route layout refactor
+- **Nouvelles routes** : `/_auth/notes/$id`, `/_auth/responsables-eleves/$id`
+- **Locales** : clés ajoutées dans `notes.json`, `responsables-eleves.json`, `periodes.json`, `eleves.json`, `emplois.json` (fr + en)
+- **0 nouvelle erreur typecheck**
 
 ## Références
 | Fichier | Rôle |
@@ -222,6 +249,15 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 | `frontend/src/components/ui/StatPill.tsx` | StatPill + StatPillScrollable |
 | `frontend/src/components/ui/CardGrid.tsx` | Grille stagger + skeleton |
 | `frontend/src/components/ui/card-variants.ts` | Source unique tons CSS |
+| `frontend/src/hooks/useTabState.ts` | Hook tab URL-driven ou useState |
+| `frontend/src/components/ui/Tabs.tsx` | TabsBar + TabsContent + TabAccent |
+| `frontend/src/components/layout/PageHeader.tsx` | PageHeader gradient + simple |
+| `frontend/src/components/ui/InfoField.tsx` | label+valeur design system |
+| `frontend/src/components/ui/Skeleton.tsx` | PageSkeleton |
+| `frontend/src/components/ui/ErrorMessage.tsx` | ErrorMessage avec retry |
+| `frontend/src/components/modals/CustomModal.tsx` | Modal compound avec responsive size, drag, resize, minimiser |
+| `frontend/src/components/modals/ConfirmDialog.tsx` | Quick confirm/alert modal wrapper (3 variants) |
+| `frontend/src/hooks/use-modal-window.ts` | Window manager hook (position, size, resize listener + maxWidth CSS) |
 
 ### Phase 3 — Routes restructurées Organisation ✓
 - **Postes/Fonctions sous Organisation** — routes déplacées de `/_auth/postes*` et `/_auth/fonctions*` vers `/_auth/organisation/{postes, fonctions}*`

@@ -43,7 +43,7 @@ export function ElevesPage() {
         limit: 20,
     });
 
-    const { data, isLoading, error, refetch } = useEleves(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useEleves(filtres);
     const supprimerEleve = useSupprimerEleve();
     const exporterEleves = useExporterEleves();
     
@@ -207,8 +207,8 @@ export function ElevesPage() {
         },
     ];
 
-    // Affichage skeleton pendant le chargement
-    if (isLoading) {
+    // Affichage skeleton uniquement au premier chargement
+    if (isLoading && !data) {
         return (
             <div className="p-6">
                 <LoadingState message="Chargement des élèves..." />
@@ -289,6 +289,7 @@ export function ElevesPage() {
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
+                isFetching={isFetching}
                     searchPlaceholder={t('filtres.recherche')}
                     enableReordering
                 enablePinning

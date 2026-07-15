@@ -39,6 +39,7 @@ export function useMatieres(filtres: MatiereFiltres = {}) {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -75,6 +76,7 @@ export function useMatiereProgramme(matiereId: string) {
             }
         },
         enabled: isAuthenticated && !!matiereId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -93,6 +95,7 @@ export function useMatiereProgrammesPedagogiques(matiereId: string) {
             }
         },
         enabled: isAuthenticated && !!matiereId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -106,6 +109,7 @@ export function useTousMatieresNiveaux() {
         },
         enabled: isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -122,6 +126,7 @@ export function useMatiereAffectations(matiereId: string) {
             }
         },
         enabled: isAuthenticated && !!matiereId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -138,6 +143,7 @@ export function useMatiereConfigurations(matiereId: string) {
             }
         },
         enabled: isAuthenticated && !!matiereId,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -159,6 +165,7 @@ export function useConfigurationEffective(matiereId: string, classeAnneeId: stri
         },
         enabled: isAuthenticated && !!matiereId && !!classeAnneeId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -262,7 +269,7 @@ export function useSupprimerMatiere() {
 export function useAjouterMatiereNiveau() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: { matiereId: string; niveauId: string; coefficient?: number; bareme?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
+        mutationFn: async (dto: { matiereId: string; niveauId: string; coefficient?: number; bareme?: number; credits?: number; volumeHoraire?: number; obligatoire?: boolean; filiereId?: string }) => {
             const response = await apiClient.post<MatiereNiveau>('/api/matieres/programme', dto);
             return response.data;
         },
@@ -278,7 +285,7 @@ export function useAjouterMatiereNiveau() {
 export function useModifierMatiereNiveau() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (params: { id: string; matiereId: string; coefficient?: number; bareme?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
+        mutationFn: async (params: { id: string; matiereId: string; coefficient?: number; bareme?: number; credits?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
             const { id, matiereId, ...dto } = params;
             const response = await apiClient.patch<MatiereNiveau>(`/api/matieres/programme/${id}`, dto);
             return response.data;

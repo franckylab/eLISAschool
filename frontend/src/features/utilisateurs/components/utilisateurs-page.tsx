@@ -50,7 +50,7 @@ export function UtilisateursPage() {
     const [utilisateurToToggle, setUtilisateurToToggle] = useState<Utilisateur | null>(null);
     const [motifToggle, setMotifToggle] = useState('');
     
-    const { data, isLoading, error, refetch } = useUtilisateurs(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useUtilisateurs(filtres);
     const toggleStatut = useToggleStatutUtilisateur(etablissementId || '');
 
     const colonnes: Column<Utilisateur>[] = [
@@ -238,8 +238,8 @@ export function UtilisateursPage() {
         },
     ];
 
-    // Affichage skeleton pendant le chargement
-    if (isLoading) {
+    // Affichage skeleton au premier chargement uniquement
+    if (isLoading && !data) {
         return <PageSkeleton showStats showTable />;
     }
 
@@ -307,6 +307,7 @@ export function UtilisateursPage() {
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
+                isFetching={isFetching}
                 enableReordering
                 enablePinning
                 enableColumnVisibility

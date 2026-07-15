@@ -49,6 +49,7 @@ export function useNote(id: string) {
         },
         enabled: !!id && isAuthenticated,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -63,6 +64,7 @@ export function useStatistiquesNotes(periodeId: string) {
         },
         enabled: !!periodeId && isAuthenticated,
         staleTime: 10 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
