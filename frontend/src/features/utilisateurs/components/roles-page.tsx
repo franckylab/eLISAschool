@@ -9,16 +9,15 @@
  */
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
 import { 
     Plus, Shield, Users, Edit, Trash2, Lock, Unlock, 
-    CheckSquare, Eye, AlertTriangle,
-    UserCheck, Calendar, Mail, Phone
+    Eye,
 } from 'lucide-react';
-import { useRoles, useSupprimerRole, useStatsRoles, useUsersByRole } from '../hooks/use-roles-permissions';
+import { useRoles, useSupprimerRole, useStatsRoles } from '../hooks/use-roles-permissions';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { CustomModal } from '@/components/modals';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -28,14 +27,13 @@ import type { Role, RoleFiltres } from '../types/utilisateur.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function RolesPage() {
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<RoleFiltres>({ page: 1, limit: 50 });
     const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-    const [showPermissions, setShowPermissions] = useState(false);
     const [showFormModal, setShowFormModal] = useState(false);
     const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
-    const [filtreType, setFiltreType] = useState<'all' | 'systeme' | 'personnalise'>('all');
+    const [filtreType] = useState<'all' | 'systeme' | 'personnalise'>('all');
 
     const { data, isLoading, isFetching, error, refetch } = useRoles(filtres);
     const { data: statsApi } = useStatsRoles();
@@ -84,7 +82,7 @@ export function RolesPage() {
                     </div>
                     <div>
                             <div className="flex items-center gap-2">
-                                <p className="font-medium text-gray-900 dark:text-gray-200">{r.nom}</p>
+                                <p className="font-medium text-gray-900 dark:text-gray-200">{r.libelle}</p>
                             {r.estSysteme && (
                                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                                     <Lock className="h-3 w-3 mr-1" />
@@ -136,11 +134,8 @@ export function RolesPage() {
                 {
                     key: 'permissions',
                     icon: Eye,
-                    label: 'Permissions',
-                    onClick: () => {
-                        setSelectedRole(r);
-                        setShowPermissions(true);
-                    },
+                    label: 'Détail',
+                    onClick: () => navigate({ to: '/admin/roles/$id', params: { id: r.id } }),
                 },
                 {
                     key: 'modifier',
@@ -264,6 +259,7 @@ export function RolesPage() {
                 transition={{ delay: 0.2 }}
             >
                 <DataTable
+                    tableId="roles-list"
                     data={dataFiltree}
                     columns={colonnes}
                     isLoading={isLoading}
@@ -284,7 +280,7 @@ export function RolesPage() {
             <ConfirmationModal
                 isOpen={!!roleToDelete}
                 title="Supprimer ce rôle"
-                message={`Êtes-vous sûr de vouloir supprimer le rôle "${roleToDelete?.nom}" ?`}
+                message={`Êtes-vous sûr de vouloir supprimer le rôle "${roleToDelete?.libelle}" ?`}
                 details={`Ce rôle est actuellement attribué à ${roleToDelete?.nbUtilisateurs || 0} utilisateur(s). La suppression peut affecter leurs accès.`}
                 variant="danger"
                 onConfirm={async () => {
@@ -308,207 +304,6 @@ export function RolesPage() {
                 />
             )}
 
-            {/* Modal Permissions (à implémenter) */}
-            {showPermissions && selectedRole && (
-                <RolePermissionsModal
-                    role={selectedRole}
-                    onClose={() => {
-                        setShowPermissions(false);
-                        setSelectedRole(null);
-                    }}
-                />
-            )}
         </div>
-    );
-}
-
-// Modal de visualisation des permissions et utilisateurs d'un rôle
-function RolePermissionsModal({ role, onClose }: { role: Role; onClose: () => void }) {
-    const [ongletActif, setOngletActif] = useState<'permissions' | 'utilisateurs'>('permissions');
-    const { data: utilisateurs, isLoading: loadingUsers, error: usersError } = useUsersByRole(role.id);
-
-    // Gérer les deux formats: string[] ou Permission[]
-    const permissionsList = role.permissions.map(p => {
-        if (typeof p === 'string') {
-            return { code: p, libelle: p, module: p.split(':')[0] || 'inconnu' };
-        }
-        return { code: p.code, libelle: p.libelle, module: p.module || 'inconnu' };
-    });
-
-    const permissionsGroupedByModule = permissionsList.reduce((acc, perm) => {
-        const module = perm.module;
-        if (!acc[module]) acc[module] = [];
-        acc[module].push(perm);
-        return acc;
-    }, {} as Record<string, Array<{ code: string; libelle: string; module: string }>>);
-
-    const onglets = [
-        { id: 'permissions' as const, label: 'Permissions', icone: Shield, count: role.permissions.length },
-        { id: 'utilisateurs' as const, label: 'Utilisateurs', icone: Users, count: utilisateurs?.length || role.nbUtilisateurs || 0 },
-    ];
-
-    return (
-        <CustomModal
-            open={true}
-            onOpenChange={(v) => { if (!v) onClose(); }}
-            title={role.nom}
-            description={role.code}
-            size="3xl"
-            initialHeight={700}
-            footer={<ElisaButton variant="primary" onClick={onClose}>Fermer</ElisaButton>}
-        >
-            {/* Onglets */}
-            <div className="flex border-b border-[var(--color-bordure)] mb-4">
-                {onglets.map((onglet) => {
-                    const Icone = onglet.icone;
-                    return (
-                        <button
-                            key={onglet.id}
-                            onClick={() => setOngletActif(onglet.id)}
-                            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative ${
-                                ongletActif === onglet.id
-                                    ? 'text-[var(--color-dominante)] border-b-2 border-[var(--color-dominante)]'
-                                    : 'text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)] hover:bg-[var(--color-surface-hover)]'
-                            }`}
-                        >
-                            <Icone className="h-4 w-4" />
-                            {onglet.label}
-                            <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                                ongletActif === onglet.id
-                                    ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
-                                    : 'bg-[var(--color-surface-hover)] text-[var(--color-texte-secondaire)]'
-                            }`}>
-                                {onglet.count}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Contenu des onglets */}
-            <div className="overflow-y-auto">
-                <AnimatePresence mode="wait">
-                    {/* Onglet Permissions */}
-                    {ongletActif === 'permissions' && (
-                        <motion.div
-                            key="permissions"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-6"
-                        >
-                            {Object.keys(permissionsGroupedByModule).length === 0 ? (
-                                <div className="text-center py-12 text-[var(--color-texte-secondaire)]">
-                                    <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                                    <p>Aucune permission attribuée</p>
-                                </div>
-                            ) : (
-                                Object.entries(permissionsGroupedByModule).map(([module, perms]) => (
-                                    <div key={module} className="space-y-3">
-                                        <h3 className="text-lg font-semibold text-[var(--color-texte)] capitalize flex items-center gap-2">
-                                            <Shield className="h-4 w-4 text-[var(--color-dominante)]" />
-                                            {module.replace(/[-_]/g, ' ')}
-                                            <span className="text-sm font-normal text-[var(--color-texte-secondaire)]">
-                                                ({perms.length} permission{perms.length > 1 ? 's' : ''})
-                                            </span>
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {perms.map((perm) => (
-                                                <div key={perm.code} className="flex items-start gap-2 p-3 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-bordure)]">
-                                                    <CheckSquare className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-medium text-[var(--color-texte)]">{perm.libelle}</p>
-                                                        <code className="text-xs text-[var(--color-texte-secondaire)] bg-[var(--color-fond)] px-1.5 py-0.5 rounded mt-1 inline-block">
-                                                            {perm.code}
-                                                        </code>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </motion.div>
-                    )}
-
-                    {/* Onglet Utilisateurs */}
-                    {ongletActif === 'utilisateurs' && (
-                        <motion.div
-                            key="utilisateurs"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {loadingUsers ? (
-                                <div className="space-y-3">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="animate-pulse h-16 bg-[var(--color-surface-hover)] rounded-lg" />
-                                    ))}
-                                </div>
-                            ) : usersError ? (
-                                <div className="text-center py-12 text-red-600">
-                                    <AlertTriangle className="h-12 w-12 mx-auto mb-3" />
-                                    <p>Erreur de chargement des utilisateurs</p>
-                                    <p className="text-sm text-[var(--color-texte-secondaire)] mt-2">{usersError.message}</p>
-                                </div>
-                            ) : !utilisateurs || utilisateurs.length === 0 ? (
-                                <div className="text-center py-12 text-[var(--color-texte-secondaire)]">
-                                    <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                                    <p>Aucun utilisateur avec ce rôle</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {utilisateurs.map((user) => (
-                                        <div key={user.id} className="flex items-center gap-4 p-4 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-bordure)] hover:bg-[var(--color-fond)] transition-colors">
-                                            <div className="flex-shrink-0">
-                                                <div className="h-12 w-12 rounded-full bg-[var(--color-dominante)]/10 flex items-center justify-center">
-                                                    <UserCheck className="h-6 w-6 text-[var(--color-dominante)]" />
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-[var(--color-texte)]">
-                                                    {user.prenom} {user.nom}
-                                                </p>
-                                                <div className="flex items-center gap-4 mt-1">
-                                                    <span className="flex items-center gap-1 text-xs text-[var(--color-texte-secondaire)]">
-                                                        <Mail className="h-3 w-3" />
-                                                        {user.email}
-                                                    </span>
-                                                    {user.telephone && (
-                                                        <span className="flex items-center gap-1 text-xs text-[var(--color-texte-secondaire)]">
-                                                            <Phone className="h-3 w-3" />
-                                                            {user.telephone}
-                                                        </span>
-                                                    )}
-                                                    {(user as any).derniereConnexion && (
-                                                        <span className="flex items-center gap-1 text-xs text-[var(--color-texte-secondaire)]">
-                                                            <Calendar className="h-3 w-3" />
-                                                            {new Date((user as any).derniereConnexion).toLocaleDateString('fr-FR')}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex-shrink-0">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    user.statut === 'ACTIF'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : user.statut === 'SUSPENDU'
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-texte-secondaire)]'
-                                                }`}>
-                                                    {user.statut === 'ACTIF' ? 'Actif' : user.statut === 'SUSPENDU' ? 'Suspendu' : user.statut || 'Inactif'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </CustomModal>
     );
 }

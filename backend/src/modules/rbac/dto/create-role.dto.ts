@@ -27,7 +27,7 @@ export const createRoleSchema = z.object({
  * Schéma d'assignation de permissions à un rôle
  */
 export const assignPermissionsToRoleSchema = z.object({
-    permissionIds: z.array(z.string().uuid()).min(1, 'Au moins une permission est requise'),
+    permissionIds: z.array(z.string().uuid()),
 });
 
 /**
@@ -50,15 +50,40 @@ export const assignPermissionToUserSchema = z.object({
     motif: z.string().optional(),
 });
 
+/**
+ * Schéma de batch permissions pour un utilisateur
+ * Chaque entrée peut être GRANTED, DENIED, ou null pour retrait
+ */
+export const batchPermissionsSchema = z.object({
+    permissions: z.array(z.object({
+        permissionId: z.string().uuid('ID de la permission invalide'),
+        type: z.enum(['GRANTED', 'DENIED']).nullable(),
+    })).min(1, 'Au moins une permission est requise'),
+});
+
+/**
+ * Schéma de batch permissions pour un rôle
+ * addedPermissionIds : permissions à ajouter
+ * removedPermissionIds : permissions à retirer
+ */
+export const batchRolePermissionsSchema = z.object({
+    addedPermissionIds: z.array(z.string().uuid()),
+    removedPermissionIds: z.array(z.string().uuid()),
+});
+
 // Types inférés
 export type CreateRoleDto = z.infer<typeof createRoleSchema>;
 export type AssignPermissionsToRoleDto = z.infer<typeof assignPermissionsToRoleSchema>;
 export type AssignRoleToUserDto = z.infer<typeof assignRoleToUserSchema>;
 export type AssignPermissionToUserDto = z.infer<typeof assignPermissionToUserSchema>;
+export type BatchPermissionsDto = z.infer<typeof batchPermissionsSchema>;
+export type BatchRolePermissionsDto = z.infer<typeof batchRolePermissionsSchema>;
 
 export default {
     createRoleSchema,
     assignPermissionsToRoleSchema,
     assignRoleToUserSchema,
     assignPermissionToUserSchema,
+    batchPermissionsSchema,
+    batchRolePermissionsSchema,
 };

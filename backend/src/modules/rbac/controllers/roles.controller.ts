@@ -10,9 +10,9 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { rolesService } from '../services/roles.service';
-import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
-import { createRoleSchema, assignPermissionsToRoleSchema } from '../dto/create-role.dto';
+import { createRoleSchema, assignPermissionsToRoleSchema, batchRolePermissionsSchema } from '../dto/create-role.dto';
 import { successResponse } from '@common/utils/api-response.util';
 import { Role as RoleEntity } from '@modules/auth/entities';
 
@@ -148,6 +148,38 @@ router.get('/roles/:id/permissions', requirePermission('roles:manage'), async (r
         const permissions = await rolesService.getRolePermissions(req.params.id);
 
         successResponse(res, permissions, 'Permissions du rôle récupérées avec succès');
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * @route   GET /api/rbac/roles/:id/permissions/detail
+ * @desc    Récupérer toutes les permissions avec leur statut d'assignation pour un rôle
+ * @access  ADMIN
+ */
+router.get('/roles/:id/permissions/detail', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const permissions = await rolesService.getRolePermissionsDetail(req.params.id);
+
+        successResponse(res, permissions, 'Détail des permissions du rôle récupéré avec succès');
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * @route   PUT /api/rbac/roles/:id/permissions/batch
+ * @desc    Mettre à jour les permissions d'un rôle (delta add/remove)
+ * @access  ADMIN
+ */
+router.put('/roles/:id/permissions/batch', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(batchRolePermissionsSchema, req.body);
+
+        const role = await rolesService.batchAssignRolePermissions(req.params.id, dto, req.utilisateur?.id);
+
+        successResponse(res, role, 'Permissions du rôle mises à jour avec succès');
     } catch (error) {
         next(error);
     }

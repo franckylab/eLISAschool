@@ -16,7 +16,7 @@ import {
 import { ChangeRoleModal } from './change-role-modal';
 import { InfoProfilModal } from './info-profil-modal';
 import { TabInformations } from './tab-informations';
-import { TabRolesPermissions } from './tab-roles-permissions';
+import { UserPermissionsTab } from './user-permissions-tab';
 import { TabActivite } from './tab-activite';
 import { TabSecurite } from './tab-securite';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -212,7 +212,7 @@ export function UtilisateurDetailPage() {
 
             <TabsContent activeTab={ongletActif}>
                 {ongletActif === 'informations' && <TabInformations utilisateur={utilisateur} />}
-                {ongletActif === 'roles-permissions' && <TabRolesPermissions utilisateur={utilisateur} />}
+                {ongletActif === 'roles-permissions' && <UserPermissionsTab utilisateur={utilisateur} />}
                 {ongletActif === 'activite' && <TabActivite utilisateur={utilisateur} />}
                 {ongletActif === 'securite' && (
                     <TabSecurite

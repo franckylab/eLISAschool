@@ -12,7 +12,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { userRolesService } from '../services/user-roles.service';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
-import { assignRoleToUserSchema, assignPermissionToUserSchema } from '../dto/create-role.dto';
+import { assignRoleToUserSchema, assignPermissionToUserSchema, batchPermissionsSchema } from '../dto/create-role.dto';
 import { successResponse } from '@common/utils/api-response.util';
 import { permissionResolverService } from '@modules/auth/services';
 
@@ -104,6 +104,41 @@ router.get('/users/:userId/permissions/effective', requirePermission('roles:mana
     try {
         const permissions = await userRolesService.getEffectivePermissions(req.params.userId);
         successResponse(res, permissions, 'Permissions effectives récupérées avec succès');
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * @route   GET /api/rbac/users/:userId/permissions/effective/detail
+ * @desc    Récupérer les permissions effectives avec source (rôle/granted/denied)
+ * @access  ADMIN
+ */
+router.get('/users/:userId/permissions/effective/detail', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const permissions = await userRolesService.getEffectivePermissionsDetail(req.params.userId);
+        successResponse(res, permissions, 'Permissions effectives (détaillées) récupérées avec succès');
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * @route   PUT /api/rbac/users/:userId/permissions/batch
+ * @desc    Assigner/retirer des permissions en batch
+ * @access  ADMIN
+ */
+router.put('/users/:userId/permissions/batch', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(batchPermissionsSchema, req.body);
+
+        await userRolesService.batchAssignPermissions(
+            req.params.userId,
+            dto.permissions,
+            req.utilisateur?.id
+        );
+
+        successResponse(res, null, 'Permissions mises à jour avec succès');
     } catch (error) {
         next(error);
     }

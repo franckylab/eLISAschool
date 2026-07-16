@@ -223,7 +223,7 @@ export function UtilisateurFormModal({
                             value={formData.role}
                             onValueChange={(value) => handleChange('role', value)}
                             placeholder="Sélectionner un rôle"
-                            options={roles?.map((role) => ({ value: role.code, label: role.nom })) ?? []}
+                            options={roles?.map((role) => ({ value: role.code, label: role.libelle })) ?? []}
                             error={erreurs.role}
                             required
                         />

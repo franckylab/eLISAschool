@@ -1,7 +1,7 @@
 # eLISAschool — Session Context
 
 ## Objective
-Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Connecter vraies données EDT/Affectations.
+Phase 8s : Refactor permissions (simplification 4→3 états). Connecter vraies données EDT/Affectations.
 
 ## Constraints & Preferences
 - Système multi-tenant avec etablissementId sur toutes les entités
@@ -35,6 +35,30 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 - **Touche Escape** : efface la recherche — géré dans `SearchInput.tsx` et DataTable
 - **`SearchInput`** composant réutilisable (`@/components/ui/SearchInput`) avec debounce, clear button, Escape, icône Search, responsive — utilisé par DataTable, disponible pour tous les filtres
 - **Ne pas hardcoder `isLoading={false}`** sur DataTable — toujours passer `isLoading={isLoading}` pour permettre l'affichage du spinner interne
+
+### UserPermissionsTab — Permissions utilisateur avec source filter
+- **`UserPermissionsTab`** remplace `TabRolesPermissions` : arbre par module (expand/collapse), badges source (Rôle/Active/Refusée/Neutre), 3-state checkbox en modal
+- **Source filter** : 5 pills (`Toutes | Autorisée | Refusée | Rôle | Neutre`) avec comptes, combinable avec la recherche textuelle et le filtre module
+- **Backend `getEffectivePermissionsDetail`** retourne TOUTES les permissions actives avec `source: 'role' | 'granted' | 'denied' | 'none'` (plus de filtre excluant les neutres)
+- **Batch endpoint** `PUT /api/rbac/users/:userId/permissions/batch` — transaction unique pour upsert/delete bulk
+- **Clear filters** : bouton qui réinitialise recherche + module + source, visible seulement quand un filtre est actif
+- **Empty state contextuel** : message différent selon qu'il y a des filtres actifs (`aucunResultat` + suggestion + clear) ou non (`aucunePermissionTrouvee`)
+- **`StatCard`** utilise la prop `color` (backward-compat mappée vers `CardTone`) — ne PAS utiliser `tone` avec les noms de couleurs simples
+- **`PermissionCheckbox`** 3 états (GRANTED/DENIED/null) avec cycle au clic : `null → GRANTED → DENIED → null`
+- **Nomenclature source** : `granted` → affiché "Ajoutée" (FR) / "Added" (EN) (remplace "Active"/"Granted"). Icône `PlusCircle` au lieu de `CheckCircle`. Concept : permissions explicitement ajoutées au-delà du rôle, pas "directes"
+- **Row tinting** : chaque ligne de permission a un fond teinté selon sa source :
+  - `granted`/`GRANTED` → bleu doux `bg-blue-50/40` (FR) / `Added` (EN) — mise en évidence des surcharges positives
+  - `denied`/`DENIED` → rouge doux `bg-red-50/40` — mise en évidence des refus
+  - `role`/`none` → fond neutre (par défaut)
+  - Ce tinting s'applique aussi dans la modale d'édition, basé sur `editState` courant
+- **Icônes source** : `PlusCircle` pour granted (ajoutée), `Ban` pour denied (bloquée), `Lock` pour rôle, cercle en pointillés pour neutre
+- **Reset to role** : bouton `Réinitialiser aux permissions du rôle` dans le pied du modal, visible quand `editState.size > 0`. Confirmation inline (remplace le texte de statut + boutons) avec comptes granted/denied. `handleResetToRole` vide la map `editState` → toutes les permissions directes sont marquées pour suppression au prochain save
+- **Permissions groups collapsed by default** : `openModal` initialise `expandedModules = new Set()` (plus de `new Set(modules)`), et `expandedModules` commence vide sur la page. L'auto-expand sur recherche/filtre reste actif via `isExpanded = expandedModules.has(...) || !!search || ...`
+- **Expand/Collapse All** : bouton dans l'en-tête du bloc filtres (vue principale) + dans le header sticky de la modale. Logique : si tous les modules filtrés sont expand → collapse tous, sinon expand tous. `allModulesExpanded` computed avec `filteredModules.every(...)`, `toggleAllModules` bascule tout le set. Même pattern avec `allModalModulesExpanded` / `toggleAllModalModules` pour la modale. Clés i18n : `toutDeplier`, `toutReplier`
+- **Filter bar collapsible** : l'en-tête du bloc filtres est un toggle `showFilters` qui affiche/masque les pills source + module + clear. Icône ChevronDown pivotée `-rotate-90` quand replié. Badge point dominant quand `hasActiveFilters` est vrai
+- **Modal sticky header** : le contenu modal est `flex flex-col max-h-[65vh]` avec :
+  1. Header `flex-shrink-0` (search + module filter pills + expand/collapse all) — `border-b` le sépare du tree, pas de scroll
+  2. Tree `flex-1 overflow-y-auto` — scrollable indépendant, le header ne bouge pas pendant le défilement
 
 ### Typage du Personnel
 - `TypePoste` enum supprimé → remplacé par FK `Poste.typePersonnelId` → `TypePersonnel`
@@ -166,7 +190,17 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 - **Single Source of Truth** — `ProfilUtilisateur` = données perso (nom, prénom, téléphone, dateNaissance, genre) ; `MembrePersonnel` = données pro (matricule, diplomes, specialitePrincipale, posteExact, dateEmbauche, specialites[], departement, service) ; `Utilisateur` = identité système (email, role, statut, 2FA, langue)
 - **Backward compat** — ContratPersonnel et Poste entity inchangés (`typeContrat`, `poste` relation gardés)
 
-### Phase 7e — Refactor Design System (Card, StatCard, KpiCard, StatPill, CardGrid) ✓
+### Phase 8r — Page Détail Rôle /admin/roles/$id + Permissions Tab ✓
+- **Backend** — 2 nouveaux endpoints : `GET /roles/:id/permissions/detail` (permissions avec source 'role'|'none'), `PUT /roles/:id/permissions/batch` (delta add/remove). Fix `assignPermissionsToRoleSchema` (`min(0)` au lieu de `min(1)`).
+- **Route restructurée** : `_auth.admin.roles.tsx` devient layout avec `<Outlet/>` + `Breadcrumbs` ; `_auth.admin.roles.index.tsx` = liste ; `_auth.admin.roles.$id.tsx` = détail.
+- **`RoleDetailPage`** : PageHeader gradient (Shield icon, badges système/personnalisé, stats permissions/utilisateurs), TabsBar 2 onglets (Permissions + Utilisateurs). Bouton "Modifier le rôle" visible si `!estSysteme && hasPermission('roles:edit')`.
+- **`RolePermissionsTab`** : adapté du `UserPermissionsTab` — 3 StatCards, searchBar, filter bars collapsible (source + module), ModuleTree read-only, bouton "Modifier les permissions" → ouvre `CustomModal` avec ModuleEditRow. **Cycle du PermissionCheckbox : `null → GRANTED → null`** (skip DENIED pour les rôles). Sauvegarde via `PUT /roles/:id/permissions/batch` avec addedIds/removedIds.
+- **`RoleUsersTab`** : 4 StatCards (total/actifs/inactifs/suspendus), search, grille de cards utilisateurs cliquables → navigue vers `/utilisateurs/$id`.
+- **Shared permission components** : `SourceIcon`, `FilterBars`, `ModuleTree`, `ModuleEditRow`, `PermissionFilterPanel` dans `permission-utils.tsx`. `PermissionFilterPanel` encapsule la barre de recherche + pills source + pills module dans un panneau collapsible unique — utilisé par les deux tabs. La recherche est à l'intérieur du panneau (masquée quand replié).
+- **Hooks** : `useRolePermissionsDetail(roleId)`, `useBatchRolePermissions()` ajoutés.
+- **Types** : `RolePermissionAvecStatut`, `BatchRolePermissionsDto` ajoutés.
+
+## Phase 7e — Refactor Design System (Card, StatCard, KpiCard, StatPill, CardGrid) ✓
 - **Grill-me décisions** : CSS variables et tons sémantiques (dominant/accent/success/danger/warning/info/muted/purple/orange) adoptés ; backward compat `StatCard.color` → `tone` ; eLISAschool-first naming
 - **`globals.css`** : `@custom-variant dark (&:where([data-theme="dark"] *))` aligne `dark:` avec `data-theme` ; `--color-card`/`--color-card-foreground` ; toutes les couleurs enregistrées dans `@theme` pour modificateurs d'opacité (`/10`, `/20`)
 - **`Card` compound** : Card/CardHeader/CardTitle/CardDescription/CardContent/CardFooter — fond quadrillé subtil + fade-in framer-motion
@@ -178,6 +212,15 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 - **`Skeleton.tsx`** : `StatsCardSkeleton` aligné avec classes CSS variables (`bg-card border-border`)
 - **Fichiers migrés (29)** : tab-roles-permissions, tab-postes, tab-fonctions, organisation-page, analytics-page, hero-header (x2), +22 pages feature (absences, examens, evenements, documents, bibliotheque, parking, stage, courriers, atelier, laboratoire, discipline, conges, inventaire, archives, finances, securite, maintenance, pointages, evaluations, sante, rapports, tab-heure-cours, admin-permissions-matrix) — remplacement inline gradient cards → StatCard + CardGrid
 - **Typecheck** : 0 nouvelle erreur sur les composants et fichiers migrés
+
+### Phase 8rbac — Fix permission resolution + changeRole (RBAC v3 alignement) ✓
+- **Bug 1 : permissions toujours 0** — `resolvePermissions` retournait un set vide quand `etablissementId` manquait (aucun fallback). Fixé en intégrant un fallback direct dans `permission-resolver.service.ts:124-140` : quand `etablissementId` est absent, chercher le premier `UtilisateurEtablissement` actif de l'utilisateur et utiliser son `etablissementId` + `role` pour résoudre les permissions.
+- **Bug 2 : changeRole ne persistait pas** — `changeRole` mettait à jour `UtilisateurEtablissement.roleId` (correct) mais `formatUtilisateurResponse` retournait `utilisateur.role` (colonne enum legacy), pas le nouveau rôle. Trois corrections :
+  - `formatUtilisateurResponse` ligne 879 : `role: roleEtablissement || utilisateur.role` → priorise le rôle UE
+  - `findOne` lignes 283-294 : charge l'UE avec sa relation `role` et passe son code en `roleEtablissement` + l'utilise pour `computeEffectivePermissions`
+  - `changeRole` lignes 566-575 : recharge l'UE après sauvegarde et passe le code rôle dans la réponse
+- **Règle de résolution RBAC v3** : toujours résoudre le rôle via `UtilisateurEtablissement.roleId` (FK → `Role.code`) ; le champ legacy `Utilisateur.role` (enum) n'est mis à jour que si le code correspond à une valeur de l'enum (`Object.values(Role)`). Pour les rôles customs, seul l'UE est mis à jour.
+- **Fichiers modifiés** : `permission-resolver.service.ts` (fallback UE), `utilisateurs.service.ts` (findOne + changeRole + formatUtilisateurResponse)
 
 ### Pending
 - Connecter vraies données EDT/Affectations
@@ -258,6 +301,24 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 | `frontend/src/components/modals/CustomModal.tsx` | Modal compound avec responsive size, drag, resize, minimiser |
 | `frontend/src/components/modals/ConfirmDialog.tsx` | Quick confirm/alert modal wrapper (3 variants) |
 | `frontend/src/hooks/use-modal-window.ts` | Window manager hook (position, size, resize listener + maxWidth CSS) |
+| `frontend/src/features/utilisateurs/components/permission-utils.tsx` | Shared permission components (SourceIcon, FilterBars, ModuleTree, ModuleEditRow) |
+| `frontend/src/features/utilisateurs/components/role-detail-page.tsx` | Page détail rôle (PageHeader gradient + TabsBar + 2 onglets) |
+| `frontend/src/features/utilisateurs/components/role-permissions-tab.tsx` | Tab permissions rôle (read-only tree + edit modal, cycle null→GRANTED→null) |
+| `frontend/src/features/utilisateurs/components/role-users-tab.tsx` | Tab utilisateurs rôle (stats + cards cliquables) |
+| `frontend/src/features/utilisateurs/hooks/use-roles-permissions.ts` | + useRolePermissionsDetail, useBatchRolePermissions |
+| `frontend/src/features/utilisateurs/types/utilisateur.types.ts` | + RolePermissionAvecStatut, BatchRolePermissionsDto |
+| `backend/src/modules/rbac/services/roles.service.ts` | + getRolePermissionsDetail, batchAssignRolePermissions |
+| `backend/src/modules/rbac/controllers/roles.controller.ts` | + GET /:id/permissions/detail, PUT /:id/permissions/batch |
+| `backend/src/modules/rbac/dto/create-role.dto.ts` | Fix min(0), + batchRolePermissionsSchema |
+
+### Phase 8s — Refactor permissions (simplification 4→3 états) ✓
+- **Modèle simplifié** : fusion `role`+`granted` = `autorisee`. Les 4 sources API conservées en backend, mappées côté frontend via `getStatut()`.
+- **`permission-utils.tsx`** : nouveau helper `getStatut()`, `sourceDansCategorie()`, `PermissionStatut` type. `SOURCES` passe de 5 à 4 pills (`toutes`/`autorisee`/`refusee`/`surchargees`). `getInitialState` mappe toutes les permissions (plus seulement les overrides).
+- **ModuleTree** : checkbox statique (Check/Minus/vide) + icône discrète `SourceIcon` au lieu de `SourceBadge`. Fond teinté conservé.
+- **ModuleEditRow** : toggle 2 états (`GRANTED↔DENIED` pour utilisateurs, `GRANTED↔null` pour rôles). Supporte `null` dans `editState`.
+- **UserPermissionsTab** : 3 StatCards (Total/Autorisée avec tooltip rôle/surcharge/Refusée). `sourceCounts` 4 catégories. `togglePermission` 2-state. `handleSave` delta par comparaison `initialEditState`/`editState` + source originale.
+- **RolePermissionsTab** : adapter au même modèle (3 StatCards, 4 sourceCounts, sourceDansCategorie). Cycle `GRANTED↔null` conservé.
+- **Locales** : `filtreAutorisee`→"Autorisées" (FR)/"Authorized" (EN). Ajout `filtreSurchargees`, `statAutorisee`, `statAutoriseeTooltip`. Retiré `filtreNeutre`, `filtreRole`, `sourceRole`, `sourceGranted`.
 
 ### Phase 3 — Routes restructurées Organisation ✓
 - **Postes/Fonctions sous Organisation** — routes déplacées de `/_auth/postes*` et `/_auth/fonctions*` vers `/_auth/organisation/{postes, fonctions}*`
@@ -278,6 +339,37 @@ Phase 8 : Appliquer dark mode + i18n aux pages feature restantes (~30 pages). Co
 /_auth/organisation/fonctions/  — FonctionsPage
 /_auth/organisation/fonctions/$id — FonctionDetailPage
 /_auth/organisation/nomenclatures — NomenclaturesPage
+/_auth/admin/roles              — layout (breadcrumb + back)
+/_auth/admin/roles/             — RolesPage (list)
+/_auth/admin/roles/$id          — RoleDetailPage (Permissions + Utilisateurs tabs)
 ```
+
+## RBAC Permission Resolution Model
+
+### Deux couches indépendantes
+1. **Permissions de rôle** (`Role.permissions` M2M directe) — gérées sur le rôle lui-même, visible via `getRolePermissionsDetail` qui retourne `source: 'role' | 'none'`. L'héritage `parentId` existe en backend mais n'est PAS résolu dans `getRolePermissionsDetail` (by design : la vue d'édition ne montre que les permissions directes du rôle).
+2. **Permissions utilisateur** — résolues via `permissionResolverService` qui combine : rôle + héritage (`parentId`) + overrides `UtilisateurPermission` (GRANTED/DENIED). `getEffectivePermissionsDetail` retourne `source: 'role' | 'granted' | 'denied' | 'none'`.
+
+### Endpoints API
+- `GET /roles/:id/permissions/detail` → `PermissionAvecSource[]` (directes seulement, `role`/`none`)
+- `PUT /roles/:id/permissions/batch` → delta `addedPermissionIds`/`removedPermissionIds`
+- `GET /users/:userId/permissions/effective/detail` → `PermissionAvecSource[]` (résolues avec héritage + overrides, `role`/`granted`/`denied`/`none`)
+- `PUT /users/:userId/permissions/batch` → delta `{ permissionId, type: GRANTED|DENIED|null }[]`
+
+### Modèle simplifié (Phase 8s)
+- **Fusion rôle + granted = autorisée** : plus de distinction affichée entre une permission héritée du rôle et une surcharge GRANTED. Les 4 sources API (`role`/`granted`/`denied`/`none`) sont conservées en backend mais le frontend les mappe via `getStatut()` → `'autorisee' | 'refusee'` (plus de `non_definie`).
+- **`none` = `refusee`** : toute permission absente (ni dans le rôle, ni surchargée) est considérée comme refusée. Visuellement et statistiquement traitée comme `denied`.
+- **3 StatCards** : Total | Autorisée (avec breakdown rôle/surcharge en subtitle) | Refusée (denied + none)
+- **4 pills de filtre** : Toutes | Autorisée | Refusée (denied+none) | Surchargées (granted+denied)
+- **`SourceBadge` supprimé** — remplacé par checkbox (vert/rouge) + icône discrète (`Lock` pour rôle, `PlusCircle` pour surcharge, `Ban` pour refus). Plus de 3e état vide.
+- **`filtreNeutre`, `filtreRole`, `sourceRole`, `sourceGranted`** retirés des locales
+
+### Cycles PermissionCheckbox — Utilisateurs (Phase 8s simplifié)
+- **Utilisateurs** : `GRANTED ↔ DENIED` (2 états, plus de null). Toggle binaire dans la modale. `getInitialState` mappe TOUTES les permissions : `role`/`granted` → `GRANTED`, `denied`/`none` → `DENIED`.
+- **Roles** : `null → GRANTED → null` (inchangé, pas de DENIED pour les rôles). `getInitialState` mappe seulement `role` → `GRANTED` (les `none` ne sont pas dans la map).
+
+### Règles de sauvegarde (handleSave) — Phase 8s
+- **Utilisateur** : compare `initialEditState` (toutes les permissions) vs `editState` courant. Pour chaque permission : si absente d'`editState` ET avait une surcharge → `type: null`. Si présente ET différente de l'initiale → `type: GRANTED|DENIED`. Pas d'entrée si inchangée.
+- **Role** : inchangé (delta `addedIds`/`removedIds`).
 
 

@@ -29,6 +29,19 @@ import { permissionResolverService } from '@modules/auth/services/permission-res
 import { Role as RoleEnum } from '@shared/enums/roles.enum';
 
 /**
+ * Permission avec source (rôle, GRANTED, DENIED)
+ */
+export interface PermissionAvecSource {
+    permissionId: string;
+    code: string;
+    libelle: string;
+    module: string;
+    action: string;
+    source: 'role' | 'granted' | 'denied' | 'none';
+    utilisateurPermissionId?: string;
+}
+
+/**
  * Service de gestion des rôles et permissions des utilisateurs
  * RBAC v3.0 — Multi-Tenant Strict : rôles via utilisateur_etablissements uniquement
  */
@@ -265,6 +278,123 @@ export class UserRolesService {
     async getEffectivePermissions(utilisateurId: string, etablissementId?: string): Promise<string[]> {
         const permissions = await permissionResolverService.resolvePermissions(utilisateurId, etablissementId);
         return Array.from(permissions);
+    }
+
+    /**
+     * Récupérer les permissions effectives avec source (rôle, GRANTED, DENIED)
+     */
+    async getEffectivePermissionsDetail(utilisateurId: string, etablissementId?: string): Promise<PermissionAvecSource[]> {
+        // Fallback : si aucun établissement fourni, chercher le premier établissement actif de l'utilisateur
+        if (!etablissementId) {
+            const userEtab = await this.utilisateurEtablissementRepo.findOne({
+                where: { utilisateurId, actif: true },
+            });
+            etablissementId = userEtab?.etablissementId;
+        }
+
+        const effectiveSet = await permissionResolverService.resolvePermissions(utilisateurId, etablissementId);
+        const directPermissions = await this.utilisateurPermissionRepo.find({
+            where: { utilisateurId },
+            relations: ['permission'],
+        });
+
+        // Index des permissions directes par permissionId
+        const directMap = new Map<string, UtilisateurPermission>();
+        for (const dp of directPermissions) {
+            directMap.set(dp.permissionId, dp);
+        }
+
+        // Charger toutes les permissions actives depuis le cache global
+        const allPermissions = permissionResolverService.getAllPermissions();
+        const allPerms = allPermissions.length > 0
+            ? allPermissions
+            : await this.permissionRepo.find({ where: { actif: true } });
+
+        return allPerms.map(p => {
+            const direct = directMap.get(p.id);
+            let source: 'role' | 'granted' | 'denied' | 'none';
+
+            if (direct) {
+                source = direct.type === TypePermission.GRANTED ? 'granted' : 'denied';
+            } else if (effectiveSet.has(p.code)) {
+                source = 'role';
+            } else {
+                source = 'none';
+            }
+
+            return {
+                permissionId: p.id,
+                code: p.code,
+                libelle: p.libelle,
+                module: p.module,
+                action: p.action,
+                source,
+                utilisateurPermissionId: direct?.id || undefined,
+            };
+        });
+    }
+
+    /**
+     * Assigner des permissions en batch à un utilisateur
+     */
+    async batchAssignPermissions(
+        utilisateurId: string,
+        permissions: Array<{ permissionId: string; type: 'GRANTED' | 'DENIED' | null }>,
+        assignedBy?: string,
+    ): Promise<void> {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id: utilisateurId } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const repo = queryRunner.manager.getRepository(UtilisateurPermission);
+
+            for (const perm of permissions) {
+                const existing = await repo.findOne({
+                    where: { utilisateurId, permissionId: perm.permissionId },
+                });
+
+                if (perm.type === null) {
+                    // Retirer la permission
+                    if (existing) {
+                        await repo.remove(existing);
+                    }
+                } else {
+                    if (existing) {
+                        // Mettre à jour le type
+                        existing.type = perm.type as TypePermission;
+                        existing.attribuePar = assignedBy;
+                        await repo.save(existing);
+                    } else {
+                        // Créer
+                        const newPerm = repo.create({
+                            utilisateurId,
+                            permissionId: perm.permissionId,
+                            type: perm.type as TypePermission,
+                            attribuePar: assignedBy,
+                        });
+                        await repo.save(newPerm);
+                    }
+                }
+            }
+
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+
+        // Invalider le cache une seule fois pour tous les changements
+        await permissionResolverService.invalidateCache(utilisateurId);
+
+        logger.info(`Permissions batch mises à jour pour l'utilisateur ${utilisateur.email} (${permissions.length} changements)`);
     }
 
     /**

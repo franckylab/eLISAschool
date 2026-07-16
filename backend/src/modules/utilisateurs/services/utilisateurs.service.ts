@@ -9,7 +9,7 @@
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurPermission, TypePermission, Permission as PermissionEntity, Role as RoleEntity } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurPermission, TypePermission, Permission as PermissionEntity, Role as RoleEntity, UtilisateurEtablissement, AuditSeverity } from '@modules/auth/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Role } from '@shared/enums/roles.enum';
 import {
@@ -49,6 +49,7 @@ export class UtilisateursService {
     private roleEntityRepository: Repository<RoleEntity>;
     private permissionEntityRepository: Repository<import('@modules/auth/entities').Permission>;
     private utilisateurPermissionRepository: Repository<UtilisateurPermission>;
+    private utilisateurEtablissementRepository: Repository<UtilisateurEtablissement>;
 
     constructor() {
         this.utilisateurRepository = AppDataSource.getRepository(Utilisateur);
@@ -56,6 +57,7 @@ export class UtilisateursService {
         this.roleEntityRepository = AppDataSource.getRepository(RoleEntity);
         this.permissionEntityRepository = AppDataSource.getRepository(PermissionEntity);
         this.utilisateurPermissionRepository = AppDataSource.getRepository(UtilisateurPermission);
+        this.utilisateurEtablissementRepository = AppDataSource.getRepository(UtilisateurEtablissement);
     }
 
     /**
@@ -278,10 +280,18 @@ export class UtilisateursService {
             where: { utilisateurId: id },
         });
 
-        // Calculer les permissions effectives
-        const permissions = await this.computeEffectivePermissions(utilisateur.role, (utilisateur as any).utilisateurPermissions);
+        // RBAC v3 : charger le rôle depuis l'affectation établissement (si existante)
+        const ue = await this.utilisateurEtablissementRepository.findOne({
+            where: { utilisateurId: id, actif: true },
+            relations: ['role'],
+        });
+        const roleCode = ue?.role?.code || utilisateur.role;
+        const actifDansEtablissement = ue?.actif;
 
-        return this.formatUtilisateurResponse(utilisateur, profil || undefined, undefined, undefined, permissions);
+        // Calculer les permissions effectives (via le code rôle UE ou legacy)
+        const permissions = await this.computeEffectivePermissions(roleCode, (utilisateur as any).utilisateurPermissions);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined, roleCode, actifDansEtablissement, permissions);
     }
 
     /**
@@ -505,12 +515,37 @@ export class UtilisateursService {
         }
 
         const ancienRole = utilisateur.role;
-        utilisateur.role = changeDto.role as Role;
 
-        await this.utilisateurRepository.save(utilisateur);
+        // RBAC v3 : mettre à jour le rôle dans l'établissement (via utilisateur_etablissements)
+        const etablissementId = req?.utilisateur?.etablissementId;
+        if (etablissementId) {
+            let ue = await this.utilisateurEtablissementRepository.findOne({
+                where: { utilisateurId: id, etablissementId },
+            });
+
+            if (!ue) {
+                ue = this.utilisateurEtablissementRepository.create({
+                    utilisateurId: id,
+                    etablissementId,
+                    roleId: roleEntity.id,
+                    actif: true,
+                });
+            } else {
+                ue.roleId = roleEntity.id;
+            }
+
+            await this.utilisateurEtablissementRepository.save(ue);
+        }
+
+        // Backward compat : ne mettre à jour le champ legacy que si le code correspond à l'enum
+        const roleEnumValues = Object.values(Role) as string[];
+        if (roleEnumValues.includes(changeDto.role)) {
+            utilisateur.role = changeDto.role as Role;
+            await this.utilisateurRepository.save(utilisateur);
+        }
 
         if (req?.utilisateur?.id) {
-            const severity = changeDto.role === 'SUPER_ADMIN' ? 'CRITICAL' as const : 'WARNING' as const;
+            const severity: AuditSeverity = changeDto.role === 'SUPER_ADMIN' ? AuditSeverity.CRITICAL : AuditSeverity.WARNING;
             await auditService.log({
                 utilisateurId: req.utilisateur.id,
                 action: AuditAction.ROLE_CHANGE,
@@ -528,9 +563,16 @@ export class UtilisateursService {
             where: { utilisateurId: id },
         });
 
-        logger.info(`Rôle changé: ${utilisateur.email} ${ancienRole} → ${changeDto.role}`);
+        // Charger le rôle mis à jour depuis l'UE (RBAC v3) pour le retour
+        const ue = await this.utilisateurEtablissementRepository.findOne({
+            where: { utilisateurId: id, actif: true },
+            relations: ['role'],
+        });
+        const roleCode = ue?.role?.code || utilisateur.role;
 
-        return this.formatUtilisateurResponse(utilisateur, profil || undefined);
+        logger.info(`Rôle changé: ${utilisateur.email} ${ancienRole} → ${roleCode}`);
+
+        return this.formatUtilisateurResponse(utilisateur, profil || undefined, roleCode, undefined);
     }
 
     /**
@@ -834,7 +876,7 @@ export class UtilisateursService {
             // Nom/prénom à la racine pour accès direct par le frontend
             nom: profil?.nom || '',
             prenom: profil?.prenom || '',
-            role: utilisateur.role,
+            role: roleEtablissement || utilisateur.role,
             statut: utilisateur.statut,
             emailVerifie: utilisateur.emailVerifie,
             langue: utilisateur.langue,

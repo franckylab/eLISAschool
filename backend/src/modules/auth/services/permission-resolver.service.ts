@@ -122,11 +122,22 @@ export class PermissionResolverService {
                     return emptySet;
                 }
             } else {
-                // Pas d'établissement spécifié → erreur (contexte multi-tenant requis)
-                logger.warn(`🔐 REFUS: Aucun établissement spécifié pour l'utilisateur ${utilisateurId}`);
-                const emptySet = new Set<string>();
-                this.setToCache(utilisateurId, emptySet);
-                return emptySet;
+                // Pas d'établissement spécifié → fallback : chercher le premier établissement actif
+                const ue = await AppDataSource.getRepository(UtilisateurEtablissement).findOne({
+                    where: { utilisateurId, actif: true },
+                    relations: ['role'],
+                });
+
+                if (ue && ue.role) {
+                    rolesToUse = [ue.role];
+                    logger.debug(`🔐 Fallback UE pour utilisateur ${utilisateurId}: ${ue.role.code} (${ue.etablissementId})`);
+                    etablissementId = ue.etablissementId;
+                } else {
+                    logger.warn(`🔐 REFUS: Aucun établissement ni UE trouvé pour l'utilisateur ${utilisateurId}`);
+                    const emptySet = new Set<string>();
+                    this.setToCache(utilisateurId + ':fallback', emptySet);
+                    return emptySet;
+                }
             }
 
             if (rolesToUse.length === 0) {

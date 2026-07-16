@@ -263,6 +263,84 @@ export class RolesService {
     }
 
     /**
+     * Récupérer toutes les permissions avec leur statut d'assignation pour un rôle
+     * Retourne la liste complète des permissions, chacune annotée de son statut
+     * (assigned: true/false, source: 'role' | 'none')
+     */
+    async getRolePermissionsDetail(roleId: string): Promise<Array<{
+        permissionId: string;
+        code: string;
+        libelle: string;
+        module: string;
+        action: string;
+        source: 'role' | 'none';
+    }>> {
+        const role = await this.findRoleById(roleId);
+        const assignedIds = new Set((role.permissions || []).map(p => p.id));
+
+        const allPermissions = await this.permissionRepo.find({
+            where: { actif: true },
+            order: { module: 'ASC', code: 'ASC' },
+        });
+
+        return allPermissions.map(p => ({
+            permissionId: p.id,
+            code: p.code,
+            libelle: p.libelle,
+            module: p.module,
+            action: p.action,
+            source: assignedIds.has(p.id) ? 'role' : 'none',
+        }));
+    }
+
+    /**
+     * Assigner un batch de permissions à un rôle (delta add/remove)
+     */
+    async batchAssignRolePermissions(
+        roleId: string,
+        dto: { addedPermissionIds: string[]; removedPermissionIds: string[] },
+        updatedBy?: string,
+    ): Promise<Role> {
+        const role = await this.findRoleById(roleId);
+
+        // Empêcher la modification des rôles système
+        if (role.estSysteme) {
+            throw new AppError('Les permissions des rôles système ne peuvent pas être modifiées', 400, 'SYSTEM_ROLE_IMMUTABLE');
+        }
+
+        const currentIds = new Set((role.permissions || []).map(p => p.id));
+
+        // Ajouter les nouvelles permissions
+        if (dto.addedPermissionIds.length > 0) {
+            const toAdd = await this.permissionRepo.find({
+                where: { id: In(dto.addedPermissionIds) },
+            });
+            for (const perm of toAdd) {
+                currentIds.add(perm.id);
+            }
+        }
+
+        // Retirer les permissions
+        for (const id of dto.removedPermissionIds) {
+            currentIds.delete(id);
+        }
+
+        // Recharger les permissions finales
+        const finalPermissions = await this.permissionRepo.find({
+            where: { id: In([...currentIds]) },
+        });
+
+        role.permissions = finalPermissions;
+        await this.roleRepo.save(role);
+
+        logger.info(`Permissions batch modifiées pour le rôle ${role.libelle} par ${updatedBy} (${dto.addedPermissionIds.length} ajoutées, ${dto.removedPermissionIds.length} retirées)`);
+
+        await permissionResolverService.invalidateCacheForRole(roleId);
+
+        return role;
+    }
+
+    /**
      * Lister les utilisateurs ayant un rôle spécifique
      * MULTI-TENANT STRICT : Via utilisateur_etablissements
      */

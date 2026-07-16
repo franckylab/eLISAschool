@@ -19,7 +19,11 @@ import type {
     RoleFiltres,
     Permission,
     PermissionGroupe,
-    AttribuerPermissionDto 
+    AttribuerPermissionDto,
+    PermissionAvecSource,
+    BatchPermissionEntry,
+    RolePermissionAvecStatut,
+    BatchRolePermissionsDto,
 } from '../types/utilisateur.types';
 
 const ROLES_KEYS = {
@@ -340,6 +344,85 @@ export function useAttribuerPermissions() {
         },
         onError: (error: any) => {
             toast.error(error.message || 'Erreur lors de l\'attribution des permissions');
+        },
+    });
+}
+
+// ==================== HOOKS PERMISSIONS AVEC SOURCE ====================
+
+export function useEffectivePermissionsDetail(userId: string, options?: { enabled?: boolean }) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.all, 'utilisateur', userId, 'permissions-effectives-detail'],
+        queryFn: async () => {
+            const response = await apiClient.get<PermissionAvecSource[]>(
+                `/api/rbac/users/${userId}/permissions/effective/detail`
+            );
+            return response.data || [];
+        },
+        enabled: (options?.enabled !== undefined ? options.enabled : true) && isAuthenticated && !!userId,
+        staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
+    });
+}
+
+export function useBatchPermissionsUtilisateur() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, permissions }: { userId: string; permissions: BatchPermissionEntry[] }) => {
+            await apiClient.put(`/api/rbac/users/${userId}/permissions/batch`, { permissions });
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: [...ROLES_KEYS.all, 'utilisateur', variables.userId, 'permissions-directes'],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [...ROLES_KEYS.all, 'utilisateur', variables.userId, 'permissions-effectives-detail'],
+            });
+            toast.success('Permissions mises à jour avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la mise à jour des permissions');
+        },
+    });
+}
+
+// ==================== HOOKS PERMISSIONS RÔLE ====================
+
+export function useRolePermissionsDetail(roleId: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ROLES_KEYS.detail(roleId), 'permissions-detail'],
+        queryFn: async () => {
+            const response = await apiClient.get<RolePermissionAvecStatut[]>(
+                `/api/rbac/roles/${roleId}/permissions/detail`
+            );
+            return response.data || [];
+        },
+        enabled: !!roleId && isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
+    });
+}
+
+export function useBatchRolePermissions() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ roleId, ...dto }: BatchRolePermissionsDto & { roleId: string }) => {
+            await apiClient.put(`/api/rbac/roles/${roleId}/permissions/batch`, dto);
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.detail(variables.roleId) });
+            queryClient.invalidateQueries({
+                queryKey: [...ROLES_KEYS.detail(variables.roleId), 'permissions-detail'],
+            });
+            queryClient.invalidateQueries({ queryKey: ROLES_KEYS.listes() });
+            toast.success('Permissions du rôle mises à jour avec succès');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error?.message || 'Erreur lors de la mise à jour des permissions');
         },
     });
 }

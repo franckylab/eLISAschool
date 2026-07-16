@@ -27,7 +27,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
     const isEditMode = !!role;
     
     // État du formulaire
-    const [nom, setNom] = useState(role?.nom || '');
+    const [nom, setNom] = useState(role?.libelle || '');
     const [code, setCode] = useState(role?.code || '');
     const [description, setDescription] = useState(role?.description || '');
     const [permissionsSelectionnees, setPermissionsSelectionnees] = useState<Set<string>>(
@@ -44,12 +44,12 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
     const modifier = useModifierRole();
     const { data: permissionsGroupes, isLoading: loadingPermissions } = useToutesPermissions();
 
-    // Auto-générer le code depuis le nom
+    // Auto-générer le code depuis le libelle
     useEffect(() => {
         if (!isEditMode && nom && !code) {
             const generatedCode = nom
-                .toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9\s]/g, '')
                 .replace(/\s+/g, '_');
             setCode(generatedCode);
         }
@@ -59,9 +59,11 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
     const valider = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!nom.trim()) newErrors.nom = 'Le nom est requis';
+        if (!nom.trim()) newErrors.nom = 'Le libellé est requis';
+        else if (nom.trim().length < 2) newErrors.nom = 'Le libellé doit avoir au moins 2 caractères';
         if (!code.trim()) newErrors.code = 'Le code est requis';
-        if (!/^[a-z_]+$/.test(code)) newErrors.code = 'Le code ne doit contenir que des lettres minuscules et underscores';
+        else if (code.trim().length < 2) newErrors.code = 'Le code doit avoir au moins 2 caractères';
+        else if (!/^[A-Z_]+$/.test(code)) newErrors.code = 'Le code doit être en majuscules avec underscores uniquement';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -74,10 +76,10 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
         if (!valider()) return;
 
         const dto = {
-            nom,
-            code,
+            libelle: nom.trim(),
+            code: code.trim(),
             description,
-            permissions: Array.from(permissionsSelectionnees),
+            permissionIds: Array.from(permissionsSelectionnees),
         };
 
         try {
@@ -138,7 +140,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
     const isLoading = creer.isPending || modifier.isPending;
 
     const titre = isEditMode ? 'Modifier le rôle' : 'Créer un nouveau rôle';
-    const desc = isEditMode ? `Modification de "${role?.nom}"` : 'Définissez les informations et permissions du rôle';
+    const desc = isEditMode ? `Modification de "${role?.libelle}"` : 'Définissez les informations et permissions du rôle';
 
     return (
         <CustomModal
@@ -201,8 +203,8 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                         <input
                             type="text"
                             value={code}
-                            onChange={(e) => setCode(e.target.value.toLowerCase().replace(/[^a-z_]/g, ''))}
-                            placeholder="Ex: gestionnaire_notes"
+                            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z_]/g, ''))}
+                            placeholder="Ex: GESTIONNAIRE_NOTES"
                             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-500 ${
                                 errors.code ? 'border-red-500' : 'border-gray-300'
                             }`}
@@ -214,7 +216,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
                             </p>
                         )}
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Lettres minuscules et underscores uniquement
+                            Lettres majuscules et underscores uniquement
                         </p>
                     </div>
 

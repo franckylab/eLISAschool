@@ -140,7 +140,7 @@ export interface UtilisateurFiltres {
 
 export interface Role {
     id: string;
-    nom: string;
+    libelle: string;
     code: string;
     description?: string;
     permissions: string[] | Permission[];  // Peut être codes (string[]) ou objets (Permission[])
@@ -154,12 +154,14 @@ export interface Role {
 }
 
 export interface CreerRoleDto {
-    nom: string;
+    libelle: string;
     code: string;
     description?: string;
-    permissionIds?: string[];  // IDs des permissions à attribuer
+    permissionIds?: string[];
+    parentId?: string;
     couleur?: string;
     icone?: string;
+    etablissementId?: string;
 }
 
 export interface ModifierRoleDto extends Partial<CreerRoleDto> {
@@ -194,4 +196,33 @@ export interface PermissionGroupe {
 export interface AttribuerPermissionDto {
     roleId: string;
     permissions: string[];
+}
+
+export interface PermissionAvecSource {
+    permissionId: string;
+    code: string;
+    libelle: string;
+    module: string;
+    action: string;
+    source: 'role' | 'granted' | 'denied' | 'none';
+    utilisateurPermissionId?: string;
+}
+
+export interface BatchPermissionEntry {
+    permissionId: string;
+    type: 'GRANTED' | 'DENIED' | null;
+}
+
+export interface RolePermissionAvecStatut {
+    permissionId: string;
+    code: string;
+    libelle: string;
+    module: string;
+    action: string;
+    source: 'role' | 'none';
+}
+
+export interface BatchRolePermissionsDto {
+    addedPermissionIds: string[];
+    removedPermissionIds: string[];
 }

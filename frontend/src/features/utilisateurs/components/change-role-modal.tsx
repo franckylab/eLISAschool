@@ -71,14 +71,14 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                         <Shield className="h-3.5 w-3.5" />
-                        <span className="font-medium">{currentRoleData?.nom ?? utilisateur.role}</span>
+                        <span className="font-medium">{currentRoleData?.libelle ?? utilisateur.role}</span>
                     </div>
                     {hasChanged && (
                         <>
                             <ArrowRight className="h-4 w-4 text-gray-400" />
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                 <Shield className="h-3.5 w-3.5" />
-                                <span className="font-medium">{selectedRoleData?.nom ?? selectedRole}</span>
+                                <span className="font-medium">{selectedRoleData?.libelle ?? selectedRole}</span>
                             </div>
                         </>
                     )}
@@ -121,7 +121,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                    {role.nom}
+                                                    {role.libelle}
                                                 </span>
                                                 {isCurrent && (
                                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium">
@@ -156,8 +156,8 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                     </p>
                                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                                         {t('changerRole.confirmation.description', {
-                                            ancien: currentRoleData?.nom ?? utilisateur.role,
-                                            nouveau: selectedRoleData?.nom ?? selectedRole,
+                                            ancien: currentRoleData?.libelle ?? utilisateur.role,
+                                            nouveau: selectedRoleData?.libelle ?? selectedRole,
                                         })}
                                     </p>
                                 </div>
@@ -172,7 +172,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                 <div className="flex items-center gap-2 mt-1.5">
                                     <Shield className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                        {currentRoleData?.nom ?? utilisateur.role}
+                                        {currentRoleData?.libelle ?? utilisateur.role}
                                     </span>
                                 </div>
                             </div>
@@ -183,7 +183,7 @@ export function ChangeRoleModal({ open, onOpenChange, utilisateur, onSuccess }: 
                                 <div className="flex items-center gap-2 mt-1.5">
                                     <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                     <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">
-                                        {selectedRoleData?.nom ?? selectedRole}
+                                        {selectedRoleData?.libelle ?? selectedRole}
                                     </span>
                                 </div>
                             </div>
