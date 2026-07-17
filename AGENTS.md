@@ -29,6 +29,32 @@ Phase 8s : Refactor permissions (simplification 4→3 états). Connecter vraies 
 - **`change-role-modal.tsx`** = exemple à suivre : plus de viewport tracking manuel, simple `size="lg"` délégué à `CustomModal`
 - **Toute nouvelle modale** doit utiliser `CustomModal` (pas de modal ad-hoc) pour bénéficier automatiquement du responsive système
 - **Ne PAS ajouter de `useEffect`/`useState` de viewport** dans les modales consommatrices — c'est géré centralement dans `CustomModal` et `useModalWindow`
+### FormModal — Section Headers avec séparateur visuel
+- **Chaque section** suit le pattern : `h3` (icône + titre) → `SectionSeparator` (border-b) → grille de champs
+- **`SectionSeparator`** = composant partagé dans `@/components/ui/SectionSeparator.tsx` : `<div className="border-b border-[var(--color-bordure)]" />` — toujours utiliser CSS variables, jamais de classes gray hardcodées
+- **`space-y-4`** dans chaque section (pas de `mb-4` sur le titre) — la séparation est gérée par le border-b + space-y
+- **Icons** : `className="h-5 w-5 text-[var(--color-texte-secondaire)]"` pour un rendu sobre, non dominant
+- **Titres** : `text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2`
+- **i18n obligatoire** : tous les textes via `useTranslation(ns)` — ne JAMAIS hardcoder de chaînes FR/EN (labels + placeholders + messages validation)
+- **Pas de modal ad-hoc** : toujours utiliser `CustomModal` avec `footer` prop pour les boutons d'action
+- **Confirmation perte données** : intercepter `onOpenChange` + `ConfirmDialog` quand `hasUnsavedChanges` — pattern dans `utilisateur-form-modal.tsx`
+- **Reset à la fermeture** : `useEffect` sur `open` — si fermeture, `setFormData(FORM_INIT)` + `setErreurs({})`
+- **Auto-focus** : premier champ du formulaire avec `autoFocus`
+- **Scroll vers erreur** : `useEffect` sur `erreurs` → `FIELD_SECTION` mapping → `el?.scrollIntoView({ behavior: 'smooth', block: 'center' })`
+- **`utilisateur-form-modal.tsx`** = exemple de référence (4 sections, border-b, i18n, dark mode, dotted paths, reset, confirm, scroll-to-error)
+
+### SectionSeparator — Composant partagé
+- **Emplacement** : `@/components/ui/SectionSeparator.tsx` — exporté depuis `@/components/ui`
+- **Usage** : `import { SectionSeparator } from '@/components/ui'`
+- **Implémentation** : `<div className="border-b border-[var(--color-bordure)]" />` (CSS variable, pas de classes hardcodées)
+- **À préférer** au `border-b` inline dans chaque modal — un changement de style se propage partout
+
+### Formulaire Modal — Patterns avancés
+- **Constantes module** : `FORM_INIT` et `FIELD_SECTION` en dehors du composant (pas de recréation par render)
+- **`useMemo roleOptions`** : éviter le `roles?.map(...)` inline dans le template — re-calculé uniquement si `roles` change
+- **Champs imbriqués (profil.*)** : `handleChange` interprète les dotted paths (`'profil.dateNaissance'`) pour mettre à jour le nested state + effacer l'erreur par chemin
+- **Erreur API** : affichée via `<div role="alert">` utilisant `creer.error || modifier.error` (React Query expose l'erreur, pas besoin de catch manuel)
+- **hasUnsavedChanges** : `useMemo(() => JSON.stringify(formData) !== JSON.stringify(FORM_INIT), [formData])` — évite la référence object vs object
 - **`placeholderData: (prev) => prev`** requis sur TOUS les hooks `useQuery` avec `queryKey` dynamique (filtres/pagination) — empêche `isLoading` de passer à `true` lors des changements de filtre, évitant le démontage du DataTable
 - **Guards `isLoading`** doivent être conditionnels : `if (isLoading && !data)` au lieu de `if (isLoading)` — ne s'affiche qu'au premier chargement, pas lors des refetches
 - **Callback serveur différé** : `onSearchChange` n'est plus appelé immédiatement mais via `useEffect` sur `rechercheDebounce` (300ms) — réduit les appels API pendant la saisie
@@ -238,6 +264,15 @@ Phase 8s : Refactor permissions (simplification 4→3 états). Connecter vraies 
 - **Locales** : clés ajoutées dans `notes.json`, `responsables-eleves.json`, `periodes.json`, `eleves.json`, `emplois.json` (fr + en)
 - **0 nouvelle erreur typecheck**
 
+### FilterPanel — Panneau de filtres repliable
+- **`FilterPanel`** (`frontend/src/components/ui/FilterPanel.tsx`) : panneau de filtres repliable avec animation framer-motion.
+- **Props** : `open`, `onOpenChange?`, `filters: FilterDef[]`, `values`, `onChange`, `onClear`, `activeCount`, `showToggle` (défaut: true), `toggleButton?`
+- **Types de filtre** : `select`, `date`, `date-range`, `text`, `number` — chaque filtre a debounce (300ms) pour les inputs texte/date-range
+- **Bouton toggle** : icône `SlidersHorizontal`, badge `activeCount` (cercle dominant rempli), chevron rotatif. Clic droit `RotateCcw` pour clear
+- **Grille responsive** : 1 colonne sur mobile (<640px), 2 sur tablette, 3 sur desktop (sauf `date-range` qui force 1 colonne)
+- **Intégration DataTable** : prop `enableCollapsibleFilters` (défaut: false) sur `<DataTable>`. Quand active, les selects `filtres` passent dans le panneau repliable avec bouton dans la barre d'outils + badge compteur. `onClearFilters` callback optionnel. Backward compatible : mode désactivé garde les selects toujours visibles.
+- **Exporté** depuis `@/components/ui` barrel + types `FilterDef`, `FilterPanelProps`
+
 ## Références
 | Fichier | Rôle |
 |---------|------|
@@ -297,6 +332,8 @@ Phase 8s : Refactor permissions (simplification 4→3 états). Connecter vraies 
 | `frontend/src/components/layout/PageHeader.tsx` | PageHeader gradient + simple |
 | `frontend/src/components/ui/InfoField.tsx` | label+valeur design system |
 | `frontend/src/components/ui/Skeleton.tsx` | PageSkeleton |
+`frontend/src/components/ui/SectionSeparator.tsx` | Séparateur visuel partagé (border-b CSS vars) |
+| `frontend/src/features/utilisateurs/components/utilisateur-form-modal.tsx` | Exemple de référence modal formulaire (4 sections, i18n, scroll-to-error, confirm, reset, dotted paths) |
 | `frontend/src/components/ui/ErrorMessage.tsx` | ErrorMessage avec retry |
 | `frontend/src/components/modals/CustomModal.tsx` | Modal compound avec responsive size, drag, resize, minimiser |
 | `frontend/src/components/modals/ConfirmDialog.tsx` | Quick confirm/alert modal wrapper (3 variants) |

@@ -183,6 +183,7 @@ export interface Permission {
     libelle: string;
     description?: string;
     module: string;
+    action: string;
     categorie: string;
     estSysteme: boolean;
 }

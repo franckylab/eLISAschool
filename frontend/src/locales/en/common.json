@@ -5,7 +5,7 @@
         "supprimer": "Delete",
         "modifier": "Edit",
         "rechercher": "Search",
-        "filtrer": "Filter",
+        "filtrer": "Filters",
         "fermer": "Close",
         "confirmer": "Confirm",
         "reessayer": "Retry",
@@ -98,6 +98,7 @@
         "appliquer": "Apply",
         "reinitialiser": "Reset"
     },
+    "effacerFiltres": "Clear filters",
     "dates": {
         "aujourdHui": "Today",
         "hier": "Yesterday",

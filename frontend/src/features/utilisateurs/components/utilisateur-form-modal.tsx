@@ -2,20 +2,46 @@
  * ==================================
  * eLISAschool - Formulaire Modal Utilisateur
  * ==================================
- * Version: 3.0.0
+ * Version: 3.1.0
  * Auteur: franck arlos chendjou
  *
  * Modal de création/édition d'utilisateur avec validation
+ * Sections séparées visuellement par border-b, i18n, dark mode
  */
 
-import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Shield, Calendar, MapPin } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { User, Mail, Phone, Shield, Calendar, MapPin, KeyRound } from 'lucide-react';
 import { useCreerUtilisateur, useModifierUtilisateur } from '../hooks/use-utilisateurs';
 import { useTousRoles } from '../hooks/use-roles-permissions';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ElisaInput, ElisaSelect } from '@/components/ui';
+import { ElisaInput, ElisaSelect, SectionSeparator } from '@/components/ui';
 import type { Utilisateur, CreerUtilisateurDto } from '../types/utilisateur.types';
+
+const FIELD_SECTION: Record<string, string> = {
+    prenom: 'identite',
+    nom: 'identite',
+    email: 'contact',
+    telephone: 'contact',
+    role: 'securite',
+    motDePasse: 'securite',
+};
+
+const FORM_INIT: CreerUtilisateurDto = {
+    email: '',
+    nom: '',
+    prenom: '',
+    telephone: '',
+    role: '',
+    motDePasse: '',
+    profil: {
+        adresse: '',
+        dateNaissance: '',
+        genre: 'M',
+    },
+};
 
 interface UtilisateurFormModalProps {
     open: boolean;
@@ -30,28 +56,46 @@ export function UtilisateurFormModal({
     mode, 
     utilisateur 
 }: UtilisateurFormModalProps) {
+    const { t } = useTranslation('utilisateurs');
     const creer = useCreerUtilisateur();
     const modifier = useModifierUtilisateur();
     const { data: roles } = useTousRoles();
 
-    const [formData, setFormData] = useState<CreerUtilisateurDto>({
-        email: '',
-        nom: '',
-        prenom: '',
-        telephone: '',
-        role: '',
-        motDePasse: '',
-        profil: {
-            adresse: '',
-            dateNaissance: '',
-            genre: 'M',
-        },
-    });
+    const roleOptions = useMemo(
+        () => roles?.map((role) => ({ value: role.code, label: role.libelle })) ?? [],
+        [roles],
+    );
+
+    const [formData, setFormData] = useState<CreerUtilisateurDto>(FORM_INIT);
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
+    const [showConfirm, setShowConfirm] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
 
-    // Initialiser le formulaire en mode édition
+    const hasUnsavedChanges = useMemo(
+        () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
+        [formData],
+    );
+
     useEffect(() => {
+        const firstErrorKey = Object.keys(erreurs)[0];
+        if (!firstErrorKey || !formRef.current) return;
+        const section = FIELD_SECTION[firstErrorKey];
+        if (!section) return;
+        const el = formRef.current.querySelector(`[data-section="${section}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [erreurs]);
+
+    const handleReset = () => {
+        setFormData(FORM_INIT);
+        setErreurs({});
+    };
+
+    useEffect(() => {
+        if (!open) {
+            handleReset();
+            return;
+        }
         if (mode === 'edition' && utilisateur) {
             setFormData({
                 email: utilisateur.email,
@@ -59,7 +103,7 @@ export function UtilisateurFormModal({
                 prenom: utilisateur.prenom,
                 telephone: utilisateur.telephone || '',
                 role: utilisateur.role,
-                motDePasse: '', // Ne pas pré-remplir le mot de passe
+                motDePasse: '',
                 profil: {
                     adresse: utilisateur.profil?.adresse || '',
                     dateNaissance: utilisateur.profil?.dateNaissance || '',
@@ -73,19 +117,19 @@ export function UtilisateurFormModal({
         const nouvellesErreurs: Record<string, string> = {};
 
         if (!formData.email) {
-            nouvellesErreurs.email = 'L\'email est requis';
+            nouvellesErreurs.email = t('validation.emailRequis');
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            nouvellesErreurs.email = 'Email invalide';
+            nouvellesErreurs.email = t('validation.emailInvalide');
         }
 
-        if (!formData.nom) nouvellesErreurs.nom = 'Le nom est requis';
-        if (!formData.prenom) nouvellesErreurs.prenom = 'Le prénom est requis';
-        if (!formData.role) nouvellesErreurs.role = 'Le rôle est requis';
+        if (!formData.nom) nouvellesErreurs.nom = t('validation.nomRequis');
+        if (!formData.prenom) nouvellesErreurs.prenom = t('validation.prenomRequis');
+        if (!formData.role) nouvellesErreurs.role = t('validation.roleRequis');
 
         if (mode === 'creation' && !formData.motDePasse) {
-            nouvellesErreurs.motDePasse = 'Le mot de passe est requis';
+            nouvellesErreurs.motDePasse = t('validation.motDePasseRequis');
         } else if (formData.motDePasse && formData.motDePasse.length < 8) {
-            nouvellesErreurs.motDePasse = 'Le mot de passe doit contenir au moins 8 caractères';
+            nouvellesErreurs.motDePasse = t('validation.motDePasseTropCourt');
         }
 
         setErreurs(nouvellesErreurs);
@@ -104,14 +148,25 @@ export function UtilisateurFormModal({
                 await modifier.mutateAsync({ id: utilisateur.id, ...formData });
             }
             onOpenChange(false);
-        } catch (error) {
-            // Erreur déjà gérée par le hook
+        } catch {
+            // L'erreur est exposée via creer.error / modifier.error
         }
     };
 
     const handleChange = (field: string, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        // Effacer l'erreur quand l'utilisateur modifie le champ
+        setFormData(prev => {
+            if (field.includes('.')) {
+                const [parent, child] = field.split('.') as [keyof CreerUtilisateurDto, string];
+                return {
+                    ...prev,
+                    [parent]: {
+                        ...(prev[parent] as Record<string, unknown>),
+                        [child]: value,
+                    },
+                };
+            }
+            return { ...prev, [field]: value };
+        });
         if (erreurs[field]) {
             setErreurs(prev => {
                 const newErreurs = { ...prev };
@@ -122,120 +177,144 @@ export function UtilisateurFormModal({
     };
 
     const isLoading = creer.isPending || modifier.isPending;
+    const apiError = creer.error || modifier.error;
 
-    const titre = mode === 'creation' ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur';
-    const description = mode === 'creation'
-        ? 'Créer un nouveau compte utilisateur'
-        : 'Modifier les informations de l\'utilisateur';
+    const titre = mode === 'creation' ? t('form.titreCreation') : t('form.titreEdition');
+    const description = mode === 'creation' ? t('form.descriptionCreation') : t('form.descriptionEdition');
+
+    const handleClose = () => {
+        if (hasUnsavedChanges) {
+            setShowConfirm(true);
+        } else {
+            onOpenChange(false);
+        }
+    };
 
     return (
-        <CustomModal
-            open={open}
-            onOpenChange={onOpenChange}
-            title={titre}
-            description={description}
-            size="2xl"
-            footer={
-                <>
-                    <ElisaButton
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        disabled={isLoading}
-                    >
-                        Annuler
-                    </ElisaButton>
-                    <ElisaButton
-                        type="submit"
-                        variant="primary"
-                        isLoading={isLoading}
-                        onClick={handleSubmit}
-                    >
-                        {mode === 'creation' ? 'Créer l\'utilisateur' : 'Enregistrer'}
-                    </ElisaButton>
-                </>
-            }
+        <>
+            <CustomModal
+                open={open}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen && hasUnsavedChanges) {
+                        setShowConfirm(true);
+                        return;
+                    }
+                    onOpenChange(nextOpen);
+                }}
+                title={titre}
+                description={description}
+                size="2xl"
+                footer={
+                    <>
+                        <ElisaButton
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                            disabled={isLoading}
+                        >
+                            {t('form.annuler')}
+                        </ElisaButton>
+                        <ElisaButton
+                            type="submit"
+                            variant="primary"
+                            isLoading={isLoading}
+                            onClick={handleSubmit}
+                        >
+                            {mode === 'creation' ? t('form.creer') : t('form.enregistrer')}
+                        </ElisaButton>
+                    </>
+                }
         >
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Section Informations */}
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Informations personnelles
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+                {apiError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300" role="alert">
+                        {apiError instanceof Error ? apiError.message : t('form.erreurSauvegarde')}
+                    </div>
+                )}
+                {/* Section Informations personnelles */}
+                <div data-section="identite" className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <User className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.informationsPersonnelles')}
                     </h3>
+                    <SectionSeparator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaInput
-                            label="Prénom"
+                            label={t('form.prenom')}
                             value={formData.prenom}
                             onChange={(e) => handleChange('prenom', e.target.value)}
                             error={erreurs.prenom}
-                            placeholder="Jean"
+                            placeholder={t('form.placeholderPrenom')}
+                            autoFocus
                             required
                         />
                         <ElisaInput
-                            label="Nom"
+                            label={t('form.nom')}
                             value={formData.nom}
                             onChange={(e) => handleChange('nom', e.target.value)}
                             error={erreurs.nom}
-                            placeholder="Dupont"
+                            placeholder={t('form.placeholderNom')}
                             required
                         />
                     </div>
                 </div>
 
                 {/* Section Contact */}
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                        <Mail className="h-5 w-5" />
-                        Contact
+                <div data-section="contact" className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <Mail className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.contact')}
                     </h3>
+                    <SectionSeparator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaInput
-                            label="Email"
+                            label={t('form.email')}
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
                             error={erreurs.email}
-                            placeholder="jean.dupont@exemple.com"
+                            placeholder={t('form.placeholderEmail')}
                             icon={<Mail className="h-4 w-4" />}
                             required
                         />
                         <ElisaInput
-                            label="Téléphone"
+                            label={t('form.telephone')}
                             type="tel"
                             value={formData.telephone || ''}
                             onChange={(e) => handleChange('telephone', e.target.value)}
-                            placeholder="+237 6XX XXX XXX"
+                            placeholder={t('form.placeholderTelephone')}
                             icon={<Phone className="h-4 w-4" />}
                         />
                     </div>
                 </div>
 
-                {/* Section Sécurité */}
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                        <Shield className="h-5 w-5" />
-                        Sécurité et rôle
+                {/* Section Sécurité et rôle */}
+                <div data-section="securite" className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.securiteRole')}
                     </h3>
+                    <SectionSeparator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaSelect
-                            label="Rôle"
+                            label={t('form.role')}
                             value={formData.role}
                             onValueChange={(value) => handleChange('role', value)}
-                            placeholder="Sélectionner un rôle"
-                            options={roles?.map((role) => ({ value: role.code, label: role.libelle })) ?? []}
+                            placeholder={t('form.placeholderRole')}
+                            options={roleOptions}
                             error={erreurs.role}
                             required
                         />
 
                         {mode === 'creation' && (
                             <ElisaInput
-                                label="Mot de passe"
+                                label={t('form.motDePasse')}
                                 type="password"
                                 value={formData.motDePasse}
                                 onChange={(e) => handleChange('motDePasse', e.target.value)}
                                 error={erreurs.motDePasse}
-                                placeholder="••••••••"
+                                placeholder={t('form.placeholderMotDePasse')}
+                                icon={<KeyRound className="h-4 w-4" />}
                                 required
                             />
                         )}
@@ -243,40 +322,56 @@ export function UtilisateurFormModal({
                 </div>
 
                 {/* Section Profil */}
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
-                        Profil (optionnel)
+                <div data-section="profil" className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.profilOptionnel')}
                     </h3>
+                    <SectionSeparator />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ElisaInput
-                            label="Date de naissance"
+                            label={t('form.dateNaissance')}
                             type="date"
                             value={formData.profil?.dateNaissance || ''}
-                            onChange={(e) => handleChange('profil', { ...formData.profil, dateNaissance: e.target.value })}
+                            onChange={(e) => handleChange('profil.dateNaissance', e.target.value)}
                             icon={<Calendar className="h-4 w-4" />}
                         />
                         <ElisaSelect
-                            label="Genre"
+                            label={t('form.genre')}
                             value={formData.profil?.genre || 'M'}
-                            onValueChange={(value) => handleChange('profil', { ...formData.profil, genre: value })}
+                            onValueChange={(value) => handleChange('profil.genre', value)}
                             options={[
-                                { value: 'M', label: 'Masculin' },
-                                { value: 'F', label: 'Féminin' },
-                                { value: 'A', label: 'Autre' },
+                                { value: 'M', label: t('masculin') },
+                                { value: 'F', label: t('feminin') },
+                                { value: 'A', label: t('autreGenre') },
                             ]}
                         />
                         <div className="md:col-span-2">
                             <ElisaInput
-                                label="Adresse"
+                                label={t('form.adresse')}
                                 value={formData.profil?.adresse || ''}
-                                onChange={(e) => handleChange('profil', { ...formData.profil, adresse: e.target.value })}
-                                placeholder="Adresse complète"
+                                onChange={(e) => handleChange('profil.adresse', e.target.value)}
+                                placeholder={t('form.placeholderAdresse')}
                             />
                         </div>
                     </div>
                 </div>
             </form>
         </CustomModal>
+
+        <ConfirmDialog
+            open={showConfirm}
+            onOpenChange={setShowConfirm}
+            variant="warning"
+            title={t('form.confirmAnnulerTitre')}
+            description={t('form.confirmAnnulerDescription')}
+            confirmText={t('form.confirmAnnulerConfirmer')}
+            cancelText={t('form.confirmAnnulerRetour')}
+            onConfirm={() => {
+                setShowConfirm(false);
+                onOpenChange(false);
+            }}
+        />
+        </>
     );
 }

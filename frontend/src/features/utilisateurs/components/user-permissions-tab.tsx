@@ -118,7 +118,7 @@ export function UserPermissionsTab({ utilisateur }: { utilisateur: Utilisateur }
             let c = 0;
             for (const p of g.permissions) {
                 const detail = detailMap.get(p.id);
-                if (detail && detail.source !== 'none') c++;
+                if (detail && (detail.source === 'role' || detail.source === 'granted')) c++;
             }
             counts.set(g.module, c);
         }
@@ -281,8 +281,12 @@ export function UserPermissionsTab({ utilisateur }: { utilisateur: Utilisateur }
         for (const [id, s] of editState) {
             if (initial.get(id) !== s) count++;
         }
-        for (const [id, s] of initial) {
-            if (!editState.has(id)) count++;
+        // Permissions retirées de l'editState : compter seulement les surcharges existantes
+        for (const p of detailPerms || []) {
+            const current = editState.get(p.permissionId);
+            if (current === undefined && (p.source === 'granted' || p.source === 'denied')) {
+                count++;
+            }
         }
         return count;
     }, [editState, detailPerms]);

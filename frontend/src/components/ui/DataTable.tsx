@@ -66,10 +66,14 @@ import {
     PinOff,
     ArrowLeftToLine,
     ArrowRightToLine,
+    SlidersHorizontal,
+    ChevronDown,
+    RotateCcw,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { RowActions } from '@/components/ui/RowActions';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { FilterPanel } from '@/components/ui/FilterPanel';
 import { usePermissions, useDataTablePreferences } from '@/hooks';
 import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -178,6 +182,10 @@ interface DataTableProps<T> {
     onFilterChange?: (key: string, valeur: string) => void;
     /** Désactive la recherche Fuse.js côté client (utilise uniquement le callback serveur) */
     disableClientSearch?: boolean;
+    /** Active le panneau de filtres repliable (au lieu des selects toujours visibles) */
+    enableCollapsibleFilters?: boolean;
+    /** Callback quand les filtres sont réinitialisés */
+    onClearFilters?: () => void;
     /** Callback quand l'ordre des colonnes change */
     onColumnOrderChange?: (columnOrder: string[]) => void;
     /** Callback quand la visibilité des colonnes change */
@@ -979,6 +987,12 @@ interface BarreOutilsProps {
     valeurFiltres?: Record<string, string>;
     /** Callback quand un filtre change */
     onFiltreChange?: (key: string, valeur: string) => void;
+    /** Mode panneau repliable */
+    enableCollapsibleFilters?: boolean;
+    filtresOuverts?: boolean;
+    onToggleFiltres?: () => void;
+    filtresActifsCount?: number;
+    onClearFilters?: () => void;
     enableColumnVisibility: boolean;
     colonnes: Column<any>[];
     visibilite: VisibilityState;
@@ -999,6 +1013,11 @@ function BarreOutils({
     filtres,
     valeurFiltres,
     onFiltreChange,
+    enableCollapsibleFilters,
+    filtresOuverts,
+    onToggleFiltres,
+    filtresActifsCount,
+    onClearFilters,
     enableColumnVisibility,
     colonnes,
     visibilite,
@@ -1025,22 +1044,56 @@ function BarreOutils({
             )}
             {/* Filtres rapides */}
             {filtres && filtres.length > 0 && (
-                <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
-                    {filtres.map((f) => (
-                        <select
-                            key={f.key}
-                            value={valeurFiltres?.[f.key] ?? ''}
-                            onChange={(e) => onFiltreChange?.(f.key, e.target.value)}
-                            className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                enableCollapsibleFilters ? (
+                    <div className="flex items-center">
+                        <button
+                            type="button"
+                            onClick={onToggleFiltres}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-all duration-150 ${
+                                (filtresActifsCount ?? 0) > 0
+                                    ? 'border-[var(--color-dominant-500)]/30 bg-[var(--color-dominant-50)] dark:bg-[var(--color-dominant-900)]/20 text-[var(--color-dominant-600)] dark:text-[var(--color-dominant-400)]'
+                                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+                            }`}
+                            title={t('boutons.filtrer')}
                         >
-                            <option value="">{f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}`}</option>
-                            {f.options.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    ))}
-                </div>
+                            <SlidersHorizontal className="h-4 w-4" />
+                            <span className="hidden sm:inline text-xs font-medium">{t('boutons.filtrer')}</span>
+                            {(filtresActifsCount ?? 0) > 0 && (
+                                <span className="inline-flex items-center justify-center h-[18px] min-w-[18px] rounded-full bg-[var(--color-dominant-500)] text-[10px] font-bold text-white leading-none px-1">
+                                    {filtresActifsCount}
+                                </span>
+                            )}
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${filtresOuverts ? 'rotate-180' : ''}`} />
+                        </button>
+                        {(filtresActifsCount ?? 0) > 0 && (
+                            <button
+                                type="button"
+                                onClick={onClearFilters}
+                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors ml-1"
+                                title={t('effacerFiltres')}
+                            >
+                                <RotateCcw className="h-3 w-3" />
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
+                        {filtres.map((f) => (
+                            <select
+                                key={f.key}
+                                value={valeurFiltres?.[f.key] ?? ''}
+                                onChange={(e) => onFiltreChange?.(f.key, e.target.value)}
+                                className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
+                                style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                            >
+                                <option value="">{f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}`}</option>
+                                {f.options.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        ))}
+                    </div>
+                )
             )}
             <div className="flex items-center gap-[var(--gap-sm)] ml-auto">
                 {enableRowHeight && (
@@ -1112,6 +1165,8 @@ export function DataTable<T>({
     onSearchChange,
     onFilterChange,
     disableClientSearch = false,
+    enableCollapsibleFilters = false,
+    onClearFilters,
     onColumnOrderChange,
     onColumnVisibilityChange,
     onColumnPinningChange,
@@ -1252,6 +1307,20 @@ export function DataTable<T>({
         setValeurFiltres((prev) => ({ ...prev, [key]: valeur }));
         onFilterChange?.(key, valeur);
     }, [onFilterChange]);
+
+    // État panneau de filtres repliable
+    const [filtresOuverts, setFiltresOuverts] = useState(false);
+    const filtresActifsCount = useMemo(() => {
+        return Object.values(valeurFiltres).filter(v => v !== '').length;
+    }, [valeurFiltres]);
+    const handleClearFilters = useCallback(() => {
+        setValeurFiltres((prev) => {
+            const cleared: Record<string, string> = {};
+            for (const key of Object.keys(prev)) cleared[key] = '';
+            return cleared;
+        });
+        onClearFilters?.();
+    }, [onClearFilters]);
 
     // Filtrage côté client (Fuse.js) — uniquement si disableClientSearch n'est pas activé
     // Utilise la valeur debounced pour éviter les recalculs excessifs
@@ -1663,6 +1732,11 @@ export function DataTable<T>({
                 filtres={filtres}
                 valeurFiltres={valeurFiltres}
                 onFiltreChange={setFiltre}
+                enableCollapsibleFilters={enableCollapsibleFilters}
+                filtresOuverts={filtresOuverts}
+                onToggleFiltres={() => setFiltresOuverts(prev => !prev)}
+                filtresActifsCount={filtresActifsCount}
+                onClearFilters={handleClearFilters}
                 enableColumnVisibility={enableColumnVisibility}
                 colonnes={colonnesFinales}
                 visibilite={visibiliteColonnes}
@@ -1674,6 +1748,20 @@ export function DataTable<T>({
                 hauteurLigne={hauteurLigne}
                 onHauteurChange={setHauteurLigne}
             />
+
+            {/* Panneau de filtres repliable */}
+            {enableCollapsibleFilters && filtres && filtres.length > 0 && (
+                <FilterPanel
+                    open={filtresOuverts}
+                    onOpenChange={setFiltresOuverts}
+                    filters={filtres}
+                    values={valeurFiltres}
+                    onChange={setFiltre}
+                    onClear={handleClearFilters}
+                    activeCount={filtresActifsCount}
+                    showToggle={false}
+                />
+            )}
 
             {/* Conteneur scrollable */}
             <DndContext

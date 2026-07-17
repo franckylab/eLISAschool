@@ -20,7 +20,7 @@ const stateStyles: Record<string, string> = {
 
 const stateTitles: Record<string, string> = {
     GRANTED: 'Activée — cliquer pour refuser',
-    DENIED: 'Refusée — cliquer pour réinitialiser',
+    DENIED: 'Refusée — cliquer pour activer',
     null: 'Non définie — cliquer pour activer',
 };
 

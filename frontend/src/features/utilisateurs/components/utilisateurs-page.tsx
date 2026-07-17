@@ -11,14 +11,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, User, Users, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2, UserMinus, UserCheck, Filter, Briefcase, ExternalLink, Key, QrCode } from 'lucide-react';
+import { Plus, User, Users, Shield, Mail, Phone, Calendar, Eye, Pencil, Trash2, UserMinus, UserCheck, Briefcase, ExternalLink, Key, QrCode } from 'lucide-react';
 
 import { useUtilisateurs, useToggleStatutUtilisateur } from '../hooks/use-utilisateurs';
 import { UtilisateurFormModal } from './utilisateur-form-modal';
 import { SuppressionUtilisateurModal } from './suppression-utilisateur-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -280,23 +279,6 @@ export function UtilisateursPage() {
                 ) : undefined}
             />
 
-            {/* Barre de recherche et filtres */}
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <ElisaSelect
-                        value={filtres.actifFiltre || 'actif'}
-                        onValueChange={(value) => setFiltres((prev) => ({ ...prev, actifFiltre: value as 'tous' | 'actif' | 'inactif', page: 1 }))}
-                        options={[
-                            { value: 'tous', label: t('tousStatuts') },
-                            { value: 'actif', label: t('actifsUniquement') },
-                            { value: 'inactif', label: t('inactifsUniquement') },
-                        ]}
-                        className="min-w-[140px]"
-                    />
-                </div>
-            </div>
-
             {/* Tableau */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -304,17 +286,37 @@ export function UtilisateursPage() {
                 transition={{ delay: 0.2 }}
             >
                 <DataTable
+                    tableId="utilisateurs"
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
-                isFetching={isFetching}
-                enableReordering
-                enablePinning
-                enableColumnVisibility
+                    isFetching={isFetching}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    enableCollapsibleFilters
+                    filtres={[
+                        {
+                            key: 'actifFiltre',
+                            label: t('statut'),
+                            options: [
+                                { value: 'actif', label: t('actifsUniquement') },
+                                { value: 'inactif', label: t('inactifsUniquement') },
+                                { value: 'tous', label: t('tousStatuts') },
+                            ],
+                            allOptionLabel: t('tousStatuts'),
+                        },
+                    ]}
                     searchPlaceholder={t('rechercherPlaceholder')}
                     onSearchChange={(recherche) =>
                         setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                     }
+                    onFilterChange={(key, valeur) => {
+                        if (key === 'actifFiltre') {
+                            setFiltres((prev) => ({ ...prev, actifFiltre: valeur as 'tous' | 'actif' | 'inactif', page: 1 }));
+                        }
+                    }}
+                    onClearFilters={() => setFiltres((prev) => ({ ...prev, actifFiltre: 'tous', page: 1 }))}
                     disableClientSearch
                     pagination={data?.meta ? {
                         page: data.meta.currentPage,
