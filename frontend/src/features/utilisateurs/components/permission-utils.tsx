@@ -56,6 +56,25 @@ export function SourceIcon({ source, className }: { source: string; className?: 
     return <div className={`rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 ${className ?? 'h-3.5 w-3.5'}`} />;
 }
 
+// ─── Badge compteur module : total ( autorisées / refusées ) ───
+
+export function ModuleCountBadge({ total, authorized }: { total: number; authorized: number }) {
+    const refused = total - authorized;
+    return (
+        <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs tabular-nums leading-none flex-shrink-0">
+            <span className="text-gray-400 dark:text-gray-500 font-semibold">{total}</span>
+            <span className="inline-flex items-center gap-px text-green-700 dark:text-green-400 bg-green-100/60 dark:bg-green-900/25 px-1.5 py-0.5 rounded-full font-medium">
+                <Check className="h-[10px] w-[10px] sm:h-3 sm:w-3" />
+                {authorized}
+            </span>
+            <span className="inline-flex items-center gap-px text-red-600 dark:text-red-400 bg-red-100/60 dark:bg-red-900/25 px-1.5 py-0.5 rounded-full font-medium">
+                <X className="h-[10px] w-[10px] sm:h-3 sm:w-3" />
+                {refused}
+            </span>
+        </span>
+    );
+}
+
 // ─── Barre de filtres source + module ───
 
 interface FilterBarsProps {
@@ -276,9 +295,7 @@ export function ModuleTree({ groupe, isExpanded, onToggleModule, detailMap, modu
             >
                 <FolderOpen className={`h-4 w-4 text-dominant-500 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
                 <span>{groupe.libelle}</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto tabular-nums">
-                    {assigned}/{total}
-                </span>
+                <ModuleCountBadge total={total} authorized={assigned} />
             </button>
             {isExpanded && (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700/50 transition-all duration-200">
@@ -369,9 +386,7 @@ export function ModuleEditRow({
                 >
                     <FolderOpen className={`h-4 w-4 text-dominant-500 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
                     {groupe.libelle}
-                    <span className="text-xs text-gray-400 ml-auto tabular-nums">
-                        {checkedCount}/{total}
-                    </span>
+                    <ModuleCountBadge total={total} authorized={checkedCount} />
                 </button>
             </div>
             {isExpanded && (

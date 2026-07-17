@@ -307,7 +307,7 @@ export function RolePermissionsTab({ roleId, estSysteme }: RolePermissionsTabPro
             <CardGrid columns={{ default: 1, md: 3 }}>
                 <StatCard icon={Shield} label={t('permissionsTotal')} value={stats.total} color="blue" />
                 <StatCard icon={CheckCircle} label={t('statAutorisee')} value={stats.assigned} color="green" />
-                <StatCard icon={Ban} label={t('sourceDenied')} value={stats.refused} color="red" />
+                <StatCard icon={Ban} label={t('statRefusee')} value={stats.refused} color="red" />
             </CardGrid>
 
             {/* Filter panel — search + source + module pills, collapsible */}

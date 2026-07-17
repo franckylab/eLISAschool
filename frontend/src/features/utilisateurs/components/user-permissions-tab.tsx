@@ -332,7 +332,7 @@ export function UserPermissionsTab({ utilisateur }: { utilisateur: Utilisateur }
                     color="green"
                     subtitle={t('statAutoriseeTooltip', { roleCount: stats.roleCount, grantedCount: stats.grantedCount })}
                 />
-                <StatCard icon={Ban} label={t('sourceDenied')} value={stats.refused} color="red" />
+                <StatCard icon={Ban} label={t('statRefusee')} value={stats.refused} color="red" />
             </CardGrid>
 
             {/* Changement de rôle */}
@@ -463,8 +463,8 @@ export function UserPermissionsTab({ utilisateur }: { utilisateur: Utilisateur }
                             <>
                                 <span className="text-xs text-gray-400 dark:text-gray-500">
                                     {changeCount > 0
-                                        ? `${changeCount} modification${changeCount > 1 ? 's' : ''} en attente`
-                                        : 'Aucune modification'}
+                                        ? t('modificationsEnAttente', { count: changeCount })
+                                        : t('aucuneModification')}
                                 </span>
                                 <div className="flex gap-2">
                                     {hasDirectPermissions && (

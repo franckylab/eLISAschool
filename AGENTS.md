@@ -363,6 +363,7 @@ Phase 8s : Refactor permissions (simplification 4→3 états). Connecter vraies 
 - **4 pills de filtre** : Toutes | Autorisée | Refusée (denied+none) | Surchargées (granted+denied)
 - **`SourceBadge` supprimé** — remplacé par checkbox (vert/rouge) + icône discrète (`Lock` pour rôle, `PlusCircle` pour surcharge, `Ban` pour refus). Plus de 3e état vide.
 - **`filtreNeutre`, `filtreRole`, `sourceRole`, `sourceGranted`** retirés des locales
+- **`ModuleCountBadge`** (`permission-utils.tsx:61`) : affiche `total (✓autorisee / ✗refusee)` en badge. Utilisé dans `ModuleTree` et `ModuleEditRow`. Coloration `bg-green-100/60 dark:bg-green-900/25` / `bg-red-100/60 dark:bg-red-900/25`, icônes `Check`/`X`. Responsive `text-[11px] sm:text-xs`. Calcul : `refused = total - authorized`.
 
 ### Cycles PermissionCheckbox — Utilisateurs (Phase 8s simplifié)
 - **Utilisateurs** : `GRANTED ↔ DENIED` (2 états, plus de null). Toggle binaire dans la modale. `getInitialState` mappe TOUTES les permissions : `role`/`granted` → `GRANTED`, `denied`/`none` → `DENIED`.
