@@ -90,6 +90,20 @@ import groupesEtablissementsFr from '@/locales/fr/groupes-etablissements.json';
 import groupesEtablissementsEn from '@/locales/en/groupes-etablissements.json';
 import programmesFr from '@/locales/fr/programmes.json';
 import programmesEn from '@/locales/en/programmes.json';
+import filieresFr from '@/locales/fr/filieres.json';
+import filieresEn from '@/locales/en/filieres.json';
+import specialitesFr from '@/locales/fr/specialites.json';
+import specialitesEn from '@/locales/en/specialites.json';
+import examensNationauxFr from '@/locales/fr/examens-nationaux.json';
+import examensNationauxEn from '@/locales/en/examens-nationaux.json';
+import parametresFr from '@/locales/fr/parametres.json';
+import parametresEn from '@/locales/en/parametres.json';
+import diplomesElevesFr from '@/locales/fr/diplomes-eleves.json';
+import diplomesElevesEn from '@/locales/en/diplomes-eleves.json';
+import contratsFr from '@/locales/fr/contrats.json';
+import contratsEn from '@/locales/en/contrats.json';
+import paieFr from '@/locales/fr/paie.json';
+import paieEn from '@/locales/en/paie.json';
 
 i18n
     .use(LanguageDetector)
@@ -137,6 +151,13 @@ i18n
                 securite: securiteFr,
                 'groupes-etablissements': groupesEtablissementsFr,
                 programmes: programmesFr,
+                filieres: filieresFr,
+                specialites: specialitesFr,
+                'examens-nationaux': examensNationauxFr,
+                parametres: parametresFr,
+                'diplomes-eleves': diplomesElevesFr,
+                contrats: contratsFr,
+                paie: paieFr,
             },
             en: {
                 common: commonEn,
@@ -179,11 +200,18 @@ i18n
                 securite: securiteEn,
                 'groupes-etablissements': groupesEtablissementsEn,
                 programmes: programmesEn,
+                filieres: filieresEn,
+                specialites: specialitesEn,
+                'examens-nationaux': examensNationauxEn,
+                parametres: parametresEn,
+                'diplomes-eleves': diplomesElevesEn,
+                contrats: contratsEn,
+                paie: paieEn,
             },
         },
         fallbackLng: 'fr',
         defaultNS: 'common',
-        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes'],
+        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes', 'filieres', 'specialites', 'examens-nationaux', 'diplomes-eleves', 'parametres', 'contrats', 'paie'],
         interpolation: { escapeValue: false },
         detection: {
             order: ['localStorage', 'navigator'],

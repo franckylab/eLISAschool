@@ -57,6 +57,11 @@
         "notifications": {
             "titre": "Notifications",
             "description": "Configure notification preferences"
+        },
+        "historique": {
+            "titre": "History",
+            "description": "View configuration change history"
         }
-    }
+    },
+    "chargementErreur": "Error loading configuration"
 }

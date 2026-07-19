@@ -229,12 +229,25 @@ export enum Role {
     
     /** Audit interne (MINEDUC) */
     AUDITEUR_INTERNE = 'AUDITEUR_INTERNE',
-    
+
     /** Statisticien éducation */
     STATISTICIEN = 'STATISTICIEN',
-    
+
     /** Communication institutionnelle */
     CHARGE_COMMUNICATION = 'CHARGE_COMMUNICATION',
+
+    // ==================================
+    // PERSONNEL RH & PAIE (3 nouveaux rôles)
+    // ==================================
+
+    /** Gestionnaire RH — contrats, affectations */
+    RH = 'RH',
+
+    /** Gestionnaire de paie — bulletins, cotisations, primes, retenues */
+    GESTIONNAIRE_PAIE = 'GESTIONNAIRE_PAIE',
+
+    /** Valideur paie — validation finale des bulletins (séparation 4 yeux) */
+    VALIDATEUR_PAIE = 'VALIDATEUR_PAIE',
 }
 
 /**
@@ -343,6 +356,34 @@ export enum Permission {
     PERSONNEL_TYPES_VIEW = 'personnel:types:view',
     PERSONNEL_TYPES_CREATE = 'personnel:types:create',
     PERSONNEL_MANAGE = 'personnel:manage',
+
+    // ==================================
+    // CONTRATS (module autonome)
+    // ==================================
+    CONTRATS_VIEW = 'contrats:view',
+    CONTRATS_CREATE = 'contrats:create',
+    CONTRATS_EDIT = 'contrats:edit',
+    CONTRATS_DELETE = 'contrats:delete',
+    CONTRATS_EXPORT = 'contrats:export',
+    CONTRATS_CONFIG_VIEW = 'contrats:config:view',
+    CONTRATS_CONFIG_CREATE = 'contrats:config:create',
+    CONTRATS_CONFIG_EDIT = 'contrats:config:edit',
+    CONTRATS_CONFIG_DELETE = 'contrats:config:delete',
+
+    // ==================================
+    // PAIE (module autonome)
+    // ==================================
+    PAIE_VIEW = 'paie:view',
+    PAIE_CREATE = 'paie:create',
+    PAIE_EDIT = 'paie:edit',
+    PAIE_DELETE = 'paie:delete',
+    PAIE_GENERER = 'paie:generer',
+    PAIE_VALIDER = 'paie:valider',
+    PAIE_EXPORT = 'paie:export',
+    PAIE_CONFIG_VIEW = 'paie:config:view',
+    PAIE_CONFIG_CREATE = 'paie:config:create',
+    PAIE_CONFIG_EDIT = 'paie:config:edit',
+    PAIE_CONFIG_DELETE = 'paie:config:delete',
 
     // ==================================
     // CLASSES & MATIÈRES
@@ -947,6 +988,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
         Permission.APPARENCE_FONDS_MANAGE,
+        // Contrats (module autonome)
+        Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
+        Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
+        Permission.CONTRATS_CONFIG_VIEW, Permission.CONTRATS_CONFIG_CREATE,
+        Permission.CONTRATS_CONFIG_EDIT, Permission.CONTRATS_CONFIG_DELETE,
+        // Paie (module autonome)
+        Permission.PAIE_VIEW, Permission.PAIE_CREATE, Permission.PAIE_EDIT,
+        Permission.PAIE_DELETE, Permission.PAIE_GENERER, Permission.PAIE_VALIDER,
+        Permission.PAIE_EXPORT,
+        Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
+        Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
     ],
 
     [Role.COMPTABLE]: [
@@ -997,6 +1049,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_EXPORT,
         Permission.FINANCES_DASHBOARD_KPI,
         Permission.FINANCES_RAPPORTS_GENERER,
+        // Paie (module autonome) — opérationnel, ne valide pas
+        Permission.PAIE_VIEW, Permission.PAIE_CREATE, Permission.PAIE_EDIT,
+        Permission.PAIE_GENERER, Permission.PAIE_EXPORT,
+        Permission.PAIE_CONFIG_VIEW,
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
@@ -1101,6 +1157,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
         Permission.APPARENCE_FONDS_MANAGE,
+        // Contrats (module autonome)
+        Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
+        Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
+        Permission.CONTRATS_CONFIG_VIEW, Permission.CONTRATS_CONFIG_CREATE,
+        Permission.CONTRATS_CONFIG_EDIT, Permission.CONTRATS_CONFIG_DELETE,
+        // Paie (module autonome)
+        Permission.PAIE_VIEW, Permission.PAIE_CREATE, Permission.PAIE_EDIT,
+        Permission.PAIE_DELETE, Permission.PAIE_GENERER, Permission.PAIE_VALIDER,
+        Permission.PAIE_EXPORT,
+        Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
+        Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
     ],
 
     [Role.ENSEIGNANT]: [
@@ -1949,6 +2016,46 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.VALIDATION_CLUBS_LEVEL2,
         Permission.VALIDATION_DASHBOARD_VIEW,
         Permission.DOCUMENTS_VIEW,
+    ],
+
+    // ==================================
+    // PERSONNEL RH & PAIE (3 nouveaux rôles)
+    // ==================================
+
+    [Role.RH]: [
+        // Contrats (module autonome) — intégral
+        Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
+        Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
+        Permission.CONTRATS_CONFIG_VIEW, Permission.CONTRATS_CONFIG_CREATE,
+        Permission.CONTRATS_CONFIG_EDIT, Permission.CONTRATS_CONFIG_DELETE,
+        // Paie — lecture seule (voir salaires des membres)
+        Permission.PAIE_VIEW,
+        // Personnel
+        Permission.PERSONNEL_VIEW, Permission.PERSONNEL_CREATE, Permission.PERSONNEL_EDIT,
+        Permission.PERSONNEL_DELETE,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+    ],
+
+    [Role.GESTIONNAIRE_PAIE]: [
+        // Paie (module autonome) — complet sauf validation (4 yeux)
+        Permission.PAIE_VIEW, Permission.PAIE_CREATE, Permission.PAIE_EDIT,
+        Permission.PAIE_DELETE, Permission.PAIE_GENERER, Permission.PAIE_EXPORT,
+        Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
+        Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
+        // Lecture personnel (pour contexte)
+        Permission.PERSONNEL_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW, Permission.REQUETES_CREATE,
+    ],
+
+    [Role.VALIDATEUR_PAIE]: [
+        // Paie (module autonome) — validation uniquement
+        Permission.PAIE_VIEW, Permission.PAIE_VALIDER, Permission.PAIE_EXPORT,
+        // Lecture personnel (pour contexte)
+        Permission.PERSONNEL_VIEW,
+        Permission.MESSAGES_SEND,
+        Permission.REQUETES_VIEW,
     ],
 };
 

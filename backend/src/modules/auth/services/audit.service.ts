@@ -48,12 +48,16 @@ export class AuditService {
      * Enregistre une action dans le log d'audit
      */
     async log(options: AuditOptions, req?: Request): Promise<AuditLog> {
-        const auditLog = this.auditRepo.create({
+        const sanitizedOptions = {
             ...options,
+            utilisateurId: this.isValidUUID(options.utilisateurId) ? options.utilisateurId : undefined,
+            cibleId: this.isValidUUID(options.cibleId) ? options.cibleId : undefined,
             severity: options.severity || AuditSeverity.INFO,
             ipAddress: req ? this.getClientIP(req) : undefined,
             userAgent: req?.headers['user-agent'],
-        });
+        };
+
+        const auditLog = this.auditRepo.create(sanitizedOptions);
 
         await this.auditRepo.save(auditLog);
 
@@ -213,6 +217,14 @@ export class AuditService {
     }
 
     /**
+     * Valide qu'une chaîne est un UUID v4
+     */
+    private isValidUUID(value?: string): value is string {
+        if (!value) return false;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    }
+
+    /**
      * Extraire l'adresse IP du client
      */
     private getClientIP(req: Request): string {
@@ -226,7 +238,7 @@ export class AuditService {
     /**
      * Raccourci pour les accès refusés
      */
-    async logAccessDenied(utilisateurId: string, ressource: string, req?: Request): Promise<void> {
+    async logAccessDenied(utilisateurId: string | undefined, ressource: string, req?: Request): Promise<void> {
         await this.log({
             utilisateurId,
             action: AuditAction.ACCESS_DENIED,

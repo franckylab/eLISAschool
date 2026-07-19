@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
     FileText, CreditCard, Percent, Gift, Ban, Plus, Edit, Trash2, Eye,
     Loader2, Calendar, Building, CheckCircle2, XCircle, FileDown, Briefcase, User,
@@ -10,6 +10,9 @@ import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { Badge } from '@/components/ui/Badge';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { TabsBar, TabsContent } from '@/components/ui/Tabs';
+import type { Tab } from '@/components/ui/Tabs';
 import { ContratWizardModal } from './contrat-wizard-modal';
 import { useContrats, useSupprimerContrat, useBulletins, useCreerBulletin, useGenererBulletin, useModifierBulletin, useSupprimerBulletin, useElementsBulletin, useCotisations, useCreerCotisation, useModifierCotisation, useSupprimerCotisation, useTypesPrimes, useCreerTypePrime, useModifierTypePrime, useSupprimerTypePrime, useTypesRetenues, useCreerTypeRetenue, useModifierTypeRetenue, useSupprimerTypeRetenue, useTypesContrat, useCreerTypeContrat, useModifierTypeContrat, useSupprimerTypeContrat, useToggleTypeContrat, useSimulerPaie, useRegenererBulletin, useGenererBulletinsMasse, useRapportPaie } from '../hooks/use-paie';
 import { usePersonnel } from '../hooks/use-personnel';
@@ -259,16 +262,14 @@ function TypesContratTab() {
                                     <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{t.ordre}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
+                                            <button onClick={() => toggle.mutate(t.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t.actif ? 'Désactiver' : 'Activer'}>
+                                                {t.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
+                                            </button>
+                                            <button onClick={() => openEdit(t)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Modifier">
+                                                <Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                            </button>
                                             {!t.estSysteme && (
-                                                <button onClick={() => toggle.mutate(t.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t.actif ? 'Désactiver' : 'Activer'}>
-                                                    {t.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
-                                                </button>
-                                            )}
-                                            {!t.estSysteme && (
-                                                <button onClick={() => openEdit(t)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
-                                            )}
-                                            {!t.estSysteme && (
-                                                <button onClick={() => { if (confirm('Supprimer ce type de contrat ?')) supprimer.mutate(t.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                                <button onClick={() => { if (confirm('Supprimer ce type de contrat ?')) supprimer.mutate(t.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title="Supprimer"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                             )}
                                         </div>
                                     </td>
@@ -299,7 +300,7 @@ function TypesContratTab() {
             >
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="CDD, INTERIMAIRE" required />
+                        <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="CDD, INTERIMAIRE" required disabled={!!editing?.estSysteme} hint={editing?.estSysteme ? 'Code système non modifiable' : undefined} />
                         <ElisaInput label="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} placeholder="Contrat à durée déterminée" required />
                     </div>
                     <ElisaInput label="Description (optionnelle)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -945,43 +946,39 @@ function RetenuesTab() {
 }
 
 export function ContratsPaiePage() {
+    const { t } = useTranslation('contrat');
     const [ongletActif, setOngletActif] = useState<OngletId>('contrats');
+
+    const onglets: Tab[] = ONGLETS.map((o) => ({
+        id: o.id,
+        label: t(`onglets.${o.id}`, o.label),
+        icon: o.icon,
+    }));
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Gestion des contrats & paie</h1>
-                <p className="text-gray-500 dark:text-gray-400">Gérez les contrats, bulletins de paie, cotisations, primes et retenues du personnel</p>
-            </div>
+            <PageHeader
+                title={t('titre', 'Gestion des contrats & paie')}
+                description={t('description', 'Gérez les contrats, bulletins de paie, cotisations, primes et retenues du personnel')}
+                icon={Briefcase}
+                variant="gradient"
+            />
 
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex gap-6 overflow-x-auto">
-                    {ONGLETS.map((o) => {
-                        const Icon = o.icon;
-                        return (
-                            <button key={o.id} onClick={() => setOngletActif(o.id)}
-                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    ongletActif === o.id
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {o.label}
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
+            <TabsBar
+                tabs={onglets}
+                activeTab={ongletActif}
+                onTabChange={(tabId) => setOngletActif(tabId as OngletId)}
+                variant="underline"
+            />
 
-            <motion.div key={ongletActif} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+            <TabsContent activeTab={ongletActif}>
                 {ongletActif === 'contrats' && <ContratsTab />}
                 {ongletActif === 'types-contrat' && <TypesContratTab />}
                 {ongletActif === 'bulletins' && <BulletinsTab />}
                 {ongletActif === 'cotisations' && <CotisationsTab />}
                 {ongletActif === 'primes' && <PrimesTab />}
                 {ongletActif === 'retenues' && <RetenuesTab />}
-            </motion.div>
+            </TabsContent>
         </div>
     );
 }

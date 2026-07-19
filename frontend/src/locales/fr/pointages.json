@@ -1,0 +1,17 @@
+{
+    "titre": "Gestion des Pointages",
+    "description": "Suivez les pointages du personnel",
+    "nouveau": "Nouveau pointage",
+    "rechercher": "Rechercher un pointage...",
+    "personnel": "Personnel",
+    "date": "Date",
+    "arrivee": "Arrivée",
+    "depart": "Départ",
+    "heures": "Heures",
+    "statut": "Statut",
+    "presents": "Présents",
+    "retards": "Retards",
+    "tauxPresence": "Taux de présence",
+    "moyenneHeures": "Moy. heures",
+    "uneErreurEstSurvenue": "Une erreur est survenue"
+}

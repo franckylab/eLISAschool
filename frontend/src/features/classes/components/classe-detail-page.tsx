@@ -6,7 +6,7 @@ import {
     ArrowLeft, Users, BookOpen, MapPin,
     Edit, Trash2, UserPlus, TrendingUp, Award, Power,
     Calendar, CheckCircle, XCircle, AlertCircle,
-    GraduationCap, School,
+    Group,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';
@@ -200,7 +200,7 @@ export function ClasseDetailPage() {
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
                 <PageHeader
                     variant="gradient"
-                    icon={GraduationCap}
+                    icon={Group}
                     onBack={() => navigate({ to: '/classes' })}
                     breadcrumbLabel={classe.nom}
                     actions={
@@ -267,7 +267,7 @@ export function ClasseDetailPage() {
                     <StatCard icon={MapPin} label={t('stats.salle')} value={salleNom} tone="success" />
                     <StatCard icon={Award} label={t('stats.principal')} value={principalNom} tone="purple" />
                     <StatCard
-                        icon={School}
+                        icon={Group}
                         label={t('stats.type')}
                         value={t(`types.${classe.typeClasse.toLowerCase()}`) || classe.typeClasse}
                         tone="info"

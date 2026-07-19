@@ -1,19 +1,9 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Période (v3.0 — Structure hiérarchique)
- * ==================================
- * Version: 3.0.0
- * Auteur: franck arlos chendjou
- *
- * 3 onglets : Informations + Structure + Données liées
- * Actions : Clôturer / Réouvrir / Supprimer / Gérer compositions
- */
-
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ArrowLeft, Calendar, Clock, Trash2,
+    CalendarRange, Clock, Trash2,
     AlertCircle, Lock, Unlock, FileText,
     BarChart3, CheckCircle2, Timer, Edit, Network,
 } from 'lucide-react';
@@ -26,24 +16,21 @@ import {
 import { StatutPeriode, niveauPeutAvoirEnfants } from '../types/periode.types';
 import type { PeriodeComposition } from '../types/periode.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { InfoField, TextLabel } from '@/components/ui';
 import { ModalCloturePeriode } from './modal-cloture-periode';
 import { ModalFormPeriode } from './modal-form-periode';
 import { ModalGestionCompositions } from './modal-gestion-compositions';
 import { usePermissions } from '@/hooks';
 import { RowActions } from '@/components/ui/RowActions';
-import { useMediaQuery } from '@/hooks/use-media-query';
 
-/** Référence stable pour éviter les re-renders quand la query est désactivée */
 const EMPTY_COMPOSITIONS: PeriodeComposition[] = [];
 
 type OngletActif = 'informations' | 'structure' | 'donnees';
-
-const LABELS_STATUT: Record<string, string> = {
-    OUVERTE: 'Ouverte',
-    EN_ATTENTE_CLOTURE: 'En attente de validation',
-    CLOTUREE: 'Clôturée',
-};
 
 const COULEURS_STATUT: Record<string, string> = {
     OUVERTE: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
@@ -60,7 +47,6 @@ function formatDateFr(dateStr: string): string {
     });
 }
 
-/** Progression temporelle (0-100) entre deux dates */
 function calculeProgression(dateDebut: string, dateFin: string): number {
     const debut = new Date(dateDebut).getTime();
     const fin = new Date(dateFin).getTime();
@@ -70,27 +56,29 @@ function calculeProgression(dateDebut: string, dateFin: string): number {
     return Math.round(((maintenant - debut) / (fin - debut)) * 100);
 }
 
-/** Format de date court pour mobile (ex: "15 jan. 2026") */
-function formatDateFrCourt(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    });
+function StatutBadge({ statut, label }: { statut: string; label: string }) {
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${COULEURS_STATUT[statut]}`}>
+            {statut === StatutPeriode.OUVERTE && <CheckCircle2 className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
+            {statut === StatutPeriode.CLOTUREE && <Lock className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
+            {statut === StatutPeriode.EN_ATTENTE_CLOTURE && <Timer className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
+            {label}
+        </span>
+    );
 }
 
 export function PeriodeDetailPage() {
     const { id } = useParams({ from: '/_auth/periodes/$id' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const estMobile = useMediaQuery('(max-width: 479px)');
+    const { t } = useTranslation('periodes');
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
     const [confirmAction, setConfirmAction] = useState<'supprimer' | 'reouvrir' | null>(null);
     const [modalClotureOpen, setModalClotureOpen] = useState(false);
     const [modalFormOpen, setModalFormOpen] = useState(false);
     const [modalCompositionsOpen, setModalCompositionsOpen] = useState(false);
 
-    const { data: periode, isLoading } = usePeriode(id);
+    const { data: periode, isLoading, isError, error, refetch } = usePeriode(id);
     const { data: compositionsEnfants = EMPTY_COMPOSITIONS } = useCompositions(id);
     const { data: progressionEnfants = [] } = useProgressionEnfants(id);
     const supprimer = useSupprimerPeriode();
@@ -100,7 +88,6 @@ export function PeriodeDetailPage() {
     const estCloturee = periode?.statut === StatutPeriode.CLOTUREE;
     const estOuverte = periode?.statut === StatutPeriode.OUVERTE;
 
-    // Calculs dérivés
     const dureeJours = useMemo(() => {
         if (!periode) return 0;
         return Math.ceil(
@@ -120,72 +107,42 @@ export function PeriodeDetailPage() {
     }, [periode]);
 
     const onglets = [
-        { id: 'informations' as const, label: 'Informations', icon: FileText },
-        { id: 'structure' as const, label: 'Structure', icon: Network },
-        { id: 'donnees' as const, label: 'Données liées', icon: BarChart3 },
+        { id: 'informations' as const, label: t('detail.informations'), icon: FileText },
+        { id: 'structure' as const, label: t('detail.structure'), icon: Network },
+        { id: 'donnees' as const, label: t('detail.donneesLiees'), icon: BarChart3 },
     ];
 
-    // Vérifier si le niveau peut avoir des enfants
     const { data: niveaux = [] } = useNiveauxPeriode();
     const peutAvoirEnfants = periode ? niveauPeutAvoirEnfants(niveaux, periode.niveauId) : false;
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--color-bordure)] border-t-[var(--color-dominant-600)]" />
-            </div>
-        );
-    }
+    if (isLoading) return <PageSkeleton showHeader />;
 
-    if (!periode) {
-        return (
-            <div className="flex flex-col items-center justify-center h-64 gap-[var(--gap-md)]">
-                <AlertCircle className="h-[var(--icon-xl)] w-[var(--icon-xl)] text-[var(--color-text-tertiary)]" />
-                <p style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.125rem)' }} className="text-[var(--color-text-secondary)]">
-                    Période non trouvée
-                </p>
-                <ElisaButton variant="primary" onClick={() => navigate({ to: '/periodes' } as any)}>
-                    Retour à la liste
-                </ElisaButton>
-            </div>
-        );
-    }
+    if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
+
+    if (!periode) return <ErrorMessage message={t('periodeNonTrouvee')} />;
 
     return (
-        <div className="flex flex-col gap-[var(--gap-lg)] w-full max-w-[1200px] mx-auto" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
-
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-[var(--radius-xl)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
-                style={{ padding: 'var(--padding-modal-body)' }}
-            >
-                <div className="flex flex-col gap-[var(--gap-md)]">
-                    {/* Retour + Actions */}
-                    <div className="flex items-center justify-between flex-wrap gap-[var(--gap-sm)]">
-                        <ElisaButton
-                            variant="ghost"
-                            size="sm"
-                            icon={<ArrowLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                            onClick={() => navigate({ to: '/periodes' } as any)}
-                        >
-                            Retour
-                        </ElisaButton>
-
-                        {/* Actions secondaires — menu kebab mobile */}
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                variant="gradient"
+                tone="dominant"
+                showBreadcrumbs
+                breadcrumbLabel={periode.nom}
+                onBack={() => navigate({ to: '/periodes' } as any)}
+                actions={
+                    <>
                         <div className="sm:hidden">
                             <RowActions actions={[
                                 ...(estOuverte ? [{
                                     key: 'modifier',
-                                    label: 'Modifier',
+                                    label: t('actions.modifier'),
                                     icon: Edit,
                                     onClick: () => setModalFormOpen(true),
                                     variant: 'primary' as const,
                                 }] : []),
                                 ...(estOuverte ? [{
                                     key: 'cloturer',
-                                    label: 'Clôturer',
+                                    label: t('actions.cloturer'),
                                     icon: Lock,
                                     onClick: () => setModalClotureOpen(true),
                                     variant: 'warning' as const,
@@ -193,7 +150,7 @@ export function PeriodeDetailPage() {
                                 }] : []),
                                 ...(estCloturee ? [{
                                     key: 'reouvrir',
-                                    label: 'Réouvrir',
+                                    label: t('actions.reouvrir'),
                                     icon: Unlock,
                                     onClick: () => setConfirmAction('reouvrir'),
                                     variant: 'info' as const,
@@ -201,7 +158,7 @@ export function PeriodeDetailPage() {
                                 }] : []),
                                 ...(estOuverte ? [{
                                     key: 'supprimer',
-                                    label: 'Supprimer',
+                                    label: t('actions.supprimer'),
                                     icon: Trash2,
                                     onClick: () => setConfirmAction('supprimer'),
                                     variant: 'danger' as const,
@@ -210,157 +167,132 @@ export function PeriodeDetailPage() {
                             ]} />
                         </div>
 
-                        {/* Actions desktop — boutons complets */}
-                        <div className="hidden sm:flex items-center gap-[var(--gap-sm)] flex-wrap">
+                        <div className="hidden sm:flex items-center gap-2 flex-wrap">
                             {estOuverte && (
                                 <ElisaButton
                                     variant="outline"
                                     size="sm"
-                                    icon={<Edit className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    icon={<Edit className="h-4 w-4" />}
                                     onClick={() => setModalFormOpen(true)}
                                 >
-                                    Modifier
+                                    {t('actions.modifier')}
                                 </ElisaButton>
                             )}
                             {estOuverte && (
                                 <ElisaButton
                                     variant="outline"
                                     size="sm"
-                                    icon={<Lock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    icon={<Lock className="h-4 w-4" />}
                                     isLoading={cloturer.isPending}
                                     onClick={() => setModalClotureOpen(true)}
                                 >
-                                    Clôturer
+                                    {t('actions.cloturer')}
                                 </ElisaButton>
                             )}
                             {estCloturee && (
                                 <ElisaButton
                                     variant="accent"
                                     size="sm"
-                                    icon={<Unlock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    icon={<Unlock className="h-4 w-4" />}
                                     isLoading={reouvrir.isPending}
                                     onClick={() => setConfirmAction('reouvrir')}
                                 >
-                                    Réouvrir
+                                    {t('actions.reouvrir')}
                                 </ElisaButton>
                             )}
                             {estOuverte && (
                                 <ElisaButton
                                     variant="danger"
                                     size="sm"
-                                    icon={<Trash2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    icon={<Trash2 className="h-4 w-4" />}
                                     isLoading={supprimer.isPending}
                                     onClick={() => setConfirmAction('supprimer')}
                                 >
-                                    Supprimer
+                                    {t('actions.supprimer')}
                                 </ElisaButton>
                             )}
                         </div>
+                    </>
+                }
+            >
+                <div className="flex items-start gap-3 sm:gap-4 md:gap-6">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 p-[clamp(0.75rem,2.5vw,1rem)]">
+                        <CalendarRange className="h-[clamp(1.75rem,6vw,2.5rem)] w-[clamp(1.75rem,6vw,2.5rem)] text-white" />
                     </div>
-
-                    {/* Titre + badges */}
-                    <div className="flex items-start gap-[var(--gap-md)] flex-wrap">
-                        <div
-                            className="rounded-[var(--radius-lg)] flex items-center justify-center shrink-0"
-                            style={{
-                                width: 'clamp(48px, 5vw, 64px)',
-                                height: 'clamp(48px, 5vw, 64px)',
-                                background: 'var(--color-dominant-600)',
-                            }}
-                        >
-                            <Calendar
-                                className="text-white"
-                                style={{ width: 'clamp(24px, 2.5vw, 32px)', height: 'clamp(24px, 2.5vw, 32px)' }}
-                            />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-[var(--gap-sm)] flex-wrap mb-[var(--space-xxs)]">
-                                <h1 className="font-bold text-[var(--color-text-primary)] truncate" style={{ fontSize: 'clamp(1.25rem, 1.1rem + 0.6vw, 1.75rem)' }}>
-                                    {periode.nom}
-                                </h1>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${COULEURS_STATUT[periode.statut]}`}>
-                                    {LABELS_STATUT[periode.statut]}
+                    <div className="min-w-0 flex-1 space-y-1">
+                        <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{periode.nom}</h1>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <StatutBadge statut={periode.statut} label={t(`statut.${periode.statut}`)} />
+                            {periode.niveau?.label && (
+                                <span className="rounded-full border px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium bg-white/10 text-white/80 border-white/20">
+                                    {periode.niveau.label}
                                 </span>
-                                {periode.niveau?.label && (
-                                    <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]">
-                                        {periode.niveau.label}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap gap-[var(--gap-md)] text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                <span>{dureeJours} jours</span>
-                                {periode.anneeScolaire && (
-                                    <>
-                                        <span>•</span>
-                                        <span className="font-medium">{periode.anneeScolaire.libelle}</span>
-                                    </>
-                                )}
-                            </div>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-white/70 text-[clamp(0.75rem,2vw,0.9375rem)]">
+                            <span>{t('carte.dureeJours', { count: dureeJours })}</span>
+                            {periode.anneeScolaire && (
+                                <>
+                                    <span>•</span>
+                                    <span className="font-medium">{periode.anneeScolaire.libelle}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </PageHeader>
 
             {/* Cartes résumé */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-[var(--gap-sm)]">
                 {[
-                    { label: 'Début', value: estMobile ? formatDateFrCourt(periode.dateDebut) : formatDateFr(periode.dateDebut), icon: Calendar },
-                    { label: 'Fin', value: estMobile ? formatDateFrCourt(periode.dateFin) : formatDateFr(periode.dateFin), icon: Calendar },
-                    { label: 'Durée', value: `${dureeJours} jours`, icon: Clock },
-                    { label: 'Progression', value: `${progression}%`, icon: Timer },
+                    { label: t('carte.debut'), value: formatDateFr(periode.dateDebut), icon: CalendarRange },
+                    { label: t('carte.fin'), value: formatDateFr(periode.dateFin), icon: CalendarRange },
+                    { label: t('carte.duree'), value: t('carte.dureeJours', { count: dureeJours }), icon: Clock },
+                    { label: t('carte.progression'), value: `${progression}%`, icon: Timer },
                 ].map((carte, i) => {
                     const Icon = carte.icon;
                     return (
-                        <motion.div
-                            key={carte.label}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.05 * (i + 1) }}
-                            className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
-                            style={{ padding: 'var(--space-md)' }}
-                        >
-                            <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
-                                <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-tertiary)]" />
-                                <span style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)' }} className="text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
-                                    {carte.label}
-                                </span>
-                            </div>
-                            <p className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem)' }}>
-                                {carte.value}
-                            </p>
-                        </motion.div>
+                        <Card key={carte.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * (i + 1) }}>
+                            <CardContent className="p-[var(--space-md)]">
+                                <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
+                                    <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-tertiary)]" />
+                                    <span className="text-[clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)] text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
+                                        {carte.label}
+                                    </span>
+                                </div>
+                                <p className="font-semibold text-[var(--color-text-primary)] text-[clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem)]">
+                                    {carte.value}
+                                </p>
+                            </CardContent>
+                        </Card>
                     );
                 })}
             </div>
 
             {/* Barre de progression */}
             {estOuverte && progression > 0 && progression < 100 && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.25 }}
-                    className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
-                    style={{ padding: 'var(--space-md)' }}
-                >
-                    <div className="flex items-center justify-between mb-[var(--space-xs)]">
-                        <span className="flex items-center gap-[var(--gap-xs)] text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                            <Timer className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                            Progression
-                        </span>
-                        <span className="font-semibold text-[var(--color-dominant-700)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                            {progression}%
-                        </span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-[var(--color-surface-alt)] overflow-hidden">
-                        <motion.div
-                            className="h-full rounded-full"
-                            style={{ background: 'var(--color-dominant-600)' }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progression}%` }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                        />
-                    </div>
-                </motion.div>
+                <Card>
+                    <CardContent className="p-[var(--space-md)]">
+                        <div className="flex items-center justify-between mb-[var(--space-xs)]">
+                            <span className="flex items-center gap-[var(--gap-xs)] text-[var(--color-text-secondary)] text-[clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)]">
+                                <Timer className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+                                {t('carte.progression')}
+                            </span>
+                            <span className="font-semibold text-[var(--color-dominant-700)] text-[clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)]">
+                                {progression}%
+                            </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-[var(--color-surface-alt)] overflow-hidden">
+                            <motion.div
+                                className="h-full rounded-full"
+                                style={{ background: 'var(--color-dominant-600)' }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progression}%` }}
+                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
             )}
 
             {/* Onglets */}
@@ -382,7 +314,7 @@ export function PeriodeDetailPage() {
                                 title={onglet.label}
                             >
                                 <Icon className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
-                                <span className="hidden sm:inline">{onglet.id === 'donnees' ? 'Données' : onglet.label}</span>
+                                <span className="hidden sm:inline">{onglet.id === 'donnees' ? t('detail.donneesLiees') : onglet.label}</span>
                             </button>
                         );
                     })}
@@ -400,96 +332,75 @@ export function PeriodeDetailPage() {
                 >
                     {ongletActif === 'informations' && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--gap-md)]">
-                            {/* Informations générales */}
-                            <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'var(--padding-modal-body)' }}>
-                                <h3 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-[var(--gap-xs)] mb-[var(--space-md)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                                    <FileText className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)]" />
-                                    Informations générales
-                                </h3>
-                                <dl className="space-y-[var(--space-sm)]">
-                                    {[
-                                        { label: 'Nom', value: periode.nom },
-                                        { label: 'Type', value: periode.niveau?.label || '-' },
-                                        { label: 'Statut', value: LABELS_STATUT[periode.statut], badge: COULEURS_STATUT[periode.statut] },
-                                    ].map((item) => (
-                                        <div key={item.label} className="flex items-center justify-between py-[var(--space-xxs)] border-b border-[var(--color-bordure)] last:border-0">
-                                            <dt style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }} className="text-[var(--color-text-secondary)]">
-                                                {item.label}
-                                            </dt>
-                                            {item.badge ? (
-                                                <dd className={`px-2 py-0.5 rounded-full text-xs font-medium border ${item.badge}`}>
-                                                    {item.value}
-                                                </dd>
-                                            ) : (
-                                                <dd className="text-[var(--color-text-primary)] font-medium" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                                    {item.value}
-                                                </dd>
-                                            )}
-                                        </div>
-                                    ))}
-                                </dl>
-                            </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                                        {t('detail.informationsGenerales')}
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <InfoField label={t('nom')} value={periode.nom} />
+                                        <InfoField label={t('niveau')} value={periode.niveau?.label || '-'} />
+                                        <InfoField
+                                            label={t('detail.statut')}
+                                            value={
+                                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border ${COULEURS_STATUT[periode.statut]}`}>
+                                                    {t(`statut.${periode.statut}`)}
+                                                </span>
+                                            }
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                            {/* Dates */}
-                            <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'var(--padding-modal-body)' }}>
-                                <h3 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-[var(--gap-xs)] mb-[var(--space-md)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                                    <Clock className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)]" />
-                                    Période
-                                </h3>
-                                <dl className="space-y-[var(--space-sm)]">
-                                    {[
-                                        { label: 'Date de début', value: formatDateFr(periode.dateDebut) },
-                                        { label: 'Date de fin', value: formatDateFr(periode.dateFin) },
-                                        { label: 'Durée totale', value: `${dureeJours} jours` },
-                                        { label: 'Année scolaire', value: periode.anneeScolaire?.libelle || '-' },
-                                    ].map((item) => (
-                                        <div key={item.label} className="flex items-start justify-between py-[var(--space-xxs)] border-b border-[var(--color-bordure)] last:border-0 gap-[var(--gap-sm)]">
-                                            <dt style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }} className="text-[var(--color-text-secondary)]">
-                                                {item.label}
-                                            </dt>
-                                            <dd className="text-[var(--color-text-primary)] font-medium text-right min-w-0 truncate" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                                {item.value}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </dl>
-                            </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                                        {t('detail.periode')}
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <InfoField label={t('detail.dateDebut')} value={formatDateFr(periode.dateDebut)} />
+                                        <InfoField label={t('detail.dateFin')} value={formatDateFr(periode.dateFin)} />
+                                        <InfoField label={t('detail.dureeTotale')} value={t('carte.dureeJours', { count: dureeJours })} />
+                                        <InfoField label={t('detail.anneeScolaire')} value={periode.anneeScolaire?.libelle || '-'} />
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                            {/* Métadonnées */}
-                            <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)] lg:col-span-2" style={{ padding: 'var(--padding-modal-body)' }}>
-                                <h3 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-[var(--gap-xs)] mb-[var(--space-md)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                                    <FileText className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-text-tertiary)]" />
-                                    Métadonnées
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--gap-md)]">
-                                    {[
-                                        { label: 'ID', value: periode.id, mono: true },
-                                        { label: 'Établissement', value: (periode.etablissementId?.substring(0, 8) || '—') + '...', mono: true },
-                                        { label: 'Créée le', value: new Date(periode.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
-                                        { label: 'Modifiée le', value: new Date(periode.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
-                                    ].map((item) => (
-                                        <div key={item.label}>
-                                            <dt style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)' }} className="text-[var(--color-text-tertiary)] uppercase tracking-wide mb-[var(--space-xxs)]">
-                                                {item.label}
-                                            </dt>
-                                            <dd className={`text-[var(--color-text-primary)] ${item.mono ? 'font-mono' : ''}`} style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                                {item.value}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <Card className="lg:col-span-2">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+                                        {t('detail.metadonnees')}
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <InfoField label={t('detail.id')} value={<span className="font-mono text-sm">{periode.id}</span>} />
+                                        <InfoField label={t('detail.etablissement')} value={<span className="font-mono text-sm">{(periode.etablissementId?.substring(0, 8) || '—') + '...'}</span>} />
+                                        <InfoField label={t('detail.creeeLe')} value={new Date(periode.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
+                                        <InfoField label={t('detail.modifieeLe')} value={new Date(periode.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     )}
 
                     {ongletActif === 'structure' && (
                         <div className="space-y-[var(--gap-md)]">
-                            {/* En-tête avec bouton gérer */}
                             <div className="flex items-center justify-between flex-wrap gap-[var(--gap-sm)]">
                                 <div>
                                     <h3 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-[var(--gap-xs)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
                                         <Network className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)]" />
-                                        Composition hiérarchique
+                                        {t('detail.structure')}
                                     </h3>
                                     <p className="text-[var(--color-text-secondary)] mt-1" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                                         {peutAvoirEnfants
@@ -510,7 +421,6 @@ export function PeriodeDetailPage() {
                                 )}
                             </div>
 
-                            {/* Liste des enfants ou message */}
                             {!peutAvoirEnfants ? (
                                 <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'var(--padding-modal-body)' }}>
                                     <div className="flex items-center gap-[var(--gap-sm)] text-[var(--color-text-tertiary)]">
@@ -541,9 +451,7 @@ export function PeriodeDetailPage() {
                                 </div>
                             ) : (
                                 <>
-                                    {/* Vue desktop : tableau grille */}
                                     <div className="hidden sm:block rounded-[var(--radius-lg)] border border-[var(--color-bordure)] overflow-hidden">
-                                        {/* En-tête */}
                                         <div className="grid grid-cols-[1fr_80px_100px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-surface-alt)] border-b border-[var(--color-bordure)] text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
                                             <span>Nom</span>
                                             <span>Type</span>
@@ -551,7 +459,6 @@ export function PeriodeDetailPage() {
                                             <span>Progression</span>
                                             <span className="text-right">Ordre</span>
                                         </div>
-                                        {/* Lignes */}
                                         <div className="divide-y divide-[var(--color-bordure)]">
                                             {compositionsEnfants
                                                 .sort((a, b) => a.ordre - b.ordre)
@@ -563,10 +470,8 @@ export function PeriodeDetailPage() {
                                                     return (
                                                         <div key={comp.id} className="grid grid-cols-[1fr_80px_100px_100px_60px] gap-[var(--gap-sm)] items-center px-[var(--space-md)] py-[var(--space-sm)] hover:bg-[var(--color-surface-alt)]/50 transition-colors">
                                                             <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
-                                                                <Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
-                                                                <span className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                                                    {enfant.nom}
-                                                                </span>
+                                                                <CalendarRange className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
+                                                                <TextLabel size="sm" weight="semibold">{enfant.nom}</TextLabel>
                                                             </div>
                                                             <span className="rounded-full border px-1.5 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)] text-center">
                                                                 {enfant.niveau?.label}
@@ -603,7 +508,6 @@ export function PeriodeDetailPage() {
                                         </div>
                                     </div>
 
-                                    {/* Vue mobile : cartes verticales */}
                                     <div className="flex sm:hidden flex-col gap-[var(--gap-sm)]">
                                         {compositionsEnfants
                                             .sort((a, b) => a.ordre - b.ordre)
@@ -616,10 +520,8 @@ export function PeriodeDetailPage() {
                                                     <div key={comp.id} className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'clamp(0.75rem, 0.6rem + 0.4vw, 1rem)' }}>
                                                         <div className="flex items-center justify-between mb-[var(--space-xs)]">
                                                             <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
-                                                                <Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
-                                                                <span className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                                                    {enfant.nom}
-                                                                </span>
+                                                                <CalendarRange className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
+<TextLabel size="md" weight="semibold">{enfant.nom}</TextLabel>
                                                             </div>
                                                             <span className="text-xs font-medium text-[var(--color-text-tertiary)]">#{comp.ordre}</span>
                                                         </div>
@@ -659,62 +561,79 @@ export function PeriodeDetailPage() {
 
                     {ongletActif === 'donnees' && (
                         <div className="space-y-[var(--gap-md)]">
-                            {/* Résumé des données liées */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-[var(--gap-sm)]">
-                                {[
-                                    { label: 'Notes liées', value: '—', icon: CheckCircle2, color: 'var(--color-dominant-600)' },
-                                    { label: 'Bulletins liés', value: '—', icon: FileText, color: 'var(--color-secondary-600)' },
-                                    { label: 'Verrouillage', value: estCloturee ? 'Actif' : 'Inactif', icon: estCloturee ? Lock : Unlock, color: estCloturee ? 'var(--color-error-600)' : 'var(--color-text-tertiary)' },
-                                ].map((carte) => {
-                                    const Icon = carte.icon;
-                                    return (
-                                        <div key={carte.label} className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'var(--space-md)' }}>
-                                            <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
-                                                <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)]" style={{ color: carte.color }} />
-                                                <span style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)' }} className="text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
-                                                    {carte.label}
-                                                </span>
-                                            </div>
-                                            <p className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}>
-                                                {carte.value}
-                                            </p>
+                                <Card>
+                                    <CardContent className="p-[var(--space-md)]">
+                                        <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
+                                            <CheckCircle2 className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-dominant-600)]" />
+                                            <span className="text-[clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)] text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
+                                                {t('detail.notesLiees')}
+                                            </span>
                                         </div>
-                                    );
-                                })}
+                                        <p className="font-semibold text-[var(--color-text-primary)] text-[clamp(1rem, 0.9rem + 0.4vw, 1.25rem)]">—</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-[var(--space-md)]">
+                                        <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
+                                            <FileText className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-secondary-600)]" />
+                                            <span className="text-[clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)] text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
+                                                {t('detail.bulletinsLiees')}
+                                            </span>
+                                        </div>
+                                        <p className="font-semibold text-[var(--color-text-primary)] text-[clamp(1rem, 0.9rem + 0.4vw, 1.25rem)]">—</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-[var(--space-md)]">
+                                        <div className="flex items-center gap-[var(--gap-xs)] mb-[var(--space-xxs)]">
+                                            {estCloturee ? (
+                                                <Lock className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-error-600)]" />
+                                            ) : (
+                                                <Unlock className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-tertiary)]" />
+                                            )}
+                                            <span className="text-[clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)] text-[var(--color-text-tertiary)] font-medium uppercase tracking-wide">
+                                                {t('detail.verrouillage')}
+                                            </span>
+                                        </div>
+                                        <p className="font-semibold text-[var(--color-text-primary)] text-[clamp(1rem, 0.9rem + 0.4vw, 1.25rem)]">
+                                            {estCloturee ? t('detail.actif') : t('detail.inactif')}
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             </div>
 
-                            {/* Message informatif */}
-                            <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]" style={{ padding: 'var(--padding-modal-body)' }}>
-                                <div className="flex items-start gap-[var(--gap-md)]">
-                                    <BarChart3 className="h-[var(--icon-lg)] w-[var(--icon-lg)] text-[var(--color-text-tertiary)] shrink-0 mt-[var(--space-xs)]" />
-                                    <div>
-                                        <h3 className="font-semibold text-[var(--color-text-primary)] mb-[var(--space-xs)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                                            Données liées à cette période
-                                        </h3>
-                                        <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                            {estCloturee
-                                                ? 'Cette période est clôturée. Toutes les saisies (notes, bulletins) sont verrouillées. Les données existantes restent consultables.'
-                                                : 'Les notes et bulletins liés à cette période seront affichés ici. La clôture verrouillera toutes les modifications.'
-                                            }
-                                        </p>
-                                        {estCloturee && (
-                                            <div className="flex items-center gap-[var(--gap-xs)] mt-[var(--space-md)] text-[var(--color-error-600)]">
-                                                <Lock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
-                                                <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }} className="font-medium">
-                                                    Verrouillage actif — aucune modification possible
-                                                </span>
-                                            </div>
-                                        )}
+                            <Card>
+                                <CardContent className="p-[var(--padding-modal-body)]">
+                                    <div className="flex items-start gap-[var(--gap-md)]">
+                                        <BarChart3 className="h-[var(--icon-lg)] w-[var(--icon-lg)] text-[var(--color-text-tertiary)] shrink-0 mt-[var(--space-xs)]" />
+                                        <div>
+                                            <h3 className="font-semibold text-[var(--color-text-primary)] mb-[var(--space-xs)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
+                                                {t('detail.donneesLieesDescription')}
+                                            </h3>
+                                            <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
+                                                {estCloturee
+                                                    ? t('detail.descriptionCloturee')
+                                                    : t('detail.descriptionNonCloturee')
+                                                }
+                                            </p>
+                                            {estCloturee && (
+                                                <div className="flex items-center gap-[var(--gap-xs)] mt-[var(--space-md)] text-[var(--color-error-600)]">
+                                                    <Lock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                                                    <span className="text-[clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)] font-medium">
+                                                        {t('detail.verrouillageActif')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     )}
                 </motion.div>
             </AnimatePresence>
 
-            {/* Modals de confirmation */}
-            {/* Modal formulaire (édition) */}
             <ModalFormPeriode
                 periode={periode}
                 isOpen={modalFormOpen}
@@ -722,7 +641,6 @@ export function PeriodeDetailPage() {
                 onSuccess={() => setModalFormOpen(false)}
             />
 
-            {/* Modal cloture avec impacts */}
             <ModalCloturePeriode
                 periode={periode}
                 isOpen={modalClotureOpen}
@@ -730,7 +648,6 @@ export function PeriodeDetailPage() {
                 onClotureSuccess={() => setModalClotureOpen(false)}
             />
 
-            {/* Modal gestion des compositions */}
             <ModalGestionCompositions
                 periode={periode}
                 isOpen={modalCompositionsOpen}
@@ -738,30 +655,25 @@ export function PeriodeDetailPage() {
                 onSuccess={() => setModalCompositionsOpen(false)}
             />
 
-            {/* Modal confirmation reouvrir */}
-            <ConfirmationModal
-                isOpen={confirmAction === 'reouvrir'}
-                title="Réouvrir cette période"
-                message={`Êtes-vous sûr de vouloir réouvrir "${periode.nom}" ?`}
-                details="La période sera à nouveau disponible pour les opérations courantes."
-                variant="info"
-                confirmLabel="Réouvrir"
+            <ConfirmDialog
+                open={confirmAction === 'reouvrir'}
+                onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
                 onConfirm={async () => {
                     try {
                         await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle depuis le détail' });
                         setConfirmAction(null);
                     } catch (e) {}
                 }}
-                onCancel={() => setConfirmAction(null)}
+                title={t('confirmerReouvrirTitre')}
+                description={`${t('confirmerReouvrirMessage', { nom: periode.nom })}\n${t('confirmerReouvrirDetail')}`}
+                confirmText={t('actions.reouvrir')}
+                variant="warning"
                 isLoading={reouvrir.isPending}
             />
 
-            <ConfirmationModal
-                isOpen={confirmAction === 'supprimer'}
-                title="Supprimer cette période"
-                message={`Êtes-vous sûr de vouloir supprimer "${periode.nom}" ?`}
-                details="Cette action est irréversible."
-                variant="danger"
+            <ConfirmDialog
+                open={confirmAction === 'supprimer'}
+                onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
                 onConfirm={async () => {
                     try {
                         await supprimer.mutateAsync(periode.id);
@@ -769,7 +681,10 @@ export function PeriodeDetailPage() {
                         navigate({ to: '/periodes' } as any);
                     } catch (e) {}
                 }}
-                onCancel={() => setConfirmAction(null)}
+                title={t('confirmerSupprimerTitre')}
+                description={`${t('confirmerSupprimerMessage', { nom: periode.nom })}\n${t('confirmerSupprimerDetail')}`}
+                confirmText={t('actions.supprimer')}
+                variant="danger"
                 isLoading={supprimer.isPending}
             />
         </div>

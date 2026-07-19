@@ -1,0 +1,45 @@
+{
+    "titre": "System Parameters",
+    "description": "Configure features, constants, flags and variables for eLISAschool",
+    "nouveauParametre": "New parameter",
+    "rechercher": "Search a parameter...",
+    "totalParametres": "Total parameters",
+    "toutesCategories": "All categories",
+    "reinitialiserTout": "Reset all",
+    "aucunParametre": "No parameter found",
+    "oui": "Yes",
+    "non": "No",
+    "colonne": {
+        "cle": "Key",
+        "valeur": "Value",
+        "type": "Type",
+        "categorie": "Category",
+        "module": "Module",
+        "actions": "Actions"
+    },
+    "actions": {
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    },
+    "confirmerSupprimerTitre": "Delete parameter",
+    "confirmerSupprimerMessage": "Are you sure you want to delete the parameter \"{{cle}}\" ?",
+    "confirmerResetTitre": "Reset all parameters",
+    "confirmerResetMessage": "Are you sure you want to reset ALL parameters to their default values?",
+    "form": {
+        "titreModifier": "Edit parameter",
+        "cle": "Key",
+        "type": "Type",
+        "valeur": "Value",
+        "description": "Description",
+        "categorie": "Category",
+        "module": "Module",
+        "nombre": "number",
+        "jsonValide": "Valid JSON",
+        "descriptionPlaceholder": "Parameter description...",
+        "modifiableRuntime": "Modifiable at runtime",
+        "nonModifiable": "Not modifiable (system parameter)",
+        "annuler": "Cancel",
+        "enregistrer": "Save",
+        "enregistrement": "Saving..."
+    }
+}

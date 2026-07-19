@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { TextLabel } from '@/components/ui';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import {
     useNiveauxPeriode,
@@ -282,9 +283,7 @@ function SectionNiveaux() {
                                 {niveau.niveau}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                    {niveau.label}
-                                </p>
+                                <TextLabel size="md" weight="semibold">{niveau.label}</TextLabel>
                                 <p className="truncate text-xs text-[var(--color-text-tertiary)]">
                                     Usage: {niveau.usageCode}
                                     {niveau.description ? ` — ${niveau.description}` : ''}

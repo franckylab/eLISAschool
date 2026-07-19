@@ -5,11 +5,13 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Clock, Plus, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useAbsences, useJustifierAbsence, useStatistiquesAbsences } from '../hooks/use-absences';
 import type { Absence } from '../types/absences.types';
 import { CardGrid, StatCard } from '@/components/ui';
@@ -19,7 +21,7 @@ export function AbsencesPage() {
     const [page, setPage] = useState(1);
     const limit = 20;
 
-    const { data, isLoading } = useAbsences({
+    const { data, isLoading, isError, error, refetch } = useAbsences({
         page,
         limit,
     });
@@ -149,26 +151,27 @@ export function AbsencesPage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={(error as Error)?.message} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Signaler absence')}
-                >
-                    {t('signaler')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                title={t('titre')}
+                description={t('description')}
+                icon={Clock}
+                variant="gradient"
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Signaler absence')}
+                    >
+                        {t('signaler')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>

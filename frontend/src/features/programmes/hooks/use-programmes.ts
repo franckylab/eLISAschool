@@ -152,7 +152,7 @@ export function useRetirerMatiereProgramme() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ programmeId, pmId }: { programmeId: string; pmId: string }) => {
+        mutationFn: async ({ pmId }: { programmeId: string; pmId: string }) => {
             await apiClient.delete(`/api/programmes/matieres/${pmId}`);
         },
         onSuccess: (_, variables) => {

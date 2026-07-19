@@ -1,4 +1,14 @@
 {
+    "titre": "Contracts & Payroll Management",
+    "description": "Manage contracts, payroll, contributions, bonuses and deductions",
+    "onglets": {
+        "contrats": "Contracts",
+        "types-contrat": "Contract Types",
+        "bulletins": "Payroll",
+        "cotisations": "Contributions",
+        "primes": "Bonus Types",
+        "retenues": "Deduction Types"
+    },
     "contrat": {
         "titre": "Contract",
         "nouveauContrat": "New contract",

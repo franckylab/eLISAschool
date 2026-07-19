@@ -1,16 +1,11 @@
-/**
- * ==================================
- * eLISAschool - Page Examens Nationaux
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { Plus, FileText, GraduationCap, Eye, Edit, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, FileBadge2, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
@@ -22,11 +17,11 @@ import {
     useModifierExamenNational,
     useSupprimerExamenNational,
 } from '../hooks/use-examens-nationaux';
-import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { ExamenNationalFormModal } from './examen-national-form-modal';
 
 export function ExamensNationauxPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('examens-nationaux');
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -36,128 +31,107 @@ export function ExamensNationauxPage() {
     const [examenToDelete, setExamenToDelete] = useState<ExamenNational | null>(null);
 
     const { hasPermission } = usePermissions();
-    const { data, isLoading } = useExamensNationaux({
+    const { data, isLoading, isError, error, refetch } = useExamensNationaux({
         page,
         limit,
         recherche: recherche || undefined,
         sousSysteme: filtreSousSysteme,
     });
 
-    const { data: niveaux } = useTousNiveaux();
     const creer = useCreerExamenNational();
     const modifier = useModifierExamenNational();
     const supprimer = useSupprimerExamenNational();
 
     const examens = data?.items || [];
     const meta = data?.meta;
-    const total = meta?.totalItems || 0;
-    const totalPages = meta?.totalPages || 1;
-    const currentPage = meta?.currentPage || page;
-
-    const getNomNiveau = (niveauId: string) => {
-        return niveaux?.find(n => n.id === niveauId)?.nom || '-';
-    };
 
     const colonnes: Column<ExamenNational>[] = [
         {
             key: 'code',
-            header: 'Code',
-            render: (examen: ExamenNational, _index: number) => (
+            header: t('colonne.code'),
+            render: (examen: ExamenNational) => (
                 <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
+                    <FileBadge2 className="h-4 w-4 text-primary" />
                     <span className="font-semibold text-sm">{examen.code}</span>
                 </div>
             ),
         },
         {
             key: 'nom',
-            header: 'Nom',
-            render: (examen: ExamenNational, _index: number) => (
-                <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{examen.nom}</span>
-                </div>
+            header: t('colonne.nom'),
+            render: (examen: ExamenNational) => (
+                <span className="text-sm font-medium">{examen.nom}</span>
             ),
         },
         {
             key: 'niveauId',
-            header: 'Niveau',
-            render: (examen: ExamenNational, _index: number) => (
-                <span className="text-sm">{getNomNiveau(examen.niveauId)}</span>
-            ),
-        },
-        {
-            key: 'diplomeDelivre',
-            header: 'Diplôme',
-            render: (examen: ExamenNational, _index: number) => (
-                <div className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{examen.diplomeDelivre || '-'}</span>
-                </div>
+            header: t('colonne.niveau'),
+            render: (examen: ExamenNational) => (
+                <span className="text-sm">{examen.niveau?.nom || '-'}</span>
             ),
         },
         {
             key: 'sousSysteme',
-            header: 'Sous-système',
-            render: (examen: ExamenNational, _index: number) => (
+            header: t('colonne.sousSysteme'),
+            render: (examen: ExamenNational) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     examen.sousSysteme === 'FRANCOPHONE'
                         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 }`}>
-                    {examen.sousSysteme === 'FRANCOPHONE' ? 'Francophone' : 'Anglophone'}
+                    {t(`sousSysteme.${examen.sousSysteme}`)}
                 </span>
             ),
         },
         {
             key: 'estObligatoire',
-            header: 'Obligatoire',
-            render: (examen: ExamenNational, _index: number) => (
+            header: t('colonne.obligatoire'),
+            render: (examen: ExamenNational) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     examen.estObligatoire
                         ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                 }`}>
-                    {examen.estObligatoire ? 'Oui' : 'Non'}
+                    {examen.estObligatoire ? t('oui') : t('non')}
                 </span>
             ),
         },
         {
             key: 'actif',
-            header: 'Statut',
-            render: (examen: ExamenNational, _index: number) => (
+            header: t('colonne.statut'),
+            render: (examen: ExamenNational) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     examen.actif
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
-                    {examen.actif ? 'Actif' : 'Inactif'}
+                    {examen.actif ? t('statut.actif') : t('statut.inactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colonne.actions'),
             className: 'text-right',
             renderActions: (e) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('actions.voir'),
                     onClick: () => navigate({ to: '/examens-nationaux/$id', params: { id: e.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('actions.modifier'),
                     onClick: () => { setExamenToEdit(e); setShowFormModal(true); },
                     permission: 'examens-nationaux:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('actions.supprimer'),
                     onClick: () => setExamenToDelete(e),
                     permission: 'examens-nationaux:delete',
                     variant: 'danger' as const,
@@ -188,85 +162,64 @@ export function ExamensNationauxPage() {
         }
     };
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
+
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col sm:flex-row justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Examens Nationaux</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Gestion des examens officiels (CEP, BEPC, Probatoire, BACCALAURÉAT, GCE)
-                    </p>
-                </div>
-                {hasPermission('examens-nationaux:create') && (
-                    <ElisaButton
-                        variant="primary"
-                        onClick={handleCreate}
-                        icon={<Plus className="h-4 w-4" />}
-                    >
-                        Créer un examen
-                    </ElisaButton>
-                )}
-            </motion.div>
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
+            <PageHeader
+                title={t('titre')}
+                description={t('description')}
+                variant="gradient"
+                icon={FileBadge2}
+                actions={
+                    hasPermission('examens-nationaux:create') ? (
+                        <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
+                            {t('nouvelExamen')}
+                        </ElisaButton>
+                    ) : undefined
+                }
+            />
 
-            {/* Filtres */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Rechercher</label>
-                    <input
-                        type="text"
-                        placeholder="Nom, code..."
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    />
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Sous-système</label>
-                    <select
-                        value={filtreSousSysteme || ''}
-                        onChange={(e) => setFiltreSousSysteme(e.target.value || undefined)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    >
-                        <option value="">Tous</option>
-                        <option value="FRANCOPHONE">Francophone</option>
-                        <option value="ANGLOPHONE">Anglophone</option>
-                    </select>
-                </div>
-            </motion.div>
+            <DataTable
+                tableId="examens-nationaux"
+                columns={colonnes}
+                data={examens}
+                isLoading={isLoading}
+                enableReordering
+                enablePinning
+                enableColumnVisibility
+                disableClientSearch
+                pagination={meta ? {
+                    page: meta.currentPage,
+                    limit: meta.itemsPerPage,
+                    total: meta.totalItems,
+                    totalPages: meta.totalPages,
+                    hasNext: meta.currentPage < meta.totalPages,
+                    hasPrev: meta.currentPage > 1,
+                    onPageChange: setPage,
+                } : undefined}
+                emptyMessage={t('aucunExamen')}
+                searchable
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(v) => { setRecherche(v); setPage(1); }}
+                enableCollapsibleFilters
+                filtres={[
+                    {
+                        key: 'sousSysteme',
+                        label: t('colonne.sousSysteme'),
+                        options: [
+                            { value: 'FRANCOPHONE', label: t('sousSysteme.FRANCOPHONE') },
+                            { value: 'ANGLOPHONE', label: t('sousSysteme.ANGLOPHONE') },
+                        ],
+                    },
+                ]}
+                onFilterChange={(key, value) => {
+                    if (key === 'sousSysteme') setFiltreSousSysteme(value || undefined);
+                }}
+                onClearFilters={() => setFiltreSousSysteme(undefined)}
+            />
 
-            {/* Tableau */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-            >
-                <DataTable
-                    columns={colonnes}
-                    data={examens}
-                    isLoading={isLoading}
-                    pagination={meta ? {
-                        page: currentPage,
-                        limit: meta.itemsPerPage,
-                        total,
-                        totalPages,
-                        hasNext: currentPage < totalPages,
-                        hasPrev: currentPage > 1,
-                        onPageChange: setPage,
-                    } : undefined}
-                    emptyMessage="Aucun examen national trouvé"
-                />
-            </motion.div>
-
-            {/* Modal Formulaire */}
             <ExamenNationalFormModal
                 open={showFormModal}
                 onOpenChange={(v) => {
@@ -280,13 +233,12 @@ export function ExamensNationauxPage() {
                 isLoading={creer.isPending || modifier.isPending}
             />
 
-            {/* Modal Confirmation Suppression */}
             <ConfirmDialog
                 open={!!examenToDelete}
                 onOpenChange={(open) => { if (!open) setExamenToDelete(null); }}
-                title="Supprimer l'examen national"
-                description={`Êtes-vous sûr de vouloir supprimer l'examen "${examenToDelete?.nom}" ?`}
-                confirmText="Supprimer"
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage', { nom: examenToDelete?.nom || '' })}
+                confirmText={t('actions.supprimer')}
                 variant="danger"
                 onConfirm={handleDelete}
                 isLoading={supprimer.isPending}

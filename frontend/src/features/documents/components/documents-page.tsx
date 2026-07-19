@@ -5,11 +5,13 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FileText, Plus, Download, Eye, Edit, Trash2, HardDrive, TrendingDown } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useDocuments, useSupprimerDocument, useTelechargerDocument, useStatistiquesDocuments } from '../hooks/use-documents';
 import type { Document } from '../types/document.types';
 import { CardGrid, StatCard } from '@/components/ui';
@@ -21,7 +23,7 @@ export function DocumentsPage() {
     const [recherche, setRecherche] = useState('');
     const [filtreCategorie, setFiltreCategorie] = useState<string>('');
 
-    const { data, isLoading, meta } = useDocuments({
+    const { data, isLoading, isError, error, refetch, meta } = useDocuments({
         page,
         limit,
         recherche: recherche || undefined,
@@ -158,26 +160,27 @@ export function DocumentsPage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message || t('erreurChargement')} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Uploader document')}
-                >
-                    {t('uploader')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={FileText}
+                title={t('titre')}
+                subtitle={t('description')}
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Uploader document')}
+                    >
+                        {t('uploader')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>
@@ -187,8 +190,6 @@ export function DocumentsPage() {
                     <StatCard icon={FileText} label="Catégories" value={stats.parCategorie?.length || 0} tone="purple" />
                 </CardGrid>
             )}
-
-
 
             <DataTable
                 colonnes={colonnes}

@@ -21,7 +21,7 @@ import { useModalWindow } from '@/hooks/use-modal-window';
 interface CustomModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    title?: string;
+    title?: ReactNode;
     description?: string;
     children: ReactNode;
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';

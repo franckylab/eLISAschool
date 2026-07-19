@@ -22,23 +22,29 @@ import {
     Shield,
     UserCog,
     Building2,
-    GraduationCap as LevelIcon,
-    School,
+    Gauge,
+    IterationCcw,
+    Group,
     CalendarDays,
+    ClockArrowUp,
     Atom,
     UserRound,
     FolderTree,
     FileText,
     TrendingUp,
-    Award,
+    Split,
     Briefcase,
-    ScrollText,
+    Medal,
+    FileBadge2,
+    GitBranch,
     LayoutGrid,
     ChevronDown,
     ChevronRight,
-    Target,
+    Brain,
     BookOpen,
     DoorOpen,
+    FileSignature,
+    Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -200,18 +206,18 @@ const NAV_SECTIONS: NavSection[] = [
                 icon: GraduationCap,
                 children: [
                     { label: 'Vue d\'ensemble', path: '/parametres/structure-academique', icon: LayoutGrid },
-                    { label: 'Cycles', path: '/cycles', icon: School, module: 'cycles' },
-                    { label: 'Niveaux', path: '/niveaux', icon: LevelIcon, module: 'niveaux' },
-                    { label: 'Filières', path: '/filieres', icon: Award, module: 'filieres' },
-                    { label: 'Spécialités', path: '/specialites', icon: BookOpen, module: 'specialites' },
+                    { label: 'Cycles', path: '/cycles', icon: IterationCcw, module: 'cycles' },
+                    { label: 'Niveaux', path: '/niveaux', icon: Gauge, module: 'niveaux' },
+                    { label: 'Filières', path: '/filieres', icon: Split, module: 'filieres' },
+                    { label: 'Spécialités', path: '/specialites', icon: GitBranch, module: 'specialites' },
 
-                    { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileText, module: 'examens-nationaux' },
-                    { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: ScrollText, module: 'diplomes-eleves' },
-                    { label: 'Compétences', path: '/competences', icon: Target, module: 'competences' },
+                    { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileBadge2, module: 'examens-nationaux' },
+                    { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: Medal, module: 'diplomes-eleves' },
+                    { label: 'Compétences', path: '/competences', icon: Brain, module: 'competences' },
                 ]
             },
-            { label: 'Classes', path: '/classes', icon: School, module: 'classes' },
-            { label: 'Années Scolaires', path: '/annees-scolaires', icon: CalendarDays, module: 'anneesScolaires' },
+            { label: 'Classes', path: '/classes', icon: Group, module: 'classes' },
+            { label: 'Années Scolaires', path: '/annees-scolaires', icon: ClockArrowUp, module: 'anneesScolaires' },
             { label: 'Matières', path: '/matieres', icon: Atom, module: 'matieres' },
             {
                 label: 'Programmes',
@@ -236,7 +242,8 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Élèves', path: '/eleves', icon: Users, module: 'eleves' },
             { label: 'Personnel', path: '/personnel', icon: UserRound, module: 'personnel' },
-            { label: 'Contrats & Paie', path: '/contrats', icon: CreditCard, module: 'personnel' },
+            { label: 'Contrats', path: '/contrats', icon: FileSignature, module: 'contrats' },
+            { label: 'Paie', path: '/paie', icon: Wallet, module: 'paie' },
             // { label: 'Enseignants', path: '/enseignants', icon: GraduationCap, module: 'enseignants' }, // Merged into Personnel
             { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
             { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
@@ -307,6 +314,8 @@ export function Sidebar() {
     const emploiDuTempsPerms = useModulePermissions('emploi-du-temps');
     const periodesPerms = useModulePermissions('periodes');
     const bulletinsPerms = useModulePermissions('bulletins');
+    const contratsPerms = useModulePermissions('contrats');
+    const paiePerms = useModulePermissions('paie');
 
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
@@ -344,6 +353,7 @@ export function Sidebar() {
                     bulletins: bulletinsPerms,
                     classes: classesPerms,
                     communication: communicationPerms,
+                    contrats: contratsPerms,
                     cycles: cyclesPerms,
                     'diplomes-eleves': diplomesElevesPerms,
                     eleves: elevesPerms,
@@ -358,6 +368,7 @@ export function Sidebar() {
                     anneesScolaires: anneesScolairesPerms,
                     notes: notesPerms,
                     niveaux: niveauxPerms,
+                    paie: paiePerms,
                     periodes: periodesPerms,
                     personnel: personnelPerms,
                     roles: rolesPerms,

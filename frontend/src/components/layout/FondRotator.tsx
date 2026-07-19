@@ -15,7 +15,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFondsRotation, useConfigRotation } from '@/features/apparence/hooks';
 import type { Fond, ConfigRotation } from '@/features/apparence/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 // Context pour partager le fond actuel avec d'autres composants
 interface FondActuelContextType {
@@ -35,15 +36,12 @@ export function useFondActuel() {
 interface FondRotatorProps {
     /** Couleur de fond fallback (CSS variable ou valeur hex) */
     fallbackColor?: string;
-    /** Opacité des fonds (0-1, défaut: 0.08 = 8%) */
-    opacity?: number;
     /** Durée de la transition en ms (défaut: 1500) */
     transitionDuration?: number;
 }
 
 export function FondRotator({
     fallbackColor = 'var(--color-fond, #f5f5f5)',
-    opacity = 0.3,  // Réduit pour ne pas gêner la lecture (SVG interne = 0.08 → réel = 3.2%)
     transitionDuration = 1500,
 }: FondRotatorProps) {
     console.log('[FondRotator] Rendu du composant');
@@ -111,20 +109,17 @@ export function FondRotator({
                     ? fond.cheminFichier
                     : `/${fond.cheminFichier}`;
                 
-                if (import.meta.env.DEV) {
-                    // En dev: Vite sert depuis frontend/public/ via le lien symbolique
-                    imageUrl = cheminNormalise;
-                } else {
-                    // En prod: utiliser l'URL du backend
-                    imageUrl = `${API_BASE_URL}${cheminNormalise}`;
-                }
+                // Toujours utiliser le backend qui sert avec le bon Content-Type
+                // Cache-bust via updatedAt pour éviter les erreurs CORP/CORS d'une version précédente
+                const version = fond.updatedAt ? Date.parse(fond.updatedAt) : Date.now();
+                imageUrl = `${BACKEND_ORIGIN}${cheminNormalise}?v=${version}`;
             }
             
             console.log('[FondRotator] Préchargement image:', {
                 fondId: fond.id,
                 fondNom: fond.nom,
                 url: imageUrl,
-                mode: import.meta.env.DEV ? 'dev (vite public)' : 'prod (backend)',
+                mode: 'backend',
             });
 
             img.onload = () => {
@@ -137,7 +132,7 @@ export function FondRotator({
                     fondNom: fond.nom,
                     fondId: fond.id,
                     url: imageUrl,
-                    mode: import.meta.env.DEV ? 'dev (vite public)' : 'prod (backend)',
+                    mode: 'backend',
                     cheminFichier: fond.cheminFichier,
                 });
                 newPreloaded.set(fond.id, false);
@@ -235,9 +230,7 @@ export function FondRotator({
             ? fondActuel.cheminFichier
             : `/${fondActuel.cheminFichier}`;
         
-        urlImage = import.meta.env.DEV
-            ? cheminNormalise  // En dev: servi par Vite depuis public/
-            : `${API_BASE_URL}${cheminNormalise}`;  // En prod: backend
+        urlImage = `${BACKEND_ORIGIN}${cheminNormalise}`;
     }
 
     console.log('[FondRotator] Affichage du fond:', {
@@ -257,20 +250,30 @@ export function FondRotator({
                     style={{ backgroundColor: fallbackColor }}
                 />
 
-                {/* Fond actuel avec fondu */}
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={fondActuel.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: opacity }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: transitionDuration / 1000, ease: 'easeInOut' }}
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                        style={{
-                            backgroundImage: `url('${urlImage}')`,
-                        }}
-                    />
-                </AnimatePresence>
+                {/* Fond actuel avec fondu — filtre dark mode via CSS variables */}
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        opacity: 'var(--fond-opacity, 0.3)',
+                        filter: 'var(--fond-filter, none)',
+                        willChange: 'opacity, filter',
+                    }}
+                >
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={fondActuel.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: transitionDuration / 1000, ease: 'easeInOut' }}
+                            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                            style={{
+                                backgroundImage: `url('${urlImage}')`,
+                                willChange: 'opacity',
+                            }}
+                        />
+                    </AnimatePresence>
+                </div>
 
                 {/* Indicateur de débogage (uniquement en développement) */}
                 {process.env.NODE_ENV === 'development' && (

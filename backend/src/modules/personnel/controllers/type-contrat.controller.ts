@@ -1,28 +1,15 @@
-/**
- * ==================================
- * eLISAschool - Controller Type Contrat Personnalisé
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { Router, Request, Response, NextFunction } from 'express';
 import { typeContratService } from '../services/type-contrat.service';
 import { createTypeContratSchema, updateTypeContratSchema, queryTypeContratSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
 const router = Router();
 
-/**
- * POST /api/personnel/types-contrat
- * Créer un nouveau type de contrat personnalisé
- */
 router.post(
     '/',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('contrats:config:create'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createTypeContratSchema, req.body);
@@ -34,13 +21,10 @@ router.post(
     }
 );
 
-/**
- * GET /api/personnel/types-contrat
- * Lister les types de contrat avec pagination
- */
 router.get(
     '/',
     authMiddleware,
+    requirePermission('contrats:config:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryTypeContratSchema, req.query);
@@ -52,13 +36,10 @@ router.get(
     }
 );
 
-/**
- * GET /api/personnel/types-contrat/actifs
- * Récupérer tous les types actifs (sans pagination)
- */
 router.get(
     '/actifs',
     authMiddleware,
+    requirePermission('contrats:config:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const types = await typeContratService.getTypesActifs(req.etablissementId!);
@@ -69,13 +50,10 @@ router.get(
     }
 );
 
-/**
- * GET /api/personnel/types-contrat/:id
- * Récupérer un type de contrat par ID
- */
 router.get(
     '/:id',
     authMiddleware,
+    requirePermission('contrats:config:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const typeContrat = await typeContratService.findOne(req.params.id, req.etablissementId!);
@@ -86,14 +64,10 @@ router.get(
     }
 );
 
-/**
- * PATCH /api/personnel/types-contrat/:id
- * Mettre à jour un type de contrat
- */
 router.patch(
     '/:id',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('contrats:config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateTypeContratSchema, req.body);
@@ -111,14 +85,10 @@ router.patch(
     }
 );
 
-/**
- * DELETE /api/personnel/types-contrat/:id
- * Supprimer un type de contrat
- */
 router.delete(
     '/:id',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('contrats:config:delete'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await typeContratService.delete(req.params.id, req.utilisateur?.id!, req.etablissementId!, req);
@@ -129,14 +99,10 @@ router.delete(
     }
 );
 
-/**
- * POST /api/personnel/types-contrat/:id/toggle
- * Activer/désactiver un type de contrat
- */
 router.post(
     '/:id/toggle',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('contrats:config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const typeContrat = await typeContratService.toggleActif(

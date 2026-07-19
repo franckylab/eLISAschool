@@ -44,6 +44,7 @@ import {
 import { CATEGORIE_LABELS, CategorieFond } from './types';
 import type { Fond } from './types';
 import { useFondActuel } from '@/components/layout/FondRotator';
+import { FondImage } from '@/components/ui/FondImage';
 
 export function ApparencePage() {
     const [filtreCategorie, setFiltreCategorie] = useState<CategorieFond | 'toutes'>('toutes');
@@ -305,12 +306,7 @@ export function ApparencePage() {
             ? fond.cheminFichier
             : `/${fond.cheminFichier}`;
         
-        if (import.meta.env.DEV) {
-            // En dev: Vite sert depuis frontend/public/ via le lien symbolique
-            return cheminNormalise;
-        }
-        
-        // En prod: utiliser l'URL du backend
+        // Toujours utiliser l'URL du backend (le symlink frontend/public/ ne fonctionne pas dans Docker)
         const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7000';
         return `${API_BASE_URL}${cheminNormalise}`;
     };
@@ -700,6 +696,16 @@ export function ApparencePage() {
                                             </div>
                                         )}
 
+                                                                <FondImage
+                                            fond={fond}
+                                            mode="img"
+                                            objectFit="cover"
+                                            aspectRatio="16/9"
+                                            className="mb-[var(--space-sm)] rounded-md"
+                                            showPreviewOverlay
+                                            onPreview={(f) => setFondApercu(getUrlImageFond(f))}
+                                        />
+
                                         <div className="pr-6">
                                             <p style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
                                                 {fond.nom}
@@ -758,6 +764,7 @@ export function ApparencePage() {
                             className="max-h-[70vh] w-full rounded-lg object-contain"
                             style={{
                                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                                filter: 'var(--fond-filter, none)',
                             }}
                         />
                     </div>

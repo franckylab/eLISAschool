@@ -5,24 +5,26 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Plus, Eye, Trash2, Shield, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CardGrid, StatCard } from '@/components/ui';
 import { useSanctions, useSupprimerSanction, useAmnistierSanction, useStatistiquesDiscipline } from '../hooks/use-discipline';
 import type { Sanction } from '../types/discipline.types';
 
 export function DisciplinePage() {
     const { t } = useTranslation('discipline');
-    const [page, setPage] = useState(1);
+    const [page] = useState(1);
     const limit = 20;
     const [recherche, setRecherche] = useState('');
     const [filtreType, setFiltreType] = useState<string>('');
     const [filtreGravite, setFiltreGravite] = useState<string>('');
 
-    const { data: result, isLoading } = useSanctions({
+    const { data: result, isLoading, isError, error, refetch } = useSanctions({
         page,
         limit,
         recherche: recherche || undefined,
@@ -165,26 +167,28 @@ export function DisciplinePage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message || t('erreurChargement')} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Enregistrer sanction')}
-                >
-                    {t('enregistrer')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={Shield}
+                title={t('titre')}
+                subtitle={t('description')}
+                showBreadcrumbs={false}
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Enregistrer sanction')}
+                    >
+                        {t('enregistrer')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>
@@ -196,6 +200,7 @@ export function DisciplinePage() {
             )}
 
             <DataTable
+                tableId="discipline"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

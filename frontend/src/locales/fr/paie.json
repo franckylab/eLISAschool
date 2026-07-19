@@ -1,0 +1,55 @@
+{
+    "titre": "Gestion de la paie",
+    "description": "Gérez les bulletins de paie, cotisations, primes et retenues",
+    "nouveau": "Nouveau bulletin",
+    "editer": "Modifier le bulletin",
+    "supprimer": "Supprimer le bulletin",
+    "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce bulletin ?",
+    "generer": "Générer",
+    "valider": "Valider",
+    "exporter": "Exporter PDF",
+    "configuration": "Configuration",
+    "bulletin": {
+        "membre": "Membre",
+        "moisAnnee": "Période",
+        "salaireBase": "Salaire de base",
+        "heuresEffectuees": "Heures effectuées",
+        "montantHeuresSup": "Heures sup",
+        "primes": "Primes",
+        "deductions": "Déductions",
+        "salaireNet": "Salaire net",
+        "netAPayer": "Net à payer",
+        "statut": "Statut",
+        "datePaiement": "Date de paiement"
+    },
+    "statut": {
+        "GENERE": "Généré",
+        "EN_ATTENTE_VALIDATION": "En attente",
+        "VALIDE": "Validé",
+        "PAYE": "Payé",
+        "ANNULE": "Annulé"
+    },
+    "elements": {
+        "titre": "Lignes de salaire",
+        "type": "Type",
+        "libelle": "Libellé",
+        "baseCalcul": "Base de calcul",
+        "taux": "Taux",
+        "montant": "Montant",
+        "gain": "Gain",
+        "retenue": "Retenue"
+    },
+    "config": {
+        "titre": "Configuration paie",
+        "description": "Gérez les cotisations, types de primes et types de retenues",
+        "onglets": {
+            "cotisations": "Cotisations",
+            "primes": "Types de primes",
+            "retenues": "Types de retenues"
+        }
+    },
+    "chargement": "Chargement des bulletins...",
+    "aucunBulletin": "Aucun bulletin",
+    "aucunBulletinDescription": "Aucun bulletin trouvé pour cette période.",
+    "erreur": "Erreur lors du chargement des bulletins"
+}

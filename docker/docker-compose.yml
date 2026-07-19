@@ -9,6 +9,7 @@ services:
     image: postgres:16-alpine
     container_name: elisaschool_db
     restart: unless-stopped
+    command: postgres -p 7002
     environment:
       POSTGRES_DB: ${DB_NAME:-elisaschool}
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
@@ -21,7 +22,7 @@ services:
     networks:
       - elisaschool_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-elisaschool_user} -d ${DB_NAME:-elisaschool} -p 7002"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,6 +34,7 @@ services:
     restart: unless-stopped
     command: >
       redis-server
+      --port 7003
       --appendonly yes
       --requirepass ${REDIS_PASSWORD:-elisaschool_password}
       --maxmemory 256mb
@@ -65,8 +67,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
       REDIS_HOST: redis
       REDIS_PORT: 7003
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev_encryption_key_32chars}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:7001}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:7001}
       
@@ -91,6 +94,7 @@ services:
     volumes:
       - ../backend:/app/backend
       - ../shared:/app/shared
+      - ../public:/app/public
       - /app/backend/node_modules
       - /app/shared/node_modules
       - /app/node_modules
@@ -111,8 +115,10 @@ services:
     image: node:20-alpine
     container_name: elisaschool_frontend
     restart: unless-stopped
+    working_dir: /app
     environment:
-      VITE_API_URL: http://localhost:${APP_PORT:-7000}/api
+      VITE_API_URL: http://localhost:${APP_PORT:-7000}
+      WATCHPACK_POLLING: "true"
     ports:
       - "${FRONTEND_PORT:-7001}:7001"
     volumes:
@@ -123,7 +129,7 @@ services:
       - elisaschool_network
     depends_on:
       - backend
-    command: npm run dev -- --host
+    command: sh -c "npm install && npm run dev -- --host"
 
   # pgAdmin - Interface web de gestion PostgreSQL
   pgadmin:

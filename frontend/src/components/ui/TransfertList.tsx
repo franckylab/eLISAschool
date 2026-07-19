@@ -184,7 +184,7 @@ export function TransfertList<T extends TransfertItem>({
     // Rendu par défaut d'un item
     const defaultRenderItem = useCallback((item: T) => (
         <div className="min-w-0">
-            <p className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+            <p className="truncate font-semibold text-[var(--color-text-strong)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                 {item.label}
             </p>
             {item.sublabel && (

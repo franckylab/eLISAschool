@@ -1,29 +1,66 @@
 {
-    "examens_nationaux": {
-        "title": "Examens Nationaux",
-        "description": "Gestion des examens officiels (CEP, BEPC, Probatoire, BACCALAURÉAT, GCE)",
-        "create": "Créer un examen national",
-        "edit": "Modifier l'examen national",
-        "delete": "Supprimer l'examen national",
-        "detail": "Détails de l'examen national",
-        "fields": {
-            "nom": "Nom",
-            "code": "Code",
-            "type": "Type",
-            "niveauId": "Niveau",
-            "dateProgrammation": "Date de programmation",
-            "coefficient": "Coefficient",
-            "estObligatoire": "Obligatoire",
-            "diplomeDelivre": "Diplôme délivré",
-            "description": "Description",
-            "sousSysteme": "Sous-système",
-            "actif": "Actif"
-        },
-        "placeholders": {
-            "nom": "Ex: BACCALAURÉAT",
-            "code": "Ex: BACCALAUREAT, BEPC, CEP",
-            "diplomeDelivre": "Ex: BACCALAUREAT"
-        },
+    "titre": "Examens Nationaux",
+    "description": "Gestion des examens officiels (CEP, BEPC, Probatoire, BACCALAURÉAT, GCE)",
+    "nouvelExamen": "Créer un examen",
+    "rechercher": "Rechercher...",
+    "aucunExamen": "Aucun examen national trouvé",
+    "colonne": {
+        "code": "Code",
+        "nom": "Nom",
+        "niveau": "Niveau",
+        "sousSysteme": "Sous-système",
+        "obligatoire": "Obligatoire",
+        "statut": "Statut",
+        "actions": "Actions"
+    },
+    "statut": {
+        "actif": "Actif",
+        "inactif": "Inactif"
+    },
+    "sousSysteme": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone"
+    },
+    "oui": "Oui",
+    "non": "Non",
+    "actions": {
+        "voir": "Voir détails",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    },
+    "confirmerSupprimerTitre": "Supprimer l'examen national",
+    "confirmerSupprimerMessage": "Êtes-vous sûr de vouloir supprimer l'examen \"{{nom}}\" ?",
+    "detail": {
+        "nonTrouvee": "Examen national non trouvé",
+        "informations": "Informations",
+        "code": "Code",
+        "type": "Type",
+        "niveau": "Niveau",
+        "sousSysteme": "Sous-système",
+        "obligatoire": "Obligatoire",
+        "diplomeDelivre": "Diplôme délivré",
+        "coefficient": "Coefficient",
+        "dateProgrammation": "Date de programmation",
+        "description": "Description",
+        "statut": "Statut",
+        "configuration": "Configuration"
+    },
+    "form": {
+        "titreCreer": "Créer un examen national",
+        "descriptionCreer": "Ajoutez un nouvel examen national",
+        "titreModifier": "Modifier l'examen national",
+        "descriptionModifier": "Modifiez les informations de l'examen",
+        "code": "Code",
+        "nom": "Nom",
+        "niveau": "Niveau",
+        "type": "Type",
+        "sousSysteme": "Sous-système",
+        "diplomeDelivre": "Diplôme délivré",
+        "coefficient": "Coefficient",
+        "estObligatoire": "Examen obligatoire",
+        "description": "Description",
+        "actif": "Actif",
+        "selectionnerNiveau": "Sélectionner un niveau",
         "types": {
             "NATIONAL": "National",
             "REGIONAL": "Régional",
@@ -33,28 +70,15 @@
             "FRANCOPHONE": "Francophone",
             "ANGLOPHONE": "Anglophone"
         },
-        "examens": {
-            "CEP": "Certificat d'Études Primaires",
-            "BEPC": "Brevet d'Études du Premier Cycle",
-            "PROBATOIRE": "Probatoire",
-            "BACCALAUREAT": "Baccalauréat",
-            "GCE_OL": "GCE Ordinary Level",
-            "GCE_AL": "GCE Advanced Level"
-        },
-        "messages": {
-            "createSuccess": "Examen national créé avec succès",
-            "updateSuccess": "Examen national modifié avec succès",
-            "deleteSuccess": "Examen national supprimé avec succès",
-            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet examen national ?",
-            "codeExists": "Ce code d'examen existe déjà"
-        },
-        "actions": {
-            "create": "Créer un examen",
-            "edit": "Modifier",
-            "delete": "Supprimer",
-            "view": "Voir les détails",
-            "activate": "Activer",
-            "deactivate": "Désactiver"
-        }
+        "codePlaceholder": "Ex: BACCALAUREAT, BEPC",
+        "nomPlaceholder": "Ex: BACCALAURÉAT, GCE Advanced Level",
+        "diplomePlaceholder": "Ex: BACCALAUREAT",
+        "descriptionPlaceholder": "Description de l'examen...",
+        "niveauxFiltreInfo": "Les niveaux affichés correspondent au sous-système sélectionné",
+        "annuler": "Annuler",
+        "creer": "Créer",
+        "modifier": "Modifier",
+        "enregistrement": "Enregistrement...",
+        "obligatoire": "Obligatoire"
     }
 }

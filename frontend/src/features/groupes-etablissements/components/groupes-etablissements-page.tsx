@@ -1,47 +1,34 @@
-/**
- * ==================================
- * eLISAschool - Page Groupes d'Établissements
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, Building2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DataTable } from '@/components/ui/DataTable';
-import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { usePermissions } from '@/hooks';
-import type { Column } from '@/components/ui/DataTable';
-import type { GroupeEtablissement, GroupeEtablissementFiltres } from '../types/groupe-etablissement.types';
-import {
-    useGroupesEtablissements,
-    useCreerGroupeEtablissement,
-    useModifierGroupeEtablissement,
-    useSupprimerGroupeEtablissement,
-    useEtablissementsDisponibles,
-    useUtilisateursDisponibles,
-    useListerEtablissementsGroupe,
-    useListerAdmins,
-    useTousEtablissementsAssignesIds,
-} from '../hooks/use-groupes-etablissements';
+import { useGroupesEtablissements, useCreerGroupeEtablissement, useModifierGroupeEtablissement, useSupprimerGroupeEtablissement, useEtablissementsDisponibles, useUtilisateursDisponibles, useListerEtablissementsGroupe, useListerAdmins, useTousEtablissementsAssignesIds } from '../hooks/use-groupes-etablissements';
 import { GroupeEtablissementFormModal } from './groupe-etablissement-form-modal';
 import { GroupeEtablissementDetailModal } from './groupe-etablissement-detail-modal';
 import { GestionEtablissementsModal } from './gestion-etablissements-modal';
 import { GestionAdminsModal } from './gestion-admins-modal';
+import { DataTable } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { StatCard } from '@/components/ui/StatCard';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { ElisaButton } from '@/components/ui/ElisaButton';
+import { usePermissions } from '@/hooks';
+import type { Column } from '@/components/ui/DataTable';
+import type { GroupeEtablissement, GroupeEtablissementFiltres } from '../types/groupe-etablissement.types';
 
 export function GroupesEtablissementsPage() {
     const { t } = useTranslation('groupes-etablissements');
     const { hasPermission } = usePermissions();
     const queryClient = useQueryClient();
-    
-    const [filtres, setFiltres] = useState<GroupeEtablissementFiltres>({ 
-        page: 1, 
-        limit: 20, 
-        recherche: '' 
+
+    const [filtres, setFiltres] = useState<GroupeEtablissementFiltres>({
+        page: 1,
+        limit: 20,
+        recherche: ''
     });
     const [showFormModal, setShowFormModal] = useState(false);
     const [groupeToEdit, setGroupeToEdit] = useState<GroupeEtablissement | null>(null);
@@ -50,7 +37,7 @@ export function GroupesEtablissementsPage() {
     const [groupeToManageEtabs, setGroupeToManageEtabs] = useState<GroupeEtablissement | null>(null);
     const [groupeToManageAdmins, setGroupeToManageAdmins] = useState<GroupeEtablissement | null>(null);
 
-    const { data: dataGroupes, isLoading } = useGroupesEtablissements(filtres);
+    const { data: dataGroupes, isLoading, isFetching, error, refetch } = useGroupesEtablissements(filtres);
     const { data: dataEtablissements } = useEtablissementsDisponibles();
     const { data: dataUtilisateurs } = useUtilisateursDisponibles();
     const { data: dataEtablissementsAssignes } = useListerEtablissementsGroupe(groupeToManageEtabs?.id || '', !!groupeToManageEtabs);
@@ -61,10 +48,7 @@ export function GroupesEtablissementsPage() {
     const modifier = useModifierGroupeEtablissement();
     const supprimer = useSupprimerGroupeEtablissement();
 
-    // Extraire les tableaux de données des réponses API
-    // Les hooks retournent déjà les tableaux extraits (queryFn fait return response?.data)
     const groupes = dataGroupes?.items || [];
-    // Filtrer les établissements déjé assignés à N'IMPORTE QUEL groupe
     const etablissementsDisponibles = (dataEtablissements || []).filter(
         e => !tousEtablissementsAssignesIds?.has(e.id)
     );
@@ -72,6 +56,7 @@ export function GroupesEtablissementsPage() {
     const etablissementsAssignes = dataEtablissementsAssignes || [];
     const adminsActuels = dataAdminsActuels || [];
     const total = dataGroupes?.meta?.totalItems || 0;
+    const actifsCount = groupes.filter((g: GroupeEtablissement) => g.actif).length;
 
     const colonnes: Column<GroupeEtablissement>[] = [
         {
@@ -135,14 +120,14 @@ export function GroupesEtablissementsPage() {
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: t('boutons.voirDetails', { defaultValue: 'Voir détails' }),
+                    label: t('boutons.voirDetails'),
                     onClick: () => setGroupeToView(g),
                     variant: 'info' as const,
                 },
                 {
                     key: 'etablissements',
                     icon: Building2,
-                    label: 'Gérer les établissements',
+                    label: t('boutons.gererEtablissements'),
                     onClick: () => setGroupeToManageEtabs(g),
                     permission: 'groupes-etablissements:edit',
                     variant: 'success' as const,
@@ -150,21 +135,21 @@ export function GroupesEtablissementsPage() {
                 {
                     key: 'admins',
                     icon: Users,
-                    label: 'Gérer les admins',
+                    label: t('boutons.gererAdmins'),
                     onClick: () => setGroupeToManageAdmins(g),
                     permission: 'groupes-etablissements:edit',
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: t('boutons.modifier', { defaultValue: 'Modifier' }),
+                    label: t('boutons.modifier'),
                     onClick: () => { setGroupeToEdit(g); setShowFormModal(true); },
                     permission: 'groupes-etablissements:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: t('boutons.supprimer', { defaultValue: 'Supprimer' }),
+                    label: t('boutons.supprimer'),
                     onClick: () => setGroupeToDelete(g),
                     permission: 'groupes-etablissements:delete',
                     variant: 'danger' as const,
@@ -173,26 +158,31 @@ export function GroupesEtablissementsPage() {
         },
     ];
 
-    const handleDelete = async () => {
-        if (!groupeToDelete) return;
+    if (isLoading && groupes.length === 0) {
+        return <PageSkeleton showStats showTable />;
+    }
 
-        try {
-            await supprimer.mutateAsync(groupeToDelete.id);
-            setGroupeToDelete(null);
-        } catch (error) {
-            console.error('Erreur lors de la suppression:', error);
-        }
-    };
+    if (error) {
+        return (
+            <div className="p-6">
+                <ErrorMessage
+                    title={t('messages.chargement')}
+                    message={error.message}
+                    onRetry={() => refetch()}
+                    retryLabel={t('reessayer')}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            {/* En-tête */}
-            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">{t('titre')}</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{total} groupe(s)</p>
-                </div>
-                {hasPermission('groupes-etablissements:create') && (
+            <PageHeader
+                title={t('titre')}
+                subtitle={t('sousTitre')}
+                icon={Building2}
+                variant="gradient"
+                actions={hasPermission('groupes-etablissements:create') ? (
                     <ElisaButton
                         variant="primary"
                         size="sm"
@@ -204,58 +194,118 @@ export function GroupesEtablissementsPage() {
                     >
                         {t('boutons.nouveau')}
                     </ElisaButton>
-                )}
+                ) : undefined}
+            />
+
+            <CardGrid columns={{ default: 1, sm: 2, lg: 4, xl: 4 }}>
+                <StatCard
+                    icon={Building2}
+                    label={t('indicateurs.total')}
+                    value={total}
+                    tone="accent"
+                    delay={0}
+                />
+                <StatCard
+                    icon={Users}
+                    label={t('indicateurs.actifs')}
+                    value={actifsCount}
+                    tone="success"
+                    delay={0.05}
+                />
+                <StatCard
+                    icon={Building2}
+                    label={t('indicateurs.inactifs')}
+                    value={total - actifsCount}
+                    tone="muted"
+                    delay={0.1}
+                />
+                <StatCard
+                    icon={Building2}
+                    label={t('indicateurs.totalEtablissements')}
+                    value={groupes.reduce((sum: number, g: GroupeEtablissement) => sum + (g.nbEtablissements || 0), 0)}
+                    tone="purple"
+                    delay={0.15}
+                />
+            </CardGrid>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
+                <DataTable
+                    tableId="groupes-etablissements"
+                    data={groupes}
+                    columns={colonnes}
+                    isLoading={isLoading}
+                    isFetching={isFetching}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    enableCollapsibleFilters
+                    filtres={[
+                        {
+                            key: 'actif',
+                            label: t('colonnes.statut'),
+                            options: [
+                                { value: 'true', label: t('champs.actif') },
+                                { value: 'false', label: t('champs.inactif') },
+                            ],
+                            allOptionLabel: t('tous'),
+                        },
+                    ]}
+                    searchPlaceholder={t('search.placeholder')}
+                    onSearchChange={(recherche) =>
+                        setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
+                    }
+                    onFilterChange={(key, valeur) => {
+                        if (key === 'actif') {
+                            setFiltres((prev) => ({ ...prev, actif: valeur === 'true' ? true : valeur === 'false' ? false : undefined, page: 1 }));
+                        }
+                    }}
+                    onClearFilters={() => setFiltres((prev) => ({ ...prev, actif: undefined, page: 1 }))}
+                    disableClientSearch
+                    pagination={dataGroupes?.meta ? {
+                        page: dataGroupes.meta.currentPage,
+                        limit: dataGroupes.meta.itemsPerPage,
+                        total: dataGroupes.meta.totalItems,
+                        totalPages: dataGroupes.meta.totalPages,
+                        hasNext: dataGroupes.meta.currentPage < dataGroupes.meta.totalPages,
+                        hasPrev: dataGroupes.meta.currentPage > 1,
+                    } : undefined}
+                    onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                    onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                    emptyMessage={t('messages.aucunGroupe')}
+                    aria-label={t('titre')}
+                />
             </motion.div>
 
-            {/* Tableau */}
-            <DataTable
-                data={groupes}
-                columns={colonnes}
-                isLoading={isLoading}
-                enableReordering
-                enablePinning
-                enableColumnVisibility
-                searchPlaceholder={t('search.placeholder')}
-                onSearchChange={(val: string) =>
-                    setFiltres((prev) => ({ ...prev, recherche: val, page: 1 }))
-                }
-                disableClientSearch
-                pagination={dataGroupes?.meta ? {
-                    page: dataGroupes.meta.currentPage,
-                    limit: dataGroupes.meta.itemsPerPage,
-                    total: dataGroupes.meta.totalItems,
-                    totalPages: dataGroupes.meta.totalPages,
-                    hasNext: dataGroupes.meta.currentPage < dataGroupes.meta.totalPages,
-                    hasPrev: dataGroupes.meta.currentPage > 1,
-                } : undefined}
-                onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
-                onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
-                emptyMessage={t('messages.aucunGroupe')}
-                aria-label={t('titre')}
-            />
+            {showFormModal && (
+                <GroupeEtablissementFormModal
+                    open={showFormModal}
+                    groupe={groupeToEdit}
+                    onOpenChange={(open) => {
+                        if (!open) { setShowFormModal(false); setGroupeToEdit(null); }
+                    }}
+                    onSubmit={async (dto) => {
+                        if (groupeToEdit) {
+                            await modifier.mutateAsync({ id: groupeToEdit.id, ...dto });
+                        } else {
+                            await creer.mutateAsync(dto);
+                        }
+                    }}
+                />
+            )}
 
-            {/* Modal Formulaire */}
-            <GroupeEtablissementFormModal
-                open={showFormModal}
-                groupe={groupeToEdit}
-                onClose={() => {
-                    setShowFormModal(false);
-                    setGroupeToEdit(null);
-                }}
-                onSubmit={async (dto) => {
-                    if (groupeToEdit) {
-                        await modifier.mutateAsync({ id: groupeToEdit.id, ...dto });
-                    } else {
-                        await creer.mutateAsync(dto);
-                    }
-                }}
-            />
-
-            {/* Dialog Confirmation Suppression */}
             <ConfirmDialog
                 open={!!groupeToDelete}
                 onOpenChange={(open) => { if (!open) setGroupeToDelete(null); }}
-                onConfirm={handleDelete}
+                onConfirm={async () => {
+                    if (groupeToDelete) {
+                        await supprimer.mutateAsync(groupeToDelete.id);
+                        setGroupeToDelete(null);
+                    }
+                }}
                 title={t('confirmation.titreSuppression')}
                 description={t('confirmation.messageSuppression', { nom: groupeToDelete?.nom })}
                 confirmText={t('confirmation.confirmText')}
@@ -263,7 +313,6 @@ export function GroupesEtablissementsPage() {
                 isLoading={supprimer.isPending}
             />
 
-            {/* Modal Détails */}
             {groupeToView && (
                 <GroupeEtablissementDetailModal
                     open={!!groupeToView}
@@ -272,7 +321,6 @@ export function GroupesEtablissementsPage() {
                 />
             )}
 
-            {/* Modal Gestion Établissements */}
             {groupeToManageEtabs && (
                 <GestionEtablissementsModal
                     open={!!groupeToManageEtabs}
@@ -281,15 +329,13 @@ export function GroupesEtablissementsPage() {
                     etablissementsDisponibles={etablissementsDisponibles}
                     etablissementsAssignes={etablissementsAssignes}
                     onRefresh={() => {
-                        // Rafraîchir les données sans fermer le modal
-                        queryClient.invalidateQueries({ 
-                            queryKey: ['groupes-etablissements', groupeToManageEtabs?.id, 'etablissements'] 
+                        queryClient.invalidateQueries({
+                            queryKey: ['groupes-etablissements', groupeToManageEtabs?.id, 'etablissements']
                         });
                     }}
                 />
             )}
 
-            {/* Modal Gestion Admins */}
             {groupeToManageAdmins && (
                 <GestionAdminsModal
                     open={!!groupeToManageAdmins}
@@ -298,9 +344,8 @@ export function GroupesEtablissementsPage() {
                     utilisateursDisponibles={utilisateursDisponibles}
                     adminsActuels={adminsActuels}
                     onRefresh={() => {
-                        // Rafraîchir les données sans fermer le modal
-                        queryClient.invalidateQueries({ 
-                            queryKey: ['groupes-etablissements', groupeToManageAdmins?.id, 'admins'] 
+                        queryClient.invalidateQueries({
+                            queryKey: ['groupes-etablissements', groupeToManageAdmins?.id, 'admins']
                         });
                     }}
                 />

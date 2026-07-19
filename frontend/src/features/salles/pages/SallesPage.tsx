@@ -1,44 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Building2, Users, MapPin, BarChart3, CheckCircle, Wrench, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Building2, CheckCircle, Users, BarChart3 } from 'lucide-react';
 import { useSalles, useSupprimerSalle, useStatistiquesSalles } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle, FiltresSalles, Salle } from '../types/salle.types';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { SalleFormModal } from '../components/SalleFormModal';
 import { DataTable } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { StatCard } from '@/components/ui/StatCard';
+import { CardGrid } from '@/components/ui/CardGrid';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
-import { toast } from 'sonner';
 import type { Column } from '@/components/ui/DataTable';
 
-const TYPE_SALLE_LABELS: Record<TypeSalle, string> = {
-    [TypeSalle.CLASSIQUE]: 'Classique',
-    [TypeSalle.LABORATOIRE]: 'Laboratoire',
-    [TypeSalle.INFORMATIQUE]: 'Informatique',
-    [TypeSalle.AMPHITHEATRE]: 'Amphithéâtre',
-    [TypeSalle.SPORT]: 'Sport',
-    [TypeSalle.MUSIQUE]: 'Musique',
-    [TypeSalle.ARTS]: 'Arts',
-    [TypeSalle.BIBLIOTHEQUE]: 'Bibliothèque',
-    [TypeSalle.ADMINISTRATION]: 'Administration',
-    [TypeSalle.AUTRE]: 'Autre',
+const STATUT_BADGE: Record<StatutSalle, { bg: string; text: string; icon: React.ElementType }> = {
+    [StatutSalle.DISPONIBLE]: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', icon: CheckCircle },
+    [StatutSalle.EN_MAINTENANCE]: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300', icon: BarChart3 },
+    [StatutSalle.INDISPONIBLE]: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300', icon: BarChart3 },
 };
 
-const STATUT_SALLE_LABELS: Record<StatutSalle, string> = {
-    [StatutSalle.DISPONIBLE]: 'Disponible',
-    [StatutSalle.EN_MAINTENANCE]: 'En maintenance',
-    [StatutSalle.INDISPONIBLE]: 'Indisponible',
-};
-
-const getTypeLabel = (type: TypeSalle): string => TYPE_SALLE_LABELS[type] || type;
-const getStatutLabel = (statut: StatutSalle): string => STATUT_SALLE_LABELS[statut] || statut;
-
-function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
-}
+const TYPE_OPTIONS = Object.values(TypeSalle).map((v) => ({ value: v, label: `salles:${v.toLowerCase()}` }));
+const STATUT_OPTIONS = Object.values(StatutSalle).map((v) => ({ value: v, label: `salles:${v.toLowerCase()}` }));
 
 export function SallesPage() {
+    const { t } = useTranslation('salles');
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
 
@@ -51,103 +40,86 @@ export function SallesPage() {
     const [salleToEdit, setSalleToEdit] = useState<Salle | null>(null);
     const [salleToDelete, setSalleToDelete] = useState<Salle | null>(null);
 
-    const { data, isLoading } = useSalles(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useSalles(filtres);
     const { data: stats, isLoading: statsLoading } = useStatistiquesSalles();
     const supprimer = useSupprimerSalle();
 
     const salles = data?.data || [];
     const pagination = data?.pagination;
 
-    const handleDelete = async () => {
-        if (!salleToDelete) return;
-        try {
-            await supprimer.mutateAsync(salleToDelete.id);
-            toast.success('Salle supprimée avec succès');
-            setSalleToDelete(null);
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error?.message || 'Erreur lors de la suppression');
-        }
-    };
-
     const colonnes: Column<Salle>[] = [
         {
             key: 'nom',
             pinned: 'left' as const,
-            header: 'Salle',
+            header: t('colonneSalle'),
             sortable: true,
             render: (s) => (
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                        <Building2 className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                        <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <div className="font-semibold text-gray-900">{s.nom}</div>
-                        {s.code && <div className="text-xs text-gray-500 font-mono">{s.code}</div>}
+                        <div className="font-semibold text-[var(--color-texte)]">{s.nom}</div>
+                        {s.code && <div className="text-xs text-[var(--color-texte-muted)] font-mono">{s.code}</div>}
                     </div>
                 </div>
             ),
         },
         {
             key: 'typeSalle',
-            header: 'Type',
+            header: t('colonneType'),
             render: (s) => (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                    {getTypeLabel(s.typeSalle)}
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--color-bg-tertiaire)] text-[var(--color-texte)]">
+                    {t(s.typeSalle.toLowerCase())}
                 </span>
             ),
         },
         {
             key: 'capacite',
-            header: 'Capacité',
+            header: t('colonneCapacite'),
             sortable: true,
             render: (s) => (
                 <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-700 font-medium">{s.capacite} places</span>
+                    <Users className="h-4 w-4 text-[var(--color-texte-muted)]" />
+                    <span className="text-sm text-[var(--color-texte)] font-medium">{t('nPlaces', { count: s.capacite })}</span>
                 </div>
             ),
         },
         {
             key: 'localisation',
-            header: 'Localisation',
+            header: t('colonneLocalisation'),
             className: 'hidden lg:table-cell',
             render: (s) => s.localisation ? (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-[var(--color-texte-secondaire)]">
+                    <Building2 className="h-4 w-4 text-[var(--color-texte-muted)]" />
                     <span>{s.localisation}</span>
                 </div>
-            ) : <span className="text-gray-400 text-sm">-</span>,
+            ) : <span className="text-[var(--color-texte-muted)] text-sm">-</span>,
         },
         {
             key: 'statut',
-            header: 'Statut',
+            header: t('colonneStatut'),
             render: (s) => {
                 const displayStatut = !s.disponible ? StatutSalle.INDISPONIBLE : s.statut;
-                const icon = displayStatut === StatutSalle.DISPONIBLE ? CheckCircle
-                    : displayStatut === StatutSalle.EN_MAINTENANCE ? Wrench : AlertCircle;
-                const colorMap = {
-                    [StatutSalle.DISPONIBLE]: 'bg-green-100 text-green-800',
-                    [StatutSalle.EN_MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
-                    [StatutSalle.INDISPONIBLE]: 'bg-red-100 text-red-800',
-                };
-                const Icon = icon;
+                const config = STATUT_BADGE[displayStatut];
+                const Icon = config.icon;
                 return (
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[displayStatut]}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
                         <Icon className="h-3.5 w-3.5" />
-                        {getStatutLabel(displayStatut)}
+                        {t(displayStatut.toLowerCase())}
                     </span>
                 );
             },
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colonneActions'),
             className: 'text-right',
             renderActions: (s) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('voirDetails'),
                     onClick: () => navigate({ to: '/salles/$salleId', params: { salleId: s.id } }),
                     variant: 'info' as const,
                 },
@@ -155,13 +127,13 @@ export function SallesPage() {
                     {
                         key: 'modifier',
                         icon: Edit,
-                        label: 'Modifier',
+                        label: t('modifier'),
                         onClick: () => { setSalleToEdit(s); setShowFormModal(true); },
                     },
                     {
                         key: 'supprimer',
                         icon: Trash2,
-                        label: 'Supprimer',
+                        label: t('supprimer'),
                         onClick: () => setSalleToDelete(s),
                         variant: 'danger' as const,
                     },
@@ -170,88 +142,121 @@ export function SallesPage() {
         },
     ];
 
-    const statCards = [
-        { icon: Building2, label: 'Total salles', value: stats?.total ?? 0, color: 'text-blue-600', iconBg: 'bg-blue-100' },
-        { icon: CheckCircle, label: 'Disponibles', value: stats?.disponibles ?? 0, color: 'text-green-600', iconBg: 'bg-green-100' },
-        { icon: Users, label: 'Capacité totale', value: stats?.capaciteTotale?.toLocaleString() ?? 0, color: 'text-orange-600', iconBg: 'bg-orange-100' },
-        { icon: BarChart3, label: 'Taux occupation', value: stats && stats.total > 0 ? `${Math.round(((stats.total - stats.disponibles) / stats.total) * 100)}%` : '0%', color: 'text-purple-600', iconBg: 'bg-purple-100' },
-    ];
-
     if (isLoading && salles.length === 0) {
+        return <PageSkeleton showStats showTable />;
+    }
+
+    if (error) {
         return (
-            <div className="container mx-auto px-4 py-8 max-w-7xl">
-                <Skeleton className="h-10 w-56 mb-8" />
-                <div className="grid grid-cols-4 gap-4 mb-8">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
-                </div>
-                <Skeleton className="h-96 w-full" />
+            <div className="p-6">
+                <ErrorMessage
+                    title={t('chargement')}
+                    message={error.message}
+                    onRetry={() => refetch()}
+                    retryLabel={t('reessayer', { ns: 'common' })}
+                />
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-8 mb-8">
-                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
-                        <Building2 className="w-full h-full" />
-                    </div>
-                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-5">
-                            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
-                                <Building2 className="h-10 w-10 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-bold text-white mb-1">Gestion des Salles</h1>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-emerald-200">{pagination?.total || 0} salle(s)</span>
-                                    <span className="text-emerald-300">•</span>
-                                    <span className="text-sm text-emerald-200">{stats?.capaciteTotale || 0} places au total</span>
-                                </div>
-                            </div>
-                        </div>
-                        {hasPermission('config:edit') && (
-                            <ElisaButton
-                                onClick={() => { setSalleToEdit(null); setShowFormModal(true); }}
-                                icon={<Plus className="h-4 w-4" />}
-                                className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-                            >
-                                Nouvelle salle
-                            </ElisaButton>
-                        )}
-                    </div>
-                </div>
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                title={t('gestionSalles')}
+                subtitle={t('sallesCount', { count: pagination?.total || 0 })}
+                icon={Building2}
+                variant="gradient"
+                actions={hasPermission('config:edit') ? (
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        icon={<Plus className="h-4 w-4" />}
+                        onClick={() => { setSalleToEdit(null); setShowFormModal(true); }}
+                    >
+                        {t('nouvelleSalle')}
+                    </ElisaButton>
+                ) : undefined}
+            />
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                    {statCards.map((card) => (
-                        <motion.div
-                            key={card.label}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex items-start justify-between mb-3">
-                                <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
-                                    <card.icon className={`h-5 w-5 ${card.color}`} />
-                                </div>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                            <p className="text-sm text-gray-500 mt-0.5">{card.label}</p>
-                        </motion.div>
-                    ))}
-                </div>
+            {stats && (
+                <CardGrid columns={{ default: 1, sm: 2, lg: 4, xl: 4 }}>
+                    <StatCard
+                        icon={Building2}
+                        label={t('totalSalles')}
+                        value={stats.total ?? 0}
+                        tone="accent"
+                        delay={0}
+                        loading={statsLoading}
+                    />
+                    <StatCard
+                        icon={CheckCircle}
+                        label={t('disponibles')}
+                        value={stats.disponibles ?? 0}
+                        tone="success"
+                        delay={0.05}
+                        loading={statsLoading}
+                    />
+                    <StatCard
+                        icon={Users}
+                        label={t('capaciteTotale')}
+                        value={(stats.capaciteTotale ?? 0).toLocaleString()}
+                        tone="orange"
+                        delay={0.1}
+                        loading={statsLoading}
+                    />
+                    <StatCard
+                        icon={BarChart3}
+                        label={t('tauxOccupationLabel')}
+                        value={stats.total && stats.total > 0
+                            ? `${Math.round(((stats.total - stats.disponibles) / stats.total) * 100)}%`
+                            : '0%'}
+                        tone="purple"
+                        delay={0.15}
+                        loading={statsLoading}
+                    />
+                </CardGrid>
+            )}
 
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
                 <DataTable
+                    tableId="salles"
                     data={salles}
                     columns={colonnes}
                     isLoading={isLoading}
-                    tableId="salles"
+                    isFetching={isFetching}
                     enableReordering
                     enablePinning
                     enableColumnVisibility
-                    searchable
-                    searchPlaceholder="Rechercher par nom, code ou localisation..."
+                    enableCollapsibleFilters
+                    filtres={[
+                        {
+                            key: 'typeSalle',
+                            label: t('colonneType'),
+                            options: TYPE_OPTIONS,
+                            allOptionLabel: t('tousTypes'),
+                        },
+                        {
+                            key: 'statut',
+                            label: t('colonneStatut'),
+                            options: STATUT_OPTIONS,
+                            allOptionLabel: t('tousStatuts'),
+                        },
+                    ]}
+                    searchPlaceholder={t('rechercherPar')}
                     onSearchChange={(search) => setFiltres((prev) => ({ ...prev, search, page: 1 }))}
+                    onFilterChange={(key, value) => {
+                        setFiltres((prev) => {
+                            const next = { ...prev, page: 1 };
+                            if (key === 'typeSalle') next.typeSalle = value as TypeSalle | undefined;
+                            if (key === 'statut') next.statut = value as StatutSalle | undefined;
+                            return next;
+                        });
+                    }}
+                    onClearFilters={() => setFiltres((prev) => ({ ...prev, typeSalle: undefined, statut: undefined, page: 1 }))}
                     disableClientSearch
                     pagination={pagination ? {
                         page: pagination.page,
@@ -264,23 +269,33 @@ export function SallesPage() {
                     onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                     onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
                 />
+            </motion.div>
 
+            {showFormModal && (
                 <SalleFormModal
                     open={showFormModal}
-                    onClose={() => { setShowFormModal(false); setSalleToEdit(null); }}
+                    onOpenChange={(open) => {
+                        if (!open) { setShowFormModal(false); setSalleToEdit(null); }
+                    }}
                     salleId={salleToEdit?.id}
                 />
+            )}
 
-                <ConfirmationModal
-                    isOpen={!!salleToDelete}
-                    title="Confirmer la suppression"
-                    message={`Êtes-vous sûr de vouloir supprimer la salle "${salleToDelete?.nom}" ? Cette action est irréversible.`}
-                    confirmLabel="Supprimer"
+            {salleToDelete && (
+                <ConfirmDialog
+                    open={!!salleToDelete}
+                    onOpenChange={(open) => { if (!open) setSalleToDelete(null); }}
+                    title={t('confirmerSuppression')}
+                    description={t('messageSuppression', { nom: salleToDelete.nom })}
+                    confirmText={t('supprimer')}
                     variant="danger"
-                    onConfirm={handleDelete}
-                    onCancel={() => setSalleToDelete(null)}
+                    onConfirm={async () => {
+                        await supprimer.mutateAsync(salleToDelete.id);
+                        setSalleToDelete(null);
+                    }}
+                    isLoading={supprimer.isPending}
                 />
-            </motion.div>
+            )}
         </div>
     );
 }

@@ -1,0 +1,45 @@
+{
+    "titre": "Paramètres Système",
+    "description": "Configurez les fonctionnalités, constantes, flags et variables d'eLISAschool",
+    "nouveauParametre": "Nouveau paramètre",
+    "rechercher": "Rechercher un paramètre...",
+    "totalParametres": "Total paramètres",
+    "toutesCategories": "Toutes les catégories",
+    "reinitialiserTout": "Réinitialiser tout",
+    "aucunParametre": "Aucun paramètre trouvé",
+    "oui": "Oui",
+    "non": "Non",
+    "colonne": {
+        "cle": "Clé",
+        "valeur": "Valeur",
+        "type": "Type",
+        "categorie": "Catégorie",
+        "module": "Module",
+        "actions": "Actions"
+    },
+    "actions": {
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    },
+    "confirmerSupprimerTitre": "Supprimer le paramètre",
+    "confirmerSupprimerMessage": "Êtes-vous sûr de vouloir supprimer le paramètre \"{{cle}}\" ?",
+    "confirmerResetTitre": "Réinitialiser tous les paramètres",
+    "confirmerResetMessage": "Êtes-vous sûr de vouloir réinitialiser TOUS les paramètres à leurs valeurs par défaut ?",
+    "form": {
+        "titreModifier": "Modifier le paramètre",
+        "cle": "Clé",
+        "type": "Type",
+        "valeur": "Valeur",
+        "description": "Description",
+        "categorie": "Catégorie",
+        "module": "Module",
+        "nombre": "nombre",
+        "jsonValide": "JSON valide",
+        "descriptionPlaceholder": "Description du paramètre...",
+        "modifiableRuntime": "Modifiable à l'exécution",
+        "nonModifiable": "Non modifiable (paramètre système)",
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer",
+        "enregistrement": "Enregistrement..."
+    }
+}

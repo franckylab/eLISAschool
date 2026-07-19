@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Edit, Building2,
@@ -13,13 +14,15 @@ import {
 } from 'lucide-react';
 import { useSalle, useStatistiquesSalles, useModifierSalle, useSalleStats, useSalleEmploiDuTemps, useSalleClasses } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle } from '../types/salle.types';
-import type { CreneauEmploiDuTemps, ClasseLiee } from '../types/salle.types';
+import type { CreneauEmploiDuTemps } from '../types/salle.types';
 import { SalleFormModal } from '../components/SalleFormModal';
 import { AssignerClasseModal } from '../components/AssignerClasseModal';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { usePermissions } from '@/hooks';
 import { toast } from 'sonner';
 
@@ -76,32 +79,8 @@ function getHourFromTime(t: string): number {
     return parseInt(t.split(':')[0], 10);
 }
 
-function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 rounded ${className || ''}`} />;
-}
-
 function SalleDetailSkeleton() {
-    return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <Skeleton className="h-10 w-48 mb-8" />
-            <Skeleton className="h-40 w-full mb-8" />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <Skeleton className="h-64" />
-                    <Skeleton className="h-48" />
-                    <Skeleton className="h-80" />
-                </div>
-                <div className="space-y-6">
-                    <Skeleton className="h-32" />
-                    <Skeleton className="h-32" />
-                    <Skeleton className="h-32" />
-                </div>
-            </div>
-        </div>
-    );
+    return <PageSkeleton showStats showTable />;
 }
 
 function buildCreneauMap(creneaux: CreneauEmploiDuTemps[]): Record<string, Record<string, CreneauEmploiDuTemps[]>> {
@@ -115,10 +94,11 @@ function buildCreneauMap(creneaux: CreneauEmploiDuTemps[]): Record<string, Recor
 }
 
 export function SalleDetailPage() {
+    const { t } = useTranslation('salles');
     const { salleId } = useParams({ from: '/_auth/salles/$salleId' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const { data: salle, isLoading, error } = useSalle(salleId);
+    const { data: salle, isLoading, error, refetch } = useSalle(salleId);
     const { data: globalStats } = useStatistiquesSalles();
     const { data: salleStats } = useSalleStats(salleId);
     const { data: emploiDuTemps = [] } = useSalleEmploiDuTemps(salleId);
@@ -184,14 +164,13 @@ export function SalleDetailPage() {
 
     if (error || !salle) {
         return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-                <p className="text-xl font-semibold text-red-600 mb-2">Salle non trouvée</p>
-                <p className="text-gray-500 mb-6">La salle demandée n'existe pas ou a été supprimée.</p>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/salles' })}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Retour à la liste
-                </ElisaButton>
+            <div className="p-6">
+                <ErrorMessage
+                    title={t('salleNonTrouvee')}
+                    message={t('salleNonTrouveeDesc')}
+                    onRetry={() => refetch()}
+                    retryLabel={t('reessayer', { ns: 'common' })}
+                />
             </div>
         );
     }
@@ -242,7 +221,7 @@ export function SalleDetailPage() {
     const nbClassesDepassantes = classesDepassantCapacite.length;
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex flex-col gap-6 p-6">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
                 <Breadcrumbs currentLabel={salle.nom} />
                 <ElisaButton
@@ -251,7 +230,7 @@ export function SalleDetailPage() {
                     icon={<ArrowLeft className="h-4 w-4" />}
                     className="mb-6"
                 >
-                    Retour aux salles
+                    {t('retourAuxSalles')}
                 </ElisaButton>
 
                 <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${heroGradient} p-8 mb-8`}>
@@ -294,8 +273,8 @@ export function SalleDetailPage() {
                                             icon={<MoreHorizontal className="h-4 w-4" />}
                                             className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm"
                                         >
-                                            Statut
-                                        </ElisaButton>
+                                                    {t('statut')}
+                                                </ElisaButton>
                                         <AnimatePresence>
                                             {statutMenuOpen && (
                                                 <motion.div
@@ -335,7 +314,7 @@ export function SalleDetailPage() {
                                     icon={<Copy className="h-4 w-4" />}
                                     className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm"
                                 >
-                                    Dupliquer
+                                    {t('dupliquer')}
                                 </ElisaButton>
                                 <ElisaButton
                                     onClick={handlePrint}
@@ -343,7 +322,7 @@ export function SalleDetailPage() {
                                     icon={<Printer className="h-4 w-4" />}
                                     className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm"
                                 >
-                                    Imprimer
+                                    {t('imprimer')}
                                 </ElisaButton>
                                 {hasPermission('config:edit') && (
                                     <ElisaButton
@@ -351,7 +330,7 @@ export function SalleDetailPage() {
                                         icon={<Edit className="h-4 w-4" />}
                                         className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
                                     >
-                                        Modifier
+                                        {t('modifier')}
                                     </ElisaButton>
                                 )}
                             </div>
@@ -367,15 +346,15 @@ export function SalleDetailPage() {
                                 key={stat.label}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                                className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-5 hover:shadow-md transition-shadow"
                             >
                                 <div className="flex items-start justify-between mb-3">
                                     <div className={`p-2.5 rounded-xl ${stat.iconBg}`}>
                                         <Icon className={`h-5 w-5 ${stat.color}`} />
                                     </div>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                                <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+                                <p className="text-2xl font-bold text-[var(--color-texte)]">{stat.value}</p>
+                                <p className="text-sm text-[var(--color-texte-secondaire)] mt-0.5">{stat.label}</p>
                             </motion.div>
                         );
                     })}
@@ -385,11 +364,11 @@ export function SalleDetailPage() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8"
+                        className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6 mb-8"
                     >
-                        <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-[var(--color-texte)] mb-5 flex items-center gap-2">
                             <Calendar className="h-5 w-5 text-purple-500" />
-                            Taux d'occupation
+                            {t('tauxOccupationTitre')}
                             {totalEffectifMax > salle.capacite && (
                                 <Badge variant="warning" size="xs" icon={<AlertTriangle className="h-3 w-3" />} title="La somme des effectifs max dépasse la capacité de la salle">
                                     Capacité
@@ -399,7 +378,7 @@ export function SalleDetailPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-600">Créneaux occupés</span>
+                                    <span className="text-gray-600">{t('creneauxOccupes')}</span>
                                     <span className="font-medium text-gray-900">
                                         {salleStats.creneauxOccupes} / {salleStats.totalCreneauxSemaine}
                                     </span>
@@ -413,12 +392,12 @@ export function SalleDetailPage() {
                                     />
                                 </div>
                                 <p className="mt-1 text-xs text-gray-500">
-                                    {Math.min((salleStats.creneauxOccupes / salleStats.totalCreneauxSemaine) * 100, 100).toFixed(1)}% des créneaux utilisés
+                                    {t('desCreneauxUtilises', { percent: Math.min((salleStats.creneauxOccupes / salleStats.totalCreneauxSemaine) * 100, 100).toFixed(1) })}
                                 </p>
                             </div>
                             <div>
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-600">Heures réservées / Semaine</span>
+                                    <span className="text-gray-600">{t('heuresReserveesSemaine')}</span>
                                     <span className="font-medium text-gray-900">
                                         {salleStats.heuresReservees}h / {salleStats.totalCreneauxSemaine}h
                                     </span>
@@ -432,7 +411,7 @@ export function SalleDetailPage() {
                                     />
                                 </div>
                                 <p className="mt-1 text-xs text-gray-500">
-                                    {capacityPercent}% de la capacité horaire utilisée
+                                    {t('deCapaciteHoraireUtilisee', { percent: capacityPercent })}
                                 </p>
                             </div>
                         </div>
@@ -440,12 +419,12 @@ export function SalleDetailPage() {
                         {classesLiees.length > 0 && (
                             <div className="mt-6 pt-6 border-t border-gray-100">
                                 <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                                    Effectifs ({totalEffectifActuel} élèves)
+                                    {t('effectifs')} ({totalEffectifActuel} {t('eleves')})
                                 </h3>
                                 <div className="space-y-4">
                                     <div>
                                         <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-gray-600">Effectif / Capacité max des classes</span>
+                                            <span className="text-gray-600">{t('effectifCapaciteMaxClasses')}</span>
                                             <span className="font-medium text-gray-900">
                                                 {totalEffectifActuel} / {totalEffectifMax}
                                             </span>
@@ -459,12 +438,12 @@ export function SalleDetailPage() {
                                             />
                                         </div>
                                         <p className="mt-1 text-xs text-gray-500">
-                                            {effectifRatioMax.toFixed(1)}% de la capacité max utilisée
+                                            {t('deCapaciteMaxUtilisee', { percent: effectifRatioMax.toFixed(1) })}
                                         </p>
                                     </div>
                                     <div>
                                         <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-gray-600">Effectif / Capacité de la salle</span>
+                                            <span className="text-gray-600">{t('effectifCapaciteSalle')}</span>
                                             <span className="font-medium text-gray-900">
                                                 {totalEffectifActuel} / {salle.capacite}
                                             </span>
@@ -478,7 +457,7 @@ export function SalleDetailPage() {
                                             />
                                         </div>
                                         <p className="mt-1 text-xs text-gray-500">
-                                            {effectifRatioCapacite.toFixed(1)}% de la capacité physique utilisée
+                                            {t('deCapacitePhysiqueUtilisee', { percent: effectifRatioCapacite.toFixed(1) })}
                                         </p>
                                     </div>
                                 </div>
@@ -486,8 +465,8 @@ export function SalleDetailPage() {
                                 {showDepassementWarning && nbClassesDepassantes > 0 && (
                                     <ErrorMessage
                                         variant="warning"
-                                        title="Incohérence détectée"
-                                        message={`${nbClassesDepassantes} classe${nbClassesDepassantes > 1 ? 's ont' : ' a'} un effectif max supérieur à la capacité de la salle (${salle.capacite} places).`}
+                                        title={t('incoherenceDetectee')}
+                                        message={t('incoherenceMessage', { count: nbClassesDepassantes, capacite: salle.capacite })}
                                         dismissible
                                         onDismiss={() => setShowDepassementWarning(false)}
                                         autoDismissMs={30000}
@@ -496,8 +475,8 @@ export function SalleDetailPage() {
                                 {showTotalWarning && totalEffectifMax > salle.capacite && (
                                     <ErrorMessage
                                         variant="warning"
-                                        title="Dépassement de capacité totale"
-                                        message={`La somme des effectifs max (${totalEffectifMax}) dépasse la capacité de la salle (${salle.capacite} places).`}
+                                        title={t('depassementCapaciteTotale')}
+                                        message={t('depassementMessage', { total: totalEffectifMax, capacite: salle.capacite })}
                                         dismissible
                                         onDismiss={() => setShowTotalWarning(false)}
                                         autoDismissMs={30000}
@@ -510,56 +489,55 @@ export function SalleDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-                        >
-                            <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                                <Building2 className="h-5 w-5 text-blue-500" />
-                                Informations générales
-                            </h2>
-                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-                                <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Type</dt>
-                                    <dd className="flex items-center gap-2">
-                                        <div className={`p-1 rounded-md ${typeConfig.iconBg}`}>
-                                            <typeConfig.icon className="h-4 w-4 text-gray-700" />
-                                        </div>
-                                        <span className="text-sm font-semibold text-gray-900">{typeConfig.label}</span>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Capacité</dt>
-                                    <dd className="text-sm font-semibold text-gray-900">{salle.capacite} places</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Localisation</dt>
-                                    <dd className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
-                                        <MapPin className="h-4 w-4 text-gray-400" />
-                                        {salle.localisation || <span className="text-gray-400 italic">Non renseignée</span>}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Code</dt>
-                                    <dd className="text-sm font-semibold text-gray-900 font-mono">{salle.code}</dd>
-                                </div>
-                                {salle.description && (
-                                    <div className="sm:col-span-2">
-                                        <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Description</dt>
-                                        <dd className="text-sm text-gray-700 leading-relaxed">{salle.description}</dd>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-[var(--color-dominant-500)]" />
+                                    {t('informationsGenerales')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                                    <div>
+                                        <dt className="text-xs font-medium text-[var(--color-texte-muted)] uppercase tracking-wider mb-1">{t('type')}</dt>
+                                        <dd className="flex items-center gap-2">
+                                            <div className={`p-1 rounded-md ${typeConfig.iconBg}`}>
+                                                <typeConfig.icon className="h-4 w-4 text-[var(--color-texte)]" />
+                                            </div>
+                                            <span className="text-sm font-semibold text-[var(--color-texte)]">{typeConfig.label}</span>
+                                        </dd>
                                     </div>
-                                )}
-                            </dl>
-                        </motion.div>
+                                    <div>
+                                        <dt className="text-xs font-medium text-[var(--color-texte-muted)] uppercase tracking-wider mb-1">{t('capacite')}</dt>
+                                        <dd className="text-sm font-semibold text-[var(--color-texte)]">{t('nPlaces', { count: salle.capacite })}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-medium text-[var(--color-texte-muted)] uppercase tracking-wider mb-1">{t('localisation')}</dt>
+                                        <dd className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-texte)]">
+                                            <MapPin className="h-4 w-4 text-[var(--color-texte-muted)]" />
+                                            {salle.localisation || <span className="italic text-[var(--color-texte-muted)]">{t('nonRenseignee')}</span>}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-medium text-[var(--color-texte-muted)] uppercase tracking-wider mb-1">{t('code')}</dt>
+                                        <dd className="text-sm font-semibold text-[var(--color-texte)] font-mono">{salle.code}</dd>
+                                    </div>
+                                    {salle.description && (
+                                        <div className="sm:col-span-2">
+                                            <dt className="text-xs font-medium text-[var(--color-texte-muted)] uppercase tracking-wider mb-1">{t('description')}</dt>
+                                            <dd className="text-sm text-[var(--color-texte-secondaire)] leading-relaxed">{salle.description}</dd>
+                                        </div>
+                                    )}
+                                </dl>
+                            </CardContent>
+                        </Card>
 
                         {salle.equipements && salle.equipements.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.15 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                             >
                                 <div className="flex items-center gap-2 mb-5">
                                     <Monitor className="h-5 w-5 text-gray-500" />
@@ -598,11 +576,11 @@ export function SalleDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                             >
                                 <div className="flex items-center gap-2 mb-4">
                                     <Clock className="h-5 w-5 text-emerald-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Aujourd'hui</h2>
+                                    <h2 className="text-lg font-semibold text-gray-900">{t('aujourdhui')}</h2>
                                     <Badge variant="outline" className="text-xs">
                                         {todayCreneaux.length} créneau{todayCreneaux.length !== 1 ? 'x' : ''}
                                     </Badge>
@@ -639,12 +617,12 @@ export function SalleDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.25 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                         >
                             <div className="flex items-center justify-between mb-5">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-5 w-5 text-gray-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Planning d'occupation</h2>
+                                    <h2 className="text-lg font-semibold text-gray-900">{t('planningOccupation')}</h2>
                                     <Badge variant="outline" className="text-xs">
                                         {emploiDuTemps.length} créneau{emploiDuTemps.length !== 1 ? 'x' : ''}
                                     </Badge>
@@ -664,14 +642,13 @@ export function SalleDetailPage() {
                                     </thead>
                                     <tbody>
                                         {CRENEAUX.map((heure) => {
-                                            const hourNum = parseInt(heure.split(':')[0]);
                                             const isMidday = heure === '12:00';
                                             return (
                                                 <tr key={heure} className={isMidday ? '' : 'border-t border-gray-100'}>
                                                     <td className="py-1.5 pr-2 text-[10px] text-gray-400 font-mono text-right align-top pt-2">
                                                         {heure}
                                                     </td>
-                                                    {JOURS.map((jour, idx) => {
+                                                    {JOURS.map((jour, _idx) => {
                                                         const slotsAtTime = creneauMap[jour]?.[heure];
                                                         const isOccupied = slotsAtTime && slotsAtTime.length > 0;
                                                         const creneau = isOccupied ? slotsAtTime![0] : undefined;
@@ -712,15 +689,15 @@ export function SalleDetailPage() {
                             <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
                                 <div className="flex items-center gap-1.5">
                                     <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200" />
-                                    <span>Occupé</span>
+                                    <span>{t('occupe')}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <div className="w-3 h-3 rounded bg-gray-50 border border-gray-100" />
-                                    <span>Libre</span>
+                                    <span>{t('libre')}</span>
                                 </div>
                                 <span className="text-gray-300">•</span>
                                 <span className="text-gray-400">
-                                    Capacity: {capacityPercent}% utilisée
+                                    {t('capacityUtilisee', { percent: capacityPercent })}
                                 </span>
                             </div>
                         </motion.div>
@@ -730,11 +707,11 @@ export function SalleDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                             >
                                 <div className="flex items-center gap-2 mb-4">
                                     <Calendar className="h-5 w-5 text-indigo-500" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Prochains créneaux</h2>
+                                    <h2 className="text-lg font-semibold text-gray-900">{t('prochainsCreneaux')}</h2>
                                 </div>
                                 <div className="space-y-2">
                                     {upcomingCreneaux.map((c) => {
@@ -774,12 +751,12 @@ export function SalleDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.35 }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                             >
                                 <div className="flex items-center justify-between gap-2 mb-4">
                                     <div className="flex items-center gap-2">
                                         <GraduationCap className="h-5 w-5 text-amber-500" />
-                                        <h2 className="text-lg font-semibold text-gray-900">Classes liées</h2>
+                                        <h2 className="text-lg font-semibold text-gray-900">{t('classesLiees')}</h2>
                                         {totalEffectifMax > salle.capacite && (
                                             <Badge variant="warning" size="xs" icon={<AlertTriangle className="h-3 w-3" />} title="La somme des effectifs max dépasse la capacité de la salle">
                                                 Capacité
@@ -796,7 +773,7 @@ export function SalleDetailPage() {
                                             icon={<GraduationCap className="h-4 w-4" />}
                                             onClick={() => setAssignerClasseOpen(true)}
                                         >
-                                            Assigner une classe
+                                            {t('assignerClasse')}
                                         </ElisaButton>
                                     )}
                                 </div>
@@ -828,15 +805,15 @@ export function SalleDetailPage() {
                                                     <p className={`text-sm font-semibold ${cl.effectifMax > salle.capacite ? 'text-red-600' : 'text-gray-900'}`}>
                                                         {cl.effectifActuel}/{cl.effectifMax}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-400">élèves</p>
+                                                    <p className="text-[10px] text-gray-400">{t('eleves')}</p>
                                                     {cl.effectifMax > salle.capacite ? (
                                                         <p className="flex items-center justify-end gap-1 text-[10px] text-amber-600 mt-0.5">
                                                             <AlertTriangle className="h-3 w-3" />
-                                                            &gt; capa. salle ({salle.capacite})
+                                                            {t('depasseCapaciteSalle', { capacite: salle.capacite })}
                                                         </p>
                                                     ) : (
                                                         <p className="text-[10px] text-gray-400 mt-0.5">
-                                                            Max {cl.effectifMax} / Capa. salle {salle.capacite}
+                                                            {t('maxCapaciteSalle', { max: cl.effectifMax, capacite: salle.capacite })}
                                                         </p>
                                                     )}
                                                 </div>
@@ -846,8 +823,8 @@ export function SalleDetailPage() {
                                 ) : (
                                     <div className="text-center py-8 text-gray-500">
                                         <GraduationCap className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-                                        <p className="text-sm">Aucune classe liée</p>
-                                        <p className="text-xs mt-1">Utilisez le bouton ci-dessus pour assigner une classe à cette salle.</p>
+                                        <p className="text-sm">{t('aucuneClasseLiee')}</p>
+                                        <p className="text-xs mt-1">{t('assignerClasseDesc')}</p>
                                     </div>
                                 )}
                             </motion.div>
@@ -859,41 +836,41 @@ export function SalleDetailPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.25 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                         >
                             <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-gray-400" />
-                                Aperçu
+                                {t('apercu')}
                             </h3>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Capacité</span>
+                                    <span className="text-sm text-gray-600">{t('capacite')}</span>
                                     <span className="text-sm font-semibold text-gray-900">{salle.capacite} places</span>
                                 </div>
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Type</span>
+                                    <span className="text-sm text-gray-600">{t('type')}</span>
                                     <span className="text-sm font-semibold text-gray-900">{typeConfig.label}</span>
                                 </div>
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Localisation</span>
+                                    <span className="text-sm text-gray-600">{t('localisation')}</span>
                                     <span className="text-sm font-semibold text-gray-900">
                                         {salle.localisation || '-'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Équipements</span>
+                                    <span className="text-sm text-gray-600">{t('equipements')}</span>
                                     <span className="text-sm font-semibold text-gray-900">
                                         {salle.equipements?.length || 0}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Créneaux/sem</span>
+                                    <span className="text-sm text-gray-600">{t('creneauxSem')}</span>
                                     <span className="text-sm font-semibold text-gray-900">
                                         {salleStats?.creneauxOccupes ?? '-'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
-                                    <span className="text-sm text-gray-600">Classes liées</span>
+                                    <span className="text-sm text-gray-600">{t('classesLiees')}</span>
                                     <span className="text-sm font-semibold text-gray-900">
                                         {salleStats?.classesLiees ?? '-'}
                                     </span>
@@ -905,15 +882,15 @@ export function SalleDetailPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                         >
                             <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-400" />
-                                Capacité utilisée
+                                {t('capaciteUtilisee')}
                             </h3>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Occupation hebdo</span>
+                                    <span className="text-gray-600">{t('occupationHebdo')}</span>
                                     <span className="font-semibold text-gray-900">{capacityPercent}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
@@ -931,7 +908,7 @@ export function SalleDetailPage() {
                                     />
                                 </div>
                                 <p className="text-[10px] text-gray-400">
-                                    {salleStats?.heuresReservees ?? 0}h réservées / {salleStats?.totalCreneauxSemaine ?? 66}h disponibles
+                                    {t('hReserveesHDisponibles', { heures: salleStats?.heuresReservees ?? 0, total: salleStats?.totalCreneauxSemaine ?? 66 })}
                                 </p>
                             </div>
                         </motion.div>
@@ -940,19 +917,19 @@ export function SalleDetailPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.35 }}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="bg-[var(--color-card)] rounded-xl shadow-sm border border-[var(--color-bordure)] p-6"
                         >
                             <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-gray-400" />
-                                Informations système
+                                {t('informationsSysteme')}
                             </h3>
                             <div className="space-y-3 text-sm">
                                 <div>
-                                    <p className="text-gray-500 text-xs">Créée le</p>
+                                    <p className="text-gray-500 text-xs">{t('creeeLe')}</p>
                                     <p className="font-medium text-gray-900">{formatDateTime(salle.createdAt)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 text-xs">Modifiée le</p>
+                                    <p className="text-gray-500 text-xs">{t('modifieeLe')}</p>
                                     <p className="font-medium text-gray-900">{formatDateTime(salle.updatedAt)}</p>
                                 </div>
                                 {salle.id && (
@@ -969,12 +946,12 @@ export function SalleDetailPage() {
 
             <SalleFormModal
                 open={formOpen}
-                onClose={() => setFormOpen(false)}
+                onOpenChange={(v) => { if (!v) setFormOpen(false); }}
                 salleId={salle.id}
             />
             <SalleFormModal
                 open={duplicateFromId !== null}
-                onClose={() => setDuplicateFromId(null)}
+                onOpenChange={(v) => { if (!v) setDuplicateFromId(null); }}
                 duplicateFromId={duplicateFromId || undefined}
             />
             {assignerClasseOpen && (

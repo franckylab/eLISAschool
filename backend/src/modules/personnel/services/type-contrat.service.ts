@@ -173,9 +173,19 @@ export class TypeContratService {
     ): Promise<TypeContratPersonnalise> {
         const typeContrat = await this.findOne(id, etablissementId);
 
-        // Protection des types système
+        // Protection partielle : les types système sont modifiables
+        // mais leur code et estSysteme restent immutables (DTO exclut déjà code)
         if (typeContrat.estSysteme) {
-            throw new AppError('Les types système ne peuvent pas être modifiés', 403, 'SYSTEM_TYPE_PROTECTED');
+            // Seuls certains champs sont autorisés pour les types système
+            const allowedFields: (keyof UpdateTypeContratDto)[] = [
+                'nom', 'description', 'categorie', 'modeRemuneration', 'ordre',
+                'renouvellementAutoDefaut', 'dureeMaxMois', 'clausesDefaut', 'avantagesDefaut',
+            ];
+            for (const key of Object.keys(dto)) {
+                if (!allowedFields.includes(key as keyof UpdateTypeContratDto)) {
+                    throw new AppError(`Le champ "${key}" ne peut pas être modifié sur un type système`, 403, 'FIELD_PROTECTED');
+                }
+            }
         }
 
         const anciennesValeurs = {
@@ -266,10 +276,6 @@ export class TypeContratService {
         req?: any
     ): Promise<TypeContratPersonnalise> {
         const typeContrat = await this.findOne(id, etablissementId);
-
-        if (typeContrat.estSysteme) {
-            throw new AppError('Les types système ne peuvent pas être désactivés', 403, 'SYSTEM_TYPE_PROTECTED');
-        }
 
         typeContrat.actif = !typeContrat.actif;
         await this.repo.save(typeContrat);

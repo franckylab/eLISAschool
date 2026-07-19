@@ -1,0 +1,17 @@
+{
+    "titre": "Time Tracking",
+    "description": "Track staff attendance",
+    "nouveau": "New entry",
+    "rechercher": "Search entries...",
+    "personnel": "Staff",
+    "date": "Date",
+    "arrivee": "Check-in",
+    "depart": "Check-out",
+    "heures": "Hours",
+    "statut": "Status",
+    "presents": "Present",
+    "retards": "Late",
+    "tauxPresence": "Attendance rate",
+    "moyenneHeures": "Avg. hours",
+    "uneErreurEstSurvenue": "An error occurred"
+}

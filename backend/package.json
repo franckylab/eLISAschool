@@ -22,9 +22,9 @@
         "migration:revert": "typeorm migration:revert -d src/database/data-source.ts",
         "migration:fix-indexes": "ts-node -r tsconfig-paths-register scripts/analyze-indexes.ts",
         "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run-seeds.ts",
-        "seed:check": "ts-node -r tsconfig-paths/register src/database/seeds/check-seeds-status.ts",
+        "seed:check": "ts-node -r tsconfig-paths/register src/database/scripts/check-seeds-status.ts",
         "seed:rbac": "ts-node -r tsconfig-paths/register src/database/seeds/run-rbac-seed.ts",
-        "seed:rbac-users": "ts-node -r tsconfig-paths/register src/database/seeds/rbac-users.seed.ts",
+        "seed:demo": "ts-node -r tsconfig-paths/register src/database/seeds/run-demo-seeds.ts",
         "db:analyze-indexes": "ts-node -r tsconfig-paths/register scripts/analyze-indexes.ts",
         "db:fix-duplicate-index": "./scripts/fix-duplicate-index.sh"
     },

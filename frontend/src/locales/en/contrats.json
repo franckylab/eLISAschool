@@ -1,0 +1,50 @@
+{
+    "titre": "Contract Management",
+    "description": "Manage staff contracts and contract types",
+    "nouveau": "New contract",
+    "editer": "Edit contract",
+    "supprimer": "Delete contract",
+    "supprimerMessage": "Are you sure you want to delete this contract?",
+    "detail": {
+        "membre": "Member",
+        "typeContrat": "Contract type",
+        "dateDebut": "Start date",
+        "dateFin": "End date",
+        "salaireBase": "Base salary",
+        "tarifHoraire": "Hourly rate",
+        "modeRemuneration": "Pay mode",
+        "poste": "Position",
+        "fonction": "Function",
+        "statut": "Status",
+        "clauses": "Clauses"
+    },
+    "statut": {
+        "ACTIF": "Active",
+        "EXPIRE": "Expired",
+        "ROMPU": "Terminated",
+        "RENEGOCIE": "Renegotiated"
+    },
+    "modeRemuneration": {
+        "MENSUEL": "Monthly",
+        "HORAIRE": "Hourly",
+        "MIXTE": "Mixed",
+        "HEBDOMADAIRE": "Weekly"
+    },
+    "types": {
+        "titre": "Contract Types",
+        "description": "Manage custom contract types",
+        "nouveau": "New type",
+        "editer": "Edit",
+        "supprimer": "Delete",
+        "code": "Code",
+        "nom": "Name",
+        "categorie": "Category",
+        "actif": "Active",
+        "estSysteme": "System type",
+        "dureeMaxMois": "Max duration (months)"
+    },
+    "chargement": "Loading contracts...",
+    "aucunContrat": "No contracts",
+    "aucunContratDescription": "No contracts found. Create a new one.",
+    "erreur": "Error loading contracts"
+}

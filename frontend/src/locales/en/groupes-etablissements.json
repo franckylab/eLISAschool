@@ -1,12 +1,16 @@
 {
     "titre": "Establishment Groups",
     "sousTitre": "Manage establishment groupings for consolidation",
+    "tous": "All",
+    "reessayer": "Retry",
     "boutons": {
         "nouveau": "New group",
         "modifier": "Edit",
         "supprimer": "Delete",
         "voirDetails": "View details",
-        "effacer": "Clear"
+        "effacer": "Clear",
+        "gererEtablissements": "Manage establishments",
+        "gererAdmins": "Manage admins"
     },
     "colonnes": {
         "groupe": "Group",
@@ -29,7 +33,9 @@
     },
     "indicateurs": {
         "total": "Total Groups",
-        "actifs": "Active"
+        "actifs": "Active",
+        "inactifs": "Inactive",
+        "totalEtablissements": "Total Establishments"
     },
     "messages": {
         "aucunGroupe": "No establishment groups found",
@@ -63,5 +69,24 @@
         "nomRequis": "Name is required",
         "nomMin": "Name must contain at least 2 characters",
         "codeFormat": "Code must only contain uppercase letters, numbers, hyphens and underscores"
+    },
+    "form": {
+        "titreCreer": "New establishment group",
+        "titreModifier": "Edit group",
+        "description": "Fill in the information below",
+        "annuler": "Cancel",
+        "enregistrer": "Save",
+        "creer": "Create",
+        "nomLabel": "Name",
+        "nomPlaceholder": "Ex: African School Group",
+        "codeLabel": "Code",
+        "codePlaceholder": "AFRICAN_SCHOOL_GROUP",
+        "codeHelper": "Auto-generated if empty",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Description of the establishment group...",
+        "etablissementsLabel": "Establishments to add to the group (optional)",
+        "nbSelectionnes": "{{count}} establishment(s) selected",
+        "erreurNomRequis": "Name is required",
+        "erreurCodeRequis": "Code is required"
     }
 }

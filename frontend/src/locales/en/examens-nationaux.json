@@ -1,29 +1,66 @@
 {
-    "examens_nationaux": {
-        "title": "National Examinations",
-        "description": "Management of official examinations (CEP, BEPC, Probatoire, BACCALAUREATE, GCE)",
-        "create": "Create a national examination",
-        "edit": "Edit the national examination",
-        "delete": "Delete the national examination",
-        "detail": "National examination details",
-        "fields": {
-            "nom": "Name",
-            "code": "Code",
-            "type": "Type",
-            "niveauId": "Level",
-            "dateProgrammation": "Scheduled date",
-            "coefficient": "Coefficient",
-            "estObligatoire": "Mandatory",
-            "diplomeDelivre": "Awarded diploma",
-            "description": "Description",
-            "sousSysteme": "Sub-system",
-            "actif": "Active"
-        },
-        "placeholders": {
-            "nom": "E.g.: BACCALAUREATE",
-            "code": "E.g.: BACCALAUREAT",
-            "description": "Examination description"
-        },
+    "titre": "National Examinations",
+    "description": "Management of official examinations (CEP, BEPC, Probatoire, BACCALAUREATE, GCE)",
+    "nouvelExamen": "Create an examination",
+    "rechercher": "Search...",
+    "aucunExamen": "No national examination found",
+    "colonne": {
+        "code": "Code",
+        "nom": "Name",
+        "niveau": "Level",
+        "sousSysteme": "Sub-system",
+        "obligatoire": "Mandatory",
+        "statut": "Status",
+        "actions": "Actions"
+    },
+    "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "sousSysteme": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone"
+    },
+    "oui": "Yes",
+    "non": "No",
+    "actions": {
+        "voir": "View details",
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    },
+    "confirmerSupprimerTitre": "Delete national examination",
+    "confirmerSupprimerMessage": "Are you sure you want to delete the examination \"{{nom}}\" ?",
+    "detail": {
+        "nonTrouvee": "National examination not found",
+        "informations": "Information",
+        "code": "Code",
+        "type": "Type",
+        "niveau": "Level",
+        "sousSysteme": "Sub-system",
+        "obligatoire": "Mandatory",
+        "diplomeDelivre": "Awarded diploma",
+        "coefficient": "Coefficient",
+        "dateProgrammation": "Scheduled date",
+        "description": "Description",
+        "statut": "Status",
+        "configuration": "Configuration"
+    },
+    "form": {
+        "titreCreer": "Create a national examination",
+        "descriptionCreer": "Add a new national examination",
+        "titreModifier": "Edit the national examination",
+        "descriptionModifier": "Modify the examination information",
+        "code": "Code",
+        "nom": "Name",
+        "niveau": "Level",
+        "type": "Type",
+        "sousSysteme": "Sub-system",
+        "diplomeDelivre": "Awarded diploma",
+        "coefficient": "Coefficient",
+        "estObligatoire": "Mandatory examination",
+        "description": "Description",
+        "actif": "Active",
+        "selectionnerNiveau": "Select a level",
         "types": {
             "NATIONAL": "National",
             "REGIONAL": "Regional",
@@ -33,20 +70,15 @@
             "FRANCOPHONE": "Francophone",
             "ANGLOPHONE": "Anglophone"
         },
-        "examens": {
-            "CEP": "Primary Education Certificate",
-            "BEPC": "First Cycle Studies Diploma",
-            "PROBATOIRE": "Probationary Examination",
-            "BACCALAUREAT": "Baccalaureate",
-            "GCE_OL": "GCE Ordinary Level",
-            "GCE_AL": "GCE Advanced Level"
-        },
-        "messages": {
-            "createSuccess": "National examination created successfully",
-            "updateSuccess": "National examination updated successfully",
-            "deleteSuccess": "National examination deleted successfully",
-            "deleteConfirm": "Are you sure you want to delete this examination? Student diplomas may be affected.",
-            "noData": "No national examinations to display"
-        }
+        "codePlaceholder": "E.g.: BACCALAUREAT, BEPC",
+        "nomPlaceholder": "E.g.: BACCALAUREATE, GCE Advanced Level",
+        "diplomePlaceholder": "E.g.: BACCALAUREAT",
+        "descriptionPlaceholder": "Examination description...",
+        "niveauxFiltreInfo": "Displayed levels match the selected sub-system",
+        "annuler": "Cancel",
+        "creer": "Create",
+        "modifier": "Modify",
+        "enregistrement": "Saving...",
+        "obligatoire": "Required"
     }
 }

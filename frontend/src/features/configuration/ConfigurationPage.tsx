@@ -1,14 +1,11 @@
-/**
- * ==================================
- * eLISAschool - Configuration Page
- * ==================================
- * Configuration établissement, thème, modules
- */
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { useThemeStore } from '@/stores/theme.store';
@@ -40,13 +37,11 @@ export function ConfigurationPage() {
     const themeStore = useThemeStore();
     const { etablissementId } = useAuthStore();
 
-    // Charger les données de l'établissement (source de vérité)
-    const { data: etablissement, isLoading: isLoadingEtablissement } = useEtablissement(
+    const { data: etablissement, isLoading: isLoadingEtablissement, error: etablissementError, refetch } = useEtablissement(
         etablissementId || ''
     );
     const modifierEtablissement = useModifierEtablissement();
 
-    // État du formulaire général (depuis l'entité Etablissement)
     const [formData, setFormData] = useState({
         nomEtablissement: etablissement?.nom || '',
         codeEtablissement: etablissement?.codeEtablissement || '',
@@ -55,7 +50,6 @@ export function ConfigurationPage() {
         adresse: etablissement?.adresse || '',
     });
 
-    // Synchroniser avec l'établissement chargé
     useEffect(() => {
         if (etablissement) {
             setFormData({
@@ -69,7 +63,6 @@ export function ConfigurationPage() {
     }, [etablissement]);
 
     const handleSaveGeneral = async () => {
-        // Mettre à jour l'entité Etablissement (source de vérité)
         await modifierEtablissement.mutateAsync({
             id: etablissementId!,
             nom: formData.nomEtablissement,
@@ -80,15 +73,32 @@ export function ConfigurationPage() {
         });
     };
 
+    if (isLoadingEtablissement && !etablissement) {
+        return <PageSkeleton showHeader showStats={false} showTable={false} />;
+    }
+
+    if (etablissementError) {
+        return (
+            <div>
+                <PageHeader title={t('titre')} icon={Settings} />
+                <ErrorMessage
+                    message={t('chargementErreur')}
+                    variant="error"
+                    onRetry={() => refetch()}
+                />
+            </div>
+        );
+    }
+
     return (
         <div>
             <PageHeader
                 title={t('titre')}
-                description={t('sections.general.description')}
+                subtitle={t('sousTitre')}
+                icon={Settings}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
-                {/* Tabs latérales */}
                 <nav className="flex gap-1 overflow-x-auto lg:w-48 lg:flex-col">
                     {TABS.map((tab) => {
                         const Icon = tab.icon;
@@ -110,145 +120,156 @@ export function ConfigurationPage() {
                     })}
                 </nav>
 
-                {/* Contenu de l'onglet */}
-                <div className="flex-1 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-6">
-                    {/* Général */}
+                <div className="flex-1">
                     {activeTab === 'general' && (
-                        <div className="space-y-6">
-                            <div>
-                                <h2 className="text-lg font-semibold text-[var(--color-texte)]">
-                                    {t('sections.general.titre')}
-                                </h2>
-                                <p className="text-sm text-[var(--color-texte-secondaire)]">
-                                    {t('sections.general.description')}
-                                </p>
-                            </div>
-                            {isLoadingEtablissement ? (
-                                <div className="py-8 text-center">Chargement...</div>
-                            ) : (
-                                <>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <ElisaInput
-                                            label={t('sections.general.nomEtablissement')}
-                                            value={formData.nomEtablissement}
-                                            onChange={(e) => setFormData({ ...formData, nomEtablissement: e.target.value })}
-                                            placeholder="Lycée..."
-                                        />
-                                        <ElisaInput
-                                            label={t('sections.general.codeEtablissement')}
-                                            value={formData.codeEtablissement}
-                                            onChange={(e) => setFormData({ ...formData, codeEtablissement: e.target.value })}
-                                            placeholder="LYC-001"
-                                        />
-                                        <ElisaInput
-                                            label={t('sections.general.email')}
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            placeholder="contact@ecole.com"
-                                        />
-                                        <ElisaInput
-                                            label={t('sections.general.telephone')}
-                                            value={formData.telephone}
-                                            onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                                            placeholder="+237..."
-                                        />
-                                        <ElisaInput
-                                            label={t('sections.general.adresse')}
-                                            className="sm:col-span-2"
-                                            value={formData.adresse}
-                                            onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
-                                            placeholder="Yaoundé, Cameroun"
-                                        />
-                                    </div>
-                                    <ElisaButton
-                                        variant="primary"
-                                        onClick={handleSaveGeneral}
-                                        isLoading={modifierEtablissement.isPending}
-                                    >
-                                        {t('boutons.enregistrer', { ns: 'common' })}
-                                    </ElisaButton>
-                                </>
-                            )}
-                        </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('sections.general.titre')}</CardTitle>
+                                <CardDescription>{t('sections.general.description')}</CardDescription>
+                            </CardHeader>
+                            <SectionSeparator />
+                            <CardContent className="space-y-6">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <ElisaInput
+                                        label={t('sections.general.nomEtablissement')}
+                                        value={formData.nomEtablissement}
+                                        onChange={(e) => setFormData({ ...formData, nomEtablissement: e.target.value })}
+                                        placeholder="Lycée..."
+                                    />
+                                    <ElisaInput
+                                        label={t('sections.general.codeEtablissement')}
+                                        value={formData.codeEtablissement}
+                                        onChange={(e) => setFormData({ ...formData, codeEtablissement: e.target.value })}
+                                        placeholder="LYC-001"
+                                    />
+                                    <ElisaInput
+                                        label={t('sections.general.email')}
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        placeholder="contact@ecole.com"
+                                    />
+                                    <ElisaInput
+                                        label={t('sections.general.telephone')}
+                                        value={formData.telephone}
+                                        onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                                        placeholder="+237..."
+                                    />
+                                    <ElisaInput
+                                        label={t('sections.general.adresse')}
+                                        className="sm:col-span-2"
+                                        value={formData.adresse}
+                                        onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                                        placeholder="Yaoundé, Cameroun"
+                                    />
+                                </div>
+                                <ElisaButton
+                                    variant="primary"
+                                    onClick={handleSaveGeneral}
+                                    isLoading={modifierEtablissement.isPending}
+                                >
+                                    {t('boutons.enregistrer', { ns: 'common' })}
+                                </ElisaButton>
+                            </CardContent>
+                        </Card>
                     )}
 
-                    {/* Thème */}
                     {activeTab === 'theme' && (
-                        <div className="space-y-6">
-                            <div>
-                                <h2 className="text-lg font-semibold text-[var(--color-texte)]">
-                                    {t('sections.theme.titre')}
-                                </h2>
-                                <p className="text-sm text-[var(--color-texte-secondaire)]">
-                                    {t('sections.theme.description')}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="mb-3 text-sm font-medium text-[var(--color-texte)]">
-                                    {t('sections.theme.couleurDominante')}
-                                </p>
-                                <div className="flex flex-wrap gap-3">
-                                    {COULEURS_DOMINANTES.map((c) => (
-                                        <button
-                                            key={c.valeur}
-                                            onClick={() => themeStore.setCouleurDominante(c.valeur)}
-                                            className={cn(
-                                                'h-10 w-10 rounded-full border-2 transition-transform hover:scale-110',
-                                                themeStore.couleurDominante === c.valeur
-                                                    ? 'border-[var(--color-texte)] scale-110 ring-2 ring-[var(--color-dominante)]/30'
-                                                    : 'border-transparent',
-                                            )}
-                                            style={{ backgroundColor: c.valeur }}
-                                            title={c.nom}
-                                        />
-                                    ))}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('sections.theme.titre')}</CardTitle>
+                                <CardDescription>{t('sections.theme.description')}</CardDescription>
+                            </CardHeader>
+                            <SectionSeparator />
+                            <CardContent className="space-y-6">
+                                <div>
+                                    <p className="mb-3 text-sm font-medium text-[var(--color-texte)]">
+                                        {t('sections.theme.couleurDominante')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {COULEURS_DOMINANTES.map((c) => (
+                                            <button
+                                                key={c.valeur}
+                                                onClick={() => themeStore.setCouleurDominante(c.valeur)}
+                                                className={cn(
+                                                    'h-10 w-10 rounded-full border-2 transition-transform hover:scale-110',
+                                                    themeStore.couleurDominante === c.valeur
+                                                        ? 'border-[var(--color-texte)] scale-110 ring-2 ring-[var(--color-dominante)]/30'
+                                                        : 'border-transparent',
+                                                )}
+                                                style={{ backgroundColor: c.valeur }}
+                                                title={c.nom}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div>
-                                <p className="mb-3 text-sm font-medium text-[var(--color-texte)]">
-                                    {t('sections.theme.mode')}
-                                </p>
-                                <div className="flex gap-3">
-                                    {(['light', 'dark'] as const).map((mode) => (
-                                        <button
-                                            key={mode}
-                                            onClick={() => themeStore.setMode(mode)}
-                                            className={cn(
-                                                'rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-                                                themeStore.mode === mode
-                                                    ? 'border-[var(--color-dominante)] bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
-                                                    : 'border-[var(--color-bordure)] text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)]',
-                                            )}
-                                        >
-                                            {mode === 'light' ? t('sections.theme.modeClair') : t('sections.theme.modeSombre')}
-                                        </button>
-                                    ))}
+                                <div>
+                                    <p className="mb-3 text-sm font-medium text-[var(--color-texte)]">
+                                        {t('sections.theme.mode')}
+                                    </p>
+                                    <div className="flex gap-3">
+                                        {(['light', 'dark'] as const).map((mode) => (
+                                            <button
+                                                key={mode}
+                                                onClick={() => themeStore.setMode(mode)}
+                                                className={cn(
+                                                    'rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
+                                                    themeStore.mode === mode
+                                                        ? 'border-[var(--color-dominante)] bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
+                                                        : 'border-[var(--color-bordure)] text-[var(--color-texte-secondaire)] hover:text-[var(--color-texte)]',
+                                                )}
+                                            >
+                                                {mode === 'light' ? t('sections.theme.modeClair') : t('sections.theme.modeSombre')}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-
-                            <ElisaButton variant="outline" onClick={themeStore.reinitialiserTheme}>
-                                {t('sections.theme.reinitialiser')}
-                            </ElisaButton>
-                        </div>
+                                <ElisaButton variant="outline" onClick={themeStore.reinitialiserTheme}>
+                                    {t('sections.theme.reinitialiser')}
+                                </ElisaButton>
+                            </CardContent>
+                        </Card>
                     )}
 
-                    {/* Sécurité */}
-                    {activeTab === 'securite' && <SecuriteTab />}
+                    {activeTab === 'securite' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <SecuriteTab />
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    {/* Langue & Région */}
-                    {activeTab === 'langue' && <LangueRegionTab />}
+                    {activeTab === 'langue' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <LangueRegionTab />
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    {/* Modules */}
-                    {activeTab === 'modules' && <ModulesTab />}
+                    {activeTab === 'modules' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <ModulesTab />
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    {/* Notifications */}
-                    {activeTab === 'notifications' && <NotificationsTab />}
+                    {activeTab === 'notifications' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <NotificationsTab />
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    {/* Historique */}
-                    {activeTab === 'historique' && <HistoriqueTab />}
+                    {activeTab === 'historique' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <HistoriqueTab />
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

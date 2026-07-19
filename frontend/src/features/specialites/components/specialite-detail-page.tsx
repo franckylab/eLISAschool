@@ -1,155 +1,198 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Spécialité
- * ==================================
- */
-
+import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import {
-    ArrowLeft, BookOpen, Layers,
-    CheckCircle, XCircle, Loader2, AlertCircle,
-} from 'lucide-react';
-import { useSpecialite } from '../hooks/use-specialites';
+import { useTranslation } from 'react-i18next';
+import { GitBranch, Edit, Trash2, Layers, Calendar } from 'lucide-react';
+import { useSpecialite, useSupprimerSpecialite } from '../hooks/use-specialites';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { InfoField } from '@/components/ui/InfoField';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { usePermissions } from '@/hooks';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { CheckCircle, XCircle } from 'lucide-react';
+
+function StatutBadge({ actif }: { actif: boolean }) {
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${
+            actif ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted-foreground'
+        }`}>
+            {actif ? <CheckCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" /> : <XCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
+            {actif ? 'Actif' : 'Inactif'}
+        </span>
+    );
+}
+
+function formatDate(d: string) {
+    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 export function SpecialiteDetailPage() {
     const { id } = useParams({ from: '/_auth/specialites/$id' });
     const navigate = useNavigate();
-    const { data: specialite, isLoading, error } = useSpecialite(id);
+    const { t } = useTranslation('specialites');
+    const { hasPermission } = usePermissions();
+    const { data: specialite, isLoading, error, refetch } = useSpecialite(id);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const supprimer = useSupprimerSpecialite();
+
+    const handleDelete = async () => {
+        await supprimer.mutateAsync(id);
+        navigate({ to: '/specialites' });
+    };
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
-            </div>
-        );
+        return <PageSkeleton showHeader />;
     }
 
     if (error || !specialite) {
         return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
-                <p className="text-red-600 mb-4">Spécialité non trouvée</p>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/specialites' })}>
-                    Retour à la liste
-                </ElisaButton>
+            <div className="p-6">
+                <ErrorMessage
+                    title={t('nonTrouvee')}
+                    message={error instanceof Error ? error.message : t('nonTrouvee')}
+                    onRetry={refetch}
+                    retryLabel={t('retourListe')}
+                />
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                variant="gradient"
+                showBreadcrumbs
+                breadcrumbLabel={specialite.nom}
+                onBack={() => navigate({ to: '/specialites' })}
+                actions={
+                    <>
+                        {hasPermission('specialites:edit') && (
+                            <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}>
+                                {t('detail.modifier')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('specialites:delete') && (
+                            <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteConfirmOpen(true)}>
+                                {t('detail.supprimer')}
+                            </ElisaButton>
+                        )}
+                    </>
+                }
             >
-                <ElisaButton
-                    variant="ghost"
-                    onClick={() => navigate({ to: '/specialites' })}
-                    icon={<ArrowLeft className="h-4 w-4" />}
-                    className="mb-6"
-                >
-                    Retour aux spécialités
-                </ElisaButton>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-teal-50 rounded-xl">
-                            <BookOpen className="h-8 w-8 text-teal-600" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{specialite.nom}</h1>
-                            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{specialite.code}</p>
+                <div className="flex items-start gap-3 sm:gap-4 md:gap-6">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl shrink-0 p-[clamp(0.75rem,2.5vw,1rem)]">
+                        <GitBranch className="h-[clamp(1.75rem,6vw,2.5rem)] w-[clamp(1.75rem,6vw,2.5rem)] text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                        <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{specialite.nom}</h1>
+                        {specialite.code && <p className="text-[clamp(0.75rem,2vw,1.125rem)] text-white/70 font-mono">{specialite.code}</p>}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <StatutBadge actif={specialite.actif} />
                         </div>
                     </div>
                 </div>
+            </PageHeader>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{specialite.code}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Ordre</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{specialite.ordre}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Filière</dt>
-                                    <dd>
-                                        {specialite.filiere ? (
-                                            <button
-                                                onClick={() => navigate({ to: '/filieres/$id', params: { id: specialite.filiere!.id } })}
-                                                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                            >
-                                                {specialite.filiere.nom}
-                                            </button>
-                                        ) : (
-                                            <span className="text-sm text-gray-400 dark:text-gray-300">-</span>
-                                        )}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
-                                    <dd>
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${specialite.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {specialite.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                                            {specialite.actif ? 'Actif' : 'Inactif'}
-                                        </span>
-                                    </dd>
-                                </div>
-                            </dl>
-                            {specialite.description && (
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</dt>
-                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{specialite.description}</dd>
-                                </div>
-                            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <GitBranch className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                            {t('detail.informations')}
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                    <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <InfoField
+                                label={t('detail.nom')}
+                                value={specialite.nom}
+                            />
+                            <InfoField
+                                label={t('detail.code')}
+                                value={<span className="font-mono">{specialite.code}</span>}
+                            />
+                            <InfoField
+                                label={t('detail.ordre')}
+                                value={specialite.ordre}
+                            />
+                            <InfoField
+                                label={t('detail.statut')}
+                                value={<StatutBadge actif={specialite.actif} />}
+                            />
                         </div>
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    <div className="space-y-6">
-                        <div className={`rounded-xl shadow-sm border p-6 ${specialite.actif ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                            <div className="flex items-center gap-3 mb-3">
-                                {specialite.actif
-                                    ? <CheckCircle className="h-5 w-5 text-green-600" />
-                                    : <XCircle className="h-5 w-5 text-red-600" />
-                                }
-                                <span className={`font-semibold ${specialite.actif ? 'text-green-800' : 'text-red-800'}`}>
-                                    {specialite.actif ? 'Actif' : 'Inactif'}
-                                </span>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {specialite.actif
-                                    ? 'Cette spécialité est actuellement active.'
-                                    : 'Cette spécialité est actuellement inactive.'}
-                            </p>
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Filière</h3>
-                            <div className="flex items-center gap-2">
-                                <Layers className="h-4 w-4 text-indigo-500" />
-                                {specialite.filiere ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Layers className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                            {t('detail.filiere')}
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                    <CardContent>
+                        <div className="grid grid-cols-1 gap-4">
+                            <InfoField
+                                label={t('detail.filiere')}
+                                value={specialite.filiere ? (
                                     <button
                                         onClick={() => navigate({ to: '/filieres/$id', params: { id: specialite.filiere!.id } })}
                                         className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
                                     >
-                                        {specialite.filiere.nom} ({specialite.filiere.code})
+                                        {specialite.filiere.nom}
                                     </button>
-                                ) : (
-                                    <span className="text-sm text-gray-400 dark:text-gray-300">Non rattachée</span>
-                                )}
-                            </div>
+                                ) : t('detail.nonRattachee')}
+                            />
                         </div>
-                    </div>
-                </div>
-            </motion.div>
+                    </CardContent>
+                </Card>
+
+                {specialite.description && (
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <GitBranch className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                                {t('detail.description')}
+                            </CardTitle>
+                        </CardHeader>
+                        <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                        <CardContent>
+                            <p className="text-sm text-[var(--color-texte)]">{specialite.description}</p>
+                        </CardContent>
+                    </Card>
+                )}
+
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                            {t('detail.metadonnees')}
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="border-b border-[var(--color-bordure)] mx-4 sm:mx-5" />
+                    <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <InfoField label={t('detail.creeLe')} value={formatDate(specialite.createdAt)} />
+                            <InfoField label={t('detail.modifieLe')} value={formatDate(specialite.updatedAt)} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                title={t('supprimerTitre')}
+                description={t('supprimerMessage', { nom: specialite.nom })}
+                confirmText={t('supprimer')}
+                variant="danger"
+                onConfirm={handleDelete}
+                isLoading={supprimer.isPending}
+            />
         </div>
     );
 }

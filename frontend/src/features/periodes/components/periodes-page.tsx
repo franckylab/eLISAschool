@@ -1,22 +1,10 @@
-/**
- * ==================================
- * eLISAschool - Page Périodes (v3.0 — Vue arborescente)
- * ==================================
- * Version: 3.0.0
- * Auteur: franck arlos chendjou
- *
- * Vue arborescente expansible des périodes :
- * - Parents en lignes expansibles
- * - Enfants en sous-lignes indentées
- * - Actions : créer, modifier, supprimer, composer, clôturer
- * - Génération depuis template
- */
-
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
     Plus, Calendar, Edit, Trash2, Lock, Unlock, Eye,
     ChevronRight, ChevronDown, Layers, Sparkles, Network, Settings,
+    CalendarRange,
 } from 'lucide-react';
 import {
     usePeriodesArbre, useSupprimerPeriode,
@@ -27,7 +15,11 @@ import { useAnneesScolaires, useAnneeScolaireActive } from '@/features/annees-sc
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useNavigate } from '@tanstack/react-router';
 import { usePermissions } from '@/hooks';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { TextLabel } from '@/components/ui';
 import { ModalCloturePeriode } from './modal-cloture-periode';
 import { ModalFormPeriode } from './modal-form-periode';
 import { StatutPeriode, niveauPeutAvoirEnfants } from '../types/periode.types';
@@ -38,49 +30,34 @@ import { ModalGestionNiveaux } from './modal-gestion-niveaux';
 
 const COULEURS_STATUT: Record<string, string> = {
     OUVERTE: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-    EN_ATTENTE_CLOTURE: 'bg-amber-50 text-amber-700 border-amber-200',
-    CLOTUREE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-tertiary)] border-[var(--color-bordure)]',
+    EN_ATTENTE_CLOTURE: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    CLOTUREE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-bordure)]',
 };
 
-const LABELS_STATUT: Record<string, string> = {
-    OUVERTE: 'Ouverte',
-    EN_ATTENTE_CLOTURE: 'En attente',
-    CLOTUREE: 'Clôturée',
-};
-
-/**
- * Configuration des couleurs et barres de l'arborescence (profondeur dynamique)
- */
 const NIVEAU_CONFIG_BASE = [
-    { barWidth: 4, color: 'var(--color-dominant-600)', bgColor: 'transparent' },
-    { barWidth: 5, color: 'var(--color-dominant-400)', bgColor: 'var(--color-dominant-50)' },
-    { barWidth: 6, color: 'var(--color-dominant-300)', bgColor: 'var(--color-dominant-100)' },
+    { barWidth: 4, color: 'var(--color-dominant-600)', bgClass: '' },
+    { barWidth: 5, color: 'var(--color-dominant-400)', bgClass: 'bg-[var(--color-dominant-50)] dark:bg-[var(--color-dominant-950)]/35' },
+    { barWidth: 6, color: 'var(--color-dominant-300)', bgClass: 'bg-[var(--color-dominant-100)] dark:bg-[var(--color-dominant-900)]/45' },
 ] as const;
 
 function getNiveauConfig(profondeur: number) {
     if (profondeur < NIVEAU_CONFIG_BASE.length) {
         return NIVEAU_CONFIG_BASE[profondeur];
     }
-    // Generer dynamiquement pour des profondeurs arbitraires
     return {
         barWidth: 6,
         color: 'var(--color-dominant-200)',
-        bgColor: 'var(--color-dominant-100)'
+        bgClass: 'bg-[var(--color-dominant-100)] dark:bg-[var(--color-dominant-900)]/45',
     };
 }
 
 const INDENT_DESKTOP = 28;
-const BAR_WIDTH = 3;       // Épaisseur de chaque barre
-const BAR_SPACING = 8;     // Espacement entre barres
-const BAR_ZONE_PAD = 8;    // Padding gauche dans la zone des barres
-const MAX_PROFONDEUR = 5;  // Profondeur maximale supportée pour les barres de gauche
-/** Largeur fixe de la zone des barres (aligne header et lignes) */
+const BAR_WIDTH = 3;
+const BAR_SPACING = 8;
+const BAR_ZONE_PAD = 8;
+const MAX_PROFONDEUR = 5;
 const BAR_ZONE_FIXED = BAR_ZONE_PAD + (MAX_PROFONDEUR + 1) * (BAR_WIDTH + BAR_SPACING);
 
-
-/**
- * Ligne aplatie pour le rendu (parent ou enfant visible)
- */
 interface LigneArbre {
     node: PeriodeArbre;
     profondeur: number;
@@ -89,9 +66,6 @@ interface LigneArbre {
     parentNom?: string;
 }
 
-/**
- * Aplatir l'arbre en liste de lignes selon l'état d'expansion
- */
 function aplatirArbre(
     arbres: PeriodeArbre[],
     expanded: Set<string>,
@@ -118,27 +92,22 @@ function aplatirArbre(
 export function PeriodesPage() {
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
+    const { t } = useTranslation('periodes');
 
-    // Sélection année scolaire
     const { data: annees } = useAnneesScolaires();
     const { data: anneeActive } = useAnneeScolaireActive();
     const [anneeId, setAnneeId] = useState<string>(anneeActive?.id || '');
 
-    // Données (vue arbre)
-    const { data: arbres, isLoading } = usePeriodesArbre({ anneeId });
+    const { data: arbres, isLoading, isError, error, refetch } = usePeriodesArbre({ anneeId });
     const supprimer = useSupprimerPeriode();
     const reouvrir = useReouvrirPeriode();
     const genererTemplate = useGenererTemplate();
     const { data: templates = [] } = useTemplatesPeriode();
     const { data: niveaux = [] } = useNiveauxPeriode();
 
-    // États expansion
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-    // États confirmation
     const [confirmAction, setConfirmAction] = useState<{ type: 'supprimer' | 'reouvrir'; periode: PeriodeArbre } | null>(null);
 
-    // États modaux
     const [modalFormOpen, setModalFormOpen] = useState(false);
     const [periodeToEdit, setPeriodeToEdit] = useState<PeriodeArbre | null>(null);
     const [modalClotureOpen, setModalClotureOpen] = useState(false);
@@ -149,7 +118,6 @@ export function PeriodesPage() {
     const [modalTemplatesOpen, setModalTemplatesOpen] = useState(false);
     const [modalNiveauxOpen, setModalNiveauxOpen] = useState(false);
 
-    // Toggle expansion
     const toggleExpand = useCallback((id: string) => {
         setExpanded((prev) => {
             const next = new Set(prev);
@@ -159,7 +127,6 @@ export function PeriodesPage() {
         });
     }, []);
 
-    // Expand all / collapse all
     const expandAll = useCallback(() => {
         if (!arbres) return;
         const allIds = new Set<string>();
@@ -177,13 +144,11 @@ export function PeriodesPage() {
 
     const collapseAll = useCallback(() => setExpanded(new Set()), []);
 
-    // Handlers
     const openCreer = () => {
         setPeriodeToEdit(null);
         setModalFormOpen(true);
     };
     const openModifier = (p: PeriodeArbre) => {
-        // Convertir PeriodeArbre en format compatible avec ModalFormPeriode
         setPeriodeToEdit(p);
         setModalFormOpen(true);
     };
@@ -199,7 +164,6 @@ export function PeriodesPage() {
         setModalCompositionsOpen(true);
     };
 
-    // Générer depuis template (v4.0 — par ID)
     const handleGenererTemplate = async (templateId: string) => {
         if (!anneeId) return;
         const now = new Date();
@@ -209,13 +173,11 @@ export function PeriodesPage() {
         setShowTemplateMenu(false);
     };
 
-    // Aplatir l'arbre
     const lignes = useMemo(() => {
         if (!arbres?.length) return [];
         return aplatirArbre(arbres, expanded);
     }, [arbres, expanded]);
 
-    // Stats
     const stats = useMemo(() => {
         if (!arbres?.length) return { total: 0, ouvertes: 0, enAttente: 0, cloturees: 0 };
         let total = 0, ouvertes = 0, enAttente = 0, cloturees = 0;
@@ -232,10 +194,8 @@ export function PeriodesPage() {
         return { total, ouvertes, enAttente, cloturees };
     }, [arbres]);
 
-    // Liste des années pour le sélecteur
     const listeAnnees = annees?.items || [];
 
-    // Convertir PeriodeArbre en Periode pour les modals (compatible v5.0)
     const arbreToPeriode = (a: PeriodeArbre): Periode => ({
         id: a.id,
         nom: a.nom,
@@ -250,169 +210,160 @@ export function PeriodesPage() {
         updatedAt: a.updatedAt,
     });
 
-    // Vérifier si un niveau peut avoir des enfants (dynamique depuis les niveaux chargés)
     const peutAvoirEnfantsFn = (niveauId: string): boolean => {
         return niveauPeutAvoirEnfants(niveaux, niveauId);
     };
 
     return (
         <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
-            {/* Header */}
-            <motion.div
-                className="flex flex-col gap-[var(--gap-md)] sm:flex-row sm:items-center sm:justify-between"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1 className="font-bold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(1.25rem, 1.1rem + 0.6vw, 1.75rem)' }}>
-                        Périodes
-                    </h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                        {stats.total} période(s) — {stats.ouvertes} ouverte(s), {stats.cloturees} clôturée(s)
-                    </p>
-                </div>
-                <div className="flex items-center gap-[var(--gap-sm)] flex-wrap">
-                    {/* Bouton gestion templates & labels */}
-                    {(hasPermission('periodes:templates:view') || hasPermission('niveaux_periode:view')) && (
-                        <ElisaButton
-                            variant="ghost"
-                            size="sm"
-                            icon={<Settings className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                            onClick={() => setModalTemplatesOpen(true)}
-                        >
-                            Templates
-                        </ElisaButton>
-                    )}
-                    {/* Bouton gestion niveaux & usages */}
-                    {hasPermission('niveaux_periode:view') && (
-                        <ElisaButton
-                            variant="ghost"
-                            size="sm"
-                            icon={<Layers className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                            onClick={() => setModalNiveauxOpen(true)}
-                        >
-                            Niveaux
-                        </ElisaButton>
-                    )}
-                    {/* Sélecteur année */}
-                    <select
-                        value={anneeId}
-                        onChange={(e) => setAnneeId(e.target.value)}
-                        className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                        style={{
-                            padding: 'var(--space-sm)',
-                            fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)',
-                        }}
-                    >
-                        <option value="">Sélectionner une année...</option>
-                        {listeAnnees.map((a) => (
-                            <option key={a.id} value={a.id}>{a.libelle}</option>
-                        ))}
-                    </select>
-                    {hasPermission('periodes:templates:generer') && anneeId && (
-                        <div className="relative">
+            <PageHeader
+                variant="gradient"
+                tone="dominant"
+                icon={CalendarRange}
+                title={t('titre')}
+                subtitle={t('stats', { total: stats.total, ouvertes: stats.ouvertes, cloturees: stats.cloturees })}
+                showBreadcrumbs={false}
+                actions={
+                    <>
+                        {(hasPermission('periodes:templates:view') || hasPermission('niveaux_periode:view')) && (
                             <ElisaButton
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                icon={<Sparkles className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                                onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+                                icon={<Settings className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                onClick={() => setModalTemplatesOpen(true)}
                             >
-                                Générer
+                                {t('templates')}
                             </ElisaButton>
-                            <AnimatePresence>
-                                {showTemplateMenu && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -4 }}
-                                        className="absolute right-0 top-full mt-1 z-50 rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg min-w-[200px]"
-                                    >
-                                        {templates.length === 0 && (
-                                            <div className="px-3 py-2 text-sm text-[var(--color-text-tertiary)]">
-                                                Aucun template disponible
-                                            </div>
-                                        )}
-                                        {templates.map((tpl) => (
-                                            <button
-                                                key={tpl.id}
-                                                className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--color-surface-alt)] text-[var(--color-text-primary)] transition-colors first:rounded-t-[var(--radius-md)] last:rounded-b-[var(--radius-md)]"
-                                                onClick={() => handleGenererTemplate(tpl.id)}
-                                                disabled={genererTemplate.isPending}
-                                            >
-                                                <span className="flex items-center gap-2">
-                                                    {tpl.estSysteme && <span className="text-xs opacity-50">★</span>}
-                                                    {tpl.nom}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    )}
-                    {hasPermission('periodes:create') && (
-                        <ElisaButton variant="primary" size="sm" icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />} onClick={openCreer}>
-                            Nouvelle période
-                        </ElisaButton>
-                    )}
-                </div>
-            </motion.div>
+                        )}
+                        {hasPermission('niveaux_periode:view') && (
+                            <ElisaButton
+                                variant="ghost"
+                                size="sm"
+                                icon={<Layers className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                onClick={() => setModalNiveauxOpen(true)}
+                            >
+                                {t('niveaux')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('periodes:templates:generer') && anneeId && (
+                            <div className="relative">
+                                <ElisaButton
+                                    variant="outline"
+                                    size="sm"
+                                    icon={<Sparkles className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                    onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+                                >
+                                    {t('actions.generer')}
+                                </ElisaButton>
+                                <AnimatePresence>
+                                    {showTemplateMenu && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -4 }}
+                                            className="absolute right-0 top-full mt-1 z-50 rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-lg min-w-[200px]"
+                                        >
+                                            {templates.length === 0 && (
+                                                <div className="px-3 py-2 text-sm text-[var(--color-text-tertiary)]">
+                                                    Aucun template disponible
+                                                </div>
+                                            )}
+                                            {templates.map((tpl) => (
+                                                <button
+                                                    key={tpl.id}
+                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--color-surface-alt)] text-[var(--color-text-primary)] transition-colors first:rounded-t-[var(--radius-md)] last:rounded-b-[var(--radius-md)]"
+                                                    onClick={() => handleGenererTemplate(tpl.id)}
+                                                    disabled={genererTemplate.isPending}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        {tpl.estSysteme && <span className="text-xs opacity-50">★</span>}
+                                                        {tpl.nom}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                        {hasPermission('periodes:create') && (
+                            <ElisaButton variant="primary" size="sm" icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />} onClick={openCreer}>
+                                {t('nouvellePeriode')}
+                            </ElisaButton>
+                        )}
+                    </>
+                }
+            />
 
-            {/* Vue arborescente */}
-            {!anneeId ? (
+            {/* Sélecteur année */}
+            <div className="flex items-center gap-[var(--gap-sm)]">
+                <select
+                    value={anneeId}
+                    onChange={(e) => setAnneeId(e.target.value)}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
+                    style={{
+                        padding: 'var(--space-sm)',
+                        fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)',
+                    }}
+                >
+                    <option value="">{t('selectAnnee')}</option>
+                    {listeAnnees.map((a) => (
+                        <option key={a.id} value={a.id}>{a.libelle}</option>
+                    ))}
+                </select>
+            </div>
+
+            {isError ? (
+                <ErrorMessage
+                    message={error?.message}
+                    onRetry={() => refetch()}
+                />
+            ) : !anneeId ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-[var(--gap-md)]">
                     <Calendar className="h-[var(--icon-xl)] w-[var(--icon-xl)] text-[var(--color-text-tertiary)]" />
                     <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                        Sélectionnez une année scolaire pour voir les périodes
+                        {t('selectionnezAnnee')}
                     </p>
                 </div>
             ) : isLoading ? (
-                <div className="flex items-center justify-center py-16">
-                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--color-bordure)] border-t-[var(--color-dominant-600)]" />
-                </div>
+                <PageSkeleton />
             ) : !lignes.length ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-[var(--gap-md)]">
                     <Layers className="h-[var(--icon-xl)] w-[var(--icon-xl)] text-[var(--color-text-tertiary)]" />
                     <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.9375rem, 0.85rem + 0.3vw, 1.0625rem)' }}>
-                        Aucune période pour cette année
+                        {t('aucunePeriodeAnnee')}
                     </p>
                 </div>
             ) : (
                 <>
-                    {/* Contrôles expansion */}
                     <div className="flex items-center gap-[var(--gap-sm)]">
                         <button
                             onClick={expandAll}
                             className="text-xs text-[var(--color-dominant-600)] hover:underline font-medium"
                         >
-                            Tout déplier
+                            {t('toutDeplier')}
                         </button>
                         <span className="text-[var(--color-text-tertiary)]">·</span>
                         <button
                             onClick={collapseAll}
                             className="text-xs text-[var(--color-dominant-600)] hover:underline font-medium"
                         >
-                            Tout replier
+                            {t('toutReplier')}
                         </button>
                     </div>
 
-                    {/* Tableau arborescent */}
                     <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] overflow-hidden">
-                        {/* En-tête */}
                         <div className="hidden sm:flex items-center border-b border-[var(--color-bordure)] bg-[var(--color-surface-alt)] text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide py-[var(--space-sm)]">
-                            {/* Zone barres vide (même largeur que les lignes) */}
                             <div className="shrink-0" style={{ width: `${BAR_ZONE_FIXED}px` }} aria-hidden="true" />
-                            {/* Colonnes grille (même padding que le contenu des lignes) */}
                             <div className="flex-1 min-w-0 grid grid-cols-[1fr_100px_120px_100px_140px] gap-[var(--gap-sm)] items-center" style={{ paddingLeft: 'var(--space-sm)' }}>
-                                <span>Nom</span>
-                                <span>Type</span>
-                                <span>Période</span>
-                                <span>Statut</span>
-                                <span className="text-right">Actions</span>
+                                <span>{t('colonne.nom')}</span>
+                                <span>{t('colonne.type')}</span>
+                                <span>{t('colonne.periode')}</span>
+                                <span>{t('colonne.statut')}</span>
+                                <span className="text-right">{t('colonne.actions')}</span>
                             </div>
                         </div>
 
-                        {/* Lignes */}
                         <div className="divide-y divide-[var(--color-bordure)]">
                             {lignes.map((ligne) => {
                                 const { node, profondeur, aEnfants } = ligne;
@@ -422,10 +373,8 @@ export function PeriodesPage() {
                                 return (
                                     <div
                                         key={node.id}
-                                        className="flex items-center py-[var(--space-sm)] hover:bg-[var(--color-surface-alt)]/50 transition-colors"
-                                        style={{ backgroundColor: profondeur > 0 ? niveau.bgColor : undefined }}
+                                        className={`flex items-center py-[var(--space-sm)] hover:bg-[var(--color-surface-alt)]/50 transition-colors ${profondeur > 0 ? niveau.bgClass : ''}`}
                                     >
-                                        {/* === Zone gauche : barres de profondeur (largeur fixe alignée) === */}
                                         <div
                                             className="relative shrink-0 self-stretch hidden sm:block"
                                             style={{ width: `${BAR_ZONE_FIXED}px` }}
@@ -449,12 +398,10 @@ export function PeriodesPage() {
                                             })}
                                         </div>
 
-                                        {/* === Zone contenu (flex-1, après les barres) === */}
                                         <div
                                             className="flex-1 min-w-0 grid grid-cols-[1fr_100px_120px_100px_140px] gap-[var(--gap-sm)] items-center"
                                             style={{ paddingLeft: `calc(var(--space-sm) + ${profondeur * INDENT_DESKTOP}px)` }}
                                         >
-                                            {/* --- Vue desktop : colonnes grille --- */}
                                             <div className="hidden sm:contents">
                                                 <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
                                                     {aEnfants ? (
@@ -467,17 +414,16 @@ export function PeriodesPage() {
                                                         </span>
                                                     ) : null}
                                                     <Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-muted)] shrink-0" />
-                                                    <span className={`truncate ${profondeur === 0 ? 'font-semibold' : 'font-medium'} text-[var(--color-text-primary)]`} style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>{node.nom}</span>
+                                                    <TextLabel size="sm" weight={profondeur === 0 ? 'bold' : 'semibold'}>{node.nom}</TextLabel>
                                                 </div>
                                                 <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)] text-center">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
                                                 <div style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem)' }}>
                                                     <p className="text-[var(--color-text-primary)]">{new Date(node.dateDebut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                     <p className="text-xs text-[var(--color-text-muted)]">→ {new Date(node.dateFin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                 </div>
-                                                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium text-center ${COULEURS_STATUT[node.statut]}`}>{LABELS_STATUT[node.statut]}</span>
+                                                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium text-center ${COULEURS_STATUT[node.statut]}`}>{t(`statut.${node.statut}`)}</span>
                                             </div>
 
-                                            {/* --- Vue mobile : carte verticale --- */}
                                             <div className="sm:hidden w-full col-span-full">
                                                 <div className="flex items-center justify-between mb-[var(--space-xs)]">
                                                     <div className="flex items-center gap-[var(--gap-xs)] min-w-0 flex-1">
@@ -491,9 +437,9 @@ export function PeriodesPage() {
                                                             </span>
                                                         ) : null}
                                                         <Calendar className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-text-muted)] shrink-0" />
-                                                        <span className={`truncate ${profondeur === 0 ? 'font-semibold' : 'font-medium'} text-[var(--color-text-primary)]`} style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>{node.nom}</span>
+                                                        <TextLabel size="md" weight={profondeur === 0 ? 'bold' : 'semibold'}>{node.nom}</TextLabel>
                                                     </div>
-                                                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium shrink-0 ml-2 ${COULEURS_STATUT[node.statut]}`}>{LABELS_STATUT[node.statut]}</span>
+                                                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium shrink-0 ml-2 ${COULEURS_STATUT[node.statut]}`}>{t(`statut.${node.statut}`)}</span>
                                                 </div>
                                                 <div className="flex items-center gap-[var(--gap-sm)] flex-wrap mb-[var(--space-xs)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                                                     <span className="rounded-full border px-2 py-0.5 text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]">{node.niveau?.label || node.niveauId?.substring(0, 8) || '—'}</span>
@@ -505,12 +451,11 @@ export function PeriodesPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Actions */}
                                             <div className="flex items-center gap-[var(--gap-xxs)] col-span-full sm:col-span-1 justify-start sm:justify-end flex-wrap">
                                             <button
                                                 onClick={() => voirDetail(node)}
                                                 className="p-2 sm:p-1 rounded hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                                                title="Voir le détail"
+                                                title={t('actions.voir')}
                                             >
                                                 <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
                                             </button>
@@ -518,7 +463,7 @@ export function PeriodesPage() {
                                                 <button
                                                     onClick={() => openGestionCompositions(node)}
                                                     className="p-2 sm:p-1 rounded hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)] transition-colors"
-                                                    title="Gérer les enfants"
+                                                    title={t('compositions.gerer')}
                                                 >
                                                     <Network className="h-5 w-5 sm:h-4 sm:w-4" />
                                                 </button>
@@ -527,7 +472,7 @@ export function PeriodesPage() {
                                                 <button
                                                     onClick={() => openModifier(node)}
                                                     className="p-2 sm:p-1 rounded hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)] transition-colors"
-                                                    title="Modifier"
+                                                    title={t('actions.modifier')}
                                                 >
                                                     <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
                                                 </button>
@@ -536,7 +481,7 @@ export function PeriodesPage() {
                                                 <button
                                                     onClick={() => openCloturer(node)}
                                                     className="p-2 sm:p-1 rounded hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-amber-600 transition-colors"
-                                                    title="Clôturer"
+                                                    title={t('actions.cloturer')}
                                                 >
                                                     <Lock className="h-5 w-5 sm:h-4 sm:w-4" />
                                                 </button>
@@ -545,7 +490,7 @@ export function PeriodesPage() {
                                                 <button
                                                     onClick={() => setConfirmAction({ type: 'reouvrir', periode: node })}
                                                     className="p-2 sm:p-1 rounded hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)] transition-colors"
-                                                    title="Réouvrir"
+                                                    title={t('actions.reouvrir')}
                                                 >
                                                     <Unlock className="h-5 w-5 sm:h-4 sm:w-4" />
                                                 </button>
@@ -554,7 +499,7 @@ export function PeriodesPage() {
                                                 <button
                                                     onClick={() => setConfirmAction({ type: 'supprimer', periode: node })}
                                                     className="p-2 sm:p-1 rounded hover:bg-red-50 text-[var(--color-text-muted)] hover:text-red-600 transition-colors"
-                                                    title="Supprimer"
+                                                    title={t('actions.supprimer')}
                                                 >
                                                     <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
                                                 </button>
@@ -569,7 +514,6 @@ export function PeriodesPage() {
                 </>
             )}
 
-            {/* Modal gestion des compositions */}
             <ModalGestionCompositions
                 periode={periodeToCompose}
                 isOpen={modalCompositionsOpen}
@@ -577,19 +521,16 @@ export function PeriodesPage() {
                 onSuccess={() => { setModalCompositionsOpen(false); setPeriodeToCompose(null); }}
             />
 
-            {/* Modal gestion templates & labels */}
             <ModalGestionTemplates
                 isOpen={modalTemplatesOpen}
                 onClose={() => setModalTemplatesOpen(false)}
             />
 
-            {/* Modal gestion niveaux & usages */}
             <ModalGestionNiveaux
                 isOpen={modalNiveauxOpen}
                 onClose={() => setModalNiveauxOpen(false)}
             />
 
-            {/* Modal formulaire (création/édition) */}
             <ModalFormPeriode
                 periode={periodeToEdit ? {
                     ...arbreToPeriode(periodeToEdit),
@@ -601,7 +542,6 @@ export function PeriodesPage() {
                 onSuccess={() => setModalFormOpen(false)}
             />
 
-            {/* Modal clôture avec impacts */}
             <ModalCloturePeriode
                 periode={periodeToCloture ? arbreToPeriode(periodeToCloture) : null}
                 isOpen={modalClotureOpen}
@@ -609,38 +549,39 @@ export function PeriodesPage() {
                 onClotureSuccess={() => { setModalClotureOpen(false); setPeriodeToCloture(null); }}
             />
 
-            {/* Modal confirmation (supprimer/réouvrir) */}
-            {confirmAction && (
-                <ConfirmationModal
-                    isOpen={!!confirmAction}
-                    title={
-                        confirmAction.type === 'supprimer' ? 'Supprimer la période' :
-                        'Réouvrir la période'
-                    }
-                    message={`Êtes-vous sûr de vouloir ${confirmAction.type === 'supprimer' ? 'supprimer' : 'réouvrir'} "${confirmAction.periode.nom}" ?`}
-                    variant={confirmAction.type === 'supprimer' ? 'danger' : 'info'}
-                    confirmLabel={
-                        confirmAction.type === 'supprimer' ? 'Supprimer' : 'Réouvrir'
-                    }
+            {confirmAction?.type === 'supprimer' && (
+                <ConfirmDialog
+                    open={true}
+                    onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
                     onConfirm={async () => {
-                        const { type, periode } = confirmAction;
-                        if (type === 'supprimer') {
-                            try {
-                                await supprimer.mutateAsync(periode.id);
-                                setConfirmAction(null);
-                            } catch (e) {
-                                // L'erreur est déjà affichée par le toast.error dans la configuration onError de la mutation.
-                                // On ne ferme pas le modal en cas d'erreur pour que l'utilisateur puisse corriger/comprendre.
-                            }
-                        } else if (type === 'reouvrir') {
-                            try {
-                                await reouvrir.mutateAsync({ id: periode.id, motif: 'Réouverture manuelle' });
-                                setConfirmAction(null);
-                            } catch (e) {}
-                        }
+                        try {
+                            await supprimer.mutateAsync(confirmAction.periode.id);
+                            setConfirmAction(null);
+                        } catch (e) {}
                     }}
-                    onCancel={() => setConfirmAction(null)}
-                    isLoading={supprimer.isPending || reouvrir.isPending}
+                    title={t('confirmerSupprimerTitre')}
+                    description={`${t('confirmerSupprimerMessage', { nom: confirmAction.periode.nom })}\n${t('confirmerSupprimerDetail')}`}
+                    confirmText={t('actions.supprimer')}
+                    variant="danger"
+                    isLoading={supprimer.isPending}
+                />
+            )}
+
+            {confirmAction?.type === 'reouvrir' && (
+                <ConfirmDialog
+                    open={true}
+                    onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+                    onConfirm={async () => {
+                        try {
+                            await reouvrir.mutateAsync({ id: confirmAction.periode.id, motif: 'Réouverture manuelle' });
+                            setConfirmAction(null);
+                        } catch (e) {}
+                    }}
+                    title={t('confirmerReouvrirTitre')}
+                    description={`${t('confirmerReouvrirMessage', { nom: confirmAction.periode.nom })}\n${t('confirmerReouvrirDetail')}`}
+                    confirmText={t('actions.reouvrir')}
+                    variant="warning"
+                    isLoading={reouvrir.isPending}
                 />
             )}
         </div>

@@ -1,30 +1,38 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Calendar, List, Settings, FileText, BookOpen } from 'lucide-react';
 import { useCreneaux } from '../hooks/use-emploi-du-temps';
 import { EDTCalendar } from './edt-calendar';
+import { EmploiDuTempsListe } from './edt-liste';
 import { EDTPreferencesPage } from './edt-preferences';
 import { EDTTemplatesPage } from './edt-templates';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ListLoading } from '@/components/feedback/ListLoading';
-import { EmptyState } from '@/components/feedback/EmptyState';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { TabsBar } from '@/components/ui/Tabs';
+import type { Tab } from '@/components/ui/Tabs';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { EDTGenerationModal } from './edt-generation-modal';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 
 type EDTTab = 'calendrier' | 'liste' | 'preferences' | 'templates';
 
-const TABS: { id: EDTTab; label: string; icon: any }[] = [
-    { id: 'calendrier', label: 'Calendrier', icon: Calendar },
-    { id: 'liste', label: 'Liste', icon: List },
-    { id: 'preferences', label: 'Préférences', icon: Settings },
-    { id: 'templates', label: 'Templates', icon: FileText },
-];
-
 export function EDTStandalonePage() {
+    const { t } = useTranslation('emplois');
+    const navigate = useNavigate();
     const [tab, setTab] = useState<EDTTab>('calendrier');
     const [classeFilter, setClasseFilter] = useState('');
     const [genModalOpen, setGenModalOpen] = useState(false);
+
+    const TABS: Tab[] = [
+        { id: 'calendrier', label: t('onglets.calendrier'), icon: Calendar },
+        { id: 'liste', label: t('onglets.liste'), icon: List },
+        { id: 'preferences', label: t('onglets.preferences'), icon: Settings },
+        { id: 'templates', label: t('onglets.templates'), icon: FileText },
+    ];
 
     const { data: classes } = useToutesClasses();
     const classeOptions = (classes ?? [])
@@ -34,166 +42,112 @@ export function EDTStandalonePage() {
             label: `${c.nom}${c.anneeScolaire?.libelle ? ` — ${c.anneeScolaire.libelle}` : ''}`,
         }));
 
-    const { data: paginated, isLoading } = useCreneaux(
+    const { data: paginated, isLoading, error, refetch } = useCreneaux(
         classeFilter ? { classeAnneeId: classeFilter } : { limit: 100 }
     );
-    const creneaux = paginated?.items ?? [];
+    const creneaux = paginated?.data?.items ?? [];
+
+    const renderCalendrier = () => (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                    <span className="text-sm font-medium text-[var(--color-texte)]">{t('filtrerParClasse')}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <select
+                        value={classeFilter}
+                        onChange={(e) => setClasseFilter(e.target.value)}
+                        className="rounded-lg border border-[var(--color-bordure)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-dominante)] dark:bg-[var(--color-surface)] dark:text-[var(--color-texte)]"
+                    >
+                        <option value="">{t('tousLesCreneaux')}</option>
+                        {classeOptions.map(o => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                    </select>
+                    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-2">
+                        <ElisaButton variant="primary" size="xs" icon={<Calendar className="h-4 w-4" />}
+                            onClick={() => setGenModalOpen(true)}
+                        >
+                            {t('generer')}
+                        </ElisaButton>
+                    </div>
+                </div>
+            </div>
+            {isLoading ? (
+                <PageSkeleton showHeader={false} showStats={false} showTable />
+            ) : creneaux.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-[var(--color-surface)] rounded-lg border border-[var(--color-bordure)]">
+                    <Calendar className="h-16 w-16 text-[var(--color-text-muted)] mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] mb-2">{t('aucunCreneau')}</h3>
+                    <p className="text-[var(--color-texte-secondaire)] mb-6 max-w-md mx-auto">{t('aucunCreneauDescription')}</p>
+                    <ElisaButton variant="primary" size="sm" icon={<Calendar className="h-4 w-4" />} onClick={() => setGenModalOpen(true)}>
+                        {t('genererEmploiDuTemps')}
+                    </ElisaButton>
+                </div>
+            ) : (
+                <EDTCalendar creneaux={creneaux} />
+            )}
+            <CustomModal
+                open={genModalOpen}
+                onOpenChange={setGenModalOpen}
+                title={t('genererEmploiDuTemps')}
+                description={t('configurerGeneration')}
+                size="2xl"
+            >
+                {classeFilter && (
+                    <EDTGenerationModal
+                        classeAnneeId={classeFilter}
+                        onSuccess={() => { setGenModalOpen(false); }}
+                        onClose={() => setGenModalOpen(false)}
+                    />
+                )}
+            </CustomModal>
+        </div>
+    );
+
+    const renderListe = () => {
+        if (!classeFilter) {
+            return (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-[var(--color-surface)] rounded-lg border border-[var(--color-bordure)]">
+                    <List className="h-16 w-16 text-[var(--color-text-muted)] mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] mb-2">{t('aucuneClasseSelectionnee')}</h3>
+                    <p className="text-[var(--color-texte-secondaire)] max-w-md mx-auto">{t('selectionnerClassePourVoirListe')}</p>
+                </div>
+            );
+        }
+        return <EmploiDuTempsListe classeAnneeId={classeFilter} anneeScolaireId="" />;
+    };
 
     const renderTab = () => {
         switch (tab) {
-            case 'calendrier':
-                return (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <BookOpen className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Filtrer par classe:</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <select
-                                    value={classeFilter}
-                                    onChange={(e) => setClasseFilter(e.target.value)}
-                                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                                >
-                                    <option value="">Tous les créneaux</option>
-                                    {classeOptions.map(o => (
-                                        <option key={o.value} value={o.value}>{o.label}</option>
-                                    ))}
-                                </select>
-                                <ElisaButton variant="primary" size="sm" icon={<Calendar className="h-4 w-4" />}
-                                    onClick={() => setGenModalOpen(true)}
-                                >
-                                    Générer
-                                </ElisaButton>
-                            </div>
-                        </div>
-                        {isLoading ? (
-                            <ListLoading />
-                        ) : creneaux.length === 0 ? (
-                            <EmptyState
-                                icon={Calendar}
-                                title="Aucun créneau"
-                                description="Aucun créneau trouvé. Générez l'emploi du temps ou ajustez les filtres."
-                                actionLabel="Générer l'emploi du temps"
-                                onAction={() => setGenModalOpen(true)}
-                            />
-                        ) : (
-                            <EDTCalendar creneaux={creneaux} />
-                        )}
-                        <CustomModal
-                            open={genModalOpen}
-                            onOpenChange={setGenModalOpen}
-                            title="Générer l'emploi du temps"
-                            description="Configurez les paramètres de génération"
-                            size="2xl"
-                        >
-                            {classeFilter && (
-                                <EDTGenerationModal
-                                    classeAnneeId={classeFilter}
-                                    onSuccess={() => { setGenModalOpen(false); }}
-                                    onClose={() => setGenModalOpen(false)}
-                                />
-                            )}
-                        </CustomModal>
-                    </div>
-                );
-
-            case 'liste':
-                return (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <BookOpen className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Filtrer par classe:</span>
-                            <select
-                                value={classeFilter}
-                                onChange={(e) => setClasseFilter(e.target.value)}
-                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                            >
-                                <option value="">Tous les créneaux</option>
-                            </select>
-                        </div>
-                        {isLoading ? (
-                            <ListLoading />
-                        ) : creneaux.length === 0 ? (
-                            <EmptyState icon={List} title="Aucun créneau" description="Aucun créneau trouvé." />
-                        ) : (
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-50 dark:bg-gray-900">
-                                        <tr>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Jour</th>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Horaire</th>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Matière</th>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Enseignant</th>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Classe</th>
-                                            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Salle</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                        {creneaux.map((c) => (
-                                            <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="px-4 py-3 font-medium">{c.jour}</td>
-                                                <td className="px-4 py-3 font-mono text-gray-700 dark:text-gray-300">
-                                                    {c.heureDebut?.slice(0, 5)} - {c.heureFin?.slice(0, 5)}
-                                                </td>
-                                                <td className="px-4 py-3">{c.matiere?.nom || '-'}</td>
-                                                <td className="px-4 py-3">
-                                                    {c.enseignant ? `${c.enseignant.prenom} ${c.enseignant.nom}` : '-'}
-                                                </td>
-                                                <td className="px-4 py-3">{c.classeAnnee?.classe?.nom || '-'}</td>
-                                                <td className="px-4 py-3">{c.salle?.nom || '-'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                );
-
-            case 'preferences':
-                return <EDTPreferencesPage />;
-
-            case 'templates':
-                return <EDTTemplatesPage />;
-
-            default:
-                return null;
+            case 'calendrier': return renderCalendrier();
+            case 'liste': return renderListe();
+            case 'preferences': return <EDTPreferencesPage />;
+            case 'templates': return <EDTTemplatesPage />;
+            default: return null;
         }
     };
 
-    return (
-        <div className="flex flex-col gap-6 p-6 dark:bg-gray-900">
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <h1 className="text-3xl font-bold text-[var(--color-text-primary)] flex items-center gap-3">
-                    <Calendar className="h-8 w-8 text-[var(--color-dominant-600)]" />
-                    Emploi du Temps
-                </h1>
-            </motion.div>
-
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex gap-6">
-                    {TABS.map((t) => {
-                        const Icon = t.icon;
-                        return (
-                            <button key={t.id} onClick={() => setTab(t.id)}
-                                className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
-                                    tab === t.id
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
-                                }`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {t.label}
-                            </button>
-                        );
-                    })}
-                </nav>
+    if (error) {
+        return (
+            <div className="p-6">
+                <ErrorMessage message={t('chargement')} onRetry={() => refetch()} />
             </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                variant="gradient"
+                icon={Calendar}
+                title={t('titre')}
+                subtitle={t('description')}
+                onBack={() => navigate({ to: '/' })}
+            />
+
+            <TabsBar tabs={TABS} activeTab={tab} onTabChange={(id) => setTab(id as EDTTab)} />
 
             <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {renderTab()}

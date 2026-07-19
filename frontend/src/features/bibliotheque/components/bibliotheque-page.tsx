@@ -5,11 +5,13 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Book, Plus, Eye, Trash2, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useOuvrages, usePrets, useSupprimerOuvrage, useStatistiquesBibliotheque } from '../hooks/use-bibliotheque';
 import type { Ouvrage } from '../types/bibliotheque.types';
 import { CardGrid, StatCard } from '@/components/ui';
@@ -22,7 +24,7 @@ export function BibliothequePage() {
     const [filtreCategorie, setFiltreCategorie] = useState('');
     const [filtreDispo, setFiltreDispo] = useState('tous');
 
-    const { data: result, isLoading } = useOuvrages({
+    const { data: result, isLoading, isError, error, refetch } = useOuvrages({
         recherche: recherche || undefined,
         categorie: filtreCategorie || undefined,
         disponibilite: filtreDispo as any,
@@ -135,26 +137,28 @@ export function BibliothequePage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message || t('erreurChargement')} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Ajouter ouvrage')}
-                >
-                    {t('ajouter')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={BookOpen}
+                title={t('titre')}
+                subtitle={t('description')}
+                showBreadcrumbs={false}
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Ajouter ouvrage')}
+                    >
+                        {t('ajouter')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>
@@ -168,6 +172,7 @@ export function BibliothequePage() {
 
 
             <DataTable
+                tableId="bibliotheque"
                 columns={colonnes}
                 data={data?.data || []}
                 isLoading={isLoading}

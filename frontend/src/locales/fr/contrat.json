@@ -1,4 +1,14 @@
 {
+    "titre": "Gestion des contrats & paie",
+    "description": "Gérez les contrats, bulletins de paie, cotisations, primes et retenues du personnel",
+    "onglets": {
+        "contrats": "Contrats",
+        "types-contrat": "Types de contrat",
+        "bulletins": "Bulletins de paie",
+        "cotisations": "Cotisations",
+        "primes": "Types de primes",
+        "retenues": "Types de retenues"
+    },
     "contrat": {
         "titre": "Contrat",
         "nouveauContrat": "Nouveau contrat",

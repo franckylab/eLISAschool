@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Users, Edit, Trash2, Eye, Power, GraduationCap, School, CheckCircle, XCircle, BookOpen } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Eye, Power, Group, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import { useClasses, useSupprimerClasse, useToggleActifClasse } from '../hooks/use-classes';
 import { ClasseFormModal } from './classe-form-modal';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -266,7 +266,7 @@ export function ClassesPage() {
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
                 <PageHeader
                     variant="gradient"
-                    icon={GraduationCap}
+                    icon={Group}
                     title={t('titre')}
                     subtitle={`${data?.meta?.totalItems || 0} ${t('sousTitre.classesActives')}`}
                     actions={hasPermission('classes:create') ? (
@@ -277,7 +277,7 @@ export function ClassesPage() {
                 />
 
                 <CardGrid columns={{ default: 1, sm: 2, lg: 4 }} className="mb-8">
-                    <StatCard icon={School} label={t('stats.total') || 'Total'} value={computedStats.total} tone="dominant" />
+                    <StatCard icon={Group} label={t('stats.total') || 'Total'} value={computedStats.total} tone="dominant" />
                     <StatCard icon={CheckCircle} label={t('stats.actives') || 'Actives'} value={computedStats.actives} tone="success" />
                     <StatCard icon={Users} label={t('stats.effectifTotal') || 'Effectif total'} value={computedStats.effectifTotal} tone="purple" />
                     <StatCard icon={BookOpen} label={t('stats.niveaux') || 'Niveaux'} value={computedStats.niveaux} tone="info" />

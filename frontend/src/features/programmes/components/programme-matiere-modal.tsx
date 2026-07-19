@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, BookOpen, Plus, X } from 'lucide-react';
+import { Save, BookOpen } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';

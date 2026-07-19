@@ -90,7 +90,17 @@
     "supprimerLogoTitle": "Delete logo",
     "breadcrumbLabel": "Breadcrumb",
     "altLogo": "Logo {{nom}}",
+    "tousSousSystemes": "All",
+    "tousTypes": "All",
+    "tousStatuts": "All",
+    "reseauxSociaux": "Social networks",
+    "infoDirection": "Role assigned via user management.",
     "nbEtablissements": "{{count}} establishment(s)",
+    "form": {
+        "titreCreer": "New establishment",
+        "titreCreerDesc": "Create a new school establishment",
+        "nomRequis": "Name is required"
+    },
     "typesEtablissement": {
         "LAIC": "Secular",
         "CONFESSIONNEL_CATHOLIQUE": "Catholic",

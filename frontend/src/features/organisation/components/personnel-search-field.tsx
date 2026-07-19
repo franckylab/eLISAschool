@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, X, User, Loader2 } from 'lucide-react';
+import { Search, User, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 
 interface PersonnelSearchResult {
@@ -33,7 +33,7 @@ export function PersonnelSearchField({
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<PersonnelSearchResult[]>([]);
     const [searching, setSearching] = useState(false);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         if (!query.trim() || value) {

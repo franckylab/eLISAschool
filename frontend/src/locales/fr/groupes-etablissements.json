@@ -1,12 +1,16 @@
 {
     "titre": "Groupes d'Établissements",
     "sousTitre": "Gérez les regroupements d'établissements pour la consolidation",
+    "tous": "Tous",
+    "reessayer": "Réessayer",
     "boutons": {
         "nouveau": "Nouveau groupe",
         "modifier": "Modifier",
         "supprimer": "Supprimer",
         "voirDetails": "Voir détails",
-        "effacer": "Effacer"
+        "effacer": "Effacer",
+        "gererEtablissements": "Gérer les établissements",
+        "gererAdmins": "Gérer les admins"
     },
     "colonnes": {
         "groupe": "Groupe",
@@ -29,7 +33,9 @@
     },
     "indicateurs": {
         "total": "Total Groupes",
-        "actifs": "Actifs"
+        "actifs": "Actifs",
+        "inactifs": "Inactifs",
+        "totalEtablissements": "Total Établissements"
     },
     "messages": {
         "aucunGroupe": "Aucun groupe d'établissements trouvé",
@@ -63,5 +69,24 @@
         "nomRequis": "Le nom est requis",
         "nomMin": "Le nom doit contenir au moins 2 caractères",
         "codeFormat": "Le code ne doit contenir que des majuscules, chiffres, tirets et underscores"
+    },
+    "form": {
+        "titreCreer": "Nouveau groupe d'établissements",
+        "titreModifier": "Modifier le groupe",
+        "description": "Remplissez les informations ci-dessous",
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer",
+        "creer": "Créer",
+        "nomLabel": "Nom",
+        "nomPlaceholder": "Ex: Groupe Scolaire Africain",
+        "codeLabel": "Code",
+        "codePlaceholder": "GROUPE_SCOLAIRE_AFRICAIN",
+        "codeHelper": "Généré automatiquement si vide",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Description du groupe d'établissements...",
+        "etablissementsLabel": "Établissements à ajouter au groupe (optionnel)",
+        "nbSelectionnes": "{{count}} établissement(s) sélectionné(s)",
+        "erreurNomRequis": "Le nom est requis",
+        "erreurCodeRequis": "Le code est requis"
     }
 }

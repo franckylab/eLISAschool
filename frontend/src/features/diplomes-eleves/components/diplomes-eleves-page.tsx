@@ -1,16 +1,11 @@
-/**
- * ==================================
- * eLISAschool - Page Diplômes Élèves
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { Plus, GraduationCap, Calendar, Hash, Eye, Edit, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, Medal, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
@@ -26,6 +21,7 @@ import { DiplomeEleveFormModal } from './diplome-eleve-form-modal';
 
 export function DiplomesElevesPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('diplomes-eleves');
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -35,7 +31,7 @@ export function DiplomesElevesPage() {
     const [diplomeToDelete, setDiplomeToDelete] = useState<DiplomeEleve | null>(null);
 
     const { hasPermission } = usePermissions();
-    const { data, isLoading } = useDiplomesEleves({
+    const { data, isLoading, isError, error, refetch } = useDiplomesEleves({
         page,
         limit,
         recherche: recherche || undefined,
@@ -48,9 +44,6 @@ export function DiplomesElevesPage() {
 
     const diplomes = data?.items || [];
     const meta = data?.meta;
-    const total = meta?.totalItems || 0;
-    const totalPages = meta?.totalPages || 1;
-    const currentPage = meta?.currentPage || page;
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -63,45 +56,39 @@ export function DiplomesElevesPage() {
     const colonnes: Column<DiplomeEleve>[] = [
         {
             key: 'eleveId',
-            header: 'Élève',
-            render: (diplome: DiplomeEleve, _index: number) => (
+            header: t('colonne.eleve'),
+            render: (diplome: DiplomeEleve) => (
                 <div className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-primary" />
+                    <Medal className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">{diplome.eleve?.nom || diplome.eleveId?.substring(0, 8) || '—'}</span>
                 </div>
             ),
         },
         {
             key: 'examenNationalId',
-            header: 'Examen',
-            render: (diplome: DiplomeEleve, _index: number) => (
+            header: t('colonne.examen'),
+            render: (diplome: DiplomeEleve) => (
                 <span className="text-sm">{diplome.examenNational?.nom || diplome.examenNationalId?.substring(0, 8) || '—'}</span>
             ),
         },
         {
             key: 'numeroDiplome',
-            header: 'N° Diplôme',
-            render: (diplome: DiplomeEleve, _index: number) => (
-                <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-mono">{diplome.numeroDiplome || '-'}</span>
-                </div>
+            header: t('colonne.numeroDiplome'),
+            render: (diplome: DiplomeEleve) => (
+                <span className="text-sm font-mono">{diplome.numeroDiplome || '-'}</span>
             ),
         },
         {
             key: 'dateObtention',
-            header: 'Date d\'obtention',
-            render: (diplome: DiplomeEleve, _index: number) => (
-                <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{diplome.dateObtention ? formatDate(diplome.dateObtention) : '-'}</span>
-                </div>
+            header: t('colonne.dateObtention'),
+            render: (diplome: DiplomeEleve) => (
+                <span className="text-sm">{diplome.dateObtention ? formatDate(diplome.dateObtention) : '-'}</span>
             ),
         },
         {
             key: 'mention',
-            header: 'Mention',
-            render: (diplome: DiplomeEleve, _index: number) => (
+            header: t('colonne.mention'),
+            render: (diplome: DiplomeEleve) => (
                 diplome.mention ? (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         diplome.mention.includes('Très')
@@ -118,41 +105,43 @@ export function DiplomesElevesPage() {
             ),
         },
         {
-            key: 'actif',
-            header: 'Statut',
-            render: (diplome: DiplomeEleve, _index: number) => (
+            key: 'resultat',
+            header: t('colonne.resultat'),
+            render: (diplome: DiplomeEleve) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     diplome.resultat === 'ADMIS'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : diplome.resultat === 'AJOURNE'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
-                    {diplome.resultat === 'ADMIS' ? 'Validé' : 'Inactif'}
+                    {t(`resultat.${diplome.resultat}`)}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colonne.actions'),
             className: 'text-right',
             renderActions: (d) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('actions.voir'),
                     onClick: () => navigate({ to: '/diplomes-eleves/$id', params: { id: d.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('actions.modifier'),
                     onClick: () => { setDiplomeToEdit(d); setShowFormModal(true); },
                     permission: 'diplomes-eleves:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('actions.supprimer'),
                     onClick: () => setDiplomeToDelete(d),
                     permission: 'diplomes-eleves:delete',
                     variant: 'danger' as const,
@@ -183,83 +172,56 @@ export function DiplomesElevesPage() {
         }
     };
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
+
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col sm:flex-row justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Diplômes Élèves</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Gestion des diplômes obtenus par les élèves
-                    </p>
-                </div>
-                {hasPermission('diplomes-eleves:create') && (
-                    <ElisaButton
-                        variant="primary"
-                        onClick={handleCreate}
-                        icon={<Plus className="h-4 w-4" />}
-                    >
-                        Enregistrer un diplôme
-                    </ElisaButton>
-                )}
-            </motion.div>
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
+            <PageHeader
+                title={t('titre')}
+                description={t('description')}
+                icon={Medal}
+                actions={
+                    hasPermission('diplomes-eleves:create') ? (
+                        <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
+                            {t('nouveauDiplome')}
+                        </ElisaButton>
+                    ) : undefined
+                }
+            />
 
-            {/* Filtres */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Rechercher</label>
-                    <input
-                        type="text"
-                        placeholder="Nom élève, N° diplôme..."
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    />
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Examen</label>
-                    <select
-                        value={filtreExamenId || ''}
-                        onChange={(e) => setFiltreExamenId(e.target.value || undefined)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    >
-                        <option value="">Tous les examens</option>
-                        {/* TODO: Ajouter hook useExamensNationaux pour dropdown */}
-                    </select>
-                </div>
-            </motion.div>
+            <DataTable
+                tableId="diplomes-eleves"
+                columns={colonnes}
+                data={diplomes}
+                isLoading={isLoading}
+                pagination={meta ? {
+                    page: meta.currentPage,
+                    limit: meta.itemsPerPage,
+                    total: meta.totalItems,
+                    totalPages: meta.totalPages,
+                    hasNext: meta.currentPage < meta.totalPages,
+                    hasPrev: meta.currentPage > 1,
+                    onPageChange: setPage,
+                } : undefined}
+                emptyMessage={t('aucunDiplome')}
+                searchable
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(v) => { setRecherche(v); setPage(1); }}
+                enableCollapsibleFilters
+                filtres={[
+                    {
+                        key: 'examenNationalId',
+                        label: t('colonne.examen'),
+                        options: [],
+                    },
+                ]}
+                onFilterChange={(key, value) => {
+                    if (key === 'examenNationalId') setFiltreExamenId(value || undefined);
+                }}
+                onClearFilters={() => setFiltreExamenId(undefined)}
+            />
 
-            {/* Tableau */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-            >
-                <DataTable
-                    columns={colonnes}
-                    data={diplomes}
-                    isLoading={isLoading}
-                    pagination={meta ? {
-                        page: currentPage,
-                        limit: meta.itemsPerPage,
-                        total,
-                        totalPages,
-                        hasNext: currentPage < totalPages,
-                        hasPrev: currentPage > 1,
-                        onPageChange: setPage,
-                    } : undefined}
-                    emptyMessage="Aucun diplôme enregistré" tableId={''}                />
-            </motion.div>
-
-            {/* Modal Formulaire */}
             <DiplomeEleveFormModal
                 open={showFormModal}
                 onOpenChange={(v) => {
@@ -273,13 +235,12 @@ export function DiplomesElevesPage() {
                 isLoading={creer.isPending || modifier.isPending}
             />
 
-            {/* Modal Confirmation Suppression */}
             <ConfirmDialog
                 open={!!diplomeToDelete}
                 onOpenChange={(open) => { if (!open) setDiplomeToDelete(null); }}
-                title="Supprimer le diplôme"
-                description="Êtes-vous sûr de vouloir supprimer ce diplôme ?"
-                confirmText="Supprimer"
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage')}
+                confirmText={t('actions.supprimer')}
                 variant="danger"
                 onConfirm={handleDelete}
                 isLoading={supprimer.isPending}

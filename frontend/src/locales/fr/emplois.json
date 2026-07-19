@@ -1,13 +1,114 @@
 {
     "titre": "Emplois du Temps",
     "description": "Gérer les créneaux horaires, salles et enseignants",
-    "ajouter": "Ajouter créneau",
+    "chargement": "Chargement des emplois du temps…",
     "jour": "Jour",
     "horaire": "Horaire",
     "matiere": "Matière",
     "enseignant": "Enseignant",
     "salle": "Salle",
+    "classe": "Classe",
     "conflits": "Conflits détectés",
     "heuresSemaine": "Heures/semaine",
-    "tauxOccupation": "Taux occupation"
+    "tauxOccupation": "Taux occupation",
+    "filtrerParClasse": "Filtrer par classe",
+    "tousLesCreneaux": "Tous les créneaux",
+    "generer": "Générer",
+    "genererEmploiDuTemps": "Générer l'emploi du temps",
+    "configurerGeneration": "Configurez les paramètres de génération",
+    "descriptionGeneration": "Configurez les paramètres de génération automatique",
+    "aucunCreneau": "Aucun créneau",
+    "aucunCreneauDescription": "Aucun créneau trouvé. Générez l'emploi du temps ou ajustez les filtres.",
+    "aucuneClasseSelectionnee": "Aucune classe sélectionnée",
+    "selectionnerClassePourVoirListe": "Sélectionnez une classe dans le filtre ci-dessus pour voir sa liste de créneaux.",
+    "onglets": {
+        "calendrier": "Calendrier",
+        "liste": "Liste",
+        "preferences": "Préférences",
+        "templates": "Templates"
+    },
+    "liste": {
+        "titre": "Emploi du Temps",
+        "actualiser": "Actualiser",
+        "exportHtml": "Export HTML",
+        "exportPdf": "Export PDF",
+        "genererModifier": "Générer / Modifier",
+        "vide": {
+            "titre": "Aucun emploi du temps",
+            "description": "Cet emploi du temps est vide. Générez-le automatiquement ou ajoutez des créneaux manuellement.",
+            "action": "Générer l'emploi du temps"
+        }
+    },
+    "generation": {
+        "titre": "Générer l'emploi du temps",
+        "options": "Options de génération",
+        "regenerer": "Régénérer complètement",
+        "regenererDesc": "Supprimer tous les créneaux existants avant de générer",
+        "respecterContraintes": "Respecter les contraintes",
+        "respecterContraintesDesc": "Éviter les conflits d'enseignants et respecter les préférences",
+        "info": {
+            "titre": "Informations",
+            "l1": "La génération utilise les affectations de la classe",
+            "l2": "Les volumes horaires sont respectés automatiquement",
+            "l3": "Les conflits d'enseignants sont évités",
+            "l4": "Un rapport de conflits est généré si nécessaire"
+        },
+        "annuler": "Annuler",
+        "generer": "Générer",
+        "enCours": "Génération en cours…"
+    },
+    "preferences": {
+        "titre": "Préférences",
+        "description": "Configurez les paramètres par défaut pour la génération des emplois du temps",
+        "joursTravaille": "Jours travaillés",
+        "horairesCours": "Horaires de cours",
+        "heureDebut": "Heure de début",
+        "heureFin": "Heure de fin",
+        "dureeCreneau": "Durée créneau (min)",
+        "dureeRecreation": "Durée récréation (min)",
+        "repartitionEquilibree": "Répartition équilibrée des matières",
+        "contraintes": "Contraintes de planification",
+        "maxCreneauxJour": "Max créneaux / jour",
+        "maxMemeMatiereJour": "Max mêmes matière / jour",
+        "maxConsecutifsMatiere": "Max consécutifs même matière",
+        "reinitialiser": "Réinitialiser",
+        "enregistrer": "Enregistrer les préférences",
+        "enregistrement": "Enregistrement…",
+        "erreurJoursOuvrables": "Veuillez sélectionner au moins un jour travaillé"
+    },
+    "templates": {
+        "titre": "Templates",
+        "description": "Gérez les modèles réutilisables pour générer rapidement des emplois du temps",
+        "nouveau": "Nouveau Template",
+        "vide": {
+            "titre": "Aucun template",
+            "description": "Créez votre premier template pour standardiser la génération des emplois du temps",
+            "action": "Créer un template"
+        },
+        "creneauxTypes": "Créneaux types :",
+        "joursTravailles": "Jours travaillés :",
+        "heureDebut": "Heure début :",
+        "heureFin": "Heure fin :",
+        "dupliquer": "Dupliquer",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer",
+        "partage": "Partagé",
+        "creationTitre": "Créer un template",
+        "creationDesc": "Fonctionnalité en cours de développement",
+        "creationFermer": "Fermer",
+        "supprimerTitre": "Supprimer le template",
+        "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce template\u00A0? Cette action est irréversible.",
+        "supprimerConfirmer": "Supprimer"
+    },
+    "calendrier": {
+        "heure": "Heure",
+        "lundi": "Lundi",
+        "mardi": "Mardi",
+        "mercredi": "Mercredi",
+        "jeudi": "Jeudi",
+        "vendredi": "Vendredi",
+        "samedi": "Samedi"
+    },
+    "salle": "Salle",
+    "matiereDefaut": "Matière"
 }

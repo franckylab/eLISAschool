@@ -76,17 +76,35 @@ class RedisService {
         if (this.isConnecting) {
             // Attendre que la connexion en cours se termine
             return new Promise((resolve, reject) => {
+                let settled = false;
                 const checkInterval = setInterval(() => {
-                    if (this.cacheClient?.status === 'ready') {
+                    if (!settled && this.cacheClient?.status === 'ready') {
+                        settled = true;
                         clearInterval(checkInterval);
+                        clearTimeout(timeout);
                         resolve(this.cacheClient!);
                     }
                 }, 100);
-
-                setTimeout(() => {
+                const timeout = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
                     clearInterval(checkInterval);
                     reject(new Error('Timeout connexion Redis'));
-                }, 8000);  // Réduit de 15s à 8s
+                }, 8000);
+                this.cacheClient?.once('ready', () => {
+                    if (settled) return;
+                    settled = true;
+                    clearInterval(checkInterval);
+                    clearTimeout(timeout);
+                    resolve(this.cacheClient!);
+                });
+                this.cacheClient?.once('error', (err) => {
+                    if (settled) return;
+                    settled = true;
+                    clearInterval(checkInterval);
+                    clearTimeout(timeout);
+                    reject(err);
+                });
             });
         }
 
@@ -107,6 +125,9 @@ class RedisService {
         this.isConnecting = true;
 
         try {
+            // Nettoyer les anciens clients avant d'en créer de nouveaux
+            await this.disconnect();
+
             // 1. Client pour CACHE (GET/SET/DEL)
             this.cacheClient = new Redis(redisConfig);
 
@@ -116,7 +137,7 @@ class RedisService {
             });
 
             this.cacheClient.on('error', (error) => {
-                logger.error('[Redis] Cache client error:', error.message);
+                logger.error('[Redis] Cache client error:', error?.message || String(error));
                 this.isConnecting = false;
             });
 
@@ -135,8 +156,16 @@ class RedisService {
                 logger.info('[Redis] Subscriber client connecté et prêt');
             });
 
-            this.subscriberClient.on('error', (error) => {
-                logger.error('[Redis] Subscriber client error:', error.message);
+            this.subscriberClient.on('error', (error: Error) => {
+                logger.error('[Redis] Subscriber client error:', error.message || String(error));
+            });
+
+            this.subscriberClient.on('close', () => {
+                logger.warn('[Redis] Subscriber client connexion fermée');
+            });
+
+            this.subscriberClient.on('reconnecting', () => {
+                logger.info('[Redis] Subscriber client tentative de reconnexion...');
             });
 
             // Attendre que le cache client soit prêt
@@ -151,8 +180,10 @@ class RedisService {
 
             return this.cacheClient;
         } catch (error) {
+            // Nettoyer les clients partiellement créés
+            await this.disconnect();
             this.isConnecting = false;
-            logger.error('[Redis] Échec de connexion:', error);
+            logger.error('[Redis] Échec de connexion:', error instanceof Error ? error.message : String(error));
             throw error;
         }
     }
@@ -185,7 +216,7 @@ class RedisService {
             }
             return false;
         } catch (error) {
-            logger.debug('[Redis] isAvailable check failed:', error.message);
+            logger.debug('[Redis] isAvailable check failed:', error instanceof Error ? error.message : String(error));
             return false;
         }
     }

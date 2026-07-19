@@ -11,8 +11,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, BookOpen, Hash } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, Edit, Trash2, Eye, GitBranch } from 'lucide-react';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import {
     useSpecialites,
@@ -20,13 +20,16 @@ import {
     useModifierSpecialite,
     useSupprimerSpecialite,
     type Specialite,
-    type SpecialiteFormData,
 } from '../hooks/use-specialites';
 import { usePermissions } from '@/hooks';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import type { Column } from '@/components/ui/DataTable';
 
 // Types
@@ -41,6 +44,7 @@ interface SpecialiteFormData {
 
 export function SpecialitesPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('specialites');
     const { hasPermission } = usePermissions();
     const { data: filieres } = useToutesFilieres();
     
@@ -50,7 +54,7 @@ export function SpecialitesPage() {
     const [itemToEdit, setItemToEdit] = useState<Specialite | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Specialite | null>(null);
 
-    const { data, isLoading } = useSpecialites(filtres);
+    const { data, isLoading, isError, error, refetch } = useSpecialites(filtres);
     const creer = useCreerSpecialite();
     const modifier = useModifierSpecialite();
     const supprimer = useSupprimerSpecialite();
@@ -58,7 +62,7 @@ export function SpecialitesPage() {
     const colonnes: Column<Specialite>[] = [
         {
             key: 'code',
-            header: 'Code',
+            header: t('code'),
             sortable: true,
             render: (s) => (
                 <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">
@@ -69,7 +73,7 @@ export function SpecialitesPage() {
         {
             key: 'nom',
             pinned: 'left' as const,
-            header: 'Nom',
+            header: t('nom'),
             sortable: true,
             render: (s) => (
                 <div>
@@ -82,10 +86,10 @@ export function SpecialitesPage() {
         },
         {
             key: 'filiere',
-            header: 'Filière',
+            header: t('filiere'),
             render: (s) => (
                 <span className="inline-flex items-center gap-1.5 text-sm">
-                    <BookOpen className="h-3.5 w-3.5 text-purple-600" />
+                    <GitBranch className="h-3.5 w-3.5 text-purple-600" />
                     <span className="font-medium text-purple-700">
                         {s.filiere?.nom || s.filiereId}
                     </span>
@@ -94,7 +98,7 @@ export function SpecialitesPage() {
         },
         {
             key: 'ordre',
-            header: 'Ordre',
+            header: t('ordre'),
             sortable: true,
             className: 'text-center',
             render: (s) => (
@@ -105,33 +109,33 @@ export function SpecialitesPage() {
         },
         {
             key: 'actif',
-            header: 'Statut',
+            header: t('statut'),
             sortable: true,
             className: 'text-center',
             render: (s) => (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                     s.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                    {s.actif ? '✓ Actif' : '✗ Inactif'}
+                    {s.actif ? `✓ ${t('actif')}` : `✗ ${t('inactif')}`}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('actions'),
             className: 'text-right',
             renderActions: (s) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('voirDetails'),
                     onClick: () => navigate({ to: '/specialites/$id', params: { id: s.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('modifier'),
                     onClick: () => {
                         setItemToEdit(s);
                         setShowFormModal(true);
@@ -141,7 +145,7 @@ export function SpecialitesPage() {
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('supprimer'),
                     onClick: () => {
                         setItemToDelete(s);
                         setShowDeleteConfirm(true);
@@ -186,42 +190,52 @@ export function SpecialitesPage() {
         }));
     }, [filieres]);
 
+    if (isLoading && !data) {
+        return <PageSkeleton showHeader showTable />;
+    }
+
+    if (isError) {
+        return (
+            <div className="p-6">
+                <ErrorMessage
+                    message={error instanceof Error ? error.message : t('chargement')}
+                    onRetry={() => refetch()}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div 
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" 
-                initial={{ opacity: 0, y: -10 }} 
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1 className="text-3xl font-bold">Spécialités</h1>
-                    <p className="text-sm text-gray-600">
-                        {data?.meta?.totalItems || 0} spécialité(s) • Options par filière technique
-                    </p>
-                </div>
-                {hasPermission('specialites:create') && (
+            <PageHeader
+                variant="gradient"
+                icon={GitBranch}
+                title={t('titre')}
+                subtitle={t('infoSpecialites', { count: data?.meta?.totalItems || 0 })}
+                actions={hasPermission('specialites:create') ? (
                     <ElisaButton
                         variant="primary"
                         size="sm"
-                        icon={<Plus className="h-4 w-4" />}
+                        leftIcon={<Plus className="h-4 w-4" />}
                         onClick={() => {
                             setItemToEdit(null);
                             setShowFormModal(true);
                         }}
                     >
-                        Nouvelle spécialité
+                        {t('nouvelleSpecialite')}
                     </ElisaButton>
-                )}
-            </motion.div>
+                ) : undefined}
+            />
 
             <DataTable
+                tableId="specialites"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                searchPlaceholder="Rechercher une spécialité..."
+                searchPlaceholder={t('rechercher')}
                 onSearchChange={(recherche) =>
                     setFiltres({ ...filtres, recherche, page: 1 })
                 }
@@ -263,9 +277,9 @@ export function SpecialitesPage() {
                     }
                 }}
                 onConfirm={handleDelete}
-                title="Supprimer la spécialité ?"
-                description={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.nom}" ? Cette action est irréversible.`}
-                confirmText="Supprimer"
+                title={t('supprimerTitre')}
+                description={t('supprimerMessage', { nom: itemToDelete?.nom })}
+                confirmText={t('supprimer')}
                 variant="danger"
             />
         </div>
@@ -282,165 +296,218 @@ interface SpecialiteFormModalProps {
     filieresOptions: Array<{ value: string; label: string }>;
 }
 
+const FORM_INIT: SpecialiteFormData & { description: string } = {
+    nom: '',
+    code: '',
+    description: '',
+    filiereId: '',
+    ordre: 1,
+    actif: true,
+};
+
 function SpecialiteFormModal({ open, onOpenChange, specialite, onSave, isLoading, filieresOptions }: SpecialiteFormModalProps) {
-    const [nom, setNom] = useState('');
-    const [code, setCode] = useState('');
-    const [description, setDescription] = useState('');
-    const [filiereId, setFiliereId] = useState('');
-    const [ordre, setOrdre] = useState(1);
-    const [actif, setActif] = useState(true);
+    const { t: tSpecialite } = useTranslation('specialites');
+    const [formData, setFormData] = useState(FORM_INIT);
+    const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (specialite) {
-            setNom(specialite.nom);
-            setCode(specialite.code);
-            setDescription(specialite.description || '');
-            setFiliereId(specialite.filiereId);
-            setOrdre(specialite.ordre);
-            setActif(specialite.actif);
-        } else {
-            setNom('');
-            setCode('');
-            setDescription('');
-            setFiliereId('');
-            setOrdre(1);
-            setActif(true);
+        if (open && specialite) {
+            setFormData({
+                nom: specialite.nom || '',
+                code: specialite.code || '',
+                description: specialite.description || '',
+                filiereId: specialite.filiereId || '',
+                ordre: specialite.ordre ?? 1,
+                actif: specialite.actif ?? true,
+            });
+        } else if (!open) {
+            setFormData(FORM_INIT);
+            setErreurs({});
         }
-    }, [specialite]);
+    }, [specialite, open]);
+
+    const hasUnsavedChanges = useMemo(
+        () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
+        [formData],
+    );
+
+    const handleChange = (field: string, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (erreurs[field]) {
+            setErreurs(prev => { const next = { ...prev }; delete next[field]; return next; });
+        }
+    };
+
+    const valider = (): boolean => {
+        const nouvelles: Record<string, string> = {};
+        if (!formData.nom.trim()) nouvelles.nom = 'Le nom est requis';
+        if (!formData.code.trim()) nouvelles.code = 'Le code est requis';
+        if (!formData.filiereId) nouvelles.filiereId = 'La filière est requise';
+        setErreurs(nouvelles);
+        return Object.keys(nouvelles).length === 0;
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!nom.trim() || !code.trim() || !filiereId) {
-            return;
-        }
-
+        if (!valider()) return;
         onSave({
-            nom: nom.trim(),
-            code: code.trim(),
-            description: description.trim() || undefined,
-            filiereId,
-            ordre,
-            actif,
+            nom: formData.nom.trim(),
+            code: formData.code.trim(),
+            description: formData.description.trim() || undefined,
+            filiereId: formData.filiereId,
+            ordre: formData.ordre,
+            actif: formData.actif,
         });
     };
+
+    const handleClose = () => {
+        if (hasUnsavedChanges) return;
+        onOpenChange(false);
+    };
+
+    const titre = specialite ? tSpecialite('modifierTitre') : tSpecialite('creerTitre');
+    const description = specialite ? tSpecialite('modifierDescription') : tSpecialite('creerDescription');
 
     return (
         <CustomModal
             open={open}
-            onOpenChange={onOpenChange}
-            title={specialite ? 'Modifier la spécialité' : 'Créer une spécialité'}
-            description={specialite ? 'Modifiez les informations de la spécialité' : 'Ajoutez une nouvelle spécialité pour une filière technique'}
+            onOpenChange={(v) => {
+                if (!v && hasUnsavedChanges) return;
+                onOpenChange(v);
+            }}
+            title={titre}
+            description={description}
             size="lg"
             footer={
                 <>
-                    <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        Annuler
+                    <ElisaButton variant="outline" onClick={handleClose}>
+                        {tSpecialite('annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
                         onClick={handleSubmit}
-                        disabled={!nom.trim() || !code.trim() || !filiereId || isLoading}
-                        icon={<BookOpen className="h-4 w-4" />}
+                        isLoading={isLoading}
+                        icon={<GitBranch className="h-4 w-4" />}
                     >
-                        {isLoading ? 'Enregistrement...' : specialite ? 'Modifier' : 'Créer'}
+                        {specialite ? tSpecialite('modifier') : tSpecialite('creer')}
                     </ElisaButton>
                 </>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
-                            Code <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            placeholder="Ex: MA, EI, GC"
-                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                            required
-                            maxLength={50}
-                        />
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <GitBranch className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {tSpecialite('informations')}
+                    </h3>
+                    <SectionSeparator />
+                    <div className="mt-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-foreground mb-2 block">
+                                    {tSpecialite('code')} <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.code}
+                                    onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
+                                    placeholder={tSpecialite('codePlaceholder')}
+                                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                    required
+                                    maxLength={50}
+                                    autoFocus
+                                />
+                                {erreurs.code && <p className="text-xs text-red-500 mt-1">{erreurs.code}</p>}
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-foreground mb-2 block">
+                                    {tSpecialite('ordre')}
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.ordre}
+                                    onChange={(e) => handleChange('ordre', parseInt(e.target.value) || 1)}
+                                    placeholder="1"
+                                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                    min={1}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground mb-2 block">
+                                {tSpecialite('nom')} <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.nom}
+                                onChange={(e) => handleChange('nom', e.target.value)}
+                                placeholder={tSpecialite('nomPlaceholder')}
+                                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                required
+                                maxLength={100}
+                            />
+                            {erreurs.nom && <p className="text-xs text-red-500 mt-1">{erreurs.nom}</p>}
+                        </div>
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
-                            Ordre
-                        </label>
-                        <input
-                            type="number"
-                            value={ordre}
-                            onChange={(e) => setOrdre(parseInt(e.target.value) || 1)}
-                            placeholder="1"
-                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                            required
-                            min={1}
-                        />
+                </div>
+
+                <div>
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <GitBranch className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {tSpecialite('filiere')}
+                    </h3>
+                    <SectionSeparator />
+                    <div className="mt-4 space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground mb-2 block">
+                                {tSpecialite('filiere')} <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={formData.filiereId}
+                                onChange={(e) => handleChange('filiereId', e.target.value)}
+                                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                required
+                            >
+                                <option value="">{tSpecialite('filierePlaceholder')}</option>
+                                {filieresOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {erreurs.filiereId && <p className="text-xs text-red-500 mt-1">{erreurs.filiereId}</p>}
+                        </div>
                     </div>
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                        Nom <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        value={nom}
-                        onChange={(e) => setNom(e.target.value)}
-                        placeholder="Ex: Maintenance Automobile, Électrotechnique Industrielle"
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                        required
-                        maxLength={100}
-                    />
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                        Filière <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={filiereId}
-                        onChange={(e) => setFiliereId(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                        required
-                    >
-                        <option value="">Sélectionner une filière</option>
-                        {filieresOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        <Hash className="h-3 w-3 inline mr-1" />
-                        Les spécialités sont associées aux filières techniques (F1-F4, G1-G2, H, I, K, L)
-                    </p>
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Description de la spécialité..."
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm resize-none"
-                        rows={2}
-                        maxLength={500}
-                    />
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="actif"
-                        checked={actif}
-                        onChange={(e) => setActif(e.target.checked)}
-                        className="w-4 h-4 rounded border-input"
-                    />
-                    <label htmlFor="actif" className="text-sm font-medium text-foreground">
-                        Spécialité active
-                    </label>
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <GitBranch className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {tSpecialite('description')}
+                    </h3>
+                    <SectionSeparator />
+                    <div className="mt-4 space-y-4">
+                        <textarea
+                            value={formData.description}
+                            onChange={(e) => handleChange('description', e.target.value)}
+                            placeholder={tSpecialite('descriptionPlaceholder')}
+                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm resize-none"
+                            rows={3}
+                            maxLength={500}
+                        />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="actif"
+                                checked={formData.actif}
+                                onChange={(e) => handleChange('actif', e.target.checked)}
+                                className="w-4 h-4 rounded border-input"
+                            />
+                            <label htmlFor="actif" className="text-sm font-medium text-foreground">
+                                {tSpecialite('specialiteActive')}
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </form>
         </CustomModal>

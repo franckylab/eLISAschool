@@ -1,17 +1,24 @@
-/**
- * ==================================
- * eLISAschool - Modal Formulaire Examen National
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- */
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { FileText } from 'lucide-react';
+import { FileBadge2 } from 'lucide-react';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import type { ExamenNational } from '../types/examen-national.types';
+
+const FORM_INIT = {
+    code: '',
+    nom: '',
+    type: 'NATIONAL' as 'NATIONAL' | 'REGIONAL' | 'INTERNATIONAL',
+    niveauId: '',
+    diplomeDelivre: '',
+    sousSysteme: 'FRANCOPHONE' as 'FRANCOPHONE' | 'ANGLOPHONE',
+    estObligatoire: true,
+    coefficient: undefined as number | undefined,
+    description: '',
+    actif: true,
+};
 
 interface ExamenNationalFormModalProps {
     open: boolean;
@@ -22,191 +29,194 @@ interface ExamenNationalFormModalProps {
 }
 
 export function ExamenNationalFormModal({ open, onOpenChange, examen, onSave, isLoading }: ExamenNationalFormModalProps) {
+    const { t } = useTranslation('examens-nationaux');
     const { data: niveaux } = useTousNiveaux();
-    
-    const [nom, setNom] = useState('');
-    const [code, setCode] = useState('');
-    const [type, setType] = useState<'NATIONAL' | 'REGIONAL' | 'INTERNATIONAL'>('NATIONAL');
-    const [niveauId, setNiveauId] = useState('');
-    const [diplomeDelivre, setDiplomeDelivre] = useState('');
-    const [sousSysteme, setSousSysteme] = useState<'FRANCOPHONE' | 'ANGLOPHONE'>('FRANCOPHONE');
-    const [estObligatoire, setEstObligatoire] = useState(true);
-    const [coefficient, setCoefficient] = useState<number>();
-    const [description, setDescription] = useState('');
-    const [actif, setActif] = useState(true);
+    const [formData, setFormData] = useState(FORM_INIT);
+    const [erreurs, setErreurs] = useState<Record<string, string>>({});
+
+    const isEdit = !!examen;
 
     useEffect(() => {
-        if (examen) {
-            setNom(examen.nom);
-            setCode(examen.code);
-            setType(examen.type as any);
-            setNiveauId(examen.niveauId);
-            setDiplomeDelivre(examen.diplomeDelivre || '');
-            setSousSysteme(examen.sousSysteme as any);
-            setEstObligatoire(examen.estObligatoire);
-            setCoefficient(examen.coefficient);
-            setDescription(examen.description || '');
-            setActif(examen.actif);
-        } else {
-            setNom('');
-            setCode('');
-            setType('NATIONAL');
-            setNiveauId('');
-            setDiplomeDelivre('');
-            setSousSysteme('FRANCOPHONE');
-            setEstObligatoire(true);
-            setCoefficient(undefined);
-            setDescription('');
-            setActif(true);
+        if (!open) {
+            setFormData(FORM_INIT);
+            setErreurs({});
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (examen && open) {
+            setFormData({
+                code: examen.code,
+                nom: examen.nom,
+                type: examen.type as any,
+                niveauId: examen.niveauId,
+                diplomeDelivre: examen.diplomeDelivre || '',
+                sousSysteme: examen.sousSysteme as any,
+                estObligatoire: examen.estObligatoire,
+                coefficient: examen.coefficient,
+                description: examen.description || '',
+                actif: examen.actif,
+            });
         }
     }, [examen, open]);
 
+    const hasUnsavedChanges = useMemo(() => JSON.stringify(formData) !== JSON.stringify(FORM_INIT), [formData]);
+
+    const handleChange = (field: string, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        setErreurs(prev => ({ ...prev, [field]: '' }));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!nom.trim() || !code.trim() || !niveauId) {
-            return;
-        }
+        const errs: Record<string, string> = {};
+        if (!formData.nom.trim()) errs.nom = t('form.obligatoire');
+        if (!formData.code.trim()) errs.code = t('form.obligatoire');
+        if (!formData.niveauId) errs.niveauId = t('form.obligatoire');
+        if (Object.keys(errs).length > 0) { setErreurs(errs); return; }
 
         onSave({
-            nom: nom.trim(),
-            code: code.trim(),
-            type,
-            niveauId,
-            diplomeDelivre: diplomeDelivre.trim() || undefined,
-            sousSysteme,
-            estObligatoire,
-            coefficient: coefficient || undefined,
-            description: description.trim() || undefined,
-            actif,
+            ...formData,
+            code: formData.code.trim().toUpperCase(),
+            nom: formData.nom.trim(),
+            diplomeDelivre: formData.diplomeDelivre.trim() || undefined,
+            coefficient: formData.coefficient || undefined,
+            description: formData.description.trim() || undefined,
         });
     };
 
-    // Filtrer les niveaux selon le sous-système
-    const niveauxFiltres = niveaux?.filter((n: { id: string; sousSysteme?: string }) => (n as any).sousSysteme === sousSysteme) || [];
+    const niveauxFiltres = niveaux?.filter((n: any) => n.sousSysteme === formData.sousSysteme) || [];
 
     return (
         <CustomModal
             open={open}
-            onOpenChange={onOpenChange}
-            title={examen ? 'Modifier l\'examen national' : 'Créer un examen national'}
-            description={examen ? 'Modifiez les informations de l\'examen' : 'Ajoutez un nouvel examen national'}
+            onOpenChange={(v) => {
+                if (!v && hasUnsavedChanges) return;
+                onOpenChange(v);
+            }}
+            title={isEdit ? t('form.titreModifier') : t('form.titreCreer')}
+            description={isEdit ? t('form.descriptionModifier') : t('form.descriptionCreer')}
             size="xl"
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        Annuler
+                        {t('form.annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
                         onClick={handleSubmit}
-                        disabled={!nom.trim() || !code.trim() || !niveauId || isLoading}
-                        icon={<FileText className="h-4 w-4" />}
+                        disabled={isLoading}
+                        icon={<FileBadge2 className="h-4 w-4" />}
                     >
-                        {isLoading ? 'Enregistrement...' : examen ? 'Modifier' : 'Créer'}
+                        {isLoading ? t('form.enregistrement') : isEdit ? t('form.modifier') : t('form.creer')}
                     </ElisaButton>
                 </>
             }
         >
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                    <FileBadge2 className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                    {t('detail.informations')}
+                </h3>
+                <SectionSeparator />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Code <span className="text-red-500">*</span>
+                            {t('form.code')} <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            placeholder="Ex: BACCALAUREAT, BEPC"
+                            value={formData.code}
+                            onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
+                            placeholder={t('form.codePlaceholder')}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                            required
                             maxLength={50}
                         />
+                        {erreurs.code && <p className="text-xs text-red-500 mt-1">{erreurs.code}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">Type</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">{t('form.type')}</label>
                         <select
-                            value={type}
-                            onChange={(e) => setType(e.target.value as any)}
+                            value={formData.type}
+                            onChange={(e) => handleChange('type', e.target.value)}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                         >
-                            <option value="NATIONAL">National</option>
-                            <option value="REGIONAL">Régional</option>
-                            <option value="INTERNATIONAL">International</option>
+                            {Object.entries(t('form.types', { returnObjects: true }) as Record<string, string>).map(([key, label]) => (
+                                <option key={key} value={key}>{label}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
 
                 <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                        Nom <span className="text-red-500">*</span>
+                        {t('form.nom')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
-                        value={nom}
-                        onChange={(e) => setNom(e.target.value)}
-                        placeholder="Ex: BACCALAURÉAT, GCE Advanced Level"
+                        value={formData.nom}
+                        onChange={(e) => handleChange('nom', e.target.value)}
+                        placeholder={t('form.nomPlaceholder')}
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                        required
                         maxLength={100}
                     />
+                    {erreurs.nom && <p className="text-xs text-red-500 mt-1">{erreurs.nom}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Niveau <span className="text-red-500">*</span>
+                            {t('form.niveau')} <span className="text-red-500">*</span>
                         </label>
                         <select
-                            value={niveauId}
-                            onChange={(e) => setNiveauId(e.target.value)}
+                            value={formData.niveauId}
+                            onChange={(e) => handleChange('niveauId', e.target.value)}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                            required
                         >
-                            <option value="">Sélectionner un niveau</option>
-                            {niveauxFiltres.map((niveau: { id: string; nom: string; code: string }) => (
+                            <option value="">{t('form.selectionnerNiveau')}</option>
+                            {niveauxFiltres.map((niveau: any) => (
                                 <option key={niveau.id} value={niveau.id}>
                                     {niveau.nom} ({niveau.code})
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Les niveaux affichés correspondent au sous-système sélectionné
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('form.niveauxFiltreInfo')}</p>
+                        {erreurs.niveauId && <p className="text-xs text-red-500 mt-1">{erreurs.niveauId}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">Diplôme délivré</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">{t('form.diplomeDelivre')}</label>
                         <input
                             type="text"
-                            value={diplomeDelivre}
-                            onChange={(e) => setDiplomeDelivre(e.target.value.toUpperCase())}
-                            placeholder="Ex: BACCALAUREAT"
+                            value={formData.diplomeDelivre}
+                            onChange={(e) => handleChange('diplomeDelivre', e.target.value.toUpperCase())}
+                            placeholder={t('form.diplomePlaceholder')}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                             maxLength={100}
                         />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <SectionSeparator />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">Sous-système</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">{t('form.sousSysteme')}</label>
                         <select
-                            value={sousSysteme}
-                            onChange={(e) => setSousSysteme(e.target.value as any)}
+                            value={formData.sousSysteme}
+                            onChange={(e) => handleChange('sousSysteme', e.target.value)}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                         >
-                            <option value="FRANCOPHONE">Francophone</option>
-                            <option value="ANGLOPHONE">Anglophone</option>
+                            {Object.entries(t('form.sousSystemes', { returnObjects: true }) as Record<string, string>).map(([key, label]) => (
+                                <option key={key} value={key}>{label}</option>
+                            ))}
                         </select>
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">Coefficient</label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">{t('form.coefficient')}</label>
                         <input
                             type="number"
-                            value={coefficient || ''}
-                            onChange={(e) => setCoefficient(e.target.value ? parseFloat(e.target.value) : undefined)}
-                            placeholder="Optionnel"
+                            value={formData.coefficient || ''}
+                            onChange={(e) => handleChange('coefficient', e.target.value ? parseFloat(e.target.value) : undefined)}
+                            placeholder={t('form.coefficient')}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                             min="0"
                             step="0.5"
@@ -215,40 +225,41 @@ export function ExamenNationalFormModal({ open, onOpenChange, examen, onSave, is
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+                    <label className="text-sm font-medium text-foreground mb-2 block">{t('form.description')}</label>
                     <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Description de l'examen..."
+                        value={formData.description}
+                        onChange={(e) => handleChange('description', e.target.value)}
+                        placeholder={t('form.descriptionPlaceholder')}
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm resize-none"
                         rows={2}
                         maxLength={500}
                     />
                 </div>
 
+                <SectionSeparator />
                 <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
                             id="estObligatoire"
-                            checked={estObligatoire}
-                            onChange={(e) => setEstObligatoire(e.target.checked)}
+                            checked={formData.estObligatoire}
+                            onChange={(e) => handleChange('estObligatoire', e.target.checked)}
                             className="w-4 h-4 rounded border-input"
                         />
                         <label htmlFor="estObligatoire" className="text-sm font-medium text-foreground">
-                            Examen obligatoire
+                            {t('form.estObligatoire')}
                         </label>
                     </div>
                     <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
                             id="actif"
-                            checked={actif}
-                            onChange={(e) => setActif(e.target.checked)}
+                            checked={formData.actif}
+                            onChange={(e) => handleChange('actif', e.target.checked)}
                             className="w-4 h-4 rounded border-input"
                         />
                         <label htmlFor="actif" className="text-sm font-medium text-foreground">
-                            Actif
+                            {t('form.actif')}
                         </label>
                     </div>
                 </div>

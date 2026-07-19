@@ -37,5 +37,20 @@
     "informations": "Informations",
     "nonRattachee": "Non rattachée",
     "activeMessage": "Cette spécialité est actuellement active.",
-    "inactiveMessage": "Cette spécialité est actuellement inactive."
+    "inactiveMessage": "Cette spécialité est actuellement inactive.",
+    "detail": {
+        "informations": "Informations générales",
+        "filiere": "Filière",
+        "description": "Description",
+        "metadonnees": "Métadonnées",
+        "creeLe": "Créée le",
+        "modifieLe": "Dernière modification",
+        "nom": "Nom",
+        "code": "Code",
+        "ordre": "Ordre",
+        "statut": "Statut",
+        "nonRattachee": "Non rattachée",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer"
+    }
 }

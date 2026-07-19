@@ -1,41 +1,64 @@
 {
-    "filieres": {
-        "title": "Streams",
-        "description": "Management of streams and specializations for upper secondary education",
-        "create": "Create a stream",
-        "edit": "Edit the stream",
-        "delete": "Delete the stream",
-        "detail": "Stream details",
-        "fields": {
-            "nom": "Name",
-            "code": "Code",
-            "description": "Description",
-            "cycleId": "Cycle",
-            "sousSysteme": "Sub-system",
-            "actif": "Active"
-        },
-        "placeholders": {
-            "nom": "E.g.: Series C - Mathematics and Physics",
-            "code": "E.g.: C, D, E, A, A1",
-            "description": "Stream description"
-        },
-        "sousSystemes": {
-            "FRANCOPHONE": "Francophone",
-            "ANGLOPHONE": "Anglophone"
-        },
-        "series": {
-            "C": "Mathematics and Physics",
-            "D": "Natural Sciences and Biology",
-            "E": "Civil Engineering",
-            "A": "Literature and Humanities",
-            "A1": "Languages and Literatures"
-        },
-        "messages": {
-            "createSuccess": "Stream created successfully",
-            "updateSuccess": "Stream updated successfully",
-            "deleteSuccess": "Stream deleted successfully",
-            "deleteConfirm": "Are you sure you want to delete this stream? Associated students may be affected.",
-            "noData": "No streams to display"
-        }
-    }
+    "titre": "Streams",
+    "description": "Management of streams and specializations for upper secondary education",
+    "nouvelleFiliere": "New stream",
+    "rechercher": "Search...",
+    "aucuneFiliere": "No streams found",
+    "colonne": {
+        "code": "Code",
+        "nom": "Name",
+        "cycle": "Cycle",
+        "sousSysteme": "Sub-system",
+        "statut": "Status",
+        "actions": "Actions"
+    },
+    "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "sousSysteme": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone",
+        "tous": "All"
+    },
+    "actions": {
+        "voir": "View details",
+        "modifier": "Edit",
+        "supprimer": "Delete",
+        "creer": "Create a stream"
+    },
+    "boutons": {
+        "annuler": "Cancel",
+        "creer": "Create",
+        "enregistrer": "Save"
+    },
+    "form": {
+        "titreCreer": "Create a stream",
+        "titreModifier": "Edit the stream",
+        "sectionIdentification": "Identification",
+        "sectionConfiguration": "Configuration",
+        "nom": "Name",
+        "nomPlaceholder": "E.g.: Series C - Mathematics and Physics",
+        "code": "Code",
+        "codePlaceholder": "E.g.: C, D, E, A, A1",
+        "description": "Description",
+        "descriptionPlaceholder": "Stream description",
+        "cycle": "Cycle",
+        "sousSysteme": "Sub-system",
+        "actif": "Active",
+        "nomRequis": "Name is required",
+        "codeRequis": "Code is required",
+        "cycleRequis": "Cycle is required"
+    },
+    "detail": {
+        "sousSysteme": "Sub-system",
+        "cycle": "Cycle",
+        "statut": "Status",
+        "specialites": "Specializations",
+        "description": "Description",
+        "informations": "Information",
+        "nonTrouvee": "Stream not found"
+    },
+    "confirmerSupprimerTitre": "Delete stream",
+    "confirmerSupprimerMessage": "Are you sure you want to delete the stream \"{{nom}}\" ?"
 }

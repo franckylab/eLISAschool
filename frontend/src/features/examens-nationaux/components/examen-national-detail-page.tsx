@@ -1,33 +1,17 @@
-/**
- * ==================================
- * eLISAschool - Page Détail Examen National
- * ==================================
- */
-
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import {
-    ArrowLeft, Edit, FileText, GraduationCap,
-    CheckCircle, XCircle, Loader2, AlertCircle,
-    Calendar, Award, BookOpen,
-} from 'lucide-react';
-import { useExamenNational } from '../hooks/use-examens-nationaux';
-import { useModifierExamenNational } from '../hooks/use-examens-nationaux';
+import { useTranslation } from 'react-i18next';
+import { Edit, Trash2, FileBadge2, CheckCircle, XCircle } from 'lucide-react';
+import { useExamenNational, useModifierExamenNational, useSupprimerExamenNational } from '../hooks/use-examens-nationaux';
 import { ExamenNationalFormModal } from './examen-national-form-modal';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { InfoField } from '@/components/ui/InfoField';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
-
-const TYPE_LABELS: Record<string, string> = {
-    NATIONAL: 'National',
-    REGIONAL: 'Régional',
-    INTERNATIONAL: 'International',
-};
-
-const SOUS_SYSTEME_LABELS: Record<string, string> = {
-    FRANCOPHONE: 'Francophone',
-    ANGLOPHONE: 'Anglophone',
-};
 
 function formatDate(dateStr?: string): string {
     if (!dateStr) return '-';
@@ -39,182 +23,152 @@ function formatDate(dateStr?: string): string {
 export function ExamenNationalDetailPage() {
     const { id } = useParams({ from: '/_auth/examens-nationaux/$id' });
     const navigate = useNavigate();
+    const { t } = useTranslation('examens-nationaux');
     const { hasPermission } = usePermissions();
-    const { data: examen, isLoading, error } = useExamenNational(id);
+    const { data: examen, isLoading, isError, error, refetch } = useExamenNational(id);
     const [formOpen, setFormOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const modifier = useModifierExamenNational();
+    const supprimer = useSupprimerExamenNational();
 
     const handleSave = async (data: any) => {
         await modifier.mutateAsync({ id: examen!.id, ...data });
         setFormOpen(false);
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
-            </div>
-        );
-    }
+    const handleDelete = async () => {
+        await supprimer.mutateAsync(id);
+        navigate({ to: '/examens-nationaux' });
+    };
 
-    if (error || !examen) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
-                <p className="text-red-600 mb-4">Examen national non trouvé</p>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/examens-nationaux' })}>
-                    Retour à la liste
-                </ElisaButton>
-            </div>
-        );
-    }
+    if (isLoading) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
+    if (!examen) return <ErrorMessage message={t('detail.nonTrouvee')} />;
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <ElisaButton
-                    variant="ghost"
-                    onClick={() => navigate({ to: '/examens-nationaux' })}
-                    icon={<ArrowLeft className="h-4 w-4" />}
-                    className="mb-6"
-                >
-                    Retour aux examens nationaux
-                </ElisaButton>
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
+            <PageHeader
+                variant="gradient"
+                title={examen.nom}
+                subtitle={examen.code}
+                icon={FileBadge2}
+                onBack={() => navigate({ to: '/examens-nationaux' })}
+                actions={
+                    <>
+                        {hasPermission('examens-nationaux:edit') && (
+                            <ElisaButton
+                                onClick={() => setFormOpen(true)}
+                                icon={<Edit className="h-4 w-4" />}
+                                variant="primary"
+                            >
+                                {t('actions.modifier')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('examens-nationaux:delete') && (
+                            <ElisaButton
+                                onClick={() => setDeleteConfirmOpen(true)}
+                                icon={<Trash2 className="h-4 w-4" />}
+                                variant="danger"
+                            >
+                                {t('actions.supprimer')}
+                            </ElisaButton>
+                        )}
+                    </>
+                }
+            />
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-amber-50 rounded-xl">
-                            <FileText className="h-8 w-8 text-amber-600" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">{examen.nom}</h1>
-                            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">{examen.code}</p>
-                        </div>
-                    </div>
-                    {hasPermission('examens-nationaux:edit') && (
-                        <ElisaButton
-                            onClick={() => setFormOpen(true)}
-                            icon={<Edit className="h-4 w-4" />}
-                            variant="primary"
-                        >
-                            Modifier
-                        </ElisaButton>
-                    )}
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">Informations</h2>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Code</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200 font-mono">{examen.code}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Type</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{TYPE_LABELS[examen.type] || examen.type}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Niveau</dt>
-                                    <dd>
-                                        {examen.niveau ? (
-                                            <button
-                                                onClick={() => navigate({ to: '/niveaux/$id', params: { id: examen.niveau!.id } })}
-                                                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                            >
-                                                {examen.niveau.nom}
-                                            </button>
-                                        ) : (
-                                            <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
-                                        )}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Sous-système</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{SOUS_SYSTEME_LABELS[examen.sousSysteme] || examen.sousSysteme}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Obligatoire</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.estObligatoire ? 'Oui' : 'Non'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Diplôme délivré</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.diplomeDelivre || '-'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Coefficient</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{examen.coefficient ?? '-'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Date programmation</dt>
-                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-200">{formatDate(examen.dateProgrammation)}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Statut</dt>
-                                    <dd>
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${examen.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-[var(--gap-md)]">
+                <div className="lg:col-span-2 space-y-[var(--gap-md)]">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('detail.informations')}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                <InfoField label={t('detail.code')} value={examen.code} />
+                                <InfoField
+                                    label={t('detail.type')}
+                                    value={t(`form.types.${examen.type}`)}
+                                />
+                                <InfoField
+                                    label={t('detail.niveau')}
+                                    value={examen.niveau?.nom || '-'}
+                                />
+                                <InfoField
+                                    label={t('detail.sousSysteme')}
+                                    value={t(`sousSysteme.${examen.sousSysteme}`)}
+                                />
+                                <InfoField
+                                    label={t('detail.obligatoire')}
+                                    value={examen.estObligatoire ? t('oui') : t('non')}
+                                />
+                                <InfoField label={t('detail.diplomeDelivre')} value={examen.diplomeDelivre || '-'} />
+                                <InfoField label={t('detail.coefficient')} value={examen.coefficient?.toString() ?? '-'} />
+                                <InfoField label={t('detail.dateProgrammation')} value={formatDate(examen.dateProgrammation)} />
+                                <InfoField
+                                    label={t('detail.statut')}
+                                    value={
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${examen.actif ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                                             {examen.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                                            {examen.actif ? 'Actif' : 'Inactif'}
+                                            {examen.actif ? t('statut.actif') : t('statut.inactif')}
                                         </span>
-                                    </dd>
-                                </div>
-                            </dl>
+                                    }
+                                />
+                            </div>
                             {examen.description && (
-                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                    <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</dt>
-                                    <dd className="text-sm text-gray-900 dark:text-gray-200">{examen.description}</dd>
+                                <div className="col-span-2 pt-4 border-t border-[var(--color-bordure)]">
+                                    <InfoField label={t('detail.description')} value={examen.description} />
                                 </div>
                             )}
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className={`rounded-xl shadow-sm border p-6 ${examen.actif ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                            <div className="flex items-center gap-3 mb-3">
-                                {examen.actif
-                                    ? <CheckCircle className="h-5 w-5 text-green-600" />
-                                    : <XCircle className="h-5 w-5 text-red-600" />
-                                }
-                                <span className={`font-semibold ${examen.actif ? 'text-green-800' : 'text-red-800'}`}>
-                                    {examen.actif ? 'Actif' : 'Inactif'}
-                                </span>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {examen.actif
-                                    ? 'Cet examen est actuellement actif.'
-                                    : 'Cet examen est actuellement inactif.'}
-                            </p>
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-3">Configuration</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Type</span>
-                                    <span className="font-medium">{TYPE_LABELS[examen.type] || examen.type}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Niveau</span>
-                                    <span className="font-medium">{examen.niveau?.nom || '-'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Coefficient</span>
-                                    <span className="font-medium">{examen.coefficient ?? '-'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Obligatoire</span>
-                                    <span className="font-medium">{examen.estObligatoire ? 'Oui' : 'Non'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
-            </motion.div>
+
+                <div className="space-y-[var(--gap-md)]">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('detail.statut')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className={`rounded-lg p-4 ${examen.actif ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'}`}>
+                                <div className="flex items-center gap-3 mb-2">
+                                    {examen.actif
+                                        ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                        : <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                    }
+                                    <span className={`font-semibold ${examen.actif ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                                        {examen.actif ? t('statut.actif') : t('statut.inactif')}
+                                    </span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('detail.configuration')}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t('detail.type')}</span>
+                                <span className="font-medium">{t(`form.types.${examen.type}`)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t('detail.niveau')}</span>
+                                <span className="font-medium">{examen.niveau?.nom || '-'}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t('detail.coefficient')}</span>
+                                <span className="font-medium">{examen.coefficient ?? '-'}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t('detail.obligatoire')}</span>
+                                <span className="font-medium">{examen.estObligatoire ? t('oui') : t('non')}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
 
             {formOpen && (
                 <ExamenNationalFormModal
@@ -222,8 +176,20 @@ export function ExamenNationalDetailPage() {
                     onOpenChange={(v) => { if (!v) setFormOpen(false); }}
                     examen={examen}
                     onSave={handleSave}
+                    isLoading={modifier.isPending}
                 />
             )}
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage', { nom: examen.nom })}
+                confirmText={t('actions.supprimer')}
+                variant="danger"
+                onConfirm={handleDelete}
+                isLoading={supprimer.isPending}
+            />
         </div>
     );
 }

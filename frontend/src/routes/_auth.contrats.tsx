@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { ContratsPaiePage } from '@/features/personnel/components/contrats-paie-page';
+import { requireModulePermission } from '@/app/permission-guards';
+import { ContratsPage } from '@/features/contrats';
 
 export const Route = createFileRoute('/_auth/contrats')({
-    component: RouteComponent,
+    beforeLoad: () => requireModulePermission('contrats'),
+    component: ContratsPage,
 });
-
-function RouteComponent() {
-    return <ContratsPaiePage />;
-}

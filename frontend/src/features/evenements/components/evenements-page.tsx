@@ -5,11 +5,13 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Plus, Users, Edit, Trash2, MapPin, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useEvenements, useSupprimerEvenement, useStatistiquesEvenements } from '../hooks/use-evenements';
 import type { Evenement } from '../types/evenement.types';
 import { CardGrid, StatCard } from '@/components/ui';
@@ -22,7 +24,7 @@ export function EvenementsPage() {
     const [filtreType, setFiltreType] = useState<string>('');
     const [filtreStatut, setFiltreStatut] = useState<string>('');
 
-    const { data, isLoading, meta } = useEvenements({
+    const { data, isLoading, isError, error, refetch, meta } = useEvenements({
         page,
         limit,
         recherche: recherche || undefined,
@@ -162,26 +164,27 @@ export function EvenementsPage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message || t('erreurChargement')} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Créer événement')}
-                >
-                    {t('creer')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={Calendar}
+                title={t('titre')}
+                subtitle={t('description')}
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Créer événement')}
+                    >
+                        {t('creer')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>
@@ -191,8 +194,6 @@ export function EvenementsPage() {
                     <StatCard icon={Users} label="Participants" value={stats.totalParticipants} tone="orange" />
                 </CardGrid>
             )}
-
-
 
             <DataTable
                 columns={colonnes}

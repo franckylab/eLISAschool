@@ -34,14 +34,9 @@ CREATE INDEX IF NOT EXISTS idx_types_contrat_categorie ON types_contrat_personna
 CREATE INDEX IF NOT EXISTS idx_types_contrat_actif ON types_contrat_personnalises(actif);
 CREATE INDEX IF NOT EXISTS idx_types_contrat_systeme ON types_contrat_personnalises(est_systeme);
 
--- 2. Insérer les types système par défaut
-INSERT INTO types_contrat_personnalises (code, nom, categorie, ordre, est_systeme, actif, etablissement_id)
-VALUES 
-    ('CDD', 'Contrat à Durée Déterminée', 'EMPLOI_TEMPORAIRE', 1, TRUE, TRUE, NULL),
-    ('CDI', 'Contrat à Durée Indéterminée', 'EMPLOI_PERMANENT', 2, TRUE, TRUE, NULL),
-    ('VACATAIRE', 'Vacataire', 'EMPLOI_TEMPORAIRE', 3, TRUE, TRUE, NULL),
-    ('STAGIAIRE', 'Stagiaire', 'STAGE_FORMATION', 4, TRUE, TRUE, NULL)
-ON CONFLICT (code, etablissement_id) DO NOTHING;
+-- 2. Insérer les types système par défaut (déplacé vers seed-types-contrat.ts)
+--    Le seed TypeScript gère désormais les 8 types système.
+--    Voir backend/src/database/seeds/system/seed-types-contrat.ts
 
 -- 3. Modifier la table contrats_personnel pour supporter les types personnalisés
 -- Ajouter la colonne type_contrat_id (nullable pour compatibilité)

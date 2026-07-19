@@ -34,7 +34,7 @@ export function requireModuleActive(moduleNom: string) {
 
             if (!estActif) {
                 await auditService.logAccessDenied(
-                    req.utilisateur?.id || 'anonymous',
+                    req.utilisateur?.id,
                     `Tentative d'accès au module désactivé: ${moduleNom}`,
                     req
                 );

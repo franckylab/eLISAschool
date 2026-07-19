@@ -2,15 +2,16 @@
  * ==================================
  * eLISAschool - Page Filières
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
  */
 
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { Plus, BookOpen, School, Eye, Edit, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, Split, Eye, Edit, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
@@ -27,6 +28,8 @@ import { FiliereFormModal } from './filiere-form-modal';
 
 export function FilieresPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('filieres');
+    const { hasPermission } = usePermissions();
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [recherche, setRecherche] = useState('');
@@ -36,8 +39,7 @@ export function FilieresPage() {
     const [filiereToEdit, setFiliereToEdit] = useState<Filiere | null>(null);
     const [filiereToDelete, setFiliereToDelete] = useState<Filiere | null>(null);
 
-    const { hasPermission } = usePermissions();
-    const { data, isLoading } = useFilieres({
+    const { data, isLoading, isError, error, refetch } = useFilieres({
         page,
         limit,
         recherche: recherche || undefined,
@@ -52,93 +54,87 @@ export function FilieresPage() {
 
     const filieres = data?.items || [];
     const meta = data?.meta;
-    const total = meta?.totalItems || 0;
-    const totalPages = meta?.totalPages || 1;
-    const currentPage = meta?.currentPage || page;
 
     const getNomCycle = (cycleId: string) => {
-        return cycles?.find((c: any) => c.id === cycleId)?.nom || '-';
+        return cycles?.find((c: { id: string; nom: string }) => c.id === cycleId)?.nom || '-';
     };
 
     const colonnes: Column<Filiere>[] = [
         {
             key: 'code',
-            header: 'Code',
-            render: (filiere: Filiere, _index: number) => (
+            header: t('colonne.code'),
+            render: (filiere: Filiere) => (
                 <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
+                    <Split className="h-4 w-4 text-primary" />
                     <span className="font-semibold text-sm">{filiere.code}</span>
                 </div>
             ),
         },
         {
             key: 'nom',
-            header: 'Nom',
-            render: (filiere: Filiere, _index: number) => (
+            header: t('colonne.nom'),
+            render: (filiere: Filiere) => (
                 <span className="text-sm font-medium">{filiere.nom}</span>
             ),
         },
         {
             key: 'cycleId',
-            header: 'Cycle',
-            render: (filiere: Filiere, _index: number) => (
-                <div className="flex items-center gap-2">
-                    <School className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{getNomCycle(filiere.cycleId)}</span>
-                </div>
+            header: t('colonne.cycle'),
+            render: (filiere: Filiere) => (
+                <span className="text-sm">{getNomCycle(filiere.cycleId)}</span>
             ),
         },
         {
             key: 'sousSysteme',
-            header: 'Sous-système',
-            render: (filiere: Filiere, _index: number) => (
+            header: t('colonne.sousSysteme'),
+            render: (filiere: Filiere) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     filiere.sousSysteme === 'FRANCOPHONE'
                         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 }`}>
-                    {filiere.sousSysteme === 'FRANCOPHONE' ? 'Francophone' : 'Anglophone'}
+                    {t(`sousSysteme.${filiere.sousSysteme}`)}
                 </span>
             ),
         },
         {
             key: 'actif',
-            header: 'Statut',
-            render: (filiere: Filiere, _index: number) => (
+            header: t('colonne.statut'),
+            render: (filiere: Filiere) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     filiere.actif
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
-                    {filiere.actif ? 'Actif' : 'Inactif'}
+                    {filiere.actif ? t('statut.actif') : t('statut.inactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colonne.actions'),
             className: 'text-right',
             renderActions: (f) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('actions.voir'),
                     onClick: () => navigate({ to: '/filieres/$id', params: { id: f.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('actions.modifier'),
                     onClick: () => { setFiliereToEdit(f); setShowFormModal(true); },
-                    permission: 'filieres:edit',
+                    permission: 'filieres:edit' as const,
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('actions.supprimer'),
                     onClick: () => setFiliereToDelete(f),
-                    permission: 'filieres:delete',
+                    permission: 'filieres:delete' as const,
                     variant: 'danger' as const,
                 },
             ],
@@ -167,98 +163,55 @@ export function FilieresPage() {
         }
     };
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
+
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col sm:flex-row justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Filières</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Gestion des filières et spécialités du second cycle secondaire
-                    </p>
-                </div>
-                {hasPermission('filieres:create') && (
-                    <ElisaButton
-                        variant="primary"
-                        onClick={handleCreate}
-                        icon={<Plus className="h-4 w-4" />}
-                    >
-                        Créer une filière
-                    </ElisaButton>
-                )}
-            </motion.div>
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
+            <PageHeader
+                variant="gradient"
+                title={t('titre')}
+                description={t('description')}
+                icon={Split}
+                actions={
+                    hasPermission('filieres:create') ? (
+                        <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
+                            {t('nouvelleFiliere')}
+                        </ElisaButton>
+                    ) : undefined
+                }
+            />
 
-            {/* Filtres */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4"
-            >
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Rechercher</label>
-                    <input
-                        type="text"
-                        placeholder="Nom, code..."
-                        value={recherche}
-                        onChange={(e) => setRecherche(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    />
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Sous-système</label>
-                    <select
-                        value={filtreSousSysteme || ''}
-                        onChange={(e) => setFiltreSousSysteme(e.target.value || undefined)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    >
-                        <option value="">Tous</option>
-                        <option value="FRANCOPHONE">Francophone</option>
-                        <option value="ANGLOPHONE">Anglophone</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Cycle</label>
-                    <select
-                        value={filtreCycleId || ''}
-                        onChange={(e) => setFiltreCycleId(e.target.value || undefined)}
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                    >
-                        <option value="">Tous</option>
-                        {cycles?.map((cycle: any) => (
-                            <option key={cycle.id} value={cycle.id}>{cycle.nom}</option>
-                        ))}
-                    </select>
-                </div>
-            </motion.div>
+            <DataTable
+                tableId="filieres"
+                columns={colonnes}
+                data={filieres}
+                isLoading={isLoading}
+                pagination={meta ? {
+                    page: meta.currentPage,
+                    limit: meta.itemsPerPage,
+                    total: meta.totalItems,
+                    totalPages: meta.totalPages,
+                    hasNext: meta.currentPage < meta.totalPages,
+                    hasPrev: meta.currentPage > 1,
+                    onPageChange: setPage,
+                } : undefined}
+                emptyMessage={t('aucuneFiliere')}
+                searchable
+                searchPlaceholder={t('rechercher')}
+                onSearchChange={(v) => { setRecherche(v); setPage(1); }}
+                enableCollapsibleFilters
+                filtres={[
+                    { key: 'sousSysteme', label: t('colonne.sousSysteme'), options: [{ value: 'FRANCOPHONE', label: t('sousSysteme.FRANCOPHONE') }, { value: 'ANGLOPHONE', label: t('sousSysteme.ANGLOPHONE') }] },
+                    { key: 'cycleId', label: t('colonne.cycle'), options: (cycles || []).map((c: { id: string; nom: string }) => ({ value: c.id, label: c.nom })) },
+                ]}
+                onFilterChange={(key, value) => {
+                    if (key === 'sousSysteme') setFiltreSousSysteme(value || undefined);
+                    if (key === 'cycleId') setFiltreCycleId(value || undefined);
+                }}
+                onClearFilters={() => { setFiltreSousSysteme(undefined); setFiltreCycleId(undefined); }}
+            />
 
-            {/* Tableau */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-            >
-                <DataTable
-                    columns={colonnes}
-                    data={filieres}
-                    isLoading={isLoading}
-                    pagination={meta ? {
-                        page: currentPage,
-                        limit: meta.itemsPerPage,
-                        total,
-                        totalPages,
-                        hasNext: currentPage < totalPages,
-                        hasPrev: currentPage > 1,
-                        onPageChange: setPage,
-                    } : undefined}
-                    emptyMessage="Aucune filière trouvée"
-                />
-            </motion.div>
-
-            {/* Modal Formulaire */}
             <FiliereFormModal
                 open={showFormModal}
                 onOpenChange={(v) => {
@@ -272,13 +225,12 @@ export function FilieresPage() {
                 isLoading={creer.isPending || modifier.isPending}
             />
 
-            {/* Modal Confirmation Suppression */}
             <ConfirmDialog
                 open={!!filiereToDelete}
                 onOpenChange={(open) => { if (!open) setFiliereToDelete(null); }}
-                title="Supprimer la filière"
-                description={`Êtes-vous sûr de vouloir supprimer la filière "${filiereToDelete?.nom}" ?`}
-                confirmText="Supprimer"
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage', { nom: filiereToDelete?.nom || '' })}
+                confirmText={t('actions.supprimer')}
                 variant="danger"
                 onConfirm={handleDelete}
                 isLoading={supprimer.isPending}

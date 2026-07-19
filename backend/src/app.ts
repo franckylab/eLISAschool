@@ -60,7 +60,8 @@ import { competencesController } from '@modules/competences';
 import { examensNationauxController } from '@modules/examens-nationaux';
 import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
-import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, bulletinPaieController, personnelDashboardController, cotisationsController, typesPrimesController, typesRetenuesController, calculPaieController, membreFonctionController } from '@modules/personnel';
+import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, personnelDashboardController, membreFonctionController } from '@modules/personnel';
+import { bulletinPaieController, calculPaieController, cotisationsController, typesPrimesController, typesRetenuesController } from '@modules/paie';
 import { classesController, classesAnneesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
 import { configurationScoringController } from '@modules/scoring';
@@ -220,12 +221,14 @@ export function createApp(): Application {
     // Servir les fichiers uploadés (fonds d'écran, logos, documents, etc.)
     const uploadsDir = path.join(process.cwd(), 'uploads');
     app.use('/uploads', express.static(uploadsDir, {
-        maxAge: '7d', // Cache 7 jours pour les fichiers statiques
+        maxAge: '1h', // Cache court pour permettre aux mises à jour de se propager
         setHeaders: (res, filePath) => {
             // Headers CORS pour les fichiers SVG
             if (filePath.endsWith('.svg')) {
                 res.setHeader('Content-Type', 'image/svg+xml');
-                res.setHeader('Cache-Control', 'public, max-age=604800');
+                res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             }
         },
     }));
@@ -233,15 +236,18 @@ export function createApp(): Application {
     // Servir les fonds d'écran du catalogue (fichiers système)
     const fondsCatalogueDir = path.join(process.cwd(), '..', 'public', 'fonds-catalogue');
     app.use('/fonds-catalogue', express.static(fondsCatalogueDir, {
-        maxAge: '30d', // Cache 30 jours pour les fichiers système (rarement modifiés)
+        maxAge: '1h', // Cache court pour permettre aux mises à jour de se propager
         setHeaders: (res, filePath) => {
             if (filePath.endsWith('.svg')) {
                 res.setHeader('Content-Type', 'image/svg+xml');
-                res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+                // Cache court + must-revalidate pour que les changements CORP/headers soient pris
+                res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
                 // Headers CORS pour permettre le chargement cross-origin des SVG
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+                // Surcharger Cross-Origin-Resource-Policy (Helmet le met à 'same-origin')
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             }
         },
     }));
@@ -434,15 +440,16 @@ export function createApp(): Application {
     app.use('/api/personnel/absences', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), absencePersonnelController);
     app.use('/api/personnel/evaluations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), evaluationController);
     app.use('/api/personnel/progressions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), progressionProgrammeController);
-    app.use('/api/personnel/bulletins', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), bulletinPaieController);
     app.use('/api/personnel/dashboard', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelDashboardController);
-    app.use('/api/personnel/cotisations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), cotisationsController);
-    app.use('/api/personnel/types-primes', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typesPrimesController);
-    app.use('/api/personnel/types-retenues', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typesRetenuesController);
-    app.use('/api/personnel/paie', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), calculPaieController);
     app.use('/api/personnel/membres-fonctions', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), membreFonctionController);
     // Route générique /:id en dernier
     app.use('/api/personnel', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), personnelController);
+    // Module paie autonome
+    app.use('/api/paie/bulletins', requireModuleActive('paie'), authMiddleware, filterByEtablissement(), bulletinPaieController);
+    app.use('/api/paie/calcul', requireModuleActive('paie'), authMiddleware, filterByEtablissement(), calculPaieController);
+    app.use('/api/paie/cotisations', requireModuleActive('paie'), authMiddleware, filterByEtablissement(), cotisationsController);
+    app.use('/api/paie/types-primes', requireModuleActive('paie'), authMiddleware, filterByEtablissement(), typesPrimesController);
+    app.use('/api/paie/types-retenues', requireModuleActive('paie'), authMiddleware, filterByEtablissement(), typesRetenuesController);
     app.use('/api/classes', authMiddleware, filterByEtablissement(), classesController);
     app.use('/api/classes-annees', authMiddleware, filterByEtablissement(), classesAnneesController);
     app.use('/api/scoring/config', authMiddleware, filterByEtablissement(), configurationScoringController);

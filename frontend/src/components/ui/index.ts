@@ -28,3 +28,4 @@ export { InfoField } from './InfoField';
 export { ActivityItem } from './ActivityItem';
 export { SettingsRow } from './SettingsRow';
 export { SectionSeparator } from './SectionSeparator';
+export { TextLabel } from './TextLabel';

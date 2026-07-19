@@ -740,6 +740,34 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
         defaultSettings: {},
     },
 
+    [ModuleName.CONTRATS]: {
+        name: ModuleName.CONTRATS,
+        label: 'Contrats',
+        description: 'Gestion des contrats du personnel',
+        icon: 'FileSignature',
+        basePath: '/contrats',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.RH],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.PERSONNEL],
+        defaultSettings: {},
+    },
+
+    [ModuleName.PAIE]: {
+        name: ModuleName.PAIE,
+        label: 'Paie',
+        description: 'Gestion de la paie et des bulletins de salaire',
+        icon: 'Wallet',
+        basePath: '/paie',
+        defaultActive: true,
+        premium: false,
+        defaultRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.CHEF_ETABLISSEMENT, Role.COMPTABLE, Role.GESTIONNAIRE_PAIE, Role.VALIDATEUR_PAIE],
+        permissions: [],
+        dependencies: [ModuleName.AUTH, ModuleName.PERSONNEL],
+        defaultSettings: {},
+    },
+
     [ModuleName.DASHBOARD]: {
         name: ModuleName.DASHBOARD,
         label: 'Dashboard',

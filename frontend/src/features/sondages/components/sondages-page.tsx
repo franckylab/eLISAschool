@@ -10,6 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { BarChart3, Plus, Eye, Trash2, Download, Users, CheckCircle } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useSondages, useSupprimerSondage, useExporterSondage } from '../hooks/use-sondages';
 import type { Sondage } from '../types/sondage.types';
 
@@ -21,7 +24,7 @@ export function SondagesPage() {
     const [filtreCategorie, setFiltreCategorie] = useState<string>('');
     const [filtreStatut, setFiltreStatut] = useState<string>('');
 
-    const { data, isLoading, meta } = useSondages({
+    const { data, isLoading, meta, isError, error, refetch } = useSondages({
         page,
         limit,
         recherche: recherche || undefined,
@@ -164,26 +167,39 @@ export function SondagesPage() {
         },
     ];
 
+    if (isLoading && !data) {
+        return <PageSkeleton showHeader showTable />;
+    }
+
+    if (isError) {
+        return (
+            <div className="p-6">
+                <ErrorMessage
+                    message={error instanceof Error ? error.message : 'Erreur lors du chargement'}
+                    onRetry={() => refetch()}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus className="h-4 w-4" />}
-                    onClick={() => window.alert('Créer sondage')}
-                >
-                    {t('creer')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={BarChart3}
+                title={t('titre')}
+                subtitle={t('description')}
+                actions={
+                    <ElisaButton
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="h-4 w-4" />}
+                        onClick={() => window.alert('Créer sondage')}
+                    >
+                        {t('creer')}
+                    </ElisaButton>
+                }
+            />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

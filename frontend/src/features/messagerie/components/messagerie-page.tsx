@@ -1,24 +1,22 @@
-/**
- * ==================================
- * eLISAschool - Page Messagerie
- * ==================================
- */
-
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Plus, Mail, MailOpen, Eye, Trash2 } from 'lucide-react';
 import { useMessages, useSupprimerMessage } from '../hooks/use-messagerie';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import type { Message, MessageFiltres } from '../types/messagerie.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function MessageriePage() {
+    const { t } = useTranslation('messagerie');
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<MessageFiltres>({ page: 1, limit: 20 });
 
-    const { data, isLoading } = useMessages(filtres);
+    const { data, isLoading, error } = useMessages(filtres);
     const supprimer = useSupprimerMessage();
 
     const colonnes: Column<Message>[] = [
@@ -36,7 +34,7 @@ export function MessageriePage() {
         },
         {
             key: 'expediteur',
-            header: 'Expéditeur',
+            header: t('expediteur'),
             render: (m) => (
                 <div>
                     <p className={`font-medium ${!m.estLu ? 'text-blue-600' : ''}`}>
@@ -48,14 +46,14 @@ export function MessageriePage() {
         },
         {
             key: 'sujet',
-            header: 'Sujet',
+            header: t('sujet'),
             render: (m) => (
                 <p className={`font-medium ${!m.estLu ? 'font-bold' : ''}`}>{m.sujet}</p>
             ),
         },
         {
             key: 'date',
-            header: 'Date',
+            header: t('date'),
             className: 'text-right',
             render: (m) => (
                 <span className="text-sm text-gray-500">
@@ -65,20 +63,20 @@ export function MessageriePage() {
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('actions'),
             className: 'text-right',
             renderActions: (m) => [
                 {
                     key: 'lire',
                     icon: Eye,
-                    label: 'Lire',
+                    label: t('lire'),
                     onClick: () => {},
                     variant: 'info' as const,
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('supprimer'),
                     onClick: () => supprimer.mutateAsync(m.id),
                     permission: 'messagerie:delete',
                     variant: 'danger' as const,
@@ -87,25 +85,28 @@ export function MessageriePage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (error) return <ErrorMessage message={error?.message || t('uneErreurEstSurvenue')} onRetry={() => window.location.reload()} />;
+
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">Messagerie</h1>
-                    <p className="text-sm text-gray-600">{data?.meta?.totalItems || 0} message(s)</p>
-                </div>
-                {hasPermission('messagerie:create') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>
-                        Nouveau message
+            <PageHeader
+                variant="gradient"
+                icon={Mail}
+                title={t('titre')}
+                subtitle={`${data?.meta?.totalItems || 0} ${t('messages')}`}
+                actions={hasPermission('messagerie:create') && (
+                    <ElisaButton variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                        {t('nouveauMessage')}
                     </ElisaButton>
                 )}
-            </motion.div>
+            />
 
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
-                searchPlaceholder="Rechercher..."
+                searchPlaceholder={t('rechercher')}
                 enableRowHeight
                 enableReordering
                 enablePinning

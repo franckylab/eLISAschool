@@ -90,7 +90,17 @@
     "supprimerLogoTitle": "Supprimer le logo",
     "breadcrumbLabel": "Fil d'Ariane",
     "altLogo": "Logo {{nom}}",
+    "tousSousSystemes": "Tous",
+    "tousTypes": "Tous",
+    "tousStatuts": "Tous",
     "nbEtablissements": "{{count}} établissement(s)",
+    "reseauxSociaux": "Réseaux sociaux",
+    "infoDirection": "Rôle attribué via la gestion des utilisateurs.",
+    "form": {
+        "titreCreer": "Nouvel établissement",
+        "titreCreerDesc": "Créez un nouvel établissement scolaire",
+        "nomRequis": "Le nom est requis"
+    },
     "typesEtablissement": {
         "LAIC": "Laïc",
         "CONFESSIONNEL_CATHOLIQUE": "Catholique",

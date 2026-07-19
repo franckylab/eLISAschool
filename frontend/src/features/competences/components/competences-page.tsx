@@ -11,8 +11,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, BookOpen, GraduationCap, Layers, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, Edit, Trash2, Eye, BookOpen, GraduationCap, Layers, Brain } from 'lucide-react';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import {
     useCompetences,
@@ -20,11 +20,13 @@ import {
     useModifierCompetence,
     useSupprimerCompetence,
     type Competence,
-    type CompetenceFormData,
 } from '../hooks/use-competences';
 import { usePermissions } from '@/hooks';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import type { Column } from '@/components/ui/DataTable';
@@ -57,6 +59,7 @@ const DOMAINES = [
 
 export function CompetencesPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('competences');
     const { hasPermission } = usePermissions();
     const { data: niveaux } = useTousNiveaux();
     
@@ -66,7 +69,7 @@ export function CompetencesPage() {
     const [itemToEdit, setItemToEdit] = useState<Competence | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Competence | null>(null);
 
-    const { data, isLoading } = useCompetences(filtres);
+    const { data, isLoading, isError, error, refetch } = useCompetences(filtres);
     const creer = useCreerCompetence();
     const modifier = useModifierCompetence();
     const supprimer = useSupprimerCompetence();
@@ -74,7 +77,7 @@ export function CompetencesPage() {
     const colonnes: Column<Competence>[] = [
         {
             key: 'code',
-            header: 'Code',
+            header: t('code'),
             sortable: true,
             render: (c) => (
                 <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">
@@ -85,7 +88,7 @@ export function CompetencesPage() {
         {
             key: 'libelle',
             pinned: 'left' as const,
-            header: 'Libellé',
+            header: t('libelle'),
             sortable: true,
             render: (c) => (
                 <div>
@@ -98,7 +101,7 @@ export function CompetencesPage() {
         },
         {
             key: 'domaine',
-            header: 'Domaine',
+            header: t('domaine'),
             render: (c) => (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800">
                     <Layers className="h-3 w-3" />
@@ -108,7 +111,7 @@ export function CompetencesPage() {
         },
         {
             key: 'niveau',
-            header: 'Niveau',
+            header: t('niveau'),
             render: (c) => (
                 <span className="inline-flex items-center gap-1.5 text-sm">
                     <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
@@ -120,7 +123,7 @@ export function CompetencesPage() {
         },
         {
             key: 'matiere',
-            header: 'Matière',
+            header: t('matiere'),
             render: (c) => (
                 <span className="inline-flex items-center gap-1.5 text-sm">
                     {c.matiere ? (
@@ -129,14 +132,14 @@ export function CompetencesPage() {
                             <span className="font-medium text-orange-700">{c.matiere.nom}</span>
                         </>
                     ) : (
-                        <span className="text-gray-400 italic">Toutes matières</span>
+                        <span className="text-gray-400 italic">{t('toutesMatieres')}</span>
                     )}
                 </span>
             ),
         },
         {
             key: 'ordre',
-            header: 'Ordre',
+            header: t('ordre'),
             sortable: true,
             className: 'text-center',
             render: (c) => (
@@ -147,33 +150,33 @@ export function CompetencesPage() {
         },
         {
             key: 'actif',
-            header: 'Statut',
+            header: t('statut'),
             sortable: true,
             className: 'text-center',
             render: (c) => (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                     c.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                    {c.actif ? '✓ Actif' : '✗ Inactif'}
+                    {c.actif ? `✓ ${t('actif')}` : `✗ ${t('inactif')}`}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colonnes.actions', 'Actions'),
             className: 'text-right',
             renderActions: (c) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('actions.voir', 'Voir détails'),
                     onClick: () => navigate({ to: '/competences/$id', params: { id: c.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('actions.modifier', 'Modifier'),
                     onClick: () => {
                         setItemToEdit(c);
                         setShowFormModal(true);
@@ -183,7 +186,7 @@ export function CompetencesPage() {
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('actions.supprimer', 'Supprimer'),
                     onClick: () => {
                         setItemToDelete(c);
                         setShowDeleteConfirm(true);
@@ -228,42 +231,52 @@ export function CompetencesPage() {
         }));
     }, [niveaux]);
 
+    if (isLoading && !data) {
+        return <PageSkeleton showHeader showTable />;
+    }
+
+    if (isError) {
+        return (
+            <div className="p-6">
+                <ErrorMessage
+                    message={error instanceof Error ? error.message : t('chargement')}
+                    onRetry={() => refetch()}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div 
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" 
-                initial={{ opacity: 0, y: -10 }} 
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1 className="text-3xl font-bold">Compétences</h1>
-                    <p className="text-sm text-gray-600">
-                        {data?.meta?.totalItems || 0} compétence(s) • Approche Par Compétences (APC)
-                    </p>
-                </div>
-                {hasPermission('competences:create') && (
+            <PageHeader
+                variant="gradient"
+                icon={Brain}
+                title={t('titre')}
+                subtitle={t('sousTitre', { count: data?.meta?.totalItems || 0 })}
+                actions={hasPermission('competences:create') ? (
                     <ElisaButton
                         variant="primary"
                         size="sm"
-                        icon={<Plus className="h-4 w-4" />}
+                        leftIcon={<Plus className="h-4 w-4" />}
                         onClick={() => {
                             setItemToEdit(null);
                             setShowFormModal(true);
                         }}
                     >
-                        Nouvelle compétence
+                        {t('nouvelleCompetence')}
                     </ElisaButton>
-                )}
-            </motion.div>
+                ) : undefined}
+            />
 
             <DataTable
+                tableId="competences"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                searchPlaceholder="Rechercher une compétence..."
+                searchPlaceholder={t('rechercher')}
                 onSearchChange={(recherche) =>
                     setFiltres({ ...filtres, recherche, page: 1 })
                 }
@@ -305,9 +318,9 @@ export function CompetencesPage() {
                     }
                 }}
                 onConfirm={handleDelete}
-                title="Supprimer la compétence ?"
-                description={`Êtes-vous sûr de vouloir supprimer "${itemToDelete?.libelle}" ? Cette action est irréversible.`}
-                confirmText="Supprimer"
+                title={t('supprimerTitre')}
+                description={t('supprimerMessage', { libelle: itemToDelete?.libelle })}
+                confirmText={t('supprimerConfirm')}
                 variant="danger"
             />
         </div>
@@ -325,6 +338,7 @@ interface CompetenceFormModalProps {
 }
 
 function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading, niveauxOptions }: CompetenceFormModalProps) {
+    const { t: tComp } = useTranslation('competences');
     const [code, setCode] = useState('');
     const [libelle, setLibelle] = useState('');
     const [description, setDescription] = useState('');
@@ -379,21 +393,21 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
         <CustomModal
             open={open}
             onOpenChange={onOpenChange}
-            title={competence ? 'Modifier la compétence' : 'Créer une compétence'}
-            description={competence ? 'Modifiez les informations de la compétence' : 'Ajoutez une nouvelle compétence pour l\'évaluation APC'}
+            title={competence ? tComp('modifierTitre') : tComp('creerTitre')}
+            description={competence ? tComp('modifierDescription') : tComp('creerDescription')}
             size="xl"
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        Annuler
+                        {tComp('annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
                         onClick={handleSubmit}
                         disabled={!code.trim() || !libelle.trim() || !niveauId || isLoading}
-                        icon={<Target className="h-4 w-4" />}
+                        leftIcon={<Brain className="h-4 w-4" />}
                     >
-                        {isLoading ? 'Enregistrement...' : competence ? 'Modifier' : 'Créer'}
+                        {isLoading ? tComp('enregistrement') : competence ? tComp('modifier') : tComp('creer')}
                     </ElisaButton>
                 </>
             }
@@ -402,13 +416,13 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Code <span className="text-red-500">*</span>
+                            {tComp('code')} <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             value={code}
                             onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            placeholder="Ex: COMP_MATH_01"
+                            placeholder={tComp('exempleCode')}
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                             required
                             maxLength={50}
@@ -416,7 +430,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                     </div>
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Domaine <span className="text-red-500">*</span>
+                            {tComp('domaine')} <span className="text-red-500">*</span>
                         </label>
                         <select
                             value={domaine}
@@ -433,13 +447,13 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
 
                 <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                        Libellé <span className="text-red-500">*</span>
+                        {tComp('libelle')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         value={libelle}
                         onChange={(e) => setLibelle(e.target.value)}
-                        placeholder="Ex: Résoudre une équation du second degré"
+                        placeholder={tComp('exempleLibelle')}
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                         required
                         maxLength={200}
@@ -449,7 +463,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Niveau <span className="text-red-500">*</span>
+                            {tComp('niveau')} <span className="text-red-500">*</span>
                         </label>
                         <select
                             value={niveauId}
@@ -457,7 +471,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                             required
                         >
-                            <option value="">Sélectionner un niveau</option>
+                            <option value="">{tComp('selectionnerNiveau')}</option>
                             {niveauxOptions.map((opt) => (
                                 <option key={opt.value} value={opt.value}>
                                     {opt.label}
@@ -467,7 +481,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                     </div>
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Matière (optionnel)
+                            {tComp('matiereOptionnelle')}
                         </label>
                         <input
                             type="text"
@@ -478,17 +492,17 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                             maxLength={50}
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                            Laisser vide pour compétence transversale
+                            {tComp('laisserVide')}
                         </p>
                     </div>
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+                    <label className="text-sm font-medium text-foreground mb-2 block">{tComp('description')}</label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Description détaillée de la compétence..."
+                        placeholder={tComp('descriptionDetaillee')}
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm resize-none"
                         rows={2}
                         maxLength={500}
@@ -498,7 +512,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            Ordre
+                            {tComp('ordre')}
                         </label>
                         <input
                             type="number"
@@ -519,7 +533,7 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                             className="w-4 h-4 rounded border-input"
                         />
                         <label htmlFor="actif" className="text-sm font-medium text-foreground">
-                            Compétence active
+                            {tComp('competenceActive')}
                         </label>
                     </div>
                 </div>

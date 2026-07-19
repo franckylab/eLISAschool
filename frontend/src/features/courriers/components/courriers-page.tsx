@@ -5,11 +5,13 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Mail, Plus, Trash2, MailOpen, AlertCircle, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { CardGrid, StatCard } from '@/components/ui';
 import { useCourriers, useMarquerCommeLu, useSupprimerCourrier, useStatistiquesCourriers } from '../hooks/use-courriers';
 import type { Courrier } from '../types/courriers.types';
@@ -22,7 +24,7 @@ export function CourriersPage() {
     const [filtreType, setFiltreType] = useState('');
     const [filtreStatut, setFiltreStatut] = useState('');
 
-    const { data, isLoading, meta } = useCourriers({
+    const { data, isLoading, meta, isError, error, refetch } = useCourriers({
         recherche: recherche || undefined,
         type: filtreType || undefined,
         statut: filtreStatut || undefined,
@@ -143,17 +145,23 @@ export function CourriersPage() {
         },
     ];
 
+    if (isLoading && !data) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={error?.message || t('erreurChargement')} onRetry={refetch} />;
+
     return (
         <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('titre')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
-                </div>
-                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => window.alert('Nouveau courrier')}>
-                    {t('creer')}
-                </ElisaButton>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={Mail}
+                title={t('titre')}
+                subtitle={t('description')}
+                showBreadcrumbs={false}
+                actions={
+                    <ElisaButton variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => window.alert('Nouveau courrier')}>
+                        {t('creer')}
+                    </ElisaButton>
+                }
+            />
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>

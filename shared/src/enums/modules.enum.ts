@@ -75,7 +75,10 @@ export enum ModuleName {
   // Modules manquants (référencés dans app.ts mais absents du registre)
   SALLES = 'salles',
   OPTIONS = 'options',
+  // Modules RH & Paie
   PERSONNEL = 'personnel',
+  CONTRATS = 'contrats',
+  PAIE = 'paie',
 }
 
 /**
@@ -140,6 +143,8 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.SALLES]: ModuleCategory.LOGISTIQUES,
   [ModuleName.OPTIONS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PERSONNEL]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.CONTRATS]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.PAIE]: ModuleCategory.ACADEMIQUES,
 };
 
 export default { ModuleName, ModuleCategory, MODULE_CATEGORIES };

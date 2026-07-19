@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
-    ArrowLeft, Edit, Trash2, BookOpen, Clock, Layers,
-    Target, FileText, BarChart3, Plus, X, Check,
-    AlertTriangle, ChevronDown, ChevronRight, ListChecks,
+    Edit, Trash2, BookOpen,
+    Plus, X, ChevronRight,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { CustomModal } from '@/components/modals/CustomModal';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { InfoField } from '@/components/ui/InfoField';
+import { Badge } from '@/components/ui/Badge';
+import { TabsBar, TabsContent } from '@/components/ui/Tabs';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePermissions } from '@/hooks';
-import { useTousCycles } from '@/features/cycles/hooks/use-tous-cycles';
-import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
+import { PageHeader } from '@/components/layout/PageHeader';
+import type { Tab } from '@/components/ui/Tabs';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import {
     useProgrammeDetail,
     useModifierProgramme,
@@ -30,6 +37,7 @@ import type { AddMatiereDto, ProgrammeChapitre } from '../types/programme.types'
 export function ProgrammeDetailPage() {
     const { id: programmeId } = useParams({ from: '/_auth/programmes/$id' });
     const navigate = useNavigate();
+    const { t } = useTranslation('programmes');
     const { hasPermission } = usePermissions();
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -44,482 +52,388 @@ export function ProgrammeDetailPage() {
     const [chapitreDeleteId, setChapitreDeleteId] = useState<string | null>(null);
     const [chapitreProgrammeMatiereId, setChapitreProgrammeMatiereId] = useState<string>('');
 
-    const { data: programme, isLoading } = useProgrammeDetail(programmeId);
-    const { data: cycles } = useTousCycles();
-    const { data: niveaux } = useTousNiveaux();
+    const { data: programme, isLoading, isError, error, refetch } = useProgrammeDetail(programmeId);
     const { data: tousMatieresNiveaux } = useTousMatieresNiveaux();
+
     const modifier = useModifierProgramme();
     const supprimer = useSupprimerProgramme();
     const ajouterMatiere = useAjouterMatiereProgramme();
     const retirerMatiere = useRetirerMatiereProgramme();
-    const { data: chapitres, refetch: refetchChapitres } = useChapitresProgramme(programmeId);
+    const { data: chapitresData } = useChapitresProgramme(programmeId);
     const creerChapitre = useCreerChapitre();
     const modifierChapitre = useModifierChapitre();
     const supprimerChapitre = useSupprimerChapitre();
+
+    if (isLoading && !programme) return <PageSkeleton />;
+    if (isError) return <ErrorMessage message={(error as Error)?.message} onRetry={refetch} />;
+    if (!programme) return <PageSkeleton />;
+
+    const matieres = (programme.matieres || []) as any[];
+    const chapitres = chapitresData || [];
+    const chapitresParMatiere = chapitres.reduce((acc: Record<string, ProgrammeChapitre[]>, ch: any) => {
+        const matiereId = ch.programmeMatiereId || ch.programme_matiere_id || '';
+        if (!acc[matiereId]) acc[matiereId] = [];
+        acc[matiereId].push(ch);
+        return acc;
+    }, {} as Record<string, ProgrammeChapitre[]>);
 
     const handleDelete = async () => {
         try {
             await supprimer.mutateAsync(programmeId);
             navigate({ to: '/programmes' });
-        } catch (error) {
-            console.error('Erreur suppression:', error);
+        } catch (err) {
+            console.error('Erreur suppression programme:', err);
         }
     };
 
-    const handleAddMatiere = async () => {
-        if (!newMatiereNiveauId) return;
-        try {
-            await ajouterMatiere.mutateAsync({
-                programmeId,
-                dto: {
-                    matiereNiveauId: newMatiereNiveauId,
-                    coefficient: newCoefficient || undefined,
-                    volumeHoraire: newVolumeHoraire || undefined,
-                } as AddMatiereDto,
-            });
-            setShowAddMatiere(false);
-            setNewMatiereNiveauId('');
-            setNewCoefficient(1);
-            setNewVolumeHoraire(0);
-        } catch (error) {
-            console.error('Erreur ajout matière:', error);
-        }
-    };
+    const totalHeures = matieres.reduce((s: number, m: any) => s + (Number(m.volumeHoraireHebdo) || 0), 0);
+    const totalCoefficients = matieres.reduce((s: number, m: any) => s + (Number(m.coefficient) || 0), 0);
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominante)]" />
-            </div>
-        );
-    }
-
-    if (!programme) {
-        return (
-            <div className="text-center py-16">
-                <AlertTriangle className="h-12 w-12 mx-auto text-orange-400 mb-4" />
-                <h2 className="text-xl font-semibold">Programme non trouvé</h2>
-                <ElisaButton variant="outline" className="mt-4" onClick={() => navigate({ to: '/programmes' })}>
-                    Retour à la liste
-                </ElisaButton>
-            </div>
-        );
-    }
-
-    const chapitresCount = chapitres?.length || 0;
-
-    const tabs = [
-        { id: 'informations', label: 'Informations', icon: FileText },
-        { id: 'matieres', label: 'Matières', icon: BookOpen, count: programme.matieres?.length || 0 },
-        { id: 'chapitres', label: 'Chapitres', icon: ListChecks, count: chapitresCount },
-        { id: 'objectifs', label: 'Objectifs', icon: Target },
-        { id: 'stats', label: 'Statistiques', icon: BarChart3 },
+    const onglets: Tab[] = [
+        { id: 'informations', label: t('informations') },
+        { id: 'matieres', label: t('matieres') },
+        { id: 'chapitres', label: t('chapitres') },
     ];
-
-    const cycleNom = programme.cycle?.nom || cycles?.find((c: any) => c.id === programme.cycleId)?.nom || '-';
-    const niveauNom = programme.niveau?.nom || niveaux?.find((n: any) => n.id === programme.niveauId)?.nom || '-';
 
     return (
         <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => navigate({ to: '/programmes' })} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 transition-colors">
-                            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                        </button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-2xl font-bold text-[var(--color-texte)]">{programme.nom}</h1>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    programme.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
-                                }`}>
-                                    {programme.actif ? 'Actif' : 'Inactif'}
-                                </span>
-                            </div>
-                            <p className="text-sm text-[var(--color-texte-secondaire)] mt-1">
-                                Code: <code className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{programme.code}</code>
-                                {cycleNom !== '-' && <span className="ml-3">Cycle: {cycleNom}</span>}
-                                {niveauNom !== '-' && <span className="ml-3">Niveau: {niveauNom}</span>}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
+            <PageHeader
+                title={programme.nom}
+                description={`${t('code')}: ${programme.code} | ${programme.cycle?.nom || ''}`}
+                icon={BookOpen}
+                variant="gradient"
+                onBack={() => navigate({ to: '/programmes' })}
+                actions={
+                    <div className="flex items-center gap-2">
                         {hasPermission('programmes:config:write') && (
-                            <>
-                                <ElisaButton variant="outline" size="sm" onClick={() => setShowEditModal(true)} leftIcon={<Edit className="h-4 w-4" />}>
-                                    Modifier
-                                </ElisaButton>
-                                <ElisaButton variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)} leftIcon={<Trash2 className="h-4 w-4" />}>
-                                    Supprimer
-                                </ElisaButton>
-                            </>
+                            <ElisaButton
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setShowEditModal(true)}
+                                leftIcon={<Edit className="h-4 w-4" />}
+                            >
+                                {t('modifierProgramme')}
+                            </ElisaButton>
                         )}
-                    </div>
-                </div>
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Matières', value: programme.matieres?.length || 0, icon: BookOpen, color: 'var(--color-dominante)' },
-                    { label: 'Volume horaire', value: `${programme.nbHeuresCalculees || programme.nbHeuresHebdo}h`, icon: Clock, color: 'blue' },
-                    { label: 'Type', value: programme.type === 'CYCLE' ? 'Par cycle' : programme.type === 'NIVEAU' ? 'Par niveau' : 'Personnalisé', icon: Layers, color: 'purple' },
-                    { label: 'Coefficient moyen', value: programme.matieres?.length ? (programme.matieres.reduce((s, m) => s + (m.coefficient || 1), 0) / programme.matieres.length).toFixed(1) : '-', icon: BarChart3, color: 'orange' },
-                ].map((stat, idx) => (
-                    <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 * idx }}
-                        className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: stat.color }}>{stat.value}</p>
-                            </div>
-                            <stat.icon className="h-8 w-8 opacity-20" style={{ color: stat.color }} />
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
-
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="flex gap-6">
-                    {tabs.map((tab) => (
-                        <button key={tab.id} onClick={() => setTabActif(tab.id)}
-                            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                                tabActif === tab.id ? 'border-[var(--color-dominante)] text-[var(--color-dominante)]' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-400'
-                            }`}
-                        >
-                            <tab.icon className="h-4 w-4" />
-                            {tab.label}
-                            {tab.count !== undefined && (
-                                <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800">{tab.count}</span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            {tabActif === 'informations' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-                        <h3 className="font-semibold text-lg">Détails du programme</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            {[
-                                ['Nom', programme.nom],
-                                ['Code', programme.code],
-                                ['Type', programme.type === 'CYCLE' ? 'Cycle' : programme.type === 'NIVEAU' ? 'Niveau' : 'Personnalisé'],
-                                ['Cycle', cycleNom],
-                                ['Niveau', niveauNom],
-                                ['Volume horaire', `${programme.nbHeuresHebdo}h/sem`],
-                                ['Actif', programme.actif ? 'Oui' : 'Non'],
-                                ['Créé le', new Date(programme.createdAt).toLocaleDateString('fr-FR')],
-                            ].map(([label, value]) => (
-                                <div key={label}>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-                                    <p className="text-sm font-medium mt-0.5">{value || '-'}</p>
-                                </div>
-                            ))}
-                        </div>
-                        {programme.description && (
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Description</p>
-                                <p className="text-sm text-gray-700 dark:text-gray-400">{programme.description}</p>
-                            </div>
-                        )}
-                    </div>
-                    {programme.objectifsGeneraux && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-                            <h3 className="font-semibold text-lg">Objectifs généraux</h3>
-                            <p className="text-sm text-gray-700 dark:text-gray-400 whitespace-pre-wrap">{programme.objectifsGeneraux}</p>
-                            {programme.competencesVisees && programme.competencesVisees.length > 0 && (
-                                <div>
-                                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Compétences visées</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {programme.competencesVisees.map((c, i) => (
-                                            <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{c}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </motion.div>
-            )}
-
-            {tabActif === 'matieres' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="font-semibold text-lg">Matières du programme</h3>
                         {hasPermission('programmes:config:write') && (
-                            <ElisaButton variant="primary" size="sm" onClick={() => setShowAddMatiere(!showAddMatiere)} leftIcon={<Plus className="h-4 w-4" />}>
-                                Ajouter une matière
+                            <ElisaButton
+                                variant="danger"
+                                size="sm"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                leftIcon={<Trash2 className="h-4 w-4" />}
+                            >
+                                {t('supprimer')}
                             </ElisaButton>
                         )}
                     </div>
+                }
+            />
 
-                    {showAddMatiere && (
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
-                            {(() => {
-                                const filtered = programme.niveauId
-                                    ? (tousMatieresNiveaux ?? []).filter(mn => mn.niveauId === programme.niveauId)
-                                    : (tousMatieresNiveaux ?? []);
-                                return (
-                                <>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    {programme.niveauId && (
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-                                            Filtré par niveau : {niveauNom}
-                                        </span>
-                                    )}
-                                    <span>{filtered.length} matière{filtered.length > 1 ? 's' : ''} disponible{filtered.length > 1 ? 's' : ''}</span>
+            <TabsBar
+                tabs={onglets}
+                activeTab={tabActif}
+                onTabChange={setTabActif}
+            />
+
+            <TabsContent activeTab={tabActif}>
+                {tabActif === 'informations' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('infosGenerales')}</CardTitle>
+                            <SectionSeparator />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <InfoField label={t('nom')} value={programme.nom} />
+                                <InfoField label={t('code')} value={programme.code} />
+                                <InfoField
+                                    label={t('type')}
+                                    value={t(`programmeType.${programme.type}`)}
+                                />
+                                <InfoField label={t('cycle')} value={programme.cycle?.nom || '-'} />
+                                {programme.niveau && (
+                                    <InfoField label={t('niveau')} value={programme.niveau.nom} />
+                                )}
+                                <InfoField
+                                    label={t('statut')}
+                                    value={
+                                        <Badge variant={programme.actif ? 'success' : 'secondary'}>
+                                            {programme.actif ? t('actif') : t('inactif')}
+                                        </Badge>
+                                    }
+                                />
+                                <InfoField
+                                    label={t('volumeHoraire')}
+                                    value={`${totalHeures}h`}
+                                />
+                                <InfoField
+                                    label={t('matieres')}
+                                    value={`${matieres.length}`}
+                                />
+                                <InfoField
+                                    label={t('coefficient', 'Coefficient moyen')}
+                                    value={matieres.length ? (totalCoefficients / matieres.length).toFixed(1) : '-'}
+                                />
+                            </div>
+                            {programme.description && (
+                                <div className="mt-6">
+                                    <InfoField label={t('description')} value={programme.description} />
                                 </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Matière - Niveau</label>
-                                    <select value={newMatiereNiveauId} onChange={(e) => setNewMatiereNiveauId(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                            )}
+                            {programme.objectifsGeneraux && (
+                                <div className="mt-6">
+                                    <InfoField label={t('objectifsGeneraux')} value={programme.objectifsGeneraux} />
+                                </div>
+                            )}
+                            {programme.competencesVisees && (
+                                <div className="mt-6">
+                                    <InfoField label={t('competencesVisees')} value={programme.competencesVisees?.join(', ')} />
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {tabActif === 'matieres' && (
+                    <>
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>{t('matieresDansProgramme')}</CardTitle>
+                                    {hasPermission('programmes:config:write') && (
+                                        <ElisaButton
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => setShowAddMatiere(true)}
+                                            leftIcon={<Plus className="h-4 w-4" />}
+                                        >
+                                            {t('ajouterMatiere')}
+                                        </ElisaButton>
+                                    )}
+                                </div>
+                                <SectionSeparator />
+                            </CardHeader>
+                            <CardContent>
+                                {matieres.length === 0 ? (
+                                    <p className="text-sm text-[var(--color-texte-secondaire)] py-4 text-center">{t('aucuneMatiere', 'Aucune matière ajoutée')}</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {matieres.map((m: any) => {
+                                            const matiere = m.matiere || m.matiereNiveau?.matiere || {};
+                                            const niveau = m.matiereNiveau?.niveau || {};
+                                            const chapitreCount = chapitresParMatiere[m.id]?.length || 0;
+                                            return (
+                                                <div key={m.id} className="flex items-center justify-between p-4 rounded-lg border border-[var(--color-bordure)] hover:bg-[var(--color-survol)] transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <BookOpen className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                                                        <div>
+                                                            <p className="font-medium text-[var(--color-texte)]">{matiere.nom || matiere.matiereNom || '-'}</p>
+                                                            <div className="flex items-center gap-3 text-xs text-[var(--color-texte-secondaire)]">
+                                                                <span>{t('coefficient', 'Coeff')}: {m.coefficient || 1}</span>
+                                                                <span>{t('volumeHoraire')}: {m.volumeHoraire || m.volumeHoraireHebdo || 0}h/sem</span>
+                                                                {niveau.nom && <span>{t('niveau')}: {niveau.nom}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-[var(--color-texte-secondaire)]">{chapitreCount} chapitre{chapitreCount > 1 ? 's' : ''}</span>
+                                                        {hasPermission('programmes:config:write') && (
+                                                            <ElisaButton
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => retirerMatiere.mutate({ programmeId, pmId: m.matiereNiveauId || m.id } as any)}
+                                                                leftIcon={<X className="h-4 w-4" />}
+                                                                isLoading={retirerMatiere.isPending}
+                                                            >
+                                                                {t('retirerMatiere')}
+                                                            </ElisaButton>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <CustomModal
+                            open={showAddMatiere}
+                            onOpenChange={(open) => { if (!open) setShowAddMatiere(false); }}
+                            title={t('ajouterMatiere')}
+                            size="lg"
+                            footer={
+                                <div className="flex justify-end gap-3">
+                                    <ElisaButton variant="ghost" onClick={() => setShowAddMatiere(false)}>{t('annuler')}</ElisaButton>
+                                    <ElisaButton
+                                        variant="primary"
+                                        onClick={async () => {
+                                            if (!newMatiereNiveauId) return;
+                                            const dto: AddMatiereDto = {
+                                                matiereNiveauId: newMatiereNiveauId,
+                                                coefficient: newCoefficient,
+                                                volumeHoraire: newVolumeHoraire || undefined,
+                                            };
+                                            await ajouterMatiere.mutateAsync({ programmeId, dto });
+                                            setShowAddMatiere(false);
+                                            setNewMatiereNiveauId('');
+                                            setNewCoefficient(1);
+                                            setNewVolumeHoraire(0);
+                                        }}
+                                        isLoading={ajouterMatiere.isPending}
                                     >
-                                        <option value="">Sélectionner...</option>
-                                        {filtered.map((mn) => (
+                                        {t('ajouterMatiere')}
+                                    </ElisaButton>
+                                </div>
+                            }
+                        >
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('matiere', 'Matière')}</label>
+                                    <select
+                                        value={newMatiereNiveauId}
+                                        onChange={(e) => setNewMatiereNiveauId(e.target.value)}
+                                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                    >
+                                        <option value="">{t('selectionnerMatiere', 'Sélectionner une matière')}</option>
+                                        {(tousMatieresNiveaux || []).map((mn: any) => (
                                             <option key={mn.id} value={mn.id}>
-                                                {mn.matiere?.nom} — {mn.niveau?.nom}{mn.groupe ? ` (${mn.groupe.nom})` : ''}
+                                                {mn.matiere?.nom || mn.matiereNom} - {mn.niveau?.nom || mn.niveauNom}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Coefficient</label>
-                                    <input type="number" min={0} step={0.5} value={newCoefficient} onChange={(e) => setNewCoefficient(Number(e.target.value))}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Vol. horaire</label>
-                                    <input type="number" min={0} value={newVolumeHoraire} onChange={(e) => setNewVolumeHoraire(Number(e.target.value))}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 justify-end">
-                                <ElisaButton variant="outline" size="sm" onClick={() => setShowAddMatiere(false)}>
-                                    <X className="h-4 w-4 mr-1" /> Annuler
-                                </ElisaButton>
-                                <ElisaButton variant="primary" size="sm" onClick={handleAddMatiere} isLoading={ajouterMatiere.isPending} leftIcon={<Plus className="h-4 w-4" />}>
-                                    Ajouter
-                                </ElisaButton>
-                            </div>
-                            </>
-                            );
-                            })()}
-                        </div>
-                    )}
-
-                    {(!programme.matieres || programme.matieres.length === 0) ? (
-                        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <BookOpen className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-500 mb-3" />
-                            <p className="text-gray-500 dark:text-gray-400">Aucune matière associée à ce programme</p>
-                        </div>
-                    ) : (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 dark:bg-gray-800/50">
-                                    <tr>
-                                        <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Matière</th>
-                                        <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Niveau</th>
-                                        <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Coeff</th>
-                                        <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vol. horaire</th>
-                                        <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Oblig.</th>
-                                        <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {programme.matieres.map((pm) => (
-                                        <tr key={pm.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pm.matiereNiveau?.matiere?.couleur || '#6B7280' }} />
-                                                    <span className="font-medium text-sm">{pm.matiereNiveau?.matiere?.nom || 'N/A'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{pm.matiereNiveau?.niveau?.nom || '-'}</td>
-                                            <td className="px-4 py-3 text-sm text-center font-mono">{pm.coefficient || '-'}</td>
-                                            <td className="px-4 py-3 text-sm text-center font-mono">{pm.volumeHoraire || '-'}h</td>
-                                            <td className="px-4 py-3 text-center">
-                                                {pm.obligatoire ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-gray-300 dark:text-gray-500 mx-auto" />}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {hasPermission('programmes:config:write') && (
-                                                    <button onClick={() => retirerMatiere.mutateAsync({ programmeId, pmId: pm.id })}
-                                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
-                                                        title="Retirer du programme"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </motion.div>
-            )}
-
-            {tabActif === 'chapitres' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                    {(!chapitres || chapitres.length === 0) ? (
-                        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <ListChecks className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-500 mb-3" />
-                            <p className="text-gray-500 dark:text-gray-400">Aucun chapitre pour ce programme</p>
-                            <p className="text-sm text-gray-400 dark:text-gray-300 mt-1">Ajoutez des matières puis créez des chapitres dans chaque matière.</p>
-                        </div>
-                    ) : (
-                        (() => {
-                            const grouped: Record<string, { programmeMatiereId: string; chapitres: typeof chapitres }> = {};
-                            for (const ch of chapitres) {
-                                const matiereNom = ch.programmeMatiere?.matiereNiveau?.matiere?.nom || ch.programmeMatiereId;
-                                if (!grouped[matiereNom]) grouped[matiereNom] = { programmeMatiereId: ch.programmeMatiereId, chapitres: [] };
-                                grouped[matiereNom].chapitres.push(ch);
-                            }
-                            return Object.entries(grouped).map(([matiereNom, g]) => (
-                                <div key={matiereNom} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                                    <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.chapitres[0]?.programmeMatiere?.matiereNiveau?.matiere?.couleur || '#6B7280' }} />
-                                            {matiereNom}
-                                            <span className="text-xs text-gray-400 dark:text-gray-300 font-normal">— {g.chapitres.length} chapitre{g.chapitres.length > 1 ? 's' : ''}</span>
-                                        </h3>
-                                        {hasPermission('programmes:config:write') && (
-                                            <button onClick={() => { setChapitreProgrammeMatiereId(g.programmeMatiereId); setChapitreEdit(null); setShowChapitreModal(true); }}
-                                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                            >
-                                                <Plus className="h-3 w-3" /> Ajouter
-                                            </button>
-                                        )}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('coefficient', 'Coefficient')}</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={10}
+                                            step={0.5}
+                                            value={newCoefficient}
+                                            onChange={(e) => setNewCoefficient(Number(e.target.value))}
+                                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                        />
                                     </div>
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 dark:bg-gray-800/50">
-                                            <tr>
-                                                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Ordre</th>
-                                                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Titre</th>
-                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Durée</th>
-                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Progression</th>
-                                                <th className="text-center px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Statut</th>
-                                                {hasPermission('programmes:config:write') && (
-                                                    <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
-                                                )}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                            {g.chapitres.sort((a, b) => a.ordre - b.ordre).map((ch) => (
-                                                <tr key={ch.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50">
-                                                    <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{ch.ordre}</td>
-                                                    <td className="px-4 py-2.5">
-                                                        <p className="font-medium text-gray-800 dark:text-gray-300">{ch.titre}</p>
-                                                        {ch.description && (
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{ch.description}</p>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-2.5 text-center text-gray-600 dark:text-gray-300">
-                                                        {ch.dureePrevueHeures ? `${ch.dureePrevueHeures}h` : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-2.5">
-                                                        <div className="flex items-center gap-2 justify-center">
-                                                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                                                <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${ch.progressionPourcentage}%` }} />
-                                                            </div>
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400">{ch.progressionPourcentage}%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2.5 text-center">
-                                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                            ch.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
-                                                            ch.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                                                        }`}>
-                                                            {ch.statut === 'ACTIF' ? 'Actif' : ch.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactif'}
-                                                        </span>
-                                                    </td>
-                                                    {hasPermission('programmes:config:write') && (
-                                                        <td className="px-4 py-2.5 text-right">
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                <button onClick={() => { setChapitreEdit(ch); setShowChapitreModal(true); }}
-                                                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                                    title="Modifier"
-                                                                >
-                                                                    <Edit className="h-3.5 w-3.5" />
-                                                                </button>
-                                                                <button onClick={() => setChapitreDeleteId(ch.id)}
-                                                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                                    title="Supprimer"
-                                                                >
-                                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div>
+                                        <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('volumeHoraire')}</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            step={0.5}
+                                            value={newVolumeHoraire}
+                                            onChange={(e) => setNewVolumeHoraire(Number(e.target.value))}
+                                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                        />
+                                    </div>
                                 </div>
-                            ));
-                        })()
-                    )}
-                </motion.div>
-            )}
-
-            {tabActif === 'objectifs' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-lg mb-4">Objectifs pédagogiques</h3>
-                        {programme.objectifsGeneraux ? (
-                            <p className="text-gray-700 dark:text-gray-400 whitespace-pre-wrap">{programme.objectifsGeneraux}</p>
-                        ) : (
-                            <p className="text-gray-400 dark:text-gray-300 italic">Aucun objectif défini</p>
-                        )}
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-lg mb-4">Compétences visées</h3>
-                        {programme.competencesVisees && programme.competencesVisees.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                                {programme.competencesVisees.map((c, i) => (
-                                    <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm">{c}</span>
-                                ))}
                             </div>
-                        ) : (
-                            <p className="text-gray-400 dark:text-gray-300 italic">Aucune compétence définie</p>
-                        )}
-                    </div>
-                    {programme.description && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                            <h3 className="font-semibold text-lg mb-4">Description</h3>
-                            <p className="text-gray-700 dark:text-gray-400">{programme.description}</p>
-                        </div>
-                    )}
-                </motion.div>
-            )}
+                        </CustomModal>
+                    </>
+                )}
 
-            {tabActif === 'stats' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 text-center">
-                            <p className="text-3xl font-bold text-[var(--color-dominante)]">{programme.matieres?.length || 0}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Matières</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 text-center">
-                            <p className="text-3xl font-bold text-blue-600">{programme.nbHeuresCalculees || programme.nbHeuresHebdo}h</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Volume horaire total</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 text-center">
-                            <p className="text-3xl font-bold text-orange-600">
-                                {programme.matieres?.length
-                                    ? (programme.matieres.reduce((s, m) => s + (m.coefficient || 1), 0) / programme.matieres.length).toFixed(1)
-                                    : '-'}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Coefficient moyen</p>
-                        </div>
-                    </div>
-                </motion.div>
+                {tabActif === 'chapitres' && (
+                    <>
+                        {matieres.map((m: any) => {
+                            const matiereId = m.id;
+                            const matiere = m.matiere || m.matiereNiveau?.matiere || {};
+                            const chapitreList = chapitresParMatiere[matiereId] || [];
+                            if (chapitreList.length === 0 && !hasPermission('programmes:config:write')) return null;
+                            return (
+                                <Card key={matiereId} className="mb-4">
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="flex items-center gap-2">
+                                                <BookOpen className="h-5 w-5 text-[var(--color-dominante)]" />
+                                                {matiere.nom || matiere.matiereNom || '-'}
+                                            </CardTitle>
+                                            {hasPermission('programmes:config:write') && (
+                                                <ElisaButton
+                                                    variant="primary"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setChapitreProgrammeMatiereId(matiereId);
+                                                        setChapitreEdit(null);
+                                                        setShowChapitreModal(true);
+                                                    }}
+                                                    leftIcon={<Plus className="h-4 w-4" />}
+                                                >
+                                                    {t('nouveauChapitre')}
+                                                </ElisaButton>
+                                            )}
+                                        </div>
+                                        <SectionSeparator />
+                                    </CardHeader>
+                                    <CardContent>
+                                        {chapitreList.length === 0 ? (
+                                            <p className="text-sm text-[var(--color-texte-secondaire)] py-2">{t('aucunChapitre', 'Aucun chapitre')}</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {chapitreList
+                                                    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0))
+                                                    .map((ch) => (
+                                                        <div key={ch.id} className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-bordure)] hover:bg-[var(--color-survol)] transition-colors">
+                                                            <div className="flex items-center gap-3">
+                                                                <ChevronRight className="h-4 w-4 text-[var(--color-texte-secondaire)]" />
+                                                                <div>
+                                                                    <p className="font-medium text-sm text-[var(--color-texte)]">{ch.titre}</p>
+                                                                    <p className="text-xs text-[var(--color-texte-secondaire)]">{ch.dureePrevueHeures}h - {t('ordre')} {ch.ordre || '-'}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant={ch.statut === 'ACTIF' ? 'success' : ch.statut === 'EN_ATTENTE_VALIDATION' ? 'warning' : 'secondary'}>
+                                                                    {t(`statutChapitre.${ch.statut}`)}
+                                                                </Badge>
+                                                                {hasPermission('programmes:config:write') && (
+                                                                    <ElisaButton
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            setChapitreEdit(ch);
+                                                                            setChapitreProgrammeMatiereId(matiereId);
+                                                                            setShowChapitreModal(true);
+                                                                        }}
+                                                                        leftIcon={<Edit className="h-4 w-4" />}
+                                                                    />
+                                                                )}
+                                                                {hasPermission('programmes:config:write') && (
+                                                                    <ElisaButton
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => setChapitreDeleteId(ch.id)}
+                                                                        leftIcon={<Trash2 className="h-4 w-4 text-red-500" />}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </>
+                )}
+            </TabsContent>
+
+            {showChapitreModal && (
+                <ChapitreFormModal
+                    open={showChapitreModal}
+                    chapitre={chapitreEdit}
+                    onClose={() => {
+                        setShowChapitreModal(false);
+                        setChapitreEdit(null);
+                    }}
+                    onSubmit={async (dto) => {
+                        if (chapitreEdit) {
+                            await modifierChapitre.mutateAsync({ id: chapitreEdit.id, ...dto });
+                        } else {
+                            await creerChapitre.mutateAsync({ programmeMatiereId: chapitreProgrammeMatiereId, ...dto });
+                        }
+                    }}
+                />
             )}
 
             <ProgrammeFormModal
@@ -532,49 +446,30 @@ export function ProgrammeDetailPage() {
                 }}
             />
 
-            <ChapitreFormModal
-                open={showChapitreModal}
-                chapitre={chapitreEdit}
-                onClose={() => { setShowChapitreModal(false); setChapitreEdit(null); }}
-                isLoading={creerChapitre.isPending || modifierChapitre.isPending}
-                onSubmit={async (dto) => {
-                    if (chapitreEdit) {
-                        await modifierChapitre.mutateAsync({ id: chapitreEdit.id, ...dto });
-                    } else {
-                        await creerChapitre.mutateAsync({ programmeMatiereId: chapitreProgrammeMatiereId, ...dto });
-                    }
-                    setShowChapitreModal(false);
-                    setChapitreEdit(null);
-                    refetchChapitres();
-                }}
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={(open) => { if (!open) setShowDeleteConfirm(false); }}
+                onConfirm={handleDelete}
+                title={t('supprimer')}
+                description={t('confirmerSuppression')}
+                confirmText={t('supprimer')}
+                variant="danger"
+                isLoading={supprimer.isPending}
             />
 
             <ConfirmDialog
                 open={!!chapitreDeleteId}
-                onOpenChange={(v) => { if (!v) setChapitreDeleteId(null); }}
+                onOpenChange={(open) => { if (!open) setChapitreDeleteId(null); }}
                 onConfirm={async () => {
-                    if (chapitreDeleteId) {
-                        await supprimerChapitre.mutateAsync(chapitreDeleteId);
-                        setChapitreDeleteId(null);
-                        refetchChapitres();
-                    }
+                    if (!chapitreDeleteId) return;
+                    await supprimerChapitre.mutateAsync(chapitreDeleteId);
+                    setChapitreDeleteId(null);
                 }}
-                title="Supprimer le chapitre"
-                description="Êtes-vous sûr de vouloir supprimer ce chapitre ? Cette action est irréversible."
-                confirmText="Supprimer"
+                title={t('supprimer')}
+                description={t('confirmerSuppressionChapitre', 'Êtes-vous sûr de vouloir supprimer ce chapitre ?')}
+                confirmText={t('supprimer')}
                 variant="danger"
                 isLoading={supprimerChapitre.isPending}
-            />
-
-            <ConfirmDialog
-                open={showDeleteConfirm}
-                onOpenChange={(v) => { if (!v) setShowDeleteConfirm(false); }}
-                onConfirm={handleDelete}
-                title="Supprimer le programme"
-                description={`Êtes-vous sûr de vouloir supprimer "${programme.nom}" ? Cette action est irréversible.`}
-                confirmText="Supprimer"
-                variant="danger"
-                isLoading={supprimer.isPending}
             />
         </div>
     );

@@ -55,5 +55,22 @@
         "voir": "View details",
         "modifier": "Edit",
         "supprimer": "Delete"
+    },
+    "detail": {
+        "informations": "General information",
+        "classification": "Classification",
+        "description": "Description",
+        "metadonnees": "Metadata",
+        "creeLe": "Created on",
+        "modifieLe": "Last modified",
+        "code": "Code",
+        "libelle": "Name",
+        "domaine": "Domain",
+        "niveau": "Level",
+        "matiere": "Subject",
+        "ordre": "Order",
+        "statut": "Status",
+        "aucunNiveau": "-",
+        "aucuneMatiere": "-"
     }
 }

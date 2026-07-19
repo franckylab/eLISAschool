@@ -1,0 +1,55 @@
+{
+    "titre": "Payroll Management",
+    "description": "Manage payslips, contributions, bonuses and deductions",
+    "nouveau": "New payslip",
+    "editer": "Edit payslip",
+    "supprimer": "Delete payslip",
+    "supprimerMessage": "Are you sure you want to delete this payslip?",
+    "generer": "Generate",
+    "valider": "Validate",
+    "exporter": "Export PDF",
+    "configuration": "Configuration",
+    "bulletin": {
+        "membre": "Member",
+        "moisAnnee": "Period",
+        "salaireBase": "Base salary",
+        "heuresEffectuees": "Hours worked",
+        "montantHeuresSup": "Overtime",
+        "primes": "Bonuses",
+        "deductions": "Deductions",
+        "salaireNet": "Net salary",
+        "netAPayer": "Net to pay",
+        "statut": "Status",
+        "datePaiement": "Payment date"
+    },
+    "statut": {
+        "GENERE": "Generated",
+        "EN_ATTENTE_VALIDATION": "Pending",
+        "VALIDE": "Validated",
+        "PAYE": "Paid",
+        "ANNULE": "Cancelled"
+    },
+    "elements": {
+        "titre": "Salary lines",
+        "type": "Type",
+        "libelle": "Label",
+        "baseCalcul": "Basis",
+        "taux": "Rate",
+        "montant": "Amount",
+        "gain": "Earnings",
+        "retenue": "Deduction"
+    },
+    "config": {
+        "titre": "Payroll Configuration",
+        "description": "Manage contributions, bonus types and deduction types",
+        "onglets": {
+            "cotisations": "Contributions",
+            "primes": "Bonus Types",
+            "retenues": "Deduction Types"
+        }
+    },
+    "chargement": "Loading payslips...",
+    "aucunBulletin": "No payslips",
+    "aucunBulletinDescription": "No payslips found for this period.",
+    "erreur": "Error loading payslips"
+}

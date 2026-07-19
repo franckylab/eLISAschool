@@ -11,13 +11,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Download, Upload, Eye, Edit, Trash2, Users, UserCheck, UserX, GraduationCap } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useEleves, useSupprimerEleve, useExporterEleves } from '../hooks/use-eleves';
 import { EleveFormModal } from './eleve-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { CardGrid } from '@/components/ui/CardGrid';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions, useKeyboardShortcuts } from '@/hooks';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
@@ -228,56 +231,59 @@ export function ElevesPage() {
         );
     }
 
+    const totalActifs = data?.items?.filter((e) => e.statut === 'ACTIF').length || 0;
+    const totalExclus = data?.items?.filter((e) => e.statut === 'EXCLU').length || 0;
+    const totalDiplomes = data?.items?.filter((e) => e.statut === 'DIPLOME').length || 0;
+
     return (
         <div className="flex flex-col gap-6 p-6">
-            {/* En-tête */}
-            <motion.div
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
-                        {t('eleves.titre', { defaultValue: 'Élèves' })}
-                    </h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                        {data?.meta?.totalItems || 0} élève(s) inscrit(s)
-                    </p>
-                </div>
+            <PageHeader
+                title={t('eleves.titre', { defaultValue: 'Élèves' })}
+                description={`${data?.meta?.totalItems || 0} élève(s) inscrit(s)`}
+                icon={Users}
+                variant="gradient"
+                actions={
+                    <div className="flex flex-wrap gap-2">
+                        {hasPermission('eleves:export') && (
+                            <ElisaButton
+                                variant="outline"
+                                size="sm"
+                                leftIcon={<Download className="h-4 w-4" />}
+                                onClick={handleExporter}
+                                isLoading={exporterEleves.isPending}
+                            >
+                                {t('actions.exporter')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('eleves:import') && (
+                            <ElisaButton
+                                variant="outline"
+                                size="sm"
+                                leftIcon={<Upload className="h-4 w-4" />}
+                            >
+                                {t('actions.importer')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('eleves:create') && (
+                            <ElisaButton
+                                variant="primary"
+                                size="sm"
+                                leftIcon={<Plus className="h-4 w-4" />}
+                                onClick={handleNouveau}
+                            >
+                                {t('actions.nouveau')}
+                            </ElisaButton>
+                        )}
+                    </div>
+                }
+            />
 
-                <div className="flex flex-wrap gap-2">
-                    {hasPermission('eleves:export') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<Download className="h-4 w-4" />}
-                            onClick={handleExporter}
-                            isLoading={exporterEleves.isPending}
-                        >
-                            {t('actions.exporter')}
-                        </ElisaButton>
-                    )}
-                    {hasPermission('eleves:import') && (
-                        <ElisaButton
-                            variant="outline"
-                            size="sm"
-                            icon={<Upload className="h-4 w-4" />}
-                        >
-                            {t('actions.importer')}
-                        </ElisaButton>
-                    )}
-                    {hasPermission('eleves:create') && (
-                        <ElisaButton
-                            variant="primary"
-                            size="sm"
-                            icon={<Plus className="h-4 w-4" />}
-                            onClick={handleNouveau}
-                        >
-                            {t('actions.nouveau')}
-                        </ElisaButton>
-                    )}
-                </div>
-            </motion.div>
+            <CardGrid>
+                <StatCard label={t('statistiques.total', 'Total')} value={data?.meta?.totalItems || 0} icon={Users} tone="dominant" />
+                <StatCard label={t('statistiques.actifs', 'Actifs')} value={totalActifs} icon={UserCheck} tone="success" />
+                <StatCard label={t('statistiques.exclus', 'Exclus')} value={totalExclus} icon={UserX} tone="danger" />
+                <StatCard label={t('statistiques.diplomes', 'Diplômés')} value={totalDiplomes} icon={GraduationCap} tone="info" />
+            </CardGrid>
 
             {/* Tableau */}
             <motion.div

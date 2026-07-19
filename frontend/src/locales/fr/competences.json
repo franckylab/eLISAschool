@@ -55,5 +55,22 @@
         "voir": "Voir détails",
         "modifier": "Modifier",
         "supprimer": "Supprimer"
+    },
+    "detail": {
+        "informations": "Informations générales",
+        "classification": "Classification",
+        "description": "Description",
+        "metadonnees": "Métadonnées",
+        "creeLe": "Créée le",
+        "modifieLe": "Dernière modification",
+        "code": "Code",
+        "libelle": "Libellé",
+        "domaine": "Domaine",
+        "niveau": "Niveau",
+        "matiere": "Matière",
+        "ordre": "Ordre",
+        "statut": "Statut",
+        "aucunNiveau": "-",
+        "aucuneMatiere": "-"
     }
 }

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     Building2, Edit, Trash2, Info,
     Layers, Briefcase, GitBranch, Users, Settings,
-    CheckCircle, XCircle,
+    CheckCircle,
     SlidersHorizontal, ArrowRight,
 } from 'lucide-react';
 import { useOrganisationMine, useCreerOrganisation, useSupprimerOrganisation, useStatistiquesOrganisation } from '../hooks/use-organisation';
@@ -16,11 +16,15 @@ import { TabPostes } from './tab-postes';
 import { TabFonctions } from './tab-fonctions';
 import { TabHierarchie } from './tab-hierarchie';
 import { TabConfiguration } from './tab-configuration';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { TabsBar, TabsContent } from '@/components/ui/Tabs';
+import type { Tab } from '@/components/ui/Tabs';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { LoadingState } from '@/components/feedback';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import type { Organisation, CreerOrganisationDto } from '../types/organisation.types';
 type Onglet = 'infos' | 'unites' | 'postes' | 'fonctions' | 'hierarchie' | 'configuration';
@@ -116,7 +120,7 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const onglets: { id: Onglet; label: string; icon: typeof Info }[] = [
+    const onglets: Tab[] = [
         { id: 'infos', label: t('informations'), icon: Info },
         { id: 'unites', label: t('unites'), icon: Layers },
         { id: 'postes', label: t('postes'), icon: Briefcase },
@@ -133,70 +137,35 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
-            >
-                <div className="h-2 w-full bg-blue-500" />
-
-                <div className="p-6">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-6">
-                            <div className="w-20 h-20 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shadow-lg shrink-0">
-                                <Building2 className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{organisation.nom}</h1>
-                                    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${
-                                        organisation.statut === 'ACTIF'
-                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                                    }`}>
-                                        {organisation.statut === 'ACTIF' ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                                        {organisation.statut === 'ACTIF' ? t('actif') : t('archive')}
-                                    </span>
-                                </div>
-
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                    {organisation.code && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono">{organisation.code}</span>
-                                        </div>
-                                    )}
-                                    {organisation.type && (
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4" />
-                                            <span>{organisation.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 shrink-0">
-                            <ElisaButton variant="outline" size="sm" icon={<SlidersHorizontal className="h-4 w-4" />}
-                                onClick={() => navigate({ to: '/organisation/nomenclatures' })}>
-                                Nomenclatures
-                            </ElisaButton>
-                            {hasPermission('organisation:edit') && (
-                                <>
-                                    <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}
-                                        onClick={() => setShowEditModal(true)}>
-                                        {t('modifier')}
-                                    </ElisaButton>
-                                    <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />}
-                                        onClick={() => setShowDeleteConfirm(true)}>
-                                        {t('supprimer')}
-                                    </ElisaButton>
-                                </>
-                            )}
-                        </div>
+            <PageHeader
+                title={organisation.nom}
+                subtitle={`${organisation.code ? `${organisation.code} · ` : ''}${organisation.type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || ''}`}
+                icon={Building2}
+                variant="gradient"
+                status={organisation.statut === 'ACTIF' ? { label: t('actif'), variant: 'success' } : { label: t('archive'), variant: 'info' }}
+                actions={
+                    <div className="flex flex-col gap-2">
+                        <ElisaButton variant="outline" size="sm" leftIcon={<SlidersHorizontal className="h-4 w-4" />}
+                            onClick={() => navigate({ to: '/organisation/nomenclatures' })}>
+                            Nomenclatures
+                        </ElisaButton>
+                        {hasPermission('organisation:edit') && (
+                            <>
+                                <ElisaButton variant="outline" size="sm" leftIcon={<Edit className="h-4 w-4" />}
+                                    onClick={() => setShowEditModal(true)}>
+                                    {t('modifier')}
+                                </ElisaButton>
+                                <ElisaButton variant="danger" size="sm" leftIcon={<Trash2 className="h-4 w-4" />}
+                                    onClick={() => setShowDeleteConfirm(true)}>
+                                    {t('supprimer')}
+                                </ElisaButton>
+                            </>
+                        )}
                     </div>
-                </div>
-            </motion.div>
+                }
+            />
 
-            <CardGrid columns={{ default: 1, md: 5 }}>
+            <CardGrid>
                 <StatCard icon={Building2} label={t('titre')} value={organisation.nom} color="blue" />
                 <StatCard icon={Layers} label={t('unites')} value={stats.data?.totalUnites ?? '-'} color="purple" />
                 <StatCard icon={Briefcase} label={t('postes')} value={stats.data?.totalPostes ?? '-'} color="purple" />
@@ -206,31 +175,21 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
                 <StatCard icon={Users} label={t('postesVacants')} value={stats.data?.postesVacants ?? '-'} color="orange" />
             </CardGrid>
 
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex gap-6 overflow-x-auto">
-                    {onglets.map((o) => {
-                        const Icon = o.icon;
-                        return (
-                            <button key={o.id} onClick={() => setOngletActif(o.id)}
-                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    ongletActif === o.id
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                                }`}>
-                                <Icon className="h-4 w-4" />
-                                {o.label}
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
+            <TabsBar
+                tabs={onglets}
+                activeTab={ongletActif}
+                onTabChange={(tabId) => setOngletActif(tabId as Onglet)}
+                variant="underline"
+            />
 
-            {ongletActif === 'infos' && <TabInfos organisation={organisation} />}
-            {ongletActif === 'unites' && <TabUnites organisationId={organisation.id} />}
-            {ongletActif === 'postes' && <TabPostes organisationId={organisation.id} />}
-            {ongletActif === 'fonctions' && <TabFonctions organisationId={organisation.id} />}
-            {ongletActif === 'hierarchie' && <TabHierarchie organisationId={organisation.id} />}
-            {ongletActif === 'configuration' && <TabConfiguration organisationId={organisation.id} />}
+            <TabsContent activeTab={ongletActif}>
+                {ongletActif === 'infos' && <TabInfos organisation={organisation} />}
+                {ongletActif === 'unites' && <TabUnites organisationId={organisation.id} />}
+                {ongletActif === 'postes' && <TabPostes organisationId={organisation.id} />}
+                {ongletActif === 'fonctions' && <TabFonctions organisationId={organisation.id} />}
+                {ongletActif === 'hierarchie' && <TabHierarchie organisationId={organisation.id} />}
+                {ongletActif === 'configuration' && <TabConfiguration organisationId={organisation.id} />}
+            </TabsContent>
 
             {showEditModal && (
                 <OrganisationFormModal
@@ -240,14 +199,13 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
                 />
             )}
 
-            <ConfirmationModal
-                isOpen={showDeleteConfirm}
-                onCancel={() => setShowDeleteConfirm(false)}
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={(open) => { if (!open) setShowDeleteConfirm(false); }}
                 onConfirm={handleDelete}
                 title={t('supprimerOrganisation')}
-                message={t('confirmerSuppressionOrg')}
-                confirmLabel={t('supprimer')}
-                cancelLabel={t('annuler')}
+                description={t('confirmerSuppressionOrg')}
+                confirmText={t('supprimer')}
                 variant="danger"
             />
         </div>
@@ -255,11 +213,14 @@ function OrganisationDetail({ organisation }: { organisation: Organisation }) {
 }
 
 export function OrganisationPage() {
-    const { t } = useTranslation('organisation');
-    const { data: organisation, isLoading } = useOrganisationMine();
+    const { data: organisation, isLoading, isError, error, refetch } = useOrganisationMine();
 
-    if (isLoading) {
-        return <div className="p-6"><LoadingState message={t('chargementOrganisation')} /></div>;
+    if (isLoading && !organisation) {
+        return <PageSkeleton />;
+    }
+
+    if (isError) {
+        return <ErrorMessage message={(error as Error)?.message} onRetry={refetch} />;
     }
 
     if (!organisation) {

@@ -14,7 +14,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Save, Layers, Settings2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
-import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaButton, TextLabel } from '@/components/ui';
 import { TransfertList, type TransfertItem } from '@/components/ui/TransfertList';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
@@ -153,9 +153,7 @@ export function ModalGestionCompositions({
     // Rendu personnalisé d'un item
     const renderItem = useCallback((item: EnfantTransfert, _context: 'pool' | 'selection') => (
         <div className="min-w-0">
-            <p className="truncate font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                {item.label}
-            </p>
+            <TextLabel size="sm" weight="semibold">{item.label}</TextLabel>
             <div className="flex items-center gap-[var(--gap-xxs)] flex-wrap">
                 <span className="rounded-full border border-[var(--color-bordure)] px-1.5 py-0 text-[10px] font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
                     {item.niveauLabel}

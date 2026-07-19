@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useTabState } from '@/hooks';
@@ -8,7 +9,7 @@ import {
     BookOpen, User, Hash, Percent, Star,
     Award, BarChart3, Edit, Trash2,
 } from 'lucide-react';
-import { useNote, useStatistiquesNotes } from '../hooks/use-notes';
+import { useNote, useStatistiquesNotes, useSupprimerNote } from '../hooks/use-notes';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import { InfoField } from '@/components/ui/InfoField';
 import { StatCard } from '@/components/ui/StatCard';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 type OngletActif = 'informations' | 'statistiques';
 
@@ -33,6 +35,13 @@ export function NoteDetailPage() {
     const { data: note, isLoading, error } = useNote(id);
     const statsQuery = useStatistiquesNotes(note?.periodeId ?? '');
     const [ongletActif, setOngletActif] = useTabState<OngletActif>('informations');
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const supprimer = useSupprimerNote();
+
+    const handleDelete = async () => {
+        await supprimer.mutateAsync(id);
+        navigate({ to: '/notes' });
+    };
 
     if (isLoading) {
         return <div className="p-6"><PageSkeleton showHeader /></div>;
@@ -72,7 +81,7 @@ export function NoteDetailPage() {
                         <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}>
                             {t('modifier')}
                         </ElisaButton>
-                        <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />}>
+                        <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteConfirmOpen(true)}>
                             {t('supprimer')}
                         </ElisaButton>
                     </div>
@@ -164,6 +173,17 @@ export function NoteDetailPage() {
                     </div>
                 )}
             </TabsContent>
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage')}
+                confirmText={t('supprimer')}
+                variant="danger"
+                onConfirm={handleDelete}
+                isLoading={supprimer.isPending}
+            />
         </div>
     );
 }

@@ -15,7 +15,7 @@ import 'reflect-metadata';
 import dotenv from 'dotenv';
 import path from 'path';
 import { DataSource } from 'typeorm';
-import { RBACSeedService } from './rbac.seed';
+import { RBACSeedService } from './system/rbac.seed';
 import { logger } from '@common/utils/logger.util';
 
 // Charger le fichier .env depuis la racine du projet

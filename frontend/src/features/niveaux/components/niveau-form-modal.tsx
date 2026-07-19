@@ -1,180 +1,220 @@
-/**
- * ==================================
- * eLISAschool - Modal Formulaire Niveau
- * ==================================
- */
-
-import { useState, useEffect } from 'react';
-import { AlertTriangle, BookOpen } from 'lucide-react';
-import { useCreerNiveau, useModifierNiveau } from '../hooks/use-niveaux';
+import { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Hash, Tag } from 'lucide-react';
+import { CustomModal } from '@/components/modals/CustomModal';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
+import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCycles } from '@/features/cycles/hooks/use-cycles';
 import type { Niveau } from '../types/niveau.types';
 
-export function NiveauFormModal({ niveau, onClose, open = true }: { niveau: Niveau | null; onClose: () => void; open?: boolean }) {
-    if (!open) return null;
-    const creer = useCreerNiveau();
-    const modifier = useModifierNiveau();
-    const { data: cycles } = useCycles({ page: 1, limit: 50, actif: true });
+interface NiveauFormModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    niveau?: Niveau | null;
+    onSave: (data: any) => void;
+    isLoading?: boolean;
+}
+
+const FORM_INIT = {
+    nom: '',
+    code: '',
+    cycleId: '',
+    ordre: 1,
+    actif: true,
+};
+
+export function NiveauFormModal({ open, onOpenChange, niveau, onSave, isLoading }: NiveauFormModalProps) {
+    const { t } = useTranslation('niveaux');
+    const { data: cyclesData } = useCycles({ page: 1, limit: 50, actif: true });
+    const cycles = cyclesData?.items || [];
+
+    const [formData, setFormData] = useState(FORM_INIT);
+    const [erreurs, setErreurs] = useState<Record<string, string>>({});
+
     const isEditMode = !!niveau;
+    const hasUnsavedChanges = useMemo(
+        () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
+        [formData],
+    );
+    const cycleOptions = useMemo(() => cycles.map((c: any) => ({ value: c.id, label: `${c.nom} (${c.code})` })), [cycles]);
 
-    const [nom, setNom] = useState(niveau?.nom || '');
-    const [code, setCode] = useState(niveau?.code || '');
-    const [cycleId, setCycleId] = useState(niveau?.cycleId || '');
-    const [ordre, setOrdre] = useState(niveau?.ordre || 1);
-    const [actif, setActif] = useState(niveau?.actif ?? true);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    // Auto-générer le code
     useEffect(() => {
-        if (!isEditMode && nom && !code) {
-            const generatedCode = nom
+        if (niveau) {
+            setFormData({
+                nom: niveau.nom,
+                code: niveau.code || '',
+                cycleId: niveau.cycleId,
+                ordre: niveau.ordre,
+                actif: niveau.actif,
+            });
+        } else {
+            setFormData(FORM_INIT);
+        }
+        setErreurs({});
+    }, [niveau, open]);
+
+    useEffect(() => {
+        if (!isEditMode && formData.nom && !formData.code) {
+            const generatedCode = formData.nom
                 .toLowerCase()
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-z0-9]+/g, '_')
                 .replace(/^_|_$/g, '');
-            setCode(generatedCode);
+            setFormData((prev) => ({ ...prev, code: generatedCode }));
         }
-    }, [nom, code, isEditMode]);
+    }, [formData.nom, formData.code, isEditMode]);
 
-    const validate = (): boolean => {
-        const newErrors: Record<string, string> = {};
-        
-        if (!nom.trim()) newErrors.nom = 'Le nom est requis';
-        if (!code.trim()) newErrors.code = 'Le code est requis';
-        if (!cycleId) newErrors.cycleId = 'Le cycle est requis';
-        
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    const handleChange = (field: string, value: any) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+        if (erreurs[field]) {
+            setErreurs((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (!validate()) return;
+    const valider = (): boolean => {
+        const e: Record<string, string> = {};
+        if (!formData.nom.trim()) e.nom = t('form.erreurNomRequis');
+        if (!formData.code.trim()) e.code = t('form.erreurCodeRequis');
+        if (!formData.cycleId) e.cycleId = t('form.erreurCycleRequis');
+        setErreurs(e);
+        return Object.keys(e).length === 0;
+    };
 
-        const dto = {
-            nom,
-            code,
-            cycleId,
-            ordre,
-            actif,
-        };
-
-        try {
-            if (isEditMode && niveau) {
-                await modifier.mutateAsync({ id: niveau.id, ...dto });
-            } else {
-                await creer.mutateAsync(dto);
-            }
-            onClose();
-        } catch (error) {
-            // Erreur déjà gérée par le hook
-        }
+    const handleSubmit = () => {
+        if (!valider()) return;
+        onSave({
+            nom: formData.nom.trim(),
+            code: formData.code.trim(),
+            cycleId: formData.cycleId,
+            ordre: formData.ordre,
+            actif: formData.actif,
+        });
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-full bg-[var(--color-dominant-100)]">
-                            <BookOpen className="h-6 w-6 text-[var(--color-dominant-600)]" />
-                        </div>
-                        <h2 className="text-2xl font-bold">
-                            {isEditMode ? 'Modifier le niveau' : 'Nouveau niveau'}
-                        </h2>
+        <CustomModal
+            open={open}
+            onOpenChange={(v) => {
+                if (!v && hasUnsavedChanges) return;
+                onOpenChange(v);
+            }}
+            title={isEditMode ? t('form.titreEdition') : t('form.titreCreation')}
+            description={isEditMode ? t('form.descriptionEdition') : t('form.descriptionCreation')}
+            size="xl"
+            footer={
+                <>
+                    <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
+                        {t('annuler')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        onClick={handleSubmit}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? t('enregistrement') : (isEditMode ? t('enregistrer') : t('creer'))}
+                    </ElisaButton>
+                </>
+            }
+        >
+            <div className="space-y-6">
+                {/* Section Identité */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <Tag className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.sectionIdentite')}
+                    </h3>
+                    <SectionSeparator />
+
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">
+                            {t('form.champNom')} <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.nom}
+                            onChange={(e) => handleChange('nom', e.target.value)}
+                            className={`w-full px-4 py-2 rounded-lg border ${erreurs.nom ? 'border-red-500' : 'border-[var(--color-bordure)]'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-texte)]`}
+                            placeholder={t('form.placeholderNom')}
+                            autoFocus
+                        />
+                        {erreurs.nom && <p className="text-red-600 text-xs mt-1">{erreurs.nom}</p>}
                     </div>
-                    <button onClick={onClose} className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400">
-                        <AlertTriangle className="h-6 w-6" />
-                    </button>
+
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">
+                            {t('form.champCode')} <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.code}
+                            onChange={(e) => handleChange('code', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                            className={`w-full px-4 py-2 rounded-lg border ${erreurs.code ? 'border-red-500' : 'border-[var(--color-bordure)]'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-texte)]`}
+                            placeholder={t('form.placeholderCode')}
+                        />
+                        {erreurs.code && <p className="text-red-600 text-xs mt-1">{erreurs.code}</p>}
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Nom *</label>
-                        <input
-                            type="text"
-                            value={nom}
-                            onChange={(e) => setNom(e.target.value)}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.nom ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
-                            placeholder="Ex: Cours Moyen 1"
-                        />
-                        {errors.nom && <p className="text-red-600 text-xs mt-1">{errors.nom}</p>}
-                    </div>
+                {/* Section Configuration */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <Hash className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('form.sectionConfiguration')}
+                    </h3>
+                    <SectionSeparator />
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Code *</label>
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.code ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
-                            placeholder="Ex: cm1"
-                        />
-                        {errors.code && <p className="text-red-600 text-xs mt-1">{errors.code}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Cycle *</label>
+                        <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">
+                            {t('form.champCycle')} <span className="text-red-500">*</span>
+                        </label>
                         <select
-                            value={cycleId}
-                            onChange={(e) => setCycleId(e.target.value)}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.cycleId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]`}
+                            value={formData.cycleId}
+                            onChange={(e) => handleChange('cycleId', e.target.value)}
+                            className={`w-full px-4 py-2 rounded-lg border ${erreurs.cycleId ? 'border-red-500' : 'border-[var(--color-bordure)]'} focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-texte)]`}
                         >
-                            <option value="">Sélectionner un cycle...</option>
-                            {cycles?.items?.map((cycle: any) => (
-                                <option key={cycle.id} value={cycle.id}>
-                                    {cycle.nom} ({cycle.code})
-                                </option>
+                            <option value="">{t('form.placeholderCycle')}</option>
+                            {cycleOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
-                        {errors.cycleId && <p className="text-red-600 text-xs mt-1">{errors.cycleId}</p>}
+                        {erreurs.cycleId && <p className="text-red-600 text-xs mt-1">{erreurs.cycleId}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Ordre</label>
+                            <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">
+                                {t('form.champOrdre')}
+                            </label>
                             <input
                                 type="number"
-                                value={ordre}
-                                onChange={(e) => setOrdre(parseInt(e.target.value))}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                value={formData.ordre}
+                                onChange={(e) => handleChange('ordre', parseInt(e.target.value) || 1)}
+                                className="w-full px-4 py-2 rounded-lg border border-[var(--color-bordure)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-texte)]"
                                 min="1"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Statut</label>
+                            <label className="block text-sm font-medium text-[var(--color-texte)] mb-1">
+                                {t('statut')}
+                            </label>
                             <select
-                                value={actif ? 'actif' : 'inactif'}
-                                onChange={(e) => setActif(e.target.value === 'actif')}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
+                                value={formData.actif ? 'actif' : 'inactif'}
+                                onChange={(e) => handleChange('actif', e.target.value === 'actif')}
+                                className="w-full px-4 py-2 rounded-lg border border-[var(--color-bordure)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-texte)]"
                             >
-                                <option value="actif">Actif</option>
-                                <option value="inactif">Inactif</option>
+                                <option value="actif">{t('form.champActif')}</option>
+                                <option value="inactif">{t('form.champInactif')}</option>
                             </select>
                         </div>
                     </div>
-
-                    <div className="flex gap-3 justify-end pt-4 border-t dark:border-gray-700">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                        >
-                            Annuler
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={creer.isPending || modifier.isPending}
-                            className="px-4 py-2 rounded-lg bg-[var(--color-dominant-600)] text-white hover:bg-[var(--color-dominant-700)] disabled:opacity-50 transition-colors"
-                        >
-                            {creer.isPending || modifier.isPending ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer')}
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+        </CustomModal>
     );
 }

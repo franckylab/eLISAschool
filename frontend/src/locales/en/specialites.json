@@ -37,5 +37,20 @@
     "informations": "Information",
     "nonRattachee": "Not linked",
     "activeMessage": "This specialty is currently active.",
-    "inactiveMessage": "This specialty is currently inactive."
+    "inactiveMessage": "This specialty is currently inactive.",
+    "detail": {
+        "informations": "General information",
+        "filiere": "Stream",
+        "description": "Description",
+        "metadonnees": "Metadata",
+        "creeLe": "Created on",
+        "modifieLe": "Last modified",
+        "nom": "Name",
+        "code": "Code",
+        "ordre": "Order",
+        "statut": "Status",
+        "nonRattachee": "Not linked",
+        "modifier": "Edit",
+        "supprimer": "Delete"
+    }
 }

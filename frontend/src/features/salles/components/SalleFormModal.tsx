@@ -1,21 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Plus, X, Building2, Monitor, FlaskConical, BookOpen, Theater, Dumbbell, Music, Palette, Briefcase, HelpCircle, CheckCircle, Wrench, AlertCircle, Hash, FileText } from 'lucide-react';
 import { useSalle, useCreerSalle, useModifierSalle } from '../hooks/use-salles';
 import { TypeSalle, StatutSalle, CreerSalleDto } from '../types/salle.types';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import {
-    Save, X, Plus, Building2,
-    Monitor, FlaskConical, BookOpen,
-    Theater, Dumbbell, Music, Palette,
-    Briefcase, HelpCircle, CheckCircle,
-    Wrench, AlertCircle,
-} from 'lucide-react';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface SalleFormModalProps {
     open: boolean;
-    onClose: () => void;
+    onOpenChange: (open: boolean) => void;
     salleId?: string;
     duplicateFromId?: string;
 }
@@ -40,22 +37,9 @@ const STATUT_ICONS: Record<StatutSalle, React.ElementType> = {
 };
 
 const STATUT_COLORS: Record<StatutSalle, string> = {
-    [StatutSalle.DISPONIBLE]: 'bg-green-50 text-green-700 border-green-200',
-    [StatutSalle.EN_MAINTENANCE]: 'bg-amber-50 text-amber-700 border-amber-200',
-    [StatutSalle.INDISPONIBLE]: 'bg-red-50 text-red-700 border-red-200',
-};
-
-const TYPE_LABELS: Record<TypeSalle, string> = {
-    [TypeSalle.CLASSIQUE]: 'Classique',
-    [TypeSalle.LABORATOIRE]: 'Laboratoire',
-    [TypeSalle.INFORMATIQUE]: 'Informatique',
-    [TypeSalle.AMPHITHEATRE]: 'Amphithéâtre',
-    [TypeSalle.SPORT]: 'Sport',
-    [TypeSalle.MUSIQUE]: 'Musique',
-    [TypeSalle.ARTS]: 'Arts',
-    [TypeSalle.BIBLIOTHEQUE]: 'Bibliothèque',
-    [TypeSalle.ADMINISTRATION]: 'Administration',
-    [TypeSalle.AUTRE]: 'Autre',
+    [StatutSalle.DISPONIBLE]: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+    [StatutSalle.EN_MAINTENANCE]: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    [StatutSalle.INDISPONIBLE]: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
 };
 
 const EQUIPEMENT_PRESETS = [
@@ -67,70 +51,86 @@ const EQUIPEMENT_PRESETS = [
 const CAPACITE_MIN = 1;
 const CAPACITE_MAX = 1000;
 
-function getStatutDescription(statut: StatutSalle): string {
-    switch (statut) {
-        case StatutSalle.DISPONIBLE: return 'Visible et disponible pour les réservations.';
-        case StatutSalle.EN_MAINTENANCE: return 'Temporairement indisponible (maintenance en cours).';
-        case StatutSalle.INDISPONIBLE: return 'Masquée et non disponible pour les réservations.';
-    }
-}
+const FORM_INIT = {
+    nom: '',
+    code: '',
+    capacite: 30,
+    localisation: '',
+    typeSalle: TypeSalle.CLASSIQUE,
+    statut: StatutSalle.DISPONIBLE,
+    equipements: [] as string[],
+    description: '',
+};
 
-export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: SalleFormModalProps) {
+export function SalleFormModal({ open, onOpenChange, salleId, duplicateFromId }: SalleFormModalProps) {
+    const { t } = useTranslation('salles');
     const isEdit = !!salleId;
     const isDuplicate = !!duplicateFromId;
     const { data: salleData, isLoading: isLoadingData } = useSalle((salleId || duplicateFromId) || '');
     const creerMutation = useCreerSalle();
     const modifierMutation = useModifierSalle();
 
-    const [nom, setNom] = useState('');
-    const [code, setCode] = useState('');
-    const [capacite, setCapacite] = useState(30);
-    const [localisation, setLocalisation] = useState('');
-    const [typeSalle, setTypeSalle] = useState<TypeSalle>(TypeSalle.CLASSIQUE);
-    const [statut, setStatut] = useState<StatutSalle>(StatutSalle.DISPONIBLE);
-    const [equipementList, setEquipementList] = useState<string[]>([]);
+    const [formData, setFormData] = useState(FORM_INIT);
     const [newEquipement, setNewEquipement] = useState('');
-    const [description, setDescription] = useState('');
-    const [errors, setErrors] = useState<{ nom?: string; code?: string }>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showConfirm, setShowConfirm] = useState(false);
 
-    const capacityPercent = Math.min((capacite / CAPACITE_MAX) * 100, 100);
-    const TypeIcon = TYPE_ICONS[typeSalle];
-    const StatutIcon = STATUT_ICONS[statut];
+    const capacityPercent = Math.min((formData.capacite / CAPACITE_MAX) * 100, 100);
+    const TypeIcon = TYPE_ICONS[formData.typeSalle];
+    const StatutIcon = STATUT_ICONS[formData.statut];
+
+    const hasUnsavedChanges = useMemo(
+        () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
+        [formData],
+    );
 
     useEffect(() => {
         if (salleData && (isEdit || isDuplicate)) {
-            setNom(salleData.nom);
-            setCode(salleData.code);
-            setCapacite(salleData.capacite);
-            setLocalisation(salleData.localisation || '');
-            setTypeSalle(salleData.typeSalle);
-            setStatut(salleData.statut);
-            setEquipementList(salleData.equipements || []);
-            setDescription(salleData.description || '');
-        } else if (!isEdit && !isDuplicate && open) {
-            setNom('');
-            setCode('');
-            setCapacite(30);
-            setLocalisation('');
-            setTypeSalle(TypeSalle.CLASSIQUE);
-            setStatut(StatutSalle.DISPONIBLE);
-            setEquipementList([]);
-            setNewEquipement('');
-            setDescription('');
-            setErrors({});
+            setFormData({
+                nom: salleData.nom,
+                code: salleData.code,
+                capacite: salleData.capacite,
+                localisation: salleData.localisation || '',
+                typeSalle: salleData.typeSalle,
+                statut: salleData.statut,
+                equipements: salleData.equipements || [],
+                description: salleData.description || '',
+            });
+        } else if (!salleData && open && !isEdit && !isDuplicate) {
+            setFormData(FORM_INIT);
         }
+        setErrors({});
     }, [salleData, isEdit, isDuplicate, open]);
+
+    useEffect(() => {
+        if (!open) {
+            setFormData(FORM_INIT);
+            setErrors({});
+            setNewEquipement('');
+        }
+    }, [open]);
+
+    const handleChange = (field: string, value: any) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+    };
 
     const addEquipement = (equip: string) => {
         const trimmed = equip.trim();
-        if (trimmed && !equipementList.includes(trimmed)) {
-            setEquipementList(prev => [...prev, trimmed]);
+        if (trimmed && !formData.equipements.includes(trimmed)) {
+            handleChange('equipements', [...formData.equipements, trimmed]);
         }
         setNewEquipement('');
     };
 
     const removeEquipement = (equip: string) => {
-        setEquipementList(prev => prev.filter(e => e !== equip));
+        handleChange('equipements', formData.equipements.filter((e: string) => e !== equip));
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -141,28 +141,36 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
     };
 
     const validate = (): boolean => {
-        const newErrors: { nom?: string; code?: string } = {};
-        if (!nom.trim()) newErrors.nom = 'Le nom est requis';
-        if (!code.trim()) newErrors.code = 'Le code est requis';
-        else if (code.trim().length < 2) newErrors.code = 'Minimum 2 caractères';
+        const newErrors: Record<string, string> = {};
+        if (!formData.nom.trim()) newErrors.nom = t('form.erreurNomRequis');
+        if (!formData.code.trim()) newErrors.code = t('form.erreurCodeRequis');
+        else if (formData.code.trim().length < 2) newErrors.code = t('form.erreurCodeMin');
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
+    useEffect(() => {
+        const keys = Object.keys(errors);
+        if (keys.length > 0) {
+            const el = document.querySelector(`[data-field="${keys[0]}"]`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [errors]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
 
         const dto: CreerSalleDto = {
-            nom: nom.trim(),
-            code: code.trim(),
-            capacite,
-            localisation: localisation.trim() || undefined,
-            typeSalle,
-            statut,
-            equipements: equipementList.length > 0 ? equipementList : undefined,
-            description: description.trim() || undefined,
-            disponible: statut === StatutSalle.DISPONIBLE,
+            nom: formData.nom.trim(),
+            code: formData.code.trim(),
+            capacite: formData.capacite,
+            localisation: formData.localisation.trim() || undefined,
+            typeSalle: formData.typeSalle,
+            statut: formData.statut,
+            equipements: formData.equipements.length > 0 ? formData.equipements : undefined,
+            description: formData.description.trim() || undefined,
+            disponible: formData.statut === StatutSalle.DISPONIBLE,
         };
 
         try {
@@ -171,7 +179,7 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
             } else {
                 await creerMutation.mutateAsync(dto);
             }
-            onClose();
+            onOpenChange(false);
         } catch {
             // Handled by the hooks
         }
@@ -179,239 +187,266 @@ export function SalleFormModal({ open, onClose, salleId, duplicateFromId }: Sall
 
     const isLoading = creerMutation.isPending || modifierMutation.isPending || isLoadingData;
 
+    const handleOpenChange = (v: boolean) => {
+        if (!v && hasUnsavedChanges) {
+            setShowConfirm(true);
+        } else {
+            onOpenChange(v);
+        }
+    };
+
+    const statutOptions = useMemo(() => Object.values(StatutSalle).map((v) => ({
+        value: v,
+        label: t(`form.statut${v.charAt(0) + v.slice(1).toLowerCase()}`),
+    })), [t]);
+
+    const typeOptions = useMemo(() => Object.values(TypeSalle).map((v) => ({
+        value: v,
+        label: t(v.toLowerCase()),
+    })), [t]);
+
+    const equipColors = useMemo(() => [
+        'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+        'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+        'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+        'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+        'bg-pink-50 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800',
+        'bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
+        'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+    ], []);
+
     return (
-        <CustomModal
-            open={open}
-            onOpenChange={(v) => { if (!v) onClose(); }}
-            title={isEdit ? 'Modifier la salle' : isDuplicate ? 'Dupliquer la salle' : 'Créer une salle'}
-            description={isEdit
-                ? 'Modifiez les informations de la salle'
-                : isDuplicate
-                    ? 'Créez une nouvelle salle à partir des informations existantes'
-                    : 'Ajoutez une nouvelle salle à votre établissement'
-            }
-            size="2xl"
-            footer={
-                <>
-                    <ElisaButton variant="outline" onClick={onClose} disabled={isLoading}>
-                        <X className="h-4 w-4 mr-2" />
-                        Annuler
-                    </ElisaButton>
-                    <ElisaButton onClick={handleSubmit} disabled={isLoading || isLoadingData}>
-                        <Save className="h-4 w-4 mr-2" />
-                        {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-                    </ElisaButton>
-                </>
-            }
-        >
-            <form onSubmit={handleSubmit} className="space-y-6 py-4">
-                {/* Section Identité */}
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Identité</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Code <span className="text-red-500">*</span>
-                            </label>
-                            <ElisaInput
-                                value={code}
-                                onChange={(e) => { setCode(e.target.value.toUpperCase()); setErrors(prev => ({ ...prev, code: undefined })); }}
-                                placeholder="S101"
-                                required
-                                disabled={isLoading || isEdit}
-                                error={errors.code}
-                            />
-                            <p className="text-xs text-gray-400 dark:text-gray-500">Unique, ex: S101, LABO_CHIM</p>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Nom <span className="text-red-500">*</span>
-                            </label>
-                            <ElisaInput
-                                value={nom}
-                                onChange={(e) => { setNom(e.target.value); setErrors(prev => ({ ...prev, nom: undefined })); }}
-                                placeholder="Salle 101"
-                                required
-                                disabled={isLoading}
-                                error={errors.nom}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <hr className="border-gray-100 dark:border-gray-700" />
-
-                {/* Section Caractéristiques */}
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Caractéristiques</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Type de salle</label>
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-                                    <TypeIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                                </div>
-                                <ElisaSelect
-                                    value={typeSalle}
-                                    onValueChange={(v) => setTypeSalle(v as TypeSalle)}
+        <>
+            <CustomModal
+                open={open}
+                onOpenChange={handleOpenChange}
+                title={isEdit ? t('modifierSalle') : isDuplicate ? t('dupliquerSalle') : t('creerSalle')}
+                description={isEdit ? t('modifierSalleDesc') : isDuplicate ? t('dupliquerSalleDesc') : t('creerSalleDesc')}
+                size="2xl"
+                footer={
+                    <>
+                        <ElisaButton variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
+                            <X className="h-4 w-4 mr-2" />
+                            {t('annuler')}
+                        </ElisaButton>
+                        <ElisaButton onClick={handleSubmit} disabled={isLoading || isLoadingData}>
+                            {isLoading ? t('enregistrementEnCours') : t('enregistrer')}
+                        </ElisaButton>
+                    </>
+                }
+            >
+                <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                    {/* Section Identité */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                            <Hash className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                            {t('form.sectionIdentite')}
+                        </h3>
+                        <SectionSeparator />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2" data-field="code">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                                    {t('form.code')} <span className="text-red-500">*</span>
+                                </label>
+                                <ElisaInput
+                                    value={formData.code}
+                                    onChange={(e) => { handleChange('code', e.target.value.toUpperCase()); }}
+                                    placeholder={t('form.codePlaceholder')}
+                                    required
+                                    disabled={isLoading || isEdit}
+                                    error={errors.code}
+                                    autoFocus
+                                />
+                                <p className="text-xs text-[var(--color-texte-muted)]">{t('form.codeHelper')}</p>
+                            </div>
+                            <div className="space-y-2" data-field="nom">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">
+                                    {t('form.nom')} <span className="text-red-500">*</span>
+                                </label>
+                                <ElisaInput
+                                    value={formData.nom}
+                                    onChange={(e) => handleChange('nom', e.target.value)}
+                                    placeholder={t('form.nomPlaceholder')}
+                                    required
                                     disabled={isLoading}
-                                    className="flex-1"
-                                    options={Object.values(TypeSalle).map((v) => ({
-                                        value: v,
-                                        label: TYPE_LABELS[v] || v,
-                                    }))}
+                                    error={errors.nom}
                                 />
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Capacité</label>
-                            <ElisaInput
-                                type="number"
-                                min={CAPACITE_MIN}
-                                max={CAPACITE_MAX}
-                                value={capacite}
-                                onChange={(e) => setCapacite(Math.max(CAPACITE_MIN, Math.min(CAPACITE_MAX, parseInt(e.target.value) || CAPACITE_MIN)))}
-                                disabled={isLoading}
-                            />
-                            <div className="flex items-center gap-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-300 ${
-                                            capacityPercent > 80 ? 'bg-red-400' :
-                                            capacityPercent > 50 ? 'bg-amber-400' :
-                                            'bg-emerald-400'
-                                        }`}
-                                        style={{ width: `${capacityPercent}%` }}
+                    </div>
+
+                    {/* Section Caractéristiques */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                            {t('form.sectionCaracteristiques')}
+                        </h3>
+                        <SectionSeparator />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">{t('form.typeSalle')}</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-[var(--color-bg-tertiaire)]">
+                                        <TypeIcon className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                                    </div>
+                                    <ElisaSelect
+                                        value={formData.typeSalle}
+                                        onValueChange={(v) => handleChange('typeSalle', v as TypeSalle)}
+                                        disabled={isLoading}
+                                        className="flex-1"
+                                        options={typeOptions}
                                     />
                                 </div>
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{capacite}/{CAPACITE_MAX}</span>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[var(--color-texte)]">{t('form.capacite')}</label>
+                                <ElisaInput
+                                    type="number"
+                                    min={CAPACITE_MIN}
+                                    max={CAPACITE_MAX}
+                                    value={formData.capacite}
+                                    onChange={(e) => handleChange('capacite', Math.max(CAPACITE_MIN, Math.min(CAPACITE_MAX, parseInt(e.target.value) || CAPACITE_MIN)))}
+                                    disabled={isLoading}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-1.5 rounded-full bg-[var(--color-bg-tertiaire)] overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-300 ${
+                                                capacityPercent > 80 ? 'bg-red-400' :
+                                                capacityPercent > 50 ? 'bg-amber-400' :
+                                                'bg-emerald-400'
+                                            }`}
+                                            style={{ width: `${capacityPercent}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-[var(--color-texte-muted)] font-medium">{t('form.capaciteHelper', { count: formData.capacite, max: CAPACITE_MAX })}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-[var(--color-texte)]">{t('form.localisation')}</label>
+                            <ElisaInput
+                                value={formData.localisation}
+                                onChange={(e) => handleChange('localisation', e.target.value)}
+                                placeholder={t('form.localisationPlaceholder')}
+                                disabled={isLoading}
+                                className="mt-1"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Section Équipements */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                            <Monitor className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                            {t('form.sectionEquipements')}
+                        </h3>
+                        <SectionSeparator />
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    value={newEquipement}
+                                    onChange={(e) => setNewEquipement(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={t('form.nouvelEquipementPlaceholder')}
+                                    disabled={isLoading}
+                                    list="equipement-suggestions"
+                                    className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-bordure)] bg-[var(--color-bg-secondaire)] focus:bg-[var(--color-bg)] focus:border-[var(--color-dominant-400)] focus:ring-2 focus:ring-[var(--color-dominant-100)] transition-all outline-none"
+                                />
+                                <datalist id="equipement-suggestions">
+                                    {EQUIPEMENT_PRESETS.filter(e => !formData.equipements.includes(e)).map(e => (
+                                        <option key={e} value={e} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            <ElisaButton
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addEquipement(newEquipement)}
+                                disabled={!newEquipement.trim() || isLoading}
+                                icon={<Plus className="h-4 w-4" />}
+                            >
+                                {t('form.ajouterEquipement')}
+                            </ElisaButton>
+                        </div>
+                        {formData.equipements.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {formData.equipements.map((equip: string) => {
+                                    const colorIdx = formData.equipements.indexOf(equip) % equipColors.length;
+                                    return (
+                                        <span
+                                            key={equip}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${equipColors[colorIdx]}`}
+                                        >
+                                            {equip}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeEquipement(equip)}
+                                                disabled={isLoading}
+                                                className="ml-0.5 hover:opacity-70 transition-opacity"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-[var(--color-texte-muted)] italic">{t('form.aucunEquipement')}</p>
+                        )}
+                    </div>
+
+                    {/* Section Statut */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                            {t('form.sectionStatut')}
+                        </h3>
+                        <SectionSeparator />
+                        <div className="space-y-3">
+                            <ElisaSelect
+                                value={formData.statut}
+                                onValueChange={(v) => handleChange('statut', v as StatutSalle)}
+                                disabled={isLoading}
+                                options={statutOptions}
+                            />
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs ${STATUT_COLORS[formData.statut]}`}>
+                                <StatutIcon className="h-4 w-4 flex-shrink-0" />
+                                <span>{t(`form.statut${formData.statut.charAt(0) + formData.statut.slice(1).toLowerCase()}Desc`)}</span>
                             </div>
                         </div>
                     </div>
-                    <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Localisation</label>
-                        <ElisaInput
-                            value={localisation}
-                            onChange={(e) => setLocalisation(e.target.value)}
-                            placeholder="Bâtiment A, 1er étage"
+
+                    {/* Section Description */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                            {t('form.sectionDescription')}
+                        </h3>
+                        <SectionSeparator />
+                        <textarea
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-bordure)] bg-[var(--color-bg-secondaire)] focus:bg-[var(--color-bg)] focus:border-[var(--color-dominant-400)] focus:ring-2 focus:ring-[var(--color-dominant-100)] transition-all outline-none resize-none"
+                            value={formData.description}
+                            onChange={(e) => handleChange('description', e.target.value)}
+                            placeholder={t('form.descriptionPlaceholder')}
+                            rows={3}
                             disabled={isLoading}
-                            className="mt-1"
                         />
                     </div>
-                </div>
+                </form>
+            </CustomModal>
 
-                <hr className="border-gray-100 dark:border-gray-700" />
-
-                {/* Section Équipements */}
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Équipements</h4>
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="relative flex-1">
-                            <input
-                                type="text"
-                                value={newEquipement}
-                                onChange={(e) => setNewEquipement(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Ajouter un équipement..."
-                                disabled={isLoading}
-                                list="equipement-suggestions"
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
-                            />
-                            <datalist id="equipement-suggestions">
-                                {EQUIPEMENT_PRESETS.filter(e => !equipementList.includes(e)).map(e => (
-                                    <option key={e} value={e} />
-                                ))}
-                            </datalist>
-                        </div>
-                        <ElisaButton
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addEquipement(newEquipement)}
-                            disabled={!newEquipement.trim() || isLoading}
-                            icon={<Plus className="h-4 w-4" />}
-                        >
-                            Ajouter
-                        </ElisaButton>
-                    </div>
-                    {equipementList.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {equipementList.map((equip) => {
-                                const colors = [
-                                    'bg-blue-50 text-blue-700 border-blue-200',
-                                    'bg-green-50 text-green-700 border-green-200',
-                                    'bg-purple-50 text-purple-700 border-purple-200',
-                                    'bg-amber-50 text-amber-700 border-amber-200',
-                                    'bg-pink-50 text-pink-700 border-pink-200',
-                                    'bg-cyan-50 text-cyan-700 border-cyan-200',
-                                    'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                ];
-                                const colorIdx = equipementList.indexOf(equip) % colors.length;
-                                return (
-                                    <span
-                                        key={equip}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${colors[colorIdx]}`}
-                                    >
-                                        {equip}
-                                        <button
-                                            type="button"
-                                            onClick={() => removeEquipement(equip)}
-                                            disabled={isLoading}
-                                            className="ml-0.5 hover:opacity-70 transition-opacity"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </span>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 italic">Aucun équipement ajouté</p>
-                    )}
-                </div>
-
-                <hr className="border-gray-100 dark:border-gray-700" />
-
-                {/* Section Statut */}
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Statut</h4>
-                    <div className="space-y-3">
-                        <ElisaSelect
-                            value={statut}
-                            onValueChange={(v) => setStatut(v as StatutSalle)}
-                            disabled={isLoading}
-                            options={Object.values(StatutSalle).map((v) => {
-                                const Icon = STATUT_ICONS[v];
-                                return {
-                                    value: v,
-                                    label: v === StatutSalle.DISPONIBLE ? 'Disponible'
-                                        : v === StatutSalle.EN_MAINTENANCE ? 'En maintenance'
-                                        : 'Indisponible',
-                                };
-                            })}
-                        />
-                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs ${STATUT_COLORS[statut]}`}>
-                            <StatutIcon className="h-4 w-4 flex-shrink-0" />
-                            <span>{getStatutDescription(statut)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <hr className="border-gray-100 dark:border-gray-700" />
-
-                {/* Description */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                    <textarea
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all outline-none resize-none"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Description optionnelle de la salle..."
-                        rows={3}
-                        disabled={isLoading}
-                    />
-                </div>
-            </form>
-        </CustomModal>
+            <ConfirmDialog
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                title={t('confirmerSuppression')}
+                description={t('perteDonneesDescription', { ns: 'common' })}
+                confirmText={t('confirmer', { ns: 'common' })}
+                variant="warning"
+                onConfirm={() => { setShowConfirm(false); onOpenChange(false); }}
+            />
+        </>
     );
 }

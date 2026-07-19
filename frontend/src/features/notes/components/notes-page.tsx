@@ -1,61 +1,62 @@
-/**
- * ==================================
- * eLISAschool - Page Notes
- * ==================================
- */
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Plus, TrendingUp, ClipboardList, Edit, Trash2 } from 'lucide-react';
 import { useNotes, useSupprimerNote } from '../hooks/use-notes';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { LoadingState, ErrorState } from '@/components/feedback';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import type { Note, NoteFiltres } from '../types/note.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function NotesPage() {
-    useTranslation();
+    const { t } = useTranslation('notes');
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
-    const { data, isLoading, isFetching, error } = useNotes(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useNotes(filtres);
     const supprimer = useSupprimerNote();
 
+    const handleDelete = async () => {
+        if (!noteToDelete) return;
+        await supprimer.mutateAsync(noteToDelete.id);
+        setDeleteConfirmOpen(false);
+        setNoteToDelete(null);
+    };
+
     if (isLoading && !data) {
-        return (
-            <div className="p-6">
-                <LoadingState message="Chargement des notes..." />
-            </div>
-        );
+        return <PageSkeleton showHeader showTable />;
     }
 
     if (error) {
         return (
             <div className="p-6">
-                <ErrorState
-                    message={error.message || "Impossible de charger les notes"}
-                    onRetry={() => window.location.reload()}
+                <ErrorMessage
+                    message={t('chargement')}
+                    onRetry={() => refetch()}
                 />
             </div>
         );
     }
 
-    const typesNote: any = {
-        composition: { label: 'Composition', color: 'red' },
-        interrogation: { label: 'Interrogation', color: 'blue' },
-        exercice: { label: 'Exercice', color: 'green' },
-        projet: { label: 'Projet', color: 'purple' },
-        autre: { label: 'Autre', color: 'gray' },
+    const typesNote: Record<string, { label: string; color: string }> = {
+        composition: { label: t('composition'), color: 'red' },
+        interrogation: { label: t('interrogation'), color: 'blue' },
+        exercice: { label: t('exercice'), color: 'green' },
+        projet: { label: t('projet'), color: 'purple' },
+        autre: { label: t('autre'), color: 'gray' },
     };
 
     const colonnes: Column<Note>[] = [
         {
             key: 'eleve',
             pinned: 'left' as const,
-            header: 'Élève',
+            header: t('eleve'),
             sortable: true,
             render: (n) => (
                 <div>
@@ -66,7 +67,7 @@ export function NotesPage() {
         },
         {
             key: 'matiere',
-            header: 'Matière',
+            header: t('matiere'),
             sortable: true,
             render: (n) => (
                 <div>
@@ -77,7 +78,7 @@ export function NotesPage() {
         },
         {
             key: 'valeur',
-            header: 'Note',
+            header: t('valeur'),
             sortable: true,
             className: 'text-center',
             render: (n) => (
@@ -99,34 +100,37 @@ export function NotesPage() {
         },
         {
             key: 'coefficient',
-            header: 'Coef.',
+            header: t('coefficient'),
             className: 'text-center',
             render: (n) => <span className="font-medium">{n.coefficient || 1}</span>,
         },
         {
             key: 'enseignant',
-            header: 'Enseignant',
+            header: t('enseignant'),
             render: (n) => (
                 <span className="text-sm">{n.enseignant?.nom} {n.enseignant?.prenom}</span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('actions'),
             className: 'text-right',
             renderActions: (n) => [
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('modifier'),
                     onClick: () => {},
                     permission: 'notes:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
-                    onClick: () => supprimer.mutateAsync(n.id),
+                    label: t('supprimer'),
+                    onClick: () => {
+                        setNoteToDelete(n);
+                        setDeleteConfirmOpen(true);
+                    },
                     permission: 'notes:delete',
                     variant: 'danger' as const,
                 },
@@ -136,31 +140,33 @@ export function NotesPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">Notes</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} note(s)</p>
-                </div>
-                <div className="flex gap-2">
-                    {hasPermission('notes:create') && (
-                        <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>
-                            Nouvelle note
-                        </ElisaButton>
-                    )}
-                    {hasPermission('notes:create') && (
-                        <ElisaButton variant="outline" size="sm" icon={<TrendingUp className="h-4 w-4" />}>
-                            Saisie en masse
-                        </ElisaButton>
-                    )}
-                </div>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={ClipboardList}
+                title={t('titre')}
+                subtitle={t('noteCount', { count: data?.meta?.totalItems || 0 })}
+                actions={
+                    <div className="flex gap-2">
+                        {hasPermission('notes:create') && (
+                            <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>
+                                {t('nouvelleNote')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('notes:create') && (
+                            <ElisaButton variant="outline" size="sm" icon={<TrendingUp className="h-4 w-4" />}>
+                                {t('saisieMasse')}
+                            </ElisaButton>
+                        )}
+                    </div>
+                }
+            />
 
             <DataTable
-                data={data?.data || []}
+                data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 isFetching={isFetching}
-                searchPlaceholder="Rechercher..."
+                searchPlaceholder={t('rechercher')}
                 enableReordering
                 enablePinning
                 onSearchChange={(recherche) =>
@@ -177,6 +183,17 @@ export function NotesPage() {
                 } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                tableId="notes"
+            />
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                onConfirm={handleDelete}
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage')}
+                variant="danger"
+                isLoading={supprimer.isPending}
             />
         </div>
     );
