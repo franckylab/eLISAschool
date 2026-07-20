@@ -1,3 +1,0 @@
-- Global error handling uses a custom `AppError` class that extends the native Error object, carrying status codes and error codes for consistent API error responses.
-- API responses follow a standardized JSON structure containing a `success` boolean, optional `data` payload, and optional `message` or `meta` fields, enforced by utility functions in `api-response.util.ts`.
-- Multi-tenancy is implemented via an Express middleware that injects the `etablissementId` into the request object, supporting both single-tenant legacy users and multi-tenant users with a primary establishment fallback.

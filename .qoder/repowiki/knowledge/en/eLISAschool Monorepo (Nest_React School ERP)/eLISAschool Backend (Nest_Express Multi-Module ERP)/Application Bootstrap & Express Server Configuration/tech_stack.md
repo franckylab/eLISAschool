@@ -1,0 +1,1 @@
+Express + TypeScript; TypeORM with PostgreSQL (auto-synchronize in dev); JWT-based auth; Helmet/CORS/compression/express-rate-limit for HTTP hardening; swagger-ui-express for interactive docs; Zod for runtime env validation; dotenv for .env loading.

@@ -1,6 +1,0 @@
-- Controllers delegate all business logic to service classes and use a standardized try-catch-next pattern for error handling.
-- Services inject TypeORM repositories in the constructor or via `AppDataSource.getRepository()` for data access.
-- DTOs are validated at the controller layer using Zod schemas before being passed to service methods.
-- Audit logging is consistently implemented in service methods using `auditService.log()` for create, update, and delete operations.
-- Parental access checks are enforced via dedicated middleware (`requireParentAccess`) or service-level boolean checks (`peutAccederEleve`).
-- Optional features like validation workflows and gamification points are triggered conditionally based on centralized configuration parameters.

@@ -1,0 +1,4 @@
+- Every route file exports a named `Route` created with `createFileRoute(path)` and mounts its component as the `component` field.
+- Access control is applied uniformly by calling `requireModulePermission('<module>')` inside the route's `beforeLoad` hook rather than inside components.
+- Route files import their page components from `@/features/<feature>/components/*` (or `@/features/<feature>` barrel) instead of importing sibling route files.
+- The central index file uses a null component for the parent placeholder route solely to suppress the TanStack Router missing-component warning.

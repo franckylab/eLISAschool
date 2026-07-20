@@ -1,1 +1,0 @@
-Uses `node-cron` for scheduled tasks (e.g., daily score recalculations) and `typeorm` for ORM-based data access.

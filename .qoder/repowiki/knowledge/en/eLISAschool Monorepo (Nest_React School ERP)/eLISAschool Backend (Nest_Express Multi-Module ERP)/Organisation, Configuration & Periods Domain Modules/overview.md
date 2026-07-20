@@ -1,0 +1,1 @@
+Core domain modules providing school organisation structure, runtime configuration with backup/restore, configurable period templates, shared type enums, and administrative request tracking.

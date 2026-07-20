@@ -1,4 +1,0 @@
-- Centralized Express application (`app.ts`) mounts all domain modules under `/api/`, applying global security (Helmet, CORS) and rate limiting.
-- Cross-cutting `tenantMiddleware` injects the active `etablissementId` into every request context, enforcing data isolation for all downstream services.
-- Dynamic feature toggling via `requireModuleActive` middleware gates access to non-critical modules based on per-tenant configuration.
-- Shared `common/` layer provides standardized error handling, audit interception, and pagination utilities used uniformly across all child modules.

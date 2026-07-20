@@ -1,5 +1,0 @@
-- Adopts a standard Controller-Service-Entity layered architecture with Express routers delegating to TypeORM-backed services.
-- Implements cross-module orchestration in `BulletinsService`, which aggregates data from `NotesService` (via a specialized `NotesBatchLoaderService` for N+1 optimization), `ClassesService`, and `PeriodesService`.
-- Enforces multi-tenancy through `etablissementId` scoping in entities and service queries.
-- Integrates side-effects such as parent notifications (`notificationTemplates`) and gamification points (`gamificationService`) directly within the grade creation workflow.
-- Utilizes a validation workflow pattern for grades, transitioning notes from 'DRAFT' to 'PUBLISHED' via a dedicated `validationWorkflowService`.

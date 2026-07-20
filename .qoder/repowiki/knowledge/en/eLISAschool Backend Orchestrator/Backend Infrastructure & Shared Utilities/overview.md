@@ -1,1 +1,0 @@
-Provides foundational infrastructure, configuration management, database connectivity, and shared cross-cutting concerns for the eLISAschool backend application.

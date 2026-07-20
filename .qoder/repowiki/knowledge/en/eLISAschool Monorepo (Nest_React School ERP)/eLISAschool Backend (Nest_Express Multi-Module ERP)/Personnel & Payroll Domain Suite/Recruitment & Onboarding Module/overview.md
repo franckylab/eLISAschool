@@ -1,0 +1,1 @@
+Express-based REST module implementing the full hiring pipeline — job offers, candidate applications, interviews, and post-hire onboarding with RBAC-protected endpoints.

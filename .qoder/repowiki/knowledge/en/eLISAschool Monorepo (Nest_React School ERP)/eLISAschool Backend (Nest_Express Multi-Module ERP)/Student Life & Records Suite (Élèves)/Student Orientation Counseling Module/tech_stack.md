@@ -1,0 +1,1 @@
+TypeScript + Express Router for HTTP, TypeORM for persistence (UUID primary keys, `simple-json` columns, PostgreSQL `ILIKE` queries), Zod for request validation, and the project-wide `AppError` / `logger` utilities.

@@ -1,0 +1,6 @@
+- Each subdirectory (`entities`, `dto`, `services`, `controllers`) ships its own `index.ts` barrel that re-exports everything, so consumers import from the folder path rather than individual files.
+- Controller routes wrap every handler in a `try/catch` that forwards errors to Express' `next(error)` instead of returning responses directly.
+- All incoming request bodies are validated via `validateDto(zodSchema, req.body)` inside the controller before any service call.
+- Mutating endpoints are protected by stacking `authMiddleware` followed by `requirePermission('<action>')`, while read-only endpoints only require authentication.
+- Service methods throw `AppError` with a human message, HTTP status code, and machine-readable code (e.g. `'PROFILE_EXISTS'`, `'NOT_FOUND'`) instead of throwing plain exceptions.
+- DTOs are defined as Zod schemas and their TypeScript types are derived with `z.infer<typeof schema>` rather than hand-written interfaces.

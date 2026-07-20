@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/features/configuration_systeme
+title: System Configuration, Parameters & Maintenance Dashboards
+scope:
+    - frontend/src/features/configuration/
+    - frontend/src/features/parametres/
+    - frontend/src/features/maintenance/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,5 @@
+- Feature pages are exported as named function components (e.g. `LoginPage`, `ApparencePage`, `UnauthorizedPage`) rather than default exports, except where a file serves as a route entry point.
+- User-facing strings go through `react-i18next`'s `useTranslation('auth'|'common')` and are keyed under feature-scoped namespaces instead of being hardcoded.
+- Data mutations use TanStack Query's `useMutation` hook and trigger `queryClient.invalidateQueries` / `refetchQueries` on success to keep related caches consistent.
+- Error feedback is surfaced via `sonner`'s `toast.success` / `toast.error` / `toast.warning` calls after mutation callbacks, keeping user messages separate from console logging.
+- UI styling mixes Tailwind utility classes with CSS custom properties (`var(--color-dominante)`, `var(--color-surface)`, `var(--space-lg)`) and uses `clamp()` for responsive font/size scaling.

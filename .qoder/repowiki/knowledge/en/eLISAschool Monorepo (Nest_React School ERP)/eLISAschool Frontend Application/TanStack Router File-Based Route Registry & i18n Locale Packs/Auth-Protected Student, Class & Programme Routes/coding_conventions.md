@@ -1,0 +1,3 @@
+- Route files export a single `Route` named default via `createFileRoute('/_auth/<module>/...')` and never re-export anything else.
+- Every route guards access through `beforeLoad: () => requireModulePermission('<module>')` rather than wrapping components in HOCs.
+- Page components are imported from `@/features/<module>` (or its subpath) instead of being defined inline, keeping route files under ~16 lines.

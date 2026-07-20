@@ -1,2 +1,0 @@
-- **Audit Rotation**: Automated cron jobs (`audit-rotation.cron.ts`) run weekly to archive old audit logs to JSON files and purge expired entries, configurable via `AuditRotationService`.
-- **Permission Cache Invalidation**: The `PermissionResolverService` requires explicit cache invalidation (`invalidateCacheForRole`) when role definitions change to ensure consistency across distributed instances.

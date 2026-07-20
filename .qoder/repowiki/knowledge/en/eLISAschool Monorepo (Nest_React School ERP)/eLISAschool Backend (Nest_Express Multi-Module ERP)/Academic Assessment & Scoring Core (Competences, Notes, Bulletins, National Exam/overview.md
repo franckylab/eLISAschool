@@ -1,0 +1,1 @@
+Core academic domain modules implementing the MINESEC competency-based approach: competencies definition, grade entry and validation workflow, bulletin generation with ranking, national exam catalog, and configurable multi-indicator scoring.

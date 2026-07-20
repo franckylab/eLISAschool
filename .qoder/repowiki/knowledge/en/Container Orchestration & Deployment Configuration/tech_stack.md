@@ -1,1 +1,0 @@
-Node.js 20 Alpine, PostgreSQL 16, Redis 7, Nginx Alpine, Docker Compose v3.9

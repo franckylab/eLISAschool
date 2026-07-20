@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/features/system_auth
+title: Authentication, Authorization & Appearance Management
+scope:
+    - frontend/src/features/system/
+    - frontend/src/features/auth/
+    - frontend/src/features/apparence/
+source_files: []
+depends_on: []
+related_to: []

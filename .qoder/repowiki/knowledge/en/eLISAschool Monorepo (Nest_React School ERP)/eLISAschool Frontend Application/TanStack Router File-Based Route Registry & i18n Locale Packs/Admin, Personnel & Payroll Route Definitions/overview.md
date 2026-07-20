@@ -1,0 +1,1 @@
+TanStack File Router route definitions for the admin (roles/permissions), personnel directory, and payroll (bulletins/configuration) feature areas, wired to role- and module-based permission guards.

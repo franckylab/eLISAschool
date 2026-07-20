@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/eleves_vie_scolaire/student_tracking
+title: Student Conduct & Behavioral Tracking (Suivi-Élèves)
+scope:
+    - backend/src/modules/suivi-eleves/
+source_files: []
+depends_on: []
+related_to: []

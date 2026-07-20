@@ -1,2 +1,0 @@
-- Uses Zod for schema-based DTO validation and type inference across all modules.
-- Leverages raw SQL queries within `NotesBatchLoaderService` for high-performance batch averaging of student grades.

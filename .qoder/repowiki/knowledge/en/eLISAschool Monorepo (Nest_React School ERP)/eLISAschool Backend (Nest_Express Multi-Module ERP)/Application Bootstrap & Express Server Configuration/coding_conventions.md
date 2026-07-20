@@ -1,0 +1,5 @@
+- Environment variables are declared once in a Zod schema in `env.config.ts` and consumed through a single namespaced `envConfig` export — no direct `process.env` reads elsewhere.
+- Every module router is mounted under `/api/<module>` and composed from the same three guards in order: `authMiddleware`, `filterByEtablissement()`, and optionally `requireModuleActive(moduleName)`.
+- Critical modules (auth, utilisateurs, configuration, notifications, organisation) are whitelisted in `MODULES_CRATIQUES` so they bypass the `requireModuleActive` gate even when declared in route metadata.
+- Configuration files separate concerns into small single-responsibility modules (`env.config`, `database.config`, `swagger.config`) re-exported through a flat `config/index.ts` barrel.
+- Startup code in `index.ts` wraps each optional subsystem (permissions preload, notification provider seeding, Redis connection, cron jobs) in try/catch blocks that log warnings rather than aborting, keeping the server resilient to missing dependencies.

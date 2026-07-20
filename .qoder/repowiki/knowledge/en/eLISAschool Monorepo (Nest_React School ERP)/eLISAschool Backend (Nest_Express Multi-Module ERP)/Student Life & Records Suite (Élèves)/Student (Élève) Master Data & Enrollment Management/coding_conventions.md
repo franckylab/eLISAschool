@@ -1,0 +1,6 @@
+- Controllers wrap each route handler in try/catch and forward errors to `next(error)` rather than returning responses directly.
+- Request body validation uses `validateDto(schema, req.body)` against a Zod schema exported from the same module's `dto/` folder before reaching the service layer.
+- Authorization is applied per-route with the pair `authMiddleware, requirePermission('<permission>')` using permissions like `config:edit` and `personnel:manage`.
+- Multi-tenancy is propagated by appending `etablissementId` filters (`e.etablissementId = :etablissementId`) to every TypeORM query built inside the service.
+- Audit trails are recorded after mutations by calling `auditService.log({ utilisateurId: req.utilisateur.id, action: AuditAction.ELEVE_*, cible: 'Eleve', ... })` when `req.utilisateur?.id` is present.
+- Optional feature toggles are read at runtime via `getParamBoolean('eleves.<key>', <default>)` instead of compile-time constants.

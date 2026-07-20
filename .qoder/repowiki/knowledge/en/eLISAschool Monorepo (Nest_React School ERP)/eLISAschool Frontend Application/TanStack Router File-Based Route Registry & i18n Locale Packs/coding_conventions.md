@@ -1,0 +1,5 @@
+- Authenticated routes live under `_auth.<feature>.tsx` and inherit the `authGuard()` + `PageLayout` from the `_auth.tsx` layout root.
+- Public-only routes (login, forgot/reset password, verify email) are placed at the routes root without the `_auth` prefix.
+- Nested feature sections use a `(authenticated)/.../route.tsx` entry file plus sibling page components instead of deeply nested directories.
+- Module-level permission checks are performed in each route's `beforeLoad` hook rather than wrapping individual components.
+- Locale keys are organized per domain feature with one JSON file per feature under both `fr/` and `en/` using identical key shapes.

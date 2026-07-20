@@ -1,0 +1,1 @@
+TypeORM entities with UUID primary keys and `select: false` on large columns (`logoBase64`); raw SQL aggregation via `createQueryBuilder` for cross-establishment stats; image processing through Sharp-backed `redimensionnerLogo`; caching via `dashboardCacheService` with TTL-based precalc keys.

@@ -1,0 +1,1 @@
+Express sub-module providing student orientation profiles, job-description reference cards, and counselor appointment scheduling with a simple aptitude-based filière recommendation engine.

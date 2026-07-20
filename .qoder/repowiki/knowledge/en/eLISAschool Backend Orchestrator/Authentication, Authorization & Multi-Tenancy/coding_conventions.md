@@ -1,5 +1,0 @@
-- All services are exported as singleton instances using lowercase camelCase names (e.g., authService, tokenService, rolesService, permissionResolverService) alongside their class exports.
-- DTO validation is performed using schema objects imported from dto modules and passed to validateDto() from @common/utils before any business logic execution.
-- Express controllers wrap route handlers in try/catch blocks and delegate errors to next(error), relying on the global errorHandler middleware for standardized JSON responses.
-- Audit logging is consistently invoked for security-sensitive operations (login success/failure, password changes, access denials, establishment switches) via auditService.log() or specialized methods like logLogin() and logAccessDenied().
-- Permission checks in guards and middleware first inspect JWT-embedded permissions array, then fall back to static DEFAULT_ROLE_PERMISSIONS map when the new RBAC system is not yet populated.

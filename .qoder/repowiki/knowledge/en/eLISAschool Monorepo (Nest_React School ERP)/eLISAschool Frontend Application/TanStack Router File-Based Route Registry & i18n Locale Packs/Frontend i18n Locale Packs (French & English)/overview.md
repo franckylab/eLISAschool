@@ -1,0 +1,1 @@
+Static JSON locale packs for the French and English UI, one file per domain feature providing nested key-value translations consumed by the frontend i18n runtime.

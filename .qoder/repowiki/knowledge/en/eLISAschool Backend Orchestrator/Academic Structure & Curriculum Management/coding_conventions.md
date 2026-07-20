@@ -1,5 +1,0 @@
-- Controllers instantiate service classes locally or use singleton exports, wrapping async logic in try-catch blocks that delegate errors to Express next middleware.
-- Services utilize TypeORM Repositories injected via AppDataSource, performing business logic and entity persistence without direct SQL queries.
-- DTOs are defined using Zod schemas with explicit create/update/query variants, inferred into TypeScript types for end-to-end type safety.
-- Entities include multi-tenancy columns (etablissementId) and audit timestamps (createdAt, updatedAt) as standard fields for data isolation and tracking.
-- Complex state changes (e.g., closing school years or periods) trigger conditional validation workflows via a shared validationWorkflowService based on configuration flags.

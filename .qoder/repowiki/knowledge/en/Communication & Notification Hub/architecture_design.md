@@ -1,5 +1,0 @@
-- **Modular Monolith Structure**: The module is composed of four distinct sub-modules (`messagerie`, `notifications`, `annonces`, `sondages`), each following a strict Controller-Service-Entity-DTO layered architecture.
-- **Provider Pattern for Notifications**: The `notifications` module implements a pluggable provider system (`INotificationProvider`) with a central `ProviderRegistry` (Singleton) to manage Email, SMS, Push, and In-App channels, supporting fallback strategies.
-- **Real-time Communication**: `messagerie` utilizes Server-Sent Events (SSE) via `MessagerieSSEService` for live updates, while `sondages` employs a WebSocket service (`sondage.websocket.ts`) for real-time vote broadcasting.
-- **Shared Infrastructure**: All sub-modules rely on a common `authMiddleware` for security and `validateDto` (Zod) for input validation. They interact with a shared `AppDataSource` (TypeORM) for persistence and `redisService` for caching and pub/sub in distributed SSE scenarios.
-- **Entry Points**: Each sub-module exposes its own Express Router (e.g., `messagerie.controller.ts`, `notifications.controller.ts`) which are aggregated via barrel exports (`index.ts`).

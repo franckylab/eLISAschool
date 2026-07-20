@@ -1,0 +1,4 @@
+- Each script initializes `AppDataSource`, runs its logic in a top-level async `main()`/`runTests()`, and calls `process.exit(1)` on any unhandled error so CI can detect failures.
+- Bash wrappers validate the working directory, compile TypeScript with `npx tsc -p tsconfig.json`, then invoke the matching `.ts` file via `npx ts-node`, printing emoji-prefixed status lines.
+- Jest unit tests follow Arrange-Act-Assert inside `it('devrait ...', () => { ... })` blocks written in French, and mock external services through `jest.mock('../src/...')`.
+- Integration tests acquire `AppDataSource` in `beforeAll`, construct service instances manually, and tear down the connection in `afterAll`.

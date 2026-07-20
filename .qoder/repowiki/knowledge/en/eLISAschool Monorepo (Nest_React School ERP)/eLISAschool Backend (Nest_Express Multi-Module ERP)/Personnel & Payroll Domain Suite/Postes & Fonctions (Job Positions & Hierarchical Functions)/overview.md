@@ -1,0 +1,1 @@
+Express-based CRUD modules for school job positions (postes) and their hierarchical function taxonomy (fonctions), with TypeORM persistence, Zod validation, RBAC guards, and multi-establishment scoping.

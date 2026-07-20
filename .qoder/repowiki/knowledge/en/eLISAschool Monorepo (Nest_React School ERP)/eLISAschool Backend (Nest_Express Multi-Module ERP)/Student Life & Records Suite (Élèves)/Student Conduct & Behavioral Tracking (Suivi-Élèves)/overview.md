@@ -1,0 +1,1 @@
+Express module that records, queries and aggregates student incidents, observations, sanctions and felicitations across school years and trimesters.

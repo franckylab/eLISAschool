@@ -1,4 +1,0 @@
-- Modular Monolith: Comprises eight distinct sub-modules (annees-scolaires, cycles, niveaux, matieres, periodes, programmes, orientation, types-enum) following a strict Controller-Service-Entity-DTO layered architecture.
-- Entry Points: Each module exposes an Express Router via its `index.ts` barrel export, with `programmes` aggregating multiple routers for chapters and correlations.
-- Dependency Direction: Services depend on TypeORM repositories and cross-module services (e.g., `matieres` depends on `classes` and `validation-workflow`), while controllers depend on services and shared middleware (`authMiddleware`, `validateDto`).
-- Data Integrity: Entities use UUIDs and enforce multi-tenancy via `etablissementId`, with complex relationships managed through TypeORM decorators.

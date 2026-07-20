@@ -1,0 +1,1 @@
+Express controller and services that handle user login/register, password reset, email verification, multi-tenant establishment switching, and JWT access/refresh token lifecycle.

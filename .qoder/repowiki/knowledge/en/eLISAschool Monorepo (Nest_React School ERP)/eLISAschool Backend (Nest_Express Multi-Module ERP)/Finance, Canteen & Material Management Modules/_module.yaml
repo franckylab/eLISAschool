@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/finances_paie
+title: Finance, Canteen & Material Management Modules
+scope:
+    - backend/src/modules/finances/
+    - backend/src/modules/cantine/
+    - backend/src/modules/materiel/
+source_files: []
+depends_on: []
+related_to: []

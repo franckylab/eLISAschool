@@ -1,3 +1,0 @@
-- **Zod**: Used for schema-based DTO validation across all sub-modules (e.g., `createAnneeScolaireSchema`, `createProgrammeChapitreSchema`).
-- **TypeORM**: Utilizes `Repository` and `QueryBuilder` patterns for data access, with entities decorated with TypeORM annotations (e.g., `@Entity`, `@ManyToOne`).
-- **Express**: Implements RESTful APIs using `Router` instances, middleware for authentication (`authMiddleware`), and role-based access control (`requireRoles`).

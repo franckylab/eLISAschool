@@ -1,1 +1,0 @@
-Node.js/Express with TypeScript, utilizing a shared PostgreSQL database with TypeORM for multi-tenant data persistence and Redis for caching.

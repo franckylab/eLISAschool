@@ -1,0 +1,1 @@
+TypeORM entities with `@Entity`/`@Index` decorators, Zod runtime validation, Express Router-based controllers, and shared `AppError`/audit/logging infrastructure from `@common` and `@modules/auth`.

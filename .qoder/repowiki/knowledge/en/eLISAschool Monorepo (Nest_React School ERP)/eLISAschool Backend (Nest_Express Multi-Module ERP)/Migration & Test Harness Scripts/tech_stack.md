@@ -1,0 +1,1 @@
+TypeScript + ts-node for script execution; TypeORM `AppDataSource` for DB access; Jest (`@jest/globals`) for `test/` suites; bash for shell orchestrators.

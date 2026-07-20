@@ -1,0 +1,6 @@
+- Each module's `index.ts` re-exports `entities`, `dto`, `services`, `controllers` and either builds an Express Router (emploi-du-temps) or just re-exports (salles).
+- Controllers wrap every route in `try/catch` forwarding to `next(error)` and return `{ success, data }` JSON envelopes consistently.
+- All routes are guarded by `authMiddleware` plus `requirePermission('<resource>:<action>')` for mutating endpoints.
+- Request bodies are validated against a Zod schema imported from the module's own `dto/` directory before being passed to services.
+- Services are instantiated as module-level singletons (`export const emploiDuTempsService = new EmploiDuTempsService()`) and accessed directly rather than through DI containers.
+- Entities use UUID primary keys, `etablissementId` for multi-tenancy, `@CreateDateColumn`/`@UpdateDateColumn`, and `onDelete: 'CASCADE'` on `Etablissement` relations.

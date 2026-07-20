@@ -1,0 +1,6 @@
+- Each module exposes a singleton instance alongside its class (`export const notesService = new NotesService();`) so cross-module consumers import the instance rather than instantiating again.
+- Services fetch repositories lazily in the constructor via `AppDataSource.getRepository(Entity)` rather than relying on DI, keeping modules self-contained.
+- Business parameters are read at runtime from the central configuration store through `getParamBoolean` / `getParamNumber` helpers (e.g. `notes.bareme_defaut`, `bulletins.include_ranking`, `scoring.weight_academic`) instead of being hard-coded.
+- Cross-module side effects (audit logging, parent notifications, gamification points) are wrapped in try/catch blocks that log a warning but never throw, ensuring they cannot block the primary write path.
+- Period-closure immutability is enforced uniformly: before create/update/generate operations, services check `StatutPeriode.CLOTUREE` against a `periodes.lock_on_cloture` config flag and raise an `AppError` with a specific code like `PERIODE_CLOTUREE_IMMUTABLE`.
+- Multi-tenant scoping is applied by passing an optional `etablissementId` parameter into every public service method and adding it to the `where` clause or entity creation payload.

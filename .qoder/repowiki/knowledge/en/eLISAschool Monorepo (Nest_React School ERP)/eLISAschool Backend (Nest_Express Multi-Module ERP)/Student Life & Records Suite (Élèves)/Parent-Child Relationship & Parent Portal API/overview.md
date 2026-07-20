@@ -1,0 +1,1 @@
+Express module managing multi-parent-to-student relationships, per-child permission flags, and a parent-facing portal for grades, reports, canteen, transport, and payments.

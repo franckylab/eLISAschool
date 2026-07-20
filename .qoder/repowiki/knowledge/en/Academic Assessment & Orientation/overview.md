@@ -1,1 +1,0 @@
-Manages student grades, report card generation, and academic career guidance including profiling and counseling appointments.

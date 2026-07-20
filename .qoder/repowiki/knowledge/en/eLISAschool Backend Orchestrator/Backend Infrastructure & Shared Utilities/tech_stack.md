@@ -1,3 +1,0 @@
-- **Validation**: Zod for runtime environment variable validation (`env.config.ts`).
-- **Logging**: Winston with file rotation and console transport (`logger.util.ts`).
-- **ORM**: TypeORM with PostgreSQL driver, configured for both development (.ts) and production (.js) entity paths (`database.config.ts`).

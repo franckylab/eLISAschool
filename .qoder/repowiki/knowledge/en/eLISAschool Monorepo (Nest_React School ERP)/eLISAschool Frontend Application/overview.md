@@ -1,0 +1,1 @@
+React + TanStack Router SPA that wires feature modules, shared UI/hook libraries, and file-based routes into a multi-tenant school management application with role-based access control.

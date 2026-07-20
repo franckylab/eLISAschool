@@ -1,0 +1,1 @@
+Express Router controllers + TypeORM repositories against PostgreSQL (UUID PKs, `jsonb` columns like `primesDefault`, `metadata`), Zod schemas for request validation, and a permission-driven RBAC middleware (`requirePermission('postes:view|create|edit|delete' | 'config:edit')`).

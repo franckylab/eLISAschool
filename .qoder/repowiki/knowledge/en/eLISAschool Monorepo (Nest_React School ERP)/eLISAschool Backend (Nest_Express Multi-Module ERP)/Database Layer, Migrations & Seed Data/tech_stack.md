@@ -1,0 +1,1 @@
+TypeORM `DataSource` against PostgreSQL (configured via `@config/database.config`); migrations use raw SQL plus optional TypeScript `MigrationInterface` classes; seed orchestration uses dynamic `import()` of entity modules discovered via glob patterns.

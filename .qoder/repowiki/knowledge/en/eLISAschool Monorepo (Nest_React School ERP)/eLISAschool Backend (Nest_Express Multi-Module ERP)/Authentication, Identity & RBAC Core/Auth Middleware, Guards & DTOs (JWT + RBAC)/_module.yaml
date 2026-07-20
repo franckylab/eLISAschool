@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/auth_identity_rbac/auth_infrastructure
+title: Auth Middleware, Guards & DTOs (JWT + RBAC)
+scope:
+    - backend/src/modules/auth/middlewares/
+    - backend/src/modules/auth/guards/
+    - backend/src/modules/auth/dto/
+    - backend/src/modules/auth/index.ts
+    - backend/src/modules/auth/cron-jobs.ts
+source_files: []
+depends_on: []
+related_to: []

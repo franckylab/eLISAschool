@@ -1,0 +1,1 @@
+Collection of independent business modules providing dashboard widgets, monitoring, gamification, transport, health records, cards, parking, clubs, appearance theming, validation workflows, user management and audit trail.

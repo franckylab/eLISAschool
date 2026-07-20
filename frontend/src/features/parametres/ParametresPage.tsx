@@ -111,7 +111,7 @@ export function ParametresPage() {
         }
     };
 
-    if (isLoading && !data) return <PageSkeleton />;
+    if (isLoading && !response) return <PageSkeleton />;
     if (isError) return <ErrorMessage message={error?.message} onRetry={() => refetch()} />;
 
     return (

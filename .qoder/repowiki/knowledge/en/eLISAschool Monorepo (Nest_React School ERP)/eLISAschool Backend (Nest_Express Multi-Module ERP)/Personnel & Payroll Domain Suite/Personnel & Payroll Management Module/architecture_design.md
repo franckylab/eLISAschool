@@ -1,0 +1,7 @@
+Standard three-layer Nest/Express module under `backend/src/modules/personnel/`:
+- `entities/`: TypeORM `@Entity` classes (`MembrePersonnel`, `TypePersonnel`, `ContratPersonnel`, `AffectationPoste`, `BulletinPaie`, `Cotisation`, `ElementSalaire`, `IndisponibiliteEnseignant`, `EvaluationEnseignant`, `HeureCours`, `ProgressionProgramme`, `MembreFonction`, plus enums) with UUID PKs, `etablissementId` multi-tenancy FK, and cross-module relations into `@modules/utilisateurs` and `@modules/organisation`.
+- `dto/`: Zod schemas (one per entity + query schemas) re-exported via `index.ts`; types derived through `z.infer`.
+- `services/`: Stateful class per domain (e.g. `PersonnelService`) owning a private `Repository<T>` from `AppDataSource.getRepository(...)`, encapsulating CRUD, validation-workflow integration, audit logging, and in-process caching (`typesCache`).
+- `controllers/`: Plain Express `Router()` instances exposing REST endpoints; each controller instantiates its service once at module load and delegates all logic there.
+- Re-export barrel files at `index.ts` → `{entities,dto,services,controllers}/index.ts` provide flat public API.
+Dependency direction: controllers → services → entities; controllers also depend on shared `@modules/auth/middlewares` (`authMiddleware`, `requirePermission`) and `@common/utils` (`validateDto`, pagination helpers). Cross-module reads use `AppDataSource.getRepository('OtherEntity')` string lookup rather than direct imports.

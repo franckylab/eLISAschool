@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/routes_and_i18n/pedagogie_critiques
+title: Critical Modules Routes (Users, Notes, Bulletins)
+scope:
+    - frontend/src/routes/-_auth.modules-critiques.tsx
+    - frontend/src/routes/_auth.utilisateurs.*.tsx
+    - frontend/src/routes/_auth.notes.*.tsx
+source_files: []
+depends_on: []
+related_to: []

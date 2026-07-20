@@ -1,4 +1,0 @@
-- Uses npm workspaces to manage `backend`, `frontend`, and `shared` packages, enabling local dependency resolution and unified script execution.
-- Relies on the `shared` package for cross-cutting type safety and validation schemas (Zod) consumed by both API and UI layers.
-- Defines a multi-service Docker Compose topology that wires the Express backend to PostgreSQL and Redis, enforcing service health checks and network isolation.
-- Centralizes environment configuration via root-level `.env` files, injected into containerized services during orchestration.

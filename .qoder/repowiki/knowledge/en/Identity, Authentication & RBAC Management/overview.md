@@ -1,1 +1,0 @@
-Manages user lifecycle, multi-mode authentication, dynamic role-based access control, and user-specific preferences with comprehensive audit logging.

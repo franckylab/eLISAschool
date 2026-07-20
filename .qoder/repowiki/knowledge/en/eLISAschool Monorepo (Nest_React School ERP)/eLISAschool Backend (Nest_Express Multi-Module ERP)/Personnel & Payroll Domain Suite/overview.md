@@ -1,0 +1,1 @@
+Aggregates five Express sub-modules that together cover the full school HR lifecycle — recruitment, job taxonomy, master data, payroll computation, and performance tracking.

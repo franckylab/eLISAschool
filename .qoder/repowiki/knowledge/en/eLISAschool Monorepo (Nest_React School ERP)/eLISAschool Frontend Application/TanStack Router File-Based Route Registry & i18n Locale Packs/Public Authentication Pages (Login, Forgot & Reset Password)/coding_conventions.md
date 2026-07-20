@@ -1,0 +1,3 @@
+- Each route file exports a single `Route` created by `createFileRoute('<path>')` and imports its page component from `@/features/auth/<Name>`.
+- Every route calls `publicOnlyGuard()` inside `beforeLoad` to ensure unauthenticated-only access.
+- Query parameters are declared through `validateSearch` returning an object whose keys match the expected search fields (e.g. `redirect`, `token`).

@@ -1,0 +1,5 @@
+- Each module exposes a flat barrel `index.ts` that re-exports everything from `./entities`, `./dto`, `./services`, and `./controllers` so consumers import solely from the module root.
+- Every entity declares a UUID primary key, `createdAt`/`updatedAt` audit columns, an `actif` boolean flag, and an `etablissementId` column with both a single-column index and a composite index for multi-tenant queries.
+- Cross-entity relationships are expressed as bidirectional `@ManyToOne` + `@JoinColumn` pairs where the owning side holds the FK column and the inverse side uses a lambda selector (e.g. `(niveau) => niveau.cycle`).
+- Services retrieve their repository lazily via `AppDataSource.getRepository(Entity)` inside the constructor rather than using dependency injection, then expose async CRUD methods that throw `AppError` with typed error codes.
+- Domain-specific enums (e.g. `StatutAnneeScolaire`) live next to their entity and drive state transitions enforced at the service layer before persistence.

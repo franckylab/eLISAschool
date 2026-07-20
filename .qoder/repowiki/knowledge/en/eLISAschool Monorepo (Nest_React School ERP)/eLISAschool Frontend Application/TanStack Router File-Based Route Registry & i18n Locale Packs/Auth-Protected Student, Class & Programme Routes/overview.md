@@ -1,0 +1,1 @@
+TanStack Router file-based route declarations for the authenticated student (eleves), class (classes), and programme (programmes) modules, gated by per-module permissions.

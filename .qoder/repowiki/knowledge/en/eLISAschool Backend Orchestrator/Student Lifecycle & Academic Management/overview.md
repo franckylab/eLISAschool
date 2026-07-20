@@ -1,1 +1,0 @@
-Manages student records, parent relationships, academic grades, report cards, behavioral tracking, and extracurricular clubs within a multi-tenant school system.

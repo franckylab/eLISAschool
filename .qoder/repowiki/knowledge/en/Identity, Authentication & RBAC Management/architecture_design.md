@@ -1,5 +1,0 @@
-- **Modular Structure**: Divided into `auth` (core identity, tokens, audit), `rbac` (dynamic role/permission CRUD), and `utilisateurs` (user profile management) sub-modules.
-- **Layered Design**: Each sub-module follows a Controller-Service-Entity pattern. Controllers handle HTTP routing and DTO validation; Services encapsulate business logic (e.g., `AuthService`, `PermissionResolverService`); Entities define TypeORM schemas.
-- **Security Boundaries**: Authentication is enforced via `authMiddleware` (JWT verification). Authorization uses `requireRoles` and `checkPermission` guards/middlewares that inspect JWT payloads or resolve permissions dynamically.
-- **Dependency Direction**: The `auth` module acts as the central hub, exporting entities and services used by `rbac` and `utilisateurs`. The `rbac` module depends on `auth` entities for role-permission relationships.
-- **Key Interfaces**: `UtilisateurAuth` interface extends Express Request to provide typed user context. `PermissionResolverService` bridges static roles and dynamic permissions using a caching strategy.

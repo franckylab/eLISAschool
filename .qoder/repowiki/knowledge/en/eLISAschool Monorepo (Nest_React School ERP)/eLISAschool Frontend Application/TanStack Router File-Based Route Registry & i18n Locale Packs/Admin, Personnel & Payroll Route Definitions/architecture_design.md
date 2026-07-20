@@ -1,0 +1,5 @@
+Each `.tsx` file under `frontend/src/routes/_auth.*` is a TanStack File Router leaf that exports a `Route` created via `createFileRoute('/_auth/<area>/<path>')`. Routes are split into two layers: layout routes (e.g. `_auth.admin.roles.tsx`) render shared chrome — back button, `Breadcrumbs`, an animated `<Outlet>` wrapped in `ErrorBoundary` — while index/detail routes (e.g. `_auth.admin.roles.index.tsx`, `_auth.personnel.$id.tsx`) declare the page component and guard.
+
+Access control is enforced exclusively through `beforeLoad` hooks from `@/app/permission-guards`: role-based gates (`requireRole(['SUPER_ADMIN', 'ADMIN'])`) protect admin-only routes, while module-scoped gates (`requireModulePermission('personnel'|'paie')`) gate personnel and payroll routes. This keeps authorization logic out of components.
+
+Page components live outside this scope in `@/features/*` (`utilisateurs`, `personnel`, `paie`); route files act as thin adapters, forwarding URL params (e.g. `$id` via `Route.useParams()`) as props. The module has no internal sub-packages — it is purely a routing facade over features.

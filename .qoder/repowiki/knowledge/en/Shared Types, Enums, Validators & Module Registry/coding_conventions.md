@@ -1,5 +1,0 @@
-- Every sub-package exposes its contents through an `index.ts` barrel file that uses `export * from './...'` statements for clean re-exporting.
-- All enum values use UPPER_SNAKE_CASE naming convention (e.g., `SUPER_ADMIN`, `NOTES_VIEW`, `AUTH`).
-- Zod validator schemas follow a consistent pattern: define a `z.object()` schema, then export an inferred type via `z.infer<typeof schemaName>`.
-- Constants are defined as `as const` objects to ensure immutability and literal type inference (e.g., `APP_INFO`, `LIMITS`, `CURRENCIES`).
-- Each source file includes a standardized French header comment block with version, author, and description metadata.

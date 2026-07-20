@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/competences_notes_bulletins
+title: Academic Assessment & Scoring Core (Competences, Notes, Bulletins, National Exams, Scoring)
+scope:
+    - backend/src/modules/competences/
+    - backend/src/modules/notes/
+    - backend/src/modules/bulletins/
+    - backend/src/modules/examens-nationaux/
+    - backend/src/modules/scoring/
+source_files: []
+depends_on: []
+related_to: []

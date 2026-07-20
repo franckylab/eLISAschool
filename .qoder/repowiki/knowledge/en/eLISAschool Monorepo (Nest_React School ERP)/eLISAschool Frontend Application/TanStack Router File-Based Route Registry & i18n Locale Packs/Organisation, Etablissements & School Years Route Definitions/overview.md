@@ -1,0 +1,1 @@
+File-based route declarations for the Organisation (fonctions/postes/nomenclatures), Etablissements and Années Scolaires modules, wiring URL segments to feature pages behind permission guards.

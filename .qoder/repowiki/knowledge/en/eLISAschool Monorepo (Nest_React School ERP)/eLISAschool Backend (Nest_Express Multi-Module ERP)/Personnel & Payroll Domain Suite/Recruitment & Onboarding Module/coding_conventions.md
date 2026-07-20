@@ -1,0 +1,6 @@
+- Every resource endpoint follows the same shape: `authMiddleware` then optionally `requirePermission('personnel:manage')`, a try/catch that forwards errors to `next(error)`, and a `{ success: true, data }` JSON response.
+- Request bodies are validated through a local `validate(schema, req.body)` helper that throws `AppError('Erreur de validation', 400, 'VALIDATION_ERROR')` on failure, keeping controllers free of raw Zod calls.
+- Each service method that mutates state conditionally calls `auditService.log({ utilisateurId, action, cible, cibleId, description, nouvellesValeurs, module: 'recrutement' }, req)` guarded by `req?.utilisateur?.id`.
+- List endpoints accept `page`, `limit`, `search`, optional filters, and `sortBy`/`sortOrder`, build a `createQueryBuilder`, restrict sorting to an `allowedFields` whitelist, and return `paginateWithQueryBuilder(qb, page, limit, false)`.
+- Tenant isolation is enforced by always filtering queries with `where('...etablissementId = :etablissementId', { etablissementId })` using `req.etablissementId!` supplied by the auth middleware.
+- DTOs are defined as paired Zod schemas per aggregate (`createXxxSchema`, `updateXxxSchema = createXxxSchema.partial()`, `queryXxxSchema = paginationWithSortSchema.merge(searchSchema).extend({...})`) with TypeScript types derived via `z.infer`.

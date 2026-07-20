@@ -1,1 +1,0 @@
-Manages multi-tenant school establishments and their logical grouping for consolidated dashboards, financial reports, and administrative oversight.

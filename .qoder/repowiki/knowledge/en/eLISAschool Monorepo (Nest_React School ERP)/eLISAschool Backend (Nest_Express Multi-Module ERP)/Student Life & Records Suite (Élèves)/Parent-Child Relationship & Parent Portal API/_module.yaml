@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/eleves_vie_scolaire/parents_guardians
+title: Parent-Child Relationship & Parent Portal API
+scope:
+    - backend/src/modules/responsables-eleves/
+source_files: []
+depends_on: []
+related_to: []

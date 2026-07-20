@@ -1,0 +1,1 @@
+Express module that persists and exposes the student diploma registry linking Eleve records to ExamenNational outcomes with CRUD endpoints, validation, pagination, and role-based access.

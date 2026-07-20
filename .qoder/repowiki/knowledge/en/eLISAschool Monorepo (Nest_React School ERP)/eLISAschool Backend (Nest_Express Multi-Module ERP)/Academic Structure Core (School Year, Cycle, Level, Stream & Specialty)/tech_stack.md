@@ -1,0 +1,1 @@
+TypeORM entities with `uuid` primary keys, `@Index` / unique composite indexes on `(code|nom, etablissementId)`, and `@CreateDateColumn` / `@UpdateDateColumn` timestamps; shared `AppDataSource`, `AppError`, `logger`, and `validationWorkflowService` from `@database`, `@common`, and `@modules/validation-workflow` respectively.

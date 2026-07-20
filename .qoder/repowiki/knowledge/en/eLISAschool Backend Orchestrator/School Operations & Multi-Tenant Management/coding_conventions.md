@@ -1,4 +1,0 @@
-- Each sub-module exports a public API via a barrel `index.ts` file that re-exports entities, DTOs, services, and controllers.
-- Services are instantiated as singletons at the module level (e.g., `export const notificationsService = new NotificationsService()`) to facilitate shared state and dependency injection.
-- Controllers consistently use a `validateDto` utility combined with Zod-like schemas (e.g., `createEtablissementSchema`) for request body validation before service delegation.
-- Background tasks and scheduled jobs are isolated in dedicated `cron-jobs.ts` files within modules that require periodic execution (e.g., `notifications`, `gamification`, `sondages`).

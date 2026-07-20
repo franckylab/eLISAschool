@@ -1,1 +1,0 @@
-Uses Zod (^3.24.1) for runtime schema validation across auth validators; TypeScript ^5.7.2 with CommonJS module output and ES2022 target.

@@ -1,0 +1,1 @@
+TypeScript + Express Router, TypeORM repositories accessed through the app-wide `AppDataSource`, Zod for request validation, and integration with sibling modules `auth`, `gamification`, `validation-workflow`, `configuration` and `eleves`.

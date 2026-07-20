@@ -1,1 +1,0 @@
-Provides foundational platform capabilities including dynamic dashboards, system configuration, audit trails, monitoring, and database management.

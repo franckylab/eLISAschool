@@ -1,0 +1,5 @@
+- Each resource follows a uniform pattern: a Zod schema in `dto/suivi-eleve.dto.ts`, a TypeORM entity in `entities/`, a service method pair (`create*` + `get*ByEleve`), and paired POST/GET routes in the controller.
+- List endpoints accept `page`, `limit` (capped at 100) and optional `periodeId`, returning `{ data, pagination: { page, limit, total, totalPages, hasNext, hasPrev }, metadata }`.
+- Every write path logs an audit entry through `auditService.log` with `module: 'suivi-eleves'`, `Action.*_ELEVE_CREATE`, and `nouvellesValeurs` set to the incoming DTO.
+- Cross-module side effects (gamification points, workflow creation) are invoked inside try/catch blocks that log a warning but never throw, keeping them non-blocking.
+- Feature toggles are read at runtime via `getParamBoolean` / `getParamNumber` from `@modules/configuration/utils/config.helper` rather than hard-coded constants.

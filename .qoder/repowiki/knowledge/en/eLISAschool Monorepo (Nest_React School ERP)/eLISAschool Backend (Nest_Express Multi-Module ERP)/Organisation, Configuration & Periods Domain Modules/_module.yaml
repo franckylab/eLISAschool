@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/organisation_administration
+title: Organisation, Configuration & Periods Domain Modules
+scope:
+    - backend/src/modules/organisation/
+    - backend/src/modules/configuration/
+    - backend/src/modules/types-enum/
+    - backend/src/modules/periodes/
+    - backend/src/modules/requetes/
+source_files: []
+depends_on: []
+related_to: []

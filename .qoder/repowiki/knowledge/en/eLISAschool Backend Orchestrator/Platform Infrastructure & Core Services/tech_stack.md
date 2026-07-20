@@ -1,1 +1,0 @@
-TypeORM for database interactions, Redis for distributed caching (with in-memory fallback), Zod for runtime validation, Express.js for HTTP routing.

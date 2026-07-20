@@ -1,0 +1,5 @@
+- Each feature folder follows the layout `<Feature>/index.ts` re-exporting the page, `<Feature>/hooks/<feature>.ts` exporting one react-query hook per resource, and `<Feature>/types/<feature>.types.ts` holding DTOs/enums.
+- Server state is accessed exclusively through custom `useXxx()` hooks wrapping `useQuery`/`useMutation`; components never call `apiClient` directly.
+- Every query uses a hierarchical `CONFIG_KEYS` object whose factory functions build stable arrays as `queryKey`, so mutations can target precise slices via `invalidateQueries({ queryKey: CONFIG_KEYS.xxx() })`.
+- All user-facing strings are routed through `useTranslation('<feature>')` with namespaced keys such as `sections.<tab>.titre` rather than hard-coded literals.
+- Mutations follow a uniform shape: `mutationFn` calls `apiClient.{get|post|patch|delete}('/api/...')`, and `onSuccess` invalidates only the affected query keys instead of refetching everything.

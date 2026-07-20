@@ -1,5 +1,0 @@
-- **Layered Architecture**: Follows a standard Controller-Service-Entity pattern. Controllers (`finances.controller.ts`) handle HTTP routing and Zod validation, delegating business logic to specialized services.
-- **Sub-domains**: Logic is segregated into distinct services: `scolarite.service.ts` (tuition/installments), `depenses.service.ts` (expenses/procurement), `budget.service.ts`, `comptabilite.service.ts` (accounting entries), and `tresorerie.service.ts` (cash flow).
-- **Workflow Engine**: A dedicated `finance-workflow.service.ts` implements a configurable, amount-based multi-level approval system for payments, expenses, and budgets, decoupling validation rules from transactional logic.
-- **Automation**: Background tasks are managed via `cron-jobs.ts` using `node-cron` for automated payment reminders, budget alerts, and report generation.
-- **Configuration**: Centralized default settings and thresholds are defined in `finances.config.ts`, covering penalties, VAT, and workflow levels.

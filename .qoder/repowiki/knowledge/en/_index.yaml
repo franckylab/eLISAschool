@@ -1,426 +1,625 @@
 # 知识卡导出索引文件
 schema_version: 1
 locale: en-US
-branch: main
-exported_at: "2026-06-10T05:13:16Z"
+branch: MAJ_pages
+nodes_managed: true
+exported_at: "2026-07-20T23:29:28Z"
 modules:
     "":
-        dir_name: eLISAschool Monorepo Orchestrator
-        title: eLISAschool Monorepo Orchestrator
+        dir_name: eLISAschool Monorepo (Nest_React School ERP)
+        title: eLISAschool Monorepo (Nest/React School ERP)
         scope:
-            - .dockerignore
-            - .env
-            - .env.example
-            - .env.production.example
+            - README.md
+            - QUICKSTART.md
+            - INDEX.md
+            - AGENTS.md
+            - CHEATSHEET.md
+            - package.json
+            - package-lock.json
             - .gitignore
-            - AMELIORATIONS-GROUPES-V1.1.md
-            - AMÉLIORATIONS-FINANCES-FINAL.md
-            - ANALYSE-CONTEXTE-AFRICAIN-CAMEROUN.md
-            - ANALYSE-FRAIS-REMISES-COHERENCE.md
-            - ANALYSE-GESTION-FINANCIERE.md
-            - ANALYSE-OPTIMISATIONS-ACTIVATION-MODULES.md
-            - ANALYSE-PROGRAMME-PEDAGOGIQUE-COMPLET.md
-            - ANALYSE-SCORING-PERSONNEL-COMPLET.md
-            - ANALYSE-SUIVI-RECOMMANDATIONS.md
-            - ANALYSE_ROLES_EDUCATION_AFRICAINE.md
-            - BACKUP-SYSTEM-IMPLEMENTATION-COMPLETE.md
-            - BACKUP-SYSTEM-PROGRESS.md
-            - BACKUP-SYSTEM-README-FINAL.md
-            - BACKUP-SYSTEM-USER-GUIDE.md
-            - CONFIGURATION_100_PERCENT.md
-            - CORRECTIONS-GROUPES-V1.2.md
-            - CORRECTIONS-IMPLÉMENTÉES-RÉSUMÉ.md
-            - DEPLOYMENT-ANNONCES-RAPPORT.md
-            - DEPLOYMENT-GUIDE-TYPES-ENUM.md
-            - DEPLOYMENT-SUCCESS.md
+            - .dockerignore
             - ETAPES-ACCOMPLIES.txt
             - ETAPES-COMPLETES-RESUME.md
-            - EXECUTIVE_SUMMARY.md
-            - FINAL-SUMMARY.md
-            - FIX-ERREURS-NOTIFICATIONS.md
-            - FIX-ERREURS-TYPESCRIPT-COMPLETE.md
-            - FIX-TYPESCRIPT-ERRORS.md
-            - GAMIFICATION-AUTOMATIQUE-RESUME.md
-            - GAMIFICATION-SUIVI-ELEVES-CORRECTIONS.md
-            - GUIDE-CONTROLLERS-ANNEE-SCOLAIRE.md
-            - GUIDE-CORRECTIONS-RESTANTES.md
-            - GUIDE-DEPLOIEMENT-PHASE1.md
-            - GUIDE-GROUPES-CONSOLIDATION.md
-            - GUIDE-TEST-ACTIVATION-MODULES.md
-            - GUIDE-TEST-RESET-GLOBAL.md
-            - IMPLEMENTATION-100-COMPLETE-TOUTES-ETAPES.md
-            - IMPLEMENTATION-ACTIVATION-MODULES.md
-            - IMPLEMENTATION-ANNONCES-RESUME.md
-            - IMPLEMENTATION-AUDIT-TRAIL.md
-            - IMPLEMENTATION-COMPLETE-FINANCES-PHASE1-2.md
-            - IMPLEMENTATION-COMPLETE-FINANCES.md
-            - IMPLEMENTATION-COMPLETE-RESUME-FINAL.md
-            - IMPLEMENTATION-FINANCES-COMPLETE.md
-            - IMPLEMENTATION-FINANCES-FINAL.md
-            - IMPLEMENTATION-GAMIFICATION-RESUME.md
-            - IMPLEMENTATION-MODULE-SONDAGES.md
-            - IMPLEMENTATION-NOUVELLES-FONCTIONNALITES-RESUME.md
-            - IMPLEMENTATION-PHASE1-FRAIS-REMISES.md
-            - IMPLEMENTATION-RESPONSABLES-ELEVES.md
-            - IMPLEMENTATION-SESSION-RESUME-FINAL.md
-            - IMPLEMENTATION-TYPES-ENUM.md
-            - IMPLEMENTATION_EXTENSION_ROLES.md
-            - IMPLEMENTATION_MULTI_ETABLISSEMENTS.md
-            - IMPLÉMENTATION_MULTI-ETABLISSEMENTS-TERMINEE.md
-            - IMPLÉMENTATION_MULTI_ÉTAT.md
-            - MAJ-SKILLS-ACTIVATION-MODULES.md
-            - NOTIFICATION-AUDIT-SUMMARY.md
-            - NOTIFICATION-IMPLEMENTATION-COMPLETE.md
-            - NOTIFICATION-INTEGRATION-GUIDE.md
-            - NOTIFICATION-PROVIDERS-ACTIVATION.md
-            - NOTIFICATION-SESSION-FINALE.md
-            - NOTIFICATION-SYSTEM-COMPLETE.md
-            - NOTIFICATION-SYSTEM-GUIDE.md
-            - OPTIMISATIONS-IMPLÉMENTATION-COMPLETE.md
-            - OPTIMISATIONS-RESUME-FINAL.md
-            - PAGINATION-QUICK-REF.md
-            - PHASE1-CERTIFICAT-VALIDATION.md
-            - PHASE1-COMMANDES-DEPLOIEMENT.md
-            - PHASE1-COMPLETEE-100%.md
-            - PHASE1-ENTITES-COMPLETEES.md
-            - PHASE1-IMPLEMENTATION-COMPLETE.md
-            - PHASE1-P0-COMPLET-100%.md
-            - PHASE1-P0-RESUME.md
-            - PHASE1-PROGRESSION.md
-            - PHASE1-RAPPORT-ANALYSE-COMPLET.md
-            - PHASE1-README.md
-            - PHASE1-RESUME-RAPIDE.md
-            - PHASE1-SUIVI-PROGRESSION.md
-            - PORTAL-PARENT-IMPLEMENTATION.md
-            - QUICKSTART-SONDAGES.md
-            - RAPPORT-AUDIT-COHÉRENCE-NOUVELLES-FONCTIONNALITES.md
-            - RAPPORT-ETAPES-COMPLETES.md
-            - RAPPORT-FINAL-DEPLOIEMENT-ANNONCES.md
-            - RAPPORT-FINAL-PAGINATION.md
-            - RAPPORT-PAGINATION-IMPROVEMENTS.md
-            - README.md
-            - REDIS-CONFIGURATION.md
-            - RESUME-EXECUTIF.md
-            - RESUME-FINAL-FINANCES.md
-            - RESUME-FINAL-SONDAGES.md
-            - RESUME-IMPLEMENTATION-RESET-GLOBAL.md
-            - RH-PHASES-2-5-COMPLETE.md
-            - SCORING-PERSONNEL-RESUME.md
-            - TEST-ANNONCES-COMMANDES.md
-            - UPDATE-REGLES-SKILLS-NOTIFICATIONS.md
-            - VALIDATION-WORKFLOW-SYSTEM.md
-            - VERIFICATION-AUDIT-FINANCES.md
-            - VERIFICATION-INTEGRATION-FINANCES.md
-            - docker-compose.dev.yml
-            - docker-compose.yml
-            - package-lock.json
-            - package.json
+            - deploy-multi-tenant-v3.sh
+            - deploy-refonte-configuration.sh
+            - diagnose-scoring.sh
+            - template-import-eleves.csv
+            - VERSION
+            - backup_pre_refactor_20260614_134638.sql
+            - nom Année scolaire count.txt
+            - voici le modal de modification_et log backend.txt
         source_files: []
-        children: []
+        children:
+            - backend
+            - docker_infra
+            - documentation
+            - frontend
+            - scripts
+            - shared_library
         depends_on: []
         related_to: []
-    2c9cd0e3160d924bbaec585564256140:
-        dir_name: Financial Management & Accounting
-        title: Financial Management & Accounting
-        scope:
-            - backend/src/modules/finances/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_hr_payroll
-            - path: backend/backend_operations_support
-            - path: backend/backend_platform_infra
-            - path: shared
-            - path: backend/backend_academic_structure
-            - path: backend/backend_student_lifecycle
-    5e12f74ff678421edd77690c2d791a78:
-        dir_name: Platform Infrastructure & Core Services
-        title: Platform Infrastructure & Core Services
-        scope:
-            - backend/src/modules/dashboard/
-            - backend/src/modules/audit/
-            - backend/src/modules/configuration/
-            - backend/src/modules/monitoring/
-            - backend/src/database/
-            - backend/scripts/
-            - backend/docs/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_operations_support
-            - path: backend/backend_core_auth
-            - path: backend/backend_finance
-            - path: docker
-            - path: backend/backend_academic_structure
-            - path: backend/backend_hr_payroll
-            - path: backend/backend_student_lifecycle
-    8c1a6fd5d62d014f08d283743694c2bc:
-        dir_name: Authentication, Authorization & Multi-Tenancy
-        title: Authentication, Authorization & Multi-Tenancy
-        scope:
-            - backend/src/common/
-            - backend/src/config/
-            - backend/src/modules/auth/
-            - backend/src/modules/rbac/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_operations_support
-            - path: backend/backend_platform_infra
-            - path: shared
-            - path: backend/backend_student_lifecycle
-            - path: backend/backend_hr_payroll
-            - path: docker
-            - path: backend/backend_academic_structure
-    3323c19c72eb2f9fb60d2e706e2782b7:
-        dir_name: Student Lifecycle & Academic Management
-        title: Student Lifecycle & Academic Management
-        scope:
-            - backend/src/modules/eleves/
-            - backend/src/modules/responsables-eleves/
-            - backend/src/modules/bulletins/
-            - backend/src/modules/notes/
-            - backend/src/modules/suivi-eleves/
-            - backend/src/modules/clubs/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_academic_structure
-            - path: backend/backend_hr_payroll
-            - path: backend/backend_operations_support
-            - path: shared
-            - path: backend/backend_core_auth
-            - path: backend/backend_platform_infra
-            - path: backend/backend_finance
-    af3a1c5948b411a02aee9940e2e70821:
-        dir_name: HR Payroll & Personnel Management
-        title: HR Payroll & Personnel Management
-        scope:
-            - backend/src/modules/personnel/
-            - backend/src/modules/suivi-personnel/
-            - backend/src/modules/scoring/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend/backend_finance
-            - path: backend/backend_student_lifecycle
-            - path: backend/backend_operations_support
-            - path: backend/backend_core_auth
-            - path: backend/backend_platform_infra
-            - path: shared
     backend:
-        dir_name: eLISAschool Backend Orchestrator
-        title: eLISAschool Backend Orchestrator
+        dir_name: eLISAschool Backend (Nest_Express Multi-Module ERP)
+        title: eLISAschool Backend (Nest/Express Multi-Module ERP)
         scope:
             - backend/
         source_files: []
         children:
-            - backend/backend_infra
-            - c58424b5580c43c9f3ab0cc33c6968ba
-            - 5e12f74ff678421edd77690c2d791a78
-            - d80f6f0d5d935b98a11784aa839130b1
-            - 2c9cd0e3160d924bbaec585564256140
-            - 8c1a6fd5d62d014f08d283743694c2bc
-            - 3323c19c72eb2f9fb60d2e706e2782b7
-            - af3a1c5948b411a02aee9940e2e70821
-        depends_on: []
-        related_to:
-            - path: shared
-            - path: docker
-    backend/backend_infra:
-        dir_name: Backend Infrastructure & Shared Utilities
-        title: Backend Infrastructure & Shared Utilities
-        scope:
-            - backend/src/common/
-            - backend/src/config/
-            - backend/src/database/
-            - backend/src/app.ts
-            - backend/src/index.ts
-        source_files: []
-        children: []
+            - backend/academic_structure_core
+            - backend/app_bootstrap_config
+            - backend/auth_identity_rbac
+            - backend/classes_emploi_du_temps
+            - backend/common_infrastructure
+            - backend/communication_notifications
+            - backend/competences_notes_bulletins
+            - backend/database_layer
+            - backend/eleves_vie_scolaire
+            - backend/etablissement_groups
+            - backend/finances_paie
+            - backend/matieres_programmes
+            - backend/organisation_administration
+            - backend/personnel_rh
+            - backend/scripts_tools
+            - backend/support_services
         depends_on: []
         related_to: []
-    backend/backend_modules/academic_assessment:
-        dir_name: Academic Assessment & Orientation
-        title: Academic Assessment & Orientation
-        scope:
-            - backend/src/modules/bulletins/
-            - backend/src/modules/notes/
-            - backend/src/modules/orientation/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/backend_modules/academic_structure:
-        dir_name: Academic Structure & Curriculum Management
-        title: Academic Structure & Curriculum Management
+    backend/academic_structure_core:
+        dir_name: Academic Structure Core (School Year, Cycle, Level, Stream & Specialty)
+        title: Academic Structure Core (School Year, Cycle, Level, Stream & Specialty)
         scope:
             - backend/src/modules/annees-scolaires/
             - backend/src/modules/cycles/
-            - backend/src/modules/periodes/
             - backend/src/modules/niveaux/
-            - backend/src/modules/matieres/
-            - backend/src/modules/programmes/
+            - backend/src/modules/filieres/
+            - backend/src/modules/specialites/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    backend/backend_modules/communication:
-        dir_name: Communication & Notification Hub
-        title: Communication & Notification Hub
+    backend/app_bootstrap_config:
+        dir_name: Application Bootstrap & Express Server Configuration
+        title: Application Bootstrap & Express Server Configuration
         scope:
-            - backend/src/modules/messagerie/
-            - backend/src/modules/notifications/
-            - backend/src/modules/annonces/
-            - backend/src/modules/sondages/
+            - backend/src/app.ts
+            - backend/src/index.ts
+            - backend/src/config/
+            - backend/src/routes/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    backend/backend_modules/finance:
-        dir_name: School Financial Management & Accounting
-        title: School Financial Management & Accounting
-        scope:
-            - backend/src/modules/finances/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/backend_modules/identity_access:
-        dir_name: Identity, Authentication & RBAC Management
-        title: Identity, Authentication & RBAC Management
+    backend/auth_identity_rbac:
+        dir_name: Authentication, Identity & RBAC Core
+        title: Authentication, Identity & RBAC Core
         scope:
             - backend/src/modules/auth/
             - backend/src/modules/rbac/
-            - backend/src/modules/utilisateurs/
         source_files: []
-        children: []
+        children:
+            - backend/auth_identity_rbac/audit
+            - backend/auth_identity_rbac/auth_infrastructure
+            - backend/auth_identity_rbac/authentication
+            - backend/auth_identity_rbac/preferences
+            - backend/auth_identity_rbac/rbac_roles_permissions
         depends_on: []
         related_to: []
-    backend/backend_modules/school_organization:
-        dir_name: School Organization & Group Consolidation
-        title: School Organization & Group Consolidation
+    backend/auth_identity_rbac/audit:
+        dir_name: Audit Logging & Log Rotation
+        title: Audit Logging & Log Rotation
         scope:
-            - backend/src/modules/etablissement/
-            - backend/src/modules/groupes-etablissements/
+            - backend/src/modules/auth/entities/audit-log.entity.ts
+            - backend/src/modules/auth/services/audit.service.ts
+            - backend/src/modules/auth/services/audit-rotation.service.ts
+            - backend/src/modules/auth/controllers/audit.controller.ts
+            - backend/src/modules/auth/cron-jobs/audit-rotation.cron.ts
+            - backend/src/modules/auth/utils/audit-helpers.ts
+            - backend/src/modules/auth/utils/audit-utilisateurs.ts
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    backend/backend_modules/staff_hr:
-        dir_name: Staff HR & Organizational Management
-        title: Staff HR & Organizational Management
+    backend/auth_identity_rbac/auth_infrastructure:
+        dir_name: Auth Middleware, Guards & DTOs (JWT + RBAC)
+        title: Auth Middleware, Guards & DTOs (JWT + RBAC)
         scope:
-            - backend/src/modules/personnel/
-            - backend/src/modules/suivi-personnel/
-            - backend/src/modules/organisation/
+            - backend/src/modules/auth/middlewares/
+            - backend/src/modules/auth/guards/
+            - backend/src/modules/auth/dto/
+            - backend/src/modules/auth/index.ts
+            - backend/src/modules/auth/cron-jobs.ts
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    backend/backend_modules/student_management:
-        dir_name: Student Lifecycle & Support Services
-        title: Student Lifecycle & Support Services
+    backend/auth_identity_rbac/authentication:
+        dir_name: Authentication, Session & JWT Token Management
+        title: Authentication, Session & JWT Token Management
+        scope:
+            - backend/src/modules/auth/controllers/auth.controller.ts
+            - backend/src/modules/auth/services/auth.service.ts
+            - backend/src/modules/auth/services/token.service.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/auth_identity_rbac/preferences:
+        dir_name: Preferences & Settings Management (User, Role & Establishment Scope)
+        title: Preferences & Settings Management (User, Role & Establishment Scope)
+        scope:
+            - backend/src/modules/auth/entities/preference-globale.entity.ts
+            - backend/src/modules/auth/entities/preference-role.entity.ts
+            - backend/src/modules/auth/entities/preference-utilisateur.entity.ts
+            - backend/src/modules/auth/services/preference-globale.service.ts
+            - backend/src/modules/auth/services/preference-utilisateur.service.ts
+            - backend/src/modules/auth/controllers/preferences.controller.ts
+            - backend/src/modules/auth/controllers/preferences-globales.controller.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/auth_identity_rbac/rbac_roles_permissions:
+        dir_name: RBAC Role & Permission Management API
+        title: RBAC Role & Permission Management API
+        scope:
+            - backend/src/modules/rbac/
+            - backend/src/modules/auth/entities/role.entity.ts
+            - backend/src/modules/auth/entities/permission.entity.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/classes_emploi_du_temps:
+        dir_name: Timetable & Room Management
+        title: Timetable & Room Management
+        scope:
+            - backend/src/modules/emploi-du-temps/
+            - backend/src/modules/salles/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/common_infrastructure:
+        dir_name: Cross-Cutting Infrastructure & Shared Utilities
+        title: Cross-Cutting Infrastructure & Shared Utilities
+        scope:
+            - backend/src/common/
+            - backend/src/shared/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/communication_notifications:
+        dir_name: Communication & Notification Subsystem (Annonces, Sondages, Messagerie, Notifica
+        title: Communication & Notification Subsystem (Annonces, Sondages, Messagerie, Notifications)
+        scope:
+            - backend/src/modules/annonces/
+            - backend/src/modules/sondages/
+            - backend/src/modules/messagerie/
+            - backend/src/modules/notifications/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/competences_notes_bulletins:
+        dir_name: Academic Assessment & Scoring Core (Competences, Notes, Bulletins, National Exam
+        title: Academic Assessment & Scoring Core (Competences, Notes, Bulletins, National Exams, Scoring)
+        scope:
+            - backend/src/modules/competences/
+            - backend/src/modules/notes/
+            - backend/src/modules/bulletins/
+            - backend/src/modules/examens-nationaux/
+            - backend/src/modules/scoring/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/database_layer:
+        dir_name: Database Layer, Migrations & Seed Data
+        title: Database Layer, Migrations & Seed Data
+        scope:
+            - backend/src/database/
+            - backend/database/migrations/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/eleves_vie_scolaire:
+        dir_name: Student Life & Records Suite (Élèves)
+        title: Student Life & Records Suite (Élèves)
         scope:
             - backend/src/modules/eleves/
             - backend/src/modules/responsables-eleves/
-            - backend/src/modules/suivi-eleves/
-            - backend/src/modules/sante/
-            - backend/src/modules/cantine/
-            - backend/src/modules/transport/
-            - backend/src/modules/cartes/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    backend/backend_modules/system_tools:
-        dir_name: System Configuration, Monitoring, and Workflow Management
-        title: System Configuration, Monitoring, and Workflow Management
-        scope:
-            - backend/src/modules/configuration/
-            - backend/src/modules/monitoring/
-            - backend/src/modules/audit/
-            - backend/src/modules/validation-workflow/
-            - backend/src/modules/types-enum/
-            - backend/src/modules/requetes/
-            - backend/src/modules/impressions/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    c58424b5580c43c9f3ab0cc33c6968ba:
-        dir_name: Academic Structure & Curriculum Management
-        title: Academic Structure & Curriculum Management
-        scope:
-            - backend/src/modules/annees-scolaires/
-            - backend/src/modules/cycles/
-            - backend/src/modules/niveaux/
-            - backend/src/modules/matieres/
-            - backend/src/modules/periodes/
-            - backend/src/modules/programmes/
+            - backend/src/modules/diplomes-eleves/
             - backend/src/modules/orientation/
-            - backend/src/modules/types-enum/
+            - backend/src/modules/suivi-eleves/
+        source_files: []
+        children:
+            - backend/eleves_vie_scolaire/diplomas
+            - backend/eleves_vie_scolaire/orientation_counseling
+            - backend/eleves_vie_scolaire/parents_guardians
+            - backend/eleves_vie_scolaire/student_master
+            - backend/eleves_vie_scolaire/student_tracking
+        depends_on: []
+        related_to: []
+    backend/eleves_vie_scolaire/diplomas:
+        dir_name: Student Diplomas & National Exam Records
+        title: Student Diplomas & National Exam Records
+        scope:
+            - backend/src/modules/diplomes-eleves/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend/backend_student_lifecycle
-            - path: backend/backend_operations_support
-            - path: backend/backend_platform_infra
-            - path: backend/backend_core_auth
-            - path: backend/backend_finance
-    d80f6f0d5d935b98a11784aa839130b1:
-        dir_name: School Operations & Multi-Tenant Management
-        title: School Operations & Multi-Tenant Management
+        related_to: []
+    backend/eleves_vie_scolaire/orientation_counseling:
+        dir_name: Student Orientation Counseling Module
+        title: Student Orientation Counseling Module
+        scope:
+            - backend/src/modules/orientation/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/eleves_vie_scolaire/parents_guardians:
+        dir_name: Parent-Child Relationship & Parent Portal API
+        title: Parent-Child Relationship & Parent Portal API
+        scope:
+            - backend/src/modules/responsables-eleves/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/eleves_vie_scolaire/student_master:
+        dir_name: Student (Élève) Master Data & Enrollment Management
+        title: Student (Élève) Master Data & Enrollment Management
+        scope:
+            - backend/src/modules/eleves/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/eleves_vie_scolaire/student_tracking:
+        dir_name: Student Conduct & Behavioral Tracking (Suivi-Élèves)
+        title: Student Conduct & Behavioral Tracking (Suivi-Élèves)
+        scope:
+            - backend/src/modules/suivi-eleves/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/etablissement_groups:
+        dir_name: Multi-Establishment & Establishment Grouping
+        title: Multi-Establishment & Establishment Grouping
         scope:
             - backend/src/modules/etablissement/
             - backend/src/modules/groupes-etablissements/
-            - backend/src/modules/cartes/
-            - backend/src/modules/impressions/
-            - backend/src/modules/materiel/
-            - backend/src/modules/cantine/
-            - backend/src/modules/transport/
-            - backend/src/modules/sante/
-            - backend/src/modules/messagerie/
-            - backend/src/modules/notifications/
-            - backend/src/modules/annonces/
-            - backend/src/modules/sondages/
-            - backend/src/modules/requetes/
-            - backend/src/modules/validation-workflow/
-            - backend/src/modules/gamification/
-            - backend/src/modules/utilisateurs/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend/backend_core_auth
-            - path: backend/backend_platform_infra
-            - path: backend/backend_finance
-            - path: backend/backend_hr_payroll
-            - path: backend/backend_student_lifecycle
-            - path: backend/backend_academic_structure
-            - path: shared
-    docker:
-        dir_name: Container Orchestration & Deployment Configuration
-        title: Container Orchestration & Deployment Configuration
+        related_to: []
+    backend/finances_paie:
+        dir_name: Finance, Canteen & Material Management Modules
+        title: Finance, Canteen & Material Management Modules
+        scope:
+            - backend/src/modules/finances/
+            - backend/src/modules/cantine/
+            - backend/src/modules/materiel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/matieres_programmes:
+        dir_name: Subjects, Programmes & Optional Courses Domain
+        title: Subjects, Programmes & Optional Courses Domain
+        scope:
+            - backend/src/modules/matieres/
+            - backend/src/modules/options/
+            - backend/src/modules/programmes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/organisation_administration:
+        dir_name: Organisation, Configuration & Periods Domain Modules
+        title: Organisation, Configuration & Periods Domain Modules
+        scope:
+            - backend/src/modules/organisation/
+            - backend/src/modules/configuration/
+            - backend/src/modules/types-enum/
+            - backend/src/modules/periodes/
+            - backend/src/modules/requetes/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/personnel_rh:
+        dir_name: Personnel & Payroll Domain Suite
+        title: Personnel & Payroll Domain Suite
+        scope:
+            - backend/src/modules/personnel/
+            - backend/src/modules/postes/
+            - backend/src/modules/fonctions/
+            - backend/src/modules/recrutement/
+            - backend/src/modules/paie/
+            - backend/src/modules/suivi-personnel/
+        source_files: []
+        children:
+            - backend/personnel_rh/paie
+            - backend/personnel_rh/personnel_master
+            - backend/personnel_rh/postes_fonctions
+            - backend/personnel_rh/recrutement
+            - backend/personnel_rh/suivi_personnel
+        depends_on: []
+        related_to: []
+    backend/personnel_rh/paie:
+        dir_name: Payroll (Paie) Module
+        title: Payroll (Paie) Module
+        scope:
+            - backend/src/modules/paie/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/personnel_rh/personnel_master:
+        dir_name: Personnel & Payroll Management Module
+        title: Personnel & Payroll Management Module
+        scope:
+            - backend/src/modules/personnel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/personnel_rh/postes_fonctions:
+        dir_name: Postes & Fonctions (Job Positions & Hierarchical Functions)
+        title: Postes & Fonctions (Job Positions & Hierarchical Functions)
+        scope:
+            - backend/src/modules/postes/
+            - backend/src/modules/fonctions/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/personnel_rh/recrutement:
+        dir_name: Recruitment & Onboarding Module
+        title: Recruitment & Onboarding Module
+        scope:
+            - backend/src/modules/recrutement/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/personnel_rh/suivi_personnel:
+        dir_name: Personnel Tracking & Scoring Module
+        title: Personnel Tracking & Scoring Module
+        scope:
+            - backend/src/modules/suivi-personnel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/scripts_tools:
+        dir_name: Migration & Test Harness Scripts
+        title: Migration & Test Harness Scripts
+        scope:
+            - backend/scripts/
+            - backend/tests/
+            - backend/test/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend/support_services:
+        dir_name: Support & Cross-Cutting Modules (Dashboard, Monitoring, Gamification, etc.)
+        title: Support & Cross-Cutting Modules (Dashboard, Monitoring, Gamification, etc.)
+        scope:
+            - backend/src/modules/dashboard/
+            - backend/src/modules/monitoring/
+            - backend/src/modules/gamification/
+            - backend/src/modules/impressions/
+            - backend/src/modules/cartes/
+            - backend/src/modules/parking/
+            - backend/src/modules/sante/
+            - backend/src/modules/transport/
+            - backend/src/modules/clubs/
+            - backend/src/modules/apparence/
+            - backend/src/modules/validation-workflow/
+            - backend/src/modules/utilisateurs/
+            - backend/src/modules/audit/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    docker_infra:
+        dir_name: eLISAschool Docker Infrastructure & Deployment
+        title: eLISAschool Docker Infrastructure & Deployment
         scope:
             - docker/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: backend
-            - path: backend/backend_platform_infra
-            - path: backend/backend_core_auth
-            - path: shared
-    shared:
-        dir_name: Shared Types, Enums, Validators & Module Registry
-        title: Shared Types, Enums, Validators & Module Registry
+        related_to: []
+    documentation:
+        dir_name: eLISAschool Project Documentation Archive
+        title: eLISAschool Project Documentation Archive
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend:
+        dir_name: eLISAschool Frontend Application
+        title: eLISAschool Frontend Application
+        scope:
+            - frontend/
+        source_files: []
+        children:
+            - frontend/app_shell_and_shared
+            - frontend/features
+            - frontend/routes_and_i18n
+        depends_on: []
+        related_to: []
+    frontend/app_shell_and_shared:
+        dir_name: App Shell, Shared UI & Cross-Cutting Concerns
+        title: App Shell, Shared UI & Cross-Cutting Concerns
+        scope:
+            - frontend/src/app/
+            - frontend/src/components/
+            - frontend/src/hooks/
+            - frontend/src/lib/
+            - frontend/src/stores/
+            - frontend/src/styles/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/features:
+        dir_name: School Management Feature Modules
+        title: School Management Feature Modules
+        scope:
+            - frontend/src/features/
+        source_files: []
+        children:
+            - frontend/features/configuration_systeme
+            - frontend/features/system_auth
+        depends_on: []
+        related_to: []
+    frontend/features/configuration_systeme:
+        dir_name: System Configuration, Parameters & Maintenance Dashboards
+        title: System Configuration, Parameters & Maintenance Dashboards
+        scope:
+            - frontend/src/features/configuration/
+            - frontend/src/features/parametres/
+            - frontend/src/features/maintenance/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/features/system_auth:
+        dir_name: Authentication, Authorization & Appearance Management
+        title: Authentication, Authorization & Appearance Management
+        scope:
+            - frontend/src/features/system/
+            - frontend/src/features/auth/
+            - frontend/src/features/apparence/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n:
+        dir_name: TanStack Router File-Based Route Registry & i18n Locale Packs
+        title: TanStack Router File-Based Route Registry & i18n Locale Packs
+        scope:
+            - frontend/src/routes/
+            - frontend/src/locales/
+        source_files: []
+        children:
+            - frontend/routes_and_i18n/administration_roles_personnel_paie
+            - frontend/routes_and_i18n/auth_public_pages
+            - frontend/routes_and_i18n/i18n_locales
+            - frontend/routes_and_i18n/organisation_structure
+            - frontend/routes_and_i18n/pedagogie_critiques
+            - frontend/routes_and_i18n/pedagogie_eleves_classe_programmes
+            - frontend/routes_and_i18n/pedagogie_notes_examens_bulletins
+            - frontend/routes_and_i18n/structure_academique_parametres
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/administration_roles_personnel_paie:
+        dir_name: Admin, Personnel & Payroll Route Definitions
+        title: Admin, Personnel & Payroll Route Definitions
+        scope:
+            - frontend/src/routes/_auth.admin.*.tsx
+            - frontend/src/routes/_auth.personnel.*.tsx
+            - frontend/src/routes/_auth.paie.*.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/auth_public_pages:
+        dir_name: Public Authentication Pages (Login, Forgot & Reset Password)
+        title: Public Authentication Pages (Login, Forgot & Reset Password)
+        scope:
+            - frontend/src/routes/login.tsx
+            - frontend/src/routes/forgot-password.tsx
+            - frontend/src/routes/reset-password.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/i18n_locales:
+        dir_name: Frontend i18n Locale Packs (French & English)
+        title: Frontend i18n Locale Packs (French & English)
+        scope:
+            - frontend/src/locales/fr/
+            - frontend/src/locales/en/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/organisation_structure:
+        dir_name: Organisation, Etablissements & School Years Route Definitions
+        title: Organisation, Etablissements & School Years Route Definitions
+        scope:
+            - frontend/src/routes/_auth.etablissements.*.tsx
+            - frontend/src/routes/_auth.annees-scolaires.*.tsx
+            - frontend/src/routes/_auth.organisation.*.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/pedagogie_critiques:
+        dir_name: Critical Modules Routes (Users, Notes, Bulletins)
+        title: Critical Modules Routes (Users, Notes, Bulletins)
+        scope:
+            - frontend/src/routes/-_auth.modules-critiques.tsx
+            - frontend/src/routes/_auth.utilisateurs.*.tsx
+            - frontend/src/routes/_auth.notes.*.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/pedagogie_eleves_classe_programmes:
+        dir_name: Auth-Protected Student, Class & Programme Routes
+        title: Auth-Protected Student, Class & Programme Routes
+        scope:
+            - frontend/src/routes/_auth.eleves.*.tsx
+            - frontend/src/routes/_auth.classes.*.tsx
+            - frontend/src/routes/_auth.programmes.*.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/pedagogie_notes_examens_bulletins:
+        dir_name: Pedagogy Routes Notes, National Exams & Report Cards
+        title: 'Pedagogy Routes: Notes, National Exams & Report Cards'
+        scope:
+            - frontend/src/routes/_auth.notes.*.tsx
+            - frontend/src/routes/_auth.examens-nationaux.*.tsx
+            - frontend/src/routes/_auth.bulletins.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend/routes_and_i18n/structure_academique_parametres:
+        dir_name: Academic Structure Settings Routes
+        title: Academic Structure Settings Routes
+        scope:
+            - frontend/src/routes/(authenticated)/parametres/structure-academique/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    scripts:
+        dir_name: eLISAschool DevOps & Maintenance Scripts
+        title: eLISAschool DevOps & Maintenance Scripts
+        scope:
+            - scripts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    shared_library:
+        dir_name: eLISAschool Shared Domain Kernel (Enums, Types & Validators)
+        title: eLISAschool Shared Domain Kernel (Enums, Types & Validators)
         scope:
             - shared/
         source_files: []

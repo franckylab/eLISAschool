@@ -1,0 +1,1 @@
+Root of the eLISAschool monorepo that wires a NestJS backend, React frontend, and shared TypeScript kernel via npm workspaces plus Docker Compose for local and production environments.

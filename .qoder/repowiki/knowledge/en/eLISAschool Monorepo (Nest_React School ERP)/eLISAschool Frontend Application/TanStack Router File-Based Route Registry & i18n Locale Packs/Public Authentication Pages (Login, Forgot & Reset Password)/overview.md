@@ -1,0 +1,1 @@
+TanStack Router file-based route declarations for the public-facing login and password-reset pages, each guarded to reject authenticated users.

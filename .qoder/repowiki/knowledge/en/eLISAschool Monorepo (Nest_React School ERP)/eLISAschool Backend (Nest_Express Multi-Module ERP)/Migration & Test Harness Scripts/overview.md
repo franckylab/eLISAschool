@@ -1,0 +1,1 @@
+One-off TypeScript/Shell scripts that run TypeORM migrations, data fixes, and integration smoke tests against the live backend database.

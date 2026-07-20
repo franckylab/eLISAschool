@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: backend/auth_identity_rbac
+title: Authentication, Identity & RBAC Core
+scope:
+    - backend/src/modules/auth/
+    - backend/src/modules/rbac/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,3 +1,0 @@
-- **Validation**: Uses `Zod` schemas (e.g., `createFraisScolariteSchema`) for strict DTO validation in controllers.
-- **Scheduling**: Implements `node-cron` for periodic financial tasks like overdue detection and alerting.
-- **ORM**: Relies on `TypeORM` with `AppDataSource` for database interactions, utilizing transactions for financial integrity.

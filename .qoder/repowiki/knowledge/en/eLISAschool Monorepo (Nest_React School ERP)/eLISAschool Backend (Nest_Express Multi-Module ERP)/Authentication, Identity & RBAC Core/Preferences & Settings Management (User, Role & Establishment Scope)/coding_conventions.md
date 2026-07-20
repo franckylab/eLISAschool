@@ -1,0 +1,5 @@
+- Each service exports both a class and a module-level singleton instance (e.g. `export const preferenceUtilisateurService = new PreferenceUtilisateurService()`) consumed by controllers instead of DI injection.
+- Cache keys follow a stable `{scope}:{resource}:{id}[:{tenant}]` pattern (`preferences:${userId}:${cle}`, `pref_globale:${etablissementId}:${cle}`) and every write path invalidates both the in-memory Map and the corresponding Redis key.
+- Controller routes wrap their bodies in try/catch and forward errors to Express' `next(error)` so they are handled centrally by the global error filter.
+- Input payloads are validated with a local `validate(schema, data)` helper that throws `AppError` with code `VALIDATION_ERROR` on failure, keeping route handlers free of parsing boilerplate.
+- Default configuration lives in module-level constants (`DEFAULT_PREFERENCES`, `DEFAULT_PREFERENCES_GLOBALES`) typed as records/arrays rather than being loaded from the database at startup.

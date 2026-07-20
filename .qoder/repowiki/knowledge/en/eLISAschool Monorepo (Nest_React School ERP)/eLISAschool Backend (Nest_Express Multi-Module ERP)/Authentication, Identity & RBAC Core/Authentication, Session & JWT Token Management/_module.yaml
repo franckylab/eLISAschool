@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/auth_identity_rbac/authentication
+title: Authentication, Session & JWT Token Management
+scope:
+    - backend/src/modules/auth/controllers/auth.controller.ts
+    - backend/src/modules/auth/services/auth.service.ts
+    - backend/src/modules/auth/services/token.service.ts
+source_files: []
+depends_on: []
+related_to: []

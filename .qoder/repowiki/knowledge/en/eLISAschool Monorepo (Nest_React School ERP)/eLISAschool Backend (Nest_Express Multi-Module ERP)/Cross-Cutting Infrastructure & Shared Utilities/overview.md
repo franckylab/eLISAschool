@@ -1,0 +1,1 @@
+Provides Express middleware, global error handling, Redis-backed caching, audit logging, pagination helpers, and shared constants reused across all Nest/Express modules.

@@ -1,1 +1,0 @@
-Manages school fee billing, expense workflows, OHADA-compliant accounting entries, and treasury operations for educational institutions.

@@ -1,0 +1,1 @@
+Docker Compose-based orchestration for the eLISAschool monorepo, providing local/cloud dev/prod environments with PostgreSQL, Redis, pgAdmin, and automated backup/restore tooling.

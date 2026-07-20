@@ -1,0 +1,3 @@
+- Each route is declared by exporting a `Route` constant created with `createFileRoute('/(authenticated)/parametres/structure-academique/<slug>')({ component: ... })`.
+- The component prop always references a page component imported from a peer `@/features/<kebab-case-feature>` package rather than defining inline JSX.
+- Route files are single-purpose, ~7-line modules that exist solely to bind a URL path to a feature page.

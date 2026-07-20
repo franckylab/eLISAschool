@@ -1,0 +1,4 @@
+- Route files export a single `Route` constant created via `createFileRoute('/_auth/<feature>/...')` with no other exports.
+- Every route declares a `beforeLoad` hook that calls `requireModulePermission('<feature-key>')` using the same string key as the feature package name.
+- Feature components are imported from `@/features/<feature>` (e.g. `NotesPage`, `ExamensNationauxPage`, `BulletinsPage`) rather than being defined inline.
+- Index routes use a trailing slash in the path string (`/_auth/notes/`, `/_auth/examens-nationaux/`) while detail routes append a `$id` parameter.

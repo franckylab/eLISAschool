@@ -1,0 +1,4 @@
+- Route files export a single `Route` constant produced by `createFileRoute('/_auth/<area>/<path>')` with a `beforeLoad` hook declaring access control and a `component` pointing to a feature-page import.
+- Admin routes use `requireRole(['SUPER_ADMIN', 'ADMIN'])` in `beforeLoad`; personnel and payroll routes use `requireModulePermission('personnel'|'paie')`, keeping role vs. module checks separate by area.
+- Layout routes (e.g. roles) render a back button, `Breadcrumbs`, and an animated `<Outlet>` inside an `ErrorBoundary`, while leaf routes only declare the page component.
+- URL parameters are forwarded to page components via a small local `RouteComponent` wrapper that reads params with `Route.useParams()` rather than passing them directly in the route declaration.

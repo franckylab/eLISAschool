@@ -1,0 +1,1 @@
+Tracks personnel incidents, evaluations and absences while computing multi-dimensional performance scores, rankings and configurable point rules for school staff.

@@ -1,0 +1,5 @@
+- Each route file exports exactly one `Route = createFileRoute('/_auth/...')` binding a URL path to a React component.
+- Data-bearing routes declare a `beforeLoad: () => requireModulePermission('<module-key>')` guard; purely presentational routes omit it.
+- Nested sections under `/organisation/` follow a layout-first pattern: a parent file defines a layout rendering `Breadcrumbs`, a back-to-organisation button, and `<Outlet />`, while sibling `*.index.tsx` / `*.\$id.tsx` files provide child views.
+- Resource detail/edit routes use the `$id` filename segment to capture the primary key and forward it to a `*DetailPage` or `*EditPage` component.
+- i18n labels for navigation elements are resolved through `useTranslation('organisation')` and passed into the `Breadcrumbs` `labelsMap` rather than being hardcoded.

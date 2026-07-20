@@ -1,1 +1,0 @@
-Uses TypeORM for data persistence with UUID primary keys and transactional query runners for complex writes (e.g., group creation with initial members).

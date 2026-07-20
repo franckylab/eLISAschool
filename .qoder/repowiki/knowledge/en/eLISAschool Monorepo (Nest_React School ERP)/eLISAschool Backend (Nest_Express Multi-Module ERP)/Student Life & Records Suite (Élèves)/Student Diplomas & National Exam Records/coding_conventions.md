@@ -1,0 +1,6 @@
+- Each layer file opens with the eLISAschool banner comment including Version and Auteur fields.
+- DTOs are defined as Zod objects and immediately re-exported as TypeScript types via `z.infer<typeof schema>`.
+- Controllers validate incoming requests with `validateDto(schema, req.body|req.query)` before delegating to the service, and wrap every handler in try/catch forwarding to `next(error)`.
+- Mutating routes stack `authMiddleware` followed by `requirePermission('config:edit')`; read-only routes use `authMiddleware` alone.
+- Service methods throw `AppError` with explicit HTTP status and machine-readable code (e.g. 409/DIPLOME_EXISTS, 404/NOT_FOUND) instead of returning error responses.
+- List endpoints return a `{ success: true, data: result }` envelope consistently across all routes.

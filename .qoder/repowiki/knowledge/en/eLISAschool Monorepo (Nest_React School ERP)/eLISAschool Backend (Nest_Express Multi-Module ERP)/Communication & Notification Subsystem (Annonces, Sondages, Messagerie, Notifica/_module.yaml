@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/communication_notifications
+title: Communication & Notification Subsystem (Annonces, Sondages, Messagerie, Notifications)
+scope:
+    - backend/src/modules/annonces/
+    - backend/src/modules/sondages/
+    - backend/src/modules/messagerie/
+    - backend/src/modules/notifications/
+source_files: []
+depends_on: []
+related_to: []

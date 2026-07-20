@@ -1,0 +1,6 @@
+- Every entity carries a `uuid etablissementId` column plus a `@ManyToOne(() => Etablissement)` relation to enforce multi-tenancy at the row level.
+- Each module exposes a `config/<module>.config.ts` defining a `XxxConfig` interface paired with a `XXX_DEFAULT_CONFIG` constant and a `parseConfigValue` string→typed helper.
+- Controllers are single-file Express `Router`s created with `const router = Router()` and re-exported as `xxxController` from `controllers/index.ts`; routes are grouped by domain section using comment headers.
+- Request bodies are validated through a local `validate(schema, data)` helper that throws `AppError(400, 'VALIDATION_ERROR', ...)` on failure, keeping controllers free of raw Zod calls.
+- Service methods receive `userId` and `etablissementId` extracted from `(req as any).utilisateur` so business logic stays tenant-scoped without touching the HTTP layer.
+- Module entry points (`index.ts`) use barrel exports (`export * from './entities' | './dto' | './services' | './controllers'`) so consumers import a single package path.

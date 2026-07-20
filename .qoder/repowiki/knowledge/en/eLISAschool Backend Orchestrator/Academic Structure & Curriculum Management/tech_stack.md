@@ -1,3 +1,0 @@
-- Zod for schema-based DTO validation and type inference across all modules.
-- TypeORM for ORM-based data access with PostgreSQL-specific features (UUIDs, JSONB).
-- Express.js for HTTP routing and middleware integration.

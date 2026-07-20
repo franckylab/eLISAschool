@@ -1,0 +1,1 @@
+Bootstraps the eLISAschool Node.js server, wires TypeORM and Redis, mounts all module routers under /api with multi-tenant filtering, and exposes Swagger docs.

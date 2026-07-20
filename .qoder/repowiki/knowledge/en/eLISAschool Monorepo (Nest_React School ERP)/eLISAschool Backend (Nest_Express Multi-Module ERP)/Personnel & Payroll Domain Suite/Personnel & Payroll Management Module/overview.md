@@ -1,0 +1,1 @@
+Express-based module managing staff master data, contracts, assignments, evaluations, course hours, absences, and payroll calculation/bulletins for multi-tenant establishments.

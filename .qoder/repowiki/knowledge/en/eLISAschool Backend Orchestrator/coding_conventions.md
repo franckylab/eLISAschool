@@ -1,3 +1,0 @@
-- All domain modules follow a strict Controller-Service-Entity directory structure with centralized index exports.
-- Global `tenantMiddleware` is applied to all authenticated routes to enforce multi-tenancy at the request level.
-- Non-critical modules are protected by `requireModuleActive` middleware to support dynamic per-tenant feature enabling.

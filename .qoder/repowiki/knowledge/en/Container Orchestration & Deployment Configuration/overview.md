@@ -1,1 +1,0 @@
-Defines Docker-based infrastructure for the eLISAschool application, including multi-stage builds, service composition, and reverse proxy configuration.

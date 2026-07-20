@@ -1,8 +1,0 @@
-- **Entry Points**: `src/index.ts` bootstraps the application by initializing the TypeORM DataSource, loading notification providers, starting cron jobs, and launching the Express server defined in `src/app.ts`.
-- **Configuration Layer**: `src/config/` manages environment variables via Zod validation (`env.config.ts`) and TypeORM connection settings (`database.config.ts`), ensuring type-safe access to secrets and service endpoints.
-- **Database Layer**: `src/database/` exposes a singleton `AppDataSource` for TypeORM operations and organizes schema evolution through SQL and TypeScript migrations in `src/database/migrations/`.
-- **Shared Common Module**: `src/common/` acts as a utility library for cross-cutting concerns, including:
-  - **Middlewares**: `tenant.middleware.ts` enforces multi-tenancy by resolving the current establishment ID from JWT claims or query parameters.
-  - **Filters**: Global error handling (`error.filter.ts`) and 404 catchers (`not-found.filter.ts`) standardize API error responses.
-  - **Interceptors**: `request-logger.interceptor.ts` provides HTTP request/response logging with duration metrics.
-  - **Utilities**: Shared helpers for logging (Winston), API response formatting, pagination, and cryptography.

@@ -1,4 +1,0 @@
-- Multi-stage Dockerfiles separate dependency installation, TypeScript compilation, and production runtime for both backend (Node.js/Express) and frontend (React/Vite) services.
-- docker-compose.yml orchestrates four services (PostgreSQL, Redis, backend, frontend) on a shared bridge network with health-check dependencies ensuring database readiness before API startup.
-- Nginx acts as a reverse proxy in the frontend container, routing static assets and SPA fallbacks locally while proxying /api requests to the backend service.
-- Shared code is mounted as volumes in development but compiled into distinct dist directories in production builds.

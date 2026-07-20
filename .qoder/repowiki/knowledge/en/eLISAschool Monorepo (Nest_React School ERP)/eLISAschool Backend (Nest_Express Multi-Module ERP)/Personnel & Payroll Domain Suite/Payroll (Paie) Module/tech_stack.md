@@ -1,0 +1,1 @@
+TypeScript + Express routers; persistence via TypeORM repositories obtained through `AppDataSource.getRepository(...)`; input validation with Zod schemas; error propagation through a shared `AppError` filter.

@@ -1,0 +1,1 @@
+TanStack Router file-based route definitions for the critical modules — users, notes, and bulletins — each gated by a module-level permission guard.

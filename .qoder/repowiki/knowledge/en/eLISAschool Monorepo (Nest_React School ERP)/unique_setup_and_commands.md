@@ -1,0 +1,1 @@
+`npm install` then `npm run dev` starts both backend and frontend concurrently; `npm run docker:dev[:build]` boots the full stack via `docker-compose.dev.yml`; `npm run db:migrate` / `db:seed` proxy to the backend workspace; `npm run test` / `lint` / `build` propagate to every workspace.

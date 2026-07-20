@@ -1,0 +1,1 @@
+School payroll engine that computes monthly payslips, overtime, bonuses and social contributions for personnel across four remuneration modes.

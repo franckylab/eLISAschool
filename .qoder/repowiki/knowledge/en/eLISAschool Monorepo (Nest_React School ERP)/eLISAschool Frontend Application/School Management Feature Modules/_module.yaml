@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: frontend/features
+title: School Management Feature Modules
+scope:
+    - frontend/src/features/
+source_files: []
+depends_on: []
+related_to: []

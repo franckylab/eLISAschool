@@ -1,0 +1,6 @@
+- Controller routes are wrapped with `authMiddleware` followed by `requirePermission('<action>')` from `@modules/auth/middlewares`, using dot-notation permission strings such as `eleves:manage`, `responsables:view`, `parents:view-enfants`, `parents:pay`.
+- Request bodies are validated through a local `validateDto(schema, req.body)` helper that throws `AppError(400, 'VALIDATION_ERROR', ...)` on Zod failure, keeping validation uniform across endpoints.
+- Services acquire repositories via `AppDataSource.getRepository(Entity)` in the constructor rather than dependency injection, and throw typed `AppError` instances with machine-readable codes like `RELATION_ALREADY_EXISTS`, `PARENT_ACCESS_DENIED`.
+- Write operations that mutate a `ResponsableEleve` record call `auditService.log({ action: 'CREATE'|'UPDATE'|'DELETE', cible: 'ResponsableEleve', ... })` passing both `anciennesValeurs` and `nouvellesValeurs` before returning.
+- Soft-delete semantics are enforced by setting `actif = false` instead of removing rows, and read queries consistently filter `where: { actif: true }`.
+- Cross-module authorization uses the `parentsService.peutAccederEleve` / `peutPayerPourEleve` helpers (or the `requireParentAccess` middleware) so resource-level checks live in one place rather than being duplicated in each handler.

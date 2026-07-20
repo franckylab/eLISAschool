@@ -1,0 +1,1 @@
+`start-dev.sh` boots the dev server with nodemon; `deploy-all-migrations.sh` and `deploy-v31-complete.sh` run the full migration suite; individual migrations are executed via `scripts/run-migration.ts` / `scripts/run-pending-migrations.ts`; seed data is loaded through `src/database/seeds/run-seeds.ts`.

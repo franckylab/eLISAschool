@@ -1,6 +1,0 @@
-- The module is structured into three logical sub-domains: `personnel` (core HR/Payroll), `suivi-personnel` (staff monitoring/scoring), and `scoring` (shared scoring logic).
-- Each sub-domain follows a standard layered architecture with `controllers`, `services`, `entities`, and `dto` directories.
-- `personnel` handles complex payroll logic via `CalculPaieService` and exposes REST endpoints through controllers like `bulletin-paie.controller.ts`.
-- `suivi-personnel` integrates automated background tasks using `node-cron` in `cron-jobs.ts` to recalculate staff scores and update rankings.
-- `scoring` provides a reusable service for score aggregation and ranking, consumed by both student and staff modules.
-- Dependencies flow from controllers to services to entities, with shared utilities like `AppDataSource` and `logger` imported from common packages.

@@ -1,3 +1,0 @@
-- Environment variables use default fallback syntax (${VAR:-default}) for all configurable parameters including database credentials and service ports.
-- Service containers use explicit restart policies (unless-stopped) and health checks to ensure reliability and automatic recovery.
-- Multi-stage builds consistently use 'base', 'deps', 'builder', and 'production'/'runner' stage naming conventions across Dockerfiles.

@@ -1,1 +1,0 @@
-Development environment uses volume mounts for hot-reloading (npm run dev) while production relies on multi-stage builds; startup requires docker-compose up -d after setting environment variables via .env file.
