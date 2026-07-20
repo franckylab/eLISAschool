@@ -6,7 +6,7 @@ import {
     ArrowLeft, Users, BookOpen, MapPin,
     Edit, Trash2, UserPlus, TrendingUp, Award, Power,
     Calendar, CheckCircle, XCircle, AlertCircle,
-    Group,
+    Group, GraduationCap,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';

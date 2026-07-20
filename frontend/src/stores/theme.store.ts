@@ -69,7 +69,7 @@ export const useThemeStore = create<ThemeState>()(
             couleurDominante: COULEUR_DEFAUT,
             couleurSecondaire: genererSecondaire(COULEUR_DEFAUT),
             couleurAccent: genererAccent(COULEUR_DEFAUT),
-            mode: 'light' as ModeTheme,
+            mode: 'dark' as ModeTheme,
 
             setCouleurDominante: (couleur: string) => {
                 const secondaire = genererSecondaire(couleur);
@@ -100,11 +100,11 @@ export const useThemeStore = create<ThemeState>()(
                     couleurDominante: COULEUR_DEFAUT,
                     couleurSecondaire: secondaire,
                     couleurAccent: accent,
-                    mode: 'light',
+                    mode: 'dark',
                 });
                 appliquerThemeCSS(COULEUR_DEFAUT, secondaire, accent);
                 mettreAJourFavicon(COULEUR_DEFAUT);
-                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-theme', 'dark');
             },
 
             chargerDepuisConfig: async () => {
@@ -123,7 +123,7 @@ export const useThemeStore = create<ThemeState>()(
                         const dominante = theme.couleurDominante || COULEUR_DEFAUT;
                         const secondaire = theme.couleurSecondaire || genererSecondaire(dominante);
                         const accent = theme.couleurAccent || genererAccent(dominante);
-                        const mode = theme.mode || 'light';
+                        const mode = theme.mode || 'dark';
 
                         set({
                             couleurDominante: dominante,
