@@ -7,7 +7,7 @@
  * 
  * Affiche les fonds d'écran en rotation avec transition en fondu (1.5s).
  * Précharge tous les fonds en mémoire pour une rotation fluide.
- * Fallback sur couleur unie si aucun fond configuré.
+ * Fond semi-transparent superposé au fond alvéole fixe (NidAlveoleBackground).
  */
 
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
@@ -34,14 +34,11 @@ export function useFondActuel() {
 }
 
 interface FondRotatorProps {
-    /** Couleur de fond fallback (CSS variable ou valeur hex) */
-    fallbackColor?: string;
     /** Durée de la transition en ms (défaut: 1500) */
     transitionDuration?: number;
 }
 
 export function FondRotator({
-    fallbackColor = 'var(--color-fond, #f5f5f5)',
     transitionDuration = 1500,
 }: FondRotatorProps) {
     console.log('[FondRotator] Rendu du composant');
@@ -183,39 +180,22 @@ export function FondRotator({
     // RETURNS CONDITIONNELS (APRÈS tous les hooks)
     // ============================================
 
-    // En cas d'erreur API (backend non démarré, non authentifié, etc.)
     if (isErrorFonds || isErrorConfig) {
-        console.warn('[FondRotator] Erreur API détectée, affichage fallback', {
+        console.warn('[FondRotator] Erreur API, rendu transparent (nid alvéole visible)', {
             errorFonds: errorFonds?.message,
             errorConfig: errorConfig?.message,
         });
-        return (
-            <div
-                className="fixed inset-0 -z-10"
-                style={{ backgroundColor: fallbackColor }}
-            />
-        );
+        return null;
     }
 
-    // Pas de fonds ou chargement → afficher fallback
     if (isLoadingFonds || isLoadingConfig) {
-        console.log('[FondRotator] Chargement en cours, affichage fallback');
-        return (
-            <div
-                className="fixed inset-0 -z-10"
-                style={{ backgroundColor: fallbackColor }}
-            />
-        );
+        console.log('[FondRotator] Chargement, rendu transparent (nid alvéole visible)');
+        return null;
     }
 
     if (!fondsTyped || fondsTyped.length === 0) {
-        console.log('[FondRotator] Aucun fond disponible, affichage fallback');
-        return (
-            <div
-                className="fixed inset-0 -z-10"
-                style={{ backgroundColor: fallbackColor }}
-            />
-        );
+        console.log('[FondRotator] Aucun fond disponible, rendu transparent (nid alvéole visible)');
+        return null;
     }
 
     // Afficher uniquement le fond actuel avec transition
@@ -244,12 +224,6 @@ export function FondRotator({
     return (
         <FondActuelContext.Provider value={{ fondActuelId: fondActuel.id, fondActuelNom: fondActuel.nom }}>
             <div className="fixed inset-0 -z-10 overflow-hidden">
-                {/* Couche de couleur fallback toujours présente */}
-                <div
-                    className="absolute inset-0"
-                    style={{ backgroundColor: fallbackColor }}
-                />
-
                 {/* Fond actuel avec fondu — filtre dark mode via CSS variables */}
                 <div
                     className="absolute inset-0"

@@ -27,6 +27,16 @@ Uniformiser toutes les pages des modules (filières, spécialités, examens-nati
 ### Active
 — Aucune tâche active.
 
+## Fond alvéole principal (nid d'abeille)
+- **SVG statique généré** : `public/fonds-catalogue/nid-alveole-dark.svg` + `nid-alveole-light.svg` — 570 hexagones chacun, 1920×1080, `preserveAspectRatio="xMidYMid slice"`
+- **Damier `e`/`S`** : alternance stricte `(row + col) % 2`, `e` en `#5a8a6a`/`#8a9a84`, `S` en `#6a9a7a`/`#7a8a74` (dark/light), opacité 0.45
+- **Gradient global dark** : `#1a3a3a` → `#0d2b2b` (teal foncé)
+- **Gradient global light** : `#f0f2ee` → `#e6eae2` (gris clair)
+- **Gradient par cellule** : 12 directions (30° incréments), assignation pseudo-aléatoire via `seedRand`. Dark : `#1e4040` → `#2d5a4a`. Light : `#e8ece4` → `#dce2da`. Opacité 0.55, contour 0.5px.
+- **Composant** `NidAlveoleBackground.tsx` : `fixed inset-0 -z-20`, `background-size: cover`, détecte `data-theme` via MutationObserver pour servir le SVG correspondant
+- **Z-ordering** dans `PageLayout` : `-z-20` (base) → `FondRotator` `-z-10` (SVGs catalogue par-dessus, transparent si aucun fond)
+- **Générateur** : `/tmp/opencode/gen-honeycomb.js` (Node, usage unique, génère les deux variantes)
+
 ### Blocked
 — (none)
 
@@ -49,5 +59,5 @@ Attendre les instructions de l'utilisateur.
 - **Composant `FondImage`** (`components/ui/FondImage.tsx`) réutilisable pour toute vignette/aperçu de fond. Modes `background` (FondRotator) et `img` (grille catalogue).
   - Applique `filter: var(--fond-filter)` et `opacity: var(--fond-opacity)` automatiquement.
   - Cache-bust via `?v=${Date.parse(fond.updatedAt)}` intégré.
-- **FondRotator** : wrapper div avec les CSS variables, `willChange: opacity, filter` pour éviter le paint jank.
+- **FondRotator** : wrapper div avec les CSS variables, `willChange: opacity, filter`. Rendu transparent (null) en cas d'erreur/chargement/absence de fonds — plus de fallback couleur opaque pour laisser voir le nid d'abeille en dessous. Prop `fallbackColor` supprimée.
 - **ApparencePage** : preview `<img>` avec `filter: var(--fond-filter)`. Grille catalogue avec miniatures SVG via `FondImage` + overlay hover "Aperçu".
