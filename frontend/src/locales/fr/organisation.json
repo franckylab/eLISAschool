@@ -98,10 +98,7 @@
         "DIRECTION": "Direction",
         "DEPARTEMENT": "Département",
         "SERVICE": "Service",
-        "POLE": "Pôle",
-        "FILIERE": "Filière",
-        "CYCLE": "Cycle",
-        "SECTION": "Section",
+        "POLE_PEDAGOGIQUE": "Pôle pédagogique",
         "COMMISSION": "Commission",
         "EQUIPE": "Équipe",
         "AUTRE": "Autre"
@@ -130,15 +127,6 @@
         "SUPERVISEUR": "Superviseur",
         "EXECUTANT": "Exécutant",
         "STAGIAIRE": "Stagiaire"
-    },
-    "typeOrganisation": {
-        "DIRECTION_GENERALE": "Direction Générale",
-        "DIRECTION": "Direction",
-        "DEPARTEMENT": "Département",
-        "SERVICE": "Service",
-        "POLE": "Pôle",
-        "CELLULE": "Cellule",
-        "COMMISSION": "Commission"
     },
     "typeRelation": {
         "SUPERVISE_DIRECT": "Supervision directe",
@@ -229,20 +217,9 @@
     "retourListe": "Retour à la liste",
     "retourOrganisation": "Retour à l'organisation",
     "informations": "Informations",
-    "occupation": "Occupation {taux}%",
+    "occupation": "Occupation {{taux}}%",
     "postesVacants": "Postes vacants",
     "enCreation": "En création",
-    "statutOrganisation": {
-        "ACTIF": "Actif",
-        "EN_CREATION": "En création",
-        "ARCHIVE": "Archivé"
-    },
-    "typeOrganisationLabel": {
-        "ETABLISSEMENT_SCOLAIRE": "Établissement scolaire",
-        "GROUPE_SCOLAIRE": "Groupe scolaire",
-        "ENTREPRISE": "Entreprise",
-        "ASSOCIATION": "Association"
-    },
     "typePersonnel": "Type de personnel",
     "typesPersonnel": "Types de personnel",
     "nouveauTypePersonnel": "Nouveau type de personnel",

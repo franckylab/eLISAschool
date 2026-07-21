@@ -1,51 +1,10 @@
 import type { Poste } from '@/features/postes/types/poste.types';
 
-export type TypeOrganisation = 'ETABLISSEMENT_SCOLAIRE' | 'GROUPE_SCOLAIRE' | 'ENTREPRISE' | 'ASSOCIATION';
-export type StatutOrganisation = 'ACTIF' | 'EN_CREATION' | 'ARCHIVE';
-
-export type TypeUnite = 'DIRECTION' | 'DEPARTEMENT' | 'SERVICE' | 'POLE' | 'FILIERE' | 'CYCLE' | 'SECTION' | 'COMMISSION' | 'EQUIPE' | 'AUTRE';
+export type TypeUnite = 'DIRECTION' | 'DEPARTEMENT' | 'SERVICE' | 'POLE_PEDAGOGIQUE' | 'COMMISSION' | 'EQUIPE' | 'AUTRE';
 export type StatutUnite = 'ACTIF' | 'EN_CREATION' | 'EN_RESTRUCTURATION' | 'ARCHIVE';
 
 export type TypeRelationHierarchique = 'SUPERVISE_DIRECT' | 'SUPERVISE_INDIRECT' | 'RATTACHEMENT_FONCTIONNEL' | 'COLLABORATION' | 'REMPLACEMENT' | 'INTERIM';
 export type StatutRelation = 'ACTIVE' | 'HISTORIQUE' | 'PLANIFIEE';
-
-// ==================== ORGANISATION ====================
-
-export interface Organisation {
-    id: string;
-    nom: string;
-    description?: string;
-    type: TypeOrganisation;
-    logoUrl?: string;
-    code?: string;
-    email?: string;
-    telephone?: string;
-    adresse?: string;
-    siteWeb?: string;
-    statut: StatutOrganisation;
-    actif: boolean;
-    etablissementId?: string;
-    metadata?: Record<string, any>;
-    createdAt: string;
-    updatedAt: string;
-    unites?: UniteOrganisationnelle[];
-}
-
-export interface CreerOrganisationDto {
-    nom: string;
-    description?: string;
-    type?: TypeOrganisation;
-    logoUrl?: string;
-    code?: string;
-    email?: string;
-    telephone?: string;
-    adresse?: string;
-    siteWeb?: string;
-    etablissementId?: string;
-    metadata?: Record<string, any>;
-}
-
-export type ModifierOrganisationDto = Partial<CreerOrganisationDto>;
 
 // ==================== UNITÉ ORGANISATIONNELLE ====================
 
@@ -57,7 +16,7 @@ export interface UniteOrganisationnelle {
     code: string;
     statut: StatutUnite;
     actif: boolean;
-    organisationId: string;
+    etablissementId: string;
     parentId?: string;
     ordre: number;
     responsableNom?: string;
@@ -68,7 +27,6 @@ export interface UniteOrganisationnelle {
     metadata?: Record<string, any>;
     createdAt: string;
     updatedAt: string;
-    organisation?: Organisation;
     parent?: UniteOrganisationnelle;
     enfants?: UniteOrganisationnelle[];
     postes?: Poste[];
@@ -79,7 +37,7 @@ export interface CreerUniteDto {
     description?: string;
     type: TypeUnite;
     code: string;
-    organisationId: string;
+    etablissementId: string;
     parentId?: string;
     ordre?: number;
     responsableNom?: string;
@@ -93,7 +51,7 @@ export interface CreerUniteDto {
 export type ModifierUniteDto = Partial<CreerUniteDto>;
 
 export interface UniteFiltres {
-    organisationId?: string;
+    etablissementId?: string;
     type?: TypeUnite;
     actif?: boolean;
     parentId?: string | null;
@@ -243,7 +201,7 @@ export interface TemplateOrganisation {
 export interface GenererOrganisationDto {
     templateId?: string;
     structure?: any;
-    organisationId: string;
+    etablissementId: string;
     options?: {
         prefixeCode?: string;
         creerHierarchie?: boolean;
@@ -259,14 +217,4 @@ export interface ResultatGeneration {
     postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
     hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
     arborescence: any;
-}
-
-// ==================== FILTRES GÉNÉRIQUES ====================
-
-export interface OrganisationFiltres {
-    page?: number;
-    limit?: number;
-    recherche?: string;
-    type?: TypeOrganisation;
-    statut?: StatutOrganisation;
 }

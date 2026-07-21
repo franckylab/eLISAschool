@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Layers } from 'lucide-react';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
+import { useAuthStore } from '@/stores/auth.store';
 import { useCreerUnite, useModifierUnite } from '../hooks/use-organisation';
 import { createUniteSchema, updateUniteSchema } from '../types/organisation.zod';
 import { BaseFormModal } from './base-form-modal';
@@ -13,13 +14,13 @@ import type { UniteOrganisationnelle, TypeUnite } from '../types/organisation.ty
 interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    organisationId: string;
     parentId?: string;
     unite?: UniteOrganisationnelle | null;
 }
 
-export function UniteFormModal({ open, onOpenChange, organisationId, parentId, unite }: Props) {
+export function UniteFormModal({ open, onOpenChange, parentId, unite }: Props) {
     const { t } = useTranslation('organisation');
+    const etablissementId = useAuthStore(s => s.etablissementId) || '';
     const isEdit = !!unite;
     const creer = useCreerUnite();
     const modifier = useModifierUnite();
@@ -53,7 +54,7 @@ export function UniteFormModal({ open, onOpenChange, organisationId, parentId, u
     const onSubmit = async (data: any) => {
         setApiError(null);
         try {
-            const payload = { ...data, organisationId, parentId: parentId || unite?.parentId || undefined };
+            const payload = { ...data, etablissementId, parentId: parentId || unite?.parentId || undefined };
             if (isEdit && unite) {
                 const { code: _, ...updateData } = payload;
                 await modifier.mutateAsync({ id: unite.id, ...updateData });

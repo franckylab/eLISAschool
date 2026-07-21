@@ -50,14 +50,13 @@ export class PostesVacantsService {
         // Requête pour trouver les postes avec capacité disponible
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
-            .leftJoinAndSelect('uo.organisation', 'org')
             .where('p.actif = :actif', { actif: true })
             .andWhere('p."occupantsCount" < p."nombrePostes"')
             .andWhere('p.statut != :supprime', { supprime: StatutPoste.SUPPRIME })
             .orderBy('p.updatedAt', 'ASC');
 
         if (etablissementId) {
-            qb.andWhere('org.etablissementId = :eid', { eid: etablissementId });
+            qb.andWhere('uo.etablissementId = :eid', { eid: etablissementId });
         }
 
         const postesVacants = await qb.getMany();
@@ -75,7 +74,6 @@ export class PostesVacantsService {
                 intitule: poste.intitulé,
                 code: poste.code,
                 unite: poste.uniteOrganisationnelle?.nom,
-                organisation: poste.uniteOrganisationnelle?.organisation?.nom,
                 joursVacance,
                 dernierMAJ: poste.updatedAt,
             };
@@ -107,8 +105,7 @@ export class PostesVacantsService {
             .andWhere('p."occupantsCount" < p."nombrePostes"')
             .andWhere('p.statut != :supprime', { supprime: StatutPoste.SUPPRIME });
         if (etablissementId) {
-            qb.leftJoin('uo.organisation', 'org')
-                .andWhere('org.etablissementId = :eid', { eid: etablissementId });
+            qb.andWhere('uo.etablissementId = :eid', { eid: etablissementId });
         }
 
         const postesVacants = await qb.getMany();

@@ -142,7 +142,7 @@ export class ClonageService {
         const codeExistant = await this.uniteRepo.findOne({
             where: {
                 code: nouveauCode,
-                organisationId: uniteSource.organisationId,
+                etablissementId: uniteSource.etablissementId,
             },
         });
 
@@ -160,7 +160,7 @@ export class ClonageService {
             type: uniteSource.type,
             code: nouveauCode,
             description: uniteSource.description,
-            organisationId: uniteSource.organisationId,
+            etablissementId: uniteSource.etablissementId,
             parentId: uniteSource.parentId,
             actif: false, // Commence inactive
             statut: uniteSource.statut,

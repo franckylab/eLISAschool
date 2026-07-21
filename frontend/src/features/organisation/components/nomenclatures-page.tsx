@@ -15,13 +15,14 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { TabsBar, TabsContent } from '@/components/ui';
 import type { Tab } from '@/components/ui';
 import { usePermissions } from '@/hooks';
-import { useOrganisations, useNiveauxOrganisation, useCreerNiveauOrganisation, useModifierNiveauOrganisation, useSupprimerNiveauOrganisation,
+import { useNiveauxOrganisation, useCreerNiveauOrganisation, useModifierNiveauOrganisation, useSupprimerNiveauOrganisation,
     useUsagesUnite, useCreerUsageUnite, useModifierUsageUnite, useSupprimerUsageUnite,
     useCategoriesPoste, useCreerCategoriePoste, useModifierCategoriePoste, useSupprimerCategoriePoste,
     useNiveauxResponsabilite, useCreerNiveauResponsabilite, useModifierNiveauResponsabilite, useSupprimerNiveauResponsabilite,
     useTemplatesOrganisation, useCreerTemplateOrganisation, useModifierTemplateOrganisation, useSupprimerTemplateOrganisation,
     useGenererOrganisation,
 } from '../hooks/use-organisation';
+import { useAuthStore } from '@/stores/auth.store';
 import { useTypesPersonnel, useCreerTypePersonnel, useModifierTypePersonnel, useSupprimerTypePersonnel } from '@/features/personnel/hooks/use-types-personnel';
 import type { NiveauOrganisation, UsageUnite, CategoriePoste, NiveauResponsabilite, TemplateOrganisation, ResultatGeneration } from '../types/organisation.types';
 
@@ -698,21 +699,20 @@ function TypePersonnelAddForm({ onSave, onCancel }: { onSave: (v: any) => void; 
 
 function TabGeneration() {
     const { t } = useTranslation('organisation');
-    const { data: organisations } = useOrganisations();
     const { data: templates } = useTemplatesOrganisation();
+    const etablissementId = useAuthStore(s => s.etablissementId) || '';
     const generer = useGenererOrganisation();
     const [templateId, setTemplateId] = useState('');
-    const [organisationId, setOrganisationId] = useState('');
     const [prefixeCode, setPrefixeCode] = useState('');
     const [modeConflit, setModeConflit] = useState<'ERROR' | 'SKIP' | 'OVERWRITE'>('OVERWRITE');
     const [creerHierarchie, setCreerHierarchie] = useState(true);
     const [result, setResult] = useState<ResultatGeneration | null>(null);
 
     const handleGenerate = () => {
-        if (!templateId || !organisationId) return;
+        if (!templateId || !etablissementId) return;
         generer.mutate({
             templateId,
-            organisationId,
+            etablissementId,
             options: {
                 prefixeCode: prefixeCode || undefined,
                 creerHierarchie,
@@ -733,14 +733,6 @@ function TabGeneration() {
                         className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]">
                         <option value="">{t('selectionnerTemplate')}</option>
                         {(templates || []).map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.nom}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">{t('organisationCible')}</label>
-                    <select value={organisationId} onChange={(e) => setOrganisationId(e.target.value)}
-                        className="w-full px-3 py-2 border border-[var(--color-bordure)] rounded bg-[var(--color-surface)] text-[var(--color-text-primary)]">
-                        <option value="">{t('selectionnerOrganisation')}</option>
-                        {(organisations?.items || []).map((org) => <option key={org.id} value={org.id}>{org.nom}</option>)}
                     </select>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -767,7 +759,7 @@ function TabGeneration() {
                     </div>
                 </div>
                 <ElisaButton variant="primary" icon={<Play className="h-4 w-4" />}
-                    onClick={handleGenerate} disabled={!templateId || !organisationId || generer.isPending}>
+                    onClick={handleGenerate} disabled={!templateId || !etablissementId || generer.isPending}>
                     {generer.isPending ? t('generationEnCours') : t('generer')}
                 </ElisaButton>
 

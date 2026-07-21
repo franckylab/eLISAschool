@@ -9,13 +9,11 @@ import { useModulePermissions } from '@/hooks';
 import { useStatistiquesOrganisation } from '../hooks/use-organisation';
 import { usePostes } from '@/features/postes/hooks/use-postes';
 
-interface Props { organisationId: string }
-
-export function TabPostes({ organisationId }: Props) {
+export function TabPostes() {
     const { t } = useTranslation('organisation');
     const navigate = useNavigate();
     const { canAccess } = useModulePermissions('postes');
-    const stats = useStatistiquesOrganisation(organisationId);
+    const stats = useStatistiquesOrganisation();
     const { data: postesData } = usePostes({ limit: 5 } as any);
 
     if (!canAccess) return null;

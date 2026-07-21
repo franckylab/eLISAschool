@@ -9,26 +9,61 @@
 
 set -e
 
+# Déterminer le chemin du projet dynamiquement
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+MIGRATIONS_DIR="$SCRIPT_DIR/database/migrations"
+
 echo -e "\033[0;34m╔════════════════════════════════════════════════════════╗\033[0m"
 echo -e "\033[0;34m║  eLISAschool - Déploiement Complet Base de Données    ║\033[0m"
 echo -e "\033[0;34m╚════════════════════════════════════════════════════════╝\033[0m"
 echo ""
-
-MIGRATIONS_DIR="/home/franckylab/projets/eLISAschool/backend/database/migrations"
 
 # ============================================
 # ÉTAPE 1: Vérifier PostgreSQL et DB
 # ============================================
 echo -e "\033[1;33m📋 ÉTAPE 1: Vérifications\033[0m"
 
+# Charger les credentials depuis le .env si disponible
+ENV_FILE=""
+for candidate in "$PROJECT_DIR/.env" "$SCRIPT_DIR/.env"; do
+    if [ -f "$candidate" ]; then
+        ENV_FILE="$candidate"
+        break
+    fi
+done
+
+DB_HOST=""
+DB_PORT=""
+DB_NAME=""
+DB_USER=""
+DB_PASSWORD=""
+
+if [ -n "$ENV_FILE" ]; then
+    DB_HOST=$(grep -E "^DB_HOST=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    DB_PORT=$(grep -E "^DB_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    DB_NAME=$(grep -E "^DB_NAME=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    DB_USER=$(grep -E "^DB_USER=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    DB_PASSWORD=$(grep -E "^DB_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+fi
+
+# Fonction d'exécution psql (utilise .env ou sudo postgres)
+run_psql() {
+    if [ -n "$DB_HOST" ] && [ -n "$DB_USER" ]; then
+        PGPASSWORD="$DB_PASSWORD" psql -h "${DB_HOST:-localhost}" -p "${DB_PORT:-5432}" -U "$DB_USER" -d "${DB_NAME:-elisaschool}" "$@"
+    else
+        sudo -u postgres psql -d elisaschool "$@"
+    fi
+}
+
 if ! pg_isready > /dev/null 2>&1; then
     echo -e "\033[0;31m❌ PostgreSQL n'est pas en cours d'exécution\033[0m"
     exit 1
 fi
 
-DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='elisaschool'")
-if [ "$DB_EXISTS" != "1" ]; then
-    echo -e "\033[0;31m❌ Base 'elisaschool' n'existe pas\033[0m"
+DB_EXISTS=$(run_psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME:-elisaschool}'" 2>/dev/null || echo "")
+if [ "$(echo $DB_EXISTS | tr -d ' ')" != "1" ]; then
+    echo -e "\033[0;31m❌ Base '${DB_NAME:-elisaschool}' n'existe pas\033[0m"
     exit 1
 fi
 
@@ -65,7 +100,7 @@ for migration in "${MIGRATION_FILES[@]}"; do
     
     echo -e "\033[1;33m📄 Exécutant: $FILENAME\033[0m"
     
-    if sudo -u postgres psql -d elisaschool -f "$migration" > /dev/null 2>&1; then
+    if run_psql -f "$migration" > /dev/null 2>&1; then
         echo -e "\033[0;32m   ✅ Succès\033[0m"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
@@ -88,13 +123,13 @@ echo ""
 # ============================================
 echo -e "\033[1;33m🔍 ÉTAPE 4: Vérification tables\033[0m"
 
-TABLE_COUNT=$(sudo -u postgres psql -d elisaschool -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
+TABLE_COUNT=$(run_psql -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
 
 echo -e "\033[0;32m✅ $TABLE_COUNT tables créées\033[0m"
 echo ""
 
 # Lister quelques tables importantes
-sudo -u postgres psql -d elisaschool -c "
+run_psql -c "
 SELECT tablename 
 FROM pg_tables 
 WHERE schemaname = 'public'
@@ -116,7 +151,7 @@ echo ""
 # ============================================
 echo -e "\033[1;33m📊 ÉTAPE 5: Analyse statistiques\033[0m"
 
-sudo -u postgres psql -d elisaschool -c "ANALYZE;" > /dev/null 2>&1
+run_psql -c "ANALYZE;" > /dev/null 2>&1
 
 echo -e "\033[0;32m✅ Toutes les tables analysées\033[0m"
 echo ""
@@ -126,7 +161,7 @@ echo ""
 # ============================================
 echo -e "\033[1;33m🔍 ÉTAPE 6: Vérification indexes\033[0m"
 
-INDEX_COUNT=$(sudo -u postgres psql -d elisaschool -tAc "
+INDEX_COUNT=$(run_psql -tAc "
 SELECT count(*) 
 FROM pg_indexes 
 WHERE schemaname = 'public' 
@@ -141,7 +176,7 @@ echo ""
 # ============================================
 echo -e "\033[1;33m👁️  ÉTAPE 7: Vues matérialisées\033[0m"
 
-MV_COUNT=$(sudo -u postgres psql -d elisaschool -tAc "
+MV_COUNT=$(run_psql -tAc "
 SELECT count(*) 
 FROM pg_matviews 
 WHERE matviewname LIKE 'mv_%';
@@ -149,7 +184,7 @@ WHERE matviewname LIKE 'mv_%';
 
 if [ "$MV_COUNT" -gt "0" ]; then
     echo -e "\033[0;32m✅ $MV_COUNT vues matérialisées créées\033[0m"
-    sudo -u postgres psql -d elisaschool -c "
+    run_psql -c "
         SELECT matviewname as vue 
         FROM pg_matviews 
         WHERE matviewname LIKE 'mv_%'

@@ -21,12 +21,10 @@ const relationColors: Record<string, 'success' | 'default' | 'warning' | 'second
     INTERIM: 'default',
 };
 
-interface Props { organisationId: string }
-
-export function TabHierarchie({ organisationId }: Props) {
+export function TabHierarchie() {
     const { t } = useTranslation('organisation');
     const { hasPermission } = usePermissions();
-    const { data: organigramme, isLoading: orgLoading } = useOrganigramme(organisationId);
+    const { data: organigramme, isLoading: orgLoading } = useOrganigramme();
     const { data: hierarchies, isLoading: hierLoading } = useHierarchies();
     const { data: postesData } = usePostes();
     const postes = postesData?.data || [];

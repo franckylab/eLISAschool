@@ -1,9 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import type {
-    Organisation, CreerOrganisationDto, ModifierOrganisationDto, OrganisationFiltres,
     UniteOrganisationnelle, CreerUniteDto, ModifierUniteDto, UniteFiltres,
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
     OrganigrammeNode, StatistiquesOrganisation, ParametreConfiguration,
@@ -13,16 +12,11 @@ import type {
 } from '../types/organisation.types';
 
 const ORGA_KEYS = {
-    organisations: {
-        all: ['organisation', 'organisations'] as const,
-        liste: (filtres: OrganisationFiltres) => [...ORGA_KEYS.organisations.all, filtres] as const,
-        detail: (id: string) => [...ORGA_KEYS.organisations.all, 'detail', id] as const,
-    },
     unites: {
         all: ['organisation', 'unites'] as const,
         liste: (filtres: UniteFiltres) => [...ORGA_KEYS.unites.all, filtres] as const,
         detail: (id: string) => [...ORGA_KEYS.unites.all, 'detail', id] as const,
-        arborescence: (orgId: string) => [...ORGA_KEYS.unites.all, 'arborescence', orgId] as const,
+        arborescence: ['organisation', 'unites', 'arborescence'] as const,
         chemin: (uniteId: string) => [...ORGA_KEYS.unites.all, 'chemin', uniteId] as const,
     },
     hierarchie: {
@@ -33,13 +27,12 @@ const ORGA_KEYS = {
     },
     stats: {
         all: ['organisation', 'statistiques'] as const,
-        org: (orgId: string) => [...ORGA_KEYS.stats.all, orgId] as const,
     },
     organigramme: {
-        org: (orgId: string) => ['organisation', 'organigramme', orgId] as const,
+        all: ['organisation', 'organigramme'] as const,
     },
     validation: {
-        org: (orgId: string) => ['organisation', 'validation', orgId] as const,
+        all: ['organisation', 'validation'] as const,
     },
 };
 
@@ -47,103 +40,6 @@ const ORGA_KEYS = {
 
 function handleError(error: any, message: string) {
     toast.error(error?.response?.data?.error?.message || message);
-}
-
-// ─── ORGANISATIONS ───
-
-export function useOrganisations(filtres: OrganisationFiltres = {}) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.organisations.liste(filtres),
-        queryFn: async () => {
-            const params: Record<string, any> = {};
-            if (filtres.page) params.page = filtres.page;
-            if (filtres.limit) params.limit = filtres.limit;
-            if (filtres.recherche) params.search = filtres.recherche;
-            if (filtres.type) params.type = filtres.type;
-            if (filtres.statut) params.statut = filtres.statut;
-
-            const response = await apiClient.get<Organisation[]>('/api/organisation/organisations', params);
-            const items = response.data || [];
-            const pagination = (response as any).pagination;
-            return {
-                items,
-                meta: pagination ? {
-                    totalItems: pagination.total,
-                    itemCount: items.length,
-                    itemsPerPage: pagination.limit,
-                    totalPages: pagination.totalPages,
-                    currentPage: pagination.page,
-                } : undefined,
-            };
-        },
-        enabled: isAuthenticated,
-    });
-}
-
-export function useOrganisation(id: string) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.organisations.detail(id),
-        queryFn: async () => {
-            const response = await apiClient.get<Organisation>(`/api/organisation/organisations/${id}`);
-            return response.data;
-        },
-        enabled: !!id && isAuthenticated,
-    });
-}
-
-export function useOrganisationMine() {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ['organisation', 'mine'] as const,
-        queryFn: async () => {
-            const response = await apiClient.get<Organisation | null>('/api/organisation/organisations/mine');
-            return response.data;
-        },
-        enabled: isAuthenticated,
-    });
-}
-
-export function useCreerOrganisation() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (dto: CreerOrganisationDto) => {
-            const response = await apiClient.post<Organisation>('/api/organisation/organisations', dto);
-            return response.data;
-        },
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['organisation', 'mine'] });
-            qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.all });
-            toast.success('Organisation créée');
-        },
-        onError: (e: any) => handleError(e, 'Erreur création organisation'),
-    });
-}
-
-export function useModifierOrganisation() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & ModifierOrganisationDto) => {
-            const response = await apiClient.patch<Organisation>(`/api/organisation/organisations/${id}`, dto);
-            return response.data;
-        },
-        onSuccess: (_, vars) => {
-            qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.all });
-            qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.detail(vars.id) });
-            toast.success('Organisation modifiée');
-        },
-        onError: (e: any) => handleError(e, 'Erreur modification organisation'),
-    });
-}
-
-export function useSupprimerOrganisation() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/organisations/${id}`); return id; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.organisations.all }); toast.success('Organisation supprimée'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression organisation'),
-    });
 }
 
 // ─── UNITÉS ORGANISATIONNELLES ───
@@ -179,7 +75,10 @@ export function useCreerUnite() {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites', dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all }); toast.success('Unité créée'); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            toast.success('Unité créée');
+        },
         onError: (e: any) => handleError(e, 'Erreur création unité'),
     });
 }
@@ -203,21 +102,27 @@ export function useModifierUnite() {
 export function useSupprimerUnite() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/unites/${id}`); return id; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all }); toast.success('Unité supprimée'); },
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/organisation/unites/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            toast.success('Unité supprimée');
+        },
         onError: (e: any) => handleError(e, 'Erreur suppression unité'),
     });
 }
 
-export function useArborescence(organisationId: string) {
-    const { isAuthenticated } = useAuthStore();
+export function useArborescence() {
+    const { isAuthenticated, etablissementId } = useAuthStore();
     return useQuery({
-        queryKey: ORGA_KEYS.unites.arborescence(organisationId),
+        queryKey: ORGA_KEYS.unites.arborescence,
         queryFn: async () => {
-            const response = await apiClient.get<any[]>(`/api/organisation/arborescence/${organisationId}`);
+            const response = await apiClient.get<any[]>('/api/organisation/arborescence');
             return response.data || [];
         },
-        enabled: !!organisationId && isAuthenticated,
+        enabled: !!etablissementId && isAuthenticated,
     });
 }
 
@@ -268,7 +173,10 @@ export function useCreerHierarchie() {
             const response = await apiClient.post<HierarchiePersonnel>('/api/organisation/hierarchie', dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all }); toast.success('Relation hiérarchique créée'); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
+            toast.success('Relation hiérarchique créée');
+        },
         onError: (e: any) => handleError(e, 'Erreur création hiérarchie'),
     });
 }
@@ -280,7 +188,7 @@ export function useModifierHierarchie() {
             const response = await apiClient.patch<HierarchiePersonnel>(`/api/organisation/hierarchie/${id}`, dto);
             return response.data;
         },
-        onSuccess: (_, vars) => {
+        onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             toast.success('Relation hiérarchique modifiée');
         },
@@ -291,37 +199,57 @@ export function useModifierHierarchie() {
 export function useSupprimerHierarchie() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/hierarchie/${id}`); return id; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all }); toast.success('Relation hiérarchique supprimée'); },
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`/api/organisation/hierarchie/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
+            toast.success('Relation hiérarchique supprimée');
+        },
         onError: (e: any) => handleError(e, 'Erreur suppression hiérarchie'),
     });
 }
 
 // ─── ORGANIGRAMME ───
 
-export function useOrganigramme(organisationId: string) {
-    const { isAuthenticated } = useAuthStore();
+export function useOrganigramme() {
+    const { isAuthenticated, etablissementId } = useAuthStore();
     return useQuery({
-        queryKey: ORGA_KEYS.organigramme.org(organisationId),
+        queryKey: ORGA_KEYS.organigramme.all,
         queryFn: async () => {
-            const response = await apiClient.get<OrganigrammeNode[]>(`/api/organisation/organigramme/${organisationId}`);
+            const response = await apiClient.get<OrganigrammeNode[]>('/api/organisation/organigramme');
             return response.data || [];
         },
-        enabled: !!organisationId && isAuthenticated,
+        enabled: !!etablissementId && isAuthenticated,
     });
 }
 
 // ─── STATISTIQUES ───
 
-export function useStatistiquesOrganisation(organisationId: string) {
-    const { isAuthenticated } = useAuthStore();
+export function useStatistiquesOrganisation() {
+    const { isAuthenticated, etablissementId } = useAuthStore();
     return useQuery({
-        queryKey: ORGA_KEYS.stats.org(organisationId),
+        queryKey: ORGA_KEYS.stats.all,
         queryFn: async () => {
-            const response = await apiClient.get<StatistiquesOrganisation>(`/api/organisation/statistiques/${organisationId}`);
+            const response = await apiClient.get<StatistiquesOrganisation>('/api/organisation/statistiques');
             return response.data;
         },
-        enabled: !!organisationId && isAuthenticated,
+        enabled: !!etablissementId && isAuthenticated,
+    });
+}
+
+// ─── VALIDATION ───
+
+export function useValiderArborescence() {
+    const { isAuthenticated, etablissementId } = useAuthStore();
+    return useQuery({
+        queryKey: ORGA_KEYS.validation.all,
+        queryFn: async () => {
+            const response = await apiClient.get<any>('/api/organisation/valider-arborescence');
+            return response.data;
+        },
+        enabled: !!etablissementId && isAuthenticated,
     });
 }
 
@@ -398,7 +326,10 @@ function useCreerNomenclature<T>(key: readonly string[], url: string, msg: strin
             const response = await apiClient.post<T>(url, dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: key });
+            toast.success(msg);
+        },
         onError: (e: any) => handleError(e, `Erreur création ${msg}`),
     });
 }
@@ -410,7 +341,10 @@ function useModifierNomenclature<T>(key: readonly string[], url: string, msg: st
             const response = await apiClient.patch<T>(`${url}/${id}`, dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: key });
+            toast.success(msg);
+        },
         onError: (e: any) => handleError(e, `Erreur modification ${msg}`),
     });
 }
@@ -418,8 +352,14 @@ function useModifierNomenclature<T>(key: readonly string[], url: string, msg: st
 function useSupprimerNomenclature(key: readonly string[], url: string, msg: string) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`${url}/${id}`); return id; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success(msg); },
+        mutationFn: async (id: string) => {
+            await apiClient.delete(`${url}/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: key });
+            toast.success(msg);
+        },
         onError: (e: any) => handleError(e, `Erreur suppression ${msg}`),
     });
 }

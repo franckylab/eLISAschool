@@ -16,8 +16,6 @@ import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
 
 export interface StatsOrganisationRapides {
-    organisationId: string;
-    organisationNom: string;
     etablissementId: string;
     totalUnites: number;
     unitesActives: number;
@@ -55,16 +53,16 @@ export class StatistiquesOrganisationOptimiseesService {
      * Obtenir statistiques rapides via vue matérialisée
      * PERFORMANCE: ~5ms au lieu de 200-500ms avec calcul dynamique
      */
-    async getStatsRapides(organisationId: string): Promise<StatsOrganisationRapides> {
+    async getStatsRapides(etablissementId: string): Promise<StatsOrganisationRapides> {
         try {
             const result = await AppDataSource.query(`
                 SELECT * FROM mv_stats_organisation 
-                WHERE organisation_id = $1
-            `, [organisationId]);
+                WHERE etablissement_id = $1
+            `, [etablissementId]);
 
             if (!result || result.length === 0) {
                 throw new AppError(
-                    'Statistiques non disponibles pour cette organisation',
+                    'Statistiques non disponibles pour cet établissement',
                     404,
                     'STATS_NOT_FOUND'
                 );
@@ -72,13 +70,11 @@ export class StatistiquesOrganisationOptimiseesService {
 
             const stats = result[0];
             logger.debug(`[StatsOrga] Stats rapides récupérées (vue matérialisée)`, {
-                organisationId,
+                etablissementId,
                 temps: '~5ms',
             });
 
             return {
-                organisationId: stats.organisation_id,
-                organisationNom: stats.organisation_nom,
                 etablissementId: stats.etablissement_id,
                 totalUnites: parseInt(stats.total_unites) || 0,
                 unitesActives: parseInt(stats.unites_actives) || 0,
@@ -94,7 +90,7 @@ export class StatistiquesOrganisationOptimiseesService {
             logger.warn('[StatsOrga] Échec récupération vues matérialisées, fallback calcul dynamique', error);
             
             // Fallback: calcul dynamique si vue non disponible
-            return this.calculStatsDynamiques(organisationId);
+            return this.calculStatsDynamiques(etablissementId);
         }
     }
 
@@ -169,26 +165,20 @@ export class StatistiquesOrganisationOptimiseesService {
      * Calcul dynamique des statistiques (fallback)
      * Utilisé uniquement si les vues matérialisées ne sont pas disponibles
      */
-    private async calculStatsDynamiques(organisationId: string): Promise<StatsOrganisationRapides> {
-        const orgRepo = AppDataSource.getRepository('Organisation');
+    private async calculStatsDynamiques(etablissementId: string): Promise<StatsOrganisationRapides> {
         const uniteRepo = AppDataSource.getRepository('UniteOrganisationnelle');
         const posteRepo = AppDataSource.getRepository('Poste');
         const hierarchieRepo = AppDataSource.getRepository('HierarchiePersonnel');
 
-        const organisation = await orgRepo.findOne({ where: { id: organisationId } });
-        if (!organisation) {
-            throw new AppError('Organisation non trouvée', 404, 'ORGANISATION_NOT_FOUND');
-        }
-
         const [totalUnites, unitesActives] = await Promise.all([
-            uniteRepo.count({ where: { organisationId } }),
-            uniteRepo.count({ where: { organisationId, actif: true } }),
+            uniteRepo.count({ where: { etablissementId } }),
+            uniteRepo.count({ where: { etablissementId, actif: true } }),
         ]);
 
         const uniteIds = (await uniteRepo.find({
-            where: { organisationId },
+            where: { etablissementId },
             select: ['id'],
-        })).map((u) => u.id);
+        })).map((u: any) => u.id);
 
         const [totalPostes, postesOccupes, postesVacants] = await Promise.all([
             uniteIds.length > 0
@@ -203,14 +193,12 @@ export class StatistiquesOrganisationOptimiseesService {
         ]);
 
         const [totalHierarchies, hierarchiesActives] = await Promise.all([
-            hierarchieRepo.count({ where: { etablissementId: organisation.etablissementId } }),
-            hierarchieRepo.count({ where: { etablissementId: organisation.etablissementId, actif: true } }),
+            hierarchieRepo.count({ where: { etablissementId } }),
+            hierarchieRepo.count({ where: { etablissementId, actif: true } }),
         ]);
 
         return {
-            organisationId,
-            organisationNom: organisation.nom,
-            etablissementId: organisation.etablissementId,
+            etablissementId,
             totalUnites,
             unitesActives,
             totalPostes,

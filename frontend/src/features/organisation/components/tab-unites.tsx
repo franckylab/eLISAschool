@@ -10,9 +10,8 @@ import { UniteFormModal } from './unite-form-modal';
 import type { UniteOrganisationnelle } from '../types/organisation.types';
 
 const typeIcons: Record<string, string> = {
-    DIRECTION: '🏢', DEPARTEMENT: '📂', SERVICE: '📋', POLE: '🎯',
-    FILIERE: '🔗', CYCLE: '🔄', SECTION: '📑', COMMISSION: '⚖️',
-    EQUIPE: '👥', AUTRE: '📌',
+    DIRECTION: '🏢', DEPARTEMENT: '📂', SERVICE: '📋', POLE_PEDAGOGIQUE: '🎓',
+    COMMISSION: '⚖️', EQUIPE: '👥', AUTRE: '📌',
 };
 
 function buildTreeNodes(unites: UniteOrganisationnelle[]): TreeNode<UniteOrganisationnelle>[] {
@@ -49,20 +48,13 @@ function buildTreeNodes(unites: UniteOrganisationnelle[]): TreeNode<UniteOrganis
     return roots;
 }
 
-interface Props { organisationId: string }
-
-export function TabUnites({ organisationId }: Props) {
+export function TabUnites() {
     const { t } = useTranslation('organisation');
     const { hasPermission } = usePermissions();
-    const { data: arborescence, isLoading } = useArborescence(organisationId);
-    const { data: unites } = useUnites({ organisationId });
+    const { data: arborescence, isLoading } = useArborescence();
+    const { data: unites } = useUnites();
     const modifier = useModifierUnite();
     const supprimer = useSupprimerUnite();
-
-    console.log('[TabUnites] organisationId:', organisationId);
-    console.log('[TabUnites] arborescence:', arborescence);
-    console.log('[TabUnites] unites:', unites);
-    console.log('[TabUnites] isLoading:', isLoading);
 
     const typesUnite = t('typesUnite', { returnObjects: true }) as Record<string, string>;
 
@@ -213,7 +205,6 @@ export function TabUnites({ organisationId }: Props) {
             <UniteFormModal
                 open={showCreateModal}
                 onOpenChange={(v) => { if (!v) { setShowCreateModal(false); setParentId(undefined); } }}
-                organisationId={organisationId}
                 parentId={parentId}
             />
 
@@ -221,7 +212,6 @@ export function TabUnites({ organisationId }: Props) {
                 <UniteFormModal
                     open={!!editUnite}
                     onOpenChange={() => setEditUnite(null)}
-                    organisationId={organisationId}
                     unite={editUnite}
                 />
             )}

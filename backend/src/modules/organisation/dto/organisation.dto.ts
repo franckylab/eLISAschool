@@ -2,37 +2,13 @@
  * ==================================
  * eLISAschool - DTOs Organisation
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
  * Schémas de validation Zod pour le module Organisation
  */
 
 import { z } from 'zod';
-import { TypeOrganisation, StatutOrganisation } from '../entities';
-
-// ==================== Organisation ====================
-
-export const createOrganisationSchema = z.object({
-    nom: z.string().min(2).max(100),
-    description: z.string().optional(),
-    type: z.nativeEnum(TypeOrganisation).default(TypeOrganisation.ETABLISSEMENT_SCOLAIRE),
-    logoUrl: z.string().url().optional().or(z.literal('')),
-    code: z.string().max(50).optional(),
-    email: z.string().email().optional().or(z.literal('')),
-    telephone: z.string().max(50).optional(),
-    adresse: z.string().optional(),
-    siteWeb: z.string().url().optional().or(z.literal('')),
-    etablissementId: z.string().uuid().optional(),
-    metadata: z.record(z.any()).optional(),
-});
-
-export const updateOrganisationSchema = createOrganisationSchema.partial().omit({
-    code: true, // Le code ne peut pas être modifié après création
-});
-
-export type CreateOrganisationDto = z.infer<typeof createOrganisationSchema>;
-export type UpdateOrganisationDto = z.infer<typeof updateOrganisationSchema>;
 
 // ==================== Unité Organisationnelle ====================
 
@@ -43,16 +19,13 @@ export const createUniteOrganisationnelleSchema = z.object({
         'DIRECTION',
         'DEPARTEMENT',
         'SERVICE',
-        'POLE',
-        'FILIERE',
-        'CYCLE',
-        'SECTION',
+        'UNITE_PEDAGOGIQUE',
         'COMMISSION',
         'EQUIPE',
         'AUTRE',
     ]),
     code: z.string().min(2).max(50),
-    organisationId: z.string().uuid(),
+    etablissementId: z.string().uuid(),
     parentId: z.string().uuid().optional(),
     ordre: z.number().int().min(0).default(0),
     responsableNom: z.string().max(200).optional(),
@@ -65,7 +38,7 @@ export const createUniteOrganisationnelleSchema = z.object({
 
 export const updateUniteOrganisationnelleSchema = createUniteOrganisationnelleSchema.partial().omit({
     code: true, // Le code ne peut pas être modifié
-    organisationId: true, // L'organisation ne peut pas être changée
+    etablissementId: true, // L'établissement ne peut pas être changé
 });
 
 export type CreateUniteOrganisationnelleDto = z.infer<typeof createUniteOrganisationnelleSchema>;
@@ -109,17 +82,14 @@ export const filtreUnitesSchema = z.object({
         'DIRECTION',
         'DEPARTEMENT',
         'SERVICE',
-        'POLE',
-        'FILIERE',
-        'CYCLE',
-        'SECTION',
+        'UNITE_PEDAGOGIQUE',
         'COMMISSION',
         'EQUIPE',
         'AUTRE',
     ]).optional(),
     actif: z.boolean().optional(),
     parentId: z.string().uuid().optional(),
-    organisationId: z.string().uuid().optional(),
+    etablissementId: z.string().uuid().optional(),
 });
 
 export type FiltreUnitesDto = z.infer<typeof filtreUnitesSchema>;

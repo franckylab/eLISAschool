@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const genererOrganisationSchema = z.object({
     templateId: z.string().uuid().optional(),
     structure: z.record(z.any()).optional(),
-    organisationId: z.string().uuid(),
+    etablissementId: z.string().uuid(),
     options: z.object({
         prefixeCode: z.string().max(20).optional(),
         creerHierarchie: z.boolean().default(true),

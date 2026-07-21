@@ -23,8 +23,8 @@ export class OrganigrammePdfService {
     /**
      * Générer un organigramme HTML complet (prêt pour conversion PDF)
      */
-    async genererOrganigrammeHTML(organisationId: string): Promise<string> {
-        const organigramme = await this.organisationService.getOrganigramme(organisationId);
+    async genererOrganigrammeHTML(etablissementId: string): Promise<string> {
+        const organigramme = await this.organisationService.getOrganigramme(etablissementId);
         
         if (!organigramme) {
             throw new AppError('Organigramme non trouvé', 404, 'ORGANIGRAMME_NOT_FOUND');

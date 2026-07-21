@@ -2,14 +2,14 @@
  * ==================================
  * eLISAschool - Seed Organisation
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Crée les organisations, unités, postes et hiérarchies
+ * Crée les unités, postes et hiérarchies
  * pour les 2 établissements par défaut
+ * (rattachées directement à l'établissement)
  */
 
 import { AppDataSource } from '../../data-source';
-import { Organisation, TypeOrganisation, StatutOrganisation } from '@modules/organisation/entities/organisation.entity';
 import { UniteOrganisationnelle, TypeUniteOrganisationnelle, StatutUnite } from '@modules/organisation/entities/unite-organisationnelle.entity';
 import { Poste, NiveauResponsabiliteEnum, StatutPoste } from '@modules/organisation/entities/poste.entity';
 import { TypePersonnel } from '@modules/personnel/entities';
@@ -40,35 +40,11 @@ interface PosteSeed {
 }
 
 export async function seedOrganisation(etablissementId: string, nomEtablissement: string): Promise<void> {
-    const orgRepo = AppDataSource.getRepository(Organisation);
     const uniteRepo = AppDataSource.getRepository(UniteOrganisationnelle);
     const posteRepo = AppDataSource.getRepository(Poste);
     const hierRepo = AppDataSource.getRepository(HierarchiePersonnel);
 
     const prefix = nomEtablissement.includes('Lycée') ? 'LB' : 'CP';
-
-    let organisation = await orgRepo.findOne({ where: { etablissementId } });
-    if (!organisation) {
-        organisation = orgRepo.create({
-            nom: nomEtablissement,
-            code: `ORG-${prefix}`,
-            type: TypeOrganisation.ETABLISSEMENT_SCOLAIRE,
-            statut: StatutOrganisation.ACTIF,
-            actif: true,
-            etablissementId,
-            description: `Organisation structurelle de ${nomEtablissement}`,
-        });
-        await orgRepo.save(organisation);
-        logger.info(`Organisation créée: ${organisation.nom}`);
-    } else {
-        // Mettre à jour nom/code si différent
-        if (organisation.code !== `ORG-${prefix}` || organisation.nom !== nomEtablissement) {
-            organisation.nom = nomEtablissement;
-            organisation.code = `ORG-${prefix}`;
-            await orgRepo.save(organisation);
-        }
-        logger.info(`Organisation déjà existante: ${organisation.nom}`);
-    }
 
     const unitesData: UniteSeed[] = [
         { code: 'DIR', nom: 'Direction', type: TypeUniteOrganisationnelle.DIRECTION, ordre: 1, responsableNom: 'Dr. Jean Dupont', localisation: 'Bureau 101' },
@@ -77,28 +53,28 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
 
         { code: 'ENS', nom: 'Enseignement', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 10, responsableNom: 'M. Pierre Mbarga', localisation: 'Bâtiment A' },
         { code: 'CENS', nom: 'Censeur', type: TypeUniteOrganisationnelle.SERVICE, ordre: 11, parentCode: 'ENS', responsableNom: 'M. Pierre Mbarga', localisation: 'Bureau 201' },
-        { code: 'DEP-FR', nom: 'Département Français', type: TypeUniteOrganisationnelle.POLE, ordre: 12, parentCode: 'ENS', localisation: 'Salle 103' },
-        { code: 'DEP-MATH', nom: 'Département Mathématiques', type: TypeUniteOrganisationnelle.POLE, ordre: 13, parentCode: 'ENS', localisation: 'Salle 104' },
-        { code: 'DEP-ANG', nom: 'Département Anglais', type: TypeUniteOrganisationnelle.POLE, ordre: 14, parentCode: 'ENS', localisation: 'Salle 105' },
-        { code: 'DEP-SCI', nom: 'Département Sciences', type: TypeUniteOrganisationnelle.POLE, ordre: 15, parentCode: 'ENS', localisation: 'Salle 106' },
-        { code: 'DEP-HG', nom: 'Département Histoire-Géo', type: TypeUniteOrganisationnelle.POLE, ordre: 16, parentCode: 'ENS', localisation: 'Salle 107' },
+        { code: 'DEP-FR', nom: 'Département Français', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 12, parentCode: 'ENS', localisation: 'Salle 103' },
+        { code: 'DEP-MATH', nom: 'Département Mathématiques', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 13, parentCode: 'ENS', localisation: 'Salle 104' },
+        { code: 'DEP-ANG', nom: 'Département Anglais', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 14, parentCode: 'ENS', localisation: 'Salle 105' },
+        { code: 'DEP-SCI', nom: 'Département Sciences', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 15, parentCode: 'ENS', localisation: 'Salle 106' },
+        { code: 'DEP-HG', nom: 'Département Histoire-Géo', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 16, parentCode: 'ENS', localisation: 'Salle 107' },
 
         { code: 'VS', nom: 'Vie Scolaire', type: TypeUniteOrganisationnelle.SERVICE, ordre: 20, responsableNom: 'Mme. Aïcha Mahamat', localisation: 'Bâtiment B' },
         { code: 'SURV', nom: 'Surveillance', type: TypeUniteOrganisationnelle.SERVICE, ordre: 21, parentCode: 'VS', localisation: 'Bureau 301' },
-        { code: 'ANIM', nom: 'Animation et Clubs', type: TypeUniteOrganisationnelle.POLE, ordre: 22, parentCode: 'VS', localisation: 'Salle polyvalente' },
-        { code: 'SPORT', nom: 'Section Sportive', type: TypeUniteOrganisationnelle.SECTION, ordre: 23, parentCode: 'VS', localisation: 'Terrain A' },
+        { code: 'ANIM', nom: 'Animation et Clubs', type: TypeUniteOrganisationnelle.EQUIPE, ordre: 22, parentCode: 'VS', localisation: 'Salle polyvalente' },
+        { code: 'SPORT', nom: 'Section Sportive', type: TypeUniteOrganisationnelle.SERVICE, ordre: 23, parentCode: 'VS', localisation: 'Terrain A' },
 
         { code: 'ADM', nom: 'Administration', type: TypeUniteOrganisationnelle.DEPARTEMENT, ordre: 30, responsableNom: 'Mme. Marie Ngo Mback', localisation: 'Bâtiment C' },
         { code: 'COMPTA', nom: 'Comptabilité', type: TypeUniteOrganisationnelle.SERVICE, ordre: 31, parentCode: 'ADM', localisation: 'Bureau 401' },
         { code: 'SCOLARITE', nom: 'Scolarité', type: TypeUniteOrganisationnelle.SERVICE, ordre: 32, parentCode: 'ADM', localisation: 'Bureau 402' },
         { code: 'INTENDANCE', nom: 'Intendance', type: TypeUniteOrganisationnelle.SERVICE, ordre: 33, parentCode: 'ADM', localisation: 'Bureau 403' },
         { code: 'RH', nom: 'Ressources Humaines', type: TypeUniteOrganisationnelle.SERVICE, ordre: 34, parentCode: 'ADM', localisation: 'Bureau 404' },
-        { code: 'INFO', nom: 'Informatique', type: TypeUniteOrganisationnelle.POLE, ordre: 35, parentCode: 'ADM', localisation: 'Bureau 405' },
+        { code: 'INFO', nom: 'Informatique', type: TypeUniteOrganisationnelle.SERVICE, ordre: 35, parentCode: 'ADM', localisation: 'Bureau 405' },
     ];
 
     const unitesMap = new Map<string, UniteOrganisationnelle>();
     for (const u of unitesData) {
-        const existing = await uniteRepo.findOne({ where: { code: u.code, organisationId: organisation.id } });
+        const existing = await uniteRepo.findOne({ where: { code: u.code, etablissementId } });
         if (existing) {
             unitesMap.set(u.code, existing);
             continue;
@@ -109,7 +85,7 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
             code: u.code,
             type: u.type,
             ordre: u.ordre,
-            organisationId: organisation.id,
+            etablissementId,
             parentId: parent?.id,
             responsableNom: u.responsableNom,
             localisation: u.localisation,
@@ -151,7 +127,7 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
 
     const postesMap = new Map<string, Poste>();
     for (const p of postesData) {
-        const existing = await posteRepo.findOne({ where: { code: p.code, uniteOrganisationnelle: { organisationId: organisation.id } } });
+        const existing = await posteRepo.findOne({ where: { code: p.code, uniteOrganisationnelle: { etablissementId } } });
         if (existing) {
             postesMap.set(p.code, existing);
             continue;
@@ -169,7 +145,7 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
             niveauResponsabilite: p.niveau,
             uniteOrganisationnelleId: unite.id,
             occupantNom,
-            occupantId: undefined, // Ne pas créer de faux IDs — FK vers membres_personnel
+            occupantId: undefined,
             nombrePostes: p.nombrePostes,
             missions: p.missions,
             competencesRequises: p.competences,
@@ -223,8 +199,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
         await hierRepo.save(hier);
         logger.info(`  Hiérarchie: ${sub.occupantNom} → ${sup.occupantNom} (${h.type})`);
     }
-
-    await orgRepo.save(organisation);
 
     logger.info(`✅ Organisation seedée pour ${nomEtablissement}`);
     logger.info(`   ${unitesMap.size} unités, ${postesMap.size} postes, ${hierarchies.length} relations hiérarchiques`);

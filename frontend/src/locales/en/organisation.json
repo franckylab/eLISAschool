@@ -98,10 +98,7 @@
         "DIRECTION": "Directorate",
         "DEPARTEMENT": "Department",
         "SERVICE": "Service",
-        "POLE": "Cluster",
-        "FILIERE": "Track",
-        "CYCLE": "Cycle",
-        "SECTION": "Section",
+        "POLE_PEDAGOGIQUE": "Pedagogical division",
         "COMMISSION": "Commission",
         "EQUIPE": "Team",
         "AUTRE": "Other"
@@ -130,15 +127,6 @@
         "SUPERVISEUR": "Supervisor",
         "EXECUTANT": "Executive",
         "STAGIAIRE": "Intern"
-    },
-    "typeOrganisation": {
-        "DIRECTION_GENERALE": "General Management",
-        "DIRECTION": "Directorate",
-        "DEPARTEMENT": "Department",
-        "SERVICE": "Service",
-        "POLE": "Cluster",
-        "CELLULE": "Unit",
-        "COMMISSION": "Commission"
     },
     "typeRelation": {
         "SUPERVISE_DIRECT": "Direct supervision",
@@ -227,20 +215,9 @@
     "retourListe": "Back to list",
     "retourOrganisation": "Back to organisation",
     "informations": "Information",
-    "occupation": "Occupation {taux}%",
+    "occupation": "Occupation {{taux}}%",
     "postesVacants": "Vacant positions",
     "enCreation": "In creation",
-    "statutOrganisation": {
-        "ACTIF": "Active",
-        "EN_CREATION": "In creation",
-        "ARCHIVE": "Archived"
-    },
-    "typeOrganisationLabel": {
-        "ETABLISSEMENT_SCOLAIRE": "School",
-        "GROUPE_SCOLAIRE": "School group",
-        "ENTREPRISE": "Company",
-        "ASSOCIATION": "Association"
-    },
     "typePersonnel": "Staff type",
     "typesPersonnel": "Staff types",
     "nouveauTypePersonnel": "New staff type",

@@ -6,46 +6,38 @@ import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 
-function validate(schema: any, data: unknown): any {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-        throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', false, result.error.errors);
-    }
-    return result.data;
-}
-
-async function verifierOrganisation(organisationId: string, etablissementId?: string): Promise<void> {
-    await organisationService.findOrganisationById(organisationId, etablissementId);
-}
-
-router.get('/statistiques/:organisationId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/statistiques', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await verifierOrganisation(req.params.organisationId, req.utilisateur?.etablissementId);
-        const stats = await organisationService.getStatistiquesOrganisation(req.params.organisationId);
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        const stats = await organisationService.getStatistiquesOrganisation(etablissementId);
         res.json({ success: true, data: stats });
     } catch (error) { next(error); }
 });
 
-router.get('/organigramme/:organisationId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/organigramme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await verifierOrganisation(req.params.organisationId, req.utilisateur?.etablissementId);
-        const organigramme = await organisationService.getOrganigramme(req.params.organisationId);
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        const organigramme = await organisationService.getOrganigramme(etablissementId);
         res.json({ success: true, data: organigramme });
     } catch (error) { next(error); }
 });
 
-router.get('/valider-arborescence/:organisationId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/valider-arborescence', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await verifierOrganisation(req.params.organisationId, req.utilisateur?.etablissementId);
-        const validation = await organisationService.validerArborescence(req.params.organisationId);
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        const validation = await organisationService.validerArborescence(etablissementId);
         res.json({ success: true, data: validation });
     } catch (error) { next(error); }
 });
 
-router.get('/export-pdf/:organisationId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export-pdf', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await verifierOrganisation(req.params.organisationId, req.utilisateur?.etablissementId);
-        const html = await organigrammePdfService.genererOrganigrammeHTML(req.params.organisationId);
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        const html = await organigrammePdfService.genererOrganigrammeHTML(etablissementId);
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
     } catch (error) { next(error); }

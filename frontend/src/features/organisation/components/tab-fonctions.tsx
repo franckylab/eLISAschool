@@ -8,9 +8,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { useModulePermissions } from '@/hooks';
 import { useArbreFonctions, useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 
-interface Props { organisationId: string }
-
-export function TabFonctions({ }: Props) {
+export function TabFonctions() {
     const { t } = useTranslation('organisation');
     const navigate = useNavigate();
     const { canAccess } = useModulePermissions('fonctions');

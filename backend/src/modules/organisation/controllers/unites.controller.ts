@@ -65,10 +65,11 @@ router.delete('/unites/:id', authMiddleware, requirePermission('organisation:edi
     } catch (error) { next(error); }
 });
 
-router.get('/arborescence/:organisationId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/arborescence', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await organisationService.findOrganisationById(req.params.organisationId, req.utilisateur?.etablissementId);
-        const arborescence = await organisationService.buildArborescence(req.params.organisationId);
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        const arborescence = await organisationService.buildArborescence(etablissementId);
         res.json({ success: true, data: arborescence });
     } catch (error) { next(error); }
 });

@@ -2,12 +2,13 @@
  * ==================================
  * eLISAschool - Entité Unité Organisationnelle
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
- * Représente une unité structurelle au sein d'une organisation :
- * départements, services, pôles, filières, cycles, etc.
+ * Représente une unité structurelle au sein d'un établissement :
+ * départements, services, commissions, équipes, etc.
  * Supporte une hiérarchie en arbre (parent/enfant).
+ * Rattachée directement à l'établissement (après fusion Organisation → Etablissement).
  */
 
 import {
@@ -21,25 +22,29 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Organisation } from './organisation.entity';
+import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
 import { NiveauOrganisation } from './niveau-organisation.entity';
 
 /**
  * Type d'unité organisationnelle
+ * Après refonte: POLE/FILIERE/CYCLE/SECTION supprimés, POLE_PEDAGOGIQUE ajouté.
+ * Enum PostgreSQL — la migration 109 crée le nouvel enum et convertit les données.
  */
 export enum TypeUniteOrganisationnelle {
     DIRECTION = 'DIRECTION',
     DEPARTEMENT = 'DEPARTEMENT',
     SERVICE = 'SERVICE',
-    POLE = 'POLE',
-    FILIERE = 'FILIERE',
-    CYCLE = 'CYCLE',
-    SECTION = 'SECTION',
+    POLE_PEDAGOGIQUE = 'POLE_PEDAGOGIQUE',
     COMMISSION = 'COMMISSION',
     EQUIPE = 'EQUIPE',
     AUTRE = 'AUTRE',
 }
+
+/**
+ * Valeurs valides pour le type d'unité organisationnelle
+ */
+export const TYPES_UNITE_VALIDES = Object.values(TypeUniteOrganisationnelle);
 
 /**
  * Statut d'une unité organisationnelle
@@ -56,7 +61,7 @@ export enum StatutUnite {
  * Permet de structurer l'établissement en unités hiérarchiques
  */
 @Entity('unites_organisationnelles')
-@Index(['organisationId'])
+@Index(['etablissementId'])
 @Index(['type'])
 @Index(['parentId'])
 @Index(['code'])
@@ -88,9 +93,9 @@ export class UniteOrganisationnelle {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
-    // Référence à l'organisation parente
+    // Référence à l'établissement (multi-tenancy)
     @Column({ type: 'uuid' })
-    organisationId!: string;
+    etablissementId!: string;
 
     // Auto-référence pour hiérarchie (parent/enfant)
     @Column({ type: 'uuid', nullable: true })
@@ -125,9 +130,9 @@ export class UniteOrganisationnelle {
     updatedAt!: Date;
 
     // Relations
-    @ManyToOne(() => Organisation, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'organisationId' })
-    organisation?: Organisation;
+    @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'etablissementId' })
+    etablissement?: Etablissement;
 
     @ManyToOne(() => UniteOrganisationnelle, { onDelete: 'SET NULL', nullable: true })
     @JoinColumn({ name: 'parentId' })

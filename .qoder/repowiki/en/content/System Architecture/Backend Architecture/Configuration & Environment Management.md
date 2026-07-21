@@ -31,84 +31,14 @@
 - [backend/src/modules/configuration/migrations/105-migration-templates-v5.sql](file://backend/src/modules/configuration/migrations/105-migration-templates-v5.sql)
 - [backend/src/modules/configuration/migrations/106-rename-sequence-to-evaluation.sql](file://backend/src/modules/configuration/migrations/106-rename-sequence-to-evaluation.sql)
 - [backend/src/modules/configuration/migrations/108-refactor-salle-principale.sql](file://backend/src/modules/configuration/migrations/108-refactor-salle-principale.sql)
-- [backend/src/modules/configuration/migrations/041-module-annonces-complete.sql](file://backend/src/modules/configuration/migrations/041-module-annonces-complete.sql)
-- [backend/src/modules/configuration/migrations/041-module-annonces-fix.sql](file://backend/src/modules/configuration/migrations/041-module-annonces-fix.sql)
-- [backend/src/modules/configuration/migrations/041-module-sondages.sql](file://backend/src/modules/configuration/migrations/041-module-sondages.sql)
-- [backend/src/modules/configuration/migrations/042-annonces-performance-optimization.sql](file://backend/src/modules/configuration/migrations/042-annonces-performance-optimization.sql)
-- [backend/src/modules/configuration/migrations/043-correction-dossier-medical-fk.ts](file://backend/src/modules/configuration/migrations/043-correction-dossier-medical-fk.ts)
-- [backend/src/modules/configuration/migrations/043-module-messagerie-complete.sql](file://backend/src/modules/configuration/migrations/043-module-messagerie-complete.sql)
-- [backend/src/modules/configuration/migrations/043-permissions-critiques-manquantes.sql](file://backend/src/modules/configuration/migrations/043-permissions-critiques-manquantes.sql)
-- [backend/src/modules/configuration/migrations/043-structure-academique-v4.sql](file://backend/src/modules/configuration/migrations/043-structure-academique-v4.sql)
-- [backend/src/modules/configuration/migrations/044-messagerie-optimisations-v2.1.sql](file://backend/src/modules/configuration/migrations/044-messagerie-optimisations-v2.1.sql)
-- [backend/src/modules/configuration/migrations/044-module-organisation.sql](file://backend/src/modules/configuration/migrations/044-module-organisation.sql)
-- [backend/src/modules/configuration/migrations/045-messagerie-fonctionnalites-avancees-v2.2.sql](file://backend/src/modules/configuration/migrations/045-messagerie-fonctionnalites-avancees-v2.2.sql)
-- [backend/src/modules/configuration/migrations/045-module-recrutement.sql](file://backend/src/modules/configuration/migrations/045-module-recrutement.sql)
-- [backend/src/modules/configuration/migrations/045-organisation-optimisations.sql](file://backend/src/modules/configuration/migrations/045-organisation-optimisations.sql)
-- [backend/src/modules/configuration/migrations/046-preferences-utilisateur-et-config.sql](file://backend/src/modules/configuration/migrations/046-preferences-utilisateur-et-config.sql)
-- [backend/src/modules/configuration/migrations/047-notifications-ameliorations.sql](file://backend/src/modules/configuration/migrations/047-notifications-ameliorations.sql)
-- [backend/src/modules/configuration/migrations/047-optimisations-performance-v3.1.sql](file://backend/src/modules/configuration/migrations/047-optimisations-performance-v3.1.sql)
-- [backend/src/modules/configuration/migrations/048-notifications-performance-optimizations.sql](file://backend/src/modules/configuration/migrations/048-notifications-performance-optimizations.sql)
-- [backend/src/modules/configuration/migrations/049-ameliorations-inscription-finances.sql](file://backend/src/modules/configuration/migrations/049-ameliorations-inscription-finances.sql)
-- [backend/src/modules/configuration/migrations/050-ameliorations-inscription-relances.sql](file://backend/src/modules/configuration/migrations/050-ameliorations-inscription-relances.sql)
-- [backend/src/modules/configuration/migrations/050-etablissements-couleurs.sql](file://backend/src/modules/configuration/migrations/050-etablissements-couleurs.sql)
-- [backend/src/modules/configuration/migrations/050-multi-tenant-v3-max-etablissements.sql](file://backend/src/modules/configuration/migrations/050-multi-tenant-v3-max-etablissements.sql)
-- [backend/src/modules/configuration/migrations/050-suppression-utilisateur-etablissementId.sql](file://backend/src/modules/configuration/migrations/050-suppression-utilisateur-etablissementId.sql)
-- [backend/src/modules/configuration/migrations/051-champs-preinscription-enrichis.sql](file://backend/src/modules/configuration/migrations/051-champs-preinscription-enrichis.sql)
-- [backend/src/modules/configuration/migrations/052-approche-hybride-parents.sql](file://backend/src/modules/configuration/migrations/052-approche-hybride-parents.sql)
-- [backend/src/modules/configuration/migrations/053-structure-academique-complete.sql](file://backend/src/modules/configuration/migrations/053-structure-academique-complete.sql)
-- [backend/src/modules/configuration/migrations/054-refonte-structure-academique-v2.sql](file://backend/src/modules/configuration/migrations/054-refonte-structure-academique-v2.sql)
-- [backend/src/modules/configuration/migrations/054-structure-academique-complete-fr-en.sql](file://backend/src/modules/configuration/migrations/054-structure-academique-complete-fr-en.sql)
-- [backend/src/modules/configuration/migrations/055-structure-academique-ameliorations.sql](file://backend/src/modules/configuration/migrations/055-structure-academique-ameliorations.sql)
-- [backend/src/modules/configuration/migrations/056-refactor-note-enseignant-membre-personnel.sql](file://backend/src/modules/configuration/migrations/056-refactor-note-enseignant-membre-personnel.sql)
-- [backend/src/modules/configuration/migrations/056-suppression-cycle-scolaire.sql](file://backend/src/modules/configuration/migrations/056-suppression-cycle-scolaire.sql)
-- [backend/src/modules/configuration/migrations/057-supprimer-niveau-filiere-id.sql](file://backend/src/modules/configuration/migrations/057-supprimer-niveau-filiere-id.sql)
-- [backend/src/modules/configuration/migrations/057-supprimer-parametres-dupliques-etablissement.sql](file://backend/src/modules/configuration/migrations/057-supprimer-parametres-dupliques-etablissement.sql)
-- [backend/src/modules/configuration/migrations/058-multi-tenant-structure-academique.sql](file://backend/src/modules/configuration/migrations/058-multi-tenant-structure-academique.sql)
-- [backend/src/modules/configuration/migrations/058-unifier-periode-cloturee-statut.sql](file://backend/src/modules/configuration/migrations/058-unifier-periode-cloturee-statut.sql)
-- [backend/src/modules/configuration/migrations/059-ajouter-matiere-sous-systeme.sql](file://backend/src/modules/configuration/migrations/059-ajouter-matiere-sous-systeme.sql)
-- [backend/src/modules/configuration/migrations/059-multi-tenant-matiere.sql](file://backend/src/modules/configuration/migrations/059-multi-tenant-matiere.sql)
-- [backend/src/modules/configuration/migrations/060-ajouter-affectation-matiere-coefficient.sql](file://backend/src/modules/configuration/migrations/060-ajouter-affectation-matiere-coefficient.sql)
-- [backend/src/modules/configuration/migrations/061-creer-table-bulletins-matieres.sql](file://backend/src/modules/configuration/migrations/061-creer-table-bulletins-matieres.sql)
-- [backend/src/modules/configuration/migrations/062-creer-table-evaluations-competences.sql](file://backend/src/modules/configuration/migrations/062-creer-table-evaluations-competences.sql)
-- [backend/src/modules/configuration/migrations/063-creer-module-emploi-du-temps.sql](file://backend/src/modules/configuration/migrations/063-creer-module-emploi-du-temps.sql)
-- [backend/src/modules/configuration/migrations/064-validateur-sous-systeme.sql](file://backend/src/modules/configuration/migrations/064-validateur-sous-systeme.sql)
-- [backend/src/modules/configuration/migrations/065-creer-templates-emploi-du-temps.sql](file://backend/src/modules/configuration/migrations/065-creer-templates-emploi-du-temps.sql)
-- [backend/src/modules/configuration/migrations/069-fix-super-admin-permissions.sql](file://backend/src/modules/configuration/migrations/069-fix-super-admin-permissions.sql)
-- [backend/src/modules/configuration/migrations/070-fix-super-admin-all-permission.sql](file://backend/src/modules/configuration/migrations/070-fix-super-admin-all-permission.sql)
-- [backend/src/modules/configuration/migrations/070-module-salles.sql](file://backend/src/modules/configuration/migrations/070-module-salles.sql)
-- [backend/src/modules/configuration/migrations/072-scoping-cycles-niveaux.sql](file://backend/src/modules/configuration/migrations/072-scoping-cycles-niveaux.sql)
-- [backend/src/modules/configuration/migrations/073-competence-unique-composite.sql](file://backend/src/modules/configuration/migrations/073-competence-unique-composite.sql)
-- [backend/src/modules/configuration/migrations/074-matiere-niveau-unique-composite.sql](file://backend/src/modules/configuration/migrations/074-matiere-niveau-unique-composite.sql)
-- [backend/src/modules/configuration/migrations/075-module-groupes-etablissements.sql](file://backend/src/modules/configuration/migrations/075-module-groupes-etablissements.sql)
-- [backend/src/modules/configuration/migrations/076-permissions-groupes-etablissements.sql](file://backend/src/modules/configuration/migrations/076-permissions-groupes-etablissements.sql)
-- [backend/src/modules/configuration/migrations/077-update-permissions-groupes.sql](file://backend/src/modules/configuration/migrations/077-update-permissions-groupes.sql)
-- [backend/src/modules/configuration/migrations/078-utilisateur-test-groupes.sql](file://backend/src/modules/configuration/migrations/078-utilisateur-test-groupes.sql)
-- [backend/src/modules/configuration/migrations/079-add-roleId-utilisateur-etablissements.sql](file://backend/src/modules/configuration/migrations/079-add-roleId-utilisateur-etablissements.sql)
-- [backend/src/modules/configuration/migrations/079-correction-permissions-groupes.sql](file://backend/src/modules/configuration/migrations/079-correction-permissions-groupes.sql)
-- [backend/src/modules/configuration/migrations/080-preferences-utilisateur-multi-tenant.sql](file://backend/src/modules/configuration/migrations/080-preferences-utilisateur-multi-tenant.sql)
-- [backend/src/modules/configuration/migrations/081-module-apparence-fonds.sql](file://backend/src/modules/configuration/migrations/081-module-apparence-fonds.sql)
-- [backend/src/modules/configuration/migrations/082-fix-contrainte-unique-preferences.sql](file://backend/src/modules/configuration/migrations/082-fix-contrainte-unique-preferences.sql)
-- [backend/src/modules/configuration/migrations/083-fix-contrainte-unique-parametres.sql](file://backend/src/modules/configuration/migrations/083-fix-contrainte-unique-parametres.sql)
-- [backend/src/modules/configuration/migrations/084-cleanup-classe-id-notes.sql](file://backend/src/modules/configuration/migrations/084-cleanup-classe-id-notes.sql)
-- [backend/src/modules/configuration/migrations/085-periode-etablissement-id.sql](file://backend/src/modules/configuration/migrations/085-periode-etablissement-id.sql)
-- [backend/src/modules/configuration/migrations/086-affectation-matiere-etablissement-id.sql](file://backend/src/modules/configuration/migrations/086-affectation-matiere-etablissement-id.sql)
-- [backend/src/modules/configuration/migrations/087-affectation-matiere-verifications.sql](file://backend/src/modules/configuration/migrations/087-affectation-matiere-verifications.sql)
-- [backend/src/modules/configuration/migrations/088-refactorisation-architecture-academique.sql](file://backend/src/modules/configuration/migrations/088-refactorisation-architecture-academique.sql)
-- [backend/src/modules/configuration/migrations/089-finalisation-architecture-academique-v2.sql](file://backend/src/modules/configuration/migrations/089-finalisation-architecture-academique-v2.sql)
-- [backend/src/modules/configuration/migrations/090-correction-migration-088-camelcase.sql](file://backend/src/modules/configuration/migrations/090-correction-migration-088-camelcase.sql)
-- [backend/src/modules/configuration/migrations/091-peuplement-architecture-academique.sql](file://backend/src/modules/configuration/migrations/091-peuplement-architecture-academique.sql)
-- [backend/src/modules/configuration/migrations/092-refactorisation-classeAnneeId.sql](file://backend/src/modules/configuration/migrations/092-refactorisation-classeAnneeId.sql)
-- [backend/src/modules/configuration/migrations/099-add-monitoring-params.sql](file://backend/src/modules/configuration/migrations/099-add-monitoring-params.sql)
-- [backend/src/modules/configuration/migrations/100-classes-salle-principale.sql](file://backend/src/modules/configuration/migrations/100-classes-salle-principale.sql)
-- [backend/src/modules/configuration/migrations/101-normalisation-annee-scolaire-cloture.sql](file://backend/src/modules/configuration/migrations/101-normalisation-annee-scolaire-cloture.sql)
-- [backend/src/modules/configuration/migrations/102-periodes-hierarchie.sql](file://backend/src/modules/configuration/migrations/102-periodes-hhierarchie.sql)
-- [backend/src/modules/configuration/migrations/103-templates-periode-personnalisables.sql](file://backend/src/modules/configuration/migrations/103-templates-periode-personnalisables.sql)
-- [backend/src/modules/configuration/migrations/104-refonte-periodes-niveaux-configurables.sql](file://backend/src/modules/configuration/migrations/104-refonte-periodes-niveaux-configurables.sql)
-- [backend/src/modules/configuration/migrations/105-migration-templates-v5.sql](file://backend/src/modules/configuration/migrations/105-migration-templates-v5.sql)
-- [backend/src/modules/configuration/migrations/106-rename-sequence-to-evaluation.sql](file://backend/src/modules/configuration/migrations/106-rename-sequence-to-evaluation.sql)
-- [backend/src/modules/configuration/migrations/107-cleanup-configuration-modules-actif.sql](file://backend/src/modules/configuration/migrations/107-cleanup-configuration-modules-actif.sql)
-- [backend/src/modules/configuration/migrations/108-refactor-salle-principale.sql](file://backend/src/modules/configuration/migrations/108-refactor-salle-principale.sql)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated frontend parameter settings page integration with centralized configuration management
+- Enhanced project memory initialization for streamlined configuration handling
+- Improved configuration access patterns across the application architecture
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -116,23 +46,25 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Frontend Integration](#frontend-integration)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document explains the configuration and environment management system used by the application. It covers:
 - Environment-specific configuration using TypeORM, database connection settings, Redis configuration, and Swagger API documentation setup
 - Dynamic configuration for runtime module activation and preference management
 - Configuration validation, default values handling, and environment variable management
+- Frontend integration with centralized configuration management
 - Practical examples for adding new configuration options, managing environments (development, staging, production), and accessing configuration values throughout the application
 
 The goal is to provide a clear, progressive guide that helps both developers and operators configure and extend the system safely across environments.
 
 ## Project Structure
-Configuration-related code is organized under backend/src/config and backend/src/modules/configuration. The application bootstrap wires these configurations into NestJS modules and services.
+Configuration-related code is organized under backend/src/config and backend/src/modules/configuration. The frontend integrates with the centralized configuration system through dedicated pages and components. The application bootstrap wires these configurations into NestJS modules and services.
 
 ```mermaid
 graph TB
@@ -147,6 +79,8 @@ G --> I["Configuration Service<br/>services/configuration.service.ts"]
 G --> J["Configuration Controller<br/>controllers/configuration.controller.ts"]
 G --> K["DTOs<br/>dto/update-preference.dto.ts"]
 G --> L["Migrations<br/>migrations/*.sql"]
+M["Frontend ParametresPage<br/>ParametresPage.tsx"] --> N["Centralized Config API"]
+N --> O["Configuration Service"]
 ```
 
 **Diagram sources**
@@ -160,6 +94,7 @@ G --> L["Migrations<br/>migrations/*.sql"]
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 **Section sources**
 - [backend/src/index.ts](file://backend/src/index.ts)
@@ -172,6 +107,7 @@ G --> L["Migrations<br/>migrations/*.sql"]
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Core Components
 - Environment variables loader and validator: centralizes required keys, provides typed accessors, and validates presence and types at startup.
@@ -180,12 +116,14 @@ G --> L["Migrations<br/>migrations/*.sql"]
 - Swagger configuration: sets up OpenAPI metadata, authentication schemes, and UI exposure based on environment flags.
 - Dynamic configuration service: reads/writes preferences from the database, supports defaults, caching, and multi-tenant scoping.
 - Preference entity and migrations: schema for global, role-based, and user-level preferences; includes constraints and indexes.
+- Frontend integration layer: provides streamlined access to configuration values through centralized APIs.
 
 Key responsibilities:
 - Startup-time validation and early failure on missing critical env vars
 - Centralized access points for configuration values
 - Runtime feature toggles and per-tenant/user preferences
 - Safe defaults and graceful fallbacks when optional settings are absent
+- Consistent frontend-backend configuration synchronization
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
@@ -193,9 +131,10 @@ Key responsibilities:
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Architecture Overview
-The configuration architecture separates concerns between compile-time/static configuration (env, DB, Swagger) and runtime configuration (preferences).
+The configuration architecture separates concerns between compile-time/static configuration (env, DB, Swagger) and runtime configuration (preferences), with enhanced frontend integration for streamlined parameter management.
 
 ```mermaid
 sequenceDiagram
@@ -208,6 +147,7 @@ participant Mod as "Configuration Module"
 participant Svc as "Configuration Service"
 participant Repo as "TypeORM Repository"
 participant Cache as "Redis Client"
+participant FE as "Frontend ParametresPage"
 Boot->>App : createNestApplication()
 App->>Env : loadAndValidate()
 App->>DB : buildDataSource()
@@ -217,6 +157,8 @@ Mod->>Svc : initializeDefaults()
 Svc->>Repo : findOrCreate(key)
 Repo-->>Svc : preference record
 Svc->>Cache : set(key, value) if enabled
+FE->>Svc : GET /api/v1/configuration/preferences
+Svc-->>FE : configuration values
 Svc-->>Mod : ready
 ```
 
@@ -227,6 +169,7 @@ Svc-->>Mod : ready
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Detailed Component Analysis
 
@@ -384,8 +327,50 @@ Important migration references:
 - [backend/src/modules/configuration/migrations/046-dashboard-config.sql](file://backend/src/modules/configuration/migrations/046-dashboard-config.sql)
 - [backend/src/modules/configuration/migrations/099-add-monitoring-params.sql](file://backend/src/modules/configuration/migrations/099-add-monitoring-params.sql)
 
+## Frontend Integration
+
+### Centralized Configuration Management
+The frontend has been enhanced with streamlined configuration handling through the ParametresPage component, which provides a unified interface for managing application parameters.
+
+**Updated** Enhanced frontend integration with centralized configuration management improvements and project memory initialization.
+
+Key improvements:
+- Streamlined configuration access patterns across the application
+- Improved project memory initialization for better performance
+- Unified parameter management interface through ParametresPage
+- Better error handling and fallback mechanisms
+
+Frontend configuration flow:
+1. ParametresPage loads configuration values from centralized API
+2. Configuration values are cached in project memory for optimal performance
+3. Real-time updates are synchronized across the application
+4. Error states are handled gracefully with fallback values
+
+```mermaid
+flowchart TD
+A["ParametresPage.tsx"] --> B["Centralized Config API"]
+B --> C["Configuration Service"]
+C --> D["Project Memory Cache"]
+D --> E["UI Components"]
+C --> F["Database Storage"]
+C --> G["Redis Cache"]
+H["Environment Variables"] --> I["Backend Config"]
+I --> C
+style A fill:#e1f5fe
+style D fill:#f3e5f5
+style F fill:#e8f5e8
+```
+
+**Diagram sources**
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
+- [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+
+**Section sources**
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
+- [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+
 ## Dependency Analysis
-Configuration dependencies flow from bootstrap to modules and services.
+Configuration dependencies flow from bootstrap to modules and services, with enhanced frontend integration for streamlined parameter management.
 
 ```mermaid
 graph LR
@@ -397,6 +382,8 @@ ConfMod --> Svc["Configuration Service"]
 Svc --> Pref["Preference Entity"]
 Svc --> Repo["TypeORM Repository"]
 Svc --> Redis["Redis Client"]
+FE["ParametresPage.tsx"] --> Svc
+FE --> Mem["Project Memory"]
 ```
 
 **Diagram sources**
@@ -406,6 +393,7 @@ Svc --> Redis["Redis Client"]
 - [backend/src/app.ts](file://backend/src/app.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
@@ -414,6 +402,7 @@ Svc --> Redis["Redis Client"]
 - [backend/src/app.ts](file://backend/src/app.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Performance Considerations
 - Prefer migrations over auto-sync in non-development environments
@@ -421,8 +410,8 @@ Svc --> Redis["Redis Client"]
 - Scope queries efficiently using indexes on scope and scopeId
 - Avoid excessive preference lookups in hot paths; batch where possible
 - Monitor database connections and Redis latency; tune pool sizes accordingly
-
-[No sources needed since this section provides general guidance]
+- Utilize project memory cache in frontend for optimal parameter access performance
+- Implement proper error boundaries and fallback mechanisms for configuration loading
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -431,22 +420,25 @@ Common issues and resolutions:
 - Redis connection errors: validate host/port/password/TLS settings; check firewall rules
 - Swagger not available: confirm environment flag and route registration
 - Preference resolution unexpected: verify scope and scopeId; check precedence order and cache state
+- Frontend configuration loading issues: check API connectivity and project memory initialization
+- Parameter synchronization problems: verify real-time update mechanisms and cache invalidation
 
 Operational tips:
 - Log configuration loading and validation results
 - Add health checks for DB and Redis
 - Provide admin endpoints to inspect current configuration state
+- Monitor frontend-backend configuration synchronization
+- Implement comprehensive error tracking for configuration-related issues
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Conclusion
-The configuration system combines robust environment validation, TypeORM-based persistence, Redis-backed caching, and a flexible preference model to support dynamic feature activation and multi-tenant customization. By following the patterns outlined here, teams can safely add new configuration options, manage environments consistently, and maintain high availability and performance.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The configuration system combines robust environment validation, TypeORM-based persistence, Redis-backed caching, and a flexible preference model to support dynamic feature activation and multi-tenant customization. With the recent enhancements to frontend integration through centralized configuration management and streamlined parameter handling, teams can now maintain consistent configuration across both backend and frontend components while ensuring high availability and performance.
 
 ## Appendices
 
@@ -456,16 +448,19 @@ Steps:
 - If dynamic, add a new preference key and default value in the configuration service
 - Create or update migrations if the schema requires changes
 - Expose an endpoint in the configuration controller if external updates are needed
+- Update frontend ParametresPage to handle the new configuration option
 - Document the option and its precedence rules
 
 Examples:
 - Static option: add a new env var and getter in env config
 - Dynamic option: add a new key in the preference store with a default and cache entry
+- Frontend integration: update ParametresPage to display and manage the new option
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ### Managing Different Environments
 - Development: enable verbose logging, auto-sync, and Swagger UI
@@ -482,8 +477,10 @@ Environment-specific files or variables should be managed outside the repository
 ### Accessing Configuration Values Throughout the Application
 - For static settings: import the env config and use typed getters
 - For dynamic settings: inject the configuration service and call get/set methods with appropriate scope and scopeId
+- For frontend access: use the centralized configuration API through ParametresPage
 - Always handle missing or invalid values gracefully with fallbacks
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)

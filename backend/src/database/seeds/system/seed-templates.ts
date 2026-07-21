@@ -184,7 +184,7 @@ const TEMPLATES: TemplateDef[] = [
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, usageUnite: 'SECTION', nom: 'Section Technique', count: 3,
+                            niveau: 3, usageUnite: 'DEPARTEMENT', nom: 'Section Technique', count: 3,
                             postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de Section', ref: 'CHEF_SECTION' }, { ...P.FORMATEUR, nombrePostes: 4 }],
                             hierarchie: [],
                             enfants: [],
@@ -211,7 +211,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 3, usageUnite: 'CYCLE', nom: 'Cycle', count: 3,
+                    niveau: 3, usageUnite: 'POLE_PEDAGOGIQUE', nom: 'Cycle', count: 3,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Coordinateur de Cycle', ref: 'COORD_CYCLE', niveauResponsabilite: 'COORDINATEUR' },
                              { ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 6 }],
                     hierarchie: [],
@@ -231,7 +231,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 3, usageUnite: 'SECTION', nom: 'Section', count: 2,
+                    niveau: 3, usageUnite: 'DEPARTEMENT', nom: 'Section', count: 2,
                     postes: [{ ...P.PROF, intitulé: 'Instituteur(-trice) Maternelle', ref: 'INSTIT_MAT', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 4 },
                              { ...P.ANIM, intitulé: 'Aide-Maternelle', ref: 'AIDE_MAT', nombrePostes: 2 }],
                     hierarchie: [],
@@ -268,7 +268,7 @@ const TEMPLATES: TemplateDef[] = [
                     hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_PRIMAIRE', typeRelation: 'SUPERVISE_DIRECT' }],
                     enfants: [
                         {
-                            niveau: 3, usageUnite: 'CYCLE', nom: 'Cycle Primaire', count: 3,
+                            niveau: 3, usageUnite: 'POLE_PEDAGOGIQUE', nom: 'Cycle Primaire', count: 3,
                             postes: [{ ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT_PRIM', nombrePostes: 4 }],
                             hierarchie: [], enfants: [],
                         },
@@ -280,7 +280,7 @@ const TEMPLATES: TemplateDef[] = [
                     hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_MAT_COMP', typeRelation: 'SUPERVISE_DIRECT' }],
                     enfants: [
                         {
-                            niveau: 3, usageUnite: 'SECTION', nom: 'Section Maternelle', count: 2,
+                            niveau: 3, usageUnite: 'DEPARTEMENT', nom: 'Section Maternelle', count: 2,
                             postes: [{ ...P.PROF, intitulé: 'Institutrice Maternelle', ref: 'INSTIT_MAT_COMP', nombrePostes: 3 }],
                             hierarchie: [], enfants: [],
                         },
@@ -419,7 +419,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, usageUnite: 'POLE', nom: 'Pôle de Formation', count: 3,
+                    niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Pôle de Formation', count: 3,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Coordinateur de Pôle', ref: 'COORD_POLE' },
                              { ...P.FORMATEUR, nombrePostes: 4 }],
                     hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'COORD_POLE', typeRelation: 'SUPERVISE_DIRECT' }],
@@ -508,12 +508,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, usageUnite: 'POLE', nom: 'Pôle Pédagogique', count: 1,
+                    niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Pôle Pédagogique', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de la Pédagogie', ref: 'CHEF_PED' }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, usageUnite: 'SECTION', nom: 'Section de Formation', count: 3,
+                            niveau: 3, usageUnite: 'DEPARTEMENT', nom: 'Section de Formation', count: 3,
                             postes: [{ ...P.FORMATEUR, intitulé: 'Moniteur Maritime', ref: 'MONITEUR', nombrePostes: 4 }],
                             hierarchie: [], enfants: [],
                         },
@@ -539,7 +539,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, usageUnite: 'SECTION', nom: 'Chef de Section', count: 1,
+                    niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Chef de Section', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de Section', ref: 'CHEF_SECTION_SAR' }],
                     hierarchie: [],
                     enfants: [
@@ -564,7 +564,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, usageUnite: 'POLE', nom: 'Pôle Pédagogique', count: 1,
+                    niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Pôle Pédagogique', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Conseiller Pédagogique Principal', ref: 'CP_PRINCIPAL' },
                              { ...P.PROF, intitulé: 'Conseiller Pédagogique', ref: 'CP', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
                     hierarchie: [],
@@ -590,7 +590,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, usageUnite: 'POLE', nom: 'Pôle d\'Orientation', count: 2,
+                    niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Pôle d\'Orientation', count: 2,
                     postes: [{ ...P.ORIENT, nombrePostes: 3 }],
                     hierarchie: [],
                     enfants: [],

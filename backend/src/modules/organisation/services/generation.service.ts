@@ -2,7 +2,6 @@ import { Repository, QueryRunner } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { AppError } from '@common/filters/error.filter';
 import {
-    Organisation,
     UniteOrganisationnelle,
     Poste,
     HierarchiePersonnel,
@@ -27,7 +26,6 @@ import { organisationService } from './organisation.service';
 
 interface GenerationContext {
     etablissementId: string;
-    organisationId: string;
     prefixeCode: string;
     creerHierarchie: boolean;
     modeConflit: 'ERROR' | 'SKIP' | 'OVERWRITE';
@@ -82,12 +80,8 @@ export class GenerationService {
         // 1b. Valider la structure AVANT toute écriture
         validerNoeud(structure, 'racine');
 
-        // 2. Valider organisation cible
-        const organisationRepo = AppDataSource.getRepository(Organisation);
-        const organisation = await organisationRepo.findOne({
-            where: { id: dto.organisationId, etablissementId },
-        });
-        if (!organisation) throw new AppError('Organisation non trouvée', 404, 'ORG_NOT_FOUND');
+        // 2. Contexte = etablissementId direct
+        const context_etablissementId = dto.etablissementId || etablissementId;
 
         // 3. Préparer contexte et ouvrir transaction
         const queryRunner = AppDataSource.createQueryRunner();
@@ -95,7 +89,7 @@ export class GenerationService {
         await queryRunner.startTransaction();
 
         try {
-            const context = await this.preparerContexte(etablissementId, dto, queryRunner);
+            const context = await this.preparerContexte(context_etablissementId, dto, queryRunner);
 
             // 4. Générer récursivement
             await this.genererNoeud(structure, null, context);
@@ -106,7 +100,7 @@ export class GenerationService {
             }
 
             // 6. Construire arborescence retour
-            context.result.arborescence = await organisationService.buildArborescence(dto.organisationId);
+            context.result.arborescence = await organisationService.buildArborescence(context_etablissementId);
 
             await queryRunner.commitTransaction();
             return context.result;
@@ -125,7 +119,6 @@ export class GenerationService {
     ): Promise<GenerationContext> {
         const context: GenerationContext = {
             etablissementId,
-            organisationId: dto.organisationId,
             prefixeCode: dto.options?.prefixeCode || '',
             creerHierarchie: dto.options?.creerHierarchie ?? true,
             modeConflit: dto.options?.modeConflit || 'ERROR',
@@ -197,7 +190,7 @@ export class GenerationService {
         // Vérifier conflit
         if (ctx.modeConflit !== 'OVERWRITE') {
             const existing = await ctx.queryRunner.manager.findOne(UniteOrganisationnelle, {
-                where: { code, organisationId: ctx.organisationId },
+                where: { code, etablissementId: ctx.etablissementId },
             });
             if (existing) {
                 if (ctx.modeConflit === 'ERROR') {
@@ -214,7 +207,7 @@ export class GenerationService {
         } else {
             // OVERWRITE : supprimer l'arbre existant avant de recréer
             const existing = await ctx.queryRunner.manager.findOne(UniteOrganisationnelle, {
-                where: { code, organisationId: ctx.organisationId },
+                where: { code, etablissementId: ctx.etablissementId },
             });
             if (existing) {
                 await this.supprimerArbreUnites(existing.id, ctx.queryRunner);
@@ -233,7 +226,7 @@ export class GenerationService {
             type,
             usageUniteCode: noeud.usageUnite,
             ordre: index,
-            organisationId: ctx.organisationId,
+            etablissementId: ctx.etablissementId,
             parentId: parentId ?? undefined,
             statut: StatutUnite.ACTIF,
             actif: true,

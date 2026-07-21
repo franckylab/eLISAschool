@@ -15,10 +15,15 @@
 - [database/migrations/107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [scripts/run-migration.ts](file://backend/scripts/run-migration.ts)
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated to reflect documentation cleanup and initialization of centralized configuration management system
+- Removed verbose backup and configuration management documentation while maintaining underlying functionality
+- Added foundation for better configuration handling and reset capabilities
+- Streamlined content to focus on core configuration management features
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -33,19 +38,18 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains eLISAschool’s dynamic configuration management system with a focus on:
+This document explains eLISAschool's dynamic configuration management system with a focus on:
 - Runtime activation and deactivation of modules by administrators
 - A preference system supporting global, role-based, and tenant-specific scopes
 - A validation framework and type-safe access patterns for configurations
 - Creating new configurable modules, defining schemas, and implementing listeners
-- Backup and restore of system configurations
 - Versioning, migration strategies, and rollback procedures
 - Extending the system with custom configuration types and validation rules
 
 The goal is to provide both high-level guidance and code-level references so that developers and administrators can confidently evolve and operate the configuration system.
 
 ## Project Structure
-The configuration subsystem resides under backend/src/modules/configuration and integrates with database migrations, scripts, tests, and Docker tooling for backup and restore.
+The configuration subsystem resides under backend/src/modules/configuration and integrates with database migrations, scripts, and tests for comprehensive configuration management.
 
 ```mermaid
 graph TB
@@ -68,10 +72,6 @@ SRun["scripts/run-migration.ts"]
 SVerify["scripts/verify-configuration-integrity.ts"]
 TMulti["test/integration/configuration-multi-tenant.spec.ts"]
 end
-subgraph "Docker Tooling"
-DBackup["docker/scripts/backup-auto.sh"]
-DRestore["docker/scripts/restore.sh"]
-end
 CController --> CService
 CService --> CEntity
 CService --> M044
@@ -87,8 +87,6 @@ SRun --> M046
 SRun --> M107
 SVerify --> CService
 TMulti --> CController
-DBackup --> M044
-DRestore --> M044
 ```
 
 **Diagram sources**
@@ -104,8 +102,6 @@ DRestore --> M044
 - [scripts/run-migration.ts](file://backend/scripts/run-migration.ts)
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 
 **Section sources**
 - [configuration/index.ts](file://backend/src/modules/configuration/index.ts)
@@ -120,8 +116,6 @@ DRestore --> M044
 - [scripts/run-migration.ts](file://backend/scripts/run-migration.ts)
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 
 ## Core Components
 - Entity layer: Defines the persistent model for configuration entries and preferences.
@@ -131,7 +125,6 @@ DRestore --> M044
 - Middleware layer: Provides request-time resolution and injection of configuration values into handlers.
 - Migrations: Evolve the schema to support global, role-based, and user-scoped preferences and module flags.
 - Scripts: Run migrations and verify configuration integrity.
-- Docker tooling: Automate backups and restores of configuration data.
 
 Key responsibilities:
 - Type-safe access via strongly typed DTOs and entity fields
@@ -359,21 +352,6 @@ Guidelines:
 **Section sources**
 - [configuration/service/Configuration.service.ts](file://backend/src/modules/configuration/service/Configuration.service.ts)
 
-### Backup and Restore Functionality
-Automated backup and restore processes ensure configuration resilience:
-- Automated backups run periodically and store snapshots of the database.
-- Manual restore scripts allow administrators to roll back to known-good states.
-- Backups should be retained according to retention policies and verified regularly.
-
-Operational flow:
-- Trigger automated backup via cron or orchestration.
-- Verify backup integrity post-run.
-- On failure, use restore script to recover from the latest valid snapshot.
-
-**Section sources**
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
-
 ### Configuration Versioning, Migration Strategies, and Rollback Procedures
 Versioning and migrations:
 - Use numbered SQL migrations to evolve configuration schema and seed defaults.
@@ -420,7 +398,6 @@ The configuration module depends on:
 - Database migrations for schema evolution and seeding
 - Scripts for running migrations and verifying integrity
 - Integration tests for multi-tenant behavior
-- Docker tooling for operational backup and restore
 
 ```mermaid
 graph LR
@@ -430,8 +407,6 @@ Service --> Migrations["Migrations (SQL)"]
 Controller --> Tests["Integration Tests"]
 Migrations --> Runner["Migration Runner Script"]
 Migrations --> Integrity["Integrity Verification Script"]
-Migrations --> Backup["Backup Script"]
-Migrations --> Restore["Restore Script"]
 ```
 
 **Diagram sources**
@@ -444,8 +419,6 @@ Migrations --> Restore["Restore Script"]
 - [database/migrations/107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [scripts/run-migration.ts](file://backend/scripts/run-migration.ts)
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
 
 **Section sources**
@@ -458,8 +431,6 @@ Migrations --> Restore["Restore Script"]
 - [database/migrations/107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [scripts/run-migration.ts](file://backend/scripts/run-migration.ts)
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
 
 ## Performance Considerations
@@ -469,14 +440,11 @@ Migrations --> Restore["Restore Script"]
 - Monitor query performance and add indexes for commonly filtered scopes (tenant, role, user).
 - Validate inputs early to fail fast and avoid expensive processing.
 
-[No sources needed since this section provides general guidance]
-
 ## Troubleshooting Guide
 Common issues and resolutions:
 - Missing preferences: Ensure migrations have been applied and defaults seeded.
 - Validation errors: Check DTO constraints and input payloads.
 - Multi-tenant isolation problems: Verify tenant scoping in queries and tests.
-- Backup/restore failures: Inspect logs from Docker scripts and confirm database connectivity.
 
 Diagnostic tools:
 - Use the integrity verification script to detect inconsistencies.
@@ -486,13 +454,9 @@ Diagnostic tools:
 **Section sources**
 - [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
 - [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
-- [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh)
-- [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 
 ## Conclusion
-The eLISAschool configuration management system provides a robust, extensible foundation for dynamic feature control and preference management. With clear scoping rules, strong validation, and comprehensive migration and backup tooling, it supports safe evolution and reliable operation across tenants and roles. Following the guidelines in this document will help teams extend the system effectively and maintain high availability and correctness.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The eLISAschool configuration management system provides a robust, extensible foundation for dynamic feature control and preference management. With clear scoping rules, strong validation, and comprehensive migration and verification tooling, it supports safe evolution and reliable operation across tenants and roles. Following the guidelines in this document will help teams extend the system effectively and maintain high availability and correctness.
 
 ## Appendices
 
@@ -505,5 +469,4 @@ The eLISAschool configuration management system provides a robust, extensible fo
 - Request-time resolution: [configuration/middleware/Configuration.middleware.ts](file://backend/src/modules/configuration/middleware/Configuration.middleware.ts)
 - Migrations: [database/migrations/044-preferences-globales.sql](file://backend/database/migrations/044-preferences-globales.sql), [database/migrations/045-preferences-role.sql](file://backend/database/migrations/045-preferences-role.sql), [database/migrations/046-preferences-utilisateur-et-config.sql](file://backend/database/migrations/046-preferences-utilisateur-et-config.sql), [database/migrations/107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - Scripts: [scripts/run-migration.ts](file://backend/scripts/run-migration.ts), [scripts/verify-configuration-integrity.ts](file://backend/scripts/verify-configuration-integrity.ts)
-- Docker tooling: [docker/scripts/backup-auto.sh](file://docker/scripts/backup-auto.sh), [docker/scripts/restore.sh](file://docker/scripts/restore.sh)
 - Tests: [test/integration/configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
