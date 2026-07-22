@@ -183,13 +183,13 @@ export class FonctionsService {
     ): Promise<boolean> {
         const result = await this.repo.query(`
             WITH RECURSIVE ancestors AS (
-                SELECT id, parent_id, 0 AS depth
+                SELECT id, "parentId", 0 AS depth
                 FROM fonctions
-                WHERE id = $1 AND etablissement_id = $3
+                WHERE id = $1 AND "etablissementId" = $3
                 UNION ALL
-                SELECT f.id, f.parent_id, a.depth + 1
+                SELECT f.id, f."parentId", a.depth + 1
                 FROM fonctions f
-                INNER JOIN ancestors a ON f.id = a.parent_id
+                INNER JOIN ancestors a ON f.id = a."parentId"
                 WHERE a.depth < 100
             )
             SELECT COUNT(*)::int AS cnt FROM ancestors WHERE id = $2

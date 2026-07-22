@@ -1,0 +1,1 @@
+`npm run dev` starts backend and frontend concurrently; `npm run build|test|lint --workspaces` runs each child's script in parallel; `npm run db:migrate` / `db:seed` forward to the backend workspace; `docker:dev` / `docker:prod` families manage the full stack via compose files at the repo root.

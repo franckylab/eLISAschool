@@ -1,0 +1,1 @@
+TypeScript 5.7 compiled with vanilla `tsc`; Zod 3.x for shared input schemas; published as a private npm package (`@elisaschool/shared`) with `main`/`types` pointing at `dist/`.

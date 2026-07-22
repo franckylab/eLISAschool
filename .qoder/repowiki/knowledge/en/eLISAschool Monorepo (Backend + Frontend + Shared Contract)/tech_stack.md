@@ -1,0 +1,1 @@
+npm workspaces with Node ≥20; TypeScript across all three packages sharing one contract surface in `shared`; Docker Compose for local orchestration.

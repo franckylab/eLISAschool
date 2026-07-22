@@ -243,13 +243,13 @@ export class OrganisationService {
                 // Vérifier profondeur max (6 niveaux)
                 const profondeurResult = await this.uniteRepo.query(`
                     WITH RECURSIVE depth_calc AS (
-                        SELECT id, parent_id, 1 AS depth
+                        SELECT id, "parentId", 1 AS depth
                         FROM unites_organisationnelles
-                        WHERE id = $1 AND etablissement_id = $2
+                        WHERE id = $1 AND "etablissementId" = $2
                         UNION ALL
-                        SELECT u.id, u.parent_id, dc.depth + 1
+                        SELECT u.id, u."parentId", dc.depth + 1
                         FROM unites_organisationnelles u
-                        INNER JOIN depth_calc dc ON u.parent_id = dc.id
+                        INNER JOIN depth_calc dc ON u."parentId" = dc.id
                         WHERE dc.depth < 100
                     )
                     SELECT MAX(depth)::int AS max_depth FROM depth_calc
@@ -258,13 +258,13 @@ export class OrganisationService {
                 // Calculer la profondeur de l'unité elle-même
                 const profondeurUniteResult = await this.uniteRepo.query(`
                     WITH RECURSIVE depth_calc AS (
-                        SELECT id, parent_id, 1 AS depth
+                        SELECT id, "parentId", 1 AS depth
                         FROM unites_organisationnelles
-                        WHERE id = $1 AND etablissement_id = $2
+                        WHERE id = $1 AND "etablissementId" = $2
                         UNION ALL
-                        SELECT u.id, u.parent_id, dc.depth + 1
+                        SELECT u.id, u."parentId", dc.depth + 1
                         FROM unites_organisationnelles u
-                        INNER JOIN depth_calc dc ON u.parent_id = dc.id
+                        INNER JOIN depth_calc dc ON u."parentId" = dc.id
                         WHERE dc.depth < 100
                     )
                     SELECT MAX(depth)::int AS max_depth FROM depth_calc
@@ -842,13 +842,13 @@ export class OrganisationService {
     ): Promise<boolean> {
         const result = await this.uniteRepo.query(`
             WITH RECURSIVE ancestors AS (
-                SELECT id, parent_id, 0 AS depth
+                SELECT id, "parentId", 0 AS depth
                 FROM unites_organisationnelles
-                WHERE id = $1 AND etablissement_id = $3
+                WHERE id = $1 AND "etablissementId" = $3
                 UNION ALL
-                SELECT u.id, u.parent_id, a.depth + 1
+                SELECT u.id, u."parentId", a.depth + 1
                 FROM unites_organisationnelles u
-                INNER JOIN ancestors a ON u.id = a.parent_id
+                INNER JOIN ancestors a ON u.id = a."parentId"
                 WHERE a.depth < 100
             )
             SELECT COUNT(*)::int AS cnt FROM ancestors WHERE id = $2
@@ -879,13 +879,13 @@ export class OrganisationService {
         // Compter tous les descendants via CTE récursif
         const descendantsResult = await this.uniteRepo.query(`
             WITH RECURSIVE desc_tree AS (
-                SELECT id, parent_id, 0 AS depth
+                SELECT id, "parentId", 0 AS depth
                 FROM unites_organisationnelles
-                WHERE parent_id = $1 AND etablissement_id = $2
+                WHERE "parentId" = $1 AND "etablissementId" = $2
                 UNION ALL
-                SELECT u.id, u.parent_id, dt.depth + 1
+                SELECT u.id, u."parentId", dt.depth + 1
                 FROM unites_organisationnelles u
-                INNER JOIN desc_tree dt ON u.parent_id = dt.id
+                INNER JOIN desc_tree dt ON u."parentId" = dt.id
                 WHERE dt.depth < 100
             )
             SELECT COUNT(*)::int AS cnt FROM desc_tree
@@ -898,10 +898,10 @@ export class OrganisationService {
             const descRows = await this.uniteRepo.query(`
                 WITH RECURSIVE desc_tree AS (
                     SELECT id FROM unites_organisationnelles
-                    WHERE parent_id = $1 AND etablissement_id = $2
+                    WHERE "parentId" = $1 AND "etablissementId" = $2
                     UNION ALL
                     SELECT u.id FROM unites_organisationnelles u
-                    INNER JOIN desc_tree dt ON u.parent_id = dt.id
+                    INNER JOIN desc_tree dt ON u."parentId" = dt.id
                     WHERE dt.depth < 100
                 )
                 SELECT id FROM desc_tree

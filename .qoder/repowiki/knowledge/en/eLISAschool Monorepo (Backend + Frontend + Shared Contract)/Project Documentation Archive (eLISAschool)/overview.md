@@ -1,0 +1,1 @@
+Curated archive of the eLISAschool school management platform's technical, functional, session and deployment documentation organized by lifecycle stage.

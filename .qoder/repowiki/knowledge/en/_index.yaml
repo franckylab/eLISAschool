@@ -3,7 +3,7 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-21T03:00:00Z"
+exported_at: "2026-07-22T08:46:09Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo Orchestrator
@@ -455,6 +455,15 @@ modules:
         related_to:
             - path: backend/database_layer
             - path: scripts
+    docs:
+        dir_name: Project Documentation Archive (eLISAschool)
+        title: Project Documentation Archive (eLISAschool)
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
     documentation:
         dir_name: eLISAschool Project Documentation Archive
         title: eLISAschool Project Documentation Archive
@@ -652,3 +661,13 @@ modules:
         depends_on: []
         related_to:
             - path: backend/app_bootstrap_config
+    shared_package:
+        dir_name: Shared Types, Enums & Validation (eLISAschool Core Contract)
+        title: Shared Types, Enums & Validation (eLISAschool Core Contract)
+        scope:
+            - shared/src/
+            - shared/package.json
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

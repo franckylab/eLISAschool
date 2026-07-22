@@ -23,6 +23,14 @@
 - [frontend/package.json](file://frontend/package.json)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated API route normalization section to reflect standardized plural resource naming conventions
+- Enhanced route registry documentation with new endpoint patterns
+- Updated controller examples to demonstrate consistent RESTful patterns
+- Added guidance on query parameter usage for specific actions
+- Revised sub-resource patterns documentation
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -103,7 +111,7 @@ BE_APP --> BE_INT_ERR
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
 - [backend/src/modules/auth/dto/login.dto.ts](file://backend/src/modules/auth/dto/login.dto.ts)
-- [backend/src/modules/auth/dto/dto/register.dto.ts](file://backend/src/modules/auth/dto/register.dto.ts)
+- [backend/src/modules/auth/dto/register.dto.ts](file://backend/src/modules/auth/dto/register.dto.ts)
 - [backend/src/common/filters/global-exception.filter.ts](file://backend/src/common/filters/global-exception.filter.ts)
 - [backend/src/common/interceptors/logging.interceptor.ts](file://backend/src/common/interceptors/logging.interceptor.ts)
 - [backend/src/common/interceptors/error.interceptor.ts](file://backend/src/common/interceptors/error.interceptor.ts)
@@ -224,7 +232,7 @@ participant Hook as "useAuth"
 participant Routes as "Route Registry"
 participant Controller as "auth.controller"
 UI->>AuthSvc : "Submit credentials"
-AuthSvc->>Client : "POST /auth/login"
+AuthSvc->>Client : "POST /api/v1/users/login"
 Client->>Routes : "Forward request"
 Routes->>Controller : "Validate DTO and authenticate"
 Controller-->>Client : "{ accessToken, refreshToken }"
@@ -245,6 +253,36 @@ Hook-->>UI : "Update UI and redirect"
 - [frontend/src/features/auth/services/authService.ts](file://frontend/src/features/auth/services/authService.ts)
 - [frontend/src/stores/authStore.ts](file://frontend/src/stores/authStore.ts)
 - [frontend/src/hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
+- [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
+
+### API Route Normalization and RESTful Patterns
+**Updated** All REST API endpoints have been standardized to use plural resource names with specific actions through query parameters or sub-resources for improved API consistency.
+
+Standardized Endpoint Patterns:
+- **Plural Resource Names**: `/api/v1/users`, `/api/v1/classes`, `/api/v1/subjects` instead of singular forms
+- **Query Parameters for Actions**: `GET /api/v1/users?action=activate&id=123` instead of `/api/v1/users/activate/123`
+- **Sub-resources for Relationships**: `/api/v1/classes/{id}/students` for nested resources
+- **Consistent CRUD Operations**: 
+  - `GET /api/v1/resources` (list all)
+  - `GET /api/v1/resources/:id` (get one)
+  - `POST /api/v1/resources` (create)
+  - `PUT /api/v1/resources/:id` (update)
+  - `DELETE /api/v1/resources/:id` (delete)
+
+```mermaid
+flowchart TD
+OldPattern["Legacy Pattern<br/>/users/getProfile<br/>/classes/deleteClass"] --> Migration["API Route Normalization"]
+Migration --> NewPattern["Standardized Pattern<br/>/api/v1/users/profile<br/>/api/v1/classes/:id"]
+NewPattern --> QueryActions["Action via Query Params<br/>/api/v1/users?action=activate"]
+NewPattern --> SubResources["Nested Resources<br/>/api/v1/classes/:id/students"]
+```
+
+**Diagram sources**
+- [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
+- [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
+
+**Section sources**
+- [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/auth/controllers/auth.controller.ts](file://backend/src/modules/auth/controllers/auth.controller.ts)
 
 ### Typed API Methods Generation from Backend DTOs
@@ -418,7 +456,7 @@ Note over WS,Server : "Auto-reconnect on disconnect"
 ```mermaid
 flowchart TD
 Select["Select File(s)"] --> BuildForm["Build FormData"]
-BuildForm --> Upload["POST /files/upload"]
+BuildForm --> Upload["POST /api/v1/files/upload"]
 Upload --> Progress["Track progress events"]
 Progress --> Success{"Upload success?"}
 Success --> |Yes| SaveMeta["Save metadata and update UI"]
@@ -513,6 +551,7 @@ Common issues and resolutions:
 - Network errors: Verify base URL, proxy config, and connectivity; inspect interceptor logs.
 - Validation errors: Align frontend DTOs with backend DTOs; review error shapes.
 - WebSocket drops: Implement reconnection with exponential backoff; monitor heartbeat.
+- Route mismatches: Verify plural resource naming conventions and action parameters.
 
 **Section sources**
 - [frontend/src/lib/api-client.ts](file://frontend/src/lib/api-client.ts)
@@ -520,7 +559,7 @@ Common issues and resolutions:
 - [backend/src/common/interceptors/logging.interceptor.ts](file://backend/src/common/interceptors/logging.interceptor.ts)
 
 ## Conclusion
-The API integration layer centralizes HTTP concerns, enforces consistent error handling, and provides typed, maintainable services aligned with backend DTOs. With robust authentication, real-time capabilities, file uploads, and thoughtful versioning and testing strategies, the system remains scalable and developer-friendly.
+The API integration layer centralizes HTTP concerns, enforces consistent error handling, and provides typed, maintainable services aligned with backend DTOs. With robust authentication, real-time capabilities, file uploads, thoughtful versioning and testing strategies, and standardized RESTful routing patterns, the system remains scalable and developer-friendly.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -535,7 +574,7 @@ The API integration layer centralizes HTTP concerns, enforces consistent error h
 
 ### Application Bootstrap and Routing
 - Backend app bootstraps middleware, filters, and interceptors.
-- Route registry maps URLs to controllers.
+- Route registry maps URLs to controllers with standardized plural resource patterns.
 
 **Section sources**
 - [backend/src/app.ts](file://backend/src/app.ts)

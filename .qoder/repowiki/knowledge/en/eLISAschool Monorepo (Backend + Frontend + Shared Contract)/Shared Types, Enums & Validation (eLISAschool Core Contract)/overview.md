@@ -1,0 +1,1 @@
+TypeScript package publishing shared enums, Zod validators, API/user types, constants and the module registry consumed by both backend and frontend.
