@@ -20,10 +20,8 @@ import {
     UniteOrganisationnelle,
     Poste,
     HierarchiePersonnel,
-    TypeUniteOrganisationnelle,
     StatutUnite,
     StatutPoste,
-    TypeRelationHierarchique,
 } from '../entities';
 import {
     CreateUniteOrganisationnelleDto,
@@ -35,7 +33,7 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
-import { configurationOrganisationService } from './configuration.service';
+import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
 export class OrganisationService {
     private uniteRepo: Repository<UniteOrganisationnelle>;
@@ -58,9 +56,6 @@ export class OrganisationService {
         
         // Re-vérifier toutes les 30 secondes
         setInterval(() => this.checkRedisAvailability(), 30000);
-
-        // Charger les configurations dynamiques
-        this.chargerConfigurations();
     }
 
     /**
@@ -78,22 +73,6 @@ export class OrganisationService {
             }
         } catch (error) {
             // Ignorer les erreurs
-        }
-    }
-
-    /**
-     * Charger les configurations dynamiques
-     */
-    private async chargerConfigurations(): Promise<void> {
-        try {
-            const cacheTTL = await configurationOrganisationService.getValeur<number>('organisation.cache_arborescence_ttl');
-            if (cacheTTL) {
-                this.CACHE_ARBRESCENCE_TTL = cacheTTL;
-                this.CACHE_ORGANIGRAMME_TTL = cacheTTL;
-                logger.info(`[OrganisationService] TTL cache configuré: ${cacheTTL}s`);
-            }
-        } catch (error) {
-            logger.debug('[OrganisationService] Configuration par défaut utilisée');
         }
     }
 
@@ -120,12 +99,15 @@ export class OrganisationService {
             if (!parent) {
                 throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
             }
+            // Pas de test de cycle en création : la nouvelle entité n'a pas encore d'ID
         }
 
         const unite = this.uniteRepo.create({
             nom: dto.nom,
             description: dto.description,
-            type: dto.type as TypeUniteOrganisationnelle,
+            typeUniteId: dto.typeUniteId,
+            usageUniteId: dto.usageUniteId,
+            niveauOrganisationId: dto.niveauOrganisationId,
             code: dto.code,
             etablissementId: dto.etablissementId,
             parentId: dto.parentId,
@@ -135,7 +117,6 @@ export class OrganisationService {
             localisation: dto.localisation,
             telephone: dto.telephone,
             email: dto.email,
-            metadata: dto.metadata,
             statut: StatutUnite.ACTIF,
             actif: true,
         });
@@ -152,8 +133,8 @@ export class OrganisationService {
             where.etablissementId = filtres.etablissementId;
         }
 
-        if (filtres.type) {
-            where.type = filtres.type;
+        if (filtres.typeUniteId) {
+            where.typeUniteId = filtres.typeUniteId;
         }
 
         if (filtres.actif !== undefined) {
@@ -178,40 +159,46 @@ export class OrganisationService {
 
     // Version paginée
     async findUnitesPaginated(
-        filtres: FiltreUnitesDto,
+        filtres: FiltreUnitesDto & { recherche?: string },
         page: number,
         limit: number,
         etablissementId?: string
-    ): Promise<{ data: UniteOrganisationnelle[]; total: number }> {
-        const where: any = {};
+    ): Promise<PaginatedResult<UniteOrganisationnelle>> {
+        const qb = this.uniteRepo.createQueryBuilder('u')
+            .leftJoinAndSelect('u.parent', 'parent')
+            .leftJoinAndSelect('u.typeUnite', 'typeUnite');
 
-        if (filtres.etablissementId) {
-            where.etablissementId = filtres.etablissementId;
+        const eid = filtres.etablissementId || etablissementId;
+        if (eid) {
+            qb.andWhere('u.etablissementId = :eid', { eid });
         }
-        if (filtres.type) {
-            where.type = filtres.type;
+        if (filtres.typeUniteId) {
+            qb.andWhere('u.typeUniteId = :tid', { tid: filtres.typeUniteId });
         }
         if (filtres.actif !== undefined) {
-            where.actif = filtres.actif;
+            qb.andWhere('u.actif = :actif', { actif: filtres.actif });
         }
         if (filtres.parentId !== undefined) {
-            where.parentId = filtres.parentId;
+            qb.andWhere('u.parentId = :pid', { pid: filtres.parentId });
+        }
+        if (filtres.recherche) {
+            qb.andWhere('(u.nom ILIKE :s OR u.code ILIKE :s)', { s: `%${filtres.recherche}%` });
         }
 
-        // Multi-tenancy
-        if (etablissementId) {
-            where.etablissementId = etablissementId;
-        }
+        qb.orderBy('u.ordre', 'ASC').addOrderBy('u.createdAt', 'DESC');
+        return paginateWithQueryBuilder(qb, page, limit);
+    }
 
-        const [data, total] = await this.uniteRepo.findAndCount({
-            where,
-            relations: ['parent'],
-            order: { ordre: 'ASC', createdAt: 'DESC' },
-            skip: (page - 1) * limit,
-            take: limit,
+    /**
+     * Sous-unités directes d'une unité (pour l'onglet détail).
+     */
+    async findSousUnites(id: string, etablissementId?: string): Promise<UniteOrganisationnelle[]> {
+        await this.findUniteById(id, etablissementId);
+        return this.uniteRepo.find({
+            where: { parentId: id },
+            relations: ['typeUnite'],
+            order: { ordre: 'ASC' },
         });
-
-        return { data, total };
     }
 
     async findUniteById(id: string, etablissementId?: string): Promise<UniteOrganisationnelle> {
@@ -236,6 +223,60 @@ export class OrganisationService {
     async updateUnite(id: string, dto: UpdateUniteOrganisationnelleDto): Promise<UniteOrganisationnelle> {
         const unite = await this.findUniteById(id);
         const ancienEtablissementId = unite.etablissementId;
+
+        // Vérifier parentId (changement ou nouveau)
+        if (dto.parentId !== undefined && dto.parentId !== unite.parentId) {
+            if (dto.parentId === id) {
+                throw new AppError('Une unité ne peut pas être son propre parent', 400, 'SELF_PARENT');
+            }
+            if (dto.parentId) {
+                const parent = await this.uniteRepo.findOne({
+                    where: { id: dto.parentId, etablissementId: unite.etablissementId },
+                });
+                if (!parent) {
+                    throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
+                }
+                const cyclique = await this.verifierCycleUnite(dto.parentId, id, unite.etablissementId);
+                if (cyclique) {
+                    throw new AppError('Opération invalide : le parent choisi est un descendant de cette unité', 400, 'CYCLE_DETECTED');
+                }
+                // Vérifier profondeur max (6 niveaux)
+                const profondeurResult = await this.uniteRepo.query(`
+                    WITH RECURSIVE depth_calc AS (
+                        SELECT id, parent_id, 1 AS depth
+                        FROM unites_organisationnelles
+                        WHERE id = $1 AND etablissement_id = $2
+                        UNION ALL
+                        SELECT u.id, u.parent_id, dc.depth + 1
+                        FROM unites_organisationnelles u
+                        INNER JOIN depth_calc dc ON u.parent_id = dc.id
+                        WHERE dc.depth < 100
+                    )
+                    SELECT MAX(depth)::int AS max_depth FROM depth_calc
+                `, [dto.parentId, unite.etablissementId]);
+                const profondeurActuelle = profondeurResult[0]?.max_depth || 0;
+                // Calculer la profondeur de l'unité elle-même
+                const profondeurUniteResult = await this.uniteRepo.query(`
+                    WITH RECURSIVE depth_calc AS (
+                        SELECT id, parent_id, 1 AS depth
+                        FROM unites_organisationnelles
+                        WHERE id = $1 AND etablissement_id = $2
+                        UNION ALL
+                        SELECT u.id, u.parent_id, dc.depth + 1
+                        FROM unites_organisationnelles u
+                        INNER JOIN depth_calc dc ON u.parent_id = dc.id
+                        WHERE dc.depth < 100
+                    )
+                    SELECT MAX(depth)::int AS max_depth FROM depth_calc
+                `, [id, unite.etablissementId]);
+                const profondeurUnite = profondeurUniteResult[0]?.max_depth || 0;
+                // La profondeur résultante = profondeur du nouveau parent + sous-arbre de l'unité
+                // On vérifie que le parent ne dépasse pas le niveau 5 (pour laisser 1 niveau aux enfants)
+                if (profondeurActuelle > 5) {
+                    throw new AppError('Profondeur maximale atteinte (6 niveaux). Impossible de déplacer cette unité à cet endroit.', 400, 'MAX_DEPTH_EXCEEDED');
+                }
+            }
+        }
         
         Object.assign(unite, dto);
         const updated = await this.uniteRepo.save(unite);
@@ -282,6 +323,52 @@ export class OrganisationService {
         return this.uniteRepo.count({
             where: { etablissementId, actif: true },
         });
+    }
+
+    /**
+     * Réordonne une unité après une autre dans la liste des siblings.
+     * Met à jour les champs `ordre` de tous les siblings.
+     */
+    async reordonnerUnite(uniteId: string, apresId: string | null): Promise<void> {
+        const unite = await this.uniteRepo.findOne({ where: { id: uniteId } });
+        if (!unite) {
+            throw new AppError('Unité non trouvée', 404, 'UNITE_NOT_FOUND');
+        }
+
+        // Récupérer tous les siblings (même parent)
+        const siblings = await this.uniteRepo.find({
+            where: { parentId: unite.parentId, etablissementId: unite.etablissementId },
+            order: { ordre: 'ASC' },
+        });
+
+        // Retirer l'unité courante de la liste
+        const otherSiblings = siblings.filter(s => s.id !== uniteId);
+
+        // Construire la nouvelle liste
+        let newOrder: string[];
+        if (apresId === null) {
+            // Placer en premier
+            newOrder = [uniteId, ...otherSiblings.map(s => s.id)];
+        } else {
+            const apresIndex = otherSiblings.findIndex(s => s.id === apresId);
+            if (apresIndex === -1) {
+                throw new AppError('Unité de référence non trouvée', 404, 'REFERENCE_NOT_FOUND');
+            }
+            // Insérer après la référence
+            newOrder = [
+                ...otherSiblings.slice(0, apresIndex + 1).map(s => s.id),
+                uniteId,
+                ...otherSiblings.slice(apresIndex + 1).map(s => s.id),
+            ];
+        }
+
+        // Mettre à jour les ordres en batch
+        await Promise.all(newOrder.map((id, index) =>
+            this.uniteRepo.update(id, { ordre: index })
+        ));
+
+        logger.info(`Unité réordonnée: ${uniteId} après ${apresId || 'null'}`, { uniteId, apresId });
+        await this.invalidateArborescenceCache(unite.etablissementId);
     }
 
     // ==================== ARBORESCENCE HIÉRARCHIQUE ====================
@@ -402,7 +489,7 @@ export class OrganisationService {
             personnelNom: dto.personnelNom,
             superieurId: dto.superieurId,
             superieurNom: dto.superieurNom,
-            typeRelation: dto.typeRelation as any,
+            typeRelationId: dto.typeRelationId,
             posteId: dto.posteId,
             posteIntitule: dto.posteIntitule,
             uniteOrganisationnelleId: dto.uniteOrganisationnelleId,
@@ -411,7 +498,6 @@ export class OrganisationService {
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : undefined,
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             commentaire: dto.commentaire,
-            metadata: dto.metadata,
             statut: 'ACTIVE' as any,
             actif: true,
         });
@@ -537,24 +623,62 @@ export class OrganisationService {
 
     async getStatistiquesOrganisation(etablissementId: string): Promise<any> {
         const unites = await this.uniteRepo.find({ where: { etablissementId } });
-        const postes = await this.posteRepo.find({
-            where: { uniteOrganisationnelleId: In(unites.map((u) => u.id)) },
-        });
+        const uniteIds = unites.map((u) => u.id);
+        const postes = uniteIds.length > 0
+            ? await this.posteRepo.find({ where: { uniteOrganisationnelleId: In(uniteIds) } })
+            : [];
 
+        // Unités
+        const totalUnites = unites.length;
+        const unitesActives = unites.filter((u) => u.actif).length;
+
+        // Postes
         const totalPostes = postes.length;
         const postesActifs = postes.filter((p) => p.statut === StatutPoste.ACTIF).length;
-        const postesVacants = postes.filter((p) => p.statut === StatutPoste.VACANT).length;
+        const postesOccupes = postes.filter((p) => p.occupantsCount > 0).length;
+        const postesVacants = postes.filter((p) => p.statut === StatutPoste.VACANT || (p.actif && p.occupantsCount < p.nombrePostes)).length;
+
+        // Unités sans postes
+        const unitesAvecPostes = new Set(postes.map((p) => p.uniteOrganisationnelleId));
+        const unitesSansPostes = unites.filter((u) => !unitesAvecPostes.has(u.id)).length;
+
+        // Hiérarchies
+        const hierarchieRepo = AppDataSource.getRepository('HierarchiePersonnel');
+        const [totalHierarchies, hierarchiesActives] = uniteIds.length > 0
+            ? await Promise.all([
+                hierarchieRepo.count({ where: { etablissementId } }),
+                hierarchieRepo.count({ where: { etablissementId, actif: true } }),
+            ])
+            : [0, 0];
+
+        // Profondeur max
+        const profondeurMax = this.calculerProfondeurMax(unites);
+
+        // Répartition par type
+        const parType = unites.reduce((acc, unite) => {
+            const key = unite.typeUniteId || 'SANS_TYPE';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
 
         return {
-            totalUnites: unites.length,
+            // Unités
+            totalUnites,
+            unitesActives,
+            unitesSansPostes,
+            // Postes
             totalPostes,
             postesActifs,
+            postesOccupes,
             postesVacants,
-            tauxOccupation: totalPostes > 0 ? ((postesActifs / totalPostes) * 100).toFixed(2) : 0,
-            parType: unites.reduce((acc, unite) => {
-                acc[unite.type] = (acc[unite.type] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>),
+            tauxOccupation: totalPostes > 0 ? Math.round((postesOccupes / totalPostes) * 10000) / 100 : 0,
+            // Hiérarchies
+            totalHierarchies,
+            hierarchiesActives,
+            // Arborescence
+            profondeurMax,
+            // Répartition
+            parType,
         };
     }
 
@@ -707,6 +831,180 @@ export class OrganisationService {
         return maxProfondeur;
     }
 
+    /**
+     * Vérifie via CTE récursif PostgreSQL que parentId n'est pas un descendant de entityId
+     * (évite les cycles dans l'arborescence)
+     */
+    private async verifierCycleUnite(
+        parentId: string,
+        entityId: string,
+        etablissementId: string,
+    ): Promise<boolean> {
+        const result = await this.uniteRepo.query(`
+            WITH RECURSIVE ancestors AS (
+                SELECT id, parent_id, 0 AS depth
+                FROM unites_organisationnelles
+                WHERE id = $1 AND etablissement_id = $3
+                UNION ALL
+                SELECT u.id, u.parent_id, a.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN ancestors a ON u.id = a.parent_id
+                WHERE a.depth < 100
+            )
+            SELECT COUNT(*)::int AS cnt FROM ancestors WHERE id = $2
+        `, [parentId, entityId, etablissementId]);
+        return (result[0]?.cnt || 0) > 0;
+    }
+
+    // ==================== IMPACT SUPPRESSION & BATCH ====================
+
+    /**
+     * Calcule l'impact de la suppression d'une unité (enfants, postes, membres, hiérarchies).
+     * Vérification des relations directes ET indirectes.
+     */
+    async getImpactUnite(id: string, etablissementId?: string): Promise<{
+        enfants: number;
+        descendants: number;
+        postes: number;
+        postesOccupes: number;
+        membresDirect: number;
+        membresTotal: number;
+        hierarchies: number;
+    }> {
+        const unite = await this.findUniteById(id, etablissementId);
+
+        // Compter les enfants directs
+        const enfants = await this.uniteRepo.count({ where: { parentId: id } });
+
+        // Compter tous les descendants via CTE récursif
+        const descendantsResult = await this.uniteRepo.query(`
+            WITH RECURSIVE desc_tree AS (
+                SELECT id, parent_id, 0 AS depth
+                FROM unites_organisationnelles
+                WHERE parent_id = $1 AND etablissement_id = $2
+                UNION ALL
+                SELECT u.id, u.parent_id, dt.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN desc_tree dt ON u.parent_id = dt.id
+                WHERE dt.depth < 100
+            )
+            SELECT COUNT(*)::int AS cnt FROM desc_tree
+        `, [id, unite.etablissementId]);
+        const descendants = descendantsResult[0]?.cnt || 0;
+
+        // Collecter tous les IDs (unité + descendants)
+        const familleIds = [id];
+        if (descendants > 0) {
+            const descRows = await this.uniteRepo.query(`
+                WITH RECURSIVE desc_tree AS (
+                    SELECT id FROM unites_organisationnelles
+                    WHERE parent_id = $1 AND etablissement_id = $2
+                    UNION ALL
+                    SELECT u.id FROM unites_organisationnelles u
+                    INNER JOIN desc_tree dt ON u.parent_id = dt.id
+                    WHERE dt.depth < 100
+                )
+                SELECT id FROM desc_tree
+            `, [id, unite.etablissementId]);
+            familleIds.push(...descRows.map((r: any) => r.id));
+        }
+
+        // Compter les postes dans toute la famille
+        const postes = await this.posteRepo.find({
+            where: { uniteOrganisationnelleId: In(familleIds) },
+        });
+        const postesOccupes = postes.filter(p => p.occupantsCount > 0).length;
+
+        // Compter les membres (somme des occupantsCount)
+        const membresDirect = postes.filter(p => p.uniteOrganisationnelleId === id)
+            .reduce((sum, p) => sum + (p.occupantsCount || 0), 0);
+        const membresTotal = postes.reduce((sum, p) => sum + (p.occupantsCount || 0), 0);
+
+        // Compter les hiérarchies liées
+        const hierarchieRepo = AppDataSource.getRepository('HierarchiePersonnel');
+        const hierarchies = await hierarchieRepo.count({
+            where: { uniteOrganisationnelleId: In(familleIds), etablissementId: unite.etablissementId },
+        });
+
+        return { enfants, descendants, postes: postes.length, postesOccupes, membresDirect, membresTotal, hierarchies };
+    }
+
+    /**
+     * Crée une unité avec ses postes en une seule transaction.
+     */
+    async creerUniteAvecPostes(
+        dto: CreateUniteOrganisationnelleDto,
+        postes: Array<{ intitule: string; code?: string; categoriePosteCode?: string; description?: string; estSuppleant?: boolean }>
+    ): Promise<UniteOrganisationnelle> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // 1. Vérifier unicité du code
+            const existing = await queryRunner.manager.findOne(UniteOrganisationnelle, {
+                where: { code: dto.code, etablissementId: dto.etablissementId },
+            });
+            if (existing) {
+                throw new AppError('Une unité avec ce code existe déjà', 409, 'UNITE_CODE_EXISTS');
+            }
+
+            // 2. Créer l'unité
+            const unite = queryRunner.manager.create(UniteOrganisationnelle, {
+                nom: dto.nom,
+                description: dto.description,
+                typeUniteId: dto.typeUniteId,
+                usageUniteId: dto.usageUniteId,
+                niveauOrganisationId: dto.niveauOrganisationId,
+                code: dto.code,
+                etablissementId: dto.etablissementId,
+                parentId: dto.parentId,
+                ordre: dto.ordre,
+                responsableNom: dto.responsableNom,
+                responsableId: dto.responsableId,
+                localisation: dto.localisation,
+                telephone: dto.telephone,
+                email: dto.email,
+                statut: StatutUnite.ACTIF,
+                actif: true,
+            });
+            const savedUnite = await queryRunner.manager.save(unite);
+
+            // 3. Créer les postes associés
+            if (postes && postes.length > 0) {
+                for (const posteDto of postes) {
+                    const poste = queryRunner.manager.create(Poste, {
+                        intitule: posteDto.intitule,
+                        code: posteDto.code || posteDto.intitule.substring(0, 4).toUpperCase(),
+                        categoriePosteCode: posteDto.categoriePosteCode,
+                        description: posteDto.description,
+                        estSuppleant: posteDto.estSuppleant || false,
+                        uniteOrganisationnelleId: savedUnite.id,
+                        etablissementId: dto.etablissementId,
+                        statut: StatutPoste.VACANT,
+                        actif: true,
+                        nombrePostes: 1,
+                        occupantsCount: 0,
+                    });
+                    await queryRunner.manager.save(poste);
+                }
+            }
+
+            await queryRunner.commitTransaction();
+            logger.info(`Unité créée avec ${postes?.length || 0} poste(s): ${savedUnite.nom}`, { uniteId: savedUnite.id });
+
+            // Invalider le cache
+            await this.invalidateArborescenceCache(dto.etablissementId);
+
+            return this.findUniteById(savedUnite.id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
     async getOrganigramme(etablissementId: string): Promise<any> {
         const arborescence = await this.buildArborescence(etablissementId);
 
@@ -734,12 +1032,29 @@ export class OrganisationService {
             postesParUnite.get(p.uniteOrganisationnelleId)!.push(p);
         });
 
-        const injecterPostes = (unites: any[]): any[] => {
-            return unites.map((unite) => ({
-                ...unite,
-                postes: postesParUnite.get(unite.id) || [],
-                enfants: unite.enfants ? injecterPostes(unite.enfants) : [],
-            }));
+        // Enrichir chaque noeud avec depth, totalMembres, postesVacants
+        const injecterPostes = (unites: any[], depth: number = 0): any[] => {
+            return unites.map((unite) => {
+                const postesUnite = postesParUnite.get(unite.id) || [];
+                const enfantsEnrichis = unite.enfants ? injecterPostes(unite.enfants, depth + 1) : [];
+
+                // Calcul totalMembres (cette unité + descendants)
+                const membresDirect = postesUnite.reduce((sum: number, p: any) => sum + (p.occupantsCount || 0), 0);
+                const membresDescendants = enfantsEnrichis.reduce((sum: number, e: any) => sum + (e.totalMembres || 0), 0);
+
+                // Calcul postesVacants (cette unité + descendants)
+                const postesVacantsDirect = postesUnite.filter((p: any) => p.statut === StatutPoste.VACANT).length;
+                const postesVacantsDescendants = enfantsEnrichis.reduce((sum: number, e: any) => sum + (e.postesVacants || 0), 0);
+
+                return {
+                    ...unite,
+                    depth,
+                    postes: postesUnite,
+                    totalMembres: membresDirect + membresDescendants,
+                    postesVacants: postesVacantsDirect + postesVacantsDescendants,
+                    enfants: enfantsEnrichis,
+                };
+            });
         };
 
         return injecterPostes(arborescence);

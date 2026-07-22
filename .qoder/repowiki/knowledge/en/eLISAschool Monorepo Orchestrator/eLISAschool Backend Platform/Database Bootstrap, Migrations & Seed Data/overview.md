@@ -1,0 +1,1 @@
+TypeORM DataSource bootstrap, raw SQL and TypeScript migration scripts, and system/demo seed data that initialize the PostgreSQL schema and reference data for eLISAschool.

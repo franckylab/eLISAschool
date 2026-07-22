@@ -10,6 +10,7 @@ export * from './qr.util';
 export * from './api-response.util';
 export * from './pagination.util';
 export { validateDto, validateQuery } from './validate-dto.util';
+export { assertNotSystem } from './system-guard.util';
 
 // Exports spécifiques pour cursor pagination
 export {

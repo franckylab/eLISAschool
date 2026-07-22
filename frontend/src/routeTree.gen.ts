@@ -87,8 +87,11 @@ import { Route as AuthProgrammesIdRouteImport } from './routes/_auth/programmes.
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
 import { Route as AuthPaieConfigurationRouteImport } from './routes/_auth.paie.configuration'
+import { Route as AuthOrganisationUnitesRouteImport } from './routes/_auth.organisation.unites'
 import { Route as AuthOrganisationPostesRouteImport } from './routes/_auth.organisation.postes'
 import { Route as AuthOrganisationNomenclaturesRouteImport } from './routes/_auth.organisation.nomenclatures'
+import { Route as AuthOrganisationModelesRouteImport } from './routes/_auth.organisation.modeles'
+import { Route as AuthOrganisationHierarchieRouteImport } from './routes/_auth.organisation.hierarchie'
 import { Route as AuthOrganisationFonctionsRouteImport } from './routes/_auth.organisation.fonctions'
 import { Route as AuthNotesIdRouteImport } from './routes/_auth.notes.$id'
 import { Route as AuthNiveauxIdRouteImport } from './routes/_auth.niveaux.$id'
@@ -107,11 +110,22 @@ import { Route as AuthAnneesScolairesIdRouteImport } from './routes/_auth.annees
 import { Route as AuthAdminRolesRouteImport } from './routes/_auth.admin.roles'
 import { Route as AuthAdminPermissionsRouteImport } from './routes/_auth.admin.permissions'
 import { Route as authenticatedParametresStructureAcademiqueRouteRouteImport } from './routes/(authenticated)/parametres/structure-academique/route'
+import { Route as AuthOrganisationUnitesIndexRouteImport } from './routes/_auth.organisation.unites.index'
 import { Route as AuthOrganisationPostesIndexRouteImport } from './routes/_auth.organisation.postes.index'
+import { Route as AuthOrganisationNomenclaturesIndexRouteImport } from './routes/_auth.organisation.nomenclatures.index'
+import { Route as AuthOrganisationHierarchieIndexRouteImport } from './routes/_auth.organisation.hierarchie.index'
 import { Route as AuthOrganisationFonctionsIndexRouteImport } from './routes/_auth.organisation.fonctions.index'
 import { Route as AuthAdminRolesIndexRouteImport } from './routes/_auth.admin.roles.index'
 import { Route as AuthPaieBulletinsIdRouteImport } from './routes/_auth.paie.bulletins.$id'
+import { Route as AuthOrganisationUnitesIdRouteImport } from './routes/_auth.organisation.unites.$id'
 import { Route as AuthOrganisationPostesIdRouteImport } from './routes/_auth.organisation.postes.$id'
+import { Route as AuthOrganisationNomenclaturesUsagesUniteRouteImport } from './routes/_auth.organisation.nomenclatures.usages-unite'
+import { Route as AuthOrganisationNomenclaturesTypesPersonnelRouteImport } from './routes/_auth.organisation.nomenclatures.types-personnel'
+import { Route as AuthOrganisationNomenclaturesTemplatesRouteImport } from './routes/_auth.organisation.nomenclatures.templates'
+import { Route as AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteImport } from './routes/_auth.organisation.nomenclatures.niveaux-responsabilite'
+import { Route as AuthOrganisationNomenclaturesNiveauxOrganisationRouteImport } from './routes/_auth.organisation.nomenclatures.niveaux-organisation'
+import { Route as AuthOrganisationNomenclaturesGenerationRouteImport } from './routes/_auth.organisation.nomenclatures.generation'
+import { Route as AuthOrganisationNomenclaturesCategoriesPosteRouteImport } from './routes/_auth.organisation.nomenclatures.categories-poste'
 import { Route as AuthOrganisationFonctionsIdRouteImport } from './routes/_auth.organisation.fonctions.$id'
 import { Route as AuthAdminRolesIdRouteImport } from './routes/_auth.admin.roles.$id'
 import { Route as authenticatedParametresStructureAcademiqueNiveauxRouteImport } from './routes/(authenticated)/parametres/structure-academique/niveaux'
@@ -119,6 +133,11 @@ import { Route as authenticatedParametresStructureAcademiqueFilieresRouteImport 
 import { Route as authenticatedParametresStructureAcademiqueExamensNationauxRouteImport } from './routes/(authenticated)/parametres/structure-academique/examens-nationaux'
 import { Route as authenticatedParametresStructureAcademiqueDiplomesElevesRouteImport } from './routes/(authenticated)/parametres/structure-academique/diplomes-eleves'
 import { Route as authenticatedParametresStructureAcademiqueCyclesRouteImport } from './routes/(authenticated)/parametres/structure-academique/cycles'
+import { Route as AuthOrganisationNomenclaturesUsagesUniteIndexRouteImport } from './routes/_auth.organisation.nomenclatures.usages-unite.index'
+import { Route as AuthOrganisationNomenclaturesTypesPersonnelIndexRouteImport } from './routes/_auth.organisation.nomenclatures.types-personnel.index'
+import { Route as AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRouteImport } from './routes/_auth.organisation.nomenclatures.niveaux-responsabilite.index'
+import { Route as AuthOrganisationNomenclaturesNiveauxOrganisationIndexRouteImport } from './routes/_auth.organisation.nomenclatures.niveaux-organisation.index'
+import { Route as AuthOrganisationNomenclaturesCategoriesPosteIndexRouteImport } from './routes/_auth.organisation.nomenclatures.categories-poste.index'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -517,6 +536,11 @@ const AuthPaieConfigurationRoute = AuthPaieConfigurationRouteImport.update({
   path: '/configuration',
   getParentRoute: () => AuthPaieRoute,
 } as any)
+const AuthOrganisationUnitesRoute = AuthOrganisationUnitesRouteImport.update({
+  id: '/unites',
+  path: '/unites',
+  getParentRoute: () => AuthOrganisationRoute,
+} as any)
 const AuthOrganisationPostesRoute = AuthOrganisationPostesRouteImport.update({
   id: '/postes',
   path: '/postes',
@@ -526,6 +550,17 @@ const AuthOrganisationNomenclaturesRoute =
   AuthOrganisationNomenclaturesRouteImport.update({
     id: '/nomenclatures',
     path: '/nomenclatures',
+    getParentRoute: () => AuthOrganisationRoute,
+  } as any)
+const AuthOrganisationModelesRoute = AuthOrganisationModelesRouteImport.update({
+  id: '/modeles',
+  path: '/modeles',
+  getParentRoute: () => AuthOrganisationRoute,
+} as any)
+const AuthOrganisationHierarchieRoute =
+  AuthOrganisationHierarchieRouteImport.update({
+    id: '/hierarchie',
+    path: '/hierarchie',
     getParentRoute: () => AuthOrganisationRoute,
   } as any)
 const AuthOrganisationFonctionsRoute =
@@ -620,11 +655,29 @@ const authenticatedParametresStructureAcademiqueRouteRoute =
     path: '/parametres/structure-academique',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthOrganisationUnitesIndexRoute =
+  AuthOrganisationUnitesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationUnitesRoute,
+  } as any)
 const AuthOrganisationPostesIndexRoute =
   AuthOrganisationPostesIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthOrganisationPostesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesIndexRoute =
+  AuthOrganisationNomenclaturesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationHierarchieIndexRoute =
+  AuthOrganisationHierarchieIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationHierarchieRoute,
   } as any)
 const AuthOrganisationFonctionsIndexRoute =
   AuthOrganisationFonctionsIndexRouteImport.update({
@@ -642,11 +695,59 @@ const AuthPaieBulletinsIdRoute = AuthPaieBulletinsIdRouteImport.update({
   path: '/bulletins/$id',
   getParentRoute: () => AuthPaieRoute,
 } as any)
+const AuthOrganisationUnitesIdRoute =
+  AuthOrganisationUnitesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthOrganisationUnitesRoute,
+  } as any)
 const AuthOrganisationPostesIdRoute =
   AuthOrganisationPostesIdRouteImport.update({
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthOrganisationPostesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesUsagesUniteRoute =
+  AuthOrganisationNomenclaturesUsagesUniteRouteImport.update({
+    id: '/usages-unite',
+    path: '/usages-unite',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesTypesPersonnelRoute =
+  AuthOrganisationNomenclaturesTypesPersonnelRouteImport.update({
+    id: '/types-personnel',
+    path: '/types-personnel',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesTemplatesRoute =
+  AuthOrganisationNomenclaturesTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute =
+  AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteImport.update({
+    id: '/niveaux-responsabilite',
+    path: '/niveaux-responsabilite',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesNiveauxOrganisationRoute =
+  AuthOrganisationNomenclaturesNiveauxOrganisationRouteImport.update({
+    id: '/niveaux-organisation',
+    path: '/niveaux-organisation',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesGenerationRoute =
+  AuthOrganisationNomenclaturesGenerationRouteImport.update({
+    id: '/generation',
+    path: '/generation',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
+  } as any)
+const AuthOrganisationNomenclaturesCategoriesPosteRoute =
+  AuthOrganisationNomenclaturesCategoriesPosteRouteImport.update({
+    id: '/categories-poste',
+    path: '/categories-poste',
+    getParentRoute: () => AuthOrganisationNomenclaturesRoute,
   } as any)
 const AuthOrganisationFonctionsIdRoute =
   AuthOrganisationFonctionsIdRouteImport.update({
@@ -688,6 +789,37 @@ const authenticatedParametresStructureAcademiqueCyclesRoute =
     id: '/cycles',
     path: '/cycles',
     getParentRoute: () => authenticatedParametresStructureAcademiqueRouteRoute,
+  } as any)
+const AuthOrganisationNomenclaturesUsagesUniteIndexRoute =
+  AuthOrganisationNomenclaturesUsagesUniteIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationNomenclaturesUsagesUniteRoute,
+  } as any)
+const AuthOrganisationNomenclaturesTypesPersonnelIndexRoute =
+  AuthOrganisationNomenclaturesTypesPersonnelIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationNomenclaturesTypesPersonnelRoute,
+  } as any)
+const AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute =
+  AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () =>
+      AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute,
+  } as any)
+const AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute =
+  AuthOrganisationNomenclaturesNiveauxOrganisationIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationNomenclaturesNiveauxOrganisationRoute,
+  } as any)
+const AuthOrganisationNomenclaturesCategoriesPosteIndexRoute =
+  AuthOrganisationNomenclaturesCategoriesPosteIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthOrganisationNomenclaturesCategoriesPosteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -756,8 +888,11 @@ export interface FileRoutesByFullPath {
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
   '/organisation/fonctions': typeof AuthOrganisationFonctionsRouteWithChildren
-  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
+  '/organisation/hierarchie': typeof AuthOrganisationHierarchieRouteWithChildren
+  '/organisation/modeles': typeof AuthOrganisationModelesRoute
+  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRouteWithChildren
   '/organisation/postes': typeof AuthOrganisationPostesRouteWithChildren
+  '/organisation/unites': typeof AuthOrganisationUnitesRouteWithChildren
   '/paie/configuration': typeof AuthPaieConfigurationRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
@@ -795,11 +930,27 @@ export interface FileRoutesByFullPath {
   '/parametres/structure-academique/niveaux': typeof authenticatedParametresStructureAcademiqueNiveauxRoute
   '/admin/roles/$id': typeof AuthAdminRolesIdRoute
   '/organisation/fonctions/$id': typeof AuthOrganisationFonctionsIdRoute
+  '/organisation/nomenclatures/categories-poste': typeof AuthOrganisationNomenclaturesCategoriesPosteRouteWithChildren
+  '/organisation/nomenclatures/generation': typeof AuthOrganisationNomenclaturesGenerationRoute
+  '/organisation/nomenclatures/niveaux-organisation': typeof AuthOrganisationNomenclaturesNiveauxOrganisationRouteWithChildren
+  '/organisation/nomenclatures/niveaux-responsabilite': typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteWithChildren
+  '/organisation/nomenclatures/templates': typeof AuthOrganisationNomenclaturesTemplatesRoute
+  '/organisation/nomenclatures/types-personnel': typeof AuthOrganisationNomenclaturesTypesPersonnelRouteWithChildren
+  '/organisation/nomenclatures/usages-unite': typeof AuthOrganisationNomenclaturesUsagesUniteRouteWithChildren
   '/organisation/postes/$id': typeof AuthOrganisationPostesIdRoute
+  '/organisation/unites/$id': typeof AuthOrganisationUnitesIdRoute
   '/paie/bulletins/$id': typeof AuthPaieBulletinsIdRoute
   '/admin/roles/': typeof AuthAdminRolesIndexRoute
   '/organisation/fonctions/': typeof AuthOrganisationFonctionsIndexRoute
+  '/organisation/hierarchie/': typeof AuthOrganisationHierarchieIndexRoute
+  '/organisation/nomenclatures/': typeof AuthOrganisationNomenclaturesIndexRoute
   '/organisation/postes/': typeof AuthOrganisationPostesIndexRoute
+  '/organisation/unites/': typeof AuthOrganisationUnitesIndexRoute
+  '/organisation/nomenclatures/categories-poste/': typeof AuthOrganisationNomenclaturesCategoriesPosteIndexRoute
+  '/organisation/nomenclatures/niveaux-organisation/': typeof AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute
+  '/organisation/nomenclatures/niveaux-responsabilite/': typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute
+  '/organisation/nomenclatures/types-personnel/': typeof AuthOrganisationNomenclaturesTypesPersonnelIndexRoute
+  '/organisation/nomenclatures/usages-unite/': typeof AuthOrganisationNomenclaturesUsagesUniteIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -845,7 +996,7 @@ export interface FileRoutesByTo {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
-  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
+  '/organisation/modeles': typeof AuthOrganisationModelesRoute
   '/paie/configuration': typeof AuthPaieConfigurationRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
@@ -883,11 +1034,22 @@ export interface FileRoutesByTo {
   '/parametres/structure-academique/niveaux': typeof authenticatedParametresStructureAcademiqueNiveauxRoute
   '/admin/roles/$id': typeof AuthAdminRolesIdRoute
   '/organisation/fonctions/$id': typeof AuthOrganisationFonctionsIdRoute
+  '/organisation/nomenclatures/generation': typeof AuthOrganisationNomenclaturesGenerationRoute
+  '/organisation/nomenclatures/templates': typeof AuthOrganisationNomenclaturesTemplatesRoute
   '/organisation/postes/$id': typeof AuthOrganisationPostesIdRoute
+  '/organisation/unites/$id': typeof AuthOrganisationUnitesIdRoute
   '/paie/bulletins/$id': typeof AuthPaieBulletinsIdRoute
   '/admin/roles': typeof AuthAdminRolesIndexRoute
   '/organisation/fonctions': typeof AuthOrganisationFonctionsIndexRoute
+  '/organisation/hierarchie': typeof AuthOrganisationHierarchieIndexRoute
+  '/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesIndexRoute
   '/organisation/postes': typeof AuthOrganisationPostesIndexRoute
+  '/organisation/unites': typeof AuthOrganisationUnitesIndexRoute
+  '/organisation/nomenclatures/categories-poste': typeof AuthOrganisationNomenclaturesCategoriesPosteIndexRoute
+  '/organisation/nomenclatures/niveaux-organisation': typeof AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute
+  '/organisation/nomenclatures/niveaux-responsabilite': typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute
+  '/organisation/nomenclatures/types-personnel': typeof AuthOrganisationNomenclaturesTypesPersonnelIndexRoute
+  '/organisation/nomenclatures/usages-unite': typeof AuthOrganisationNomenclaturesUsagesUniteIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -957,8 +1119,11 @@ export interface FileRoutesById {
   '/_auth/niveaux/$id': typeof AuthNiveauxIdRoute
   '/_auth/notes/$id': typeof AuthNotesIdRoute
   '/_auth/organisation/fonctions': typeof AuthOrganisationFonctionsRouteWithChildren
-  '/_auth/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRoute
+  '/_auth/organisation/hierarchie': typeof AuthOrganisationHierarchieRouteWithChildren
+  '/_auth/organisation/modeles': typeof AuthOrganisationModelesRoute
+  '/_auth/organisation/nomenclatures': typeof AuthOrganisationNomenclaturesRouteWithChildren
   '/_auth/organisation/postes': typeof AuthOrganisationPostesRouteWithChildren
+  '/_auth/organisation/unites': typeof AuthOrganisationUnitesRouteWithChildren
   '/_auth/paie/configuration': typeof AuthPaieConfigurationRoute
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
@@ -996,11 +1161,27 @@ export interface FileRoutesById {
   '/(authenticated)/parametres/structure-academique/niveaux': typeof authenticatedParametresStructureAcademiqueNiveauxRoute
   '/_auth/admin/roles/$id': typeof AuthAdminRolesIdRoute
   '/_auth/organisation/fonctions/$id': typeof AuthOrganisationFonctionsIdRoute
+  '/_auth/organisation/nomenclatures/categories-poste': typeof AuthOrganisationNomenclaturesCategoriesPosteRouteWithChildren
+  '/_auth/organisation/nomenclatures/generation': typeof AuthOrganisationNomenclaturesGenerationRoute
+  '/_auth/organisation/nomenclatures/niveaux-organisation': typeof AuthOrganisationNomenclaturesNiveauxOrganisationRouteWithChildren
+  '/_auth/organisation/nomenclatures/niveaux-responsabilite': typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteWithChildren
+  '/_auth/organisation/nomenclatures/templates': typeof AuthOrganisationNomenclaturesTemplatesRoute
+  '/_auth/organisation/nomenclatures/types-personnel': typeof AuthOrganisationNomenclaturesTypesPersonnelRouteWithChildren
+  '/_auth/organisation/nomenclatures/usages-unite': typeof AuthOrganisationNomenclaturesUsagesUniteRouteWithChildren
   '/_auth/organisation/postes/$id': typeof AuthOrganisationPostesIdRoute
+  '/_auth/organisation/unites/$id': typeof AuthOrganisationUnitesIdRoute
   '/_auth/paie/bulletins/$id': typeof AuthPaieBulletinsIdRoute
   '/_auth/admin/roles/': typeof AuthAdminRolesIndexRoute
   '/_auth/organisation/fonctions/': typeof AuthOrganisationFonctionsIndexRoute
+  '/_auth/organisation/hierarchie/': typeof AuthOrganisationHierarchieIndexRoute
+  '/_auth/organisation/nomenclatures/': typeof AuthOrganisationNomenclaturesIndexRoute
   '/_auth/organisation/postes/': typeof AuthOrganisationPostesIndexRoute
+  '/_auth/organisation/unites/': typeof AuthOrganisationUnitesIndexRoute
+  '/_auth/organisation/nomenclatures/categories-poste/': typeof AuthOrganisationNomenclaturesCategoriesPosteIndexRoute
+  '/_auth/organisation/nomenclatures/niveaux-organisation/': typeof AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute
+  '/_auth/organisation/nomenclatures/niveaux-responsabilite/': typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute
+  '/_auth/organisation/nomenclatures/types-personnel/': typeof AuthOrganisationNomenclaturesTypesPersonnelIndexRoute
+  '/_auth/organisation/nomenclatures/usages-unite/': typeof AuthOrganisationNomenclaturesUsagesUniteIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1070,8 +1251,11 @@ export interface FileRouteTypes {
     | '/niveaux/$id'
     | '/notes/$id'
     | '/organisation/fonctions'
+    | '/organisation/hierarchie'
+    | '/organisation/modeles'
     | '/organisation/nomenclatures'
     | '/organisation/postes'
+    | '/organisation/unites'
     | '/paie/configuration'
     | '/periodes/$id'
     | '/personnel/$id'
@@ -1109,11 +1293,27 @@ export interface FileRouteTypes {
     | '/parametres/structure-academique/niveaux'
     | '/admin/roles/$id'
     | '/organisation/fonctions/$id'
+    | '/organisation/nomenclatures/categories-poste'
+    | '/organisation/nomenclatures/generation'
+    | '/organisation/nomenclatures/niveaux-organisation'
+    | '/organisation/nomenclatures/niveaux-responsabilite'
+    | '/organisation/nomenclatures/templates'
+    | '/organisation/nomenclatures/types-personnel'
+    | '/organisation/nomenclatures/usages-unite'
     | '/organisation/postes/$id'
+    | '/organisation/unites/$id'
     | '/paie/bulletins/$id'
     | '/admin/roles/'
     | '/organisation/fonctions/'
+    | '/organisation/hierarchie/'
+    | '/organisation/nomenclatures/'
     | '/organisation/postes/'
+    | '/organisation/unites/'
+    | '/organisation/nomenclatures/categories-poste/'
+    | '/organisation/nomenclatures/niveaux-organisation/'
+    | '/organisation/nomenclatures/niveaux-responsabilite/'
+    | '/organisation/nomenclatures/types-personnel/'
+    | '/organisation/nomenclatures/usages-unite/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1159,7 +1359,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/notes/$id'
-    | '/organisation/nomenclatures'
+    | '/organisation/modeles'
     | '/paie/configuration'
     | '/periodes/$id'
     | '/personnel/$id'
@@ -1197,11 +1397,22 @@ export interface FileRouteTypes {
     | '/parametres/structure-academique/niveaux'
     | '/admin/roles/$id'
     | '/organisation/fonctions/$id'
+    | '/organisation/nomenclatures/generation'
+    | '/organisation/nomenclatures/templates'
     | '/organisation/postes/$id'
+    | '/organisation/unites/$id'
     | '/paie/bulletins/$id'
     | '/admin/roles'
     | '/organisation/fonctions'
+    | '/organisation/hierarchie'
+    | '/organisation/nomenclatures'
     | '/organisation/postes'
+    | '/organisation/unites'
+    | '/organisation/nomenclatures/categories-poste'
+    | '/organisation/nomenclatures/niveaux-organisation'
+    | '/organisation/nomenclatures/niveaux-responsabilite'
+    | '/organisation/nomenclatures/types-personnel'
+    | '/organisation/nomenclatures/usages-unite'
   id:
     | '__root__'
     | '/'
@@ -1270,8 +1481,11 @@ export interface FileRouteTypes {
     | '/_auth/niveaux/$id'
     | '/_auth/notes/$id'
     | '/_auth/organisation/fonctions'
+    | '/_auth/organisation/hierarchie'
+    | '/_auth/organisation/modeles'
     | '/_auth/organisation/nomenclatures'
     | '/_auth/organisation/postes'
+    | '/_auth/organisation/unites'
     | '/_auth/paie/configuration'
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
@@ -1309,11 +1523,27 @@ export interface FileRouteTypes {
     | '/(authenticated)/parametres/structure-academique/niveaux'
     | '/_auth/admin/roles/$id'
     | '/_auth/organisation/fonctions/$id'
+    | '/_auth/organisation/nomenclatures/categories-poste'
+    | '/_auth/organisation/nomenclatures/generation'
+    | '/_auth/organisation/nomenclatures/niveaux-organisation'
+    | '/_auth/organisation/nomenclatures/niveaux-responsabilite'
+    | '/_auth/organisation/nomenclatures/templates'
+    | '/_auth/organisation/nomenclatures/types-personnel'
+    | '/_auth/organisation/nomenclatures/usages-unite'
     | '/_auth/organisation/postes/$id'
+    | '/_auth/organisation/unites/$id'
     | '/_auth/paie/bulletins/$id'
     | '/_auth/admin/roles/'
     | '/_auth/organisation/fonctions/'
+    | '/_auth/organisation/hierarchie/'
+    | '/_auth/organisation/nomenclatures/'
     | '/_auth/organisation/postes/'
+    | '/_auth/organisation/unites/'
+    | '/_auth/organisation/nomenclatures/categories-poste/'
+    | '/_auth/organisation/nomenclatures/niveaux-organisation/'
+    | '/_auth/organisation/nomenclatures/niveaux-responsabilite/'
+    | '/_auth/organisation/nomenclatures/types-personnel/'
+    | '/_auth/organisation/nomenclatures/usages-unite/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1874,6 +2104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPaieConfigurationRouteImport
       parentRoute: typeof AuthPaieRoute
     }
+    '/_auth/organisation/unites': {
+      id: '/_auth/organisation/unites'
+      path: '/unites'
+      fullPath: '/organisation/unites'
+      preLoaderRoute: typeof AuthOrganisationUnitesRouteImport
+      parentRoute: typeof AuthOrganisationRoute
+    }
     '/_auth/organisation/postes': {
       id: '/_auth/organisation/postes'
       path: '/postes'
@@ -1886,6 +2123,20 @@ declare module '@tanstack/react-router' {
       path: '/nomenclatures'
       fullPath: '/organisation/nomenclatures'
       preLoaderRoute: typeof AuthOrganisationNomenclaturesRouteImport
+      parentRoute: typeof AuthOrganisationRoute
+    }
+    '/_auth/organisation/modeles': {
+      id: '/_auth/organisation/modeles'
+      path: '/modeles'
+      fullPath: '/organisation/modeles'
+      preLoaderRoute: typeof AuthOrganisationModelesRouteImport
+      parentRoute: typeof AuthOrganisationRoute
+    }
+    '/_auth/organisation/hierarchie': {
+      id: '/_auth/organisation/hierarchie'
+      path: '/hierarchie'
+      fullPath: '/organisation/hierarchie'
+      preLoaderRoute: typeof AuthOrganisationHierarchieRouteImport
       parentRoute: typeof AuthOrganisationRoute
     }
     '/_auth/organisation/fonctions': {
@@ -2014,12 +2265,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedParametresStructureAcademiqueRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/organisation/unites/': {
+      id: '/_auth/organisation/unites/'
+      path: '/'
+      fullPath: '/organisation/unites/'
+      preLoaderRoute: typeof AuthOrganisationUnitesIndexRouteImport
+      parentRoute: typeof AuthOrganisationUnitesRoute
+    }
     '/_auth/organisation/postes/': {
       id: '/_auth/organisation/postes/'
       path: '/'
       fullPath: '/organisation/postes/'
       preLoaderRoute: typeof AuthOrganisationPostesIndexRouteImport
       parentRoute: typeof AuthOrganisationPostesRoute
+    }
+    '/_auth/organisation/nomenclatures/': {
+      id: '/_auth/organisation/nomenclatures/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/hierarchie/': {
+      id: '/_auth/organisation/hierarchie/'
+      path: '/'
+      fullPath: '/organisation/hierarchie/'
+      preLoaderRoute: typeof AuthOrganisationHierarchieIndexRouteImport
+      parentRoute: typeof AuthOrganisationHierarchieRoute
     }
     '/_auth/organisation/fonctions/': {
       id: '/_auth/organisation/fonctions/'
@@ -2042,12 +2314,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPaieBulletinsIdRouteImport
       parentRoute: typeof AuthPaieRoute
     }
+    '/_auth/organisation/unites/$id': {
+      id: '/_auth/organisation/unites/$id'
+      path: '/$id'
+      fullPath: '/organisation/unites/$id'
+      preLoaderRoute: typeof AuthOrganisationUnitesIdRouteImport
+      parentRoute: typeof AuthOrganisationUnitesRoute
+    }
     '/_auth/organisation/postes/$id': {
       id: '/_auth/organisation/postes/$id'
       path: '/$id'
       fullPath: '/organisation/postes/$id'
       preLoaderRoute: typeof AuthOrganisationPostesIdRouteImport
       parentRoute: typeof AuthOrganisationPostesRoute
+    }
+    '/_auth/organisation/nomenclatures/usages-unite': {
+      id: '/_auth/organisation/nomenclatures/usages-unite'
+      path: '/usages-unite'
+      fullPath: '/organisation/nomenclatures/usages-unite'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesUsagesUniteRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/types-personnel': {
+      id: '/_auth/organisation/nomenclatures/types-personnel'
+      path: '/types-personnel'
+      fullPath: '/organisation/nomenclatures/types-personnel'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesTypesPersonnelRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/templates': {
+      id: '/_auth/organisation/nomenclatures/templates'
+      path: '/templates'
+      fullPath: '/organisation/nomenclatures/templates'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesTemplatesRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/niveaux-responsabilite': {
+      id: '/_auth/organisation/nomenclatures/niveaux-responsabilite'
+      path: '/niveaux-responsabilite'
+      fullPath: '/organisation/nomenclatures/niveaux-responsabilite'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/niveaux-organisation': {
+      id: '/_auth/organisation/nomenclatures/niveaux-organisation'
+      path: '/niveaux-organisation'
+      fullPath: '/organisation/nomenclatures/niveaux-organisation'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesNiveauxOrganisationRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/generation': {
+      id: '/_auth/organisation/nomenclatures/generation'
+      path: '/generation'
+      fullPath: '/organisation/nomenclatures/generation'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesGenerationRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
+    }
+    '/_auth/organisation/nomenclatures/categories-poste': {
+      id: '/_auth/organisation/nomenclatures/categories-poste'
+      path: '/categories-poste'
+      fullPath: '/organisation/nomenclatures/categories-poste'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesCategoriesPosteRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesRoute
     }
     '/_auth/organisation/fonctions/$id': {
       id: '/_auth/organisation/fonctions/$id'
@@ -2097,6 +2425,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/parametres/structure-academique/cycles'
       preLoaderRoute: typeof authenticatedParametresStructureAcademiqueCyclesRouteImport
       parentRoute: typeof authenticatedParametresStructureAcademiqueRouteRoute
+    }
+    '/_auth/organisation/nomenclatures/usages-unite/': {
+      id: '/_auth/organisation/nomenclatures/usages-unite/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/usages-unite/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesUsagesUniteIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesUsagesUniteRoute
+    }
+    '/_auth/organisation/nomenclatures/types-personnel/': {
+      id: '/_auth/organisation/nomenclatures/types-personnel/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/types-personnel/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesTypesPersonnelIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesTypesPersonnelRoute
+    }
+    '/_auth/organisation/nomenclatures/niveaux-responsabilite/': {
+      id: '/_auth/organisation/nomenclatures/niveaux-responsabilite/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/niveaux-responsabilite/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute
+    }
+    '/_auth/organisation/nomenclatures/niveaux-organisation/': {
+      id: '/_auth/organisation/nomenclatures/niveaux-organisation/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/niveaux-organisation/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesNiveauxOrganisationIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesNiveauxOrganisationRoute
+    }
+    '/_auth/organisation/nomenclatures/categories-poste/': {
+      id: '/_auth/organisation/nomenclatures/categories-poste/'
+      path: '/'
+      fullPath: '/organisation/nomenclatures/categories-poste/'
+      preLoaderRoute: typeof AuthOrganisationNomenclaturesCategoriesPosteIndexRouteImport
+      parentRoute: typeof AuthOrganisationNomenclaturesCategoriesPosteRoute
     }
   }
 }
@@ -2307,6 +2670,131 @@ const AuthOrganisationFonctionsRouteWithChildren =
     AuthOrganisationFonctionsRouteChildren,
   )
 
+interface AuthOrganisationHierarchieRouteChildren {
+  AuthOrganisationHierarchieIndexRoute: typeof AuthOrganisationHierarchieIndexRoute
+}
+
+const AuthOrganisationHierarchieRouteChildren: AuthOrganisationHierarchieRouteChildren =
+  {
+    AuthOrganisationHierarchieIndexRoute: AuthOrganisationHierarchieIndexRoute,
+  }
+
+const AuthOrganisationHierarchieRouteWithChildren =
+  AuthOrganisationHierarchieRoute._addFileChildren(
+    AuthOrganisationHierarchieRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesCategoriesPosteRouteChildren {
+  AuthOrganisationNomenclaturesCategoriesPosteIndexRoute: typeof AuthOrganisationNomenclaturesCategoriesPosteIndexRoute
+}
+
+const AuthOrganisationNomenclaturesCategoriesPosteRouteChildren: AuthOrganisationNomenclaturesCategoriesPosteRouteChildren =
+  {
+    AuthOrganisationNomenclaturesCategoriesPosteIndexRoute:
+      AuthOrganisationNomenclaturesCategoriesPosteIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesCategoriesPosteRouteWithChildren =
+  AuthOrganisationNomenclaturesCategoriesPosteRoute._addFileChildren(
+    AuthOrganisationNomenclaturesCategoriesPosteRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesNiveauxOrganisationRouteChildren {
+  AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute: typeof AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute
+}
+
+const AuthOrganisationNomenclaturesNiveauxOrganisationRouteChildren: AuthOrganisationNomenclaturesNiveauxOrganisationRouteChildren =
+  {
+    AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute:
+      AuthOrganisationNomenclaturesNiveauxOrganisationIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesNiveauxOrganisationRouteWithChildren =
+  AuthOrganisationNomenclaturesNiveauxOrganisationRoute._addFileChildren(
+    AuthOrganisationNomenclaturesNiveauxOrganisationRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteChildren {
+  AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute: typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute
+}
+
+const AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteChildren: AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteChildren =
+  {
+    AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute:
+      AuthOrganisationNomenclaturesNiveauxResponsabiliteIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteWithChildren =
+  AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute._addFileChildren(
+    AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesTypesPersonnelRouteChildren {
+  AuthOrganisationNomenclaturesTypesPersonnelIndexRoute: typeof AuthOrganisationNomenclaturesTypesPersonnelIndexRoute
+}
+
+const AuthOrganisationNomenclaturesTypesPersonnelRouteChildren: AuthOrganisationNomenclaturesTypesPersonnelRouteChildren =
+  {
+    AuthOrganisationNomenclaturesTypesPersonnelIndexRoute:
+      AuthOrganisationNomenclaturesTypesPersonnelIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesTypesPersonnelRouteWithChildren =
+  AuthOrganisationNomenclaturesTypesPersonnelRoute._addFileChildren(
+    AuthOrganisationNomenclaturesTypesPersonnelRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesUsagesUniteRouteChildren {
+  AuthOrganisationNomenclaturesUsagesUniteIndexRoute: typeof AuthOrganisationNomenclaturesUsagesUniteIndexRoute
+}
+
+const AuthOrganisationNomenclaturesUsagesUniteRouteChildren: AuthOrganisationNomenclaturesUsagesUniteRouteChildren =
+  {
+    AuthOrganisationNomenclaturesUsagesUniteIndexRoute:
+      AuthOrganisationNomenclaturesUsagesUniteIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesUsagesUniteRouteWithChildren =
+  AuthOrganisationNomenclaturesUsagesUniteRoute._addFileChildren(
+    AuthOrganisationNomenclaturesUsagesUniteRouteChildren,
+  )
+
+interface AuthOrganisationNomenclaturesRouteChildren {
+  AuthOrganisationNomenclaturesCategoriesPosteRoute: typeof AuthOrganisationNomenclaturesCategoriesPosteRouteWithChildren
+  AuthOrganisationNomenclaturesGenerationRoute: typeof AuthOrganisationNomenclaturesGenerationRoute
+  AuthOrganisationNomenclaturesNiveauxOrganisationRoute: typeof AuthOrganisationNomenclaturesNiveauxOrganisationRouteWithChildren
+  AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute: typeof AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteWithChildren
+  AuthOrganisationNomenclaturesTemplatesRoute: typeof AuthOrganisationNomenclaturesTemplatesRoute
+  AuthOrganisationNomenclaturesTypesPersonnelRoute: typeof AuthOrganisationNomenclaturesTypesPersonnelRouteWithChildren
+  AuthOrganisationNomenclaturesUsagesUniteRoute: typeof AuthOrganisationNomenclaturesUsagesUniteRouteWithChildren
+  AuthOrganisationNomenclaturesIndexRoute: typeof AuthOrganisationNomenclaturesIndexRoute
+}
+
+const AuthOrganisationNomenclaturesRouteChildren: AuthOrganisationNomenclaturesRouteChildren =
+  {
+    AuthOrganisationNomenclaturesCategoriesPosteRoute:
+      AuthOrganisationNomenclaturesCategoriesPosteRouteWithChildren,
+    AuthOrganisationNomenclaturesGenerationRoute:
+      AuthOrganisationNomenclaturesGenerationRoute,
+    AuthOrganisationNomenclaturesNiveauxOrganisationRoute:
+      AuthOrganisationNomenclaturesNiveauxOrganisationRouteWithChildren,
+    AuthOrganisationNomenclaturesNiveauxResponsabiliteRoute:
+      AuthOrganisationNomenclaturesNiveauxResponsabiliteRouteWithChildren,
+    AuthOrganisationNomenclaturesTemplatesRoute:
+      AuthOrganisationNomenclaturesTemplatesRoute,
+    AuthOrganisationNomenclaturesTypesPersonnelRoute:
+      AuthOrganisationNomenclaturesTypesPersonnelRouteWithChildren,
+    AuthOrganisationNomenclaturesUsagesUniteRoute:
+      AuthOrganisationNomenclaturesUsagesUniteRouteWithChildren,
+    AuthOrganisationNomenclaturesIndexRoute:
+      AuthOrganisationNomenclaturesIndexRoute,
+  }
+
+const AuthOrganisationNomenclaturesRouteWithChildren =
+  AuthOrganisationNomenclaturesRoute._addFileChildren(
+    AuthOrganisationNomenclaturesRouteChildren,
+  )
+
 interface AuthOrganisationPostesRouteChildren {
   AuthOrganisationPostesIdRoute: typeof AuthOrganisationPostesIdRoute
   AuthOrganisationPostesIndexRoute: typeof AuthOrganisationPostesIndexRoute
@@ -2323,17 +2811,40 @@ const AuthOrganisationPostesRouteWithChildren =
     AuthOrganisationPostesRouteChildren,
   )
 
+interface AuthOrganisationUnitesRouteChildren {
+  AuthOrganisationUnitesIdRoute: typeof AuthOrganisationUnitesIdRoute
+  AuthOrganisationUnitesIndexRoute: typeof AuthOrganisationUnitesIndexRoute
+}
+
+const AuthOrganisationUnitesRouteChildren: AuthOrganisationUnitesRouteChildren =
+  {
+    AuthOrganisationUnitesIdRoute: AuthOrganisationUnitesIdRoute,
+    AuthOrganisationUnitesIndexRoute: AuthOrganisationUnitesIndexRoute,
+  }
+
+const AuthOrganisationUnitesRouteWithChildren =
+  AuthOrganisationUnitesRoute._addFileChildren(
+    AuthOrganisationUnitesRouteChildren,
+  )
+
 interface AuthOrganisationRouteChildren {
   AuthOrganisationFonctionsRoute: typeof AuthOrganisationFonctionsRouteWithChildren
-  AuthOrganisationNomenclaturesRoute: typeof AuthOrganisationNomenclaturesRoute
+  AuthOrganisationHierarchieRoute: typeof AuthOrganisationHierarchieRouteWithChildren
+  AuthOrganisationModelesRoute: typeof AuthOrganisationModelesRoute
+  AuthOrganisationNomenclaturesRoute: typeof AuthOrganisationNomenclaturesRouteWithChildren
   AuthOrganisationPostesRoute: typeof AuthOrganisationPostesRouteWithChildren
+  AuthOrganisationUnitesRoute: typeof AuthOrganisationUnitesRouteWithChildren
   AuthOrganisationIndexRoute: typeof AuthOrganisationIndexRoute
 }
 
 const AuthOrganisationRouteChildren: AuthOrganisationRouteChildren = {
   AuthOrganisationFonctionsRoute: AuthOrganisationFonctionsRouteWithChildren,
-  AuthOrganisationNomenclaturesRoute: AuthOrganisationNomenclaturesRoute,
+  AuthOrganisationHierarchieRoute: AuthOrganisationHierarchieRouteWithChildren,
+  AuthOrganisationModelesRoute: AuthOrganisationModelesRoute,
+  AuthOrganisationNomenclaturesRoute:
+    AuthOrganisationNomenclaturesRouteWithChildren,
   AuthOrganisationPostesRoute: AuthOrganisationPostesRouteWithChildren,
+  AuthOrganisationUnitesRoute: AuthOrganisationUnitesRouteWithChildren,
   AuthOrganisationIndexRoute: AuthOrganisationIndexRoute,
 }
 

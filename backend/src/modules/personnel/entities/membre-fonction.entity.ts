@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import type { MembrePersonnel } from './personnel.entity';
 import type { ContratPersonnel } from './contrat-personnel.entity';
-import { Fonction } from '@modules/fonctions/entities';
+import { Fonction } from '@modules/organisation/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('membres_fonctions')

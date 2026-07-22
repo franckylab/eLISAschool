@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: backend/auth_identity_rbac/preferences
+title: Preferences & Settings Management (User, Role & Establishment Scope)
+scope:
+    - backend/src/modules/auth/entities/preference-globale.entity.ts
+    - backend/src/modules/auth/entities/preference-role.entity.ts
+    - backend/src/modules/auth/entities/preference-utilisateur.entity.ts
+    - backend/src/modules/auth/services/preference-globale.service.ts
+    - backend/src/modules/auth/services/preference-utilisateur.service.ts
+    - backend/src/modules/auth/controllers/preferences.controller.ts
+    - backend/src/modules/auth/controllers/preferences-globales.controller.ts
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/auth_identity_rbac/audit
+    - path: backend/common_infrastructure

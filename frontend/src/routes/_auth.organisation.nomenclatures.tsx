@@ -1,6 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { NomenclaturesPage } from '@/features/organisation/components/nomenclatures-page';
+import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 
 export const Route = createFileRoute('/_auth/organisation/nomenclatures')({
-    component: NomenclaturesPage,
+    component: NomenclaturesLayout,
 });
+
+function NomenclaturesLayout() {
+    const { pathname } = useLocation();
+    return (
+        <motion.div key={pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+            <ErrorBoundary><Outlet /></ErrorBoundary>
+        </motion.div>
+    );
+}

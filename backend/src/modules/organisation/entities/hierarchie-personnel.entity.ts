@@ -2,12 +2,16 @@
  * ==================================
  * eLISAschool - Entité HierarchiePersonnel
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
- * 
+ *
  * Trace les liens hiérarchiques entre membres du personnel.
  * Permet de construire l'organigramme dynamique et de gérer les relations
  * de subordination/supervision.
+ *
+ * Refonte v2.0 :
+ * - typeRelation : FK vers TypeRelationHierarchique (remplace l'enum PostgreSQL)
+ * - FK ajoutées vers membres_personnel et unites_organisationnelles
  */
 
 import {
@@ -21,22 +25,12 @@ import {
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Poste } from './poste.entity';
+import { TypeRelationHierarchique } from './type-relation-hierarchique.entity';
 
 /**
- * Type de relation hiérarchique
- */
-export enum TypeRelationHierarchique {
-    SUPERVISE_DIRECT = 'SUPERVISE_DIRECT',
-    SUPERVISE_INDIRECT = 'SUPERVISE_INDIRECT',
-    RATTACHEMENT_FONCTIONNEL = 'RATTACHEMENT_FONCTIONNEL',
-    COLLABORATION = 'COLLABORATION',
-    REMPLACEMENT = 'REPLACEMENT',
-    INTERIM = 'INTERIM',
-}
-
-/**
- * Statut de la relation hiérarchique
+ * Statut de la relation hiérarchique (enum fermé — non modifiable)
  */
 export enum StatutRelation {
     ACTIVE = 'ACTIVE',
@@ -51,7 +45,7 @@ export enum StatutRelation {
 @Entity('hierarchie_personnel')
 @Index(['personnelId'])
 @Index(['superieurId'])
-@Index(['typeRelation'])
+@Index(['typeRelationId'])
 @Index(['posteId'])
 @Index(['etablissementId'])
 export class HierarchiePersonnel {
@@ -61,6 +55,10 @@ export class HierarchiePersonnel {
     // Personne subordonnée (nullable — peut être une hiérarchie de poste avant assignation)
     @Column({ type: 'uuid', nullable: true })
     personnelId?: string;
+
+    @ManyToOne(() => MembrePersonnel, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'personnelId' })
+    personnel?: MembrePersonnel;
 
     @Column({ type: 'varchar', length: 200, nullable: true })
     personnelNom?: string;
@@ -72,9 +70,13 @@ export class HierarchiePersonnel {
     @Column({ type: 'varchar', length: 200, nullable: true })
     superieurNom?: string;
 
-    // Type de relation
-    @Column({ type: 'enum', enum: TypeRelationHierarchique, default: TypeRelationHierarchique.SUPERVISE_DIRECT })
-    typeRelation!: TypeRelationHierarchique;
+    // FK vers TypeRelationHierarchique (remplace l'enum PostgreSQL)
+    @Column({ type: 'uuid', nullable: true })
+    typeRelationId?: string;
+
+    @ManyToOne(() => TypeRelationHierarchique, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'typeRelationId' })
+    typeRelation?: TypeRelationHierarchique;
 
     @Column({ type: 'enum', enum: StatutRelation, default: StatutRelation.ACTIVE })
     statut!: StatutRelation;
@@ -116,9 +118,6 @@ export class HierarchiePersonnel {
 
     @Column({ type: 'text', nullable: true })
     commentaire?: string;
-
-    @Column({ type: 'jsonb', nullable: true })
-    metadata?: Record<string, any>;
 
     @CreateDateColumn()
     createdAt!: Date;

@@ -1,23 +1,37 @@
+/**
+ * ==================================
+ * eLISAschool - Page Détail Fonction
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Détail routé : PageHeader gradient + TabsBar (Infos / Sous-fonctions / Membres).
+ */
+
 import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import {
-    ArrowLeft, Edit, Briefcase,
-    CheckCircle, XCircle, Loader2, AlertCircle,
-} from 'lucide-react';
-import { useFonction, useModifierFonction } from '../hooks/use-fonctions';
+import { useTranslation } from 'react-i18next';
+import { Edit, Briefcase, CheckCircle, XCircle, Info, Workflow, Users, UserRound } from 'lucide-react';
+import { useFonction, useModifierFonction, useFonctionMembres } from '../hooks/use-fonctions';
 import { FonctionFormModal } from './fonction-form-modal';
 import { FonctionArbre } from './fonction-arbre';
-import { BreadcrumbLabelProvider } from '@/components/navigation/breadcrumb-context';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { Card } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { TabsBar, TabsContent, type Tab } from '@/components/ui';
 import { usePermissions } from '@/hooks';
 
 export function FonctionDetailPage() {
+    const { t } = useTranslation('organisation');
     const { id } = useParams({ from: '/_auth/organisation/fonctions/$id' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
-    const { data: fonction, isLoading, error } = useFonction(id);
+    const { data: fonction, isLoading, error, refetch } = useFonction(id);
+    const { data: membres } = useFonctionMembres(id);
     const [formOpen, setFormOpen] = useState(false);
+    const [tab, setTab] = useState('infos');
     const modifier = useModifierFonction();
 
     const handleSave = async (data: any) => {
@@ -25,202 +39,116 @@ export function FonctionDetailPage() {
         setFormOpen(false);
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <p className="text-muted-foreground">Chargement...</p>
-            </div>
-        );
-    }
-
+    if (isLoading) return <PageSkeleton showHeader />;
     if (error || !fonction) {
         return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
-                <p className="text-red-600 mb-4">Fonction non trouvée</p>
-                <ElisaButton variant="outline" onClick={() => navigate({ to: '/organisation/fonctions' })}>
-                    Retour à la liste
-                </ElisaButton>
+            <div className="p-6">
+                <ErrorMessage title={t('erreurChargement')} message={t('erreurChargement')} onRetry={() => refetch()} retryLabel={t('reessayer')} />
             </div>
         );
     }
 
-    const breadcrumbLabel = fonction?.nom;
+    const enfants = fonction.enfants || [];
+    const membresList = membres || [];
+
+    const onglets: Tab[] = [
+        { id: 'infos', label: t('detailInfos'), icon: Info },
+        { id: 'sous-fonctions', label: t('sousFonctions'), icon: Workflow },
+        { id: 'membres', label: t('membres'), icon: Users },
+    ];
 
     return (
-        <BreadcrumbLabelProvider value={breadcrumbLabel}>
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                variant="gradient"
+                showBreadcrumbs
+                breadcrumbLabel={fonction.nom}
+                onBack={() => navigate({ to: '/organisation/fonctions' })}
+                actions={hasPermission('organisation:fonctions:write') ? (
+                    <ElisaButton variant="primary" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>{t('modifier')}</ElisaButton>
+                ) : undefined}
             >
-                <ElisaButton
-                    variant="ghost"
-                    onClick={() => navigate({ to: '/organisation/fonctions' })}
-                    icon={<ArrowLeft className="h-4 w-4" />}
-                    className="mb-6"
-                >
-                    Retour aux fonctions
-                </ElisaButton>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-                            <Briefcase className="h-8 w-8 text-indigo-600" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-foreground">{fonction.nom}</h1>
-                            <p className="text-muted-foreground font-mono text-sm">{fonction.code}</p>
+                <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                        <Briefcase className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                        <h1 className="text-2xl font-bold text-white leading-tight">{fonction.nom}</h1>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 font-mono">{fonction.code}</span>
+                            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{t('niveau')} {fonction.niveau}</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">
+                                {fonction.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                                {fonction.actif ? t('actif') : t('inactif')}
+                            </span>
                         </div>
                     </div>
-                    {hasPermission('config:edit') && (
-                        <ElisaButton
-                            onClick={() => setFormOpen(true)}
-                            icon={<Edit className="h-4 w-4" />}
-                            variant="primary"
-                        >
-                            Modifier
-                        </ElisaButton>
-                    )}
                 </div>
+            </PageHeader>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-                            <h2 className="text-lg font-semibold text-foreground mb-4">Informations</h2>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Code</dt>
-                                    <dd className="text-sm font-medium text-foreground font-mono">{fonction.code}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Niveau</dt>
-                                    <dd className="text-sm font-medium text-foreground">{fonction.niveau}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Fonction parente</dt>
-                                    <dd>
-                                        {fonction.parent ? (
-                                            <button
-                                                onClick={() => navigate({ to: '/organisation/fonctions/$id', params: { id: fonction.parent!.id } })}
-                                                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                            >
-                                                {fonction.parent.nom}
-                                            </button>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground italic">Racine</span>
-                                        )}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Statut</dt>
-                                    <dd>
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            fonction.actif ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
-                                            {fonction.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                                            {fonction.actif ? 'Actif' : 'Inactif'}
-                                        </span>
-                                    </dd>
-                                </div>
-                                {fonction.majorationDefaut != null && (
-                                    <div>
-                                        <dt className="text-sm text-muted-foreground">Majoration défaut</dt>
-                                        <dd className="text-sm font-medium text-foreground">{fonction.majorationDefaut}%</dd>
-                                    </div>
-                                )}
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Ordre</dt>
-                                    <dd className="text-sm font-medium text-foreground">{fonction.ordre}</dd>
-                                </div>
-                            </dl>
-                            {fonction.description && (
-                                <div className="mt-4 pt-4 border-t border-border">
-                                    <dt className="text-sm text-muted-foreground mb-1">Description</dt>
-                                    <dd className="text-sm text-foreground">{fonction.description}</dd>
-                                </div>
+            <TabsBar tabs={onglets} activeTab={tab} onTabChange={setTab} variant="underline" showHeader />
+
+            <TabsContent activeTab={tab}>
+                {tab === 'infos' && (
+                    <Card className="p-6">
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><dt className="text-sm text-muted-foreground">{t('code')}</dt><dd className="font-mono font-medium text-foreground">{fonction.code}</dd></div>
+                            <div><dt className="text-sm text-muted-foreground">{t('niveau')}</dt><dd className="text-foreground">{fonction.niveau}</dd></div>
+                            <div>
+                                <dt className="text-sm text-muted-foreground">{t('parent')}</dt>
+                                <dd>
+                                    {fonction.parent ? (
+                                        <button onClick={() => navigate({ to: '/organisation/fonctions/$id', params: { id: fonction.parent!.id } })} className="text-sm font-medium text-primary hover:underline">{fonction.parent.nom}</button>
+                                    ) : <span className="text-sm text-muted-foreground italic">{t('racine')}</span>}
+                                </dd>
+                            </div>
+                            {fonction.majorationDefaut != null && (
+                                <div><dt className="text-sm text-muted-foreground">{t('majorationDefaut')}</dt><dd className="text-foreground">{fonction.majorationDefaut}%</dd></div>
                             )}
-                        </div>
+                            {fonction.description && (
+                                <div className="sm:col-span-2"><dt className="text-sm text-muted-foreground">{t('descriptionSection')}</dt><dd className="text-foreground">{fonction.description}</dd></div>
+                            )}
+                        </dl>
+                    </Card>
+                )}
 
-                        {fonction.enfants && fonction.enfants.length > 0 && (
-                            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-                                <h2 className="text-lg font-semibold text-foreground mb-4">
-                                    Sous-fonctions ({fonction.enfants.length})
-                                </h2>
-                                <FonctionArbre
-                                    fonctions={fonction.enfants.map(e => ({ ...e, enfants: [] }))}
-                                    onEdit={() => {}}
-                                    onDelete={() => {}}
-                                    onView={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
-                                    compact
-                                />
-                            </div>
+                {tab === 'sous-fonctions' && (
+                    <Card className="p-4">
+                        {enfants.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">{t('aucuneSousFonction')}</p>
+                        ) : (
+                            <FonctionArbre
+                                fonctions={enfants.map((e) => ({ ...e, enfants: [] }))}
+                                onEdit={() => {}}
+                                onDelete={() => {}}
+                                onView={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
+                                compact
+                            />
                         )}
-                    </div>
+                    </Card>
+                )}
 
-                    <div className="space-y-6">
-                        <div className={`rounded-xl shadow-sm border p-6 ${
-                            fonction.actif
-                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                        }`}>
-                            <div className="flex items-center gap-3 mb-3">
-                                {fonction.actif
-                                    ? <CheckCircle className="h-5 w-5 text-green-600" />
-                                    : <XCircle className="h-5 w-5 text-red-600" />
-                                }
-                                <span className={`font-semibold ${fonction.actif ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                                    {fonction.actif ? 'Actif' : 'Inactif'}
-                                </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                {fonction.actif
-                                    ? 'Cette fonction est actuellement active.'
-                                    : 'Cette fonction est actuellement inactive.'}
-                            </p>
-                        </div>
-
-                        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-                            <h3 className="text-sm font-semibold text-foreground mb-3">Hiérarchie</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Niveau</span>
-                                    <span className="font-medium">{fonction.niveau}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Parent</span>
-                                    <span className="font-medium">{fonction.parent?.nom || '-'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Sous-fonctions</span>
-                                    <span className="font-medium">{fonction.enfants?.length || 0}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {(fonction.primesDefaut || fonction.majorationDefaut != null) && (
-                            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-                                <h3 className="text-sm font-semibold text-foreground mb-3">Paie</h3>
-                                <div className="space-y-3">
-                                    {fonction.majorationDefaut != null && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Majoration</span>
-                                            <span className="font-medium">{fonction.majorationDefaut}%</span>
+                {tab === 'membres' && (
+                    <Card className="p-4">
+                        {membresList.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">{t('aucunMembre')}</p>
+                        ) : (
+                            <ul className="divide-y divide-border">
+                                {membresList.map((m: any) => (
+                                    <li key={m.id} className="flex items-center gap-3 py-2.5">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-dominant-100)]"><UserRound className="h-4 w-4 text-[var(--color-dominant-600)]" /></div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium text-foreground truncate">{m.membrePersonnel ? `${m.membrePersonnel.prenom ?? ''} ${m.membrePersonnel.nom ?? ''}`.trim() : (m.membrePersonnelId || '—')}</p>
+                                            {m.membrePersonnel?.matricule && <p className="text-xs text-muted-foreground font-mono">{m.membrePersonnel.matricule}</p>}
                                         </div>
-                                    )}
-                                    {fonction.primesDefaut && (
-                                        <div className="text-sm">
-                                            <span className="text-muted-foreground block mb-1">Primes par défaut</span>
-                                            <pre className="text-xs bg-muted p-2 rounded">{JSON.stringify(fonction.primesDefaut, null, 2)}</pre>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                        {m.estPrincipale && <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">{t('principale')}</span>}
+                                    </li>
+                                ))}
+                            </ul>
                         )}
-                    </div>
-                </div>
-            </motion.div>
+                    </Card>
+                )}
+            </TabsContent>
 
             {formOpen && (
                 <FonctionFormModal
@@ -231,6 +159,5 @@ export function FonctionDetailPage() {
                 />
             )}
         </div>
-        </BreadcrumbLabelProvider>
     );
 }

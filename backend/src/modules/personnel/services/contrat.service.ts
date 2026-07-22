@@ -9,9 +9,8 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { Poste, StatutPoste } from '@modules/organisation/entities';
-import { Fonction } from '@modules/fonctions/entities';
-import { HierarchiePersonnel, TypeRelationHierarchique, StatutRelation } from '@modules/organisation/entities';
+import { Poste, StatutPoste, Fonction } from '@modules/organisation/entities';
+import { HierarchiePersonnel, StatutRelation } from '@modules/organisation/entities';
 
 export class ContratService {
     private repo: Repository<ContratPersonnel>;
@@ -138,10 +137,9 @@ export class ContratService {
             const lien = this.hierarchieRepo.create({
                 personnelId: membrePersonnelId,
                 superieurId: aff.membrePersonnelId,
-                typeRelation: TypeRelationHierarchique.SUPERVISE_DIRECT,
                 statut: StatutRelation.ACTIVE,
                 posteId: poste.id,
-                posteIntitule: poste.intitulé,
+                posteIntitule: poste.intitule,
                 uniteOrganisationnelleId: poste.uniteOrganisationnelleId,
                 etablissementId,
                 dateDebut,

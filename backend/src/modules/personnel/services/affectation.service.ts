@@ -28,14 +28,14 @@ export class AffectationService {
 
     /**
      * Affecter un personnel à un poste (méthode unifiée).
-     * Orchestre en une transaction : Poste.occupantId + AffectationPoste.
+     * Orchestre en une transaction : vérification occupation + création AffectationPoste.
+     * L'occupation est calculée via les affectations actives (plus de Poste.occupantId).
      */
     async affecterPersonnelAPoste(
         posteId: string,
         membrePersonnelId: string,
         etablissementId: string,
         options?: {
-            occupantNom?: string;
             typeMutation?: TypeMutation;
             contratId?: string;
             createurId?: string;
@@ -52,14 +52,16 @@ export class AffectationService {
             const poste = await posteRepo.findOne({ where: { id: posteId } });
             if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
 
-            if (poste.occupantId && poste.occupantId !== membrePersonnelId) {
+            // Vérifier si le poste est déjà occupé par un autre membre (via affectations actives)
+            const affectationPosteRepo = queryRunner.manager.getRepository(AffectationPoste);
+            const occupantActif = await affectationPosteRepo.findOne({
+                where: { posteId, statut: StatutAffectation.ACTIF },
+            });
+            if (occupantActif && occupantActif.membrePersonnelId !== membrePersonnelId) {
                 throw new AppError('Ce poste est déjà occupé', 409, 'POSTE_DEJA_OCCUPE');
             }
 
-            // 2. Mettre à jour le poste
-            const membreNom = options?.occupantNom || '';
-            poste.occupantId = membrePersonnelId;
-            poste.occupantNom = membreNom;
+            // 2. Mettre à jour le statut du poste
             poste.statut = StatutPoste.ACTIF;
             await queryRunner.manager.save(poste);
 
@@ -116,7 +118,12 @@ export class AffectationService {
             const posteRepo = queryRunner.manager.getRepository(Poste);
             const poste = await posteRepo.findOne({ where: { id: dto.posteId } });
             if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
-            if (poste.occupantId && poste.occupantId !== dto.membrePersonnelId) {
+            // Vérifier si le poste est déjà occupé par un autre membre (via affectations actives)
+            const affectationPosteRepo = queryRunner.manager.getRepository(AffectationPoste);
+            const occupantActif = await affectationPosteRepo.findOne({
+                where: { posteId: dto.posteId, statut: StatutAffectation.ACTIF },
+            });
+            if (occupantActif && occupantActif.membrePersonnelId !== dto.membrePersonnelId) {
                 throw new AppError('Ce poste est déjà occupé', 409, 'POSTE_DEJA_OCCUPE');
             }
 
@@ -137,8 +144,7 @@ export class AffectationService {
                 logger.info(`Affectation ${affectationActive.id} terminée automatiquement`);
             }
 
-            // Mettre à jour le poste (occupant)
-            poste.occupantId = dto.membrePersonnelId;
+            // Mettre à jour le statut du poste
             poste.statut = StatutPoste.ACTIF;
             await queryRunner.manager.save(poste);
 
@@ -232,7 +238,7 @@ export class AffectationService {
         // Recherche textuelle
         if (search) {
             qb.andWhere(
-                '(a.commentaire ILIKE :search OR p.intitulé ILIKE :search)',
+                '(a.commentaire ILIKE :search OR p.intitule ILIKE :search)',
                 { search: `%${search}%` }
             );
         }
@@ -324,10 +330,9 @@ export class AffectationService {
         affectation.dateFin = new Date();
         await this.repo.save(affectation);
 
-        // Libérer le poste
+        // Libérer le poste (statut → VACANT)
         const posteRepo = AppDataSource.getRepository('Poste');
         await posteRepo.update(affectation.posteId, {
-            occupantId: null,
             statut: 'VACANT',
         });
 

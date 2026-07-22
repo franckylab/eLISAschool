@@ -1,6 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { organisationService } from '../services';
-import { clonageService } from '../services/historique-clonage.service';
 import {
     createUniteOrganisationnelleSchema,
     updateUniteOrganisationnelleSchema,
@@ -26,8 +25,8 @@ router.get('/unites', authMiddleware, async (req: Request, res: Response, next: 
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
         if (req.query.page || req.query.limit) {
-            const { data, total } = await organisationService.findUnitesPaginated(filtres, page, limit, req.utilisateur?.etablissementId);
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
+            const result = await organisationService.findUnitesPaginated(filtres, page, limit, req.utilisateur?.etablissementId);
+            res.json({ success: true, data: result });
         } else {
             const unites = await organisationService.findUnites(filtres, req.utilisateur?.etablissementId);
             res.json({ success: true, data: unites });
@@ -35,7 +34,7 @@ router.get('/unites', authMiddleware, async (req: Request, res: Response, next: 
     } catch (error) { next(error); }
 });
 
-router.post('/unites', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/unites', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createUniteOrganisationnelleSchema, req.body);
         const created = await organisationService.createUnite(dto);
@@ -50,7 +49,30 @@ router.get('/unites/:id', authMiddleware, async (req: Request, res: Response, ne
     } catch (error) { next(error); }
 });
 
-router.patch('/unites/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/unites/:id/impact', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const impact = await organisationService.getImpactUnite(req.params.id, req.utilisateur?.etablissementId);
+        res.json({ success: true, data: impact });
+    } catch (error) { next(error); }
+});
+
+router.post('/unites/avec-postes', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { postes, ...uniteDto } = req.body;
+        const dto = validate(createUniteOrganisationnelleSchema, uniteDto);
+        const created = await organisationService.creerUniteAvecPostes(dto, postes || []);
+        res.status(201).json({ success: true, data: created });
+    } catch (error) { next(error); }
+});
+
+router.get('/unites/:id/sous-unites', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const sousUnites = await organisationService.findSousUnites(req.params.id, req.utilisateur?.etablissementId);
+        res.json({ success: true, data: sousUnites });
+    } catch (error) { next(error); }
+});
+
+router.patch('/unites/:id', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateUniteOrganisationnelleSchema, req.body);
         const updated = await organisationService.updateUnite(req.params.id, dto);
@@ -58,7 +80,18 @@ router.patch('/unites/:id', authMiddleware, requirePermission('organisation:edit
     } catch (error) { next(error); }
 });
 
-router.delete('/unites/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/unites/:id/reordonner', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { apresId } = req.body;
+        if (apresId !== null && typeof apresId !== 'string') {
+            throw new AppError('apresId doit être un string ou null', 400, 'VALIDATION_ERROR');
+        }
+        await organisationService.reordonnerUnite(req.params.id, apresId ?? null);
+        res.json({ success: true, message: 'Unité réordonnée' });
+    } catch (error) { next(error); }
+});
+
+router.delete('/unites/:id', authMiddleware, requirePermission('organisation:unites:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await organisationService.deleteUnite(req.params.id);
         res.json({ success: true, message: 'Unité supprimée' });
@@ -78,24 +111,6 @@ router.get('/chemin/:uniteId', authMiddleware, async (req: Request, res: Respons
     try {
         const chemin = await organisationService.getCheminHierarchique(req.params.uniteId);
         res.json({ success: true, data: chemin });
-    } catch (error) { next(error); }
-});
-
-router.post('/clone-unite/:uniteId', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { nouveauCode, nouveauNom } = req.body;
-        if (!nouveauCode) throw new AppError('Le paramètre nouveauCode est requis', 400, 'MISSING_CODE');
-        const result = await clonageService.clonerUnite(req.params.uniteId, nouveauCode, nouveauNom);
-        res.status(201).json({ success: true, data: { unite: result.unite, postesClones: result.postesClones.length } });
-    } catch (error) { next(error); }
-});
-
-router.post('/clone-structure/:uniteId', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { prefixeCode } = req.body;
-        if (!prefixeCode) throw new AppError('Le paramètre prefixeCode est requis', 400, 'MISSING_PREFIX');
-        const result = await clonageService.clonerStructureComplete(req.params.uniteId, prefixeCode);
-        res.status(201).json({ success: true, data: result });
     } catch (error) { next(error); }
 });
 

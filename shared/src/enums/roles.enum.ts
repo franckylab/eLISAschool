@@ -863,13 +863,47 @@ export enum Permission {
     GROUPES_ETABLISSEMENTS_RAPPORTS = 'groupes-etablissements:rapports',
 
     // ==================================
-    // ORGANISATION (16 permissions)
+    // ORGANISATION (permissions granulaires)
     // ==================================
     ORGANISATION_VIEW = 'organisation:view',
     ORGANISATION_CREATE = 'organisation:create',
     ORGANISATION_EDIT = 'organisation:edit',
     ORGANISATION_DELETE = 'organisation:delete',
     
+    // Permissions granulaires — Unités
+    ORGANISATION_UNITES_READ = 'organisation:unites:read',
+    ORGANISATION_UNITES_WRITE = 'organisation:unites:write',
+    ORGANISATION_UNITES_DELETE = 'organisation:unites:delete',
+    
+    // Permissions granulaires — Postes
+    ORGANISATION_POSTES_READ = 'organisation:postes:read',
+    ORGANISATION_POSTES_WRITE = 'organisation:postes:write',
+    ORGANISATION_POSTES_DELETE = 'organisation:postes:delete',
+    
+    // Permissions granulaires — Fonctions
+    ORGANISATION_FONCTIONS_READ = 'organisation:fonctions:read',
+    ORGANISATION_FONCTIONS_WRITE = 'organisation:fonctions:write',
+    ORGANISATION_FONCTIONS_DELETE = 'organisation:fonctions:delete',
+    
+    // Permissions granulaires — Hiérarchie
+    ORGANISATION_HIERARCHIE_READ = 'organisation:hierarchie:read',
+    ORGANISATION_HIERARCHIE_WRITE = 'organisation:hierarchie:write',
+    ORGANISATION_HIERARCHIE_DELETE = 'organisation:hierarchie:delete',
+    
+    // Permissions granulaires — Nomenclatures
+    ORGANISATION_NOMENCLATURES_READ = 'organisation:nomenclatures:read',
+    ORGANISATION_NOMENCLATURES_WRITE = 'organisation:nomenclatures:write',
+    ORGANISATION_NOMENCLATURES_DELETE = 'organisation:nomenclatures:delete',
+    
+    // Permissions granulaires — Templates
+    ORGANISATION_TEMPLATES_READ = 'organisation:templates:read',
+    ORGANISATION_TEMPLATES_WRITE = 'organisation:templates:write',
+    ORGANISATION_TEMPLATES_DELETE = 'organisation:templates:delete',
+    
+    // Permissions granulaires — Génération
+    ORGANISATION_GENERATION_EXECUTE = 'organisation:generation:execute',
+    
+    // Permissions legacy (compatibilité)
     UNITES_VIEW = 'unites:view',
     UNITES_CREATE = 'unites:create',
     UNITES_EDIT = 'unites:edit',
@@ -985,6 +1019,26 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.ORGANISATION_CREATE,
         Permission.ORGANISATION_EDIT,
         Permission.ORGANISATION_DELETE,
+        // Organisation — permissions granulaires
+        Permission.ORGANISATION_UNITES_READ,
+        Permission.ORGANISATION_UNITES_WRITE,
+        Permission.ORGANISATION_UNITES_DELETE,
+        Permission.ORGANISATION_POSTES_READ,
+        Permission.ORGANISATION_POSTES_WRITE,
+        Permission.ORGANISATION_POSTES_DELETE,
+        Permission.ORGANISATION_FONCTIONS_READ,
+        Permission.ORGANISATION_FONCTIONS_WRITE,
+        Permission.ORGANISATION_FONCTIONS_DELETE,
+        Permission.ORGANISATION_HIERARCHIE_READ,
+        Permission.ORGANISATION_HIERARCHIE_WRITE,
+        Permission.ORGANISATION_HIERARCHIE_DELETE,
+        Permission.ORGANISATION_NOMENCLATURES_READ,
+        Permission.ORGANISATION_NOMENCLATURES_WRITE,
+        Permission.ORGANISATION_NOMENCLATURES_DELETE,
+        Permission.ORGANISATION_TEMPLATES_READ,
+        Permission.ORGANISATION_TEMPLATES_WRITE,
+        Permission.ORGANISATION_TEMPLATES_DELETE,
+        Permission.ORGANISATION_GENERATION_EXECUTE,
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
         Permission.APPARENCE_FONDS_MANAGE,

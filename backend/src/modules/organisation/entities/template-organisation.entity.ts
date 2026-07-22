@@ -12,9 +12,9 @@ import { Etablissement } from '@modules/etablissement/entities';
 
 export interface TemplatePoste {
     ref: string;
-    intitulé: string;
-    categoriePoste: string;
-    niveauResponsabilite: string;
+    intitule: string;
+    categoriePosteId?: string;
+    niveauResponsabiliteId?: string;
     description?: string;
     nombrePostes: number;
 }

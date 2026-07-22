@@ -1,6 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { organisationService } from '../services';
-import { historiqueService } from '../services/historique-clonage.service';
 import {
     createHierarchiePersonnelSchema,
     updateHierarchiePersonnelSchema,
@@ -26,7 +25,7 @@ router.get('/hierarchie', authMiddleware, async (req: Request, res: Response, ne
     } catch (error) { next(error); }
 });
 
-router.post('/hierarchie', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/hierarchie', authMiddleware, requirePermission('organisation:hierarchie:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createHierarchiePersonnelSchema, req.body);
         dto.etablissementId = req.utilisateur!.etablissementId!;
@@ -35,7 +34,7 @@ router.post('/hierarchie', authMiddleware, requirePermission('organisation:edit'
     } catch (error) { next(error); }
 });
 
-router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateHierarchiePersonnelSchema, req.body);
         const updated = await organisationService.updateHierarchie(req.params.id, dto);
@@ -43,7 +42,7 @@ router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:
     } catch (error) { next(error); }
 });
 
-router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await organisationService.deleteHierarchie(req.params.id);
         res.json({ success: true, message: 'Relation hiérarchique supprimée' });
@@ -61,22 +60,6 @@ router.get('/hierarchie/subordonnes/:superieurId', authMiddleware, async (req: R
     try {
         const subordonnes = await organisationService.findSubordonnes(req.params.superieurId, req.utilisateur!.etablissementId!);
         res.json({ success: true, data: subordonnes });
-    } catch (error) { next(error); }
-});
-
-router.get('/historique/:personnelId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const limit = parseInt(req.query.limit as string) || 50;
-        const historique = historiqueService.getHistoriquePersonnel(req.params.personnelId, limit);
-        res.json({ success: true, data: historique });
-    } catch (error) { next(error); }
-});
-
-router.get('/mouvements-recents', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const limit = parseInt(req.query.limit as string) || 100;
-        const mouvements = historiqueService.getMouvementsRecents(req.utilisateur?.etablissementId, limit);
-        res.json({ success: true, data: mouvements });
     } catch (error) { next(error); }
 });
 

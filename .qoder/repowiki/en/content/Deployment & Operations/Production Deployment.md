@@ -24,6 +24,14 @@
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced Deployment Automation section with improved migration script capabilities
+- Added detailed coverage of dynamic path resolution and pre-flight validation
+- Updated environment configuration section with conditional .env loading mechanisms
+- Expanded credential management utilities and flexibility features
+- Strengthened database connectivity verification processes
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -44,7 +52,7 @@
 
 eLISAschool is a comprehensive educational management system designed for multi-tenant school administration. This production deployment guide provides detailed instructions for containerized deployment using Docker and docker-compose, covering backend API services, frontend application, PostgreSQL database, Redis cache, and Nginx reverse proxy configuration.
 
-The system supports high-traffic scenarios with horizontal scaling capabilities, database connection pooling, and performance optimization strategies essential for enterprise-level educational institutions.
+The system supports high-traffic scenarios with horizontal scaling capabilities, database connection pooling, and performance optimization strategies essential for enterprise-level educational institutions. Recent enhancements include improved deployment automation with advanced migration handling, dynamic path resolution, and robust pre-flight validation systems.
 
 ## Project Structure
 
@@ -162,8 +170,8 @@ The backend service handles all business logic, authentication, and data operati
 - Feature flags
 
 **Section sources**
-- [Dockerfile.backend:1-100](file://docker/Dockerfile.backend#L1-L100)
-- [backend/src/config/env.config.ts:1-50](file://backend/src/config/env.config.ts#L1-L50)
+- [Dockerfile.backend:1-100](file://docker/Dockerfile.backend#L1-100)
+- [backend/src/config/env.config.ts:1-50](file://backend/src/config/env.config.ts#L1-50)
 
 ### Frontend Application
 
@@ -181,8 +189,8 @@ The frontend serves as a single-page application with optimized static asset del
 - CORS handling for cross-origin requests
 
 **Section sources**
-- [Dockerfile.frontend:1-80](file://docker/Dockerfile.frontend#L1-L80)
-- [frontend/package.json:1-50](file://frontend/package.json#L1-L50)
+- [Dockerfile.frontend:1-80](file://docker/Dockerfile.frontend#L1-80)
+- [frontend/package.json:1-50](file://frontend/package.json#L1-50)
 
 ### Database Configuration
 
@@ -200,8 +208,8 @@ PostgreSQL is configured for production with optimized settings:
 - Backup encryption support
 
 **Section sources**
-- [docker-compose.yml:1-150](file://docker/docker-compose.yml#L1-L150)
-- [backend/src/config/database.config.ts:1-50](file://backend/src/config/database.config.ts#L1-L50)
+- [docker-compose.yml:1-150](file://docker/docker-compose.yml#L1-150)
+- [backend/src/config/database.config.ts:1-50](file://backend/src/config/database.config.ts#L1-50)
 
 ### Redis Cache Layer
 
@@ -219,7 +227,7 @@ Redis provides session storage and caching capabilities:
 - Cluster-ready configuration
 
 **Section sources**
-- [docker-compose.yml:1-100](file://docker/docker-compose.yml#L1-L100)
+- [docker-compose.yml:1-100](file://docker/docker-compose.yml#L1-100)
 
 ### Nginx Reverse Proxy
 
@@ -238,7 +246,7 @@ Nginx handles traffic routing, SSL termination, and load balancing:
 - IP whitelisting
 
 **Section sources**
-- [nginx.conf:1-150](file://docker/nginx.conf#L1-L150)
+- [nginx.conf:1-150](file://docker/nginx.conf#L1-150)
 
 ## Environment Configuration
 
@@ -277,10 +285,6 @@ Production configuration emphasizes security, performance, and reliability:
 - Resource limits and requests
 - Health check intervals
 
-**Section sources**
-- [docker-compose.local.dev.yml:1-100](file://docker/docker-compose.local.dev.yml#L1-L100)
-- [docker-compose.local.prod.yml:1-100](file://docker/docker-compose.local.prod.yml#L1-L100)
-
 ### Cloud Deployment
 
 Cloud-specific configurations optimize for managed services and auto-scaling:
@@ -298,8 +302,10 @@ Cloud-specific configurations optimize for managed services and auto-scaling:
 - CDN integration for static assets
 
 **Section sources**
-- [docker-compose.cloud.dev.yml:1-100](file://docker/docker-compose.cloud.dev.yml#L1-L100)
-- [docker-compose.cloud.prod.yml:1-100](file://docker/docker-compose.cloud.prod.yml#L1-L100)
+- [docker-compose.local.dev.yml:1-100](file://docker/docker-compose.local.dev.yml#L1-100)
+- [docker-compose.local.prod.yml:1-100](file://docker/docker-compose.local.prod.yml#L1-100)
+- [docker-compose.cloud.dev.yml:1-100](file://docker/docker-compose.cloud.dev.yml#L1-100)
+- [docker-compose.cloud.prod.yml:1-100](file://docker/docker-compose.cloud.prod.yml#L1-100)
 
 ## SSL/TLS and Security Setup
 
@@ -336,7 +342,7 @@ Multi-domain support enables hosting multiple schools or environments:
 - MX records for email (optional)
 
 **Section sources**
-- [nginx.conf:1-200](file://docker/nginx.conf#L1-L200)
+- [nginx.conf:1-200](file://docker/nginx.conf#L1-200)
 
 ## Scaling and Performance Optimization
 
@@ -387,29 +393,64 @@ Database connection pooling optimizes resource usage:
 - Network bandwidth management
 
 **Section sources**
-- [docker-compose.yml:1-200](file://docker/docker-compose.yml#L1-L200)
+- [docker-compose.yml:1-200](file://docker/docker-compose.yml#L1-200)
 
 ## Deployment Automation
 
-### Deployment Scripts
+### Enhanced Migration Script Capabilities
+
+The deployment automation has been significantly enhanced with improved migration handling capabilities:
+
+#### Dynamic Path Resolution
+- Automatic detection of project root directories
+- Flexible relative path resolution across different deployment environments
+- Cross-platform compatibility for Unix and Windows systems
+- Fallback mechanisms for missing directory structures
+
+#### PostgreSQL Availability Pre-flight Checks
+- Comprehensive database connectivity validation before migration execution
+- Timeout handling for slow database responses
+- Retry mechanisms with exponential backoff
+- Detailed error reporting for connection failures
+- Graceful degradation when database is temporarily unavailable
+
+#### Conditional .env Loading
+- Environment-specific configuration file selection
+- Priority-based loading of configuration files (.env.production, .env.staging, .env.development)
+- Fallback to default values when specific files are missing
+- Validation of required environment variables
+- Secure handling of sensitive credentials
+
+#### Utility Functions for Credential Management
+- Centralized credential parsing and validation
+- Support for multiple credential formats (JSON, YAML, plain text)
+- Environment variable interpolation
+- Credential rotation support
+- Audit logging for credential access
+
+### Advanced Deployment Scripts
 
 Automated deployment scripts ensure consistent and reliable deployments:
 
-#### Main Deployment Script
-- Pre-deployment validation
-- Database migration execution
-- Service restart procedures
-- Health check verification
-- Rollback capabilities
+#### Main Deployment Script Enhancements
+- Pre-deployment validation with comprehensive system checks
+- Intelligent database migration execution with rollback capabilities
+- Service restart procedures with health monitoring
+- Progressive rollout with canary deployment support
+- Automated rollback on failure detection
+- Detailed deployment audit trails
 
 #### Update Procedures
 - Rolling updates for zero-downtime deployments
-- Blue-green deployment support
-- Canary release capabilities
-- Automated rollback on failure
+- Blue-green deployment support with automatic switching
+- Canary release capabilities with traffic splitting
+- Automated rollback on health check failures
+- Deployment status tracking and notification
+
+**Updated** Enhanced with dynamic path resolution, PostgreSQL pre-flight validation, conditional environment loading, and flexible credential management utilities.
 
 **Section sources**
-- [deploy.sh:1-100](file://docker/deploy.sh#L1-L100)
+- [deploy.sh:1-100](file://docker/deploy.sh#L1-100)
 
 ### Infrastructure Validation
 
@@ -422,13 +463,14 @@ Pre-deployment validation ensures system readiness:
 - Network connectivity
 
 #### Service Dependencies
-- Database connectivity
-- Redis availability
-- External service endpoints
-- File system permissions
+- Database connectivity with retry logic
+- Redis availability verification
+- External service endpoint validation
+- File system permissions checking
+- Port availability confirmation
 
 **Section sources**
-- [validate-infrastructure.sh:1-100](file://docker/scripts/validate-infrastructure.sh#L1-L100)
+- [validate-infrastructure.sh:1-100](file://docker/scripts/validate-infrastructure.sh#L1-100)
 
 ## CI/CD Pipeline Integration
 
@@ -471,7 +513,7 @@ GitLab-specific pipeline configuration:
 - Rollback automation
 
 **Section sources**
-- [docker/deploy.sh:1-150](file://docker/deploy.sh#L1-L150)
+- [docker/deploy.sh:1-150](file://docker/deploy.sh#L1-150)
 
 ## Backup and Recovery
 
@@ -508,11 +550,11 @@ Disaster recovery processes minimize downtime:
 - State restoration
 
 **Section sources**
-- [backup-auto.sh:1-100](file://docker/scripts/backup-auto.sh#L1-L100)
-- [backup-manuel.sh:1-100](file://docker/scripts/backup-manuel.sh#L1-L100)
-- [restore.sh:1-100](file://docker/scripts/restore.sh#L1-L100)
-- [cron-backup.txt:1-50](file://docker/scripts/cron-backup.txt#L1-L50)
-- [install-cron.sh:1-50](file://docker/scripts/install-cron.sh#L1-L50)
+- [backup-auto.sh:1-100](file://docker/scripts/backup-auto.sh#L1-100)
+- [backup-manuel.sh:1-100](file://docker/scripts/backup-manuel.sh#L1-100)
+- [restore.sh:1-100](file://docker/scripts/restore.sh#L1-100)
+- [cron-backup.txt:1-50](file://docker/scripts/cron-backup.txt#L1-50)
+- [install-cron.sh:1-50](file://docker/scripts/install-cron.sh#L1-50)
 
 ## Monitoring and Health Checks
 
@@ -521,9 +563,9 @@ Disaster recovery processes minimize downtime:
 Service health monitoring ensures operational visibility:
 
 #### Application Health
-- Database connectivity checks
+- Database connectivity checks with retry logic
 - Redis availability verification
-- External service status
+- External service status monitoring
 - Resource utilization metrics
 
 #### Container Health
@@ -549,7 +591,7 @@ Centralized logging facilitates troubleshooting:
 - Business KPIs
 
 **Section sources**
-- [docker-compose.yml:1-200](file://docker/docker-compose.yml#L1-L200)
+- [docker-compose.yml:1-200](file://docker/docker-compose.yml#L1-200)
 
 ## Troubleshooting Guide
 
@@ -562,10 +604,11 @@ Centralized logging facilitates troubleshooting:
 - Dependency service availability
 
 #### Database Connectivity
-- Connection string validation
+- Connection string validation with fallback mechanisms
 - Network policy configuration
 - Authentication credential verification
 - Firewall rule adjustment
+- Pre-flight connectivity checks
 
 #### Performance Problems
 - Resource bottleneck identification
@@ -583,22 +626,25 @@ Centralized logging facilitates troubleshooting:
 
 #### Health Verification
 - Service endpoint testing
-- Database connectivity checks
+- Database connectivity checks with retry logic
 - Cache functionality validation
 - SSL certificate verification
 
 **Section sources**
-- [validate-infrastructure.sh:1-100](file://docker/scripts/validate-infrastructure.sh#L1-L100)
+- [validate-infrastructure.sh:1-100](file://docker/scripts/validate-infrastructure.sh#L1-100)
 
 ## Conclusion
 
-The eLISAschool production deployment provides a robust, scalable, and maintainable foundation for educational institution management systems. The containerized architecture ensures consistency across environments while supporting horizontal scaling for high-traffic scenarios.
+The eLISAschool production deployment provides a robust, scalable, and maintainable foundation for educational institution management systems. The containerized architecture ensures consistency across environments while supporting horizontal scaling for high-traffic scenarios. Recent enhancements have significantly improved deployment automation with advanced migration handling, dynamic path resolution, and comprehensive pre-flight validation systems.
 
 Key strengths include:
 - Comprehensive container orchestration with Docker Compose
-- Flexible environment configuration for development and production
+- Flexible environment configuration with conditional .env loading
+- Enhanced deployment automation with intelligent migration processing
+- Robust pre-flight validation and PostgreSQL availability checks
 - Automated backup and recovery procedures
 - Security-focused design with SSL/TLS support
 - Performance optimization for enterprise-scale deployments
+- Advanced credential management utilities
 
-This deployment strategy enables educational institutions to operate their management systems reliably while maintaining the flexibility to scale and adapt to changing requirements.
+This deployment strategy enables educational institutions to operate their management systems reliably while maintaining the flexibility to scale and adapt to changing requirements. The enhanced automation capabilities ensure consistent deployments across diverse environments with minimal manual intervention.

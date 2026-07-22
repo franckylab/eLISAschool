@@ -1,9 +1,4 @@
-import type { Poste } from '@/features/postes/types/poste.types';
-
-export type TypeUnite = 'DIRECTION' | 'DEPARTEMENT' | 'SERVICE' | 'POLE_PEDAGOGIQUE' | 'COMMISSION' | 'EQUIPE' | 'AUTRE';
 export type StatutUnite = 'ACTIF' | 'EN_CREATION' | 'EN_RESTRUCTURATION' | 'ARCHIVE';
-
-export type TypeRelationHierarchique = 'SUPERVISE_DIRECT' | 'SUPERVISE_INDIRECT' | 'RATTACHEMENT_FONCTIONNEL' | 'COLLABORATION' | 'REMPLACEMENT' | 'INTERIM';
 export type StatutRelation = 'ACTIVE' | 'HISTORIQUE' | 'PLANIFIEE';
 
 // ==================== UNITÉ ORGANISATIONNELLE ====================
@@ -12,7 +7,12 @@ export interface UniteOrganisationnelle {
     id: string;
     nom: string;
     description?: string;
-    type: TypeUnite;
+    typeUniteId?: string;
+    typeUnite?: { id: string; code: string; label: string };
+    usageUniteId?: string;
+    usageUnite?: { id: string; code: string; label: string };
+    niveauOrganisationId?: string;
+    niveauOrganisation?: { id: string; niveau: number; label: string };
     code: string;
     statut: StatutUnite;
     actif: boolean;
@@ -24,35 +24,34 @@ export interface UniteOrganisationnelle {
     localisation?: string;
     telephone?: string;
     email?: string;
-    metadata?: Record<string, any>;
     createdAt: string;
     updatedAt: string;
     parent?: UniteOrganisationnelle;
     enfants?: UniteOrganisationnelle[];
-    postes?: Poste[];
 }
 
 export interface CreerUniteDto {
     nom: string;
     description?: string;
-    type: TypeUnite;
+    typeUniteId?: string;
+    usageUniteId?: string;
+    niveauOrganisationId?: string;
     code: string;
     etablissementId: string;
-    parentId?: string;
+    parentId?: string | null; // null = détacher (racine)
     ordre?: number;
     responsableNom?: string;
     responsableId?: string;
     localisation?: string;
     telephone?: string;
     email?: string;
-    metadata?: Record<string, any>;
 }
 
 export type ModifierUniteDto = Partial<CreerUniteDto>;
 
 export interface UniteFiltres {
     etablissementId?: string;
-    type?: TypeUnite;
+    typeUniteId?: string;
     actif?: boolean;
     parentId?: string | null;
 }
@@ -61,41 +60,40 @@ export interface UniteFiltres {
 
 export interface HierarchiePersonnel {
     id: string;
-    personnelId: string;
-    personnelNom: string;
-    superieurId: string;
-    superieurNom: string;
-    typeRelation: TypeRelationHierarchique;
+    personnelId?: string;
+    personnelNom?: string;
+    superieurId?: string;
+    superieurNom?: string;
+    typeRelationId?: string;
+    typeRelation?: { id: string; code: string; label: string };
     statut: StatutRelation;
     actif: boolean;
     posteId?: string;
     posteIntitule?: string;
     uniteOrganisationnelleId?: string;
     uniteNom?: string;
-    etablissementId: string;
+    etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
     commentaire?: string;
-    metadata?: Record<string, any>;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface CreerHierarchieDto {
-    personnelId: string;
-    personnelNom: string;
-    superieurId: string;
-    superieurNom: string;
-    typeRelation?: TypeRelationHierarchique;
+    personnelId?: string;
+    personnelNom?: string;
+    superieurId?: string;
+    superieurNom?: string;
+    typeRelationId?: string;
     posteId?: string;
     posteIntitule?: string;
     uniteOrganisationnelleId?: string;
     uniteNom?: string;
-    etablissementId: string;
+    etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
     commentaire?: string;
-    metadata?: Record<string, any>;
 }
 
 export type ModifierHierarchieDto = Partial<CreerHierarchieDto>;
@@ -111,32 +109,48 @@ export interface OrganigrammeNode {
     description?: string;
     responsableNom?: string;
     ordre: number;
-    postes: Poste[];
+    depth: number;
+    totalMembres: number;
+    postesVacants: number;
+    postes: OrganigrammePoste[];
     enfants: OrganigrammeNode[];
+}
+
+export interface OrganigrammePoste {
+    id: string;
+    intitule: string;
+    code: string;
+    statut: string;
+    occupantsCount: number;
+    nombrePostes: number;
+    uniteOrganisationnelleId?: string;
+}
+
+export interface ModifierPosteDto {
+    uniteOrganisationnelleId?: string;
+    [key: string]: any;
 }
 
 // ==================== STATISTIQUES ====================
 
 export interface StatistiquesOrganisation {
+    // Unités
     totalUnites: number;
+    unitesActives: number;
+    unitesSansPostes: number;
+    // Postes
     totalPostes: number;
     postesActifs: number;
+    postesOccupes: number;
     postesVacants: number;
     tauxOccupation: number;
+    // Hiérarchies
+    totalHierarchies: number;
+    hierarchiesActives: number;
+    // Arborescence
+    profondeurMax: number;
+    // Répartition
     parType: Record<string, number>;
-}
-
-// ==================== CONFIGURATION ====================
-
-export interface ParametreConfiguration {
-    cle: string;
-    libelle: string;
-    description: string;
-    categorie: string;
-    type: 'number' | 'string' | 'boolean';
-    valeur: any;
-    valeurParDefaut: any;
-    modifiable: boolean;
 }
 
 // ==================== NOMENCLATURES ====================

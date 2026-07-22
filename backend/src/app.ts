@@ -55,7 +55,6 @@ import { cyclesController } from '@modules/cycles';
 import { niveauxController } from '@modules/niveaux';
 import { filieresController } from '@modules/filieres';
 import { specialitesController } from '@modules/specialites';
-import { fonctionsController } from '@modules/fonctions';
 import { competencesController } from '@modules/competences';
 import { examensNationauxController } from '@modules/examens-nationaux';
 import { diplomesElevesController } from '@modules/diplomes-eleves';
@@ -83,7 +82,7 @@ import { requireModuleActive } from '@modules/configuration/middlewares/module-a
 import { filterByEtablissement } from '@modules/auth/middlewares/etablissement.middleware';
 import { typesEnumController } from '@modules/types-enum';
 import { organisationController } from '@modules/organisation';
-import { postesController } from '@modules/postes';
+
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
 import { apparenceController } from '@modules/apparence';
@@ -415,10 +414,8 @@ export function createApp(): Application {
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     
     // Module organisation (critique - toujours actif avec filtrage)
+    // Inclut: unites, hierarchie, organigramme, nomenclatures, postes, fonctions
     app.use('/api/organisation', authMiddleware, filterByEtablissement(), organisationController);
-
-    // Module postes
-    app.use('/api/postes', authMiddleware, requireModuleActive('postes'), filterByEtablissement(), postesController);
 
     // Modules académiques multi-établissements avec filtrage
     app.use('/api/etablissements', authMiddleware, filterByEtablissement({ allowSuperAdminOverride: true }), etablissementController);
@@ -426,7 +423,7 @@ export function createApp(): Application {
     app.use('/api/niveaux', authMiddleware, filterByEtablissement(), niveauxController);
     app.use('/api/filieres', authMiddleware, filterByEtablissement(), filieresController);
     app.use('/api/specialites', authMiddleware, filterByEtablissement(), specialitesController);
-    app.use('/api/fonctions', authMiddleware, filterByEtablissement(), fonctionsController);
+    // Fonctions routes now under /api/organisation/fonctions (see organisationController)
     app.use('/api/competences', authMiddleware, filterByEtablissement(), competencesController);
     app.use('/api/examens-nationaux', authMiddleware, filterByEtablissement(), examensNationauxController);
     app.use('/api/diplomes-eleves', authMiddleware, filterByEtablissement(), diplomesElevesController);

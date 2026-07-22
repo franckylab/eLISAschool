@@ -1,0 +1,1 @@
+Static JSON translation bundles for the French and English UI, one file per domain feature providing nested key-value strings consumed by the frontend i18n runtime.

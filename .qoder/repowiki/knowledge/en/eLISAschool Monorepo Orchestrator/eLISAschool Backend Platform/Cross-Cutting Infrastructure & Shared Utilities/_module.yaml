@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/common_infrastructure
+title: Cross-Cutting Infrastructure & Shared Utilities
+scope:
+    - backend/src/common/
+    - backend/src/shared/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/auth_identity_rbac/preferences

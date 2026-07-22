@@ -312,9 +312,9 @@ export class OrganigrammePdfService {
                         <h4>📋 Postes (${unite.postes.length})</h4>
                         ${unite.postes.map((poste: any) => `
                             <div class="poste ${poste.statut === 'vacant' ? 'vacant' : ''}">
-                                <div class="intitule">${poste.intitulé}</div>
-                                ${poste.occupantNom 
-                                    ? `<div class="occupant">👤 ${poste.occupantNom}</div>`
+                                <div class="intitule">${poste.intitule}</div>
+                                ${poste.occupantsCount > 0
+                                    ? `<div class="occupant">👤 ${poste.occupantsCount} occupant(s)</div>`
                                     : '<div class="occupant">⚠️ Poste vacant</div>'
                                 }
                             </div>

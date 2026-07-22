@@ -1,10 +1,24 @@
+/**
+ * ==================================
+ * eLISAschool - Page Postes
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Liste des postes — pattern unifié (PageHeader gradient + DataTable serveur).
+ */
+
 import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Plus, Edit, Trash2, Eye, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Edit, Trash2, Eye, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import { usePostes, useSupprimerPoste } from '../hooks/use-postes';
@@ -20,27 +34,29 @@ const statutColors: Record<string, 'success' | 'warning' | 'danger' | 'default'>
     EN_ATTENTE: 'default',
 };
 
-const statutLabels: Record<string, string> = {
-    ACTIF: 'Actif',
-    VACANT: 'Vacant',
-    SUPPRIME: 'Supprimé',
-    EN_ATTENTE: 'En attente',
-};
+interface PostesFiltres {
+    page: number;
+    limit: number;
+    search?: string;
+    statut?: string;
+}
 
 export function PostesPage() {
     const { t } = useTranslation('organisation');
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     useDocumentTitle('eLISAschool | Postes');
-    const [filtres, setFiltres] = useState<{ typePersonnelId?: string; statut?: string }>({});
-    const { data, isLoading, isError, refetch } = usePostes({ limit: 50, ...filtres } as any);
+
+    const [filtres, setFiltres] = useState<PostesFiltres>({ page: 1, limit: 20 });
+    const { data, isLoading, isFetching, isError, refetch } = usePostes(filtres as any);
     const supprimer = useSupprimerPoste();
-    const postes = data?.data || [];
+
+    const postes = data?.items || [];
+    const meta = data?.meta;
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editPoste, setEditPoste] = useState<Poste | null>(null);
     const [deletePosteId, setDeletePosteId] = useState<string | null>(null);
-
 
     const colonnes: Column<Poste>[] = useMemo(() => [
         {
@@ -48,45 +64,46 @@ export function PostesPage() {
             header: t('intitulePoste'),
             sortable: true,
             render: (p) => (
-                <div className="cursor-pointer" onClick={() => navigate({ to: '/organisation/postes/$id', params: { id: p.id } })}>
-                    <p className="font-medium text-foreground">{p.intitulé}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{p.code}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-dominant-100)]">
+                        <Briefcase className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{p.intitule}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">{p.code}</p>
+                    </div>
                 </div>
             ),
         },
         {
             key: 'fonction',
             header: t('fonction'),
-            render: (p) => (
-                <span className="text-sm text-muted-foreground">{p.fonction?.nom || '-'}</span>
-            ),
+            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.fonction?.nom || '—'}</span>,
         },
         {
             key: 'unite',
             header: t('unites'),
-            render: (p) => (
-                <span className="text-sm text-muted-foreground">{p.uniteOrganisationnelle?.nom || '-'}</span>
-            ),
+            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.uniteOrganisationnelle?.nom || '—'}</span>,
         },
         {
             key: 'typePersonnel',
             header: t('type'),
-            render: (p) => (
-                <span className="text-sm text-muted-foreground">{p.typePersonnel?.nom || p.typePersonnelId || '-'}</span>
-            ),
+            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.typePersonnel?.nom || '—'}</span>,
         },
         {
             key: 'statut',
             header: t('statut'),
+            className: 'text-center',
             render: (p) => (
                 <Badge variant={statutColors[p.statut] || 'default'} size="sm">
-                    {statutLabels[p.statut] || p.statut}
+                    {t(`statutPoste_${p.statut}`, p.statut)}
                 </Badge>
             ),
         },
         {
             key: 'capacite',
-            header: 'Capacité',
+            header: t('capacite'),
+            className: 'text-center',
             render: (p) => (
                 <PosteCapaciteIndicator occupantsCount={p.occupantsCount} nombrePostes={p.nombrePostes} size="sm" />
             ),
@@ -94,62 +111,73 @@ export function PostesPage() {
         {
             key: 'actions',
             header: 'Actions',
-            className: 'text-right w-48',
-            renderActions: (p) => {
-                const actions: any[] = [];
-                actions.push({
-                    key: 'voir',
-                    icon: Eye,
-                    label: 'Voir',
+            className: 'text-right',
+            renderActions: (p) => [
+                {
+                    key: 'voir', icon: Eye, label: t('voir'),
                     onClick: () => navigate({ to: '/organisation/postes/$id', params: { id: p.id } }),
-                });
-                if (hasPermission('postes:edit')) {
-                    actions.push({
-                        key: 'modifier', icon: Edit, label: t('modifier'),
-                        onClick: () => setEditPoste(p),
-                    });
-                    if (hasPermission('postes:delete')) {
-                        actions.push({
-                            key: 'supprimer', icon: Trash2, label: t('supprimer'),
-                            onClick: () => setDeletePosteId(p.id), variant: 'danger' as const,
-                        });
-                    }
-                }
-                return actions;
-            },
+                    permission: 'organisation:postes:read',
+                    variant: 'info' as const,
+                },
+                {
+                    key: 'modifier', icon: Edit, label: t('modifier'),
+                    onClick: () => setEditPoste(p),
+                    permission: 'organisation:postes:write',
+                    variant: 'warning' as const,
+                },
+                {
+                    key: 'supprimer', icon: Trash2, label: t('supprimer'),
+                    onClick: () => setDeletePosteId(p.id),
+                    permission: 'organisation:postes:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
-    ], [navigate, hasPermission, t]);
+    ], [navigate, t]);
+
+    if (isLoading && !data) {
+        return <PageSkeleton showTable />;
+    }
 
     if (isError) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <AlertCircle className="h-12 w-12 text-destructive" />
-                <p className="text-lg font-medium text-destructive">Erreur de chargement</p>
-                <ElisaButton variant="outline" onClick={() => refetch()}>Réessayer</ElisaButton>
+            <div className="p-6">
+                <ErrorMessage
+                    title={t('erreurChargement')}
+                    message={t('erreurChargement')}
+                    onRetry={() => refetch()}
+                    retryLabel={t('reessayer')}
+                />
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground">{t('postes')}</h1>
-                    <p className="text-sm text-muted-foreground">{t('description')}</p>
-                </div>
-                {hasPermission('postes:create') && (
-                    <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowCreateModal(true)}>
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                title={t('postes')}
+                subtitle={t('compteurPostes', { count: meta?.totalItems || 0 })}
+                icon={Briefcase}
+                variant="gradient"
+                actions={hasPermission('organisation:postes:write') ? (
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setShowCreateModal(true)}>
                         {t('nouveauPosteBtn')}
                     </ElisaButton>
-                )}
-            </div>
+                ) : undefined}
+            />
 
-            <div className="bg-card rounded-xl shadow-sm border border-border">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <DataTable
+                    tableId="postes-list"
                     columns={colonnes}
                     data={postes}
                     isLoading={isLoading}
-                    tableId="postes-list"
+                    isFetching={isFetching}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    enableCollapsibleFilters
+                    disableClientSearch
                     searchPlaceholder={t('rechercherPoste')}
                     filtres={[
                         {
@@ -158,14 +186,26 @@ export function PostesPage() {
                             allOptionLabel: t('tousLesStatuts'),
                         },
                     ]}
+                    onSearchChange={(search) => setFiltres((prev) => ({ ...prev, search, page: 1 }))}
                     onFilterChange={(key, value) => {
-                        setFiltres((prev) => ({ ...prev, [key]: value || undefined }));
+                        if (key === 'statut') setFiltres((prev) => ({ ...prev, statut: value || undefined, page: 1 }));
                     }}
+                    onClearFilters={() => setFiltres((prev) => ({ ...prev, statut: undefined, page: 1 }))}
+                    pagination={meta ? {
+                        page: meta.currentPage,
+                        limit: meta.itemsPerPage,
+                        total: meta.totalItems,
+                        totalPages: meta.totalPages,
+                        hasNext: meta.currentPage < meta.totalPages,
+                        hasPrev: meta.currentPage > 1,
+                    } : undefined}
+                    onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
+                    onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                    emptyMessage={t('aucunPosteTrouve')}
                 />
-            </div>
+            </motion.div>
 
             <PosteFormModal open={showCreateModal} onOpenChange={setShowCreateModal} />
-
             {editPoste && (
                 <PosteFormModal open={!!editPoste} onOpenChange={() => setEditPoste(null)} poste={editPoste} />
             )}
@@ -182,7 +222,6 @@ export function PostesPage() {
                 }}
                 isLoading={supprimer.isPending}
             />
-
         </div>
     );
 }

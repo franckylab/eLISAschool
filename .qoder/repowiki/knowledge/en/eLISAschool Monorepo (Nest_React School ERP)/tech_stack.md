@@ -1,1 +1,0 @@
-Node.js ≥20 + npm workspaces as the monorepo runtime; TypeScript shared between backend (Nest/Express+TypeORM) and frontend (React+Vite); Docker Compose for infra (PostgreSQL, Redis, pgAdmin).

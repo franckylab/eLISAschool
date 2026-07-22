@@ -2300,6 +2300,35 @@ function NotFoundPage() {
 
 ---
 
+## 31.9 Pattern de Page Module (aligné sur `utilisateurs`)
+
+**Référence** : la feature `utilisateurs` est le patron de tout module de gestion. Reproduire ce pattern pour Organisation et modules similaires.
+
+### Règles de navigation
+- **JAMAIS** de sticky sub-nav interne à une page/module. La navigation latérale entre sections d'un module passe par le **sous-menu de la sidebar principale** (`components/layout/Sidebar.tsx`, `children:`).
+- Chaque section = **route dédiée autonome** (`/module/section`), deep-linkable, protégée par permission.
+- Layout de module = minimal : `Breadcrumbs` + `motion` + `ErrorBoundary` + `<Outlet/>`.
+
+### Page LISTE
+- `PageHeader variant="gradient"` (titre, sous-titre compteur, icône, `actions` = bouton créer gated).
+- `DataTable` avec pagination **serveur** : `enableReordering/Pinning/ColumnVisibility/CollapsibleFilters`, `disableClientSearch`, `onSearchChange`, `onFilterChange`, `pagination` (mappé depuis `meta`), `onPageChange`/`onLimitChange`, `renderActions` avec `permission` + `variant`.
+- Skeleton (`PageSkeleton`) au 1er chargement, `ErrorMessage` avec retry sinon.
+
+### Page DÉTAIL
+- `PageHeader variant="gradient" showBreadcrumbs onBack` + `TabsBar`/`TabsContent` (`variant="underline"`, navigation par `?tab=`), onglets typés `Tab[]` (`id/label/description/icon`).
+
+### Page CONFIG / Nomenclatures
+- Page unique + `TabsBar` ; chaque table via **UN composant générique réutilisable** (`NomenclatureCrudPage`) — pas de duplication de fichiers de tables quasi-identiques.
+
+### Contrat de pagination
+- Backend : renvoyer `PaginatedResult<T>` (`{ items, meta }`) via `@common/utils/pagination.util` (`createPaginatedResult`/`paginateWithQueryBuilder`) ; controller `res.json({ success: true, data: result })`.
+- Hook front : `return response.data` (= `{ items, meta }`) ; la page mappe `meta` → prop `pagination` du `DataTable`.
+
+### Permissions
+- Toujours granulaires : `module:section:read|write|delete`. Ne jamais utiliser une permission grossière type `module:edit`.
+
+---
+
 ## 32. Maintenance et Skills Disponibles
 
 - **`elisaschool-frontend-dev`** — Guide de développement frontend (créer composant, page, feature, intégration API)

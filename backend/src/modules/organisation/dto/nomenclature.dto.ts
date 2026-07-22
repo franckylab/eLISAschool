@@ -122,3 +122,78 @@ export const queryTemplatesOrganisationSchema = z.object({
 
 export type CreateTemplateOrganisationDto = z.infer<typeof createTemplateOrganisationSchema>;
 export type UpdateTemplateOrganisationDto = z.infer<typeof updateTemplateOrganisationSchema>;
+
+// ==================== Type Unité Organisationnelle ====================
+
+export const createTypeUniteOrganisationnelleSchema = z.object({
+    code: z.string().min(2).max(50),
+    label: z.string().min(2).max(100),
+    description: z.string().optional(),
+    etablissementId: z.string().uuid().optional(),
+    estSysteme: z.boolean().default(false),
+});
+
+export const updateTypeUniteOrganisationnelleSchema = createTypeUniteOrganisationnelleSchema.partial().omit({
+    code: true,
+    estSysteme: true,
+});
+
+export const queryTypesUniteOrganisationnelleSchema = z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    search: z.string().optional(),
+});
+
+export type CreateTypeUniteOrganisationnelleDto = z.infer<typeof createTypeUniteOrganisationnelleSchema>;
+export type UpdateTypeUniteOrganisationnelleDto = z.infer<typeof updateTypeUniteOrganisationnelleSchema>;
+
+// ==================== Type Relation Hiérarchique ====================
+
+export const createTypeRelationHierarchiqueSchema = z.object({
+    code: z.string().min(2).max(50),
+    label: z.string().min(2).max(100),
+    description: z.string().optional(),
+    etablissementId: z.string().uuid().optional(),
+    estSysteme: z.boolean().default(false),
+});
+
+export const updateTypeRelationHierarchiqueSchema = createTypeRelationHierarchiqueSchema.partial().omit({
+    code: true,
+    estSysteme: true,
+});
+
+export const queryTypesRelationHierarchiqueSchema = z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    search: z.string().optional(),
+});
+
+export type CreateTypeRelationHierarchiqueDto = z.infer<typeof createTypeRelationHierarchiqueSchema>;
+export type UpdateTypeRelationHierarchiqueDto = z.infer<typeof updateTypeRelationHierarchiqueSchema>;
+
+// ==================== Type Personnel ====================
+
+export const createTypePersonnelSchema = z.object({
+    code: z.string().min(2).max(50),
+    nom: z.string().min(2).max(100),
+    description: z.string().max(200).optional(),
+    permissionsDefaut: z.array(z.string()).optional(),
+    roleIdParDefaut: z.string().uuid().optional(),
+    modeRemunerationDefaut: z.string().max(30).optional(),
+    actif: z.boolean().default(true),
+    estSysteme: z.boolean().default(false),
+});
+
+export const updateTypePersonnelSchema = createTypePersonnelSchema.partial().omit({
+    code: true,
+    estSysteme: true,
+});
+
+export const queryTypesPersonnelSchema = z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    search: z.string().optional(),
+});
+
+export type CreateTypePersonnelDto = z.infer<typeof createTypePersonnelSchema>;
+export type UpdateTypePersonnelDto = z.infer<typeof updateTypePersonnelSchema>;

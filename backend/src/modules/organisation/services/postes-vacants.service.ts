@@ -12,7 +12,10 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Poste, StatutPoste } from '../entities';
 import { logger } from '@common/utils/logger.util';
-import { configurationOrganisationService } from './configuration.service';
+
+// Seuils par défaut (configurables via ParametreSysteme si besoin)
+const SEUIL_VACANCE_CRITIQUE = 30;
+const SEUIL_VACANCE_AVERTISSEMENT = 15;
 
 export class PostesVacantsService {
     private posteRepo: Repository<Poste>;
@@ -24,15 +27,15 @@ export class PostesVacantsService {
     /**
      * Obtenir le seuil critique depuis la configuration
      */
-    private async getSeuilCritique(): Promise<number> {
-        return await configurationOrganisationService.getValeur<number>('organisation.seuil_vacance_critique') || 30;
+    private getSeuilCritique(): number {
+        return SEUIL_VACANCE_CRITIQUE;
     }
 
     /**
-     * Obtenir le seuil d'avertissement depuis la configuration
+     * Obtenir le seuil d'avertissement
      */
-    private async getSeuilAvertissement(): Promise<number> {
-        return await configurationOrganisationService.getValeur<number>('organisation.seuil_vacance_avertissement') || 15;
+    private getSeuilAvertissement(): number {
+        return SEUIL_VACANCE_AVERTISSEMENT;
     }
 
     /**
@@ -44,8 +47,8 @@ export class PostesVacantsService {
         avertissements: any[];
     }> {
         const maintenant = new Date();
-        const seuilCritique = await this.getSeuilCritique();
-        const seuilAvertissement = await this.getSeuilAvertissement();
+        const seuilCritique = this.getSeuilCritique();
+        const seuilAvertissement = this.getSeuilAvertissement();
 
         // Requête pour trouver les postes avec capacité disponible
         const qb = this.posteRepo.createQueryBuilder('p')
@@ -71,7 +74,7 @@ export class PostesVacantsService {
 
             const info = {
                 posteId: poste.id,
-                intitule: poste.intitulé,
+                intitule: poste.intitule,
                 code: poste.code,
                 unite: poste.uniteOrganisationnelle?.nom,
                 joursVacance,
@@ -97,7 +100,7 @@ export class PostesVacantsService {
      */
     async getStatistiquesVacance(etablissementId?: string): Promise<any> {
         const maintenant = new Date();
-        const seuilCritique = await this.getSeuilCritique();
+        const seuilCritique = this.getSeuilCritique();
 
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')

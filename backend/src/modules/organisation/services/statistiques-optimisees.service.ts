@@ -127,7 +127,7 @@ export class StatistiquesOrganisationOptimiseesService {
 
             return (result || []).map((row: any) => ({
                 posteId: row.poste_id,
-                intitule: row.intitulé,
+                intitule: row.intitule,
                 code: row.code,
                 uniteNom: row.unite_nom,
                 uniteCode: row.unite_code,

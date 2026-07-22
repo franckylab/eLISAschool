@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-20T23:57:34Z"
+exported_at: "2026-07-21T03:00:00Z"
 modules:
     "":
-        dir_name: eLISAschool Monorepo (Nest_React School ERP)
-        title: eLISAschool Monorepo (Nest/React School ERP)
+        dir_name: eLISAschool Monorepo Orchestrator
+        title: eLISAschool Monorepo Orchestrator
         scope:
             - README.md
             - QUICKSTART.md
@@ -39,8 +39,8 @@ modules:
         depends_on: []
         related_to: []
     backend:
-        dir_name: eLISAschool Backend (Nest_Express Multi-Module ERP)
-        title: eLISAschool Backend (Nest/Express Multi-Module ERP)
+        dir_name: eLISAschool Backend Platform
+        title: eLISAschool Backend Platform
         scope:
             - backend/
         source_files: []
@@ -62,7 +62,8 @@ modules:
             - backend/scripts_tools
             - backend/support_services
         depends_on: []
-        related_to: []
+        related_to:
+            - path: frontend
     backend/academic_structure_core:
         dir_name: Academic Structure Core (School Year, Cycle, Level, Stream & Specialty)
         title: Academic Structure Core (School Year, Cycle, Level, Stream & Specialty)
@@ -87,7 +88,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: shared_library
     backend/auth_identity_rbac:
         dir_name: Authentication, Identity & RBAC Core
         title: Authentication, Identity & RBAC Core
@@ -117,7 +119,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/auth_identity_rbac/preferences
     backend/auth_identity_rbac/auth_infrastructure:
         dir_name: Auth Middleware, Guards & DTOs (JWT + RBAC)
         title: Auth Middleware, Guards & DTOs (JWT + RBAC)
@@ -141,7 +144,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: frontend/features/system_auth
+            - path: frontend/routes_and_i18n/auth_public_pages
     backend/auth_identity_rbac/preferences:
         dir_name: Preferences & Settings Management (User, Role & Establishment Scope)
         title: Preferences & Settings Management (User, Role & Establishment Scope)
@@ -156,7 +161,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/auth_identity_rbac/audit
+            - path: backend/common_infrastructure
     backend/auth_identity_rbac/rbac_roles_permissions:
         dir_name: RBAC Role & Permission Management API
         title: RBAC Role & Permission Management API
@@ -187,7 +194,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/auth_identity_rbac/preferences
     backend/communication_notifications:
         dir_name: Communication & Notification Subsystem (Annonces, Sondages, Messagerie, Notifica
         title: Communication & Notification Subsystem (Annonces, Sondages, Messagerie, Notifications)
@@ -212,17 +220,19 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: frontend/routes_and_i18n/pedagogie_notes_examens_bulletins
     backend/database_layer:
-        dir_name: Database Layer, Migrations & Seed Data
-        title: Database Layer, Migrations & Seed Data
+        dir_name: Database Bootstrap, Migrations & Seed Data
+        title: Database Bootstrap, Migrations & Seed Data
         scope:
             - backend/src/database/
             - backend/database/migrations/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: docker_infra
     backend/eleves_vie_scolaire:
         dir_name: Student Life & Records Suite (Élèves)
         title: Student Life & Records Suite (Élèves)
@@ -258,7 +268,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/eleves_vie_scolaire/student_master
     backend/eleves_vie_scolaire/parents_guardians:
         dir_name: Parent-Child Relationship & Parent Portal API
         title: Parent-Child Relationship & Parent Portal API
@@ -276,7 +287,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/eleves_vie_scolaire/orientation_counseling
+            - path: frontend/routes_and_i18n/pedagogie_eleves_classe_programmes
     backend/eleves_vie_scolaire/student_tracking:
         dir_name: Student Conduct & Behavioral Tracking (Suivi-Élèves)
         title: Student Conduct & Behavioral Tracking (Suivi-Élèves)
@@ -319,8 +332,8 @@ modules:
         depends_on: []
         related_to: []
     backend/organisation_administration:
-        dir_name: Organisation, Configuration & Periods Domain Modules
-        title: Organisation, Configuration & Periods Domain Modules
+        dir_name: Organisation, Configuration, Periods, Shared Enums & Admin Requests
+        title: Organisation, Configuration, Periods, Shared Enums & Admin Requests
         scope:
             - backend/src/modules/organisation/
             - backend/src/modules/configuration/
@@ -330,7 +343,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: frontend/features/configuration_systeme
     backend/personnel_rh:
         dir_name: Personnel & Payroll Domain Suite
         title: Personnel & Payroll Domain Suite
@@ -367,7 +381,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/personnel_rh/suivi_personnel
     backend/personnel_rh/postes_fonctions:
         dir_name: Postes & Fonctions (Job Positions & Hierarchical Functions)
         title: Postes & Fonctions (Job Positions & Hierarchical Functions)
@@ -395,7 +410,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/personnel_rh/personnel_master
     backend/scripts_tools:
         dir_name: Migration & Test Harness Scripts
         title: Migration & Test Harness Scripts
@@ -436,7 +452,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/database_layer
+            - path: scripts
     documentation:
         dir_name: eLISAschool Project Documentation Archive
         title: eLISAschool Project Documentation Archive
@@ -447,8 +465,8 @@ modules:
         depends_on: []
         related_to: []
     frontend:
-        dir_name: eLISAschool Frontend Application
-        title: eLISAschool Frontend Application
+        dir_name: eLISAschool Frontend SPA
+        title: eLISAschool Frontend SPA
         scope:
             - frontend/
         source_files: []
@@ -457,7 +475,8 @@ modules:
             - frontend/features
             - frontend/routes_and_i18n
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
     frontend/app_shell_and_shared:
         dir_name: App Shell, Shared UI & Cross-Cutting Concerns
         title: App Shell, Shared UI & Cross-Cutting Concerns
@@ -473,8 +492,8 @@ modules:
         depends_on: []
         related_to: []
     frontend/features:
-        dir_name: School Management Feature Modules
-        title: School Management Feature Modules
+        dir_name: School Management Feature Registry
+        title: School Management Feature Registry
         scope:
             - frontend/src/features/
         source_files: []
@@ -493,7 +512,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/organisation_administration
     frontend/features/system_auth:
         dir_name: Authentication, Authorization & Appearance Management
         title: Authentication, Authorization & Appearance Management
@@ -504,10 +524,11 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/auth_identity_rbac/authentication
     frontend/routes_and_i18n:
-        dir_name: TanStack Router File-Based Route Registry & i18n Locale Packs
-        title: TanStack Router File-Based Route Registry & i18n Locale Packs
+        dir_name: Frontend Routes & i18n Locale Packs
+        title: Frontend Routes & i18n Locale Packs
         scope:
             - frontend/src/routes/
             - frontend/src/locales/
@@ -544,10 +565,11 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/auth_identity_rbac/authentication
     frontend/routes_and_i18n/i18n_locales:
-        dir_name: Frontend i18n Locale Packs (French & English)
-        title: Frontend i18n Locale Packs (French & English)
+        dir_name: French & English Static Locale Packs
+        title: French & English Static Locale Packs
         scope:
             - frontend/src/locales/fr/
             - frontend/src/locales/en/
@@ -587,7 +609,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/eleves_vie_scolaire/student_master
     frontend/routes_and_i18n/pedagogie_notes_examens_bulletins:
         dir_name: Pedagogy Routes Notes, National Exams & Report Cards
         title: 'Pedagogy Routes: Notes, National Exams & Report Cards'
@@ -598,7 +621,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/competences_notes_bulletins
     frontend/routes_and_i18n/structure_academique_parametres:
         dir_name: Academic Structure Settings Routes
         title: Academic Structure Settings Routes
@@ -616,7 +640,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: docker_infra
     shared_library:
         dir_name: eLISAschool Shared Domain Kernel (Enums, Types & Validators)
         title: eLISAschool Shared Domain Kernel (Enums, Types & Validators)
@@ -625,4 +650,5 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend/app_bootstrap_config

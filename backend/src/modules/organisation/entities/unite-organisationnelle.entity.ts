@@ -2,13 +2,18 @@
  * ==================================
  * eLISAschool - Entité Unité Organisationnelle
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
- * 
+ *
  * Représente une unité structurelle au sein d'un établissement :
  * départements, services, commissions, équipes, etc.
  * Supporte une hiérarchie en arbre (parent/enfant).
  * Rattachée directement à l'établissement (après fusion Organisation → Etablissement).
+ *
+ * Refonte v3.0 :
+ * - type : FK vers TypeUniteOrganisationnelle (remplace l'enum PostgreSQL)
+ * - usageUniteId : FK vers UsageUnite (remplace usageUniteCode)
+ * - metadata supprimé
  */
 
 import {
@@ -25,29 +30,11 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
 import { NiveauOrganisation } from './niveau-organisation.entity';
+import { UsageUnite } from './usage-unite.entity';
+import { TypeUniteOrganisationnelle } from './type-unite-organisationnelle.entity';
 
 /**
- * Type d'unité organisationnelle
- * Après refonte: POLE/FILIERE/CYCLE/SECTION supprimés, POLE_PEDAGOGIQUE ajouté.
- * Enum PostgreSQL — la migration 109 crée le nouvel enum et convertit les données.
- */
-export enum TypeUniteOrganisationnelle {
-    DIRECTION = 'DIRECTION',
-    DEPARTEMENT = 'DEPARTEMENT',
-    SERVICE = 'SERVICE',
-    POLE_PEDAGOGIQUE = 'POLE_PEDAGOGIQUE',
-    COMMISSION = 'COMMISSION',
-    EQUIPE = 'EQUIPE',
-    AUTRE = 'AUTRE',
-}
-
-/**
- * Valeurs valides pour le type d'unité organisationnelle
- */
-export const TYPES_UNITE_VALIDES = Object.values(TypeUniteOrganisationnelle);
-
-/**
- * Statut d'une unité organisationnelle
+ * Statut d'une unité organisationnelle (enum fermé — non modifiable)
  */
 export enum StatutUnite {
     ACTIF = 'ACTIF',
@@ -62,7 +49,7 @@ export enum StatutUnite {
  */
 @Entity('unites_organisationnelles')
 @Index(['etablissementId'])
-@Index(['type'])
+@Index(['typeUniteId'])
 @Index(['parentId'])
 @Index(['code'])
 export class UniteOrganisationnelle {
@@ -75,14 +62,29 @@ export class UniteOrganisationnelle {
     @Column({ type: 'text', nullable: true })
     description?: string;
 
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    usageUniteCode?: string;
+    // FK vers UsageUnite (remplace l'ancien usageUniteCode)
+    @Column({ type: 'uuid', nullable: true })
+    usageUniteId?: string;
 
+    @ManyToOne(() => UsageUnite, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'usageUniteId' })
+    usageUnite?: UsageUnite;
+
+    // FK vers NiveauOrganisation
     @Column({ type: 'uuid', nullable: true })
     niveauOrganisationId?: string;
 
-    @Column({ type: 'enum', enum: TypeUniteOrganisationnelle, default: TypeUniteOrganisationnelle.SERVICE })
-    type!: TypeUniteOrganisationnelle;
+    @ManyToOne(() => NiveauOrganisation, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'niveauOrganisationId' })
+    niveauOrganisation?: NiveauOrganisation;
+
+    // FK vers TypeUniteOrganisationnelle (remplace l'enum PostgreSQL)
+    @Column({ type: 'uuid', nullable: true })
+    typeUniteId?: string;
+
+    @ManyToOne(() => TypeUniteOrganisationnelle, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'typeUniteId' })
+    typeUnite?: TypeUniteOrganisationnelle;
 
     @Column({ type: 'varchar', length: 50 })
     code!: string;
@@ -119,10 +121,6 @@ export class UniteOrganisationnelle {
     @Column({ type: 'varchar', length: 255, nullable: true })
     email?: string;
 
-    // Métadonnées JSON flexibles
-    @Column({ type: 'jsonb', nullable: true })
-    metadata?: Record<string, any>;
-
     @CreateDateColumn()
     createdAt!: Date;
 
@@ -140,10 +138,6 @@ export class UniteOrganisationnelle {
 
     @OneToMany(() => UniteOrganisationnelle, (unite) => unite.parent)
     enfants?: UniteOrganisationnelle[];
-
-    @ManyToOne(() => NiveauOrganisation, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'niveauOrganisationId' })
-    niveauOrganisation?: NiveauOrganisation;
 
     @OneToMany(() => Poste, (poste) => poste.uniteOrganisationnelle)
     postes?: Poste[];

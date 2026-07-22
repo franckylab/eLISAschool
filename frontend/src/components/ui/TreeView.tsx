@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     DndContext, DragOverlay, closestCenter,
@@ -7,7 +7,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronRight, ChevronDown, GripVertical } from 'lucide-react';
+import { ChevronRight, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 export interface TreeNode<T = any> {
@@ -21,7 +21,6 @@ export interface TreeNode<T = any> {
 
 interface TreeViewProps<T> {
     nodes: TreeNode<T>[];
-    onToggle?: (nodeId: string) => void;
     onSelect?: (node: TreeNode<T>) => void;
     selectedId?: string;
     expandedIds?: Set<string>;
@@ -34,32 +33,29 @@ interface TreeViewProps<T> {
     emptyMessage?: string;
 }
 
-const EXPANDED_ALL_SYMBOL = Symbol('all-expanded');
-
 function TreeItem<T>({
     node,
     depth = 0,
-    onToggle,
     onSelect,
     selectedId,
     expandedIds,
+    onExpandedChange,
     renderActions,
     enableDrag,
 }: {
     node: TreeNode<T>;
     depth?: number;
-    onToggle?: (id: string) => void;
     onSelect?: (node: TreeNode<T>) => void;
     selectedId?: string;
     expandedIds?: Set<string>;
+    onExpandedChange?: (expandedIds: Set<string>) => void;
     renderActions?: (node: TreeNode<T>) => ReactNode;
     enableDrag?: boolean;
 }) {
-    const [expanded, setExpanded] = useState(
-        expandedIds ? expandedIds.has(node.id) : true
-    );
+    const [localExpanded, setLocalExpanded] = useState(true);
     const hasChildren = node.children && node.children.length > 0;
     const isSelected = selectedId === node.id;
+    const isExpanded = expandedIds ? expandedIds.has(node.id) : localExpanded;
 
     const {
         attributes, listeners, setNodeRef, transform, transition, isDragging,
@@ -71,9 +67,16 @@ function TreeItem<T>({
         opacity: isDragging ? 0.5 : 1,
     };
 
-    const handleToggle = () => {
-        if (onToggle) onToggle(node.id);
-        else setExpanded(!expanded);
+    const handleToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (expandedIds && onExpandedChange) {
+            const next = new Set(expandedIds);
+            if (next.has(node.id)) next.delete(node.id);
+            else next.add(node.id);
+            onExpandedChange(next);
+        } else {
+            setLocalExpanded(!localExpanded);
+        }
     };
 
     const handleSelect = () => onSelect?.(node);
@@ -102,11 +105,11 @@ function TreeItem<T>({
 
                 {hasChildren ? (
                     <button
-                        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+                        onClick={handleToggle}
                         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
                     >
                         <motion.div
-                            animate={{ rotate: (expandedIds || expanded) ? 90 : 0 }}
+                            animate={{ rotate: isExpanded ? 90 : 0 }}
                             transition={{ duration: 0.15 }}
                         >
                             <ChevronRight className="h-4 w-4" />
@@ -134,7 +137,7 @@ function TreeItem<T>({
             </div>
 
             <AnimatePresence initial={false}>
-                {(expandedIds || expanded) && hasChildren && (
+                {isExpanded && hasChildren && (
                     <motion.div
                         key={`children-${node.id}`}
                         initial={{ height: 0, opacity: 0 }}
@@ -148,10 +151,10 @@ function TreeItem<T>({
                                 key={child.id}
                                 node={{ ...child, depth: depth + 1 }}
                                 depth={depth + 1}
-                                onToggle={onToggle}
                                 onSelect={onSelect}
                                 selectedId={selectedId}
                                 expandedIds={expandedIds}
+                                onExpandedChange={onExpandedChange}
                                 renderActions={renderActions}
                                 enableDrag={enableDrag}
                             />
@@ -167,7 +170,8 @@ function TreeView<T>({
     nodes,
     onSelect,
     selectedId,
-    expandedIds,
+    expandedIds: externalExpandedIds,
+    onExpandedChange,
     renderActions,
     onDragEnd,
     enableDrag = false,
@@ -176,6 +180,34 @@ function TreeView<T>({
     emptyMessage = 'Aucun élément',
 }: TreeViewProps<T>) {
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [internalExpanded, setInternalExpanded] = useState<Set<string> | undefined>(undefined);
+    const inited = useRef(false);
+
+    useEffect(() => {
+        if (inited.current || externalExpandedIds) return;
+        inited.current = true;
+        const all = new Set<string>();
+        const collect = (items: TreeNode<T>[]) => {
+            for (const item of items) {
+                if (item.children?.length) {
+                    all.add(item.id);
+                    collect(item.children);
+                }
+            }
+        };
+        collect(nodes);
+        setInternalExpanded(all);
+    }, [externalExpandedIds, nodes]);
+
+    const expandedIds = externalExpandedIds || internalExpanded;
+
+    const toggleExpanded = useCallback((next: Set<string>) => {
+        if (onExpandedChange) {
+            onExpandedChange(next);
+        } else {
+            setInternalExpanded(next);
+        }
+    }, [onExpandedChange]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -200,6 +232,17 @@ function TreeView<T>({
             if (item.children) ids.push(...flattenIds(item.children));
         }
         return ids;
+    };
+
+    const findNode = (items: TreeNode<T>[], id: string): TreeNode<T> | undefined => {
+        for (const item of items) {
+            if (item.id === id) return item;
+            if (item.children) {
+                const found = findNode(item.children, id);
+                if (found) return found;
+            }
+        }
+        return undefined;
     };
 
     if (loading) {
@@ -234,6 +277,7 @@ function TreeView<T>({
                     onSelect={onSelect}
                     selectedId={selectedId}
                     expandedIds={expandedIds}
+                    onExpandedChange={toggleExpanded}
                     renderActions={renderActions}
                     enableDrag={enableDrag}
                 />
@@ -242,6 +286,7 @@ function TreeView<T>({
     );
 
     if (enableDrag) {
+        const draggedNode = activeId ? findNode(nodes, activeId) : undefined;
         return (
             <DndContext
                 sensors={sensors}
@@ -253,9 +298,10 @@ function TreeView<T>({
                     {content}
                 </SortableContext>
                 <DragOverlay>
-                    {activeId ? (
-                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-md px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm">
-                            {activeId}
+                    {draggedNode ? (
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-md px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm flex items-center gap-2">
+                            {draggedNode.icon}
+                            <span>{draggedNode.label}</span>
                         </div>
                     ) : null}
                 </DragOverlay>

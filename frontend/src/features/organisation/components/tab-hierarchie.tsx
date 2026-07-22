@@ -1,36 +1,27 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Plus, Edit, Trash2, ArrowUp, ArrowDown, User, Briefcase } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, ArrowUp, ArrowDown, User, Briefcase, Network } from 'lucide-react';
 import { TreeView, type TreeNode } from '@/components/ui/TreeView';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { usePermissions } from '@/hooks';
+import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useOrganigramme, useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
 import { usePostes } from '@/features/postes/hooks/use-postes';
 import { HierarchieFormModal } from './hierarchie-form-modal';
 import type { HierarchiePersonnel } from '../types/organisation.types';
 
-const relationColors: Record<string, 'success' | 'default' | 'warning' | 'secondary'> = {
-    SUPERVISE_DIRECT: 'success',
-    SUPERVISE_INDIRECT: 'default',
-    RATTACHEMENT_FONCTIONNEL: 'warning',
-    COLLABORATION: 'secondary',
-    REMPLACEMENT: 'default',
-    INTERIM: 'default',
-};
-
 export function TabHierarchie() {
     const { t } = useTranslation('organisation');
     const { hasPermission } = usePermissions();
+    useDocumentTitle('eLISAschool | Hiérarchie');
     const { data: organigramme, isLoading: orgLoading } = useOrganigramme();
     const { data: hierarchies, isLoading: hierLoading } = useHierarchies();
-    const { data: postesData } = usePostes();
-    const postes = postesData?.data || [];
+        const { data: postesData } = usePostes();
+        const postes = postesData?.items || [];
     const supprimer = useSupprimerHierarchie();
-
-    const relationLabels = t('typeRelation', { returnObjects: true }) as Record<string, string>;
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editHierarchie, setEditHierarchie] = useState<HierarchiePersonnel | null>(null);
@@ -91,8 +82,8 @@ export function TabHierarchie() {
             key: 'typeRelation',
             header: t('colTypeRelation'),
             render: (h) => (
-                <Badge variant={relationColors[h.typeRelation] || 'default'} size="sm">
-                    {relationLabels[h.typeRelation] || h.typeRelation}
+                <Badge variant="default" size="sm">
+                    {h.typeRelation?.label || h.typeRelationId || '-'}
                 </Badge>
             ),
         },
@@ -112,29 +103,35 @@ export function TabHierarchie() {
             key: 'actions',
             header: t('colActions'),
             className: 'text-right w-24',
-            renderActions: (h) => {
-                if (!hasPermission('organisation:edit')) return [];
-                return [
-                    {
-                        key: 'modifier',
-                        icon: Edit,
-                        label: t('modifier'),
-                        onClick: () => setEditHierarchie(h),
-                    },
-                    {
-                        key: 'supprimer',
-                        icon: Trash2,
-                        label: t('supprimer'),
-                        onClick: () => setDeleteHierarchieId(h.id),
-                        variant: 'danger' as const,
-                    },
-                ];
-            },
+            renderActions: (h) => [
+                {
+                    key: 'modifier',
+                    icon: Edit,
+                    label: t('modifier'),
+                    onClick: () => setEditHierarchie(h),
+                    permission: 'organisation:hierarchie:write',
+                    variant: 'warning' as const,
+                },
+                {
+                    key: 'supprimer',
+                    icon: Trash2,
+                    label: t('supprimer'),
+                    onClick: () => setDeleteHierarchieId(h.id),
+                    permission: 'organisation:hierarchie:delete',
+                    variant: 'danger' as const,
+                },
+            ],
         },
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                title={t('hierarchie')}
+                subtitle={t('relationsHierarchiques')}
+                icon={Network}
+                variant="gradient"
+            />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -154,7 +151,7 @@ export function TabHierarchie() {
                             <ArrowDown className="h-5 w-5 text-blue-500" />
                             {t('relationsHierarchiques')}
                         </h3>
-                        {hasPermission('organisation:edit') && (
+                        {hasPermission('organisation:hierarchie:write') && (
                             <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}
                                 onClick={() => setShowCreateModal(true)}>
                                 {t('nouvelleRelationBtn')}

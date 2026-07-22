@@ -96,13 +96,13 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
 
     const posteOptions = [
         ...(posteActuelDuMembre && isPosteCompatible(posteActuelDuMembre)
-            ? [{ value: posteActuelDuMembre.id, label: `📌 ${posteActuelDuMembre.intitulé} (poste actuel)`, isActuel: true }]
+            ? [{ value: posteActuelDuMembre.id, label: `📌 ${posteActuelDuMembre.intitule} (poste actuel)`, isActuel: true }]
             : []),
         ...(postesVacants || [])
             .filter((p: Poste) => p.id !== posteActuelDuMembre?.id && isPosteCompatible(p))
             .map((p: Poste) => ({
                 value: p.id,
-                label: `${p.intitulé} (${p.code})${p.uniteOrganisationnelle ? ` — ${p.uniteOrganisationnelle.nom}` : ''}`,
+                label: `${p.intitule} (${p.code})${p.uniteOrganisationnelle ? ` — ${p.uniteOrganisationnelle.nom}` : ''}`,
                 isVacant: true,
             })),
     ];
@@ -212,7 +212,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                         {posteActuelDuMembre && (
                             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg text-sm">
                                 <span className="font-medium text-blue-700 dark:text-blue-300">{t('posteActuel')} :</span>{' '}
-                                <span className="text-blue-600 dark:text-blue-400">{posteActuelDuMembre.intitulé} ({posteActuelDuMembre.code})</span>
+                                <span className="text-blue-600 dark:text-blue-400">{posteActuelDuMembre.intitule} ({posteActuelDuMembre.code})</span>
                             </div>
                         )}
                         <ElisaSelect label={t('poste')} options={[
@@ -321,7 +321,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                         <div className="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapMembre')}</span><span className="font-medium">{getMembreLabel(form.membrePersonnelId)}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapTypeContrat')}</span><span className="font-medium">{form.typeContrat}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapPoste')}</span><span className="font-medium">{form.posteId ? (tousPostes?.find((p: Poste) => p.id === form.posteId)?.intitulé || form.posteId) : t('recapAucun')}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapPoste')}</span><span className="font-medium">{form.posteId ? (tousPostes?.find((p: Poste) => p.id === form.posteId)?.intitule || form.posteId) : t('recapAucun')}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionPrincipale')}</span><span className="font-medium">{form.fonctionId ? getFonctionName(form.fonctionId) : t('recapAucune')}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionsSecondaires')}</span><span className="font-medium">{form.fonctionsSecondairesIds.length > 0 ? form.fonctionsSecondairesIds.map(getFonctionName).join(', ') : t('recapAucune')}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapModeRemuneration')}</span><span className="font-medium">{modeLabel[form.modeRemuneration as string] || form.modeRemuneration}</span></div>

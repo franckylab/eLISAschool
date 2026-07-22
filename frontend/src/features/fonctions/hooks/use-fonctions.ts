@@ -19,9 +19,20 @@ export function useFonctions(filtres?: FonctionFiltres) {
     return useQuery({
         queryKey: ['fonctions', 'list', filtres],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/fonctions?${params}`);
+            const res = await apiClient.get(`/api/organisation/fonctions?${params}`);
             return (res as any).data as PaginatedResult<Fonction>;
         },
+    });
+}
+
+export function useFonctionMembres(id: string) {
+    return useQuery({
+        queryKey: ['fonctions', 'membres', id],
+        queryFn: async () => {
+            const res = await apiClient.get(`/api/organisation/fonctions/${id}/membres`);
+            return (res as any).data as any[];
+        },
+        enabled: !!id,
     });
 }
 
@@ -29,7 +40,7 @@ export function useArbreFonctions() {
     return useQuery({
         queryKey: ['fonctions', 'arbre'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/fonctions/arbre');
+            const res = await apiClient.get('/api/organisation/fonctions/arbre');
             return (res as any).data as Fonction[];
         },
     });
@@ -39,7 +50,7 @@ export function useToutesFonctions() {
     return useQuery({
         queryKey: ['fonctions', 'toutes'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/fonctions/all');
+            const res = await apiClient.get('/api/organisation/fonctions/all');
             return (res as any).data as Fonction[];
         },
     });
@@ -49,7 +60,7 @@ export function useFonction(id: string) {
     return useQuery({
         queryKey: ['fonctions', 'detail', id],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/fonctions/${id}`);
+            const res = await apiClient.get(`/api/organisation/fonctions/${id}`);
             return (res as any).data as Fonction;
         },
         enabled: !!id,
@@ -63,7 +74,7 @@ export function useCreerFonction() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (dto: CreerFonctionDto) => {
-            const res = await apiClient.post('/api/fonctions', dto);
+            const res = await apiClient.post('/api/organisation/fonctions', dto);
             return (res as any).data as Fonction;
         },
         onSuccess: () => {
@@ -78,7 +89,7 @@ export function useModifierFonction() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: ModifierFonctionDto }) => {
-            const res = await apiClient.patch(`/api/fonctions/${id}`, dto);
+            const res = await apiClient.patch(`/api/organisation/fonctions/${id}`, dto);
             return (res as any).data as Fonction;
         },
         onSuccess: (data) => {
@@ -94,7 +105,7 @@ export function useSupprimerFonction() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/fonctions/${id}`);
+            await apiClient.delete(`/api/organisation/fonctions/${id}`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });

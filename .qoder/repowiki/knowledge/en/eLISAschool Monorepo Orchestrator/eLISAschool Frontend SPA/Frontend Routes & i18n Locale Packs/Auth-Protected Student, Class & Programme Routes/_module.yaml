@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: frontend/routes_and_i18n/pedagogie_eleves_classe_programmes
+title: Auth-Protected Student, Class & Programme Routes
+scope:
+    - frontend/src/routes/_auth.eleves.*.tsx
+    - frontend/src/routes/_auth.classes.*.tsx
+    - frontend/src/routes/_auth.programmes.*.tsx
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/eleves_vie_scolaire/student_master

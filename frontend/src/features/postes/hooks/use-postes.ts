@@ -22,16 +22,19 @@ export function usePostes(filtres?: PosteFiltres) {
             if (filtres?.page) params.set('page', String(filtres.page));
             if (filtres?.limit) params.set('limit', String(filtres.limit));
             if (filtres?.search) params.set('search', filtres.search);
-            if (filtres?.type) params.set('type', filtres.type);
+            if ((filtres as any)?.typePersonnelId) params.set('typePersonnelId', (filtres as any).typePersonnelId);
             if (filtres?.statut) params.set('statut', filtres.statut);
             if (filtres?.fonctionId) params.set('fonctionId', filtres.fonctionId);
             if (filtres?.uniteOrganisationnelleId) params.set('uniteOrganisationnelleId', filtres.uniteOrganisationnelleId);
             if (filtres?.vacant !== undefined) params.set('vacant', String(filtres.vacant));
             if (filtres?.sortBy) params.set('sortBy', filtres.sortBy);
             if (filtres?.sortOrder) params.set('sortOrder', filtres.sortOrder);
-            const res = await apiClient.get(`/api/postes?${params}`);
-            const d = res as any;
-            return { data: d.data as Poste[], total: d.total || 0, page: d.page || 1, limit: d.limit || 20 };
+            const res = await apiClient.get(`/api/organisation/postes?${params}`);
+            const payload = (res as any).data;
+            return {
+                items: (payload?.items ?? []) as Poste[],
+                meta: payload?.meta ?? { currentPage: 1, itemsPerPage: filtres?.limit ?? 20, totalItems: 0, totalPages: 1 },
+            };
         },
         enabled: isAuthenticated,
         placeholderData: (previousData) => previousData,
@@ -43,7 +46,7 @@ export function useTousPostes() {
     return useQuery({
         queryKey: [...POSTES_KEYS.all, 'all'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/postes/all');
+            const res = await apiClient.get('/api/organisation/postes/all');
             return (res as any).data as Poste[];
         },
         staleTime: 5 * 60 * 1000,
@@ -57,7 +60,7 @@ export function usePostesVacants() {
     return useQuery({
         queryKey: POSTES_KEYS.vacants(),
         queryFn: async () => {
-            const res = await apiClient.get('/api/postes/vacants');
+            const res = await apiClient.get('/api/organisation/postes/vacants');
             return (res as any).data as Poste[];
         },
         staleTime: 2 * 60 * 1000,
@@ -71,7 +74,7 @@ export function usePostesParFonction(fonctionId: string) {
     return useQuery({
         queryKey: POSTES_KEYS.parFonction(fonctionId),
         queryFn: async () => {
-            const res = await apiClient.get(`/api/postes/fonction/${fonctionId}`);
+            const res = await apiClient.get(`/api/organisation/postes/fonction/${fonctionId}`);
             return (res as any).data as Poste[];
         },
         enabled: !!fonctionId && isAuthenticated,
@@ -84,7 +87,7 @@ export function usePoste(id: string) {
     return useQuery({
         queryKey: POSTES_KEYS.detail(id),
         queryFn: async () => {
-            const res = await apiClient.get(`/api/postes/${id}`);
+            const res = await apiClient.get(`/api/organisation/postes/${id}`);
             return (res as any).data as Poste;
         },
         enabled: !!id && isAuthenticated,
@@ -92,11 +95,23 @@ export function usePoste(id: string) {
     });
 }
 
+export function usePosteOccupants(id: string) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...POSTES_KEYS.detail(id), 'occupants'],
+        queryFn: async () => {
+            const res = await apiClient.get(`/api/organisation/postes/${id}/occupants`);
+            return (res as any).data as any[];
+        },
+        enabled: !!id && isAuthenticated,
+    });
+}
+
 export function useCreerPoste() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async (dto: CreatePosteDto) => {
-            const res = await apiClient.post('/api/postes', dto);
+            const res = await apiClient.post('/api/organisation/postes', dto);
             return (res as any).data as Poste;
         },
         onSuccess: () => {
@@ -113,7 +128,7 @@ export function useModifierPoste() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: UpdatePosteDto }) => {
-            const res = await apiClient.patch(`/api/postes/${id}`, dto);
+            const res = await apiClient.patch(`/api/organisation/postes/${id}`, dto);
             return (res as any).data as Poste;
         },
         onSuccess: (data) => {
@@ -131,7 +146,7 @@ export function useSupprimerPoste() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/postes/${id}`);
+            await apiClient.delete(`/api/organisation/postes/${id}`);
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });

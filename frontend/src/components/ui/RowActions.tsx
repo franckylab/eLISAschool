@@ -128,7 +128,7 @@ export function RowActions({
                     >
                         {actionsFiltrees.map((action) => {
                             const Icon = action.icon;
-                            const colors = VARIANT_COLORS[action.variant || 'default'];
+                            const colors = VARIANT_COLORS[action.variant ?? 'default'] ?? VARIANT_COLORS.default;
 
                             return (
                                 <DropdownMenu.Item

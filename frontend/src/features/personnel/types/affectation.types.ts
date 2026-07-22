@@ -24,7 +24,7 @@ export interface AffectationPoste {
     contrat?: { id: string; typeContrat: string; };
     poste?: {
         id: string;
-        intitulé: string;
+        intitule: string;
         code: string;
         statut: string;
         nombrePostes: number;

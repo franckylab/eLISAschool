@@ -14,3 +14,4 @@ export * from './cotisation.entity';
 export * from './type-prime.entity';
 export * from './type-retenue.entity';
 export * from './membre-fonction.entity';
+export { TypePersonnel } from '@modules/organisation/entities/type-personnel.entity';

@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { redisService } from '../src/common/services/redis.service';
+import { redisService } from '../../src/common/services/redis.service';
 
 describe('RedisService', () => {
     beforeAll(async () => {

@@ -1,10 +1,13 @@
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Briefcase } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Plus, Eye, Edit, Trash2, Briefcase, Workflow } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { OrgViewToggle, type OrgView } from '@/features/organisation/components/org-view-toggle';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
 import type { Fonction } from '../types/fonction.types';
@@ -19,15 +22,14 @@ import {
 import { FonctionFormModal } from './fonction-form-modal';
 import { FonctionArbre } from './fonction-arbre';
 
-type ViewMode = 'list' | 'tree';
-
 export function FonctionsPage() {
+    const { t } = useTranslation('organisation');
     const navigate = useNavigate();
     useDocumentTitle('eLISAschool | Fonctions');
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const [search, setSearch] = useState('');
-    const [viewMode, setViewMode] = useState<ViewMode>('tree');
+    const [viewMode, setViewMode] = useState<OrgView>('arbre');
     const [showFormModal, setShowFormModal] = useState(false);
     const [fonctionToEdit, setFonctionToEdit] = useState<Fonction | null>(null);
     const [fonctionToDelete, setFonctionToDelete] = useState<Fonction | null>(null);
@@ -115,14 +117,14 @@ export function FonctionsPage() {
                     icon: Edit,
                     label: 'Modifier',
                     onClick: () => { setFonctionToEdit(f); setShowFormModal(true); },
-                    permission: 'config:edit',
+                    permission: 'organisation:fonctions:write',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
                     label: 'Supprimer',
                     onClick: () => setFonctionToDelete(f),
-                    permission: 'config:edit',
+                    permission: 'organisation:fonctions:delete',
                     variant: 'danger' as const,
                 },
             ],
@@ -152,54 +154,25 @@ export function FonctionsPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col sm:flex-row justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Fonctions</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Catalogue hiérarchique des fonctions et rôles métier
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex rounded-lg border border-input overflow-hidden">
-                        <button
-                            onClick={() => setViewMode('tree')}
-                            className={`px-3 py-2 text-sm font-medium transition-colors ${
-                                viewMode === 'tree'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                            }`}
-                        >
-                            Arbre
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`px-3 py-2 text-sm font-medium transition-colors ${
-                                viewMode === 'list'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                            }`}
-                        >
-                            Liste
-                        </button>
+        <div className="flex flex-col gap-6 p-6">
+            <PageHeader
+                title={t('fonctions')}
+                subtitle={t('compteurFonctions', { count: meta?.totalItems || 0 })}
+                icon={Workflow}
+                variant="gradient"
+                actions={
+                    <div className="flex items-center gap-2">
+                        <OrgViewToggle value={viewMode} onChange={setViewMode} />
+                        {hasPermission('organisation:fonctions:write') && (
+                            <ElisaButton variant="primary" size="sm" onClick={handleCreate} icon={<Plus className="h-4 w-4" />}>
+                                {t('nouvelleFonctionBtn')}
+                            </ElisaButton>
+                        )}
                     </div>
-                    {hasPermission('config:edit') && (
-                        <ElisaButton
-                            variant="primary"
-                            onClick={handleCreate}
-                            icon={<Plus className="h-4 w-4" />}
-                        >
-                            Créer une fonction
-                        </ElisaButton>
-                    )}
-                </div>
-            </motion.div>
+                }
+            />
 
-            {viewMode === 'tree' ? (
+            {viewMode === 'arbre' ? (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

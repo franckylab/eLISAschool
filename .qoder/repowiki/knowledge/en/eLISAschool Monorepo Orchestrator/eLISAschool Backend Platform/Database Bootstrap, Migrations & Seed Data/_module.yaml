@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/database_layer
+title: Database Bootstrap, Migrations & Seed Data
+scope:
+    - backend/src/database/
+    - backend/database/migrations/
+source_files: []
+depends_on: []
+related_to:
+    - path: docker_infra

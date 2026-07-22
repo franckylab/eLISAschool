@@ -164,7 +164,7 @@ export class ParcoursPersonnelService {
                 date: new Date(contrat.dateDebut),
                 salaire: Number(contrat.salaireBase),
                 typeContrat: contrat.typeContrat,
-                poste: affectation?.poste?.intitulé,
+                poste: affectation?.poste?.intitule,
             };
         });
 
@@ -234,7 +234,7 @@ export class ParcoursPersonnelService {
             nombreAffectations,
             ancienneteAnnees: anciennete.annees,
             salaireActuel: contratActif ? Number(contratActif.salaireBase) : undefined,
-            posteActuel: affectationActive?.poste?.intitulé,
+            posteActuel: affectationActive?.poste?.intitule,
         };
     }
 }

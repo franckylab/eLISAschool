@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/personnel_rh/personnel_master
-title: Personnel & Payroll Management Module
-scope:
-    - backend/src/modules/personnel/
-source_files: []
-depends_on: []
-related_to: []

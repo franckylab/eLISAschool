@@ -24,6 +24,14 @@
 - [env.config.ts](file://backend/src/config/env.config.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Removed all references to organization controller and related endpoints
+- Updated architecture overview to reflect consolidated functionality
+- Revised module structure documentation to exclude organization module
+- Updated dependency analysis to remove organization-related components
+- Maintained all other API documentation sections unchanged
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -37,7 +45,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides a comprehensive reference for eLISAschool’s RESTful API, covering authentication, academic, financial, and HR endpoints. It specifies HTTP methods, URL patterns, request/response schemas, authentication requirements, error handling, rate limiting, versioning strategy, and best practices. It also includes guidance for Swagger/OpenAPI integration and testing approaches.
+This document provides a comprehensive reference for eLISAschool's RESTful API, covering authentication, academic, financial, and HR endpoints. It specifies HTTP methods, URL patterns, request/response schemas, authentication requirements, error handling, rate limiting, versioning strategy, and best practices. It also includes guidance for Swagger/OpenAPI integration and testing approaches.
+
+**Updated** Organization management functionality has been consolidated into other controllers or handled differently in the new architecture. Direct REST API endpoints for organization management are no longer available through a dedicated organization controller.
 
 ## Project Structure
 The backend is organized by feature modules under src/modules, with shared infrastructure (middleware, filters, utilities, config) under src/common and src/config. Routes are registered centrally via a route registry. The application entry point initializes configuration, database, middleware, routes, and the OpenAPI schema.
@@ -80,6 +90,8 @@ Key responsibilities:
 - Services encapsulate business logic and data access.
 - Guards enforce role/permission checks.
 - Middlewares handle cross-cutting concerns (auth, rate limit, tenant scoping).
+
+**Updated** Organization-specific functionality has been integrated into other controllers rather than maintaining a separate organization controller.
 
 **Section sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -167,7 +179,7 @@ Rate Limiting:
 - Auth endpoints are rate-limited to prevent brute-force attacks.
 
 Examples:
-- See section “Concrete Examples” for sample payloads and responses.
+- See section "Concrete Examples" for sample payloads and responses.
 
 **Section sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -243,7 +255,7 @@ Pagination:
 - All list endpoints support page, pageSize, sort, filter query parameters.
 
 Examples:
-- See section “Concrete Examples”.
+- See section "Concrete Examples".
 
 **Section sources**
 - [eleves.controller.ts:1-120](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L120)
@@ -292,7 +304,7 @@ Schemas:
 - Report: { totalFees, paidAmount, outstanding, breakdownByType }
 
 Examples:
-- See section “Concrete Examples”.
+- See section "Concrete Examples".
 
 **Section sources**
 - [finances.controller.ts:1-120](file://backend/src/modules/finances/controllers/finances.controller.ts#L1-L120)
@@ -321,7 +333,7 @@ Schemas:
 - PerformanceReview: { personnelId, reviewerId, period, score, comments }
 
 Examples:
-- See section “Concrete Examples”.
+- See section "Concrete Examples".
 
 **Section sources**
 - [personnel.controller.ts:1-120](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L120)
@@ -396,6 +408,8 @@ PersonnelCtrl --> RBAC
 PaieCtrl --> RBAC
 ```
 
+**Updated** Organization controller and its dependencies have been removed from the dependency graph as organization management functionality has been consolidated into other controllers.
+
 **Diagram sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
 - [eleves.controller.ts:1-120](file://backend/src/modules/eleves/controllers/eleves.controller.ts#L1-L120)
@@ -441,7 +455,9 @@ Debugging Tips:
 - [rate-limiter.middleware.ts:1-60](file://backend/src/common/middlewares/rate-limiter.middleware.ts#L1-L60)
 
 ## Conclusion
-eLISAschool’s API provides a robust, secure, and well-structured interface across authentication, academic, financial, and HR domains. With clear versioning, comprehensive documentation, and strong error handling, it supports scalable integrations and reliable operations.
+eLISAschool's API provides a robust, secure, and well-structured interface across authentication, academic, financial, and HR domains. With clear versioning, comprehensive documentation, and strong error handling, it supports scalable integrations and reliable operations.
+
+**Updated** The removal of the organization controller represents a consolidation of functionality into other controllers, streamlining the API architecture while maintaining all essential features through alternative endpoints.
 
 [No sources needed since this section summarizes without analyzing specific files]
 

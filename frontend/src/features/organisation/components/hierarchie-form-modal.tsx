@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GitBranch } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreerHierarchie, useModifierHierarchie } from '../hooks/use-organisation';
@@ -36,6 +38,14 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
     const etablissementId = useAuthStore((s) => s.etablissementId);
     const [apiError, setApiError] = useState<string | null>(null);
 
+    const { data: typesRelationData } = useQuery({
+        queryKey: ['types-relation'],
+        queryFn: async () => {
+            const res = await apiClient.get('/api/organisation/types-relation');
+            return (res as any).data || [];
+        },
+    });
+
     const initSubordonne: PersonnelSearchResult | null = hierarchie
         ? { id: hierarchie.personnelId, nom: hierarchie.personnelNom?.split(' ').slice(1).join(' ') || '', prenom: hierarchie.personnelNom?.split(' ')[0] || '' }
         : null;
@@ -50,7 +60,7 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
     const { handleSubmit, control, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            typeRelation: hierarchie?.typeRelation || 'SUPERVISE_DIRECT',
+            typeRelationId: hierarchie?.typeRelationId || '',
             posteId: hierarchie?.posteId || '',
             commentaire: hierarchie?.commentaire || '',
         },
@@ -79,11 +89,10 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
         }
     };
 
-    const typesRelation = [
-        { value: 'SUPERVISE_DIRECT', label: t('superviseurDirect') },
-        { value: 'SUPERVISE_FONCTIONNEL', label: t('superviseurFonctionnel') },
-        { value: 'REND_COMPTE', label: t('rendCompte') },
-    ];
+    const typesRelation = (typesRelationData || []).map((tr: any) => ({
+        value: tr.id,
+        label: tr.label,
+    }));
 
     const valide = subordonne && superieur;
 
@@ -114,14 +123,14 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
             />
 
             <Controller
-                name="typeRelation"
+                name="typeRelationId"
                 control={control}
                 render={({ field }) => (
                     <ElisaSelect label={t('typeRelation')}
                         value={field.value}
                         onValueChange={field.onChange}
                         options={typesRelation}
-                        error={errors.typeRelation?.message as string}
+                        error={errors.typeRelationId?.message as string}
                     />
                 )}
             />
@@ -133,7 +142,7 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
                     <ElisaSelect label={t('posteAssocie')}
                         value={field.value}
                         onValueChange={field.onChange}
-                        options={postes.map((p) => ({ value: p.id, label: p.intitulé }))}
+                        options={postes.map((p) => ({ value: p.id, label: p.intitule }))}
                         placeholder={t('aucun')}
                         error={errors.posteId?.message as string}
                     />

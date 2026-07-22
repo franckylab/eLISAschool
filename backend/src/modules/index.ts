@@ -61,10 +61,6 @@ export * from './options';
 // Module RH & Recrutement
 export * from './recrutement';
 
-// Modules RH & Organisation
-export * from './fonctions';
-export * from './postes';
-
 // Modules académiques (multi-établissements)
 export * from './etablissement';
 export * from './cycles';

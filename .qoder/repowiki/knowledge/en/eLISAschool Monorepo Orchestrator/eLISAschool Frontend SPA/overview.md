@@ -1,0 +1,1 @@
+React + TanStack Router single-page application that wires feature modules, shared UI/hook libraries, and file-based routes into a multi-tenant school management system with role-based access control.

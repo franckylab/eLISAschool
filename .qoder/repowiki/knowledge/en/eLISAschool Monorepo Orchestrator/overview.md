@@ -1,0 +1,1 @@
+npm workspaces root that wires the shared domain kernel, Express/TypeORM backend and React frontend into a single dev/build/test/lifecycle surface with Docker Compose for local and production stacks.

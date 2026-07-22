@@ -637,7 +637,7 @@ export function PersonnelDetailPage() {
                                                         {c.posteId ? (
                                                             <a href={`/organisation/postes/${c.posteId}`} className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline">
                                                                 <Briefcase className="h-3.5 w-3.5 shrink-0" />
-                                                                <span className="truncate max-w-[120px]">{c.poste?.intitulé || c.posteId?.slice(0, 8)}</span>
+                                                                <span className="truncate max-w-[120px]">{c.poste?.intitule || c.posteId?.slice(0, 8)}</span>
                                                             </a>
                                                         ) : (
                                                             <span className="text-gray-400 dark:text-gray-500 italic">—</span>
@@ -757,7 +757,7 @@ export function PersonnelDetailPage() {
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                            {affectation.poste?.intitulé || 'Poste'}
+                                                            {affectation.poste?.intitule || 'Poste'}
                                                         </p>
                                                         <Badge
                                                             variant={affectation.statut === 'ACTIF' ? 'success' : 'secondary'}

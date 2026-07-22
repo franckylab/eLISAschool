@@ -6,7 +6,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { AnnoncesPage } from '@/features/annonces';
-import { OrganisationPage } from '@/features/organisation';
+import { OrganigrammePage } from '@/features/organisation/components/organigramme/OrganigrammePage';
 import { FinancesPage } from '@/features/finances';
 
 const route = createFileRoute('/_auth/modules-organisationnels');
@@ -30,7 +30,7 @@ export const AnnoncesRoute = annoncesRoute({
 const organisationRoute = createFileRoute('/_auth/modules-organisationnels/organisation');
 
 export const OrganisationRoute = organisationRoute({
-    component: () => <OrganisationPage />,
+    component: () => <OrganigrammePage />,
 });
 
 // Route Finances

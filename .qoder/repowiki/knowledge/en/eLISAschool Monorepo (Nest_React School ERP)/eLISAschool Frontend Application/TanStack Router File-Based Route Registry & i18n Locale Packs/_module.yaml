@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: frontend/routes_and_i18n
-title: TanStack Router File-Based Route Registry & i18n Locale Packs
-scope:
-    - frontend/src/routes/
-    - frontend/src/locales/
-source_files: []
-depends_on: []
-related_to: []

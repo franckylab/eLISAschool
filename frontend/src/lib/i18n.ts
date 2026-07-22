@@ -210,6 +210,10 @@ i18n
             },
         },
         fallbackLng: 'fr',
+        // Le codebase utilise le suffixe de pluriel v3 (`_plural`) dans tous les
+        // fichiers de traduction ; on active la compat v3 pour que la
+        // pluralisation fonctionne (i18next v24 utilise sinon `_one`/`_other`).
+        compatibilityJSON: 'v3',
         defaultNS: 'common',
         ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes', 'filieres', 'specialites', 'examens-nationaux', 'diplomes-eleves', 'parametres', 'contrats', 'paie'],
         interpolation: { escapeValue: false },

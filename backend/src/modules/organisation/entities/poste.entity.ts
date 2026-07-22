@@ -2,11 +2,12 @@
  * ==================================
  * eLISAschool - Entité Poste
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
- * 
- * Représente un poste/fonction au sein d'une unité organisationnelle.
- * Un poste est occupé par un membre du personnel et définit ses responsabilités.
+ *
+ * Représente un poste au sein d'une unité organisationnelle.
+ * La relation avec le personnel se fait via AffectationPoste (module personnel).
+ * Les jointures vers nomenclatures utilisent des FK UUID directes.
  */
 
 import {
@@ -16,43 +17,16 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToMany,
     JoinColumn,
     Index,
 } from 'typeorm';
-import { MembrePersonnel, TypePersonnel } from '@modules/personnel/entities';
+import { TypePersonnel } from './type-personnel.entity';
 import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
-import { Fonction } from '@modules/fonctions/entities';
+import { Fonction } from './fonction.entity';
+import { NiveauResponsabilite } from './niveau-responsabilite.entity';
+import { CategoriePoste } from './categorie-poste.entity';
 
-/**
- * Type de poste
- */
-export enum TypePoste {
-    DIRECTION = 'DIRECTION',
-    ENSEIGNANT = 'ENSEIGNANT',
-    ADMINISTRATIF = 'ADMINISTRATIF',
-    TECHNIQUE = 'TECHNIQUE',
-    SERVICE = 'SERVICE',
-    STAGE = 'STAGE',
-    TEMPORAIRE = 'TEMPORAIRE',
-    AUTRE = 'AUTRE',
-}
-
-/**
- * Niveau de responsabilité
- */
-export enum NiveauResponsabiliteEnum {
-    DIRECTION_GENERALE = 'DIRECTION_GENERALE',
-    DIRECTION_ADJOINTE = 'DIRECTION_ADJOINTE',
-    RESPONSABLE = 'RESPONSABLE',
-    COORDINATEUR = 'COORDINATEUR',
-    SUPERVISEUR = 'SUPERVISEUR',
-    EXECUTANT = 'EXECUTANT',
-    STAGIAIRE = 'STAGIAIRE',
-}
-
-/**
- * Statut du poste
- */
 export enum StatutPoste {
     ACTIF = 'ACTIF',
     VACANT = 'VACANT',
@@ -60,14 +34,10 @@ export enum StatutPoste {
     EN_ATTENTE = 'EN_ATTENTE',
 }
 
-/**
- * Entité Poste
- * Définit une fonction/position dans l'organigramme
- */
 @Entity('postes')
 @Index(['uniteOrganisationnelleId'])
 @Index(['code'])
-@Index(['type'])
+@Index(['categoriePosteId'])
 @Index(['typePersonnelId'])
 @Index(['statut'])
 @Index(['fonctionId'])
@@ -76,8 +46,8 @@ export class Poste {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 100 })
-    intitulé!: string;
+    @Column({ type: 'varchar', length: 100, default: '' })
+    intitule!: string;
 
     @Column({ type: 'text', nullable: true })
     description?: string;
@@ -85,31 +55,37 @@ export class Poste {
     @Column({ type: 'varchar', length: 50 })
     code!: string;
 
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    categoriePosteCode?: string;
+    // FK directe vers CategoriePoste (remplace l'ancien categoriePosteCode)
+    @Column({ type: 'uuid', nullable: true })
+    categoriePosteId?: string;
 
+    @ManyToOne(() => CategoriePoste, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'categoriePosteId' })
+    categoriePoste?: CategoriePoste;
+
+    // FK directe vers Fonction
     @Column({ type: 'uuid', nullable: true })
     fonctionId?: string;
 
-    @ManyToOne(() => Fonction, { nullable: true })
+    @ManyToOne(() => Fonction, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'fonctionId' })
     fonction?: Fonction;
 
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    niveauResponsabiliteCode?: string;
+    // FK directe vers NiveauResponsabilite (remplace l'ancien niveauResponsabiliteCode)
+    @Column({ type: 'uuid', nullable: true })
+    niveauResponsabiliteId?: string;
 
-    @Column({ type: 'enum', enum: TypePoste, default: TypePoste.ADMINISTRATIF })
-    type!: TypePoste;
+    @ManyToOne(() => NiveauResponsabilite, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'niveauResponsabiliteId' })
+    niveauResponsabilite?: NiveauResponsabilite;
 
+    // FK vers TypePersonnel
     @Column({ type: 'uuid', nullable: true })
     typePersonnelId?: string;
 
-    @ManyToOne(() => TypePersonnel, { nullable: true })
+    @ManyToOne(() => TypePersonnel, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'typePersonnelId' })
     typePersonnel?: TypePersonnel;
-
-    @Column({ type: 'enum', enum: NiveauResponsabiliteEnum, default: NiveauResponsabiliteEnum.EXECUTANT })
-    niveauResponsabilite!: NiveauResponsabiliteEnum;
 
     @Column({ type: 'enum', enum: StatutPoste, default: StatutPoste.ACTIF })
     statut!: StatutPoste;
@@ -117,48 +93,31 @@ export class Poste {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
-    // Référence à l'unité organisationnelle
+    // Unité organisationnelle de rattachement
     @Column({ type: 'uuid' })
     uniteOrganisationnelleId!: string;
 
-    // Personne occupant le poste (peut être vide si poste vacant)
-    @Column({ type: 'uuid', nullable: true })
-    occupantId?: string;
+    @ManyToOne(() => UniteOrganisationnelle, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'uniteOrganisationnelleId' })
+    uniteOrganisationnelle?: UniteOrganisationnelle;
 
-    @ManyToOne(() => MembrePersonnel, { nullable: true })
-    @JoinColumn({ name: 'occupantId' })
-    occupant?: MembrePersonnel;
-
-    @Column({ type: 'varchar', length: 200, nullable: true })
-    occupantNom?: string;
-
-    // Informations complémentaires
+    // Nombre de postes prévus et occupants (calculé via AffectationPoste)
     @Column({ type: 'int', default: 1 })
     nombrePostes!: number;
 
     @Column({ type: 'int', default: 0 })
     occupantsCount!: number;
 
-    @Column({ type: 'varchar', length: 30, nullable: true })
-    modeRemunerationDefaut?: string;
-
+    // Compétences et missions (JSONB — listes simples de strings)
     @Column({ type: 'jsonb', nullable: true })
     competencesRequises?: string[];
 
     @Column({ type: 'jsonb', nullable: true })
     missions?: string[];
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata?: Record<string, any>;
-
     @CreateDateColumn()
     createdAt!: Date;
 
     @UpdateDateColumn()
     updatedAt!: Date;
-
-    // Relations
-    @ManyToOne(() => UniteOrganisationnelle, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'uniteOrganisationnelleId' })
-    uniteOrganisationnelle?: UniteOrganisationnelle;
 }

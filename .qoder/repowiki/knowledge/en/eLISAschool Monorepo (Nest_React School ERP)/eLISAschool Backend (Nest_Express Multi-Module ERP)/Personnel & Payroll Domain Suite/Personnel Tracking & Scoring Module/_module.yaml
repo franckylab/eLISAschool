@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/personnel_rh/suivi_personnel
-title: Personnel Tracking & Scoring Module
-scope:
-    - backend/src/modules/suivi-personnel/
-source_files: []
-depends_on: []
-related_to: []

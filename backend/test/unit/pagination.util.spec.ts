@@ -10,7 +10,7 @@ import {
     validatePaginationParams,
     calculatePaginationMeta,
     createPaginatedResult,
-} from '../src/common/utils/pagination.util';
+} from '../../src/common/utils/pagination.util';
 
 describe('validatePaginationParams', () => {
     it('devrait utiliser les valeurs par défaut si non fournies', () => {

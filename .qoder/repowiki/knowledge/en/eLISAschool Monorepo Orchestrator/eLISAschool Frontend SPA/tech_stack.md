@@ -1,0 +1,1 @@
+React + TypeScript + TanStack Router (file-based routing) + TanStack Query for data fetching, built with Vite; internationalization via JSON locale packs under `locales/{fr,en}`.

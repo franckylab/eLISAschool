@@ -1,4 +1,3 @@
-export type NiveauResponsabilite = 'DIRECTION_GENERALE' | 'DIRECTION_ADJOINTE' | 'RESPONSABLE' | 'COORDINATEUR' | 'SUPERVISEUR' | 'EXECUTANT' | 'STAGIAIRE';
 export type StatutPoste = 'ACTIF' | 'VACANT' | 'SUPPRIME' | 'EN_ATTENTE';
 
 export interface TypePersonnelLite {
@@ -11,46 +10,41 @@ export interface TypePersonnelLite {
 
 export interface Poste {
     id: string;
-    intitulé: string;
+    intitule: string;
     description?: string;
     code: string;
+    categoriePosteId?: string;
+    categoriePoste?: { id: string; code: string; label: string };
+    niveauResponsabiliteId?: string;
+    niveauResponsabilite?: { id: string; code: string; label: string; niveau: number };
     typePersonnelId?: string;
     typePersonnel?: TypePersonnelLite;
-    niveauResponsabilite: NiveauResponsabilite;
+    fonctionId?: string;
+    fonction?: { id: string; nom: string; code: string };
     statut: StatutPoste;
     actif: boolean;
     uniteOrganisationnelleId: string;
-    fonctionId?: string;
-    fonction?: { id: string; nom: string; code: string };
-    occupantId?: string;
-    occupant?: { id: string; nom: string; prenom: string };
-    occupantNom?: string;
+    uniteOrganisationnelle?: { id: string; nom: string; code: string };
     nombrePostes: number;
     occupantsCount: number;
-    modeRemunerationDefaut?: string;
     competencesRequises?: string[];
     missions?: string[];
-    metadata?: Record<string, any>;
-    uniteOrganisationnelle?: { id: string; nom: string; code: string };
     createdAt: string;
     updatedAt: string;
 }
 
 export interface CreatePosteDto {
-    intitulé: string;
+    intitule: string;
     description?: string;
     code: string;
+    categoriePosteId?: string;
+    niveauResponsabiliteId?: string;
     typePersonnelId?: string;
-    niveauResponsabilite?: NiveauResponsabilite;
     fonctionId?: string;
     uniteOrganisationnelleId: string;
-    occupantId?: string;
-    occupantNom?: string;
     nombrePostes?: number;
-    modeRemunerationDefaut?: string;
     competencesRequises?: string[];
     missions?: string[];
-    metadata?: Record<string, any>;
 }
 
 export type UpdatePosteDto = Partial<CreatePosteDto>;
@@ -60,6 +54,7 @@ export interface PosteFiltres {
     limit?: number;
     search?: string;
     typePersonnelId?: string;
+    categoriePosteId?: string;
     statut?: StatutPoste;
     fonctionId?: string;
     uniteOrganisationnelleId?: string;

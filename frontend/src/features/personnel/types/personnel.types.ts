@@ -129,7 +129,7 @@ export interface ContratPersonnel {
 
 export interface PostePartial {
     id: string;
-    intitulé: string;
+    intitule: string;
     code: string;
     uniteOrganisationnelle?: { id: string; nom: string };
     fonction?: { id: string; nom: string };

@@ -1,1 +1,0 @@
-Organizes every domain feature (students, payroll, timetables, etc.) as a self-contained React feature package exposing typed hooks, pages and modals through a single barrel.

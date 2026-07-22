@@ -1,0 +1,1 @@
+Five sibling NestJS-style feature modules providing school organisation structure, pluggable app/module configuration with backup/restore, configurable period templates, shared type enums, and administrative request tracking.

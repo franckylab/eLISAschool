@@ -56,3 +56,6 @@ export { useDocumentTitle } from './use-document-title';
 
 // Tab state management (URL-driven or local)
 export { useTabState } from './useTabState';
+
+// i18n enum options helper
+export { useEnumOptions } from './use-enum-options';

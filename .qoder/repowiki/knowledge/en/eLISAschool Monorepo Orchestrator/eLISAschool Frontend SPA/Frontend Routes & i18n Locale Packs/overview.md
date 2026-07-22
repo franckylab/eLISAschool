@@ -1,0 +1,1 @@
+Aggregates TanStack Router file-based route declarations and the parallel French/English JSON locale packs consumed by the app's internationalization runtime.

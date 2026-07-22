@@ -11,7 +11,7 @@ import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerPoste, useModifierPoste } from '../hooks/use-postes';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
-import { createPosteSchema, updatePosteSchema, NIVEAUX_RESPONSABILITE_OPTIONS, MODES_REMUNERATION_OPTIONS } from '../types/poste.zod';
+import { createPosteSchema, updatePosteSchema } from '../types/poste.zod';
 import type { Poste } from '../types/poste.types';
 
 interface Props {
@@ -37,7 +37,21 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const { data: typesPersonnel } = useQuery({
         queryKey: ['types-personnel'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/personnel/types');
+            const res = await apiClient.get('/api/organisation/types-personnel');
+            return (res as any).data || [];
+        },
+    });
+    const { data: categoriesPoste } = useQuery({
+        queryKey: ['categories-poste'],
+        queryFn: async () => {
+            const res = await apiClient.get('/api/organisation/categories-poste');
+            return (res as any).data || [];
+        },
+    });
+    const { data: niveauxResponsabilite } = useQuery({
+        queryKey: ['niveaux-responsabilite'],
+        queryFn: async () => {
+            const res = await apiClient.get('/api/organisation/niveaux-responsabilite');
             return (res as any).data || [];
         },
     });
@@ -51,20 +65,17 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const { register, handleSubmit, control, formState: { errors, isSubmitting }, watch, setValue } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            intitulé: poste?.intitulé || '',
+            intitule: poste?.intitule || '',
             description: poste?.description || '',
             code: poste?.code || '',
+            categoriePosteId: poste?.categoriePosteId || '',
+            niveauResponsabiliteId: poste?.niveauResponsabiliteId || '',
             typePersonnelId: poste?.typePersonnelId || '',
-            niveauResponsabilite: (poste?.niveauResponsabilite || 'EXECUTANT') as any,
             fonctionId: poste?.fonctionId || '',
             uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
-            occupantId: poste?.occupantId || '',
-            occupantNom: poste?.occupantNom || '',
             nombrePostes: poste?.nombrePostes ?? 1,
-            modeRemunerationDefaut: poste?.modeRemunerationDefaut || '',
             competencesRequises: poste?.competencesRequises || [],
             missions: poste?.missions || [],
-            metadata: poste?.metadata || undefined,
         },
     });
 
@@ -78,6 +89,16 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const uniteOptions = (unites || []).map((u: any) => ({
         value: u.id,
         label: `${u.nom} (${u.code})`,
+    }));
+
+    const categorieOptions = (categoriesPoste || []).map((c: any) => ({
+        value: c.id,
+        label: `${c.label} (${c.code})`,
+    }));
+
+    const niveauOptions = (niveauxResponsabilite || []).map((n: any) => ({
+        value: n.id,
+        label: `${n.label} (Niveau ${n.niveau})`,
     }));
 
     const addMission = () => {
@@ -107,10 +128,10 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
         try {
             const payload = {
                 ...data,
-                occupantId: data.occupantId || undefined,
-                occupantNom: data.occupantNom || undefined,
+                categoriePosteId: data.categoriePosteId || undefined,
+                niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
+                typePersonnelId: data.typePersonnelId || undefined,
                 fonctionId: data.fonctionId || undefined,
-                modeRemunerationDefaut: data.modeRemunerationDefaut || undefined,
             };
             if (isEdit && poste) {
                 await modifier.mutateAsync({ id: poste.id, dto: payload });
@@ -125,7 +146,7 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
         }
     };
 
-    const intituleValide = watch('intitulé')?.trim()?.length >= 2;
+    const intituleValide = watch('intitule')?.trim()?.length >= 2;
     const codeValide = watch('code')?.trim()?.length >= 2;
     const uniteValide = watch('uniteOrganisationnelleId');
     const canSubmit = intituleValide && codeValide && uniteValide;
@@ -145,9 +166,9 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             apiError={apiError}
         >
             <div className="grid grid-cols-2 gap-4">
-                <ElisaInput label={t('intitulePoste') + ' *'} {...register('intitulé')}
+                <ElisaInput label={t('intitulePoste') + ' *'} {...register('intitule')}
                     placeholder="Proviseur"
-                    error={errors.intitulé?.message as string}
+                    error={errors.intitule?.message as string}
                 />
                 <ElisaInput label={t('code') + ' *'}
                     {...register('code')}
@@ -175,31 +196,45 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                     )}
                 />
                 <Controller
-                    name="niveauResponsabilite"
+                    name="niveauResponsabiliteId"
                     control={control}
                     render={({ field }) => (
                         <ElisaSelect label={t('niveauResponsabilite')}
-                            value={field.value}
+                            value={field.value || ''}
                             onValueChange={field.onChange}
-                            options={NIVEAUX_RESPONSABILITE_OPTIONS}
-                            error={errors.niveauResponsabilite?.message as string}
+                            options={niveauOptions}
+                            error={errors.niveauResponsabiliteId?.message as string}
                         />
                     )}
                 />
             </div>
 
-            <Controller
-                name="fonctionId"
-                control={control}
-                render={({ field }) => (
-                    <ElisaSelect label={t('fonction')}
-                        value={field.value || ''}
-                        onValueChange={field.onChange}
-                        options={fonctionOptions}
-                        placeholder={t('selectionner')}
-                    />
-                )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+                <Controller
+                    name="categoriePosteId"
+                    control={control}
+                    render={({ field }) => (
+                        <ElisaSelect label={t('categoriePoste')}
+                            value={field.value || ''}
+                            onValueChange={field.onChange}
+                            options={categorieOptions}
+                            placeholder={t('selectionner')}
+                        />
+                    )}
+                />
+                <Controller
+                    name="fonctionId"
+                    control={control}
+                    render={({ field }) => (
+                        <ElisaSelect label={t('fonction')}
+                            value={field.value || ''}
+                            onValueChange={field.onChange}
+                            options={fonctionOptions}
+                            placeholder={t('selectionner')}
+                        />
+                    )}
+                />
+            </div>
 
             <Controller
                 name="uniteOrganisationnelleId"
@@ -221,24 +256,10 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                 error={errors.description?.message as string}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-                <ElisaInput label={t('nombrePostes')} type="number"
-                    {...register('nombrePostes', { valueAsNumber: true })}
-                    error={errors.nombrePostes?.message as string}
-                />
-                <Controller
-                    name="modeRemunerationDefaut"
-                    control={control}
-                    render={({ field }) => (
-                        <ElisaSelect label={t('modeRemunerationDefaut')}
-                            value={field.value || ''}
-                            onValueChange={field.onChange}
-                            options={MODES_REMUNERATION_OPTIONS}
-                            placeholder={t('selectionner')}
-                        />
-                    )}
-                />
-            </div>
+            <ElisaInput label={t('nombrePostes')} type="number"
+                {...register('nombrePostes', { valueAsNumber: true })}
+                error={errors.nombrePostes?.message as string}
+            />
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('missions')}</label>

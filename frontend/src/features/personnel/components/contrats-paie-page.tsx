@@ -100,7 +100,7 @@ function ContratsTab() {
                                         {hasPoste(c) ? (
                                             <a href={`/organisation/postes/${c.posteId}`} className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300 hover:text-blue-600">
                                                 <Briefcase className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
-                                                <span className="truncate max-w-[140px]">{c.poste?.intitulé || c.posteId?.slice(0, 8)}</span>
+                                                <span className="truncate max-w-[140px]">{c.poste?.intitule || c.posteId?.slice(0, 8)}</span>
                                             </a>
                                         ) : (
                                             <span className="text-gray-400 dark:text-gray-500 italic">—</span>

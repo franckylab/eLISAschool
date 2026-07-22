@@ -41,6 +41,8 @@ import {
     ChevronDown,
     ChevronRight,
     Brain,
+    Workflow,
+    Network,
     BookOpen,
     DoorOpen,
     FileSignature,
@@ -197,8 +199,20 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
             { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
-            { label: 'Mon organisation', path: '/organisation', icon: Building2, module: 'organisation' },
-
+            {
+                label: 'Organisation',
+                path: '/organisation',
+                icon: Building2,
+                module: 'organisation',
+                children: [
+                    { label: 'Unités', path: '/organisation/unites', icon: GitBranch, module: 'organisation' },
+                    { label: 'Postes', path: '/organisation/postes', icon: Briefcase, module: 'organisation' },
+                    { label: 'Fonctions', path: '/organisation/fonctions', icon: Workflow, module: 'organisation' },
+                    { label: 'Hiérarchie', path: '/organisation/hierarchie', icon: Network, module: 'organisation' },
+                    { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: LayoutGrid, module: 'organisation' },
+                    { label: 'Modèles', path: '/organisation/modeles', icon: FileText, module: 'organisation' },
+                ]
+            },
 
             {
                 label: 'Structure Académique',

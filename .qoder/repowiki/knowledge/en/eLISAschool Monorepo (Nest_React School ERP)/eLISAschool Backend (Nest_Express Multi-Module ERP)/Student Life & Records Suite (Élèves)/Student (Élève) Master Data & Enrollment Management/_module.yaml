@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/eleves_vie_scolaire/student_master
-title: Student (Élève) Master Data & Enrollment Management
-scope:
-    - backend/src/modules/eleves/
-source_files: []
-depends_on: []
-related_to: []

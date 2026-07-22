@@ -1,0 +1,3 @@
+- Cross-service contracts live exclusively in the `shared_library` workspace (enums, TS types, Zod validators) — neither backend nor frontend re-declares them locally.
+- Workspace commands are invoked through the root `package.json` scripts using `--workspace=<name>` rather than calling child binaries directly.
+- Per-child lifecycle (migrations, seeds, feature rollouts) is delegated to shell scripts under `scripts/` instead of being embedded in child code.

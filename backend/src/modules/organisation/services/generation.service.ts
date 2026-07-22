@@ -1,27 +1,27 @@
-import { Repository, QueryRunner } from 'typeorm';
+import { Repository, QueryRunner, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { AppError } from '@common/filters/error.filter';
 import {
     UniteOrganisationnelle,
     Poste,
     HierarchiePersonnel,
-    TypeUniteOrganisationnelle,
-    NiveauResponsabiliteEnum,
     StatutUnite,
     StatutPoste,
-    TypeRelationHierarchique,
     StatutRelation,
     TemplateOrganisation,
     NoeudTemplateOrganisation,
     TemplatePoste,
     TemplateLienHierarchique,
 } from '../entities';
-import { TypePersonnel } from '@modules/personnel/entities';
+import { TypePersonnel } from '../entities';
 import {
     GenererOrganisationDto,
     ResultatGeneration,
 } from '../dto';
-import { niveauOrganisationService, usageUniteService, categoriePosteService, niveauResponsabiliteService } from './nomenclature.service';
+import { niveauOrganisationService } from './niveau-organisation.service';
+import { usageUniteService } from './usage-unite.service';
+import { categoriePosteService } from './categorie-poste.service';
+import { niveauResponsabiliteService } from './niveau-responsabilite.service';
 import { organisationService } from './organisation.service';
 
 interface GenerationContext {
@@ -39,11 +39,11 @@ interface GenerationContext {
     typePersonnelMap: Map<string, string>; // code → id
 }
 
-function fallbackNiveauResponsabilite(valeur?: string): NiveauResponsabiliteEnum {
-    if (valeur && Object.values(NiveauResponsabiliteEnum).includes(valeur as NiveauResponsabiliteEnum)) {
-        return valeur as NiveauResponsabiliteEnum;
+function fallbackNiveauResponsabiliteCode(valeur?: string): string | undefined {
+    if (valeur && ['DIRECTION_GENERALE', 'DIRECTION_ADJOINTE', 'RESPONSABLE', 'COORDINATEUR', 'SUPERVISEUR', 'EXECUTANT', 'STAGIAIRE'].includes(valeur)) {
+        return valeur;
     }
-    return NiveauResponsabiliteEnum.EXECUTANT;
+    return 'EXECUTANT';
 }
 
 function validerNoeud(noeud: NoeudTemplateOrganisation, chemin: string): void {
@@ -167,12 +167,66 @@ export class GenerationService {
         uniteId: string,
         queryRunner: QueryRunner,
     ): Promise<void> {
+        // 1. Supprimer récursivement les enfants d'abord (feuilles → racine)
         const enfants = await queryRunner.manager.find(UniteOrganisationnelle, {
             where: { parentId: uniteId },
         });
         for (const enfant of enfants) {
             await this.supprimerArbreUnites(enfant.id, queryRunner);
         }
+
+        // 2. Récupérer les postes rattachés à cette unité
+        const postes = await queryRunner.manager.find(Poste, {
+            where: { uniteOrganisationnelleId: uniteId },
+        });
+        const posteIds = postes.map((p) => p.id);
+
+        // 3. Nettoyer les dépendances AVANT de supprimer l'unité (respect des contraintes FK)
+        if (posteIds.length > 0) {
+            // Affectations rattachées aux postes supprimés (CASCADE, mais on anticipe)
+            await queryRunner.query(
+                'DELETE FROM "affectations_postes" WHERE "posteId" = ANY($1)',
+                [posteIds],
+            );
+            // Liens hiérarchiques référençant ces postes (SET NULL auto, mais on anticipe)
+            await queryRunner.manager.delete(HierarchiePersonnel, { posteId: In(posteIds) });
+            await queryRunner.manager.delete(HierarchiePersonnel, { superieurId: In(posteIds) });
+            // Contrats, bulletins et offres d'emploi référençant ces postes (FK NO ACTION)
+            await queryRunner.query(
+                'UPDATE "contrats_personnel" SET "posteId" = NULL WHERE "posteId" = ANY($1)',
+                [posteIds],
+            );
+            await queryRunner.query(
+                'UPDATE "bulletins_paie" SET "posteId" = NULL WHERE "posteId" = ANY($1)',
+                [posteIds],
+            );
+            await queryRunner.query(
+                'UPDATE "offres_emploi" SET "posteId" = NULL WHERE "posteId" = ANY($1)',
+                [posteIds],
+            );
+        }
+        // Affectations pointant directement vers l'unité (FK sans ON DELETE = bloquante) :
+        // on neutralise la référence dénormalisée sans détruire l'affectation d'un poste survivant.
+        await queryRunner.query(
+            'UPDATE "affectations_postes" SET "uniteOrganisationnelleId" = NULL WHERE "uniteOrganisationnelleId" = $1',
+            [uniteId],
+        );
+        // Contrats et offres d'emploi référençant directement l'unité (FK NO ACTION)
+        await queryRunner.query(
+            'UPDATE "contrats_personnel" SET "uniteOrganisationnelleId" = NULL WHERE "uniteOrganisationnelleId" = $1',
+            [uniteId],
+        );
+        await queryRunner.query(
+            'UPDATE "offres_emploi" SET "uniteOrganisationnelleId" = NULL WHERE "uniteOrganisationnelleId" = $1',
+            [uniteId],
+        );
+
+        // 4. Supprimer les postes de l'unité
+        if (posteIds.length > 0) {
+            await queryRunner.manager.delete(Poste, { uniteOrganisationnelleId: uniteId });
+        }
+
+        // 5. Supprimer l'unité elle-même
         await queryRunner.manager.delete(UniteOrganisationnelle, uniteId);
     }
 
@@ -214,17 +268,9 @@ export class GenerationService {
             }
         }
 
-        // Créer l'unité
-        const typeVal = noeud.usageUnite as TypeUniteOrganisationnelle;
-        const type = Object.values(TypeUniteOrganisationnelle).includes(typeVal)
-            ? typeVal
-            : TypeUniteOrganisationnelle.SERVICE;
-
         const unite = ctx.queryRunner.manager.create(UniteOrganisationnelle, {
             nom,
             code,
-            type,
-            usageUniteCode: noeud.usageUnite,
             ordre: index,
             etablissementId: ctx.etablissementId,
             parentId: parentId ?? undefined,
@@ -267,20 +313,17 @@ export class GenerationService {
 
         for (let i = 0; i < count; i++) {
             const posteCode = `${ctx.prefixeCode}${templatePoste.ref.toUpperCase()}`;
-            const intituleBrut = templatePoste.intitulé ?? (templatePoste as any).intitule ?? 'Poste';
+            const intituleBrut = templatePoste.intitule ?? 'Poste';
             const intitule = count > 1
                 ? `${intituleBrut} ${i + 1}`
                 : intituleBrut;
 
-            const typePersonnelId = ctx.typePersonnelMap.get(templatePoste.categoriePoste || '');
+            const typePersonnelId = ctx.typePersonnelMap.get(templatePoste.categoriePosteId || '');
 
             const poste = ctx.queryRunner.manager.create(Poste, {
-                intitulé: intitule,
+                intitule,
                 code: posteCode,
                 typePersonnelId,
-                categoriePosteCode: templatePoste.categoriePoste,
-                niveauResponsabilite: fallbackNiveauResponsabilite(templatePoste.niveauResponsabilite),
-                niveauResponsabiliteCode: templatePoste.niveauResponsabilite,
                 uniteOrganisationnelleId: uniteId,
                 nombrePostes: 1,
                 statut: StatutPoste.VACANT,
@@ -331,8 +374,7 @@ export class GenerationService {
                 const hierarchie = ctx.queryRunner.manager.create(HierarchiePersonnel, {
                     superieurId: superieurPoste.id,
                     posteId: subordonnePoste.id,
-                    posteIntitule: subordonnePoste.intitulé,
-                    typeRelation: (lien.typeRelation as TypeRelationHierarchique) || TypeRelationHierarchique.SUPERVISE_DIRECT,
+                    posteIntitule: subordonnePoste.intitule,
                     statut: StatutRelation.ACTIVE,
                     actif: true,
                 });
