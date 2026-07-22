@@ -15,16 +15,7 @@ import type {
     CreateFondEtablissementDto,
     UpdateFondEtablissementDto,
     UploadFondDto,
-} from '../types';
-
-// ==================================
-// Types de retour
-// ==================================
-
-interface CatalogueFondsResult {
-    fonds: Fond[];
-    total: number;
-}
+} from './types';
 
 // ==================================
 // Queries (GET)
@@ -79,9 +70,6 @@ export function useConfigRotation() {
         },
         retry: 1,
         staleTime: 30 * 1000,
-        onError: (error) => {
-            console.error('[useConfigRotation] Erreur lors de la récupération de la config:', error);
-        },
     });
 }
 
@@ -101,9 +89,6 @@ export function useFondsRotation() {
         refetchInterval: 60 * 1000,
         retry: 1,
         staleTime: 30 * 1000,
-        onError: (error) => {
-            console.error('[useFondsRotation] Erreur lors de la récupération des fonds:', error);
-        },
     });
 }
 
@@ -155,7 +140,7 @@ export function useSupprimerFondEtablissement() {
             const response = await apiClient.delete(`/api/apparence/fonds/etablissement/${id}`);
             return response.data;
         },
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             // Invalider le cache pour recharger la liste
             queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'fonds'] });
             queryClient.invalidateQueries({ queryKey: ['apparence', 'etablissement', 'rotation'] });

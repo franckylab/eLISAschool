@@ -22,7 +22,6 @@ export function usePostes(filtres?: PosteFiltres) {
             if (filtres?.page) params.set('page', String(filtres.page));
             if (filtres?.limit) params.set('limit', String(filtres.limit));
             if (filtres?.search) params.set('search', filtres.search);
-            if ((filtres as any)?.typePersonnelId) params.set('typePersonnelId', (filtres as any).typePersonnelId);
             if (filtres?.statut) params.set('statut', filtres.statut);
             if (filtres?.fonctionId) params.set('fonctionId', filtres.fonctionId);
             if (filtres?.uniteOrganisationnelleId) params.set('uniteOrganisationnelleId', filtres.uniteOrganisationnelleId);

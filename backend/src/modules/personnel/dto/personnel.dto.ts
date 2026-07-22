@@ -11,8 +11,6 @@ import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.d
 export const createTypePersonnelSchema = z.object({
     code: z.string().min(2).max(50),
     nom: z.string().min(2).max(100),
-    permissionsDefaut: z.array(z.string()).optional(),
-    roleIdParDefaut: z.string().uuid().optional(),
     description: z.string().max(200).optional(),
     modeRemunerationDefaut: z.string().max(30).optional(),
 });

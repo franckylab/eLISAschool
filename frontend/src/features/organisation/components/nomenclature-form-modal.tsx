@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, X } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import type { LucideIcon } from 'lucide-react';
 
@@ -28,7 +28,7 @@ interface Props<T> {
 }
 
 export function NomenclatureFormModal<T extends Record<string, any>>({
-    open, onOpenChange, initialData, onSave, fields, titleKey, icon: Icon,
+    open, onOpenChange, initialData, onSave, fields, titleKey,
 }: Props<T>) {
     const { t } = useTranslation('organisation');
     const [error, setError] = useState('');
@@ -69,7 +69,6 @@ export function NomenclatureFormModal<T extends Record<string, any>>({
             open={open}
             onOpenChange={onOpenChange}
             title={t(titleKey)}
-            icon={Icon}
         >
             <form onSubmit={handleSubmit(doSave)} className="space-y-4 p-4">
                 <div className="grid grid-cols-2 gap-4">

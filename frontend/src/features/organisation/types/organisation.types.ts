@@ -7,8 +7,6 @@ export interface UniteOrganisationnelle {
     id: string;
     nom: string;
     description?: string;
-    typeUniteId?: string;
-    typeUnite?: { id: string; code: string; label: string };
     usageUniteId?: string;
     usageUnite?: { id: string; code: string; label: string };
     niveauOrganisationId?: string;
@@ -33,7 +31,6 @@ export interface UniteOrganisationnelle {
 export interface CreerUniteDto {
     nom: string;
     description?: string;
-    typeUniteId?: string;
     usageUniteId?: string;
     niveauOrganisationId?: string;
     code: string;
@@ -51,7 +48,6 @@ export type ModifierUniteDto = Partial<CreerUniteDto>;
 
 export interface UniteFiltres {
     etablissementId?: string;
-    typeUniteId?: string;
     actif?: boolean;
     parentId?: string | null;
 }
@@ -61,17 +57,13 @@ export interface UniteFiltres {
 export interface HierarchiePersonnel {
     id: string;
     personnelId?: string;
-    personnelNom?: string;
     superieurId?: string;
-    superieurNom?: string;
     typeRelationId?: string;
     typeRelation?: { id: string; code: string; label: string };
     statut: StatutRelation;
     actif: boolean;
     posteId?: string;
-    posteIntitule?: string;
     uniteOrganisationnelleId?: string;
-    uniteNom?: string;
     etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -82,14 +74,10 @@ export interface HierarchiePersonnel {
 
 export interface CreerHierarchieDto {
     personnelId?: string;
-    personnelNom?: string;
     superieurId?: string;
-    superieurNom?: string;
     typeRelationId?: string;
     posteId?: string;
-    posteIntitule?: string;
     uniteOrganisationnelleId?: string;
-    uniteNom?: string;
     etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -108,6 +96,11 @@ export interface OrganigrammeNode {
     statut: string;
     description?: string;
     responsableNom?: string;
+    localisation?: string;
+    telephone?: string;
+    email?: string;
+    usageUniteLabel?: string;
+    niveauOrganisationLabel?: string;
     ordre: number;
     depth: number;
     totalMembres: number;
@@ -123,6 +116,9 @@ export interface OrganigrammePoste {
     statut: string;
     occupantsCount: number;
     nombrePostes: number;
+    fonctionLabel?: string;
+    niveauResponsabiliteLabel?: string;
+    typePersonnelLabel?: string;
     uniteOrganisationnelleId?: string;
 }
 
@@ -150,7 +146,7 @@ export interface StatistiquesOrganisation {
     // Arborescence
     profondeurMax: number;
     // Répartition
-    parType: Record<string, number>;
+    parUsage: Record<string, number>;
 }
 
 // ==================== NOMENCLATURES ====================

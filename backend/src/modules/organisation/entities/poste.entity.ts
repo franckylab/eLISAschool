@@ -21,7 +21,6 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { TypePersonnel } from './type-personnel.entity';
 import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
 import { Fonction } from './fonction.entity';
 import { NiveauResponsabilite } from './niveau-responsabilite.entity';
@@ -38,7 +37,6 @@ export enum StatutPoste {
 @Index(['uniteOrganisationnelleId'])
 @Index(['code'])
 @Index(['categoriePosteId'])
-@Index(['typePersonnelId'])
 @Index(['statut'])
 @Index(['fonctionId'])
 @Index(['occupantsCount'])
@@ -78,14 +76,6 @@ export class Poste {
     @ManyToOne(() => NiveauResponsabilite, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'niveauResponsabiliteId' })
     niveauResponsabilite?: NiveauResponsabilite;
-
-    // FK vers TypePersonnel
-    @Column({ type: 'uuid', nullable: true })
-    typePersonnelId?: string;
-
-    @ManyToOne(() => TypePersonnel, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'typePersonnelId' })
-    typePersonnel?: TypePersonnel;
 
     @Column({ type: 'enum', enum: StatutPoste, default: StatutPoste.ACTIF })
     statut!: StatutPoste;

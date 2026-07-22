@@ -60,15 +60,9 @@ export class HierarchiePersonnel {
     @JoinColumn({ name: 'personnelId' })
     personnel?: MembrePersonnel;
 
-    @Column({ type: 'varchar', length: 200, nullable: true })
-    personnelNom?: string;
-
     // Supérieur hiérarchique (nullable)
     @Column({ type: 'uuid', nullable: true })
     superieurId?: string;
-
-    @Column({ type: 'varchar', length: 200, nullable: true })
-    superieurNom?: string;
 
     // FK vers TypeRelationHierarchique (remplace l'enum PostgreSQL)
     @Column({ type: 'uuid', nullable: true })
@@ -95,14 +89,8 @@ export class HierarchiePersonnel {
     @Column({ type: 'uuid', nullable: true })
     posteId?: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    posteIntitule?: string;
-
     @Column({ type: 'uuid', nullable: true })
     uniteOrganisationnelleId?: string;
-
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    uniteNom?: string;
 
     // Référence au poste (FK — permet de lier sans personnel assigné)
     @ManyToOne(() => Poste, { nullable: true, onDelete: 'SET NULL' })

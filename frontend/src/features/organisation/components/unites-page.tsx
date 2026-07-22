@@ -22,7 +22,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useArborescence, useUnites, useModifierUnite, useSupprimerUnite } from '../hooks/use-unites';
-import { UniteFormModal } from './unite-form-modal';
+import { UniteFormModal } from './organigramme/modals/UniteFormModal';
 import { OrgViewToggle, type OrgView } from './org-view-toggle';
 import type { UniteOrganisationnelle } from '../types/organisation.types';
 
@@ -94,7 +94,7 @@ export function UnitesPage() {
                 </div>
             ),
         },
-        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-gray-600 dark:text-gray-400">{u.typeUnite?.label || '—'}</span> },
+        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-gray-600 dark:text-gray-400">{u.usageUnite?.label || '—'}</span> },
         { key: 'parent', header: t('parent'), render: (u) => <span className="text-sm text-gray-600 dark:text-gray-400">{u.parent?.nom || '—'}</span> },
         {
             key: 'responsable', header: t('responsable'),

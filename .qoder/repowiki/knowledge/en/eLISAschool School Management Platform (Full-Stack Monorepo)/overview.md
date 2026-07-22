@@ -1,0 +1,1 @@
+Full-stack school management system for multi-establishment environments, providing an Express/TypeORM backend API, a React/Vite frontend with React Flow org charts, and Dockerized deployment with PostgreSQL.

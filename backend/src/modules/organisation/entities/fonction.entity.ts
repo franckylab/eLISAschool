@@ -22,10 +22,12 @@ import {
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
+import { TypePersonnel } from './type-personnel.entity';
 
 @Entity('fonctions')
 @Index(['parentId'])
 @Index(['etablissementId'])
+@Index(['typePersonnelId'])
 @Index(['code', 'etablissementId'], { unique: true })
 export class Fonction {
     @PrimaryGeneratedColumn('uuid')
@@ -56,6 +58,15 @@ export class Fonction {
 
     @Column({ type: 'varchar', length: 500, nullable: true })
     chemin?: string;
+
+    // Type statutaire porté par la fonction (ex: fonction « Professeur » ⟹ ENSEIGNANT).
+    // Permet au poste de dériver son type attendu via poste.fonction.typePersonnel.
+    @Column({ type: 'uuid', nullable: true })
+    typePersonnelId?: string;
+
+    @ManyToOne(() => TypePersonnel, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'typePersonnelId' })
+    typePersonnel?: TypePersonnel;
 
     @Column({ type: 'jsonb', nullable: true })
     primesDefaut?: Record<string, any>;

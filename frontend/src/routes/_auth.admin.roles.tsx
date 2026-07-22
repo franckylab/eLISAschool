@@ -21,7 +21,7 @@ function RolesLayout() {
         <div className="space-y-4">
             <div className="flex items-center gap-3">
                 <button
-                    onClick={() => navigate({ to: '/admin' })}
+                    onClick={() => navigate({ to: '/utilisateurs' })}
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
                 >
                     <ArrowLeft className="h-4 w-4 shrink-0" />

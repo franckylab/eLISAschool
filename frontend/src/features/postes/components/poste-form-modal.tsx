@@ -34,13 +34,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             return (res as any).data || [];
         },
     });
-    const { data: typesPersonnel } = useQuery({
-        queryKey: ['types-personnel'],
-        queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/types-personnel');
-            return (res as any).data || [];
-        },
-    });
     const { data: categoriesPoste } = useQuery({
         queryKey: ['categories-poste'],
         queryFn: async () => {
@@ -70,7 +63,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             code: poste?.code || '',
             categoriePosteId: poste?.categoriePosteId || '',
             niveauResponsabiliteId: poste?.niveauResponsabiliteId || '',
-            typePersonnelId: poste?.typePersonnelId || '',
             fonctionId: poste?.fonctionId || '',
             uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
             nombrePostes: poste?.nombrePostes ?? 1,
@@ -130,7 +122,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                 ...data,
                 categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
-                typePersonnelId: data.typePersonnelId || undefined,
                 fonctionId: data.fonctionId || undefined,
             };
             if (isEdit && poste) {
@@ -180,18 +171,14 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
 
             <div className="grid grid-cols-2 gap-4">
                 <Controller
-                    name="typePersonnelId"
+                    name="fonctionId"
                     control={control}
                     render={({ field }) => (
-                        <ElisaSelect label={t('typePersonnel')}
+                        <ElisaSelect label={t('fonction')}
                             value={field.value || ''}
                             onValueChange={field.onChange}
-                            options={(typesPersonnel || []).map((tp: any) => ({
-                                value: tp.id,
-                                label: `${tp.nom} (${tp.code})`,
-                            }))}
+                            options={fonctionOptions}
                             placeholder={t('selectionner')}
-                            error={errors.typePersonnelId?.message as string}
                         />
                     )}
                 />
@@ -223,32 +210,19 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                     )}
                 />
                 <Controller
-                    name="fonctionId"
+                    name="uniteOrganisationnelleId"
                     control={control}
                     render={({ field }) => (
-                        <ElisaSelect label={t('fonction')}
-                            value={field.value || ''}
+                        <ElisaSelect label={t('unites') + ' *'}
+                            value={field.value}
                             onValueChange={field.onChange}
-                            options={fonctionOptions}
+                            options={uniteOptions}
                             placeholder={t('selectionner')}
+                            error={errors.uniteOrganisationnelleId?.message as string}
                         />
                     )}
                 />
             </div>
-
-            <Controller
-                name="uniteOrganisationnelleId"
-                control={control}
-                render={({ field }) => (
-                    <ElisaSelect label={t('unites') + ' *'}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        options={uniteOptions}
-                        placeholder={t('selectionner')}
-                        error={errors.uniteOrganisationnelleId?.message as string}
-                    />
-                )}
-            />
 
             <ElisaInput label={t('description')}
                 {...register('description')}

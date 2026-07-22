@@ -16,7 +16,6 @@ import { z } from 'zod';
 export const createUniteOrganisationnelleSchema = z.object({
     nom: z.string().min(2).max(100),
     description: z.string().optional(),
-    typeUniteId: z.string().uuid().optional(), // FK vers TypeUniteOrganisationnelle
     usageUniteId: z.string().uuid().optional(), // FK vers UsageUnite
     niveauOrganisationId: z.string().uuid().optional(), // FK vers NiveauOrganisation
     code: z.string().min(2).max(50),
@@ -42,15 +41,11 @@ export type UpdateUniteOrganisationnelleDto = z.infer<typeof updateUniteOrganisa
 
 export const createHierarchiePersonnelSchema = z.object({
     personnelId: z.string().uuid().optional(),
-    personnelNom: z.string().min(2).max(200).optional(),
     superieurId: z.string().uuid().optional(),
-    superieurNom: z.string().min(2).max(200).optional(),
     typeRelationId: z.string().uuid().optional(), // FK vers TypeRelationHierarchique
     statut: z.enum(['ACTIVE', 'HISTORIQUE', 'PLANIFIEE']).default('ACTIVE'),
     posteId: z.string().uuid().optional(),
-    posteIntitule: z.string().max(100).optional(),
     uniteOrganisationnelleId: z.string().uuid().optional(),
-    uniteNom: z.string().max(100).optional(),
     etablissementId: z.string().uuid().optional(),
     dateDebut: z.string().datetime().optional(),
     dateFin: z.string().datetime().optional(),
@@ -65,7 +60,6 @@ export type UpdateHierarchiePersonnelDto = z.infer<typeof updateHierarchiePerson
 // ==================== DTOs pour requêtes ====================
 
 export const filtreUnitesSchema = z.object({
-    typeUniteId: z.string().uuid().optional(), // FK vers TypeUniteOrganisationnelle
     actif: z.coerce.boolean().optional(),
     parentId: z.string().uuid().optional(),
     etablissementId: z.string().uuid().optional(),

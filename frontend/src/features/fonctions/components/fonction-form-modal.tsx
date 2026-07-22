@@ -3,6 +3,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Briefcase } from 'lucide-react';
 import { useToutesFonctions } from '../hooks/use-fonctions';
+import { useTypePersonnelOptions } from '@/features/personnel/hooks/use-types-personnel';
 import type { Fonction } from '../types/fonction.types';
 
 interface FonctionFormModalProps {
@@ -15,11 +16,13 @@ interface FonctionFormModalProps {
 
 export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoading }: FonctionFormModalProps) {
     const { data: allFonctions } = useToutesFonctions();
+    const typePersonnelOptions = useTypePersonnelOptions();
     const [nom, setNom] = useState('');
     const [code, setCode] = useState('');
     const [description, setDescription] = useState('');
     const [parentId, setParentId] = useState<string>('');
     const [ordre, setOrdre] = useState(1);
+    const [typePersonnelId, setTypePersonnelId] = useState<string>('');
     const [majorationDefaut, setMajorationDefaut] = useState<string>('');
     const [actif, setActif] = useState(true);
 
@@ -30,6 +33,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             setDescription(fonction.description || '');
             setParentId(fonction.parentId || '');
             setOrdre(fonction.ordre);
+            setTypePersonnelId(fonction.typePersonnelId || '');
             setMajorationDefaut(fonction.majorationDefaut != null ? String(fonction.majorationDefaut) : '');
             setActif(fonction.actif);
         } else {
@@ -38,6 +42,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             setDescription('');
             setParentId('');
             setOrdre(1);
+            setTypePersonnelId('');
             setMajorationDefaut('');
             setActif(true);
         }
@@ -53,6 +58,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             description: description.trim() || undefined,
             parentId: parentId || null,
             ordre,
+            typePersonnelId: typePersonnelId || null,
             majorationDefaut: majorationDefaut ? Number(majorationDefaut) : null,
             actif,
         });
@@ -152,6 +158,27 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm resize-none"
                         rows={3}
                     />
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                        Type de personnel (statut)
+                    </label>
+                    <select
+                        value={typePersonnelId}
+                        onChange={(e) => setTypePersonnelId(e.target.value)}
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                    >
+                        <option value="">Aucun</option>
+                        {typePersonnelOptions
+                            .filter((o) => o.actif !== false)
+                            .map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                    </select>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Détermine le type attendu des postes liés à cette fonction (ex. Professeur ⟹ Enseignant).
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">

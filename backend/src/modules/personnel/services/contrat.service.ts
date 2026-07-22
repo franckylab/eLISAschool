@@ -224,12 +224,13 @@ export class ContratService {
         }
 
         // Valider la compatibilité type poste ↔ type membre
+        // Le type attendu du poste est dérivé de sa fonction (poste.fonction.typePersonnel).
         if (dto.posteId) {
             const poste = await this.posteRepo.findOne({
                 where: { id: dto.posteId },
-                relations: ['typePersonnel'],
+                relations: ['fonction', 'fonction.typePersonnel'],
             });
-            if (poste?.typePersonnel?.code === 'ENSEIGNANT') {
+            if (poste?.fonction?.typePersonnel?.code === 'ENSEIGNANT') {
                 const membre = await this.membrePersonnelRepo.findOne({
                     where: { id: dto.membrePersonnelId },
                     relations: ['typePersonnel'],

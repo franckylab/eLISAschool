@@ -110,7 +110,7 @@ export function ApparencePage() {
     // Hooks
     const { data: catalogueData, isLoading: loadingCatalogue } = useCatalogueFonds();
     const { data: fondsEtab, isLoading: loadingFonds } = useFondsEtablissement();
-    const { data: config, isLoading: loadingConfig } = useConfigRotation();
+    const { data: config } = useConfigRotation();
     const ajouterFond = useAjouterFondEtablissement();
     const supprimerFond = useSupprimerFondEtablissement();
     const updateConfig = useUpdateConfigRotation();
@@ -186,7 +186,7 @@ export function ApparencePage() {
                     succes++;
                 } catch (error) {
                     // Ignorer les erreurs "déjà ajouté" (409)
-                    if (error?.response?.status !== 409) {
+                    if ((error as any)?.response?.status !== 409) {
                         echecs++;
                         console.error(`[Apparence] Erreur ajout fond ${fondId}:`, error);
                     }
@@ -364,7 +364,7 @@ export function ApparencePage() {
                         </div>
                         <ElisaButton
                             variant={rotationActive ? 'danger' : 'primary'}
-                            taille="sm"
+                            size="sm"
                             onClick={handleToggleRotation}
                             chargement={updateConfig.isPending}
                         >
@@ -390,7 +390,7 @@ export function ApparencePage() {
                                 <ElisaButton
                                     key={delai}
                                     variant={delai === delaiRotation ? 'primary' : 'outline'}
-                                    taille="xs"
+                                    size="xs"
                                     onClick={() => handleChangerDelai(delai)}
                                     chargement={updateConfig.isPending}
                                 >
@@ -481,7 +481,7 @@ export function ApparencePage() {
                                         {/* Bouton Appliquer - pour tous les fonds */}
                                         <ElisaButton
                                             variant={estFondActif ? 'primary' : 'outline'}
-                                            taille="xs"
+                                            size="xs"
                                             onClick={() => appliquerFond.mutate(fe.id)}  // fe.id = ID de l'association (attendu par l'API)
                                             chargement={appliquerFond.isPending}
                                             icon={<Monitor className="h-3 w-3" />}
@@ -493,7 +493,7 @@ export function ApparencePage() {
                                         {!fe.id.startsWith('systeme-') && (
                                             <ElisaButton
                                                 variant={fe.actif ? 'outline' : 'primary'}
-                                                taille="xs"
+                                                size="xs"
                                                 onClick={() => handleToggleActif(fe.id, fe.actif)}
                                                 chargement={modifierFond.isPending}
                                                 icon={fe.actif ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
@@ -505,7 +505,7 @@ export function ApparencePage() {
                                         {/* Bouton Aperçu */}
                                         <ElisaButton
                                             variant="outline"
-                                            taille="xs"
+                                            size="xs"
                                             onClick={() => setFondApercu(getUrlImageFond(fe.fond))}
                                             icon={<Maximize2 className="h-3 w-3" />}
                                         >
@@ -524,7 +524,7 @@ export function ApparencePage() {
                                         ) : (
                                             <ElisaButton
                                                 variant="danger"
-                                                taille="xs"
+                                                size="xs"
                                                 onClick={() => handleSupprimerFond(fe.id)}
                                                 chargement={supprimerFond.isPending}
                                                 icon={<Trash2 className="h-3 w-3" />}
@@ -561,7 +561,7 @@ export function ApparencePage() {
                             <div className="flex items-center gap-[var(--gap-sm)]">
                                 <ElisaButton
                                     variant="outline"
-                                    taille="sm"
+                                    size="sm"
                                     onClick={() => setSelectionnes(new Set())}
                                     icon={<X className="h-4 w-4" />}
                                 >
@@ -569,7 +569,7 @@ export function ApparencePage() {
                                 </ElisaButton>
                                 <ElisaButton
                                     variant="primary"
-                                    taille="sm"
+                                    size="sm"
                                     onClick={() => handleAjouterSelection([...selectionnes])}
                                     chargement={ajoutEnCours || ajouterFond.isPending}
                                     icon={<Plus className="h-4 w-4" />}
@@ -588,7 +588,7 @@ export function ApparencePage() {
                         <div className="flex flex-wrap gap-[var(--gap-xs)]">
                             <ElisaButton
                                 variant={filtreCategorie === 'toutes' ? 'primary' : 'outline'}
-                                taille="xs"
+                                size="xs"
                                 onClick={() => {
                                     setFiltreCategorie('toutes');
                                     setSelectionnes(new Set()); // Vider sélection quand on change de filtre
@@ -600,7 +600,7 @@ export function ApparencePage() {
                                 <ElisaButton
                                     key={value}
                                     variant={filtreCategorie === value ? 'primary' : 'outline'}
-                                    taille="xs"
+                                    size="xs"
                                     onClick={() => {
                                         setFiltreCategorie(value as CategorieFond);
                                         setSelectionnes(new Set()); // Vider sélection quand on change de filtre
@@ -634,7 +634,7 @@ export function ApparencePage() {
                                 </div>
                                 <ElisaButton
                                     variant="primary"
-                                    taille="xs"
+                                    size="xs"
                                     onClick={handleAjouterTous}
                                     chargement={ajoutEnCours || ajouterFond.isPending}
                                     disabled={catalogueFiltre.every((fond) => fondsEtab?.some((fe) => fe.fondId === fond.id))}
@@ -719,7 +719,7 @@ export function ApparencePage() {
                                         {!dejaAjoute && (
                                             <ElisaButton
                                                 variant={estSelectionne ? 'outline' : 'primary'}
-                                                taille="sm"
+                                                size="sm"
                                                 fullWidth
                                                 className="mt-[var(--space-sm)]"
                                                 onClick={(e) => {

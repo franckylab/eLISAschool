@@ -47,10 +47,10 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
     });
 
     const initSubordonne: PersonnelSearchResult | null = hierarchie
-        ? { id: hierarchie.personnelId, nom: hierarchie.personnelNom?.split(' ').slice(1).join(' ') || '', prenom: hierarchie.personnelNom?.split(' ')[0] || '' }
+        ? { id: hierarchie.personnelId || '', nom: '', prenom: '' }
         : null;
     const initSuperieur: PersonnelSearchResult | null = hierarchie
-        ? { id: hierarchie.superieurId, nom: hierarchie.superieurNom?.split(' ').slice(1).join(' ') || '', prenom: hierarchie.superieurNom?.split(' ')[0] || '' }
+        ? { id: hierarchie.superieurId || '', nom: '', prenom: '' }
         : null;
     const [subordonne, setSubordonne] = useState<PersonnelSearchResult | null>(initSubordonne);
     const [superieur, setSuperieur] = useState<PersonnelSearchResult | null>(initSuperieur);
@@ -74,8 +74,6 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
                 ...data,
                 personnelId: subordonne.id,
                 superieurId: superieur.id,
-                personnelNom: `${subordonne.prenom} ${subordonne.nom}`,
-                superieurNom: `${superieur.prenom} ${superieur.nom}`,
                 etablissementId,
             };
             if (isEdit && hierarchie) {

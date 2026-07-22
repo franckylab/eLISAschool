@@ -10,17 +10,25 @@
  * Mode edit : champs pré-remplis depuis les données de l'unité.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
-import { useCreerUnite, useModifierUnite, useCreerUniteAvecPostes } from '../../../hooks/use-unites';
+import { useCreerUnite, useModifierUnite } from '../../../hooks/use-unites';
 import { useUsagesUnite } from '../../../hooks/use-usages-unite';
 import { useNiveauxOrganisation } from '../../../hooks/use-niveaux-organisation';
 import { useAuthStore } from '@/stores/auth.store';
-import type { OrganigrammeNode } from '../../../types/organisation.types';
+
+// Cible minimale acceptée : compatible OrganigrammeNode ET UniteOrganisationnelle.
+interface UniteFormTarget {
+    id: string;
+    nom: string;
+    code?: string;
+    description?: string;
+    responsableNom?: string;
+}
 
 // Schéma de validation
 const uniteFormSchema = z.object({
@@ -43,9 +51,12 @@ type ModalMode = 'create' | 'edit';
 interface UniteFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    mode: ModalMode;
-    unite?: OrganigrammeNode | null;
-    parentUnite?: OrganigrammeNode | null;
+    /** Optionnel : déduit de la présence de `unite` si absent. */
+    mode?: ModalMode;
+    unite?: UniteFormTarget | null;
+    parentUnite?: { id: string; nom: string } | null;
+    /** Alternative à `parentUnite` quand seul l'id du parent est connu. */
+    parentId?: string;
     onSuccess?: () => void;
 }
 
@@ -62,21 +73,24 @@ const FORM_INIT: UniteFormData = {
     email: '',
 };
 
-export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, onSuccess }: UniteFormModalProps) {
+export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, parentId, onSuccess }: UniteFormModalProps) {
     const { t } = useTranslation('organisation');
     const etablissementId = useAuthStore(s => s.etablissementId);
     const { data: usages } = useUsagesUnite();
     const { data: niveaux } = useNiveauxOrganisation();
     const { mutateAsync: creerUnite, isPending: isCreating } = useCreerUnite();
     const { mutateAsync: modifierUnite, isPending: isUpdating } = useModifierUnite();
-    const { mutateAsync: creerUniteAvecPostes, isPending: isCreatingBatch } = useCreerUniteAvecPostes();
 
-    const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<UniteFormData>({
+    // Mode déduit de la présence de `unite` si non fourni explicitement.
+    const effectiveMode: ModalMode = mode ?? (unite ? 'edit' : 'create');
+    const effectiveParentId = parentUnite?.id ?? parentId;
+
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<UniteFormData>({
         resolver: zodResolver(uniteFormSchema),
         defaultValues: FORM_INIT,
     });
 
-    const isPending = isCreating || isUpdating || isCreatingBatch;
+    const isPending = isCreating || isUpdating;
 
     // Pré-remplir le formulaire selon le mode
     useEffect(() => {
@@ -84,26 +98,26 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, o
             reset(FORM_INIT);
             return;
         }
-        if (mode === 'edit' && unite) {
+        if (effectiveMode === 'edit' && unite) {
             reset({
                 nom: unite.nom || '',
                 code: unite.code || '',
                 description: unite.description || '',
                 usageUniteId: '',
                 niveauOrganisationId: '',
-                parentId: unite.enfants?.length ? '' : '',
+                parentId: '',
                 responsableNom: unite.responsableNom || '',
                 localisation: '',
                 telephone: '',
                 email: '',
             });
-        } else if (mode === 'create') {
+        } else if (effectiveMode === 'create') {
             reset({
                 ...FORM_INIT,
-                parentId: parentUnite?.id || '',
+                parentId: effectiveParentId || '',
             });
         }
-    }, [open, mode, unite, parentUnite, reset]);
+    }, [open, effectiveMode, unite, effectiveParentId, reset]);
 
     const onSubmit = useCallback(async (data: UniteFormData) => {
         if (!etablissementId) return;
@@ -121,7 +135,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, o
             email: data.email || undefined,
         };
 
-        if (mode === 'edit' && unite) {
+        if (effectiveMode === 'edit' && unite) {
             await modifierUnite({ id: unite.id, ...dto });
         } else {
             await creerUnite(dto);
@@ -129,13 +143,13 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, o
 
         onOpenChange(false);
         onSuccess?.();
-    }, [mode, unite, etablissementId, creerUnite, modifierUnite, onOpenChange, onSuccess]);
+    }, [effectiveMode, unite, etablissementId, creerUnite, modifierUnite, onOpenChange, onSuccess]);
 
-    const title = mode === 'edit'
+    const title = effectiveMode === 'edit'
         ? t('organigramme.modal.modifierUnite', 'Modifier l\'unité')
         : t('organigramme.modal.creerUnite', 'Nouvelle unité');
 
-    const subtitle = mode === 'create' && parentUnite
+    const subtitle = effectiveMode === 'create' && parentUnite
         ? t('organigramme.modal.parent', 'Parent : {{nom}}', { nom: parentUnite.nom })
         : undefined;
 

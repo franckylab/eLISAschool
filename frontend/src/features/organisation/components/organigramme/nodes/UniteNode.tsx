@@ -12,6 +12,7 @@
 
 import { memo, useCallback, useRef, useState, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Users, Briefcase, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 import { MAX_POSTES_VISIBLE } from '../utils/layout';
@@ -232,43 +233,47 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                             >
                                 <MoreVertical className="h-3.5 w-3.5" />
                             </button>
-                            {/* Dropdown */}
-                            {menuOpen && (
-                                <div
-                                    className="absolute top-full right-0 mt-1 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
-                                    style={{
-                                        animation: 'fadeInScale 0.15s ease-out',
-                                    }}
-                                >
-                                    {onEdit && (
-                                        <button
-                                            onClick={handleEdit}
-                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
-                                        >
-                                            <Pencil className="w-3 h-3" />
-                                            Modifier
-                                        </button>
-                                    )}
-                                    {onAddChild && (
-                                        <button
-                                            onClick={handleAddChild}
-                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
-                                        >
-                                            <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
-                                            Ajouter enfant
-                                        </button>
-                                    )}
-                                    {onDelete && (
-                                        <button
-                                            onClick={handleDelete}
-                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                            Supprimer
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                            {/* Dropdown — animé via Framer Motion (opacity + scale) */}
+                            <AnimatePresence>
+                                {menuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                                        className="absolute top-full right-0 mt-1 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
+                                        style={{ transformOrigin: 'top right' }}
+                                    >
+                                        {onEdit && (
+                                            <button
+                                                onClick={handleEdit}
+                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                            >
+                                                <Pencil className="w-3 h-3" />
+                                                Modifier
+                                            </button>
+                                        )}
+                                        {onAddChild && (
+                                            <button
+                                                onClick={handleAddChild}
+                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                            >
+                                                <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
+                                                Ajouter enfant
+                                            </button>
+                                        )}
+                                        {onDelete && (
+                                            <button
+                                                onClick={handleDelete}
+                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                                Supprimer
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     )}
                     {/* Chevron collapse/expand */}
@@ -354,15 +359,9 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                     }
                 `}
                 isConnectable={isConnectable}
+                isConnectableStart={isConnectable}
+                isConnectableEnd={isConnectable}
             />
-
-            {/* Animation keyframes pour le dropdown */}
-            <style>{`
-                @keyframes fadeInScale {
-                    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-                    to { opacity: 1; transform: scale(1) translateY(0); }
-                }
-            `}</style>
         </div>
     );
 }

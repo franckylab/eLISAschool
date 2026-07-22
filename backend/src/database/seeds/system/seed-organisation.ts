@@ -12,8 +12,6 @@
 import { AppDataSource } from '../../data-source';
 import { UniteOrganisationnelle, StatutUnite } from '@modules/organisation/entities/unite-organisationnelle.entity';
 import { Poste, StatutPoste } from '@modules/organisation/entities/poste.entity';
-import { TypePersonnel } from '@modules/organisation/entities';
-import { TypeUniteOrganisationnelle } from '@modules/organisation/entities/type-unite-organisationnelle.entity';
 import { HierarchiePersonnel, StatutRelation } from '@modules/organisation/entities/hierarchie-personnel.entity';
 import { logger } from '@common/utils/logger.util';
 
@@ -44,10 +42,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
     const hierRepo = AppDataSource.getRepository(HierarchiePersonnel);
 
     const prefix = nomEtablissement.includes('Lycée') ? 'LB' : 'CP';
-
-    // Lookup FK des types d'unité par code
-    const typesUnite = await AppDataSource.getRepository(TypeUniteOrganisationnelle).find();
-    const typesUniteMap = new Map(typesUnite.map(t => [t.code, t.id]));
 
     const unitesData: UniteSeed[] = [
         { code: 'DIR', nom: 'Direction', typeCode: 'DIRECTION', ordre: 1, responsableNom: 'Dr. Jean Dupont', localisation: 'Bureau 101' },
@@ -86,7 +80,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
         const unite = uniteRepo.create({
             nom: u.nom,
             code: u.code,
-            typeUniteId: typesUniteMap.get(u.typeCode),
             ordre: u.ordre,
             etablissementId,
             parentId: parent?.id,
@@ -125,9 +118,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
         { code: 'COACH-SPORT', intitule: 'Coach Sportif', typeCode: 'SERVICE',         niveauCode: 'EXECUTANT', uniteCode: 'SPORT', nombrePostes: 3 },
     ];
 
-    const typesPersonnel = await AppDataSource.getRepository(TypePersonnel).find();
-    const typePersonnelMap = new Map(typesPersonnel.map(tp => [tp.code, tp.id]));
-
     const postesMap = new Map<string, Poste>();
     for (const p of postesData) {
         const existing = await posteRepo.findOne({ where: { code: p.code, uniteOrganisationnelle: { etablissementId } } });
@@ -143,7 +133,6 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
         const poste = posteRepo.create({
             intitule: p.intitule,
             code: p.code,
-            typePersonnelId: typePersonnelMap.get(p.typeCode),
             uniteOrganisationnelleId: unite.id,
             nombrePostes: p.nombrePostes,
             missions: p.missions,
@@ -184,9 +173,7 @@ export async function seedOrganisation(etablissementId: string, nomEtablissement
             statut: StatutRelation.ACTIVE,
             actif: true,
             posteId: sub.id,
-            posteIntitule: sub.intitule,
             uniteOrganisationnelleId: sub.uniteOrganisationnelleId,
-            uniteNom: unitesMap.get([...unitesMap.entries()].find(([, u]) => u.id === sub.uniteOrganisationnelleId)?.[0] ?? '')?.nom,
             dateDebut: new Date(),
         });
         await hierRepo.save(hier);

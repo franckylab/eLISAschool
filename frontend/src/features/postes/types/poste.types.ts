@@ -17,10 +17,8 @@ export interface Poste {
     categoriePoste?: { id: string; code: string; label: string };
     niveauResponsabiliteId?: string;
     niveauResponsabilite?: { id: string; code: string; label: string; niveau: number };
-    typePersonnelId?: string;
-    typePersonnel?: TypePersonnelLite;
     fonctionId?: string;
-    fonction?: { id: string; nom: string; code: string };
+    fonction?: { id: string; nom: string; code: string; typePersonnel?: TypePersonnelLite };
     statut: StatutPoste;
     actif: boolean;
     uniteOrganisationnelleId: string;
@@ -39,7 +37,6 @@ export interface CreatePosteDto {
     code: string;
     categoriePosteId?: string;
     niveauResponsabiliteId?: string;
-    typePersonnelId?: string;
     fonctionId?: string;
     uniteOrganisationnelleId: string;
     nombrePostes?: number;
@@ -53,7 +50,6 @@ export interface PosteFiltres {
     page?: number;
     limit?: number;
     search?: string;
-    typePersonnelId?: string;
     categoriePosteId?: string;
     statut?: StatutPoste;
     fonctionId?: string;

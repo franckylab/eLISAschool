@@ -88,7 +88,7 @@ export function PostesPage() {
         {
             key: 'typePersonnel',
             header: t('type'),
-            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.typePersonnel?.nom || '—'}</span>,
+            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.fonction?.typePersonnel?.nom || '—'}</span>,
         },
         {
             key: 'statut',

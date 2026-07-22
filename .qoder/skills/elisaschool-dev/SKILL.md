@@ -466,6 +466,15 @@ eleves?: Eleve[];
 
 Puis mettre à jour le DTO si la FK est requise en entrée, et ajouter la relation dans les `relations:` des `find()` du service.
 
+### Pattern : nomenclature liée + type dérivé
+
+Quand une entité a besoin d'un « type attendu » qui existe déjà comme nomenclature ailleurs, **ne pas dupliquer la FK** : la porter sur une nomenclature intermédiaire et **dériver** par jointure.
+
+- Exemple de référence : le type statutaire d'un `Poste` n'est **pas** stocké sur `Poste`. Il est porté par `Fonction.typePersonnelId` (FK optionnelle vers le type **global** `types_personnel`) et dérivé via `poste.fonction.typePersonnel`.
+- Une FK vers une nomenclature **globale** (sans `etablissementId`) depuis une entité **multi-tenant** est valide (`onDelete: 'SET NULL'`).
+- Charger la chaîne dans le service : `relations: ['fonction', 'fonction.typePersonnel']`, puis exposer un label dérivé (`typePersonnelLabel`) plutôt qu'un id brut.
+- Ne jamais ajouter de champs « par défaut » qui court-circuitent une source de vérité (ex. pas de `roleIdParDefaut` sur un type : le RBAC passe par `utilisateur_etablissements`).
+
 ---
 
 ## Workflow : Développer avec le multi-établissement (v2.0)

@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical } from 'lucide-react';
+import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical, MapPin, Phone, Mail, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 
@@ -70,8 +70,23 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                             <Building2 className="w-5 h-5" style={{ color: 'var(--color-dominant-600)' }} />
                         </div>
                         <div>
-                            <h2 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{unite.nom}</h2>
-                            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unite.code} · {unite.type}</span>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{unite.nom}</h2>
+                                {unite.usageUniteLabel && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
+                                        {unite.usageUniteLabel}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unite.code}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
+                                    backgroundColor: unite.statut === 'ACTIF' ? 'var(--color-success-50, #f0fdf4)' : unite.statut === 'ARCHIVE' ? 'var(--color-attention-50, #fffbeb)' : 'var(--color-dominant-50)',
+                                    color: unite.statut === 'ACTIF' ? 'var(--color-success-600, #16a34a)' : unite.statut === 'ARCHIVE' ? 'var(--color-attention-600, #d97706)' : 'var(--color-dominant-600)',
+                                }}>
+                                    {unite.statut}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--color-dominant-50)] transition-colors" aria-label={t('organigramme.drawer.fermer', 'Fermer')}>
@@ -86,6 +101,41 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{unite.description}</p>
                         </div>
                     )}
+
+                    {/* Informations */}
+                    <div className="py-4 space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                            <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                            <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.usage', 'Usage')} :</span>
+                            <span style={{ color: 'var(--color-text)' }}>{unite.usageUniteLabel || unite.type || '—'}</span>
+                        </div>
+                        {unite.niveauOrganisationLabel && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <GitBranch className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                                <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.niveau', 'Niveau')} :</span>
+                                <span style={{ color: 'var(--color-text)' }}>{unite.niveauOrganisationLabel}</span>
+                            </div>
+                        )}
+                        {unite.localisation && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                                <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.localisation', 'Localisation')} :</span>
+                                <span style={{ color: 'var(--color-text)' }}>{unite.localisation}</span>
+                            </div>
+                        )}
+                        {unite.telephone && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                                <a href={`tel:${unite.telephone}`} className="hover:underline" style={{ color: 'var(--color-dominant-600)' }}>{unite.telephone}</a>
+                            </div>
+                        )}
+                        {unite.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Mail className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                                <a href={`mailto:${unite.email}`} className="hover:underline" style={{ color: 'var(--color-dominant-600)' }}>{unite.email}</a>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Stats rapides */}
                     <div className="grid grid-cols-3 gap-3 py-4">
@@ -124,7 +174,21 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                     >
                                         <div className="flex items-center gap-1.5">
                                             <GripVertical className="w-3 h-3 text-[var(--color-text-muted)]" />
-                                            <span style={{ color: 'var(--color-text)' }}>{p.intitule}</span>
+                                            <div className="flex flex-col">
+                                                <span className="flex items-center gap-1.5">
+                                                    <span style={{ color: 'var(--color-text)' }}>{p.intitule}</span>
+                                                    {p.typePersonnelLabel && (
+                                                        <span className="text-[9px] px-1 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
+                                                            {p.typePersonnelLabel}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                {(p.fonctionLabel || p.niveauResponsabiliteLabel) && (
+                                                    <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                                                        {[p.fonctionLabel, p.niveauResponsabiliteLabel].filter(Boolean).join(' · ')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <span className="text-xs px-1.5 py-0.5 rounded" style={{
                                             backgroundColor: p.statut === 'VACANT' ? 'var(--color-attention-50, #fffbeb)' : 'var(--color-success-50, #f0fdf4)',

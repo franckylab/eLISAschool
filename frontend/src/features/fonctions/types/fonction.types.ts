@@ -8,6 +8,8 @@ export interface Fonction {
     enfants?: Fonction[];
     niveau: number;
     chemin?: string;
+    typePersonnelId?: string;
+    typePersonnel?: { id: string; code: string; nom: string };
     primesDefaut?: Record<string, any>;
     majorationDefaut?: number;
     estSysteme: boolean;
@@ -24,6 +26,7 @@ export interface CreerFonctionDto {
     description?: string;
     parentId?: string | null;
     ordre?: number;
+    typePersonnelId?: string | null;
     primesDefaut?: Record<string, any> | null;
     majorationDefaut?: number | null;
     actif?: boolean;
@@ -35,6 +38,7 @@ export interface ModifierFonctionDto {
     description?: string;
     parentId?: string | null;
     ordre?: number;
+    typePersonnelId?: string | null;
     primesDefaut?: Record<string, any> | null;
     majorationDefaut?: number | null;
     actif?: boolean;

@@ -49,7 +49,7 @@ export function PosteDetailPage() {
     }
 
     const statutLabel = STATUT_POSTE_OPTIONS.find((o) => o.value === poste.statut)?.label || poste.statut;
-    const typeNom = poste.typePersonnel?.nom || '—';
+    const typeNom = poste.fonction?.typePersonnel?.nom || '—';
     const niveauLabel = poste.niveauResponsabilite?.label || '—';
     const occupantsList = occupants || [];
 
@@ -86,7 +86,7 @@ export function PosteDetailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 font-mono">{poste.code}</span>
                             <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{statutLabel}</span>
-                            {poste.typePersonnel?.nom && <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{poste.typePersonnel.nom}</span>}
+                            {poste.fonction?.typePersonnel?.nom && <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{poste.fonction.typePersonnel.nom}</span>}
                         </div>
                     </div>
                 </div>

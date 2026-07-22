@@ -13,7 +13,6 @@ import {
     TemplatePoste,
     TemplateLienHierarchique,
 } from '../entities';
-import { TypePersonnel } from '../entities';
 import {
     GenererOrganisationDto,
     ResultatGeneration,
@@ -36,7 +35,6 @@ interface GenerationContext {
     niveauOrgMap: Map<string, string>;
     categorieMap: Map<string, string>;
     niveauRespMap: Map<string, string>;
-    typePersonnelMap: Map<string, string>; // code → id
 }
 
 function fallbackNiveauResponsabiliteCode(valeur?: string): string | undefined {
@@ -137,7 +135,6 @@ export class GenerationService {
             niveauOrgMap: new Map(),
             categorieMap: new Map(),
             niveauRespMap: new Map(),
-            typePersonnelMap: new Map(),
         };
 
         const niveaux = await niveauOrganisationService.findAll(etablissementId);
@@ -153,11 +150,6 @@ export class GenerationService {
         const niveauxResp = await niveauResponsabiliteService.findAll(etablissementId);
         for (const nr of niveauxResp) {
             context.niveauRespMap.set(nr.code, nr.code);
-        }
-
-        const typesPersonnel = await queryRunner.manager.find(TypePersonnel);
-        for (const tp of typesPersonnel) {
-            context.typePersonnelMap.set(tp.code, tp.id);
         }
 
         return context;
@@ -318,12 +310,9 @@ export class GenerationService {
                 ? `${intituleBrut} ${i + 1}`
                 : intituleBrut;
 
-            const typePersonnelId = ctx.typePersonnelMap.get(templatePoste.categoriePosteId || '');
-
             const poste = ctx.queryRunner.manager.create(Poste, {
                 intitule,
                 code: posteCode,
-                typePersonnelId,
                 uniteOrganisationnelleId: uniteId,
                 nombrePostes: 1,
                 statut: StatutPoste.VACANT,
@@ -374,7 +363,6 @@ export class GenerationService {
                 const hierarchie = ctx.queryRunner.manager.create(HierarchiePersonnel, {
                     superieurId: superieurPoste.id,
                     posteId: subordonnePoste.id,
-                    posteIntitule: subordonnePoste.intitule,
                     statut: StatutRelation.ACTIVE,
                     actif: true,
                 });

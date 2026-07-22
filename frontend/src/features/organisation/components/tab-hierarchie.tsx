@@ -55,7 +55,7 @@ export function TabHierarchie() {
             render: (h) => (
                 <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.personnelNom}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.personnelId || '-'}</span>
                 </div>
             ),
         },
@@ -74,7 +74,7 @@ export function TabHierarchie() {
             render: (h) => (
                 <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.superieurNom}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.superieurId || '-'}</span>
                 </div>
             ),
         },
@@ -91,10 +91,10 @@ export function TabHierarchie() {
             key: 'poste',
             header: t('colPoste'),
             render: (h) => (
-                h.posteIntitule ? (
+                h.posteId ? (
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <Briefcase className="h-3.5 w-3.5" />
-                        {h.posteIntitule}
+                        {h.posteId}
                     </div>
                 ) : <span className="text-sm text-gray-400">-</span>
             ),

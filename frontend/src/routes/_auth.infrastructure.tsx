@@ -6,14 +6,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { ParkingPage } from '@/features/parking/components/parking-page';
 
 // Route placeholder pour éviter le warning TanStack Router
 export const Route = createFileRoute('/_auth/infrastructure')({
     component: () => null,
-});
-
-// Route Parking
-export const ParkingRoute = createFileRoute('/_auth/parking')({
-    component: ParkingPage,
 });

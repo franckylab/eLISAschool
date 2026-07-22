@@ -20,7 +20,7 @@ function handleError(e: any, msg: string) {
 export function useCreerPoste() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: { intitule: string; code?: string; categoriePosteCode?: string; description?: string; estSuppleant?: boolean; uniteOrganisationnelleId: string; etablissementId?: string }) => {
+        mutationFn: async (dto: { intitule: string; code?: string; categoriePosteCode?: string; niveauResponsabiliteId?: string; description?: string; estSuppleant?: boolean; uniteOrganisationnelleId: string; etablissementId?: string }) => {
             const response = await apiClient.post('/api/organisation/postes', dto);
             return response.data;
         },

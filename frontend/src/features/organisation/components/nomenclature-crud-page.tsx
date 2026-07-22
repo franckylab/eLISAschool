@@ -10,6 +10,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePermissions } from '@/hooks';
 import type { UseMutationResult } from '@tanstack/react-query';
+import type { ActionConfig } from '@/components/ui/RowActions';
 
 interface EntityWithId {
     id: string;
@@ -25,7 +26,7 @@ interface NomenclatureCrudConfig<T extends EntityWithId> {
     columns: Column<T>[];
     useData: () => { data?: T[]; isLoading: boolean; error?: any; refetch: () => void };
     useCreate: () => UseMutationResult<T, Error, any>;
-    useUpdate: () => UseMutationResult<T, Error, { id: string; data: any }>;
+    useUpdate?: () => unknown;
     useDelete: () => UseMutationResult<void, Error, string>;
     formComponent: (props: {
         initialData?: T;
@@ -45,7 +46,6 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
     columns,
     useData,
     useCreate,
-    useUpdate,
     useDelete,
     formComponent: FormComponent,
     noSearch = false,
@@ -54,11 +54,9 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
     const { t } = useTranslation('organisation');
     const { hasPermission } = usePermissions();
     const canEdit = hasPermission(`${permission}:write`);
-    const canDelete = hasPermission(`${permission}:delete`);
 
     const { data, isLoading, error, refetch } = useData();
     const create = useCreate();
-    const update = useUpdate();
     const del = useDelete();
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -83,43 +81,40 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
         {
             key: 'actions',
             header: t('actions'),
-            renderActions: (item) => [
-                ...(canEdit
-                    ? [
-                        {
-                            key: 'edit',
-                            icon: Edit,
-                            label: t('modifier'),
-                            onClick: () => { setEditingId(item.id); setModalOpen(true); },
-                            variant: 'default',
+            renderActions: (item): ActionConfig[] => {
+                if (!canEdit) return [];
+                const actions: ActionConfig[] = [
+                    {
+                        key: 'edit',
+                        icon: Edit,
+                        label: t('modifier'),
+                        onClick: () => { setEditingId(item.id); setModalOpen(true); },
+                        variant: 'default',
+                    },
+                ];
+                if (item.estSysteme) {
+                    actions.push({
+                        key: 'duplicate',
+                        icon: Copy,
+                        label: t('dupliquer'),
+                        onClick: async () => {
+                            const { id, estSysteme, createdAt, updatedAt, ...rest } = item;
+                            await create.mutateAsync({ ...rest, estSysteme: false });
+                            refetch();
                         },
-                        ...(item.estSysteme
-                            ? [
-                                {
-                                    key: 'duplicate',
-                                    icon: Copy,
-                                    label: t('dupliquer'),
-                                    onClick: async () => {
-                                        const { id, estSysteme, createdAt, updatedAt, ...rest } = item;
-                                        await create.mutateAsync({ ...rest, estSysteme: false });
-                                        refetch();
-                                    },
-                                    variant: 'default',
-                                },
-                            ]
-                            : [
-                                {
-                                    key: 'delete',
-                                    icon: Trash2,
-                                    label: t('supprimer'),
-                                    onClick: () => setDeleteId(item.id),
-                                    variant: 'danger' as const,
-                                    disabled: item.estSysteme,
-                                },
-                            ]),
-                    ]
-                    : []),
-            ].filter(Boolean),
+                        variant: 'default',
+                    });
+                } else {
+                    actions.push({
+                        key: 'delete',
+                        icon: Trash2,
+                        label: t('supprimer'),
+                        onClick: () => setDeleteId(item.id),
+                        variant: 'danger',
+                    });
+                }
+                return actions;
+            },
         },
     ];
 

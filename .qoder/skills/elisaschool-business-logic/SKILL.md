@@ -197,6 +197,35 @@ logger.info('Requête exécutée', {
 
 ---
 
+## Domaine 11 : Organisation — TypePersonnel vs Fonction
+
+Deux nomenclatures **orthogonales**, à ne pas fusionner :
+
+| Axe | `TypePersonnel` (`types_personnel`) | `Fonction` (`fonctions`) |
+|-----|-------------------------------------|--------------------------|
+| Sens | Statut RH (*quel type d'employé*) | Fonction hiérarchique (*quel rôle exercé*) |
+| Portée | **Global** (pas d'`etablissementId`) | **Multi-tenant** (`etablissementId` requis) |
+| Structure | Plat | Hiérarchique (parent/enfant, `chemin`) |
+| Par personne | 1 (via `MembrePersonnel.typePersonnelId`) | N dans le temps (via `MembreFonction`) |
+| Pilote | `modeRemunerationDefaut` (paie), règles de contrat | `primesDefaut`, `majorationDefaut` (primes/carrière) |
+
+### Règles métier critiques
+
+- Le **type d'une personne** vit sur `MembrePersonnel.typePersonnelId` (une seule valeur).
+- Une personne exerce **N fonctions** dans le temps via `MembreFonction` (dates, `estPrincipale`, contrat).
+- Le **type attendu d'un poste** est **dérivé** de sa fonction : `poste.fonction.typePersonnel`. Il n'est **jamais** stocké sur `Poste`.
+- `Fonction.typePersonnelId` (FK optionnelle vers le type global) porte le type statutaire — ex. fonction « Professeur » ⟹ ENSEIGNANT.
+- Compatibilité (`contrat.service`) : *seul un ENSEIGNANT peut occuper un poste dont la fonction est de type ENSEIGNANT* → contrôle via `poste.fonction?.typePersonnel?.code`.
+- `TypePersonnel.modeRemunerationDefaut` pilote la paie. **Aucun** rôle/permission par défaut sur le type : le RBAC passe **uniquement** par `utilisateur_etablissements` (voir Domaine 2).
+
+### À ne pas faire
+
+- Ne **pas** re-stocker `typePersonnelId` sur `Poste` ni sur `HierarchiePersonnel` (dérivable → source d'incohérence).
+- Ne **pas** ajouter de `roleIdParDefaut`/`permissionsDefaut` sur `TypePersonnel` (contredit le RBAC contextuel).
+- Ne **pas** fusionner Type et Fonction : rôles distincts (statut/paie vs fonction/primes).
+
+---
+
 ## Domaine 1 : Chaîne académique (calcul notes → bulletins)
 
 ### Flux de données complet

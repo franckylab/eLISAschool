@@ -16,7 +16,6 @@ export const createPosteSchema = z.object({
     code: z.string().min(2).max(50),
     categoriePosteId: z.string().uuid().optional(), // FK vers CategoriePoste
     niveauResponsabiliteId: z.string().uuid().optional(), // FK vers NiveauResponsabilite
-    typePersonnelId: z.string().uuid().optional(), // FK vers TypePersonnel
     fonctionId: z.string().uuid().optional(), // FK vers Fonction
     uniteOrganisationnelleId: z.string().uuid(),
     nombrePostes: z.number().int().min(1).default(1),
@@ -32,7 +31,6 @@ export const queryPostesSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     search: z.string().optional(),
-    typePersonnelId: z.string().uuid().optional(),
     categoriePosteId: z.string().uuid().optional(),
     statut: z.enum(['ACTIF', 'VACANT', 'SUPPRIME', 'EN_ATTENTE']).optional(),
     fonctionId: z.string().uuid().optional(),

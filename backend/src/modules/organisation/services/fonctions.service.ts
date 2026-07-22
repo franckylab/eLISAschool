@@ -64,6 +64,7 @@ export class FonctionsService {
         const qb = this.repo.createQueryBuilder('fonction')
             .leftJoinAndSelect('fonction.parent', 'parent')
             .leftJoinAndSelect('fonction.enfants', 'enfants')
+            .leftJoinAndSelect('fonction.typePersonnel', 'typePersonnel')
             .where('fonction.etablissementId = :etablissementId', { etablissementId });
 
         if (search) {
@@ -125,7 +126,7 @@ export class FonctionsService {
     async findOne(id: string, etablissementId: string): Promise<Fonction> {
         const fonction = await this.repo.findOne({
             where: { id, etablissementId },
-            relations: ['parent', 'enfants'],
+            relations: ['parent', 'enfants', 'typePersonnel'],
         });
         if (!fonction) {
             throw new AppError('Fonction non trouvée', 404, 'NOT_FOUND');

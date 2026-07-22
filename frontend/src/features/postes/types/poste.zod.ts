@@ -6,7 +6,6 @@ export const createPosteSchema = z.object({
     code: z.string().min(2, 'Le code doit contenir au moins 2 caractères').max(50).transform((v) => v.toUpperCase()),
     categoriePosteId: z.string().uuid().optional().or(z.literal('')),
     niveauResponsabiliteId: z.string().uuid().optional().or(z.literal('')),
-    typePersonnelId: z.string().uuid().optional().or(z.literal('')),
     fonctionId: z.string().uuid().optional().or(z.literal('')),
     uniteOrganisationnelleId: z.string({ required_error: "L'unité est requise" }),
     nombrePostes: z.coerce.number().int().min(1).default(1),

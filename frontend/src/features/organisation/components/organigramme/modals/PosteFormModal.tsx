@@ -8,7 +8,7 @@
  * Modal create/edit pour un poste dans une unité organisationnelle.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { useCreerPoste, useModifierPoste } from '../../../hooks/use-postes';
 import { useCategoriesPoste } from '../../../hooks/use-categories-poste';
+import { useNiveauxResponsabilite } from '../../../hooks/use-niveaux-responsabilite';
 import { useAuthStore } from '@/stores/auth.store';
 import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organisation.types';
 
@@ -23,6 +24,7 @@ const posteFormSchema = z.object({
     intitule: z.string().min(2, 'Minimum 2 caractères').max(150),
     code: z.string().max(20).optional().or(z.literal('')),
     categoriePosteCode: z.string().optional().or(z.literal('')),
+    niveauResponsabiliteId: z.string().optional().or(z.literal('')),
     description: z.string().max(500).optional().or(z.literal('')),
     estSuppleant: z.boolean().default(false),
 });
@@ -44,6 +46,7 @@ const FORM_INIT: PosteFormData = {
     intitule: '',
     code: '',
     categoriePosteCode: '',
+    niveauResponsabiliteId: '',
     description: '',
     estSuppleant: false,
 };
@@ -52,6 +55,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
     const { t } = useTranslation('organisation');
     const etablissementId = useAuthStore(s => s.etablissementId);
     const { data: categories } = useCategoriesPoste();
+    const { data: niveaux } = useNiveauxResponsabilite();
     const { mutateAsync: creerPoste, isPending: isCreating } = useCreerPoste();
     const { mutateAsync: modifierPoste, isPending: isUpdating } = useModifierPoste();
 
@@ -72,6 +76,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 intitule: poste.intitule || '',
                 code: poste.code || '',
                 categoriePosteCode: '',
+                niveauResponsabiliteId: '',
                 description: '',
                 estSuppleant: false,
             });
@@ -89,6 +94,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 intitule: data.intitule,
                 code: data.code || undefined,
                 categoriePosteCode: data.categoriePosteCode || undefined,
+                niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 estSuppleant: data.estSuppleant,
             });
@@ -97,6 +103,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 ...data,
                 code: data.code || undefined,
                 categoriePosteCode: data.categoriePosteCode || undefined,
+                niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 uniteOrganisationnelleId: unite.id,
                 etablissementId,
@@ -190,6 +197,23 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                             ))}
                         </select>
                     </div>
+                </div>
+
+                {/* Niveau de responsabilité */}
+                <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        {t('organigramme.form.niveauResponsabilite', 'Niveau de responsabilité')}
+                    </label>
+                    <select
+                        {...register('niveauResponsabiliteId')}
+                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                    >
+                        <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
+                        {niveaux?.map(n => (
+                            <option key={n.id} value={n.id}>{n.label}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Description */}

@@ -105,7 +105,6 @@ export class OrganisationService {
         const unite = this.uniteRepo.create({
             nom: dto.nom,
             description: dto.description,
-            typeUniteId: dto.typeUniteId,
             usageUniteId: dto.usageUniteId,
             niveauOrganisationId: dto.niveauOrganisationId,
             code: dto.code,
@@ -131,10 +130,6 @@ export class OrganisationService {
 
         if (filtres.etablissementId) {
             where.etablissementId = filtres.etablissementId;
-        }
-
-        if (filtres.typeUniteId) {
-            where.typeUniteId = filtres.typeUniteId;
         }
 
         if (filtres.actif !== undefined) {
@@ -165,15 +160,11 @@ export class OrganisationService {
         etablissementId?: string
     ): Promise<PaginatedResult<UniteOrganisationnelle>> {
         const qb = this.uniteRepo.createQueryBuilder('u')
-            .leftJoinAndSelect('u.parent', 'parent')
-            .leftJoinAndSelect('u.typeUnite', 'typeUnite');
+            .leftJoinAndSelect('u.parent', 'parent');
 
         const eid = filtres.etablissementId || etablissementId;
         if (eid) {
             qb.andWhere('u.etablissementId = :eid', { eid });
-        }
-        if (filtres.typeUniteId) {
-            qb.andWhere('u.typeUniteId = :tid', { tid: filtres.typeUniteId });
         }
         if (filtres.actif !== undefined) {
             qb.andWhere('u.actif = :actif', { actif: filtres.actif });
@@ -196,7 +187,7 @@ export class OrganisationService {
         await this.findUniteById(id, etablissementId);
         return this.uniteRepo.find({
             where: { parentId: id },
-            relations: ['typeUnite'],
+            relations: ['usageUnite'],
             order: { ordre: 'ASC' },
         });
     }
@@ -486,14 +477,10 @@ export class OrganisationService {
 
         const hierarchie = this.hierarchieRepo.create({
             personnelId: dto.personnelId,
-            personnelNom: dto.personnelNom,
             superieurId: dto.superieurId,
-            superieurNom: dto.superieurNom,
             typeRelationId: dto.typeRelationId,
             posteId: dto.posteId,
-            posteIntitule: dto.posteIntitule,
             uniteOrganisationnelleId: dto.uniteOrganisationnelleId,
-            uniteNom: dto.uniteNom,
             etablissementId: dto.etablissementId,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : undefined,
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
@@ -654,9 +641,9 @@ export class OrganisationService {
         // Profondeur max
         const profondeurMax = this.calculerProfondeurMax(unites);
 
-        // Répartition par type
-        const parType = unites.reduce((acc, unite) => {
-            const key = unite.typeUniteId || 'SANS_TYPE';
+        // Répartition par usage
+        const parUsage = unites.reduce((acc, unite) => {
+            const key = unite.usageUniteId || 'SANS_USAGE';
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
@@ -677,8 +664,8 @@ export class OrganisationService {
             hierarchiesActives,
             // Arborescence
             profondeurMax,
-            // Répartition
-            parType,
+            // Répartition par usage
+            parUsage,
         };
     }
 
@@ -953,7 +940,6 @@ export class OrganisationService {
             const unite = queryRunner.manager.create(UniteOrganisationnelle, {
                 nom: dto.nom,
                 description: dto.description,
-                typeUniteId: dto.typeUniteId,
                 usageUniteId: dto.usageUniteId,
                 niveauOrganisationId: dto.niveauOrganisationId,
                 code: dto.code,
@@ -1022,6 +1008,7 @@ export class OrganisationService {
 
         const tousPostes = await this.posteRepo.find({
             where: { uniteOrganisationnelleId: In(Array.from(uniteIds)) },
+            relations: ['fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
         });
 
         const postesParUnite = new Map<string, any[]>();
@@ -1029,7 +1016,13 @@ export class OrganisationService {
             if (!postesParUnite.has(p.uniteOrganisationnelleId)) {
                 postesParUnite.set(p.uniteOrganisationnelleId, []);
             }
-            postesParUnite.get(p.uniteOrganisationnelleId)!.push(p);
+            postesParUnite.get(p.uniteOrganisationnelleId)!.push({
+                ...p,
+                fonctionLabel: p.fonction?.nom,
+                niveauResponsabiliteLabel: p.niveauResponsabilite?.label,
+                // Type statutaire dérivé de la fonction du poste (jamais stocké sur le poste)
+                typePersonnelLabel: p.fonction?.typePersonnel?.nom,
+            });
         });
 
         // Enrichir chaque noeud avec depth, totalMembres, postesVacants

@@ -18,8 +18,6 @@ export interface TypePersonnel {
     id: string;
     code: string;
     nom: string;
-    permissionsDefaut?: string[];
-    roleIdParDefaut?: string;
     description?: string;
     modeRemunerationDefaut?: string;
     actif: boolean;

@@ -7,7 +7,9 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Modèle de données
 - **NiveauResponsabilite** : table unique `niveaux_responsabilite` (enum supprimé). Poste.niveauResponsabilite calculé via relation.
 - **TypePoste** : enum supprimé, `CategoriePoste` table unique. Poste.type calculé via `categoriePosteCode`.
-- **TypePersonnel** : entité déplacée dans `organisation/entities`, champ `estSysteme` ajouté, 8 seeds système protégés.
+- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés. Statut RH d'une personne via `MembrePersonnel.typePersonnelId` (1 par personne). Pilote la paie (`modeRemunerationDefaut`). **Aucun** `roleIdParDefaut`/`permissionsDefaut` (RBAC uniquement via `utilisateur_etablissements`).
+- **Fonction** : nomenclature **multi-tenant** hiérarchique (primes, carrière). Porte le type statutaire via `Fonction.typePersonnelId` (FK optionnelle → type global). Une personne exerce N fonctions dans le temps via `MembreFonction`.
+- **Type attendu d'un Poste** : **dérivé** via `poste.fonction.typePersonnel` — jamais stocké sur `Poste` ni sur `HierarchiePersonnel`. Compatibilité contrat : seul un ENSEIGNANT occupe un poste dont la fonction est de type ENSEIGNANT.
 - **JSONB** : `missions`, `competencesRequises`, `metadata` normalisés en tables séparées (Mission, CompetenceRequise, UniteMetadata).
 - **TemplateOrganisation** : JSONB conservé (lecture seule, 22 templates seedés).
 - **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL sur UniteOrganisationnelle et Fonction.

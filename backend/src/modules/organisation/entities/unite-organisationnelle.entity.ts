@@ -11,9 +11,9 @@
  * Rattachée directement à l'établissement (après fusion Organisation → Etablissement).
  *
  * Refonte v3.0 :
- * - type : FK vers TypeUniteOrganisationnelle (remplace l'enum PostgreSQL)
  * - usageUniteId : FK vers UsageUnite (remplace usageUniteCode)
  * - metadata supprimé
+ * - typeUniteId supprimé (redondant avec UsageUnite)
  */
 
 import {

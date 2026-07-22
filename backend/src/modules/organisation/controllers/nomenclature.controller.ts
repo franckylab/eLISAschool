@@ -5,7 +5,6 @@ import {
     categoriePosteService,
     niveauResponsabiliteService,
     templateOrganisationService,
-    typeUniteOrganisationnelleService,
     typeRelationHierarchiqueService,
     typePersonnelService,
     generationService,
@@ -26,9 +25,6 @@ import {
     createTemplateOrganisationSchema,
     updateTemplateOrganisationSchema,
     queryTemplatesOrganisationSchema,
-    createTypeUniteOrganisationnelleSchema,
-    updateTypeUniteOrganisationnelleSchema,
-    queryTypesUniteOrganisationnelleSchema,
     createTypeRelationHierarchiqueSchema,
     updateTypeRelationHierarchiqueSchema,
     createTypePersonnelSchema,
@@ -318,60 +314,6 @@ router.delete('/templates/:id', authMiddleware, requirePermission('organisation:
     try {
         await templateOrganisationService.delete(req.params.id);
         res.json({ success: true, message: 'Template d\'organisation supprimé' });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// TYPES D'UNITÉ ORGANISATIONNELLE
-// ==================================
-
-router.get('/types-unite', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await typeUniteOrganisationnelleService.findAllPaginated(
-                page, limit, req.utilisateur?.etablissementId, search
-            );
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
-        } else {
-            const data = await typeUniteOrganisationnelleService.findAll(req.utilisateur?.etablissementId);
-            res.json({ success: true, data });
-        }
-    } catch (error) { next(error); }
-});
-
-router.post('/types-unite', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(createTypeUniteOrganisationnelleSchema, req.body);
-        dto.etablissementId = req.utilisateur?.etablissementId;
-        const created = await typeUniteOrganisationnelleService.create(dto);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
-router.get('/types-unite/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const data = await typeUniteOrganisationnelleService.findById(req.params.id);
-        res.json({ success: true, data });
-    } catch (error) { next(error); }
-});
-
-router.patch('/types-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(updateTypeUniteOrganisationnelleSchema, req.body);
-        delete dto.etablissementId;
-        const updated = await typeUniteOrganisationnelleService.update(req.params.id, dto);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-router.delete('/types-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await typeUniteOrganisationnelleService.delete(req.params.id);
-        res.json({ success: true, message: 'Type d\'unité supprimé' });
     } catch (error) { next(error); }
 });
 

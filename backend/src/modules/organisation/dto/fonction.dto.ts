@@ -6,6 +6,7 @@ export const createFonctionSchema = z.object({
     description: z.string().optional(),
     parentId: z.string().uuid().nullable().optional(),
     ordre: z.number().int().min(0).default(1),
+    typePersonnelId: z.string().uuid().nullable().optional(),
     primesDefaut: z.record(z.any()).nullable().optional(),
     majorationDefaut: z.number().min(0).max(100).nullable().optional(),
     actif: z.boolean().default(true),

@@ -22,4 +22,3 @@ export { NiveauxResponsabilitePage } from './components/niveaux-responsabilite-p
 export { TypesPersonnelPage } from './components/types-personnel-page';
 export { TypesRelationPage } from './components/types-relation-page';
 export { TemplatesPage } from './components/templates-page';
-export { GenerationPage } from './components/generation-page';

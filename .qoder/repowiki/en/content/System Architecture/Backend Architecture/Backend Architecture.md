@@ -41,6 +41,7 @@
 - Added new section on responsibility boundaries between API and business logic layers
 - Updated module patterns to emphasize cleaner interfaces and improved maintainability
 - Revised service layer examples to demonstrate specialized service delegation patterns
+- Strengthened separation between API layer and business logic with enhanced specialization
 
 ## Table of Contents
 1. [Introduction](#introduction)

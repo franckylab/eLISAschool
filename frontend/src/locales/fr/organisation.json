@@ -45,7 +45,6 @@
     "ajouterSousUnite": "Ajouter une sous-unité",
     "intitule": "Intitulé",
     "sigle": "Sigle",
-    "typeUnite": "Type d'unité",
     "direction": "Direction",
     "departement": "Département",
     "service": "Service",
@@ -98,13 +97,6 @@
     "informationsGenerales": "Informations générales",
     "parametresSysteme": "Paramètres système",
     "aPropos": "À propos",
-    "typesUnite_DIRECTION": "Direction",
-    "typesUnite_DEPARTEMENT": "Département",
-    "typesUnite_SERVICE": "Service",
-    "typesUnite_POLE_PEDAGOGIQUE": "Pôle pédagogique",
-    "typesUnite_COMMISSION": "Commission",
-    "typesUnite_EQUIPE": "Équipe",
-    "typesUnite_AUTRE": "Autre",
     "statutsPoste_ACTIF": "Occupé",
     "statutsPoste_VACANT": "Vacant",
     "statutsPoste_SUPPRIME": "Supprimé",
@@ -362,7 +354,10 @@
             "occupe": "Occupé",
             "modifier": "Modifier",
             "ajouterEnfant": "Enfant",
-            "fermer": "Fermer"
+            "fermer": "Fermer",
+            "usage": "Usage",
+            "niveau": "Niveau",
+            "localisation": "Localisation"
         },
         "dnd": {
             "confirmTitle": "Déplacer l'unité ?",

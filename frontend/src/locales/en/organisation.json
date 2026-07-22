@@ -45,7 +45,6 @@
     "ajouterSousUnite": "Add sub-unit",
     "intitule": "Title",
     "sigle": "Acronym",
-    "typeUnite": "Unit type",
     "direction": "Directorate",
     "departement": "Department",
     "service": "Service",
@@ -98,13 +97,6 @@
     "informationsGenerales": "General information",
     "parametresSysteme": "System settings",
     "aPropos": "About",
-    "typesUnite_DIRECTION": "Directorate",
-    "typesUnite_DEPARTEMENT": "Department",
-    "typesUnite_SERVICE": "Service",
-    "typesUnite_POLE_PEDAGOGIQUE": "Pedagogical division",
-    "typesUnite_COMMISSION": "Commission",
-    "typesUnite_EQUIPE": "Team",
-    "typesUnite_AUTRE": "Other",
     "statutsPoste_ACTIF": "Occupied",
     "statutsPoste_VACANT": "Vacant",
     "statutsPoste_SUPPRIME": "Deleted",
@@ -362,7 +354,10 @@
             "occupe": "Filled",
             "modifier": "Edit",
             "ajouterEnfant": "Child",
-            "fermer": "Close"
+            "fermer": "Close",
+            "usage": "Usage",
+            "niveau": "Level",
+            "localisation": "Location"
         },
         "dnd": {
             "confirmTitle": "Move unit?",

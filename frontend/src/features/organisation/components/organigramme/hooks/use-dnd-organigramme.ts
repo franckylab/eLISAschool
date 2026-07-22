@@ -138,7 +138,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         setDndState(prev => ({ ...prev, draggedNodeId: node.id, isDragging: true }));
     }, [isEditMode]);
 
-    const onNodeDragStop = useCallback(async (_: React.MouseEvent, node: Node) => {
+    const onNodeDragStop = useCallback(async (_: React.MouseEvent, _node: Node) => {
         if (!isEditMode) return;
         const wasDragging = dndState.isDragging;
         const draggedId = dndState.draggedNodeId;
