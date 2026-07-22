@@ -1,1 +1,0 @@
-Express-based RBAC module providing CRUD APIs, role inheritance, and dynamic permission assignment backed by TypeORM entities.

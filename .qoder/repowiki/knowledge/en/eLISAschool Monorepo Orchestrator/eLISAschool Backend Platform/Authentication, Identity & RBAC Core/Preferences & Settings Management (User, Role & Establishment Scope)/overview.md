@@ -1,1 +1,0 @@
-TypeORM-backed settings subsystem providing per-user, per-role and establishment-wide preferences with inheritance, defaults, import/export and a two-level in-memory + Redis cache.

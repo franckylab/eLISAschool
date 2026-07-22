@@ -1,1 +1,0 @@
-Express.js middleware ecosystem with ioredis for distributed caching, TypeORM via `@database/data-source` for tenant fallback lookups, and class-validator for DTO validation; uses TypeScript path aliases (`@common/*`, `@modules/*`, `@database/*`, `@config/*`).

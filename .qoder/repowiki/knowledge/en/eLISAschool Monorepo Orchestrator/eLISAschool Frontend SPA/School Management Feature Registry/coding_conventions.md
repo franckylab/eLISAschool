@@ -1,4 +1,0 @@
-- Feature packages expose a single `index.ts` barrel that re-exports `*` from `types/`, named exports from `hooks/`, and explicit component names from `components/`.
-- Data access lives in `hooks/use-<entity>.ts` files returning React Query results consumed by page components inside the same feature.
-- Domain types live in `types/<entity>.types.ts` (often paired with a `.zod.ts` schema) and are never duplicated between feature and hook layers.
-- Form-heavy features pair a list page (`*-page.tsx`) with a modal (`*-form-modal.tsx`) plus a detail page (`*-detail-page.tsx`) when the entity has rich sub-tabs.

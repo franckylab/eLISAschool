@@ -1,1 +1,0 @@
-TypeORM entities with UUID primary keys and composite indexes; Express Router controllers validated with Zod schemas; `node-cron` for scheduled background jobs; in-process `Map`-based cache with 60s TTL inside the service.

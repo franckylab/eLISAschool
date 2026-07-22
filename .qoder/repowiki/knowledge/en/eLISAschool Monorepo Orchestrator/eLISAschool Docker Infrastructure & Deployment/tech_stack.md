@@ -1,1 +1,0 @@
-Docker Compose v2; images `postgres:16-alpine`, `redis:7-alpine`, `dpage/pgadmin4:latest`, `node:20-alpine`; development backend uses `npx nodemon` with hot-reload over bind-mounted source volumes; backups use `pg_dump` piped to `gzip` and rotated with `find -mtime`.

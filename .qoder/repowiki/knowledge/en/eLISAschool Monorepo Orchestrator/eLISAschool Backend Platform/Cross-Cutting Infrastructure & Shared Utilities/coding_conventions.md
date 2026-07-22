@@ -1,6 +1,0 @@
-- Feature modules import infrastructure via absolute path aliases (`@common/utils/logger.util`, `@common/filters/error.filter`, `@modules/auth/...`) rather than relative paths.
-- Cross-cutting concerns are expressed as factory functions returning Express middleware/interceptors (e.g. `createAuditInterceptor(config)`, `genericAuditMiddleware(module, entityType)`) instead of hard-coded singletons.
-- Global errors follow the `AppError(message, statusCode, code, isOperational, details?)` constructor pattern, with a centralized `Errors` object exporting named instances per HTTP category.
-- Redis operations are wrapped in try/catch blocks that log via `logger.error` and return safe defaults (`null`, `[]`, `0`, `false`) so callers never need to handle exceptions.
-- Shared string enums use the `as const` object pattern paired with an inferred `typeof ...[keyof typeof ...]` type (see `TYPE_PERSONNEL_CODES` / `TypePersonnelCode`).
-- Public APIs expose both a named export and a default export (e.g. `export function errorHandler(...)` plus `export default errorHandler`) to support either import style.

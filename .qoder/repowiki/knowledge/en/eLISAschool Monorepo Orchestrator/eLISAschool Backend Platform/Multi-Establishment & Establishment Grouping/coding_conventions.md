@@ -1,6 +1,0 @@
-- Services are instantiated as module-level singletons (`export const xxxService = new XxxService()`) instead of being registered with Nest's DI container.
-- Cross-module repository access uses string-based `AppDataSource.getRepository('EntityName')` calls rather than importing TypeORM repositories directly.
-- Business errors are thrown as `new AppError(message, httpStatus, CODE)` with uppercase snake-case codes (e.g. `ETABLISSEMENT_NOT_FOUND`, `GROUPE_MAX_ETABLISSEMENTS`).
-- Long-running or multi-step mutations wrap their DB work in an explicit `AppDataSource.createQueryRunner()` transaction block with try/commit/rollback/finally release.
-- Soft-delete is modelled by flipping a boolean `actif` column rather than physical deletion, and deleted records are filtered out by adding `actif = true` conditions.
-- Aggregation endpoints cache results under a `precalc:groupe:${groupeId}` key via `dashboardCacheService.set(..., ttl, tag)` and invalidate the same key after any mutation.

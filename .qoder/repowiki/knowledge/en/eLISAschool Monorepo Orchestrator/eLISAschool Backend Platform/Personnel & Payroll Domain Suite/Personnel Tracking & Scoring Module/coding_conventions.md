@@ -1,6 +1,0 @@
-- Every entity is annotated with `@Entity('snake_case_table')` plus explicit `@Index` / `@JoinColumn` decorators rather than relying on defaults.
-- Multi-tenancy is enforced by requiring an `etablissementId` parameter on every service method and filtering all repository queries by it.
-- Feature toggles are read at runtime via `getParamBoolean` / `getParamNumber` from `@modules/configuration/utils/config.helper` instead of hard-coded booleans.
-- Controllers validate incoming requests through a local `validate(schema, data)` helper that wraps Zod `safeParse` and throws `AppError` on failure.
-- Services are exported as singletons (`export const xxxService = new XxxService()`) and accessed directly rather than via DI containers.
-- All user-facing errors are thrown as `AppError` with a machine-readable code string (e.g. `'SCORING_INACTIVE'`, `'REGLE_EXISTS'`) so the global error filter can serialize them consistently.

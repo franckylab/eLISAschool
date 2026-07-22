@@ -1,4 +1,0 @@
-- Every domain module under `src/modules/<name>/` exposes a barrel `index.ts` exporting its controllers, services, entities and DTOs so it can be mounted centrally.
-- Entities carry an `etablissementId` column and are filtered by the tenant middleware, enforcing single-database multi-tenancy.
-- Controllers return responses wrapped by `common/utils/api-response.util.ts` and accept pagination via `common/dto/pagination.dto.ts`.
-- Cross-cutting concerns (error filters, audit interceptor, request logger, Redis cache) are registered once in `app.ts` rather than per-module.

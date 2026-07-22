@@ -1,1 +1,0 @@
-Express-based backend modules handling school finances (tuition, expenses, accounting, treasury), canteen meal management with student subscriptions and consumption tracking, and material inventory with lending workflows.

@@ -1,6 +1,0 @@
-- Controllers are organized as one Express Router per resource file, mounted at the module root, and protected globally with `router.use(authMiddleware)` followed by per-route `requirePermission('<resource>:manage')` guards.
-- Services expose both a default class export and a pre-instantiated singleton named `<resource>Service` (e.g. `rolesService`) so controllers can import either form without constructor wiring.
-- All incoming payloads are validated against a Zod schema exported from `dto/*.dto.ts` via the shared `validateDto(schema, req.body)` helper before reaching service logic.
-- Business-rule violations are raised as `new AppError(message, httpStatus, CODE)` rather than thrown plain errors, giving callers a uniform error shape.
-- Any mutation that changes a role's permissions calls `permissionResolverService.invalidateCacheForRole(roleId)` immediately after persisting, keeping the permission cache consistent.
-- Multi-tenant scoping is enforced by filtering on `etablissementId` and counting assignments through the `utilisateur_etablissements` join table instead of direct `Utilisateur.roleId`.

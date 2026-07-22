@@ -1,1 +1,0 @@
-Express Router + TypeORM `@Entity`/`QueryBuilder` for persistence; Zod schemas validated via shared `@common/utils.validateDto`; pagination via `@common/utils/pagination.util.paginateWithQueryBuilder`; audit logging through `@modules/auth.auditService`.

@@ -1,1 +1,0 @@
-Orchestrates user identity, session/JWT lifecycle, multi-tenant establishment scoping, role/permission enforcement, preferences, and audit logging across a single TypeORM-backed domain.

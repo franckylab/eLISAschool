@@ -1,1 +1,0 @@
-Build with `npm run build` (runs `tsc`), lint with `npm run lint` / `npm run lint:fix`. Consumers install it as a dependency and import from `@elisaschool/shared` rather than copying files; the package is not intended to be published publicly (`license: UNLICENSED`, `private: true`).

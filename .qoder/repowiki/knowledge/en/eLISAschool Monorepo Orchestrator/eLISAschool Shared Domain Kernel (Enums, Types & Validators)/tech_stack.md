@@ -1,1 +1,0 @@
-TypeScript compiled to CommonJS (`tsconfig.json`: target ES2022, `module: commonjs`, `declaration: true`, `declarationMap: true`); runtime schema validation via `zod ^3.24.1`; published as a private NPM package (`@elisaschool/shared`, `private: true`).

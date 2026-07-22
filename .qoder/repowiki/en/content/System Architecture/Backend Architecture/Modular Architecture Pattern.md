@@ -12,28 +12,38 @@
 - [eleves.dto.ts](file://backend/src/modules/eleves/dto/eleves.dto.ts)
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated architecture overview to reflect enhanced modular pattern with distributed configuration management
+- Added new section on Configuration and Organisation module separation of concerns
+- Enhanced dependency analysis to show improved service boundaries
+- Updated module registration patterns to reflect better separation of concerns
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Enhanced Module Separation](#enhanced-module-separation)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document explains the NestJS modular architecture pattern used across business domains such as eleves, personnel, finances, and others. It focuses on how each domain is organized as an independent module with clear separation of concerns, standard folder structure (controllers, services, entities, DTOs, index files), dependency injection patterns, module registration, and inter-module communication strategies. It also provides guidance for creating new modules following established patterns and maintaining clean boundaries between modules.
+This document explains the NestJS modular architecture pattern used across business domains such as eleves, personnel, finances, organisation, and others. The architecture has been enhanced with distributed configuration management where services follow better separation of concerns - the organisation module owns its configuration-related business logic while the configuration module provides foundational validation and persistence capabilities. Each domain is organized as an independent module with clear separation of concerns, standard folder structure (controllers, services, entities, DTOs, index files), dependency injection patterns, module registration, and inter-module communication strategies.
 
 ## Project Structure
-The backend follows a feature-based organization under src/modules, where each business domain is encapsulated in its own directory. The application bootstrap wires configuration, database, and modules together. A central route registry can be used to aggregate or expose routes from modules.
+The backend follows a feature-based organization under src/modules, where each business domain is encapsulated in its own directory. The application bootstrap wires configuration, database, and modules together. A central route registry can be used to aggregate or expose routes from modules. The enhanced architecture now includes specialized modules for configuration management and organisational logic.
 
 ```mermaid
 graph TB
@@ -45,10 +55,12 @@ subgraph "Configuration"
 DBConfig["Database Config<br/>src/config/database.config.ts"]
 DataSource["TypeORM DataSource<br/>src/database/data-source.ts"]
 end
-subgraph "Modules"
+subgraph "Core Modules"
 ElevesMod["Eleves Module<br/>src/modules/eleves/eleves.module.ts"]
 PersonnelMod["Personnel Module<br/>src/modules/personnel/personnel.module.ts"]
 FinancesMod["Finances Module<br/>src/modules/finances/finances.module.ts"]
+OrganisationMod["Organisation Module<br/>src/modules/organisation/organisation.module.ts"]
+ConfigurationMod["Configuration Module<br/>src/modules/configuration/configuration.module.ts"]
 ModulesIndex["Modules Index<br/>src/modules/index.ts"]
 end
 subgraph "Routing"
@@ -61,6 +73,8 @@ AppInstance --> ModulesIndex
 ModulesIndex --> ElevesMod
 ModulesIndex --> PersonnelMod
 ModulesIndex --> FinancesMod
+ModulesIndex --> OrganisationMod
+ModulesIndex --> ConfigurationMod
 AppInstance --> RouteReg
 ```
 
@@ -73,6 +87,8 @@ AppInstance --> RouteReg
 - [eleves.module.ts](file://backend/src/modules/eleves/eleves.module.ts)
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
 
 **Section sources**
@@ -103,6 +119,10 @@ Example references:
   - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - Finances module:
   - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- Organisation module (enhanced):
+  - [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- Configuration module (enhanced):
+  - [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 Key responsibilities:
 - Controllers handle request parsing, validation, and response formatting. They depend on services via constructor injection.
@@ -110,6 +130,8 @@ Key responsibilities:
 - Entities define schema and relationships using TypeORM decorators.
 - DTOs enforce input/output contracts and integrate with validation pipes.
 - Module files wire everything together and declare dependencies.
+
+**Updated** Enhanced separation of concerns where organisation module owns configuration business logic while configuration module provides foundational validation and persistence capabilities.
 
 **Section sources**
 - [eleves.module.ts](file://backend/src/modules/eleves/eleves.module.ts)
@@ -119,9 +141,11 @@ Key responsibilities:
 - [eleves.dto.ts](file://backend/src/modules/eleves/dto/eleves.dto.ts)
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 ## Architecture Overview
-At runtime, Nest bootstraps the application, configures TypeORM, registers modules, and mounts controllers. Each module encapsulates its own controllers, services, and entities. Cross-module interactions occur through explicit imports and shared services.
+At runtime, Nest bootstraps the application, configures TypeORM, registers modules, and mounts controllers. Each module encapsulates its own controllers, services, and entities. Cross-module interactions occur through explicit imports and shared services. The enhanced architecture now features improved separation between configuration management and organisational logic.
 
 ```mermaid
 sequenceDiagram
@@ -131,6 +155,8 @@ participant Router as "Route Registry<br/>src/routes/route-registry.ts"
 participant ModIdx as "Modules Index<br/>src/modules/index.ts"
 participant Ctl as "Controller<br/>eleves.controller.ts"
 participant Svc as "Service<br/>eleves.service.ts"
+participant OrgSvc as "Organisation Service<br/>organisation.service.ts"
+param ConfigSvc as "Configuration Service<br/>configuration.service.ts"
 participant Repo as "Entity Repository<br/>eleves.entity.ts"
 Client->>Nest : "HTTP Request"
 Nest->>Router : "Mount routes"
@@ -138,6 +164,10 @@ Router->>ModIdx : "Load modules"
 ModIdx-->>Nest : "Registered modules"
 Nest->>Ctl : "Dispatch to controller"
 Ctl->>Svc : "Call service method"
+Svc->>OrgSvc : "Request organisational context"
+OrgSvc->>ConfigSvc : "Access configuration validation"
+ConfigSvc-->>OrgSvc : "Validated configuration"
+OrgSvc-->>Svc : "Organisational context"
 Svc->>Repo : "Query/update entity"
 Repo-->>Svc : "Data result"
 Svc-->>Ctl : "Domain result"
@@ -150,7 +180,61 @@ Ctl-->>Client : "HTTP Response"
 - [modules/index.ts](file://backend/src/modules/index.ts)
 - [eleves.controller.ts](file://backend/src/modules/eleves/controllers/eleves.controller.ts)
 - [eleves.service.ts](file://backend/src/modules/eleves/services/eleves.service.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 - [eleves.entity.ts](file://backend/src/modules/eleves/entities/eleves.entity.ts)
+
+## Enhanced Module Separation
+
+### Configuration Management Architecture
+The enhanced architecture introduces a clear separation between configuration management and organisational logic:
+
+**Configuration Module Responsibilities:**
+- Foundational validation capabilities for all configuration data
+- Persistence layer abstraction for configuration storage
+- Common validation rules and constraints
+- Base configuration entities and DTOs
+
+**Organisation Module Responsibilities:**
+- Business logic specific to organisational configuration
+- Domain-specific validation rules and workflows
+- Organisational context management
+- Business rule enforcement for configuration changes
+
+```mermaid
+classDiagram
+class ConfigurationModule {
++validateConfig() boolean
++persistConfig() Promise~void~
++getBaseRules() ValidationRules
+}
+class OrganisationModule {
++manageOrganisationConfig() Promise~any~
++applyBusinessRules() boolean
++handleContextSwitch() void
+}
+class OrganisationService {
++updateOrganisationSettings(dto) Promise~any~
++getOrganisationContext() any
++validateBusinessRules() boolean
+}
+class ConfigurationService {
++validateInput(dto) boolean
++saveToPersistence(data) Promise~void~
++loadFromPersistence(key) any
+}
+ConfigurationModule --> ConfigurationService : "provides"
+OrganisationModule --> OrganisationService : "provides"
+OrganisationService --> ConfigurationService : "uses for validation/persistence"
+```
+
+**Diagram sources**
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+
+**Section sources**
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
 
 ## Detailed Component Analysis
 
@@ -223,7 +307,7 @@ References:
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 
 Best practices:
-- Keep personnel-specific logic within this module’s services.
+- Keep personnel-specific logic within this module's services.
 - Expose only necessary APIs via controllers.
 - Use DTOs for all external inputs.
 
@@ -245,6 +329,30 @@ Interactions:
 
 **Section sources**
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+
+### Organisation Module (Enhanced)
+The organisation module now focuses specifically on organisational business logic:
+- Manages organisational context and settings
+- Implements business rules for configuration changes
+- Handles multi-tenant organisational data
+- Coordinates with configuration module for validation and persistence
+
+**Updated** Enhanced to focus on business logic while delegating validation and persistence to configuration module.
+
+**Section sources**
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+
+### Configuration Module (Enhanced)
+The configuration module provides foundational capabilities:
+- Centralized validation rules and constraints
+- Abstracted persistence layer for configuration data
+- Common configuration entities and DTOs
+- Base services for configuration management
+
+**Updated** Enhanced to provide reusable validation and persistence capabilities used by organisation and other modules.
+
+**Section sources**
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 ### Module Registration and Bootstrap
 The application bootstrap initializes Nest, loads configuration, sets up TypeORM, and registers modules. A central modules index can simplify importing multiple modules into the root application module.
@@ -274,21 +382,29 @@ MountRoutes --> Ready(["Application Ready"])
 
 ## Dependency Analysis
 - Intra-module dependencies:
-  - Controllers depend on their module’s services.
+  - Controllers depend on their module's services.
   - Services depend on TypeORM repositories derived from entities.
 - Inter-module dependencies:
   - Modules import each other explicitly when needed (e.g., finances depending on eleves).
+  - Organisation module depends on configuration module for validation and persistence.
   - Shared utilities and constants should live in common or shared packages to avoid circular dependencies.
+
+**Updated** Enhanced dependency structure with clear separation between organisation business logic and configuration foundation services.
 
 ```mermaid
 graph LR
 Eleves["Eleves Module"] --> |imports| Personnel["Personnel Module"]
 Finances["Finances Module"] --> |imports| Eleves
 Finances --> |imports| Personnel
+Organisation["Organisation Module"] --> |uses| Configuration["Configuration Module"]
+Configuration --> |provides| Validation["Validation Services"]
+Configuration --> |provides| Persistence["Persistence Layer"]
 App["Root App"] --> |imports| ModulesIndex["Modules Index"]
 ModulesIndex --> Eleves
 ModulesIndex --> Personnel
 ModulesIndex --> Finances
+ModulesIndex --> Organisation
+ModulesIndex --> Configuration
 ```
 
 **Diagram sources**
@@ -296,17 +412,22 @@ ModulesIndex --> Finances
 - [eleves.module.ts](file://backend/src/modules/eleves/eleves.module.ts)
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 Guidelines:
 - Prefer unidirectional dependencies to reduce coupling.
 - Introduce interfaces or shared services for complex cross-module interactions.
 - Avoid direct entity access across modules; use services as the integration surface.
+- Leverage configuration module for shared validation and persistence needs.
 
 **Section sources**
 - [modules/index.ts](file://backend/src/modules/index.ts)
 - [eleves.module.ts](file://backend/src/modules/eleves/eleves.module.ts)
 - [personnel.module.ts](file://backend/src/modules/personnel/personnel.module.ts)
 - [finances.module.ts](file://backend/src/modules/finances/finances.module.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 ## Performance Considerations
 - Use lazy-loaded modules for large or rarely used features to reduce startup time.
@@ -314,6 +435,7 @@ Guidelines:
 - Cache frequently accessed read-only data using appropriate caching strategies.
 - Optimize database queries by selecting only required fields and leveraging indexes.
 - Batch operations where possible to reduce round-trips.
+- **Updated** Leverage configuration module's caching mechanisms for shared configuration data.
 
 [No sources needed since this section provides general guidance]
 
@@ -327,19 +449,25 @@ Common issues and resolutions:
   - Verify DTOs match expected request shapes and that global validation is enabled.
 - Database connection issues:
   - Check database configuration and TypeORM data source initialization.
+- **Updated** Configuration module integration issues:
+  - Ensure configuration module is properly imported before organisation module.
+  - Verify that configuration services are correctly injected into organisation services.
 
 Checkpoints:
 - Confirm module registration order and imports.
 - Validate that controllers reference correct services.
 - Inspect logs for stack traces around DI resolution.
+- **Updated** Verify configuration module dependencies are resolved before organisation module initialization.
 
 **Section sources**
 - [app.ts](file://backend/src/app.ts)
 - [database.config.ts](file://backend/src/config/database.config.ts)
 - [data-source.ts](file://backend/src/database/data-source.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 ## Conclusion
-The eLISA School backend employs a robust NestJS modular architecture with clear separation of concerns per business domain. Standardized structures (controllers, services, entities, DTOs) and explicit dependency management enable maintainability and scalability. Following the guidelines for creating new modules and maintaining clean boundaries will help keep the system coherent and performant.
+The eLISA School backend employs a robust NestJS modular architecture with clear separation of concerns per business domain. The enhanced architecture now features improved distribution of configuration management responsibilities, where the organisation module focuses on business logic while the configuration module provides foundational validation and persistence capabilities. Standardized structures (controllers, services, entities, DTOs) and explicit dependency management enable maintainability and scalability. Following the guidelines for creating new modules and maintaining clean boundaries will help keep the system coherent and performant.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -356,6 +484,7 @@ The eLISA School backend employs a robust NestJS modular architecture with clear
   - index.ts: re-export public symbols if needed.
 - Import the new module in the modules index or root app module.
 - Wire routes via the route registry if applicable.
+- **Updated** If your module requires configuration validation or persistence, consider using the configuration module instead of implementing these capabilities directly.
 
 References:
 - [eleves.module.ts](file://backend/src/modules/eleves/eleves.module.ts)
@@ -365,6 +494,8 @@ References:
 - [eleves.dto.ts](file://backend/src/modules/eleves/dto/eleves.dto.ts)
 - [modules/index.ts](file://backend/src/modules/index.ts)
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
+- [organisation.module.ts](file://backend/src/modules/organisation/organisation.module.ts)
+- [configuration.module.ts](file://backend/src/modules/configuration/configuration.module.ts)
 
 ### Best Practices for Module Organization
 - One module per business domain.
@@ -373,5 +504,7 @@ References:
 - Export only what is necessary to preserve encapsulation.
 - Prefer composition over inheritance for shared behavior.
 - Maintain clear boundaries; avoid direct cross-module entity access.
+- **Updated** For configuration-related functionality, leverage the configuration module's validation and persistence capabilities rather than duplicating these concerns.
+- **Updated** Follow the separation pattern demonstrated by organisation and configuration modules when designing new modules with configuration needs.
 
 [No sources needed since this section provides general guidance]

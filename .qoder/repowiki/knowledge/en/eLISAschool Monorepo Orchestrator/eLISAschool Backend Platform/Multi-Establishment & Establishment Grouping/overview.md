@@ -1,1 +1,0 @@
-Defines the multi-tenant Etablissement entity with per-establishment configuration and provides grouping of establishments into logical groups for consolidated dashboards and reports.

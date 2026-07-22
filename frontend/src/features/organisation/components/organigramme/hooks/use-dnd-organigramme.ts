@@ -33,6 +33,7 @@ interface DndState {
     isValid: boolean;
     isOverPane: boolean;
     isDragging: boolean; // distingue un vrai drag d'un simple clic
+    isConnecting: boolean; // true quand un drag de connexion (handle-to-handle) est en cours
 }
 
 /**
@@ -107,6 +108,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         isValid: false,
         isOverPane: false,
         isDragging: false,
+        isConnecting: false,
     });
     const confirmPending = useRef<{ nodeId: string; targetId: string } | null>(null);
 
@@ -136,17 +138,51 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         setDndState(prev => ({ ...prev, draggedNodeId: node.id, isDragging: true }));
     }, [isEditMode]);
 
-    const onNodeDragStop = useCallback((_: React.MouseEvent, _node: Node) => {
+    const onNodeDragStop = useCallback(async (_: React.MouseEvent, node: Node) => {
         if (!isEditMode) return;
         const wasDragging = dndState.isDragging;
         const draggedId = dndState.draggedNodeId;
         const targetId = dndState.dropTargetId;
 
         // Réinitialiser l'état DnD
-        setDndState({ draggedNodeId: null, dropTargetId: null, isValid: false, isOverPane: false, isDragging: false });
+        setDndState(prev => ({ ...prev, draggedNodeId: null, dropTargetId: null, isValid: false, isOverPane: false, isDragging: false }));
 
-        // Si pas de drop target et qu'on a vraiment draggué → drop sur canvas (détacher)
-        if (wasDragging && draggedId && !targetId) {
+        // Si pas de drag réel, ignorer (c'était un simple clic)
+        if (!wasDragging || !draggedId) return;
+
+        // Drop sur un nœud cible
+        if (targetId && targetId !== draggedId) {
+            // Anti-cycle frontend
+            if (estDescendant(arbre, targetId, draggedId)) {
+                toast.error('Déplacement impossible : cycle détecté');
+                return;
+            }
+
+            // Vérifier si même parent → réordonnancement (pas de reparenting)
+            const draggedParent = trouverParent(arbre, draggedId);
+            const targetParent = trouverParent(arbre, targetId);
+            if (draggedParent === targetParent && draggedParent !== null) {
+                // Même parent : déclencher le réordonnancement
+                window.dispatchEvent(new CustomEvent('organigramme-reorder', {
+                    detail: { nodeId: draggedId, apresId: targetId },
+                }));
+                return;
+            }
+
+            const nbEnfants = compterEnfants(arbre, draggedId);
+            if (nbEnfants > 0) {
+                confirmPending.current = { nodeId: draggedId, targetId };
+                window.dispatchEvent(new CustomEvent('organigramme-confirm-move', {
+                    detail: { nodeId: draggedId, targetId, nbEnfants },
+                }));
+            } else {
+                await executerDeplacement(draggedId, targetId);
+            }
+            return;
+        }
+
+        // Drop sur canvas vide → détacher (faire racine)
+        if (!targetId) {
             const nbEnfants = compterEnfants(arbre, draggedId);
             if (nbEnfants > 0) {
                 confirmPending.current = { nodeId: draggedId, targetId: '__root__' };
@@ -154,7 +190,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
                     detail: { nodeId: draggedId, targetId: '__root__', nbEnfants },
                 }));
             } else {
-                executerDeplacement(draggedId, null);
+                await executerDeplacement(draggedId, null);
             }
         }
     }, [isEditMode, dndState.isDragging, dndState.draggedNodeId, dndState.dropTargetId, arbre, executerDeplacement]);
@@ -173,68 +209,6 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         // Note : on ne clear PAS dropTargetId ici pour permettre la détection canvas drop dans onNodeDragStop.
         // Le visuel reste actif jusqu'au reset complet dans onNodeDragStop.
     }, [isEditMode]);
-
-    // ─── DROP SUR UN NOEUD ───
-
-    const onNodeDrop = useCallback(async (_: React.MouseEvent, targetNode: Node) => {
-        if (!isEditMode) return;
-        const draggedId = dndState.draggedNodeId;
-        if (!draggedId || draggedId === targetNode.id) return;
-
-        // Anti-cycle frontend
-        if (estDescendant(arbre, targetNode.id, draggedId)) return;
-
-        // Vérifier si même parent → réordonnancement (pas de reparenting)
-        const draggedParent = trouverParent(arbre, draggedId);
-        const targetParent = trouverParent(arbre, targetNode.id);
-        if (draggedParent === targetParent && draggedParent !== null) {
-            // Même parent : déclencher le réordonnancement
-            window.dispatchEvent(new CustomEvent('organigramme-reorder', {
-                detail: { nodeId: draggedId, apresId: targetNode.id },
-            }));
-            setDndState({ draggedNodeId: null, dropTargetId: null, isValid: false, isOverPane: false, isDragging: false });
-            return;
-        }
-
-        const nbEnfants = compterEnfants(arbre, draggedId);
-
-        if (nbEnfants > 0) {
-            confirmPending.current = { nodeId: draggedId, targetId: targetNode.id };
-            window.dispatchEvent(new CustomEvent('organigramme-confirm-move', {
-                detail: { nodeId: draggedId, targetId: targetNode.id, nbEnfants },
-            }));
-        } else {
-            await executerDeplacement(draggedId, targetNode.id);
-        }
-
-        setDndState({ draggedNodeId: null, dropTargetId: null, isValid: false, isOverPane: false, isDragging: false });
-    }, [isEditMode, dndState.draggedNodeId, arbre, executerDeplacement]);
-
-    // ─── DROP SUR CANVAS (faire racine) ───
-
-    const onPaneDragStop = useCallback(() => {
-        if (!isEditMode || !dndState.draggedNodeId) return;
-        // Si pas de dropTarget et on arrête de drag → détacher
-        if (!dndState.dropTargetId) {
-            setDndState(prev => ({ ...prev, isOverPane: true }));
-        }
-    }, [isEditMode, dndState.draggedNodeId, dndState.dropTargetId]);
-
-    const onPaneDrop = useCallback(async () => {
-        if (!isEditMode || !dndState.draggedNodeId) return;
-        const draggedId = dndState.draggedNodeId;
-        const nbEnfants = compterEnfants(arbre, draggedId);
-
-        if (nbEnfants > 0) {
-            confirmPending.current = { nodeId: draggedId, targetId: '__root__' };
-            window.dispatchEvent(new CustomEvent('organigramme-confirm-move', {
-                detail: { nodeId: draggedId, targetId: '__root__', nbEnfants },
-            }));
-        } else {
-            await executerDeplacement(draggedId, null);
-        }
-        setDndState({ draggedNodeId: null, dropTargetId: null, isValid: false, isOverPane: false, isDragging: false });
-    }, [isEditMode, dndState.draggedNodeId, arbre, executerDeplacement]);
 
     // ─── CONFIRMATION ───
 
@@ -270,11 +244,11 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
     }, [isEditMode, arbre, executerDeplacement]);
 
     const onConnectStart = useCallback(() => {
-        // Feedback visuel : mode connexion actif
+        setDndState(prev => ({ ...prev, isConnecting: true }));
     }, []);
 
     const onConnectEnd = useCallback(() => {
-        // Fin du mode connexion
+        setDndState(prev => ({ ...prev, isConnecting: false }));
     }, []);
 
     return {
@@ -283,9 +257,6 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         onNodeDragStop,
         onNodeMouseEnter,
         onNodeMouseLeave,
-        onNodeDrop,
-        onPaneDragStop,
-        onPaneDrop,
         confirmerDeplacement,
         annulerDeplacement,
         confirmPending,

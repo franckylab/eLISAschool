@@ -1,3 +1,0 @@
-- Document filenames follow a fixed prefix + descriptive slug pattern per category (e.g. `ANALYSE-*`, `CORRECTION-*`, `IMPLEMENTATION-*`, `GUIDE-*`, `RAPPORT-*`, `RESUME-*`, `SYNTHESE-*`, `AMELIORATIONS-*`, `MIGRATION-*`, `CONFIGURATION-*`, `DEPLOYMENT-*`, `AUDIT-*`, `CHECKLIST-*`, `CERTIFICATION-*`) so they sort chronologically within their topic folder.
-- Stable documents use uppercase French titles with version suffixes (e.g. `-v1.1`, `-v2`, `-FINAL`, `-COMPLETE`) while transient work-in-progress lives under `autres/_`-prefixed subfolders to keep the main tree clean.
-- Obsolescence is signaled inline via a `⚠️ DOCUMENT OBSOLÈTE` banner inside the file body rather than by renaming or deleting the file, preserving historical audit trails.

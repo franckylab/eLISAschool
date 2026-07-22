@@ -1,7 +1,0 @@
-Routes are declared via TanStack Router's file-based convention under `src/routes/_auth.*.tsx`, all gated by the shared `_auth` layout prefix so they require authentication.
-
-- Flat top-level routes: `/etablissements/`, `/annees-scolaires/`, `/organisation/`, `/organisation/nomenclatures` each export a single `Route = createFileRoute(...)` mapping to a page component from `@/features/*`.
-- Nested sub-routes under `/organisation/` use a layout + children pattern: `_auth.organisation.fonctions.tsx` and `_auth.organisation.postes.tsx` define a layout component that renders a back button, a `Breadcrumbs` bar, an `Outlet` wrapped in `ErrorBoundary` and `motion.div`; their index/detail siblings (`*.index.tsx`, `*.\$id.tsx`) render list and edit pages respectively.
-- Every route with user-facing data adds a `beforeLoad: () => requireModulePermission('<module>')` guard (e.g. `etablissements`, `annees-scolaires`, `fonctions`, `postes`); static read-only routes like `nomenclatures` omit it.
-- Detail routes use the `$id` segment to pass the resource identifier into the corresponding `*DetailPage` / `*EditPage` component imported from `@/features/<feature>`.
-- i18n is handled at the layout level via `useTranslation('organisation')` and the label map fed to `Breadcrumbs`, keeping translation keys scoped to the organisation namespace.

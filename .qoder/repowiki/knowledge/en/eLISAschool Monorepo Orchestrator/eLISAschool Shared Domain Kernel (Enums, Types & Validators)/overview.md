@@ -1,1 +1,0 @@
-Zero-dependency TypeScript package that centralizes the application's domain enums, shared types, Zod input validators and module configuration registry consumed by both backend and frontend.

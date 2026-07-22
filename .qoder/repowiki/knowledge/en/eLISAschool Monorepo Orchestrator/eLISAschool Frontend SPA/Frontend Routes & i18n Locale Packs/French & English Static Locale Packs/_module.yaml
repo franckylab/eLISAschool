@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: frontend/routes_and_i18n/i18n_locales
-title: French & English Static Locale Packs
-scope:
-    - frontend/src/locales/fr/
-    - frontend/src/locales/en/
-source_files: []
-depends_on: []
-related_to: []

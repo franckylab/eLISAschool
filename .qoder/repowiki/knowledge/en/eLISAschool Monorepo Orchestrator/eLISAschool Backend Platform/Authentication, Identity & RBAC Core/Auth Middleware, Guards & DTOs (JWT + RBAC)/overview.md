@@ -1,1 +1,0 @@
-Express middleware and Nest-style guards that authenticate requests via JWT and enforce fine-grained permissions, plus shared request/response DTOs for the auth module.

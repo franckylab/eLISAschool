@@ -1,1 +1,0 @@
-TypeORM entities with `uuid` primary keys and PostgreSQL-specific `jsonb`; request validation via Zod; distributed L2 cache via `redisService` plus an in-process L1 `Map` (60 s TTL) keyed by `preferences:{userId}[:{etablissementId}]`.

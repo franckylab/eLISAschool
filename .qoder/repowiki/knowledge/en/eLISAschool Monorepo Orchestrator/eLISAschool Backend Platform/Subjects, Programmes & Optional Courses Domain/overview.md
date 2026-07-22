@@ -1,1 +1,0 @@
-Domain modules managing school subjects (matières), optional course enrollments (options), and pedagogical programme composition across cycles, levels, and personalised tracks.

@@ -1,7 +1,0 @@
-Standard three-layer Express module under `backend/src/modules/recrutement/`:
-- `controllers/recrutement.controller.ts` defines an Express `Router` with ~25 routes grouped by domain (`/offres`, `/candidatures`, `/entretiens`, `/onboarding`). Each route is wrapped by `authMiddleware` + `requirePermission('personnel:manage')` (except public POST `/candidatures`) and delegates to a single shared service instance.
-- `services/recrutement.service.ts` exposes a singleton `RecrutementService` class that owns all business logic. It holds four TypeORM `Repository` instances resolved from `AppDataSource.getRepository(...)` in the constructor and performs multi-entity transactions (e.g. creating a candidature increments `offre.nombreCandidatures`).
-- `entities/recrutement.entity.ts` declares four TypeORM entities (`OffreEmploi`, `Candidature`, `Entretien`, `Onboarding`) plus their status/type enums; every entity carries an `etablissementId` FK for tenant scoping and uses `@Index` annotations for query performance.
-- `dto/recrutement.dto.ts` centralises Zod schemas (`create*Schema`, `update*Schema`, `query*Schema`) reused by both controller validation and service typing via `z.infer`.
-- The barrel `index.ts` re-exports entities, DTOs, services, and controllers so other modules import this package as a unit.
-Dependency direction is strictly one-way: controller → service → TypeORM repositories; cross-module imports go only outward to `@modules/auth`, `@modules/personnel`, `@modules/organisation`, `@modules/etablissement`, and `@common/*` utilities.

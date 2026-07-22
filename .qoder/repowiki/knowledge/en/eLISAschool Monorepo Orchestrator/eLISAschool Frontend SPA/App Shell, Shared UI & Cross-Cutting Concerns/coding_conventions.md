@@ -1,5 +1,0 @@
-- Cross-cutting logic is exposed as pure functions or hooks that call `useAuthStore.getState()` directly rather than using the hook inside render, so they can be invoked from non-component contexts like route `beforeLoad` guards.
-- Each subdirectory (`components/*`, `hooks`, `stores`, `lib`) ships an `index.ts` barrel that re-exports its public API, and consumers import exclusively from these barrels instead of relative file paths.
-- Route guards are implemented as functions that `throw redirect({ to: ... })` from `@tanstack/react-router` rather than returning values, allowing them to be composed into `beforeLoad` handlers.
-- UI components follow a consistent prop shape pattern where variant/size/color props are typed as union literals (e.g. `CardTone`, `ActionVariant`) and exported alongside the component's props type from the same barrel.
-- Theme-aware styling uses CSS custom properties (`var(--color-surface)`, `var(--color-texte)`, etc.) defined in `globals.css` and manipulated via `theme-utils` (`appliquerThemeCSS`, `genererSecondaire`, `genererAccent`) rather than hard-coded color values.

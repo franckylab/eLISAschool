@@ -1,4 +1,0 @@
-- Each feature area gets its own `<domain>.json` file with identical filename across both `fr/` and `en/` so the two languages stay in lock-step.
-- Translation keys are organized as nested objects grouped by UI concern (buttons, messages, validation, dates, navigation, filters) rather than flat lists.
-- User-facing strings are written in natural sentences using sentence case and proper punctuation, never concatenated from fragments.
-- Dynamic content is injected via double-brace interpolation placeholders (`{{page}}`, `{{total}}`, `{{count}}`, `{{email}}`) instead of string concatenation.

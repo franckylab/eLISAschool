@@ -1,3 +1,0 @@
-- Each sub-module exposes a single barrel `index.ts` re-exporting entities, dto, services and controllers so app.ts can import them as one namespace from `@modules/<name>`.
-- Every controller route is wrapped with `authMiddleware` plus `filterByEtablissement()` to enforce per-établissement tenant scoping.
-- Optional modules (`suivi-eleves`, `orientation`) add `requireModuleActive('<slug>')` after auth to gate endpoints behind a configuration flag.

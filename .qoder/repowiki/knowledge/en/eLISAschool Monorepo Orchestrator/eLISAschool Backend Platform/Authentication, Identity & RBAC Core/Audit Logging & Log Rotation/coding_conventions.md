@@ -1,5 +1,0 @@
-- Domain-specific audit entry points are grouped as named objects (`auditSondage`, `auditAnnonce`, `auditGamification`, `auditSante`, `auditUtilisateur`) exposing one method per business action, each calling `auditService.log` with a matching `AuditAction` enum value.
-- Every audit call sets `module` to the owning sub-system name (e.g. `'sondages'`, `'annonces'`, `'gamification'`, `'sante'`, `'utilisateurs'`, `'configuration'`) so logs can be filtered by origin.
-- Sensitive operations default to `AuditSeverity.WARNING` or `CRITICAL` (password changes, deletions, suspensions), while read-only/info events use `INFO`.
-- Admin endpoints under `/api/audit/*` are uniformly protected by `authMiddleware` followed by `requirePermission(...)`, and return `{ success, data }` responses wrapped in try/catch delegating to `next(error)`.
-- The rotation service uses synchronous `fs` (`readdirSync`, `statSync`, `writeFileSync`, `unlinkSync`) against a fixed `<cwd>/logs/audit-archive` directory, and TypeORM `createQueryBuilder` for bulk delete/count queries rather than repository methods.

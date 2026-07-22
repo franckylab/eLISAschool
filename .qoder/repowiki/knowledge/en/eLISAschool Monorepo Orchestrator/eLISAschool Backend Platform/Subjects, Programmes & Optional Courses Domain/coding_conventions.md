@@ -1,6 +1,0 @@
-- Each module's `index.ts` re-exports `entities`, `dto`, `services`, `controllers` and, when it exposes HTTP routes, builds a single Express `Router` mounting its controllers under scoped prefixes before exporting it.
-- Services are implemented as a class holding private `Repository<T>` fields obtained via `AppDataSource.getRepository(Entity)` in the constructor, then exposed as a module-level singleton instance (`export const xxxService = new XxxService()`).
-- Every entity carries a `uuid` PK, a `etablissementId` foreign key for multi-tenancy, `@Index(['etablissementId'])`, plus `createdAt`/`updatedAt` timestamp columns.
-- CRUD methods accept an `etablissementId` parameter and scope all `where` clauses to it, throwing `AppError('... non trouvée', 404, 'NOT_FOUND')` when the record does not belong to the tenant.
-- Mutating operations that may require approval set a `statut` enum field to `EN_ATTENTE_VALIDATION` and call `validationWorkflowService.createWorkflow(...)` when `getParamBoolean('matieres.require_validation', ...)` is true.
-- Controllers are thin Express routers that delegate to the corresponding service, wrap calls in try/catch forwarding errors to `next(error)`, and return `{ success: true, data }` JSON responses.

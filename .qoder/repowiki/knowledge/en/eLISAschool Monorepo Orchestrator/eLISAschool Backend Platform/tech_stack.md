@@ -1,1 +1,0 @@
-Node.js + Express + TypeScript, TypeORM with PostgreSQL for persistence, Redis for caching, JWT-based auth, and Swagger for API docs — shared across every module via `common/` and `config/`.

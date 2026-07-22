@@ -1,1 +1,0 @@
-TypeScript + Express routers arranged in NestJS-style folders; persistence via TypeORM entities with PostgreSQL-specific types (`jsonb`, UUID PKs); backup storage abstracted behind the `IBackupStorage` interface allowing future S3/filesystem providers.

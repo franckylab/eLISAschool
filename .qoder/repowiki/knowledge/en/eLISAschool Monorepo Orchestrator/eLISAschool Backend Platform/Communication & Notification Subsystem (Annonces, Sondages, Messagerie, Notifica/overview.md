@@ -1,1 +1,0 @@
-User-facing communication features: announcements with multi-targeting and validation workflow, polls with scheduling and real-time voting, a full-featured chat system with SSE, and a pluggable notification delivery engine.

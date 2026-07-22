@@ -31,7 +31,6 @@ import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
 import { NiveauOrganisation } from './niveau-organisation.entity';
 import { UsageUnite } from './usage-unite.entity';
-import { TypeUniteOrganisationnelle } from './type-unite-organisationnelle.entity';
 
 /**
  * Statut d'une unité organisationnelle (enum fermé — non modifiable)
@@ -49,7 +48,6 @@ export enum StatutUnite {
  */
 @Entity('unites_organisationnelles')
 @Index(['etablissementId'])
-@Index(['typeUniteId'])
 @Index(['parentId'])
 @Index(['code'])
 export class UniteOrganisationnelle {
@@ -77,14 +75,6 @@ export class UniteOrganisationnelle {
     @ManyToOne(() => NiveauOrganisation, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'niveauOrganisationId' })
     niveauOrganisation?: NiveauOrganisation;
-
-    // FK vers TypeUniteOrganisationnelle (remplace l'enum PostgreSQL)
-    @Column({ type: 'uuid', nullable: true })
-    typeUniteId?: string;
-
-    @ManyToOne(() => TypeUniteOrganisationnelle, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'typeUniteId' })
-    typeUnite?: TypeUniteOrganisationnelle;
 
     @Column({ type: 'varchar', length: 50 })
     code!: string;

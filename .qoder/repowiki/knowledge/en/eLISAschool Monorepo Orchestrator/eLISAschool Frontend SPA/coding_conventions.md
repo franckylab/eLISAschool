@@ -1,5 +1,0 @@
-- Each feature folder follows a fixed layout: `components/`, `hooks/`, `types/`, optional `utils/`, plus a barrel `index.ts` that re-exports the public surface.
-- Authenticated routes are grouped under `_auth.<group>.tsx` barrel files (infrastructure, pedagogical, RH, vie scolaire, etc.) rather than scattered individually.
-- API interactions go exclusively through `src/lib/api-client.ts` / `api.ts` backed by TanStack Query; features consume data via custom `use-*` hooks.
-- User-facing strings are pulled from `locales/{fr,en}/<feature>.json` via the shared i18n runtime instead of being hardcoded in components.
-- Cross-feature communication uses shared hooks in `src/hooks` and stores in `src/stores` (auth, language, sidebar, theme) rather than direct imports between features.

@@ -1,3 +1,0 @@
-- Every sub-module exposes a single `index.ts` barrel that re-exports controllers, services, DTOs and TypeORM entities so the parent can register them in one import.
-- All entities carry an `etablissement_id` foreign key and every service method scopes queries to the current tenant before any DB access.
-- Controller endpoints are guarded with the shared RBAC decorator and validate payloads through Zod schemas defined alongside the DTOs.

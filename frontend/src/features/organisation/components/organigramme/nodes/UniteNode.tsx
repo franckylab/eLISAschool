@@ -2,16 +2,17 @@
  * ==================================
  * eLISAschool - Noeud Unite pour React Flow
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Noeud custom React Flow représentant une UniteOrganisationnelle.
  * Header coloré (thème), liste des postes compacte, footer stats.
+ * v2: Menu ⋮ dans header, distinction clic/drag, handles améliorés.
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useRef, useState, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
-import { ChevronDown, ChevronRight, Users, Briefcase, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, Briefcase, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 import { MAX_POSTES_VISIBLE } from '../utils/layout';
 
@@ -34,37 +35,100 @@ export interface UniteNodeData {
     isDropValid?: boolean;
     isAnyDragging?: boolean;
     isConnectable?: boolean;
+    isConnecting?: boolean; // true quand un drag de connexion est en cours
 }
 
 function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
     const {
         unite, isCollapsed, onToggleCollapse, onSelect, isSelected, isSearchMatch, direction,
         isEditMode, onEdit, onAddChild, onDelete,
-        isDragged, isDropTarget, isDropValid, isAnyDragging, isConnectable,
+        isDragged, isDropTarget, isDropValid, isAnyDragging, isConnectable, isConnecting,
     } = data;
+
+    // ─── Distinction clic vs drag ───
+    const hasDraggedRef = useRef(false);
+    const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+
+    // ─── Menu ⋮ dropdown ───
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Fermer le menu au clic extérieur
+    useEffect(() => {
+        if (!menuOpen) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        // Delay pour éviter le fermeture immédiate au clic qui a ouvert le menu
+        const timer = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 0);
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [menuOpen]);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+        hasDraggedRef.current = false;
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (mouseDownPosRef.current) {
+            const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
+            const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
+            if (dx > 3 || dy > 3) {
+                hasDraggedRef.current = true;
+            }
+        }
+    }, []);
 
     const handleToggle = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         onToggleCollapse(unite.id);
     }, [unite.id, onToggleCollapse]);
 
-    const handleClick = useCallback(() => {
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        // Si un drag a eu lieu, ne pas déclencher la sélection
+        if (hasDraggedRef.current) {
+            hasDraggedRef.current = false;
+            return;
+        }
+        // Si le clic vient du menu ⋮ ou du dropdown, ne pas sélectionner
+        if ((e.target as HTMLElement).closest('[data-menu-trigger]')) {
+            return;
+        }
         onSelect(unite);
     }, [unite, onSelect]);
+
+    const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+        // En mode édition : double-clic ouvre le modal d'édition
+        // Sauf si le double-clic vient du menu ⋮
+        if ((e.target as HTMLElement).closest('[data-menu-trigger]')) return;
+        if (isEditMode && onEdit) {
+            onEdit(unite);
+        }
+    }, [isEditMode, onEdit, unite]);
 
     // Handlers mode édition
     const handleEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+        setMenuOpen(false);
         onEdit?.(unite);
     }, [unite, onEdit]);
 
     const handleAddChild = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+        setMenuOpen(false);
         onAddChild?.(unite);
     }, [unite, onAddChild]);
 
     const handleDelete = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+        setMenuOpen(false);
         onDelete?.(unite);
     }, [unite, onDelete]);
 
@@ -87,6 +151,9 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
     return (
         <div
             onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
             onKeyDown={handleKeyDown}
             role="treeitem"
             tabIndex={0}
@@ -126,39 +193,99 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
             <Handle
                 type="target"
                 position={inputPos}
-                className={`!w-2.5 !h-2.5 !border-[var(--color-surface)] !border-2 transition-colors duration-200 ${
-                    isConnectable
-                        ? '!bg-[var(--color-dominant-400)] hover:!bg-[var(--color-dominant-600)] !cursor-crosshair'
-                        : '!bg-[var(--color-text-muted)]'
-                }`}
+                className={`
+                    transition-all duration-200
+                    ${isEditMode
+                        ? '!w-3 !h-3 !border-[var(--color-surface)] !border-2 !bg-[var(--color-dominant-400)] hover:!bg-[var(--color-dominant-600)] !cursor-crosshair'
+                        : '!w-2 !h-2 !bg-[var(--color-text-muted)] !opacity-30'
+                    }
+                    ${isConnecting && isEditMode
+                        ? '!bg-green-500 !w-4 !h-4 !shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                        : ''
+                    }
+                `}
                 isConnectable={isConnectable}
+                isConnectableStart={isConnectable}
+                isConnectableEnd={isConnectable}
             />
 
             {/* Header */}
             <div
-                className="px-3 py-2 flex items-center justify-between gap-1"
+                className="px-3 py-2 flex items-center gap-1"
                 style={{ backgroundColor: 'var(--color-dominant-600)' }}
             >
                 <span
-                    className="text-white font-medium truncate text-xs"
+                    className="text-white font-medium truncate text-xs flex-1 min-w-0"
                     style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)' }}
                     title={unite.nom}
                 >
                     {unite.nom}
                 </span>
-                {hasChildren && (
-                    <button
-                        onClick={handleToggle}
-                        className="text-white/80 hover:text-white transition-colors flex-shrink-0"
-                        aria-label={isCollapsed ? 'Déplier' : 'Replier'}
-                    >
-                        {isCollapsed ? (
-                            <ChevronRight className="h-3.5 w-3.5" />
-                        ) : (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                        )}
-                    </button>
-                )}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                    {/* Menu ⋮ — visible uniquement en mode édition */}
+                    {isEditMode && (
+                        <div className="relative" ref={menuRef} data-menu-trigger="true">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }}
+                                className="text-white/70 hover:text-white transition-colors p-0.5 rounded hover:bg-white/10"
+                                aria-label="Actions"
+                            >
+                                <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
+                            {/* Dropdown */}
+                            {menuOpen && (
+                                <div
+                                    className="absolute top-full right-0 mt-1 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
+                                    style={{
+                                        animation: 'fadeInScale 0.15s ease-out',
+                                    }}
+                                >
+                                    {onEdit && (
+                                        <button
+                                            onClick={handleEdit}
+                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                            Modifier
+                                        </button>
+                                    )}
+                                    {onAddChild && (
+                                        <button
+                                            onClick={handleAddChild}
+                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                        >
+                                            <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
+                                            Ajouter enfant
+                                        </button>
+                                    )}
+                                    {onDelete && (
+                                        <button
+                                            onClick={handleDelete}
+                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                            Supprimer
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {/* Chevron collapse/expand */}
+                    {hasChildren && (
+                        <button
+                            onClick={handleToggle}
+                            className="text-white/80 hover:text-white transition-colors p-0.5"
+                            aria-label={isCollapsed ? 'Déplier' : 'Replier'}
+                        >
+                            {isCollapsed ? (
+                                <ChevronRight className="h-3.5 w-3.5" />
+                            ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                            )}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Body — Postes */}
@@ -211,53 +338,31 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 )}
             </div>
 
-            {/* Overlay actions mode édition */}
-            {isEditMode && (
-                <div
-                    className="absolute -top-1 -right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {onEdit && (
-                        <button
-                            onClick={handleEdit}
-                            className="w-6 h-6 flex items-center justify-center rounded-md bg-white shadow-md border border-[var(--color-bordure)] hover:bg-[var(--color-dominant-50)] transition-colors"
-                            title="Modifier"
-                        >
-                            <Pencil className="w-3 h-3 text-[var(--color-text-muted)]" />
-                        </button>
-                    )}
-                    {onAddChild && (
-                        <button
-                            onClick={handleAddChild}
-                            className="w-6 h-6 flex items-center justify-center rounded-md bg-white shadow-md border border-[var(--color-bordure)] hover:bg-[var(--color-dominant-50)] transition-colors"
-                            title="Ajouter enfant"
-                        >
-                            <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
-                        </button>
-                    )}
-                    {onDelete && (
-                        <button
-                            onClick={handleDelete}
-                            className="w-6 h-6 flex items-center justify-center rounded-md bg-white shadow-md border border-[var(--color-bordure)] hover:bg-red-50 transition-colors"
-                            title="Supprimer"
-                        >
-                            <Trash2 className="w-3 h-3 text-red-500" />
-                        </button>
-                    )}
-                </div>
-            )}
-
             {/* Handle de sortie — connectable uniquement en mode édition */}
             <Handle
                 type="source"
                 position={outputPos}
-                className={`!w-2.5 !h-2.5 !border-[var(--color-surface)] !border-2 transition-colors duration-200 ${
-                    isConnectable
-                        ? '!bg-[var(--color-dominant-600)] hover:!bg-[var(--color-dominant-700)] !cursor-crosshair'
-                        : '!bg-[var(--color-dominant-600)]'
-                }`}
+                className={`
+                    transition-all duration-200
+                    ${isEditMode
+                        ? '!w-3 !h-3 !border-[var(--color-surface)] !border-2 !bg-[var(--color-dominant-600)] hover:!bg-[var(--color-dominant-700)] !cursor-crosshair'
+                        : '!w-2 !h-2 !bg-[var(--color-dominant-600)] !opacity-30'
+                    }
+                    ${isConnecting && isEditMode
+                        ? '!bg-green-500 !w-4 !h-4 !shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                        : ''
+                    }
+                `}
                 isConnectable={isConnectable}
             />
+
+            {/* Animation keyframes pour le dropdown */}
+            <style>{`
+                @keyframes fadeInScale {
+                    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }

@@ -1,6 +1,0 @@
-- Each module exports a singleton service instance (`postesService`, `fonctionsService`) alongside the class, so controllers instantiate it once rather than using DI containers.
-- Controllers are thin wrappers that chain `authMiddleware` + `requirePermission('<resource>:<action>')`, validate input with a Zod schema, call the service, and return `{ success: true, data }` responses.
-- All read/write operations scope queries by `etablissementId` taken from `req.utilisateur.etablissementId`, enforcing multi-tenant isolation at the repository query level.
-- Business-rule violations are raised as `new AppError(message, httpStatus, CODE, ...)` with stable uppercase error codes instead of throwing plain errors.
-- DTOs are defined as Zod objects (`create*Schema`, `update*Schema = create*.partial()`, `query*Schema`) with corresponding `z.infer` types exported for service signatures.
-- Tree entities maintain both a `niveau` depth column and a `chemin` path string, updated on create/update to support ancestor/descendant checks without recursive queries.

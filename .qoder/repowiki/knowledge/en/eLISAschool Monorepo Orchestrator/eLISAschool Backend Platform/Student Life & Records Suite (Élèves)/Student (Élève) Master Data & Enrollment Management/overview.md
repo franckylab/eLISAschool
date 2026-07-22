@@ -1,1 +1,0 @@
-Express module providing CRUD, pre-enrollment workflow, CSV import/export and dashboard statistics for the student master entity with multi-tenant isolation.

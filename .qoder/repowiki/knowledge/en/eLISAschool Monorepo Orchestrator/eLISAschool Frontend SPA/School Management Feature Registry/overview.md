@@ -1,1 +1,0 @@
-Aggregates every domain feature (students, payroll, timetables, etc.) as a self-contained React package exposing typed hooks, pages and modals through a single barrel.

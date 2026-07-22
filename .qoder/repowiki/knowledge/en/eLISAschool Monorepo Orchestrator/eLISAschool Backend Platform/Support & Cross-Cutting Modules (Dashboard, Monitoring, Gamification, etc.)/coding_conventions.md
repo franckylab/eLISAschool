@@ -1,5 +1,0 @@
-- Every module exposes a single `index.ts` barrel that re-exports controllers, services, entities and DTOs so consumers import from the module root.
-- Controllers are thin Express routers that delegate all business logic to a corresponding service under `services/`; routes throw `AppError` instances with machine-readable codes instead of returning raw error objects.
-- Cross-module dependencies are accessed via absolute path aliases (`@modules/auth/...`, `@database/data-source`, `@common/utils/logger.util`) rather than relative imports.
-- Configuration-heavy modules define a typed config interface alongside a `*_DEFAULT_CONFIG` constant and a `parseConfigValue` helper for string-to-TS coercion.
-- Background/scheduled work is exposed as `init*` / `stop*` factory functions (see `gamification/cron-jobs.ts`) rather than being auto-started at import time.

@@ -1,1 +1,0 @@
-Express-based modules for managing school timetables (créneaux, templates, scheduling generation) and physical rooms with availability/conflict checking.

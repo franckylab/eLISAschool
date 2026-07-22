@@ -1,1 +1,0 @@
-TypeScript + Express Router for HTTP, TypeORM with `QueryBuilder` for data access, Zod schemas for request validation, and the project's shared `auditService` / `paginationWithQueryBuilder` / `AppError` infrastructure.

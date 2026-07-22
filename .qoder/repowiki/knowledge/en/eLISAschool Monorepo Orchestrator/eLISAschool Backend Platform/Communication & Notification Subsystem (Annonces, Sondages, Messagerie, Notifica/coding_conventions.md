@@ -1,5 +1,0 @@
-- Each module exposes a flat barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` so consumers import from the module root rather than subpaths.
-- Entities use TypeORM decorators (`@Entity`, `@Index`, `@ManyToOne`/`@OneToMany` with `@JoinColumn`) and follow a multi-tenant shape with `etablissementId`, `createdBy`/`updatedBy` audit columns, and `deletedAt` soft-delete.
-- Realtime helpers are singleton instances exported from their file (`messagerieSSEService`, `sondageWebSocketService`) and accept external transports via an explicit `initialize(io)` method rather than constructor injection, keeping the module bootstrappable without a live socket server.
-- Background work is isolated in per-module `cron-jobs.ts` files that register schedules via `node-cron` and delegate business logic to the corresponding service, instead of scattering `setInterval`/`setTimeout` across controllers.
-- Cross-module dependencies are imported dynamically with `await import('@modules/...')` inside hot paths (e.g., cron jobs, SSE broadcast) to avoid circular initialization between modules.

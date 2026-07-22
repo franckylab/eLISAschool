@@ -1,1 +1,0 @@
-React + TypeScript with `@tanstack/react-query` for server state, `react-i18next` for French i18n, `lucide-react` icons, and Tailwind CSS classes using design tokens like `[var(--color-dominante)]`.

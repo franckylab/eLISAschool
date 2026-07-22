@@ -1,6 +1,0 @@
-- Each module exposes a barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` sub-folders for single-import consumption.
-- Controllers are grouped under a local `controllers/index.ts` that mounts individual route handlers onto one Express `Router` instance rather than registering routes directly.
-- Entities use TypeORM decorators (`@Entity`, `@PrimaryGeneratedColumn('uuid')`, `@Column`, `@OneToMany`/`@ManyToOne` with `@JoinColumn`) and carry `createdAt`/`updatedAt` timestamps plus a multi-tenant `etablissementId` column.
-- Enums are declared as TypeScript `enum` types inside the entity file and persisted via `@Column({ type: 'enum', enum: ... })`.
-- Configuration permissions follow a guard-factory pattern: `requireConfigPermission(permission)` returns an Express middleware, with prebuilt constants (`canViewConfigApp`, `canEditParams`, …) exported for direct controller decoration.
-- Cross-module imports go through the `@modules/<name>` path alias instead of relative paths, keeping module boundaries explicit.

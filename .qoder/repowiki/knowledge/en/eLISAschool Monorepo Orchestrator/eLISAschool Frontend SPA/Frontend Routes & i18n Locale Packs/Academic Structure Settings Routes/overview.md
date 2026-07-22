@@ -1,1 +1,0 @@
-File-based route declarations for the academic structure settings sub-section, wiring URL paths to feature-page components.

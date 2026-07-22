@@ -1,5 +1,0 @@
-- Every shell script sets `set -e`, derives `SCRIPT_DIR`/`PROJECT_ROOT` from `${BASH_SOURCE[0]}`, and uses colored log helpers (`log_info|log_success|log_warning|log_error`) instead of raw `echo`.
-- Secrets are never hard-coded: compose files read them from environment variables with safe defaults (`${VAR:-default}`) and `deploy.sh` generates missing ones only when a `__AUTO_GENERATE__` placeholder is found.
-- Environment-specific overrides are expressed as separate `docker-compose.<env>.<stage>.yml` overlays rather than conditional blocks inside a single compose file.
-- Backup lifecycle follows a fixed naming convention `<db>_<type>_<YYYYMMDD>.sql.gz` stored under `backups/{daily,weekly,monthly}/` with retention enforced by `find -mtime` (7 days / 28 days / 365 days).
-- Service health is declared via `healthcheck` directives in compose YAML and `depends_on` uses `condition: service_healthy` so dependent containers start only after readiness.

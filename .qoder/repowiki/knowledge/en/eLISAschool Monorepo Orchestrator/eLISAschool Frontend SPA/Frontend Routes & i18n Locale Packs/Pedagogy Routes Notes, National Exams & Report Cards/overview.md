@@ -1,1 +1,0 @@
-TanStack Router file-based route declarations for the pedagogy sub-features — notes listing/detail, national exams listing/detail, and report cards — gated by module-level permissions.

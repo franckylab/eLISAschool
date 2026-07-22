@@ -12,6 +12,7 @@
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/migrations/046-preferences-utilisateur-et-config.sql](file://backend/src/modules/configuration/migrations/046-preferences-utilisateur-et-config.sql)
 - [backend/src/modules/configuration/migrations/082-fix-contrainte-unique-preferences.sql](file://backend/src/modules/configuration/migrations/082-fix-contrainte-unique-preferences.sql)
 - [backend/src/modules/configuration/migrations/083-fix-contrainte-unique-parametres.sql](file://backend/src/modules/configuration/migrations/083-fix-contrainte-unique-parametres.sql)
@@ -36,10 +37,10 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced centralized configuration management system through ParametresPage with memory-based caching and real-time updates
-- Improved frontend integration providing streamlined parameter management replacing fragmented approach across multiple tabs
-- Updated project memory initialization for better performance and error handling
-- Enhanced configuration access patterns throughout the application architecture
+- Updated architecture to reflect major refactoring where centralized Configuration.service.ts has been decomposed into specialized services within the organisation module
+- Business logic for module activation/deactivation now delegated to Organisation.service while data validation and persistence remain in configuration module entities and DTOs
+- Enhanced documentation to clarify the separation of concerns between configuration data management and business logic orchestration
+- Updated service interaction patterns and dependency relationships in architectural diagrams
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -57,7 +58,7 @@
 ## Introduction
 This document explains the configuration and environment management system used by the application. It covers:
 - Environment-specific configuration using TypeORM, database connection settings, Redis configuration, and Swagger API documentation setup
-- Dynamic configuration for runtime module activation and preference management
+- Dynamic configuration for runtime module activation and preference management with enhanced service decomposition
 - Configuration validation, default values handling, and environment variable management
 - Frontend integration with centralized configuration management through enhanced ParametresPage component
 - Practical examples for adding new configuration options, managing environments (development, staging, production), and accessing configuration values throughout the application
@@ -65,7 +66,7 @@ This document explains the configuration and environment management system used 
 The goal is to provide a clear, progressive guide that helps both developers and operators configure and extend the system safely across environments with improved performance and user experience.
 
 ## Project Structure
-Configuration-related code is organized under backend/src/config and backend/src/modules/configuration. The frontend integrates with the centralized configuration system through the enhanced ParametresPage component which provides unified parameter management with memory-based caching and real-time synchronization.
+Configuration-related code is organized under backend/src/config and backend/src/modules/configuration, with business logic delegation to backend/src/modules/organisation. The frontend integrates with the centralized configuration system through the enhanced ParametresPage component which provides unified parameter management with memory-based caching and real-time synchronization.
 
 ```mermaid
 graph TB
@@ -80,11 +81,15 @@ G --> I["Configuration Service<br/>services/configuration.service.ts"]
 G --> J["Configuration Controller<br/>controllers/configuration.controller.ts"]
 G --> K["DTOs<br/>dto/update-preference.dto.ts"]
 G --> L["Migrations<br/>migrations/*.sql"]
-M["Enhanced ParametresPage<br/>ParametresPage.tsx"] --> N["Centralized Config API"]
-N --> O["Configuration Service"]
-O --> P["Memory Cache"]
-O --> Q["Redis Cache"]
-O --> R["Database Storage"]
+B --> M["Organisation Module<br/>modules/organisation"]
+M --> N["Organisation Service<br/>services/organisation.service.ts"]
+O["Enhanced ParametresPage<br/>ParametresPage.tsx"] --> P["Centralized Config API"]
+P --> Q["Configuration Service"]
+Q --> R["Memory Cache"]
+Q --> S["Redis Cache"]
+Q --> T["Database Storage"]
+N --> U["Module Activation Logic"]
+U --> Q
 ```
 
 **Diagram sources**
@@ -98,6 +103,7 @@ O --> R["Database Storage"]
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 **Section sources**
@@ -111,6 +117,7 @@ O --> R["Database Storage"]
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Core Components
@@ -118,13 +125,14 @@ O --> R["Database Storage"]
 - TypeORM configuration: builds a data source with environment-aware connection parameters, logging toggles, and synchronization strategy.
 - Redis configuration: defines host, port, password, and optional TLS or namespace settings; validated before use.
 - Swagger configuration: sets up OpenAPI metadata, authentication schemes, and UI exposure based on environment flags.
-- Dynamic configuration service: reads/writes preferences from the database, supports defaults, multi-level caching (memory + Redis), and multi-tenant scoping.
+- **Updated** Decomposed configuration service architecture: Configuration.service.ts handles data validation and persistence, while Organisation.service manages business logic for module activation/deactivation operations.
 - Preference entity and migrations: schema for global, role-based, and user-level preferences; includes constraints and indexes.
 - Enhanced frontend integration layer: provides streamlined access to configuration values through centralized APIs with memory-based caching and real-time updates.
 
 Key responsibilities:
 - Startup-time validation and early failure on missing critical env vars
 - Centralized access points for configuration values with multi-tier caching
+- **Updated** Separated business logic from data persistence: Organisation.service orchestrates module activation workflows while Configuration.service manages data integrity
 - Runtime feature toggles and per-tenant/user preferences
 - Safe defaults and graceful fallbacks when optional settings are absent
 - Consistent frontend-backend configuration synchronization with real-time updates
@@ -135,11 +143,12 @@ Key responsibilities:
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Architecture Overview
-The configuration architecture separates concerns between compile-time/static configuration (env, DB, Swagger) and runtime configuration (preferences), with enhanced frontend integration providing streamlined parameter management through centralized APIs and memory-based caching.
+The configuration architecture separates concerns between compile-time/static configuration (env, DB, Swagger) and runtime configuration (preferences), with enhanced frontend integration providing streamlined parameter management through centralized APIs and memory-based caching. **Updated** The architecture now features a clear separation between data persistence (Configuration.service) and business logic orchestration (Organisation.service).
 
 ```mermaid
 sequenceDiagram
@@ -148,8 +157,9 @@ participant App as "Nest App<br/>app.ts"
 participant Env as "Env Config<br/>env.config.ts"
 participant DB as "DB Config<br/>database.config.ts"
 participant SW as "Swagger Config<br/>swagger.config.ts"
-participant Mod as "Configuration Module"
-participant Svc as "Configuration Service"
+participant ConfMod as "Configuration Module"
+participant ConfSvc as "Configuration Service<br/>(Data Layer)"
+participant OrgSvc as "Organisation Service<br/>(Business Logic)"
 participant Repo as "TypeORM Repository"
 participant MemCache as "Memory Cache"
 participant Redis as "Redis Client"
@@ -158,17 +168,19 @@ Boot->>App : createNestApplication()
 App->>Env : loadAndValidate()
 App->>DB : buildDataSource()
 App->>SW : registerOpenApi()
-App->>Mod : registerModule()
-Mod->>Svc : initializeDefaults()
-Svc->>Repo : findOrCreate(key)
-Repo-->>Svc : preference record
-Svc->>MemCache : set(key, value) immediate
-Svc->>Redis : set(key, value) persistent
+App->>ConfMod : registerModule()
+ConfMod->>ConfSvc : initializeDefaults()
+ConfSvc->>Repo : findOrCreate(key)
+Repo-->>ConfSvc : preference record
+ConfSvc->>MemCache : set(key, value) immediate
+ConfSvc->>Redis : set(key, value) persistent
 FE->>MemCache : GET key (fast access)
 MemCache-->>FE : cached value
-FE->>Svc : GET /api/v1/configuration/preferences
-Svc-->>FE : configuration values
-Svc-->>Mod : ready
+FE->>ConfSvc : GET /api/v1/configuration/preferences
+ConfSvc-->>FE : configuration values
+OrgSvc->>ConfSvc : validateAndUpdate()
+ConfSvc-->>OrgSvc : confirmation
+ConfSvc-->>ConfMod : ready
 ```
 
 **Diagram sources**
@@ -178,6 +190,7 @@ Svc-->>Mod : ready
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Detailed Component Analysis
@@ -240,20 +253,28 @@ Operational notes:
 **Section sources**
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 
-### Dynamic Configuration System (Runtime Preferences)
-The dynamic configuration system enables runtime activation of features and management of preferences at multiple scopes with enhanced caching capabilities:
-- Global scope: applies to all tenants
-- Role-based scope: applies to users with specific roles
-- User-level scope: personal preferences
-- Tenant (establishment) scope: tenant-specific overrides
+### **Updated** Decomposed Configuration System Architecture
+The configuration system has undergone major architectural refactoring with clear separation of concerns:
 
-Core components:
-- Preference entity: stores key-value pairs with scope metadata
-- Configuration service: reads, writes, caches with multi-tier strategy (memory + Redis), and resolves precedence
-- DTOs: validate incoming updates
-- Migrations: evolve schema and seed initial defaults
+**Data Persistence Layer (Configuration.service)**:
+- Handles all database operations for preferences and configuration data
+- Manages validation, sanitization, and persistence of configuration values
+- Maintains multi-tier caching strategy (memory + Redis)
+- Provides CRUD operations for preference entities
 
-Resolution order:
+**Business Logic Layer (Organisation.service)**:
+- Orchestrates complex business workflows for module activation/deactivation
+- Coordinates multiple configuration operations as part of larger business processes
+- Implements business rules and validation logic beyond simple data persistence
+- Manages dependencies between different configuration aspects
+
+**Updated** Key architectural improvements:
+- Clear separation between data operations and business logic
+- Improved maintainability through focused service responsibilities
+- Better testability with isolated business logic
+- Enhanced scalability with modular service design
+
+Resolution order remains unchanged:
 1. User-level preference
 2. Role-based preference
 3. Global preference
@@ -274,11 +295,18 @@ class ConfigurationService {
 +get(key, scope?, scopeId?) any
 +set(key, value, scope?, scopeId?) void
 +clearCache(key?) void
--resolvePrecedence(key, scope?, scopeId?) any
+-validateInput(dto) boolean
+-persistToDatabase(data) Promise~void~
 -memoryGet(key) any
 -memorySet(key, value) void
 -cacheGet(key) any
 -cacheSet(key, value) void
+}
+class OrganisationService {
++activateModule(moduleName, tenantId) Promise~boolean~
++deactivateModule(moduleName, tenantId) Promise~boolean~
++validateModuleActivation(moduleName) boolean
+-coordinateConfigurationWorkflow(workflow) Promise~any~
 }
 class UpdatePreferenceDto {
 +string key
@@ -288,26 +316,32 @@ class UpdatePreferenceDto {
 }
 ConfigurationService --> PreferenceEntity : "reads/writes"
 ConfigurationService --> UpdatePreferenceDto : "validates input"
+OrganisationService --> ConfigurationService : "delegates data operations"
+OrganisationService --> PreferenceEntity : "orchestrates business logic"
 ```
 
 **Diagram sources**
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
 
 **Section sources**
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/dto/update-preference.dto.ts](file://backend/src/modules/configuration/dto/update-preference.dto.ts)
 
 ### Configuration Controller and Endpoints
 - Exposes endpoints to read and update preferences
 - Enforces authorization and scope checks
 - Returns standardized responses and errors
+- **Updated** Delegates complex business operations to Organisation.service while handling basic CRUD operations directly
 
 Typical flows:
 - GET /api/v1/configuration/preferences?key=...&scope=...&scopeId=...
 - PATCH /api/v1/configuration/preferences with DTO body
+- **Updated** POST /api/v1/organisation/modules/activate - delegates to Organisation.service for complex workflows
 
 **Section sources**
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
@@ -364,13 +398,14 @@ Frontend configuration flow:
 flowchart TD
 A["Enhanced ParametresPage.tsx"] --> B["Memory Cache Layer"]
 B --> C["Centralized Config API"]
-C --> D["Configuration Service"]
+C --> D["Configuration Service<br/>(Data Layer)"]
 D --> E["Multi-tier Cache<br/>Memory + Redis"]
 E --> F["Database Storage"]
 G["Real-time Updates"] --> B
 H["Error Handling"] --> B
 I["Environment Variables"] --> J["Backend Config"]
 J --> D
+K["Organisation Service<br/>(Business Logic)"] --> D
 style A fill:#e1f5fe
 style B fill:#f3e5f5
 style F fill:#e8f5e8
@@ -380,13 +415,15 @@ style G fill:#fff3e0
 **Diagram sources**
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 
 **Section sources**
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 
 ## Dependency Analysis
-Configuration dependencies flow from bootstrap to modules and services, with enhanced frontend integration providing streamlined parameter management through memory-based caching and real-time synchronization.
+Configuration dependencies flow from bootstrap to modules and services, with enhanced frontend integration providing streamlined parameter management through memory-based caching and real-time synchronization. **Updated** Dependencies now clearly separate data layer from business logic layer.
 
 ```mermaid
 graph LR
@@ -394,13 +431,16 @@ Env["env.config.ts"] --> App["app.ts"]
 DB["database.config.ts"] --> App
 SW["swagger.config.ts"] --> App
 App --> ConfMod["Configuration Module"]
-ConfMod --> Svc["Configuration Service"]
-Svc --> Pref["Preference Entity"]
-Svc --> Repo["TypeORM Repository"]
-Svc --> MemCache["Memory Cache"]
-Svc --> Redis["Redis Client"]
+App --> OrgMod["Organisation Module"]
+ConfMod --> ConfSvc["Configuration Service<br/>(Data Layer)"]
+OrgMod --> OrgSvc["Organisation Service<br/>(Business Logic)"]
+ConfSvc --> Pref["Preference Entity"]
+ConfSvc --> Repo["TypeORM Repository"]
+ConfSvc --> MemCache["Memory Cache"]
+ConfSvc --> Redis["Redis Client"]
+OrgSvc --> ConfSvc
 FE["Enhanced ParametresPage.tsx"] --> MemCache
-FE --> Svc
+FE --> ConfSvc
 FE --> RT["Real-time Updates"]
 ```
 
@@ -410,6 +450,7 @@ FE --> RT["Real-time Updates"]
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/app.ts](file://backend/src/app.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
@@ -419,6 +460,7 @@ FE --> RT["Real-time Updates"]
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/app.ts](file://backend/src/app.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/entities/preference.entity.ts](file://backend/src/modules/configuration/entities/preference.entity.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
@@ -433,6 +475,7 @@ FE --> RT["Real-time Updates"]
 - Implement proper error boundaries and fallback mechanisms for configuration loading
 - Optimize real-time update mechanisms to minimize network overhead
 - Use efficient cache invalidation strategies to maintain data consistency
+- **Updated** Separate business logic from data operations to improve service responsiveness and testability
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -445,6 +488,7 @@ Common issues and resolutions:
 - Parameter synchronization problems: verify real-time update mechanisms, cache invalidation, and memory consistency
 - Memory cache inconsistencies: implement proper cache warming and validation strategies
 - Real-time update failures: check WebSocket connections and fallback mechanisms
+- **Updated** Service communication issues: verify Configuration.service and Organisation.service interactions and error propagation
 
 Operational tips:
 - Log configuration loading and validation results with detailed error context
@@ -453,16 +497,18 @@ Operational tips:
 - Monitor frontend-backend configuration synchronization and cache hit rates
 - Implement comprehensive error tracking for configuration-related issues
 - Set up alerts for cache miss rates and real-time update failures
+- **Updated** Monitor inter-service communication metrics between Configuration.service and Organisation.service
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/config/database.config.ts](file://backend/src/config/database.config.ts)
 - [backend/src/config/swagger.config.ts](file://backend/src/config/swagger.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
 ## Conclusion
-The configuration system combines robust environment validation, TypeORM-based persistence, multi-tier caching (memory + Redis), and a flexible preference model to support dynamic feature activation and multi-tenant customization. With the recent enhancements to frontend integration through centralized configuration management, memory-based caching, and streamlined parameter handling, teams can now maintain consistent configuration across both backend and frontend components while ensuring high availability, optimal performance, and seamless user experience.
+The configuration system combines robust environment validation, TypeORM-based persistence, multi-tier caching (memory + Redis), and a flexible preference model to support dynamic feature activation and multi-tenant customization. With the recent architectural refactoring that separates data persistence (Configuration.service) from business logic orchestration (Organisation.service), teams can now maintain consistent configuration across both backend and frontend components while ensuring high availability, optimal performance, and seamless user experience. The decomposed architecture provides better maintainability, testability, and scalability for future enhancements.
 
 ## Appendices
 
@@ -472,17 +518,20 @@ Steps:
 - If dynamic, add a new preference key and default value in the configuration service
 - Create or update migrations if the schema requires changes
 - Expose an endpoint in the configuration controller if external updates are needed
+- For complex business logic, delegate to Organisation.service rather than implementing in Configuration.service
 - Update frontend ParametresPage to handle the new configuration option with memory caching
 - Document the option and its precedence rules
 
 Examples:
 - Static option: add a new env var and getter in env config
-- Dynamic option: add a new key in the preference store with a default and cache entry
+- Simple dynamic option: add a new key in the preference store with a default and cache entry
+- Complex business workflow: implement in Organisation.service and delegate data operations to Configuration.service
 - Frontend integration: update ParametresPage to display and manage the new option with real-time updates
 
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/configuration/controllers/configuration.controller.ts](file://backend/src/modules/configuration/controllers/configuration.controller.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)
 
@@ -500,7 +549,8 @@ Environment-specific files or variables should be managed outside the repository
 
 ### Accessing Configuration Values Throughout the Application
 - For static settings: import the env config and use typed getters
-- For dynamic settings: inject the configuration service and call get/set methods with appropriate scope and scopeId
+- For simple dynamic settings: inject the configuration service and call get/set methods with appropriate scope and scopeId
+- For complex business workflows: use Organisation.service which coordinates multiple configuration operations
 - For frontend access: use the centralized configuration API through enhanced ParametresPage with memory caching
 - Always handle missing or invalid values gracefully with fallbacks
 - Leverage real-time updates for dynamic configuration changes
@@ -508,4 +558,5 @@ Environment-specific files or variables should be managed outside the repository
 **Section sources**
 - [backend/src/config/env.config.ts](file://backend/src/config/env.config.ts)
 - [backend/src/modules/configuration/services/configuration.service.ts](file://backend/src/modules/configuration/services/configuration.service.ts)
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [frontend/src/routes/ParametresPage.tsx](file://frontend/src/routes/ParametresPage.tsx)

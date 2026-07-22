@@ -9,7 +9,7 @@
  * Gère le collapse/expand et les 2 directions (TB/LR).
  */
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import type { Node, Edge } from 'reactflow';
 import { MarkerType } from 'reactflow';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
@@ -22,6 +22,7 @@ export interface DndVisualState {
     dropTargetId: string | null;
     isValid: boolean;
     isDragging: boolean;
+    isConnecting: boolean; // true quand un drag de connexion est en cours
 }
 
 interface UseOrganigrammeFlowOptions {
@@ -36,6 +37,57 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(new Set());
+
+    // ─── Position overrides (anti snap-back après drag) ───
+    const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+    const prevDataRef = useRef(data);
+
+    // Mettre à jour la position d'un nœud après un drag
+    const setNodePosition = useCallback((nodeId: string, position: { x: number; y: number }) => {
+        setPositionOverrides(prev => ({ ...prev, [nodeId]: position }));
+    }, []);
+
+    // Effacer les overrides quand les données changent (reparenting via API)
+    useEffect(() => {
+        if (prevDataRef.current !== data) {
+            prevDataRef.current = data;
+            setPositionOverrides({});
+        }
+    }, [data]);
+
+    // ─── Position overrides (anti snap-back après drag) ───
+    const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+    const prevDataRef = useRef(data);
+
+    // Mettre à jour la position d'un nœud après un drag
+    const setNodePosition = useCallback((nodeId: string, position: { x: number; y: number }) => {
+        setPositionOverrides(prev => ({ ...prev, [nodeId]: position }));
+    }, []);
+
+    // Effacer les overrides quand les données changent (reparenting via API)
+    useEffect(() => {
+        if (prevDataRef.current !== data) {
+            prevDataRef.current = data;
+            setPositionOverrides({});
+        }
+    }, [data]);
+
+    // ─── Position overrides (anti snap-back après drag) ───
+    const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+    const prevDataRef = useRef(data);
+
+    // Mettre à jour la position d'un nœud après un drag
+    const setNodePosition = useCallback((nodeId: string, position: { x: number; y: number }) => {
+        setPositionOverrides(prev => ({ ...prev, [nodeId]: position }));
+    }, []);
+
+    // Effacer les overrides quand les données changent (reparenting via API)
+    useEffect(() => {
+        if (prevDataRef.current !== data) {
+            prevDataRef.current = data;
+            setPositionOverrides({});
+        }
+    }, [data]);
 
     // Initialiser les collapses par défaut (profondeur > seuil)
     useMemo(() => {
@@ -174,6 +226,7 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
                 isDropTarget: dndVisualState?.isDragging && dndVisualState?.dropTargetId === ln.id,
                 isDropValid: dndVisualState?.isValid ?? false,
                 isAnyDragging: !!dndVisualState?.isDragging,
+                isConnecting: dndVisualState?.isConnecting ?? false,
                 // Mode édition
                 isEditMode,
                 isConnectable: isEditMode,

@@ -1,1 +1,0 @@
-Scripts must be run from `backend/` (they assert `package.json` exists). Typical invocations: `npm run migrate:config` → `run-config-migration.sh` → `npx tsc` → `npx ts-node src/database/migrations/...`; direct execution via `npx ts-node scripts/<script>.ts`; Jest suites via `npm test -- test/unit` / `npm test -- test/integration`.

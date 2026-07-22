@@ -1,1 +1,0 @@
-Frontend feature pages for system configuration (tabs: general/theme/langue/modules/security/notifications/history), runtime parameter management, and maintenance intervention dashboards.

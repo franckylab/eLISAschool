@@ -1,1 +1,0 @@
-Aggregates five sibling Express sub-modules that together manage the student lifecycle — master data, parent links, diplomas, orientation counseling, and behavioral tracking — under shared /api/eleves* routes.

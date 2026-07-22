@@ -1,1 +1,0 @@
-React + TypeScript with TanStack Router (file-based `routeTree.gen`), TanStack React Query for data fetching, Zustand for client state, Sonner for toasts, Lucide icons, and Tailwind CSS with CSS custom properties for theming.

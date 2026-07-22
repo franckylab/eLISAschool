@@ -1,1 +1,0 @@
-POSIX shell (Bash ≥ 4), Node.js + ts-node/tsconfig-paths for seeders, PostgreSQL client (`psql`, `pg_dump`, `createdb`), Docker/Docker Compose, and curl for HTTP assertions; TypeScript-only seed entry point at `backend/src/database/seeds/run-seeds.ts`.

@@ -1,1 +1,0 @@
-TypeORM with `uuid` primary keys and `simple-json` columns; request validation via Zod schemas consumed by `@common/utils.validateDto`; multi-tenancy enforced through `etablissementId` FKs; optional validation workflow integration via `validationWorkflowService` driven by config param `personnel.require_validation`.

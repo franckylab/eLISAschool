@@ -3,7 +3,6 @@ export * from './poste.entity';
 export * from './hierarchie-personnel.entity';
 export * from './fonction.entity';
 export * from './type-personnel.entity';
-export * from './type-unite-organisationnelle.entity';
 export * from './type-relation-hierarchique.entity';
 export * from './niveau-organisation.entity';
 export * from './usage-unite.entity';

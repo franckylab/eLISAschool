@@ -1,1 +1,0 @@
-Shell/JS/TS utility scripts for bootstrapping, deploying, migrating, testing, and verifying the eLISAschool monorepo across development, staging, and per-module rollout.

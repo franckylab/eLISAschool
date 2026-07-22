@@ -1,1 +1,0 @@
-Express routers + TypeORM entities; `node-cron` for scheduled tasks (all jobs pinned to `Africa/Douala`); `multer` with memory storage for profile photo uploads; class-validator/class-transformer DTOs; permission model delegated to `@modules/auth/services/permission-resolver.service`.

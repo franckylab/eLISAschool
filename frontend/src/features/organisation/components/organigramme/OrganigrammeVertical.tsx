@@ -47,14 +47,14 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { fitView, zoomIn, zoomOut } = useReactFlow();
 
-    const { dndState, onNodeDrag, onNodeDragStop, onNodeMouseEnter, onNodeMouseLeave, onNodeDrop, onConnect, onConnectStart, onConnectEnd } = useDndOrganigramme({ arbre: data, isEditMode });
+    const { dndState, onNodeDrag, onNodeDragStop, onNodeMouseEnter, onNodeMouseLeave, onConnect, onConnectStart, onConnectEnd } = useDndOrganigramme({ arbre: data, isEditMode });
 
     const { nodes, edges, selectNode, expandAll, collapseAll, handleSearch } = useOrganigrammeFlow({
         data,
         direction: 'TB',
         defaultCollapseDepth: 2,
         isEditMode,
-        dndVisualState: { draggedNodeId: dndState.draggedNodeId, dropTargetId: dndState.dropTargetId, isValid: dndState.isValid, isDragging: dndState.isDragging },
+        dndVisualState: { draggedNodeId: dndState.draggedNodeId, dropTargetId: dndState.dropTargetId, isValid: dndState.isValid, isDragging: dndState.isDragging, isConnecting: dndState.isConnecting },
     });
 
     const { mutateAsync: modifierPoste } = useModifierPoste();
@@ -167,7 +167,6 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
                     onNodeMouseLeave(_, node);
                     setPosteDropTarget(null);
                 }}
-                onNodeClick={onNodeDrop}
                 onConnect={onConnect}
                 onConnectStart={onConnectStart}
                 onConnectEnd={onConnectEnd}
@@ -178,7 +177,7 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
                 defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                 nodesDraggable={isEditMode}
                 nodesConnectable={isEditMode}
-                elementsSelectable={false}
+                elementsSelectable={isEditMode}
                 panOnDrag
                 panOnScroll={false}
                 zoomOnScroll

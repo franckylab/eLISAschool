@@ -1,1 +1,0 @@
-Frontend feature set providing login/registration/password flows, an unauthorized-access error page, and per-establishment wallpaper catalog management.

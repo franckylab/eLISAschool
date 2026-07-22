@@ -1,1 +1,0 @@
-TypeScript + Express routers; TypeORM entities with PostgreSQL-specific types (`jsonb`, `time`, `uuid`); request validation via Zod schemas re-exported through each module's `dto/index.ts`; PDF/HTML export handled by a dedicated `emploi-du-temps.pdf.ts` service.

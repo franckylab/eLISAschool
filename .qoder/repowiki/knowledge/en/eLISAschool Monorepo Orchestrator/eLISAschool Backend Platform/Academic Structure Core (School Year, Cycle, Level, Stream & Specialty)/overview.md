@@ -1,1 +1,0 @@
-Defines the hierarchical academic structure entities — school year, cycle, level/stream, and specialty — with multi-tenant scoping and optional validation workflow integration.

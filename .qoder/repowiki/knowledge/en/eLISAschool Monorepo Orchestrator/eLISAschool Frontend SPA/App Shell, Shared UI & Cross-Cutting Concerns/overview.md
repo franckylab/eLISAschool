@@ -1,1 +1,0 @@
-Root application shell, shared React components, hooks, stores, and utility libraries that provide authentication guards, theming, permissions, layout, and reusable UI primitives across the eLISAschool frontend.

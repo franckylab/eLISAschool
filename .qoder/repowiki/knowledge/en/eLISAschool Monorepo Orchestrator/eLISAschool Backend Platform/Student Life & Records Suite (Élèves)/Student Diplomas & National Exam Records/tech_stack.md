@@ -1,1 +1,0 @@
-TypeScript + Express Router + TypeORM (UUID columns, `EXTRACT(YEAR FROM ...)` SQL) for persistence; Zod schemas for runtime input validation; shared `@common/utils` for `validateDto`, `logger`, and `paginateWithQueryBuilder`.

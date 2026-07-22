@@ -1,6 +1,0 @@
-- Each feature file exports both a class and a pre-instantiated singleton named `<feature>Service` / `<feature>Controller` (e.g. `calculPaieService`, `bulletinPaieService`) consumed by other layers instead of DI containers.
-- Cross-module boundaries use absolute path aliases (`@modules/personnel/...`, `@modules/auth/...`, `@common/...`) rather than relative imports.
-- Business errors are thrown as `new AppError(message, httpStatus, code)` with a machine-readable third argument used downstream by the global error filter.
-- Entities are annotated with `@Index` (including composite unique indexes like `[membrePersonnelId, annee, mois]`) and `@ManyToOne` relations with explicit `@JoinColumn` names.
-- Controllers wrap every route in `try/catch` and forward exceptions to the next middleware via `next(e)`, keeping response formatting uniform.
-- Optional configuration toggles are read at runtime through `getParamBoolean('personnel.paie.<key>', { defaultValue })` instead of compile-time constants.

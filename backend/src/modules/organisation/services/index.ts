@@ -16,7 +16,6 @@ export * from './usage-unite.service';
 export * from './categorie-poste.service';
 export * from './niveau-responsabilite.service';
 export * from './template-organisation.service';
-export * from './type-unite.service';
 export * from './type-relation.service';
 export * from './type-personnel.service';
 

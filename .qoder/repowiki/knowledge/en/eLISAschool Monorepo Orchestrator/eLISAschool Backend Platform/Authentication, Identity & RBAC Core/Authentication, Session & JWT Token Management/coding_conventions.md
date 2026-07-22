@@ -1,6 +1,0 @@
-- Controllers validate incoming bodies with `validateDto(schema, req.body)` from `../dto` before calling any service method, and wrap each route body in try/catch delegating to `next(error)`.
-- Protected routes are gated by the `authMiddleware` imported from `../middlewares/auth.middleware`, which attaches `req.utilisateur` used throughout the handler.
-- Business-layer errors are thrown as `AppError` with a numeric HTTP code and a machine-readable error code string (e.g. `'ACCOUNT_LOCKED'`, `'INVALID_CREDENTIALS'`, `'NO_ETABLISSEMENT'`) rather than raw exceptions.
-- Security-sensitive operations are audited through `auditService.log(...)` / `auditService.logLogin(...)` / `auditService.logPasswordChange(...)` using `AuditAction` and `AuditSeverity` enums from `../entities/audit-log.entity`.
-- Configuration-driven security thresholds (max login attempts, lockout duration, session length, password policy) are fetched via `getParamNumber`/`getParamBoolean` from `@modules/configuration/utils/config.helper` and cached in a local TTL'd field instead of being hard-coded.
-- Services expose both a default class export and a pre-instantiated singleton (`export const authService = new AuthService();`, `export const tokenService = new TokenService()`) so callers can import whichever form they prefer.

@@ -1,5 +1,0 @@
-Two sibling directories with distinct purposes:
-- `backend/scripts/` contains ad-hoc executables invoked via `ts-node` or `bash`. They bootstrap a real `AppDataSource`, call domain services (e.g. `notesService`, `elevesService`) directly, and exit with code 1 on failure — no test framework is involved. Bash wrappers (`run-config-migration.sh`, `run-indexes.sh`, `verify-phase1.sh`, `verify-pagination.sh`) orchestrate compilation (`npx tsc -p tsconfig.json`) then delegate to the corresponding `.ts` entry point.
-- `backend/test/` holds Jest-based unit (`unit/*.spec.ts`) and integration (`integration/*.spec.ts`) suites using `@jest/globals`; they initialize `AppDataSource` in `beforeAll`/`afterAll` and mock external dependencies per the README conventions.
-- `backend/tests/integration/corrections-academique.test.ts` is an older-style standalone harness (same shape as the migration scripts) rather than a Jest suite, kept for legacy verification of academic corrections.
-Dependency direction is one-way: scripts import from `src/` and `@modules/*` at runtime; nothing in `src/` imports back into these directories.

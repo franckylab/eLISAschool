@@ -1,1 +1,0 @@
-Curated Markdown archive of the eLISAschool school management platform's technical docs, session reports, implementation records, and developer guides organized by lifecycle stage.

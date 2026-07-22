@@ -1,6 +1,0 @@
-- Every public file starts with a French-language header comment block containing version and author metadata, followed by JSDoc on each exported symbol.
-- Domain constants live in dedicated enum files under `src/enums/` and are never duplicated — `config.registry.ts` references them exclusively through `ModuleName` and `Role` enum values instead of string literals.
-- Each sub-package ships its own `index.ts` barrel that re-exports its contents, and the root `src/index.ts` re-exports those barrels, forming a flat public surface.
-- Zod schemas in `validators/` use French field names (e.g. `motDePasse`, `confirmationMotDePasse`, `seRappelerDeMoi`) and derive their typed inputs via `z.infer<typeof schema>` exports alongside the schemas.
-- Large constant-heavy files (`roles.enum.ts`, `config.registry.ts`) group entries into clearly labeled sections using `// ====== ... ======` comment dividers (e.g. Direction d'établissement, Enseignants, Finances).
-- Files also export a named default object aggregating their exports (e.g. `{ loginSchema, registerSchema, ... }`) in addition to named `export const`, supporting both import styles.

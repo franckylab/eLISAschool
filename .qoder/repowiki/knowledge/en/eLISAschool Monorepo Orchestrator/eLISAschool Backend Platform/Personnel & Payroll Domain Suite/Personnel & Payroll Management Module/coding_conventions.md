@@ -1,6 +1,0 @@
-- Each domain has a matching trio of files — `<domain>.entity.ts`, `<domain>.service.ts`, `<domain>.controller.ts` — plus a sibling DTO file, all re-exported through an `index.ts` barrel.
-- Controllers are plain Express `Router()` instances that instantiate their service as a module-level singleton and delegate every handler to it; no business logic lives in routes.
-- Every route is wrapped in `try/catch` forwarding errors to `next(error)` so the global error filter handles responses uniformly.
-- Input bodies are validated against a Zod schema via `validateDto(schema, req.body)` before being passed to the service layer.
-- Authorization uses `authMiddleware` plus `requirePermission('<resource>:<action>')` guards on each route, with fine-grained permissions such as `personnel:edit:identity` or `personnel:manage`.
-- Services throw `AppError` with a machine-readable code (e.g. `'MATRICULE_EXISTS'`, `'TYPE_IN_USE'`) instead of generic exceptions, and log mutations through `logger.info` / `auditService.log`.

@@ -1,1 +1,0 @@
-TypeORM entities with `uuid` primary keys, composite unique indexes (e.g. `[niveauId, matiereId, etablissementId]` on `Competence`), and `@Index` decorators; batched score loading via a custom `notesBatchLoaderService` instead of eager relations; transactional bulletin generation using `AppDataSource.createQueryRunner()` with manual commit/rollback.

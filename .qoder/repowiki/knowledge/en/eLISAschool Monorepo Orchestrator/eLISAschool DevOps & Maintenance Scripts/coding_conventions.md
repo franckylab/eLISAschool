@@ -1,6 +1,0 @@
-- Every shell script starts with `#!/bin/bash`, `set -e`, ANSI color variables (`GREEN`/`RED`/`YELLOW`/`NC`), and a banner header printed via `echo -e` before any work begins.
-- Database access goes through `PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME` (never interactive prompts except in `fix-super-admin-permissions.sh`); connection info is read from `DATABASE_URL` via `sed` or from `.env`.
-- Deployment scripts follow a fixed step cadence: preflight checks → SQL migration(s) → `npm install --production` → `npm run build` → optional `docker-compose restart backend` → summary footer.
-- Test scripts use `curl -s http://localhost:<port>/api/<endpoint>` and assert non-empty response or specific HTTP codes, exiting with status 0 on pass and non-zero on failure.
-- Verification scripts expose a uniform `check()` / `check_warning()` helper that wraps an `eval "$command" > /dev/null 2>&1` test and increments local `SUCCESS`/`WARNINGS`/`ERRORS` counters, printing colored ✅/⚠️/❌ prefixes.
-- Per-module deployment scripts live alongside their target migration files under `backend/database/migrations/` and reference them by exact filename (e.g. `043-module-messagerie-complete.sql`) rather than globbing.

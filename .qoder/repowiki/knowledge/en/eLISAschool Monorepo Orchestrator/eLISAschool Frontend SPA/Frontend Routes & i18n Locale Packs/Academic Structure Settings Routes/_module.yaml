@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: frontend/routes_and_i18n/structure_academique_parametres
-title: Academic Structure Settings Routes
-scope:
-    - frontend/src/routes/(authenticated)/parametres/structure-academique/
-source_files: []
-depends_on: []
-related_to: []

@@ -1,1 +1,0 @@
-Centralized audit trail for sensitive actions across the application, with TypeORM-backed persistence, per-domain helper modules, and automated archival/cleanup of old logs.

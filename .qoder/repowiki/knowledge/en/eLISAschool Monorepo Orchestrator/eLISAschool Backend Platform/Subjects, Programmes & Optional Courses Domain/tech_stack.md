@@ -1,1 +1,0 @@
-TypeORM with `uuid` primary keys, `enum` columns, `json` arrays, and `@Index` decorators; Express `Router` per controller file mounted into a module-level router; class-validator DTOs; shared `AppError`, `paginateWithRepository`, `getParamBoolean`, `validationWorkflowService`, `logger` utilities from `@common` and other modules.

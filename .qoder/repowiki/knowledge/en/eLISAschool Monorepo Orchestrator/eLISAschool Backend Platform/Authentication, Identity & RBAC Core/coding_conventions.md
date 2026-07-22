@@ -1,4 +1,0 @@
-- Each sub-module re-exports its public surface from a top-level `index.ts` (controllers, services, entities, DTOs, middlewares) consumed by the app bootstrap.
-- RBAC entities (`Role`, `Permission`, `UtilisateurEtablissement`, `RoleLimitationEtablissement`) live exclusively under `auth/entities` and are imported by `rbac/services` — never duplicated.
-- Request authorization follows the same pattern: `authMiddleware` → attach `UtilisateurEtablissement` → `permission.guard.ts` / `check-permission.middleware.ts` → `permission-resolver.service.ts`.
-- Sensitive actions emit audit events through `audit.service.ts` using the typed helpers in `audit-helpers.ts` and `audit-utilisateurs.ts` instead of writing logs directly.

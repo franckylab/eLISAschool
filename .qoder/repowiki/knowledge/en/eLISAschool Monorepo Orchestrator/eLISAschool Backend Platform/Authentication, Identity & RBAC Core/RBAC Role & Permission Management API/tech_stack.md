@@ -1,1 +1,0 @@
-Express routers + TypeORM entities (UUID primary keys, `ManyToMany`/`ManyToOne` relations); request validation via Zod schemas consumed by a shared `validateDto` utility; error propagation through a custom `AppError` class.

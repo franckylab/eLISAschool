@@ -1,1 +1,0 @@
-Express/TypeScript server that wires ~40 domain modules around a shared TypeORM+PostgreSQL data layer, exposing them under /api with multi-tenant establishment scoping and RBAC.
