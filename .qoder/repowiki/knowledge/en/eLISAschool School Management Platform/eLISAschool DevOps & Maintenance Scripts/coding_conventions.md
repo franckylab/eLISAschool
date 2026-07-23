@@ -1,6 +1,0 @@
-- Every script begins with `#!/bin/bash`, a banner header block (`# ============================================`), `set -e`, ANSI color variables (`GREEN=\033[0;32m`, etc.), and a usage comment describing flags.
-- User-facing output uses colored emoji markers (`✅`, `❌`, `⚠️`, `📋 ÉTAPE N/M:`) wrapped in `$GREEN/$RED/$YELLOW/$NC` variables for consistent terminal formatting.
-- External dependencies are probed at the top of the script with `command -v <tool>` and `docker ps | grep -q <service>`, failing fast with a yellow hint line telling the user how to install/start the missing piece.
-- Database operations use `PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "SELECT 1;"` in a retry loop (typically `{1..10}` iterations, `sleep 2`) before proceeding.
-- Per-feature deployment scripts follow the same shape: validate prerequisites → create DB if missing → iterate `ls -1 migrations/*.sql` sorted → execute seeds via `ts-node -r tsconfig-paths/register` → optional `npm run build` → print a summary box.
-- Long-running processes are backgrounded with `&`, their PID captured into `$!`, written to `/tmp/elisaschool-<service>.pid`, and later terminated by a matching `stop-*` script reading that PID file.

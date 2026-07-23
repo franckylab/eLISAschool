@@ -7,4 +7,7 @@ scope:
     - frontend/scripts/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: backend
+    - path: docker_infra
+    - path: shared_package

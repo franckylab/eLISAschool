@@ -15,6 +15,8 @@ export interface TemplatePoste {
     intitule: string;
     categoriePosteId?: string;
     niveauResponsabiliteId?: string;
+    fonctionRef?: string;
+    fonctionId?: string;
     description?: string;
     nombrePostes: number;
 }

@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: shared_package
-title: shared_package
-scope:
-    - shared/
-source_files: []
-depends_on: []
-related_to: []

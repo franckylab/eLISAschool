@@ -1,1 +1,0 @@
-Root-level bootstrap: `npm install` → `docker-compose up -d` (spawns Postgres + Redis) → `npm run dev` (starts backend + frontend concurrently); environment verification runs `bash scripts/verify-setup.sh`; academic-structure seeding is triggered via `cd backend && ../scripts/deploy-structure-academique.sh`.

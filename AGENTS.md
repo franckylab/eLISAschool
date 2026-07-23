@@ -6,16 +6,16 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ## Décisions Architecturales (grill-me session)
 ### Modèle de données
 - **NiveauResponsabilite** : table unique `niveaux_responsabilite` (enum supprimé). Poste.niveauResponsabilite calculé via relation.
-- **CategoriePoste** : table unique `categories_poste` (remplace l'enum `TypePoste`). Poste.type calculé via `categoriePosteId` FK.
-- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés. Route API UNIQUE : `/api/personnel/types`. Pas de doublon dans `/api/organisation/types-personnel`.
+- **CategoriePoste** : table unique `categories_poste` (remplace l'enum `TypePoste`). 9 seeds protégés (DIRECTION, ENSEIGNEMENT, ENCADREMENT, ADMINISTRATIF, TECHNIQUE, DOCUMENTATION, ORIENTATION, SANTE, SOCIAL). Codes distincts de TypePersonnel pour éviter la confusion sémantique (sauf DIRECTION intentionnellement partagé). Poste.type calculé via `categoriePosteId` FK.
+- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés (TYPE_ENSEIGNANT, TYPE_DIRECTION, TYPE_ADMINISTRATIF, TYPE_TECHNIQUE, TYPE_SERVICE, TYPE_SANTE, TYPE_SOCIAL, TYPE_AUTRE). Codes préfixés `TYPE_` pour les disambiguer de `CategoriePoste`. STAGE et TEMPORAIRE retirés (redondants). Route API UNIQUE : `/api/personnel/types`. Pas de doublon dans `/api/organisation/types-personnel`. Migration seed incluse : renommage auto des anciens codes.
 - **Fonction** : nomenclature **multi-tenant** hiérarchique (`etablissementId` requis). Porte le type statutaire via `Fonction.typePersonnelId` (FK optionnelle → type global). Seedée par établissement dans `seed-organisation.ts`.
 - **Type attendu d'un Poste** : **dérivé** via `poste.fonction.typePersonnel` — jamais stocké sur `Poste` ni sur `HierarchiePersonnel`.
 - **NiveauOrganisation** : table `niveaux_organisation` (niveau 0-3). Lié via `UniteOrganisationnelle.niveauOrganisationId`.
 - **UsageUnite** : table `usages_unite`. Lié via `UniteOrganisationnelle.usageUniteId`.
 - **TypeRelationHierarchique** : table `types_relation_hierarchique`. Lié via `HierarchiePersonnel.typeRelationId`.
 - **JSONB** : `missions`, `competencesRequises` conservés sur Poste (pas de tables séparées).
-- **TemplateOrganisation** : JSONB conservé (lecture seule, 22 templates seedés).
-- **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL sur UniteOrganisationnelle et Fonction.
+- **TemplateOrganisation** : JSONB conservé (lecture seule, 22 templates seedés). TemplatePoste supporte `fonctionId` (optionnel) avec fallback `fonctionRef`. Validation croisée seed-templates : vérifie que chaque `fonctionRef` existe dans au moins un établissement.
+- **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL sur UniteOrganisationnelle (Fonction) et HierarchiePersonnel (CTE WITH RECURSIVE).
 - **Protection seeds** : `assertNotSystem()` guard backend, UI bouton Supprimer caché + Dupliquer.
 
 ### Modules backend
@@ -33,7 +33,7 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Composants** : `NomenclatureCrudPage<T>` générique (6 nomenclatures). Plus de `TemplatesPage` (supprimé, remplacé par `ModelesPage`).
 - **Hooks** : unitaires, tous exportés depuis le barrel `features/organisation/index.ts` (use-postes, use-hierarchies, etc.).
 - **i18n** : 100% flat. `NomenclatureCrudPage` utilise `t('colActions')` (pas `t('actions')`).
-- **Permissions** : sous-permissions CRUD + section. Ne plus utiliser `organisation:edit`.
+- **Permissions** : sous-permissions CRUD + section (6 niveaux : unites, postes, fonctions, hierarchie, nomenclatures, templates). `organisation:unites:read`, `organisation:postes:write`, etc. Toutes les routes GET protégées par `requirePermission`. Sidebar filtrée par `useModulePermissions('organisation')`. Enum complet dans `shared/src/enums/roles.enum.ts`.
 - **Icônes** : Building2(module), LayoutDashboard(dashboard), GitBranch(unités), Briefcase(postes), Workflow(fonctions), Network(hiérarchie), Layers(niveaux-org), Tags(usages), FolderTree(catégories), ArrowUpDown(niveaux-resp), FileText(modèles), UserCheck(types-personnel), Sparkles(génération).
 
 ### Sidebar
@@ -41,9 +41,9 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - Icône mère : Building2.
 
 ### Seeds ordre (initial.seed.ts)
-10. seedTypePersonnel() — global, 8 types
+10. seedTypePersonnel() — global, 8 types (TYPE_ENSEIGNANT, TYPE_DIRECTION, TYPE_ADMINISTRATIF, TYPE_TECHNIQUE, TYPE_SERVICE, TYPE_SANTE, TYPE_SOCIAL, TYPE_AUTRE). Renomme auto les anciens codes (sans préfixe).
 10b. seedTypesContrat() — global
-10c. seedNomenclatures() — global : categories_poste, niveaux_organisation, niveaux_responsabilite, usages_unite, types_relation_hierarchique
+10c. seedNomenclatures() — global : categories_poste (9), niveaux_organisation, niveaux_responsabilite, usages_unite, types_relation_hierarchique
 11. seedOrganisation(etablissementId) — par établissement : 22 fonctions arborescentes + 20 unités + 22 postes + 13 hiérarchies (FK résolues)
 12. seedTemplatesOrganisation() — global, 22 templates
 
@@ -70,10 +70,6 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 
 ## Next Move
 - Tests unitaires dédiés (phase séparée)
-- Sous-permissions CRUD+section granulaires
-- Routes détail pour unités (comme postes/fonctions ont `$id`)
-- Installer `reactflow` + `dagre` et résoudre les erreurs TS associées
-- Réviser `base-form-modal.tsx` colorMap pour couleurs non-`primary` (indigo, purple, green, orange, amber) — utiliser les CSS vars au lieu de classes hardcodées
 
 ## Travail effectué — Session 2026-07-23
 ### Frontend — Nettoyage `any` types
@@ -126,3 +122,23 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
   - Cache-bust via `?v=${Date.parse(fond.updatedAt)}` intégré.
 - **FondRotator** : wrapper div avec les CSS variables, `willChange: opacity, filter`. Rendu transparent (null) en cas d'erreur/chargement/absence de fonds. Prop `fallbackColor` supprimée.
 - **ApparencePage** : preview `<img>` avec `filter: var(--fond-filter)`. Grille catalogue miniatures SVG via `FondImage`.
+
+
+## Travail effectué — Session 2026-07-23 (grill-me organisation)
+### Architecture & Modèle
+- **TypePersonnel codes** : préfixe `TYPE_` pour disambiguer de CategoriePoste. `personnel.constants.ts`, `seed-type-personnel.ts`, `seed-organisation.ts` mis à jour. Migration seed auto : renommage des anciens codes (ex. `ENSEIGNANT` → `TYPE_ENSEIGNANT`).
+- **TemplatePoste.fonctionId** : champ optionnel ajouté à l'interface. `generation.service.ts` priorise `fonctionId` sur `fonctionRef`. Validation croisée seed-templates : vérifie que chaque `fonctionRef` existe dans la base.
+- **CTE anti-cycle HierarchiePersonnel** : remplacement du DFS applicatif par une `WITH RECURSIVE` PostgreSQL dans `organisation.service.ts`.
+- **Progression niveaux unités** : validation stricte `enfant.niveau === parent.niveau + 1` ajoutée à `createUnite` et `updateUnite`.
+- **Permissions GET** : `requirePermission('organisation:*:read')` ajouté à toutes les routes GET (unites, fonctions, hierarchie, nomenclatures, templates) qui étaient sans guard.
+- **Sidebar filtrage** : `organisation:view`/`organisation:manage` ajouté aux `permsMap` du Sidebar via `useModulePermissions('organisation')`.
+
+### Frontend
+- **UniteDetailPage** : permission guard (`beforeLoad`), boutons Edit/Delete, modal d'édition (`UniteFormModal`), confirmation suppression. Typage propre (`UniteDetail` extends `UniteOrganisationnelle`). Cast `(unite as any)` supprimé.
+- **reactflow + dagre** : `npm install` exécuté. Composant `OrganigrammeFlowView.tsx` fonctionnel sans erreur TS.
+
+### AGENTS.md
+- Décisions grill-me documentées (prefix TYPE_, fonctionId, CTE, progression niveaux, permissions GET, sidebar).
+
+### Frontend — base-form-modal colorMap
+- **`base-form-modal.tsx`** : couleurs indigo/purple/green/orange/amber remplacées par CSS vars (`var(--color-info)`, `accent`, `var(--color-success)`, `var(--color-warning)`). Plus de classes hardcodées dark/light.

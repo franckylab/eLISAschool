@@ -75,7 +75,6 @@ export const classementPersonnelSchema = z.object({
     anneeScolaireId: z.string().uuid(),
     periodeId: z.string().uuid().optional(),
     typePersonnelId: z.string().uuid().optional(),
-    categoriePersonnel: z.string().max(50).optional(),
     matiereId: z.string().uuid().optional(),
     classeId: z.string().uuid().optional(),
     sortBy: z.enum(['scoreGlobal', 'scoreAssiduite', 'scoreComportement', 'scorePerformance', 'scorePedagogie']).default('scoreGlobal'),

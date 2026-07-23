@@ -1,1 +1,0 @@
-Curated documentation archive for the eLISAschool school management platform, organized by lifecycle stage (analysis, implementation, corrections, guides, reports) and role.

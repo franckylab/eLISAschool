@@ -61,7 +61,8 @@ export class Poste {
     @JoinColumn({ name: 'categoriePosteId' })
     categoriePoste?: CategoriePoste;
 
-    // FK directe vers Fonction
+    // FK directe vers Fonction (requis côté applicatif via DTO — le type attendu du poste est dérivé via fonction.typePersonnel)
+    // nullable en base temporairement (synchronize dev) le temps que les NULL existants soient backfillés
     @Column({ type: 'uuid', nullable: true })
     fonctionId?: string;
 

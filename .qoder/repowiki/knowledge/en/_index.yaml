@@ -3,7 +3,7 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-23T06:02:24Z"
+exported_at: "2026-07-23T14:00:17Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo (Backend + Frontend + Shared + Docker)
@@ -36,7 +36,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: docker_infra
+            - path: frontend
+            - path: shared_package
     docker_infra:
         dir_name: Docker Infrastructure & Deployment Orchestration
         title: Docker Infrastructure & Deployment Orchestration
@@ -45,7 +48,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: frontend
     docs:
         dir_name: docs
         title: docs
@@ -65,7 +70,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: docker_infra
+            - path: shared_package
     scripts:
         dir_name: scripts
         title: scripts
@@ -84,4 +92,6 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: frontend

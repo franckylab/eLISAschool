@@ -22,11 +22,11 @@ interface BaseFormModalProps {
 
 const colorMap: Record<string, { wrapper: string; iconColor: string }> = {
     blue: { wrapper: 'bg-primary/10', iconColor: 'text-primary' },
-    indigo: { wrapper: 'bg-indigo-100 dark:bg-indigo-900/30', iconColor: 'text-indigo-600 dark:text-indigo-400' },
-    purple: { wrapper: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
-    green: { wrapper: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
-    orange: { wrapper: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
-    amber: { wrapper: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+    indigo: { wrapper: 'bg-[var(--color-info)]/10', iconColor: 'text-[var(--color-info)]' },
+    purple: { wrapper: 'bg-accent/10', iconColor: 'text-accent' },
+    green: { wrapper: 'bg-[var(--color-success)]/10', iconColor: 'text-[var(--color-success)]' },
+    orange: { wrapper: 'bg-[var(--color-warning)]/10', iconColor: 'text-[var(--color-warning)]' },
+    amber: { wrapper: 'bg-[var(--color-warning)]/15', iconColor: 'text-[var(--color-warning)]' },
     red: { wrapper: 'bg-destructive/10', iconColor: 'text-destructive' },
     gray: { wrapper: 'bg-muted', iconColor: 'text-muted-foreground' },
 };

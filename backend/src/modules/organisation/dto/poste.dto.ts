@@ -16,7 +16,7 @@ export const createPosteSchema = z.object({
     code: z.string().min(2).max(50),
     categoriePosteId: z.string().uuid().optional(), // FK vers CategoriePoste
     niveauResponsabiliteId: z.string().uuid().optional(), // FK vers NiveauResponsabilite
-    fonctionId: z.string().uuid().optional(), // FK vers Fonction
+    fonctionId: z.string().uuid(), // FK vers Fonction (obligatoire)
     uniteOrganisationnelleId: z.string().uuid(),
     nombrePostes: z.number().int().min(1).default(1),
     competencesRequises: z.array(z.string()).optional(),

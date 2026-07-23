@@ -10,60 +10,42 @@ source_files:
     - frontend/src/lib/theme-utils.ts
     - frontend/src/stores/theme.store.ts
     - frontend/src/components/ui/index.ts
-    - frontend/src/components/ui/ElisaButton.tsx
     - frontend/package.json
 ---
 
-## Frontend Style Architecture
+The frontend uses a modern, token-driven styling architecture built on **Tailwind CSS v4** (via `@tailwindcss/vite` plugin) combined with **Radix UI primitives** for accessible, unstyled base components. The system is organized around three core layers: design tokens, utility composition, and runtime theming.
 
-The eLISAschool frontend uses a modern, token-driven styling approach built on Tailwind CSS v4 with a custom design system centered around the 60-30-10 color rule.
+### Styling Stack
+- **Tailwind CSS v4** — imported via `@import 'tailwindcss'` in `globals.css`, using the new `@theme` block to declare breakpoints, color scales, spacing, typography, and radius tokens directly in CSS rather than a separate config file.
+- **Radix UI primitives** — `@radix-ui/react-*` packages provide headless, accessible building blocks (`dialog`, `select`, `dropdown-menu`, `tabs`, `tooltip`, `visually-hidden`) that are wrapped in custom `Elisa*` components under `src/components/ui/`.
+- **Utility composition** — a local `cn()` helper (`src/lib/cn.ts`) composes `clsx` + `tailwind-merge` for conditional class merging; no external component library (no shadcn/ui CLI scaffolding).
+- **Icons** — `lucide-react` for consistent iconography across the app.
+- **Animations** — `framer-motion` for page/component transitions.
 
-### Core Styling Stack
+### Design Tokens & Responsive Strategy
+All tokens live in `frontend/src/styles/globals.css` inside a single `@theme` block:
+- **Breakpoints**: 9+ from `xxs: 100px` through `5xl: 2560px`, enabling fine-grained responsive control.
+- **Color palette**: Three semantic scales following a **60-30-10 rule** — `--color-dominant-*` (green #28a745), `--color-secondary-*` (yellow #ffc107), `--color-accent-*` (blue #007bff) — plus semantic aliases (`success`, `warning`, `danger`, `info`).
+- **Typography & spacing**: Fluid values via CSS `clamp()` for text sizes, spacing, padding, gaps, border-radius, and icon sizes, all exposed as CSS variables.
+- **Dark mode**: Controlled by `data-theme="dark"` on `<html>` (not `prefers-color-scheme` media query); dark overrides live in `[data-theme='dark']` selectors within `@layer base`.
+- **Global resets**: Box-sizing, smooth scroll, Inter font stack, custom scrollbar, focus-visible outline, and selection colors.
 
-- CSS Framework: Tailwind CSS v4 with @tailwindcss/vite plugin for build-time processing
-- Primitive Components: Radix UI primitives (@radix-ui/*) for accessible, unstyled base components (Dialog, Select, DropdownMenu, Tabs, Tooltip)
-- Utility Libraries:
-  - clsx + tailwind-merge via centralized cn() utility for conditional class composition
-  - class-variance-authority (cva) for component variant systems
-  - framer-motion for micro-interactions and transitions
-  - lucide-react for consistent iconography
+### Runtime Theming System
+A dynamic theme engine lets users pick a dominant brand color at runtime:
+- `src/lib/theme-utils.ts` provides HSL conversion utilities (`hexToHsl`, `hslToHex`) and generates full 50–950 color scales, secondary/accent palettes derived from the dominant hue, contrast detection, and `appliquerThemeCSS()` which writes computed CSS variables onto `document.documentElement`.
+- `src/stores/theme.store.ts` (Zustand + `persist` middleware) owns state (`couleurDominante`, `couleurSecondaire`, `couleurAccent`, `mode`) and persists it to `localStorage`. It also syncs with the backend `/api/configuration` endpoint to load per-establishment theme settings and dynamically updates the favicon SVG based on luminance.
+- `COULEURS_DOMINANTES` preset list offers nine predefined brand colors (Vert, Bleu, Rouge, Jaune, Violet, Orange, Marron, Rose, Gris).
 
-### Design Token System
+### Component Library Conventions
+Reusable UI lives in `src/components/ui/` with a barrel export (`index.ts`). Components follow these patterns:
+- **Primitives over frameworks**: Every interactive primitive wraps a Radix primitive (e.g., `ElisaSelect` → `@radix-ui/react-select`, `CustomModal` → `@radix-ui/react-dialog`).
+- **Class composition**: All className props go through `cn(...)` to allow callers to override or extend styles safely.
+- **Token usage**: Colors, spacing, and typography reference CSS variables (`var(--color-dominante)`, `var(--text-base)`, `var(--space-md)`) rather than hardcoded Tailwind classes, enabling runtime re-theming.
+- **Variant types**: Components expose typed variant props (e.g., `CardTone`, `ActionVariant`, `Tab`) instead of string magic.
+- **Accessibility**: Focus management, ARIA attributes, and keyboard navigation come from Radix; global `:focus-visible` rules enforce consistent focus rings.
 
-All visual tokens are defined in frontend/src/styles/globals.css using Tailwind's new @theme directive:
-
-- Color Palette: Three-tier system following 60-30-10 rule
-  - Dominant colors (60%): Green scale --color-dominant-* (#28a745 base)
-  - Secondary colors (30%): Yellow scale --color-secondary-* (#ffc107 base)
-  - Accent colors (10%): Blue scale --color-accent-* (#007bff base)
-- Semantic Colors: Success, warning, danger, info tokens
-- Surface Tokens: Background, surface, border, text hierarchy
-- Fluid Typography: CSS clamp() functions for responsive font sizes
-- Fluid Spacing: Responsive spacing variables using clamp()
-
-### Responsive Strategy
-
-Nine breakpoints from 100px to 2560px (xxs through 5xl) provide granular control across all device sizes. The system uses fluid sizing throughout — typography, spacing, padding, borders, and icons all scale smoothly between breakpoints rather than jumping at fixed points.
-
-### Dark Mode Implementation
-
-Dark mode is controlled via data-theme="dark" attribute on <html> rather than media queries. A Zustand store (stores/theme.store.ts) manages theme state with persistence to localStorage, supporting three modes: light, dark, and auto (system preference). The theme can be dynamically customized per establishment through the configuration API.
-
-### Component Architecture
-
-Custom UI components live in src/components/ui/ and follow consistent patterns:
-- Each component uses cn() for class merging
-- Variants defined with cva() for prop-based styling
-- All dimensions use CSS variables or clamp() for fluidity
-- Accessible focus states using focus-visible pseudo-class
-- Consistent animation patterns via Framer Motion
-
-### Key Conventions
-
-1. Never use hardcoded colors — always reference CSS variables like var(--color-dominante)
-2. Use cn() utility instead of template literals for conditional classes
-3. Prefer CSS variables over Tailwind arbitrary values for maintainability
-4. Follow cva pattern for component variants (primary/secondary/ghost/danger)
-5. Use fluid sizing with clamp() for responsive components
-6. Radix UI primitives as foundation, styled with Tailwind utilities
-7. Theme-aware styling via data-theme selector for dark mode support
+### What's NOT used
+- No SCSS/Sass, Less, or CSS-in-JS libraries (no styled-components, Emotion).
+- No third-party UI kit (no MUI, Chakra, AntD, shadcn/ui CLI-generated code).
+- No separate `tailwind.config.js` — configuration is entirely in-CSS via `@theme`.
+- No CSS modules or BEM naming; styling is purely utility-first.

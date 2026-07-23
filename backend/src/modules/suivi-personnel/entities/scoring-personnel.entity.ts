@@ -39,13 +39,12 @@ import { Classe } from '@modules/classes/entities';
 @Index(['anneeScolaireId'])
 @Index(['periodeId'])
 @Index(['typePersonnelId'])
-@Index(['categoriePersonnel'])
 @Index(['matiereId'])
 @Index(['classeId'])
 @Index(['scoreGlobal'])
 @Index(['rangGlobal'])
 @Index(['anneeScolaireId', 'membrePersonnelId'])
-@Index(['categoriePersonnel', 'scoreGlobal'])
+@Index(['typePersonnelId', 'scoreGlobal'])
 @Index(['matiereId', 'scoreGlobal'])
 @Index(['classeId', 'scoreGlobal'])
 export class ScorePersonnel {
@@ -86,9 +85,6 @@ export class ScorePersonnel {
     @ManyToOne(() => TypePersonnel, { nullable: true })
     @JoinColumn({ name: 'typePersonnelId' })
     typePersonnel?: TypePersonnel;
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    categoriePersonnel?: string; // ENSEIGNANT, ADMIN, SURVEILLANT, etc.
 
     @Column({ type: 'uuid', nullable: true })
     matiereId?: string;

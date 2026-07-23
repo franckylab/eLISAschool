@@ -38,15 +38,19 @@ export async function seedNomenclatures(): Promise<{
     logger.info('📋 Seed des nomenclatures organisation (globales)...');
 
     // 1. Catégories de poste
+    // Note: les codes sont distincts de TypePersonnel pour éviter la confusion sémantique.
+    // Seul DIRECTION est intentionnellement partagé (un directeur occupant un poste de direction).
     const catRepo = AppDataSource.getRepository(CategoriePoste);
     const categoriesPoste = await upsertAll(catRepo, [
         { code: 'DIRECTION', label: 'Direction', description: 'Postes de direction et d\'encadrement supérieur', estSysteme: true },
-        { code: 'ENSEIGNANT', label: 'Enseignant', description: 'Postes d\'enseignement', estSysteme: true },
+        { code: 'ENSEIGNEMENT', label: 'Enseignement', description: 'Postes d\'enseignement et de formation', estSysteme: true },
+        { code: 'ENCADREMENT', label: 'Encadrement éducatif', description: 'Postes de surveillance, animation et éducation', estSysteme: true },
         { code: 'ADMINISTRATIF', label: 'Administratif', description: 'Postes administratifs et de gestion', estSysteme: true },
         { code: 'TECHNIQUE', label: 'Technique', description: 'Postes techniques et maintenance', estSysteme: true },
-        { code: 'SERVICE', label: 'Service', description: 'Postes de service et d\'animation', estSysteme: true },
+        { code: 'DOCUMENTATION', label: 'Documentation', description: 'Postes de documentation et bibliothèque', estSysteme: true },
+        { code: 'ORIENTATION', label: 'Orientation', description: 'Postes d\'orientation et conseil', estSysteme: true },
         { code: 'SANTE', label: 'Santé', description: 'Postes médicaux et paramédicaux', estSysteme: true },
-        { code: 'SOCIAL', label: 'Social', description: 'Postes d\'assistance sociale et d\'orientation', estSysteme: true },
+        { code: 'SOCIAL', label: 'Social', description: 'Postes d\'assistance sociale et d\'accompagnement', estSysteme: true },
     ], 'code');
     logger.info(`   Catégories poste: ${categoriesPoste.size}`);
 

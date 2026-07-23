@@ -1,1 +1,0 @@
-Collection of shell/JS/TS/Python utilities for bootstrapping, deploying, testing, and verifying the eLISAschool application across development, CI, and multi-tenant environments.

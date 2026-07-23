@@ -11,65 +11,45 @@ source_files:
     - shared/package.json
     - backend/tsconfig.json
     - frontend/vite.config.ts
-    - docker/Dockerfile.backend
-    - docker/Dockerfile.frontend
     - docker/docker-compose.yml
-    - docker/deploy.sh
+    - docker/Dockerfile.backend
+    - docker/Dockerfile.backend.dev
+    - docker/Dockerfile.frontend
 ---
 
-## System Overview
+The project uses an npm workspaces monorepo to build and orchestrate three packages — backend (Express + TypeORM), frontend (React + Vite PWA), and shared (TypeScript types/enums) — with Docker Compose providing the runtime environment (PostgreSQL, Redis, pgAdmin). There is no Makefile or CI pipeline in this branch; build and deployment are driven by npm scripts and Dockerfiles.
 
-eLISAschool uses an **npm workspaces monorepo** with three packages (`backend`, `frontend`, `shared`) orchestrated through **Docker Compose** for local/cloud development and production. There is no CI/CD pipeline in the repository — builds are driven by npm scripts and shell deployment scripts.
+Workspace layout and top-level scripts:
+- Root package.json declares workspaces [backend, frontend, shared] and exposes unified commands: npm run dev (parallel backend+frontend), npm run build, npm run test, npm run lint, plus db:migrate / db:seed forwarding to the backend workspace. A postinstall hook removes a conflicting @types/express-serve-static-core.
+- Engine constraints require Node >=20 and npm >=10.
 
-## Build Stack
+Backend build chain:
+- TypeScript compilation via tsc (build script is tsc || true); output goes to dist/ with CommonJS modules, ES2022 target, strict mode, decorators enabled, source maps and declaration files emitted. Path aliases map @modules/*, @common/*, @config/*, @database/*, @shared/* to src/... and the sibling shared/src.
+- Development runs through nodemon + ts-node --transpile-only so no pre-build step is needed locally.
+- Database migrations are managed by TypeORM CLI (migration:run, migration:generate, migration:revert) against src/database/data-source.ts; seeds are executed via dedicated ts-node scripts under src/database/seeds/.
+- Tests use Jest (jest.config.ts) with unit/integration suites under test/.
 
-- **Root orchestrator**: `package.json` defines workspaces and top-level scripts (`dev`, `build`, `test`, `db:migrate`, `docker:*`). All commands are forwarded to workspace sub-packages via `--workspace=...`.
-- **Backend** (`@elisaschool/backend`): TypeScript + Express, compiled with `tsc` (ES2022, CommonJS) into `dist/`. TypeORM handles migrations (`migration:run`, `migration:generate`, `migration:revert`). Jest runs tests. Nodemon drives dev hot-reload.
-- **Frontend** (`@elisaschool/frontend`): React 19 + Vite 6 + TanStack Router. Build chain is `tsc -b && vite build`. PWA generated via `vite-plugin-pwa`.
-- **Shared contracts** (`@elisaschool/shared`): Pure TypeScript package of enums/types/Zod validators consumed by both backend and frontend; built independently first.
+Frontend build chain:
+- Built with Vite 6 + React plugin + Tailwind v4 + TanStack Router codegen (routeTree.gen.ts). The build command first runs tsc -b then vite build; production bundles are split into manual chunks (react-vendor, query-vendor, router-vendor, ui-vendor) and served from dist/.
+- PWA support is provided by vite-plugin-pwa with Workbox caching rules for /api/* and static images; PWA dev registration is disabled to avoid message violations.
+- HMR uses polling (usePolling: true, interval 100ms) to work inside Docker bind mounts.
 
-## Docker Architecture
+Shared package:
+- Pure TypeScript library built with tsc; published as main: dist/index.js with types: dist/index.d.ts. Both backend and frontend import it via path aliases rather than npm linking.
 
-Two-tier containerization per service:
+Docker image construction:
+- Development backend (docker/Dockerfile.backend.dev): single-stage node:20-alpine that installs all dependencies (including dev) and runs nodemon; source is mounted via volumes for hot-reload.
+- Production backend (docker/Dockerfile.backend): multi-stage — deps stage installs everything, builder stage runs npm run build --workspace=shared && npm run build --workspace=backend, and the final production stage copies only --omit=dev node_modules plus the compiled dist/ trees, running as a non-root expressjs user.
+- Frontend (docker/Dockerfile.frontend): multi-stage building the Vite app and serving the static dist/ from nginx:alpine using docker/nginx.conf.
+- Compose (docker/docker-compose.yml): defines services postgres (port 7002), redis (port 7003), backend (port 7000, depends on healthy postgres/redis), frontend (port 7001, proxies to backend via VITE_API_URL), and pgadmin (port 7004). Environment variables are sourced from .env files; healthchecks gate startup order.
 
-- **Development images** use bind mounts so source changes reload without rebuilds (backend via nodemon, frontend via Vite HMR polling).
-- **Production images** are multi-stage: `deps` → `builder` → `production` (backend) or `builder` → `nginx:alpine` (frontend). Only `node_modules --omit=dev` and compiled `dist/` artifacts ship.
+Environment configuration:
+- Backend env vars cover DB, Redis, JWT secret, encryption key, SMTP/Twilio/Firebase credentials, CORS origins, and frontend URL. Frontend reads VITE_API_URL at build time. Separate compose variants exist for local/cloud and dev/prod (docker-compose.local.dev.yml, docker-compose.cloud.prod.yml, etc.).
 
-Compose services: `postgres` (port 7002), `redis` (port 7003), `backend` (port 7000), `frontend` (port 7001), `pgadmin` (port 7004). Health checks gate startup ordering.
-
-Environment variants are selected by compose files:
-- `docker-compose.local.dev.yml` / `.local.prod.yml`
-- `docker-compose.cloud.dev.yml` / `.cloud.prod.yml`
-
-The single entrypoint `docker/deploy.sh` resolves mode (`local-dev | local-prod | cloud-dev | cloud-prod`), auto-generates secrets (JWT, DB password, Redis password, encryption key, pgAdmin password) when placeholders are detected, validates minimum secret lengths in prod, auto-detects host IP and injects CORS origins, then delegates to `docker compose -f <compose-file> up|down|restart|rebuild|status|logs`.
-
-## Database Migrations & Seeds
-
-- SQL migration files live under `backend/database/migrations/` (numbered `NNN-*.sql` plus a few `.ts` helpers).
-- Runtime execution via TypeORM CLI: `npm run migration:run` (root alias forwards to backend).
-- Seed data lives under `backend/src/database/seeds/` with dedicated scripts (`run-seeds.ts`, `run-rbac-seed.ts`, `run-demo-seeds.ts`).
-- A large collection of one-shot shell scripts under `scripts/` and `backend/scripts/` deploy individual features/migrations (e.g. `deploy-messagerie-v2.1.sh`, `deploy-permissions.sh`, `run-scoring-sql-migration.sh`). These are ad-hoc, not part of a formal release pipeline.
-
-## Conventions & Rules
-
-- **Node/NPM versions**: root `engines` enforces `node >= 20`, `npm >= 10`.
-- **Workspace-first**: never install dependencies directly at the repo root; always add to the appropriate workspace `package.json`.
-- **Build order**: shared must be built before backend/frontend consume it (enforced in Dockerfile builder stage and in `frontend/vite.config.ts` alias `@shared`).
-- **TypeScript paths**: backend maps `@modules/*`, `@common/*`, `@config/*`, `@database/*`, `@shared/*`; frontend maps `@` and `@shared`. Keep these aliases consistent across packages.
-- **Ports are fixed**: backend 7000, frontend 7001, postgres 7002, redis 7003, pgadmin 7004 — change only via env vars in the relevant `.env.*` file.
-- **Secrets**: never commit `.env.local` or `.env.cloud`; they are generated on first deploy by `deploy.sh`. Production requires JWT_SECRET ≥ 64 chars, DB_PASSWORD ≥ 16 chars, ENCRYPTION_KEY ≥ 32 chars.
-- **No CI**: there is no GitHub Actions/GitLab CI configuration. The project relies on manual `./docker/deploy.sh` invocations and per-feature shell scripts for rollout.
-
-## Key Files
-
-- `package.json` — root workspaces & orchestration scripts
-- `backend/package.json` — backend build/test/migration/seed scripts
-- `frontend/package.json` — Vite/PWA build scripts
-- `shared/package.json` — shared contracts package
-- `backend/tsconfig.json` — TS compilation targets & path aliases
-- `frontend/vite.config.ts` — Vite plugins, PWA, chunking, HMR
-- `docker/Dockerfile.backend` — multi-stage production image
-- `docker/Dockerfile.frontend` — build + nginx runner
-- `docker/docker-compose.yml` — default compose (dev) with health checks
-- `docker/deploy.sh` — environment selector, secret generation, validation, compose dispatcher
-- `docker/.env.local` / `docker/.env.cloud` — environment templates with auto-generated secrets
+Conventions developers should follow:
+- Add new workspace packages under the root workspaces array and expose matching npm scripts at the root level.
+- Keep backend builds deterministic: prefer tsc over transpile-only in production; rely on the multi-stage Dockerfile which already builds shared before backend.
+- Do not remove the || true from the backend build script until all TS errors are fixed — it currently allows the build to pass even when tsc fails.
+- When adding new environment variables, document them in docker/docker-compose.yml and provide defaults via ${VAR:-default} syntax.
+- Use the existing path aliases (@shared/*, @modules/*, ...) instead of relative imports across the monorepo to keep builds stable.
+- Frontend route changes must go through TanStack Router's file-based generator; do not edit routeTree.gen.ts manually.

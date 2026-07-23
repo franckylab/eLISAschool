@@ -1,1 +1,0 @@
-Monorepo for the eLISAschool PWA school management system, wiring a TypeScript/Express backend and a React+Vite frontend around shared types, Dockerised PostgreSQL/Redis, and a scripts layer.

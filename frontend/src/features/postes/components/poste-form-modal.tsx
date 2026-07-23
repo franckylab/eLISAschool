@@ -122,7 +122,7 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                 ...data,
                 categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
-                fonctionId: data.fonctionId || undefined,
+                fonctionId: data.fonctionId,
             };
             if (isEdit && poste) {
                 await modifier.mutateAsync({ id: poste.id, dto: payload });
@@ -140,7 +140,8 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const intituleValide = watch('intitule')?.trim()?.length >= 2;
     const codeValide = watch('code')?.trim()?.length >= 2;
     const uniteValide = watch('uniteOrganisationnelleId');
-    const canSubmit = intituleValide && codeValide && uniteValide;
+    const fonctionValide = watch('fonctionId');
+    const canSubmit = intituleValide && codeValide && uniteValide && fonctionValide;
 
     return (
         <BaseFormModal
@@ -174,7 +175,7 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
                     name="fonctionId"
                     control={control}
                     render={({ field }) => (
-                        <ElisaSelect label={t('fonction')}
+                        <ElisaSelect label={t('fonction') + ' *'}
                             value={field.value || ''}
                             onValueChange={field.onChange}
                             options={fonctionOptions}

@@ -18,7 +18,7 @@ function validate(schema: any, data: unknown): any {
     return result.data;
 }
 
-router.get('/unites', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/unites', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const filtres = validate(filtreUnitesSchema, req.query);
         const page = parseInt(req.query.page as string) || 1;
@@ -42,7 +42,7 @@ router.post('/unites', authMiddleware, requirePermission('organisation:unites:wr
     } catch (error) { next(error); }
 });
 
-router.get('/unites/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/unites/:id', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const unite = await organisationService.findUniteById(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data: unite });
@@ -65,7 +65,7 @@ router.post('/unites/avec-postes', authMiddleware, requirePermission('organisati
     } catch (error) { next(error); }
 });
 
-router.get('/unites/:id/sous-unites', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/unites/:id/sous-unites', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const sousUnites = await organisationService.findSousUnites(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data: sousUnites });
@@ -98,7 +98,7 @@ router.delete('/unites/:id', authMiddleware, requirePermission('organisation:uni
     } catch (error) { next(error); }
 });
 
-router.get('/arborescence', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/arborescence', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
@@ -107,7 +107,7 @@ router.get('/arborescence', authMiddleware, async (req: Request, res: Response, 
     } catch (error) { next(error); }
 });
 
-router.get('/chemin/:uniteId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/chemin/:uniteId', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const chemin = await organisationService.getCheminHierarchique(req.params.uniteId);
         res.json({ success: true, data: chemin });

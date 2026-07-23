@@ -7,7 +7,7 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { MembrePersonnel, TypePersonnel, StatutPersonnel } from '../entities';
-import { Poste } from '@modules/organisation/entities';
+import { Fonction } from '@modules/organisation/entities';
 import { CreatePersonnelDto, UpdatePersonnelDto, CreateTypePersonnelDto, UpdateTypePersonnelDto, QueryPersonnelDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -78,11 +78,11 @@ export class PersonnelService {
         if (type.estSysteme) throw new AppError('Impossible de supprimer un type système', 403, 'FORBIDDEN');
 
         const countMembres = await this.personnelRepo.count({ where: { typePersonnelId: id } });
-        const countPostes = await AppDataSource.getRepository(Poste).count({ where: { typePersonnelId: id } });
+        const countFonctions = await AppDataSource.getRepository(Fonction).count({ where: { typePersonnelId: id } });
 
-        if (countMembres > 0 || countPostes > 0) {
+        if (countMembres > 0 || countFonctions > 0) {
             throw new AppError(
-                `Type utilisé par ${countMembres} membre(s) et ${countPostes} poste(s). Veuillez réaffecter avant de supprimer.`,
+                `Type utilisé par ${countMembres} membre(s) et ${countFonctions} fonction(s). Veuillez réaffecter avant de supprimer.`,
                 409,
                 'TYPE_IN_USE',
             );

@@ -48,7 +48,7 @@ function validate(schema: any, data: unknown): any {
 // NIVEAUX D'ORGANISATION
 // ==================================
 
-router.get('/niveaux-organisation', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/niveaux-organisation', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -76,7 +76,7 @@ router.post('/niveaux-organisation', authMiddleware, requirePermission('organisa
     } catch (error) { next(error); }
 });
 
-router.get('/niveaux-organisation/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/niveaux-organisation/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await niveauOrganisationService.findById(req.params.id);
         res.json({ success: true, data });
@@ -103,7 +103,7 @@ router.delete('/niveaux-organisation/:id', authMiddleware, requirePermission('or
 // USAGES D'UNITÉ
 // ==================================
 
-router.get('/usages-unite', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/usages-unite', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -130,7 +130,7 @@ router.post('/usages-unite', authMiddleware, requirePermission('organisation:nom
     } catch (error) { next(error); }
 });
 
-router.get('/usages-unite/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/usages-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await usageUniteService.findById(req.params.id);
         res.json({ success: true, data });
@@ -157,7 +157,7 @@ router.delete('/usages-unite/:id', authMiddleware, requirePermission('organisati
 // CATÉGORIES DE POSTE
 // ==================================
 
-router.get('/categories-poste', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/categories-poste', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -184,7 +184,7 @@ router.post('/categories-poste', authMiddleware, requirePermission('organisation
     } catch (error) { next(error); }
 });
 
-router.get('/categories-poste/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/categories-poste/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await categoriePosteService.findById(req.params.id);
         res.json({ success: true, data });
@@ -211,7 +211,7 @@ router.delete('/categories-poste/:id', authMiddleware, requirePermission('organi
 // NIVEAUX DE RESPONSABILITÉ
 // ==================================
 
-router.get('/niveaux-responsabilite', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/niveaux-responsabilite', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -239,7 +239,7 @@ router.post('/niveaux-responsabilite', authMiddleware, requirePermission('organi
     } catch (error) { next(error); }
 });
 
-router.get('/niveaux-responsabilite/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/niveaux-responsabilite/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await niveauResponsabiliteService.findById(req.params.id);
         res.json({ success: true, data });
@@ -266,7 +266,7 @@ router.delete('/niveaux-responsabilite/:id', authMiddleware, requirePermission('
 // TEMPLATES D'ORGANISATION
 // ==================================
 
-router.get('/templates', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/templates', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -294,7 +294,7 @@ router.post('/templates', authMiddleware, requirePermission('organisation:templa
     } catch (error) { next(error); }
 });
 
-router.get('/templates/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/templates/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await templateOrganisationService.findById(req.params.id);
         res.json({ success: true, data });
@@ -321,7 +321,7 @@ router.delete('/templates/:id', authMiddleware, requirePermission('organisation:
 // TYPES DE RELATION HIÉRARCHIQUE
 // ==================================
 
-router.get('/types-relation', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/types-relation', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -348,7 +348,7 @@ router.post('/types-relation', authMiddleware, requirePermission('organisation:n
     } catch (error) { next(error); }
 });
 
-router.get('/types-relation/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/types-relation/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await typeRelationHierarchiqueService.findById(req.params.id);
         res.json({ success: true, data });
@@ -375,7 +375,7 @@ router.delete('/types-relation/:id', authMiddleware, requirePermission('organisa
 // MODES DE RÉMUNÉRATION
 // ==================================
 
-router.get('/modes-remuneration', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/modes-remuneration', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -402,7 +402,7 @@ router.post('/modes-remuneration', authMiddleware, requirePermission('organisati
     } catch (error) { next(error); }
 });
 
-router.get('/modes-remuneration/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = await modeRemunerationService.findById(req.params.id);
         res.json({ success: true, data });

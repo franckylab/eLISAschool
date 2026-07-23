@@ -17,7 +17,7 @@ function validate(schema: any, data: unknown): any {
     return result.data;
 }
 
-router.get('/hierarchie', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/hierarchie', authMiddleware, requirePermission('organisation:hierarchie:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const personnelId = req.query.personnelId as string | undefined;
         const hierarchies = await organisationService.findHierarchies(req.utilisateur!.etablissementId!, personnelId);
@@ -49,14 +49,14 @@ router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation
     } catch (error) { next(error); }
 });
 
-router.get('/hierarchie/superieurs/:personnelId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/hierarchie/superieurs/:personnelId', authMiddleware, requirePermission('organisation:hierarchie:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const superieurs = await organisationService.findSuperieurs(req.params.personnelId, req.utilisateur!.etablissementId!);
         res.json({ success: true, data: superieurs });
     } catch (error) { next(error); }
 });
 
-router.get('/hierarchie/subordonnes/:superieurId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/hierarchie/subordonnes/:superieurId', authMiddleware, requirePermission('organisation:hierarchie:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const subordonnes = await organisationService.findSubordonnes(req.params.superieurId, req.utilisateur!.etablissementId!);
         res.json({ success: true, data: subordonnes });

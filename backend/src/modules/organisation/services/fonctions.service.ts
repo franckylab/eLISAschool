@@ -6,6 +6,7 @@ import { CreateFonctionDto, UpdateFonctionDto, QueryFonctionsDto } from '../dto/
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { assertNotSystem } from '@common/utils/system-guard.util';
 
 export class FonctionsService {
     private repo: Repository<Fonction>;
@@ -200,6 +201,7 @@ export class FonctionsService {
 
     async delete(id: string, etablissementId: string): Promise<void> {
         const fonction = await this.findOne(id, etablissementId);
+        assertNotSystem(fonction, 'supprimer');
 
         const enfants = await this.repo.count({ where: { parentId: id } });
         if (enfants > 0) {

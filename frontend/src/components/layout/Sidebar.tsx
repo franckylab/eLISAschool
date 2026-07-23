@@ -335,6 +335,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
     const bulletinsPerms = useModulePermissions('bulletins');
     const contratsPerms = useModulePermissions('contrats');
     const paiePerms = useModulePermissions('paie');
+    const organisationPerms = useModulePermissions('organisation');
 
     // Filtrer les sections du sidebar selon les permissions de l'utilisateur
     const filteredSections = NAV_SECTIONS.map((section) => ({
@@ -345,16 +346,17 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                 if (item.children) {
                     const filteredChildren = item.children.filter((child) => {
                         if (!child.module) return true;
-                        const permsMap: Record<string, { canAccess: boolean }> = {
-                            cycles: cyclesPerms,
-                            niveaux: niveauxPerms,
-                            filieres: filieresPerms,
-                            specialites: specialitesPerms,
-                            competences: competencesPerms,
-                            'examens-nationaux': examensNationauxPerms,
-                            'diplomes-eleves': diplomesElevesPerms,
-                        };
-                        const perms = permsMap[child.module];
+                            const permsMap: Record<string, { canAccess: boolean }> = {
+                                cycles: cyclesPerms,
+                                niveaux: niveauxPerms,
+                                filieres: filieresPerms,
+                                specialites: specialitesPerms,
+                                competences: competencesPerms,
+                                'examens-nationaux': examensNationauxPerms,
+                                'diplomes-eleves': diplomesElevesPerms,
+                                organisation: organisationPerms,
+                            };
+                            const perms = permsMap[child.module];
                         return perms?.canAccess ?? true;
                     });
 
@@ -381,12 +383,12 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                     etablissements: etablissementsPerms,
                     'examens-nationaux': examensNationauxPerms,
                     filieres: filieresPerms,
-
                     finances: financesPerms,
                     matieres: matieresPerms,
                     anneesScolaires: anneesScolairesPerms,
                     notes: notesPerms,
                     niveaux: niveauxPerms,
+                    organisation: organisationPerms,
                     paie: paiePerms,
                     periodes: periodesPerms,
                     personnel: personnelPerms,

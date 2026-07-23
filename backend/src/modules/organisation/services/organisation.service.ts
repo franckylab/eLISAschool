@@ -20,6 +20,7 @@ import {
     UniteOrganisationnelle,
     Poste,
     HierarchiePersonnel,
+    NiveauOrganisation,
     StatutUnite,
     StatutPoste,
 } from '../entities';
@@ -91,15 +92,16 @@ export class OrganisationService {
             throw new AppError('Une unité avec ce code existe déjà dans cet établissement', 409, 'UNITE_CODE_EXISTS');
         }
 
-        // Si parentId fourni, vérifier qu'il existe
+        // Si parentId fourni, vérifier qu'il existe + progression de niveau stricte
         if (dto.parentId) {
             const parent = await this.uniteRepo.findOne({
                 where: { id: dto.parentId, etablissementId: dto.etablissementId },
+                relations: ['niveauOrganisation'],
             });
             if (!parent) {
                 throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
             }
-            // Pas de test de cycle en création : la nouvelle entité n'a pas encore d'ID
+            await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId);
         }
 
         const unite = this.uniteRepo.create({
@@ -223,6 +225,7 @@ export class OrganisationService {
             if (dto.parentId) {
                 const parent = await this.uniteRepo.findOne({
                     where: { id: dto.parentId, etablissementId: unite.etablissementId },
+                    relations: ['niveauOrganisation'],
                 });
                 if (!parent) {
                     throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
@@ -266,6 +269,18 @@ export class OrganisationService {
                 if (profondeurActuelle > 5) {
                     throw new AppError('Profondeur maximale atteinte (6 niveaux). Impossible de déplacer cette unité à cet endroit.', 400, 'MAX_DEPTH_EXCEEDED');
                 }
+                await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId ?? unite.niveauOrganisationId);
+            }
+        } else if (dto.niveauOrganisationId !== undefined && dto.niveauOrganisationId !== unite.niveauOrganisationId) {
+            // Changement de niveau sans changement de parent
+            const parent = unite.parentId
+                ? await this.uniteRepo.findOne({
+                    where: { id: unite.parentId },
+                    relations: ['niveauOrganisation'],
+                })
+                : null;
+            if (parent) {
+                await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId);
             }
         }
         
@@ -535,7 +550,6 @@ export class OrganisationService {
         superieurId: string,
         etablissementId: string
     ): Promise<void> {
-        // Vérification cycle direct
         if (personnelId === superieurId) {
             throw new AppError(
                 'Une personne ne peut pas être son propre supérieur',
@@ -544,36 +558,50 @@ export class OrganisationService {
             );
         }
 
-        // Parcours DFS pour détecter cycles indirects (A → B → C → A)
-        const visited = new Set<string>();
-        const stack = [superieurId];
+        // CTE récursif PostgreSQL : détection de cycle (A → B → C → A)
+        const result = await this.hierarchieRepo.query(
+            `WITH RECURSIVE chaine AS (
+                SELECT h."superieurId" AS id, 1 AS depth
+                FROM hierarchie_personnel h
+                WHERE h."personnelId" = $1 AND h.actif = true
+            UNION ALL
+                SELECT h."superieurId", c.depth + 1
+                FROM hierarchie_personnel h
+                INNER JOIN chaine c ON c.id = h."personnelId"
+                WHERE h.actif = true AND c.depth < 50
+            )
+            SELECT COUNT(*) > 0 AS cycle FROM chaine WHERE id = $2`,
+            [personnelId, superieurId],
+        );
 
-        while (stack.length > 0) {
-            const currentId = stack.pop()!;
+        if (result[0]?.cycle) {
+            throw new AppError(
+                'Cycle hiérarchique détecté : ce supérieur est déjà subordonné (directement ou indirectement) à cette personne',
+                400,
+                'HIERARCHIE_CYCLE'
+            );
+        }
+    }
 
-            if (currentId === personnelId) {
-                throw new AppError(
-                    'Cycle hiérarchique détecté : ce supérieur est déjà subordonné (directement ou indirectement) à cette personne',
-                    400,
-                    'HIERARCHIE_CYCLE'
-                );
-            }
+    private async verifierProgressionNiveau(parent: UniteOrganisationnelle, enfantNiveauOrganisationId?: string | null): Promise<void> {
+        if (!enfantNiveauOrganisationId) return;
 
-            if (visited.has(currentId)) continue;
-            visited.add(currentId);
+        const parentNiveauId = parent.niveauOrganisationId;
+        if (!parentNiveauId) return;
 
-            const relations = await this.hierarchieRepo.find({
-                where: {
-                    personnelId: currentId,
-                    etablissementId,
-                    actif: true,
-                },
-                select: ['superieurId'],
-            });
+        const [parentNiveau, enfantNiveau] = await Promise.all([
+            AppDataSource.getRepository(NiveauOrganisation).findOne({ where: { id: parentNiveauId } }),
+            AppDataSource.getRepository(NiveauOrganisation).findOne({ where: { id: enfantNiveauOrganisationId } }),
+        ]);
 
-            for (const rel of relations) {
-                if (rel.superieurId) stack.push(rel.superieurId);
-            }
+        if (!parentNiveau || !enfantNiveau) return;
+
+        if (enfantNiveau.niveau !== parentNiveau.niveau + 1) {
+            throw new AppError(
+                `Progression de niveau invalide : le parent est au niveau ${parentNiveau.niveau}, l'enfant doit être au niveau ${parentNiveau.niveau + 1} (reçu: ${enfantNiveau.niveau})`,
+                400,
+                'NIVEAU_PROGRESSION_INVALIDE',
+            );
         }
     }
 
@@ -954,7 +982,7 @@ export class OrganisationService {
      */
     async creerUniteAvecPostes(
         dto: CreateUniteOrganisationnelleDto,
-        postes: Array<{ intitule: string; code?: string; categoriePosteId?: string; description?: string; estSuppleant?: boolean }>
+        postes: Array<{ intitule: string; code?: string; categoriePosteId?: string; fonctionId?: string; description?: string; estSuppleant?: boolean }>
     ): Promise<UniteOrganisationnelle> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -994,6 +1022,7 @@ export class OrganisationService {
                         intitule: posteDto.intitule,
                         code: posteDto.code || posteDto.intitule.substring(0, 4).toUpperCase(),
                         categoriePosteId: posteDto.categoriePosteId,
+                        fonctionId: posteDto.fonctionId!,
                         description: posteDto.description,
                         estSuppleant: posteDto.estSuppleant || false,
                         uniteOrganisationnelleId: savedUnite.id,

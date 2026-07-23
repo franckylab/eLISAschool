@@ -58,6 +58,23 @@ async function bootstrap(): Promise<void> {
         await AppDataSource.initialize();
         logger.info('✅ Connexion à la base de données établie avec succès');
 
+        // Backfill sécurisé des postes sans fonctionId (migration différée)
+        try {
+            const backfilled = await AppDataSource.query(
+                `UPDATE postes SET "fonctionId" = (
+                    SELECT f."id" FROM fonctions f
+                    JOIN unites_organisationnelles uo ON uo."id" = postes."uniteOrganisationnelleId"
+                    WHERE f."code" = 'AGENT-COMPTA' AND f."etablissementId" = uo."etablissementId"
+                    LIMIT 1
+                ) WHERE "fonctionId" IS NULL`
+            );
+            if (backfilled?.[1] > 0) {
+                logger.info(`✅ ${backfilled[1]} postes backfillés avec la fonction AGENT-COMPTA`);
+            }
+        } catch (error) {
+            logger.warn('⚠️ Backfill fonctionId ignoré (non bloquant)', error);
+        }
+
         // Précharger le cache des permissions APRÈS la connexion DB
         try {
             await permissionResolverService.preloadGlobalPermissions();

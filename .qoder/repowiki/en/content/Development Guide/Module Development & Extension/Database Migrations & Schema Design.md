@@ -8,6 +8,7 @@
 - [037-gamification-tracabilite.ts](file://backend/database/migrations/037-gamification-tracabilite.ts)
 - [038-index-performance-gamification-suivi.ts](file://backend/database/migrations/038-index-performance-gamification-suivi.ts)
 - [043-correction-dossier-medical-fk.ts](file://backend/database/migrations/043-correction-dossier-medical-fk.ts)
+- [113-unite-responsable-fk-cleanup.sql](file://backend/database/migrations/113-unite-responsable-fk-cleanup.sql)
 - [010-module-finances.sql](file://backend/database/migrations/010-module-finances.sql)
 - [016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
 - [029-paie-etendue.sql](file://backend/database/migrations/029-paie-etendue.sql)
@@ -53,6 +54,13 @@
 - [seed-sondages.ts](file://backend/src/database/seeds/seed-sondages.ts)
 - [seed-notifications.ts](file://backend/src/database/seeds/seed-notifications.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added documentation for migration 113-unite-responsable-fk-cleanup.sql addressing foreign key relationships for unit responsibility management
+- Updated organizational structure section to include the new migration pattern
+- Enhanced referential integrity guidelines with examples from the latest migration
+- Updated foreign key constraint best practices section
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -169,6 +177,7 @@ DB-->>Dev : "Migration applied successfully"
   - Academic structure refactors: 053-structure-academique-complete.sql, 054-refonte-structure-academique-v2.sql, 088-refactorisation-architecture-academique.sql, 089-finalisation-architecture-academique-v2.sql, 091-peuplement-architecture-academique.sql, 092-refactorisation-classeAnneeId.sql.
   - Periods and templates: 035-contexte-africain-periodes.sql, 035b-migration-donnees-periodes.sql, 102-periodes-hierarchie.sql, 103-templates-periode-personnalisables.sql, 104-refonte-periodes-niveaux-configurables.sql, 105-migration-templates-v5.sql.
   - Performance and monitoring: 099-add-monitoring-params.sql, 100-classes-salle-principale.sql, 101-normalisation-annee-scolaire-cloture.sql, 106-rename-sequence-to-evaluation.sql, 107-cleanup-configuration-modules-actif.sql, 108-refactor-salle-principale.sql.
+  - **Updated** Organizational integrity fixes: 113-unite-responsable-fk-cleanup.sql addresses foreign key relationships for unit responsibility management.
 
 Best practices:
 - Keep each migration focused on a single change set.
@@ -202,6 +211,7 @@ Best practices:
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
 - [107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [108-refactor-salle-principale.sql](file://backend/database/migrations/108-refactor-salle-principale.sql)
+- [113-unite-responsable-fk-cleanup.sql](file://backend/database/migrations/113-unite-responsable-fk-cleanup.sql)
 
 ### Idempotent Migrations and Backward Compatibility
 - Use IF NOT EXISTS for objects where supported to allow re-running without errors.
@@ -255,7 +265,7 @@ Best practices:
 - [043-correction-dossier-medical-fk.ts](file://backend/database/migrations/043-correction-dossier-medical-fk.ts)
 
 ### Entities Using TypeORM Decorators
-While specific entity files are not referenced here, follow these patterns aligned with the project’s DataSource configuration:
+While specific entity files are not referenced here, follow these patterns aligned with the project's DataSource configuration:
 - Define entities with decorators corresponding to tables created by migrations.
 - Map columns to existing types and constraints defined in SQL migrations.
 - Use @Entity, @PrimaryGeneratedColumn, @Column, @Index, and relationship decorators (@OneToMany, @ManyToOne, etc.) to mirror schema design.
@@ -272,6 +282,10 @@ Recommendations:
 - Model relationships explicitly in entities to match FK constraints defined in migrations.
 - Use cascade rules judiciously; avoid heavy cascades on high-volume tables.
 - Enforce referential integrity at the database level via FKs in migrations.
+
+**Updated** Recent organizational structure improvements demonstrate proper foreign key constraint management:
+- The 113-unite-responsable-fk-cleanup.sql migration specifically addresses foreign key relationships for unit responsibility management, ensuring data integrity and proper referential constraints within the organizational structure.
+- This pattern should be followed when creating relationships between organizational units and responsible parties.
 
 [No sources needed since this section provides general guidance]
 
@@ -291,6 +305,24 @@ Operational helpers:
 - [038-index-performance-gamification-suivi.ts](file://backend/database/migrations/038-index-performance-gamification-suivi.ts)
 - [099-add-monitoring-params.sql](file://backend/database/migrations/099-add-monitoring-params.sql)
 - [fix-index.ts](file://backend/src/database/fix-index.ts)
+
+### Foreign Key Constraint Management
+Foreign key constraints are critical for maintaining data integrity across related tables. The project follows strict patterns for managing referential integrity:
+
+**Updated** Recent improvements in foreign key management:
+- The 113-unite-responsable-fk-cleanup.sql migration demonstrates proper cleanup and establishment of foreign key relationships for unit responsibility management.
+- This ensures that organizational structures maintain proper referential constraints between units and their responsible parties.
+
+Best practices for foreign key management:
+- Always define foreign keys with appropriate ON DELETE and ON UPDATE actions.
+- Use CASCADE carefully to avoid unintended data deletion.
+- Implement proper validation before establishing foreign key constraints.
+- Test constraint violations during development to catch data integrity issues early.
+- Consider using DEFERRABLE constraints for complex initialization scenarios.
+
+**Section sources**
+- [113-unite-responsable-fk-cleanup.sql](file://backend/database/migrations/113-unite-responsable-fk-cleanup.sql)
+- [043-correction-dossier-medical-fk.ts](file://backend/database/migrations/043-correction-dossier-medical-fk.ts)
 
 ### Seed Data Creation for Testing and Development
 Seed scripts populate essential reference data and sample records for local development and testing.
@@ -362,6 +394,7 @@ Seeds --> DB
 - Use EXPLAIN ANALYZE to validate query plans for critical paths.
 - Monitor long-running migrations; consider partitioning large table updates.
 - Leverage monitoring parameters introduced by 099-add-monitoring-params.sql to track performance regressions.
+- **Updated** Foreign key constraint cleanup migrations like 113-unite-responsable-fk-cleanup.sql help maintain optimal query performance by ensuring proper referential integrity.
 
 [No sources needed since this section provides general guidance]
 
@@ -375,13 +408,18 @@ Common issues and resolutions:
   - Ensure idempotent guards (IF NOT EXISTS) and separate structural vs. data migrations.
 - Slow migrations:
   - Break large updates into smaller batches; create indexes post-load.
+- **Updated** Foreign key constraint violations:
+  - Review recent constraint cleanup migrations like 113-unite-responsable-fk-cleanup.sql for proper patterns.
+  - Check for orphaned records before establishing foreign key relationships.
+  - Use deferred constraints for complex initialization scenarios.
 
 **Section sources**
 - [fix-index.ts](file://backend/src/database/fix-index.ts)
 - [diagnose-enum.ts](file://backend/src/database/diagnose-enum.ts)
+- [113-unite-responsable-fk-cleanup.sql](file://backend/database/migrations/113-unite-responsable-fk-cleanup.sql)
 
 ## Conclusion
-Adopting disciplined migration practices, robust entity design, and careful indexing will ensure scalable and maintainable schema evolution for new eLISAschool modules. Use TypeScript migrations for complex scenarios, keep SQL migrations simple and idempotent, and rely on seed scripts to bootstrap reliable test environments.
+Adopting disciplined migration practices, robust entity design, and careful indexing will ensure scalable and maintainable schema evolution for new eLISAschool modules. Use TypeScript migrations for complex scenarios, keep SQL migrations simple and idempotent, and rely on seed scripts to bootstrap reliable test environments. Recent improvements in foreign key constraint management, particularly the 113-unite-responsable-fk-cleanup.sql migration, demonstrate the importance of maintaining proper referential integrity in organizational structures.
 
 ## Appendices
 
@@ -400,6 +438,7 @@ Adopting disciplined migration practices, robust entity design, and careful inde
 - Personnel/RH: 016-module-personnel-rh-phase1.sql
 - Announcements/Surveys: 041-module-annonces-complete.sql
 - Organization/Recruitment: 044-module-organisation.sql, 045-module-recrutement.sql
+- **Updated** Organizational Integrity: 113-unite-responsable-fk-cleanup.sql
 - Academic Structure Refactors: 053-structure-academique-complete.sql, 054-refonte-structure-academique-v2.sql, 088-refactorisation-architecture-academique.sql, 089-finalisation-architecture-academique-v2.sql, 091-peuplement-architecture-academique.sql, 092-refactorisation-classeAnneeId.sql
 - Timetable: 063-creer-module-emploi-du-temps.sql
 - Rooms: 070-module-salles.sql
@@ -415,6 +454,7 @@ Adopting disciplined migration practices, robust entity design, and careful inde
 - [041-module-annonces-complete.sql](file://backend/database/migrations/041-module-annonces-complete.sql)
 - [044-module-organisation.sql](file://backend/database/migrations/044-module-organisation.sql)
 - [045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
+- [113-unite-responsable-fk-cleanup.sql](file://backend/database/migrations/113-unite-responsable-fk-cleanup.sql)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 - [053-structure-academique-complete.sql](file://backend/database/migrations/053-structure-academique-complete.sql)
 - [054-refonte-structure-academique-v2.sql](file://backend/database/migrations/054-refonte-structure-academique-v2.sql)

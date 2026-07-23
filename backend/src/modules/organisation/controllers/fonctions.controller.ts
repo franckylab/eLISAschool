@@ -6,7 +6,7 @@ import { validateDto } from '@common/utils';
 
 const router = Router();
 
-router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('organisation:fonctions:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryFonctionsSchema, req.query);
         const etablissementId = req.utilisateur!.etablissementId!;
@@ -15,7 +15,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     } catch (error) { next(error); }
 });
 
-router.get('/arbre', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/arbre', authMiddleware, requirePermission('organisation:fonctions:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         const arbre = await fonctionsService.findArbre(etablissementId);
@@ -23,7 +23,7 @@ router.get('/arbre', authMiddleware, async (req: Request, res: Response, next: N
     } catch (error) { next(error); }
 });
 
-router.get('/all', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/all', authMiddleware, requirePermission('organisation:fonctions:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         const fonctions = await fonctionsService.findAllSimple(etablissementId);
@@ -31,7 +31,7 @@ router.get('/all', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
-router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', authMiddleware, requirePermission('organisation:fonctions:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         const fonction = await fonctionsService.findOne(req.params.id, etablissementId);
@@ -39,7 +39,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
     } catch (error) { next(error); }
 });
 
-router.get('/:id/membres', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/membres', authMiddleware, requirePermission('organisation:fonctions:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
         const membres = await fonctionsService.findMembres(req.params.id, etablissementId);

@@ -4,6 +4,7 @@ import { AppError } from '@common/filters/error.filter';
 import {
     UniteOrganisationnelle,
     Poste,
+    Fonction,
     HierarchiePersonnel,
     StatutUnite,
     StatutPoste,
@@ -35,6 +36,7 @@ interface GenerationContext {
     niveauOrgMap: Map<string, string>;
     categorieMap: Map<string, string>;
     niveauRespMap: Map<string, string>;
+    fonctionMap: Map<string, string>;
 }
 
 function fallbackNiveauResponsabiliteCode(valeur?: string): string | undefined {
@@ -135,6 +137,7 @@ export class GenerationService {
             niveauOrgMap: new Map(),
             categorieMap: new Map(),
             niveauRespMap: new Map(),
+            fonctionMap: new Map(),
         };
 
         const niveaux = await niveauOrganisationService.findAll(etablissementId);
@@ -149,7 +152,15 @@ export class GenerationService {
 
         const niveauxResp = await niveauResponsabiliteService.findAll(etablissementId);
         for (const nr of niveauxResp) {
-            context.niveauRespMap.set(nr.code, nr.code);
+            context.niveauRespMap.set(nr.code, nr.id);
+        }
+
+        const fonctions = await queryRunner.manager.find(Fonction, {
+            where: { etablissementId },
+            select: ['id', 'code'],
+        });
+        for (const f of fonctions) {
+            context.fonctionMap.set(f.code, f.id);
         }
 
         return context;
@@ -302,10 +313,22 @@ export class GenerationService {
         noeud: NoeudTemplateOrganisation,
     ): Promise<string | null> {
         const count = templatePoste.nombrePostes || 1;
+        const tp = templatePoste as any;
+
+        // Résoudre la catégorie de poste (code → UUID)
+        const categorieCode = tp.categoriePoste;
+        const categoriePosteId = tp.categoriePosteId ?? (categorieCode ? ctx.categorieMap.get(categorieCode) : undefined);
+
+        // Résoudre le niveau de responsabilité (code → UUID)
+        const niveauRespCode = tp.niveauResponsabilite;
+        const niveauResponsabiliteId = tp.niveauResponsabiliteId ?? (niveauRespCode ? ctx.niveauRespMap.get(niveauRespCode) : undefined);
+
+        // Résoudre la fonction (priorité à fonctionId, fallback fonctionRef → code → UUID)
+        const fonctionId = tp.fonctionId ?? (tp.fonctionRef ? ctx.fonctionMap.get(tp.fonctionRef) : undefined);
 
         for (let i = 0; i < count; i++) {
-            const posteCode = `${ctx.prefixeCode}${templatePoste.ref.toUpperCase()}`;
-            const intituleBrut = templatePoste.intitule ?? 'Poste';
+            const posteCode = `${ctx.prefixeCode}${tp.ref.toUpperCase()}`;
+            const intituleBrut = tp.intitule ?? tp.intitulé ?? 'Poste';
             const intitule = count > 1
                 ? `${intituleBrut} ${i + 1}`
                 : intituleBrut;
@@ -314,6 +337,9 @@ export class GenerationService {
                 intitule,
                 code: posteCode,
                 uniteOrganisationnelleId: uniteId,
+                categoriePosteId,
+                niveauResponsabiliteId,
+                fonctionId,
                 nombrePostes: 1,
                 statut: StatutPoste.VACANT,
                 actif: true,
@@ -321,7 +347,7 @@ export class GenerationService {
             const savedPoste = await ctx.queryRunner.manager.save(poste);
             ctx.result.postesCrees++;
             const nomNet = noeud.nom.trim();
-            const posteRef = `${nomNet}.${templatePoste.ref}${count > 1 ? `_${i + 1}` : ''}`;
+            const posteRef = `${nomNet}.${tp.ref}${count > 1 ? `_${i + 1}` : ''}`;
             ctx.result.postes.push({ ref: posteRef, id: savedPoste.id, intitule, code: posteCode });
             ctx.posteRefMap.set(posteRef, savedPoste.id);
         }

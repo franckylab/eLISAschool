@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../data-source';
-import { TemplateOrganisation } from '@modules/organisation/entities';
+import { TemplateOrganisation, Fonction } from '@modules/organisation/entities';
 import { logger } from '@common/utils/logger.util';
 
 interface TemplateDef {
@@ -10,6 +10,22 @@ interface TemplateDef {
 
 export async function seedTemplatesOrganisation(): Promise<number> {
     const repo = AppDataSource.getRepository(TemplateOrganisation);
+
+    // Validation croisée : tous les fonctionRef doivent exister dans au moins un établissement
+    const fonctionsExistantes = await AppDataSource.getRepository(Fonction).find({ select: ['code'] });
+    const codesFonctions = new Set(fonctionsExistantes.map((f) => f.code));
+    const refsManquantes: string[] = [];
+    const fonctionRefs = new Set<string>();
+    for (const defs of Object.values(P)) {
+        if (defs.fonctionRef) fonctionRefs.add(defs.fonctionRef);
+    }
+    for (const ref of fonctionRefs) {
+        if (!codesFonctions.has(ref)) refsManquantes.push(ref);
+    }
+    if (refsManquantes.length > 0) {
+        logger.warn(`  ⚠ fonctionRef introuvables dans la base: ${refsManquantes.join(', ')}`);
+    }
+
     let count = 0;
 
     for (const def of TEMPLATES) {
@@ -37,22 +53,22 @@ export async function seedTemplatesOrganisation(): Promise<number> {
 // ─── 22 TEMPLATES SYSTÈME ───
 
 const P = {
-    DIR: { ref: 'DIR', intitulé: 'Directeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_GENERALE', nombrePostes: 1 },
-    CENSEUR: { ref: 'CENSEUR', intitulé: 'Censeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_ADJOINTE', nombrePostes: 1 },
-    SURV: { ref: 'SURV', intitulé: 'Surveillant Général', categoriePoste: 'EDUCATIF', niveauResponsabilite: 'SUPERVISEUR', nombrePostes: 1 },
-    ADMIN: { ref: 'ADMIN', intitulé: 'Agent Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
-    RESP_ADMIN: { ref: 'RESP_ADMIN', intitulé: 'Chef Service Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'RESPONSABLE', nombrePostes: 1 },
-    SECRET: { ref: 'SECRET', intitulé: 'Secrétaire', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 2 },
-    COMPTA: { ref: 'COMPTA', intitulé: 'Comptable', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
-    INTEND: { ref: 'INTEND', intitulé: 'Intendant', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'RESPONSABLE', nombrePostes: 1 },
-    CHEF_DEPT: { ref: 'CHEF_DEPT', intitulé: 'Chef de Département', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 1 },
-    PROF: { ref: 'PROF', intitulé: 'Professeur', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 10 },
-    CHEF_ATEL: { ref: 'CHEF_ATEL', intitulé: 'Chef d\'Atelier', categoriePoste: 'TECHNIQUE', niveauResponsabilite: 'RESPONSABLE', nombrePostes: 1 },
-    FORMATEUR: { ref: 'FORMATEUR', intitulé: 'Formateur Technique', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 5 },
-    DOC: { ref: 'DOC', intitulé: 'Documentaliste', categoriePoste: 'DOCUMENTATION', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
-    ORIENT: { ref: 'ORIENT', intitulé: 'Conseiller d\'Orientation', categoriePoste: 'ORIENTATION', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
-    INFIRM: { ref: 'INFIRM', intitulé: 'Infirmier Scolaire', categoriePoste: 'SANTE', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
-    ANIM: { ref: 'ANIM', intitulé: 'Animateur Pédagogique', categoriePoste: 'EDUCATIF', niveauResponsabilite: 'EXECUTANT', nombrePostes: 1 },
+    DIR: { ref: 'DIR', intitulé: 'Directeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_GENERALE', fonctionRef: 'DIR-ETAB', nombrePostes: 1 },
+    CENSEUR: { ref: 'CENSEUR', intitulé: 'Censeur', categoriePoste: 'DIRECTION', niveauResponsabilite: 'DIRECTION_ADJOINTE', fonctionRef: 'CENSEUR', nombrePostes: 1 },
+    SURV: { ref: 'SURV', intitulé: 'Surveillant Général', categoriePoste: 'ENCADREMENT', niveauResponsabilite: 'SUPERVISEUR', fonctionRef: 'SURV-GEN', nombrePostes: 1 },
+    ADMIN: { ref: 'ADMIN', intitulé: 'Agent Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'AGENT-COMPTA', nombrePostes: 1 },
+    RESP_ADMIN: { ref: 'RESP_ADMIN', intitulé: 'Chef Service Administratif', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'RESPONSABLE', fonctionRef: 'CHEF-ADM', nombrePostes: 1 },
+    SECRET: { ref: 'SECRET', intitulé: 'Secrétaire', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'AGENT-COMPTA', nombrePostes: 2 },
+    COMPTA: { ref: 'COMPTA', intitulé: 'Comptable', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'COMPTABLE', nombrePostes: 1 },
+    INTEND: { ref: 'INTEND', intitulé: 'Intendant', categoriePoste: 'ADMINISTRATIF', niveauResponsabilite: 'RESPONSABLE', fonctionRef: 'INTENDANT', nombrePostes: 1 },
+    CHEF_DEPT: { ref: 'CHEF_DEPT', intitulé: 'Chef de Département', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'COORDINATEUR', fonctionRef: 'CDEPT', nombrePostes: 1 },
+    PROF: { ref: 'PROF', intitulé: 'Professeur', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'PROF-TIT', nombrePostes: 10 },
+    CHEF_ATEL: { ref: 'CHEF_ATEL', intitulé: 'Chef d\'Atelier', categoriePoste: 'TECHNIQUE', niveauResponsabilite: 'RESPONSABLE', fonctionRef: 'RESP-TECH', nombrePostes: 1 },
+    FORMATEUR: { ref: 'FORMATEUR', intitulé: 'Formateur Technique', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'PROF-TIT', nombrePostes: 5 },
+    DOC: { ref: 'DOC', intitulé: 'Documentaliste', categoriePoste: 'DOCUMENTATION', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'DOCUMENTALISTE', nombrePostes: 1 },
+    ORIENT: { ref: 'ORIENT', intitulé: 'Conseiller d\'Orientation', categoriePoste: 'ORIENTATION', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'ORIENTEUR', nombrePostes: 1 },
+    INFIRM: { ref: 'INFIRM', intitulé: 'Infirmier Scolaire', categoriePoste: 'SANTE', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'INFIRMIER', nombrePostes: 1 },
+    ANIM: { ref: 'ANIM', intitulé: 'Animateur Pédagogique', categoriePoste: 'ENCADREMENT', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'ANIMATEUR', nombrePostes: 1 },
 };
 
 const H_DIR_CENSEUR = [{ superieurRef: 'DIRECTION', subordonneRef: 'CENSORAT', typeRelation: 'SUPERVISE_DIRECT' }];
@@ -213,7 +229,7 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 3, usageUnite: 'POLE_PEDAGOGIQUE', nom: 'Cycle', count: 3,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Coordinateur de Cycle', ref: 'COORD_CYCLE', niveauResponsabilite: 'COORDINATEUR' },
-                             { ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 6 }],
+                             { ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 6 }],
                     hierarchie: [],
                     enfants: [],
                 },
@@ -232,7 +248,7 @@ const TEMPLATES: TemplateDef[] = [
             enfants: [
                 {
                     niveau: 3, usageUnite: 'DEPARTEMENT', nom: 'Section', count: 2,
-                    postes: [{ ...P.PROF, intitulé: 'Instituteur(-trice) Maternelle', ref: 'INSTIT_MAT', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 4 },
+                    postes: [{ ...P.PROF, intitulé: 'Instituteur(-trice) Maternelle', ref: 'INSTIT_MAT', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 4 },
                              { ...P.ANIM, intitulé: 'Aide-Maternelle', ref: 'AIDE_MAT', nombrePostes: 2 }],
                     hierarchie: [],
                     enfants: [],
@@ -566,7 +582,7 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, usageUnite: 'DEPARTEMENT', nom: 'Pôle Pédagogique', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Conseiller Pédagogique Principal', ref: 'CP_PRINCIPAL' },
-                             { ...P.PROF, intitulé: 'Conseiller Pédagogique', ref: 'CP', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
+                             { ...P.PROF, intitulé: 'Conseiller Pédagogique', ref: 'CP', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
                     hierarchie: [],
                     enfants: [],
                 },
@@ -617,7 +633,7 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, usageUnite: 'SERVICE', nom: 'Division des Enseignements', count: 1,
                     postes: [{ ...P.RESP_ADMIN, intitulé: 'Chef Division Enseignements', ref: 'CHEF_DIV_ENS' },
-                             { ...P.PROF, intitulé: 'Inspecteur Pédagogique', ref: 'INSPECTEUR', categoriePoste: 'ENSEIGNANT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
+                             { ...P.PROF, intitulé: 'Inspecteur Pédagogique', ref: 'INSPECTEUR', categoriePoste: 'ENSEIGNEMENT', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
                     hierarchie: [],
                     enfants: [],
                 },

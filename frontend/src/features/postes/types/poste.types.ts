@@ -17,7 +17,7 @@ export interface Poste {
     categoriePoste?: { id: string; code: string; label: string };
     niveauResponsabiliteId?: string;
     niveauResponsabilite?: { id: string; code: string; label: string; niveau: number };
-    fonctionId?: string;
+    fonctionId: string;
     fonction?: { id: string; nom: string; code: string; typePersonnel?: TypePersonnelLite };
     statut: StatutPoste;
     actif: boolean;
@@ -37,7 +37,7 @@ export interface CreatePosteDto {
     code: string;
     categoriePosteId?: string;
     niveauResponsabiliteId?: string;
-    fonctionId?: string;
+    fonctionId: string;
     uniteOrganisationnelleId: string;
     nombrePostes?: number;
     competencesRequises?: string[];
