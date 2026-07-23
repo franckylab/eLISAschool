@@ -20,11 +20,10 @@ import { useNiveauxResponsabilite } from '../../../hooks/use-niveaux-responsabil
 import { useAuthStore } from '@/stores/auth.store';
 import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organisation.types';
 
-// Schéma de validation (messages i18n — construit dans le composant)
 type PosteFormData = {
     intitule: string;
     code: string;
-    categoriePosteCode: string;
+    categoriePosteId: string;
     niveauResponsabiliteId: string;
     description: string;
     estSuppleant: boolean;
@@ -44,7 +43,7 @@ interface PosteFormModalProps {
 const FORM_INIT: PosteFormData = {
     intitule: '',
     code: '',
-    categoriePosteCode: '',
+    categoriePosteId: '',
     niveauResponsabiliteId: '',
     description: '',
     estSuppleant: false,
@@ -57,7 +56,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
     const posteFormSchema = useMemo(() => z.object({
         intitule: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
         code: z.string().max(20).optional().or(z.literal('')),
-        categoriePosteCode: z.string().optional().or(z.literal('')),
+        categoriePosteId: z.string().optional().or(z.literal('')),
         niveauResponsabiliteId: z.string().optional().or(z.literal('')),
         description: z.string().max(500).optional().or(z.literal('')),
         estSuppleant: z.boolean().default(false),
@@ -83,7 +82,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             reset({
                 intitule: poste.intitule || '',
                 code: poste.code || '',
-                categoriePosteCode: '',
+                categoriePosteId: '',
                 niveauResponsabiliteId: '',
                 description: '',
                 estSuppleant: false,
@@ -101,7 +100,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 id: poste.id,
                 intitule: data.intitule,
                 code: data.code || undefined,
-                categoriePosteCode: data.categoriePosteCode || undefined,
+                categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 estSuppleant: data.estSuppleant,
@@ -110,7 +109,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             await creerPoste({
                 ...data,
                 code: data.code || undefined,
-                categoriePosteCode: data.categoriePosteCode || undefined,
+                categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 uniteOrganisationnelleId: unite.id,
@@ -195,7 +194,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                             {t('organigramme.form.categorie', 'Catégorie')}
                         </label>
                         <select
-                            {...register('categoriePosteCode')}
+                            {...register('categoriePosteId')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         >

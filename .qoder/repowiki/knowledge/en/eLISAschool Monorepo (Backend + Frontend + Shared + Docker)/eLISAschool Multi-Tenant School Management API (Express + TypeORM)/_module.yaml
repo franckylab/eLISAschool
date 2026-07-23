@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend
+title: eLISAschool Multi-Tenant School Management API (Express + TypeORM)
+scope:
+    - backend/src/
+    - backend/database/migrations/
+    - backend/scripts/
+source_files: []
+depends_on: []
+related_to: []

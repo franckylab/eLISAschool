@@ -26,8 +26,6 @@ export const createUniteOrganisationnelleSchema = z.object({
     responsableNom: z.string().max(200).optional(),
     responsableId: z.string().uuid().optional(),
     localisation: z.string().max(100).optional(),
-    telephone: z.string().max(50).optional(),
-    email: z.string().email().optional().or(z.literal('')),
 });
 
 export const updateUniteOrganisationnelleSchema = createUniteOrganisationnelleSchema.partial().omit({

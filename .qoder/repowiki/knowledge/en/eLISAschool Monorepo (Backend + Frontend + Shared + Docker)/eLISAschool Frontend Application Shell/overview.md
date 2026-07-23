@@ -1,0 +1,1 @@
+React SPA entry point, routing, providers, and shared UI/hook/store layer for the eLISAschool school management system.

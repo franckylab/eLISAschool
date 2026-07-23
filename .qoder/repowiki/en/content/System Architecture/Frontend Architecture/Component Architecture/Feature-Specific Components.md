@@ -28,14 +28,17 @@
 - [hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
 - [lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
 - [stores/app.store.ts](file://frontend/src/stores/app.store.ts)
+- [features/organisation/modes-remuneration-page.tsx](file://frontend/src/features/organisation/modes-remuneration-page.tsx)
+- [features/organisation/use-modes-remuneration.ts](file://frontend/src/features/organisation/use-modes-remuneration.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive dark mode support section for feature-specific components
-- Updated component analysis to include theme-aware styling patterns
-- Enhanced accessibility considerations for dark mode implementations
-- Added guidelines for maintaining design system consistency across features
+- Added comprehensive remuneration mode management capabilities to the organization feature
+- Integrated new modes-remuneration-page.tsx component with internationalization support
+- Enhanced use-modes-remuneration.ts hook for data fetching and state management
+- Updated feature architecture documentation to include organization domain expansion
+- Added new section covering remuneration mode management functionality
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,21 +47,23 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Dark Mode Support](#dark-mode-support)
 6. [Detailed Component Analysis](#detailed-component-analysis)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
+7. [Organization Feature Expansion](#organization-feature-expansion)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the feature-based architecture used across business domains (eleves, personnel, finances, etc.). Each domain owns its components, hooks, types, stores, and utilities. The frontend uses:
+This document explains the feature-based architecture used across business domains (eleves, personnel, finances, organisation, etc.). Each domain owns its components, hooks, types, stores, and utilities. The frontend uses:
 - React Query for data fetching and caching
 - Zustand for local UI state management
 - Route-based component organization with TanStack Router
 - Permission guards to protect routes and actions
 - Feature module loading patterns for scalability
 - **Enhanced dark mode support with theme-aware styling across all feature components**
+- **Internationalization support for multi-language interfaces**
 
-The goal is to help developers understand how features are composed, how state flows between layers, and how to test and optimize feature components effectively while maintaining consistent dark mode support.
+The goal is to help developers understand how features are composed, how state flows between layers, and how to test and optimize feature components effectively while maintaining consistent dark mode support and internationalization capabilities.
 
 ## Project Structure
 The frontend organizes code by feature under src/features/<domain>. A typical feature includes:
@@ -75,11 +80,13 @@ App["App.tsx"]
 Main["main.tsx"]
 RTG["routeTree.gen.ts"]
 Theme["Theme Provider"]
+I18n["i18n Provider"]
 end
 subgraph "Features"
-Eleves["features/eleves<br/>+ Dark Mode Support"]
-Personnel["features/personnel<br/>+ Dark Mode Support"]
-Finances["features/finances<br/>+ Dark Mode Support"]
+Eleves["features/eleves<br/>+ Dark Mode + i18n"]
+Personnel["features/personnel<br/>+ Dark Mode + i18n"]
+Finances["features/finances<br/>+ Dark Mode + i18n"]
+Organisation["features/organisation<br/>+ Remuneration Modes<br/>+ Dark Mode + i18n"]
 end
 subgraph "Shared"
 Guards["components/guards/PermissionGuard.tsx"]
@@ -92,15 +99,23 @@ Main --> App
 RTG --> Eleves
 RTG --> Personnel
 RTG --> Finances
+RTG --> Organisation
 Theme --> Eleves
 Theme --> Personnel
 Theme --> Finances
+Theme --> Organisation
+I18n --> Eleves
+I18n --> Personnel
+I18n --> Finances
+I18n --> Organisation
 Eleves --> QueryClient
 Personnel --> QueryClient
 Finances --> QueryClient
+Organisation --> QueryClient
 Eleves --> AppStore
 Personnel --> AppStore
 Finances --> AppStore
+Organisation --> AppStore
 RTG --> Guards
 Guards --> AuthHook
 ```
@@ -125,6 +140,7 @@ Each feature exposes a small public surface via an index file that re-exports co
 - eleves: student list/detail views, queries, types, and UI store slice with enhanced dark mode support
 - personnel: staff list/detail views, queries, types, and UI store slice with enhanced dark mode support
 - finances: payments and related views, queries, types, and UI store slice with enhanced dark mode support
+- organisation: organizational structure management including remuneration modes, queries, types, and UI store slice with enhanced dark mode support
 
 Key responsibilities:
 - Components render feature UI and consume hooks with theme-aware styling
@@ -132,6 +148,7 @@ Key responsibilities:
 - Types define request/response contracts and UI shapes
 - Stores manage local UI state (filters, pagination, modals)
 - **All components now support seamless dark mode transitions and maintain design system consistency**
+- **Components integrate with internationalization system for multi-language support**
 
 **Section sources**
 - [eleves/index.ts](file://frontend/src/features/eleves/index.ts)
@@ -146,6 +163,7 @@ Feature architecture follows a layered pattern:
 - Components read/write Zustand stores for local UI state
 - Permission guards wrap protected routes/actions
 - **Theme provider ensures consistent dark mode styling across all components**
+- **i18n provider enables internationalization across all features**
 
 ```mermaid
 sequenceDiagram
@@ -153,43 +171,47 @@ participant User as "User"
 participant Router as "TanStack Router"
 participant Guard as "PermissionGuard"
 participant Theme as "Theme Provider"
+participant I18n as "i18n Provider"
 participant Comp as "Feature Component"
 participant Hook as "useXxx Hook"
 participant Q as "React Query"
 participant Store as "Zustand Store"
-User->>Router : Navigate to "/eleves/ : id"
+User->>Router : Navigate to "/organisation/remuneration-modes"
 Router->>Guard : Check permissions
 Guard-->>Router : Allow/Deny
 Router->>Theme : Apply theme context
+Router->>I18n : Set language context
 Theme-->>Comp : Theme values (light/dark)
-Router->>Comp : Render EleveDetail
-Comp->>Hook : Call useEleve(id)
+I18n-->>Comp : Translation functions
+Router->>Comp : Render ModesRemunerationPage
+Comp->>Hook : Call useModesRemuneration()
 Hook->>Q : query({ key, fetcher })
 Q-->>Hook : data | isLoading | error
 Hook-->>Comp : { data, status }
 Comp->>Store : setFilter()/setModal()
 Store-->>Comp : latest UI state
-Comp-->>User : Rendered UI with theme-aware styling
+Comp-->>User : Rendered UI with theme-aware styling and translations
 ```
 
 **Diagram sources**
-- [routes/eleves.$id.tsx](file://frontend/src/routes/eleves.$id.tsx)
+- [routes/_layout.tsx](file://frontend/src/routes/_layout.tsx)
 - [components/guards/PermissionGuard.tsx](file://frontend/src/components/guards/PermissionGuard.tsx)
 - [hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
 - [lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
-- [eleves/hooks/useEleves.ts](file://frontend/src/features/eleves/hooks/useEleves.ts)
-- [eleves/store/eleves.store.ts](file://frontend/src/features/eleves/store/eleves.store.ts)
+- [features/organisation/modes-remuneration-page.tsx](file://frontend/src/features/organisation/modes-remuneration-page.tsx)
+- [features/organisation/use-modes-remuneration.ts](file://frontend/src/features/organisation/use-modes-remuneration.ts)
 
 ## Dark Mode Support
 
 ### Theme-Aware Component Architecture
-All feature-specific components now implement comprehensive dark mode support through a unified theming system. The enhancement includes specialized components like PosteFormModal, UniteFormModal, fonction-form-modal, and nomenclature-crud-page that maintain visual consistency across light and dark themes.
+All feature-specific components now implement comprehensive dark mode support through a unified theming system. The enhancement includes specialized components like PosteFormModal, UniteFormModal, fonction-form-modal, nomenclature-crud-page, and modes-remuneration-page that maintain visual consistency across light and dark themes.
 
 ### Key Dark Mode Features
 - **Consistent Color Palettes**: All components use semantic color tokens that adapt to theme context
 - **Smooth Transitions**: CSS transitions provide seamless switching between light and dark modes
 - **Accessibility Compliance**: WCAG 2.1 AA contrast ratios maintained in both themes
 - **Design System Integration**: Components follow established design tokens and spacing rules
+- **Internationalization Support**: All text content adapts to selected language while maintaining theme consistency
 
 ### Implementation Patterns
 
@@ -214,13 +236,14 @@ Specialized modal components like PosteFormModal and UniteFormModal now include:
 - Responsive layout adjustments
 
 #### Form Components Styling
-Form elements including fonction-form-modal implement:
+Form elements including fonction-form-modal and modes-remuneration-page implement:
 - Theme-aware input borders and backgrounds
 - Consistent validation states across themes
 - Proper label and helper text contrast
 - Focus indicators visible in both modes
+- Internationalized form labels and messages
 
-**Updated** Enhanced dark mode support across all feature components with theme-aware styling and design system consistency
+**Updated** Enhanced dark mode support across all feature components including the new remuneration mode management interface with theme-aware styling and design system consistency
 
 **Section sources**
 - [components/guards/PermissionGuard.tsx](file://frontend/src/components/guards/PermissionGuard.tsx)
@@ -432,12 +455,14 @@ Routes are organized by domain and nested layout:
 
 ```mermaid
 graph LR
-Layout["_layout.tsx<br/>+ Theme Provider"] --> ElevesRoute["eleves.$id.tsx"]
+Layout["_layout.tsx<br/>+ Theme Provider + i18n"] --> ElevesRoute["eleves.$id.tsx"]
 Layout --> PersonnelRoute["personnel.$id.tsx"]
 Layout --> FinancesRoute["finances.payments.tsx"]
-ElevesRoute --> ElevesComp["features/eleves/*<br/>+ Dark Mode"]
-PersonnelRoute --> PersonnelComp["features/personnel/*<br/>+ Dark Mode"]
-FinancesRoute --> FinancesComp["features/finances/*<br/>+ Dark Mode"]
+Layout --> OrgRoute["organisation/*<br/>+ Remuneration Modes"]
+ElevesRoute --> ElevesComp["features/eleves/*<br/>+ Dark Mode + i18n"]
+PersonnelRoute --> PersonnelComp["features/personnel/*<br/>+ Dark Mode + i18n"]
+FinancesRoute --> FinancesComp["features/finances/*<br/>+ Dark Mode + i18n"]
+OrgRoute --> OrgComp["features/organisation/*<br/>+ Dark Mode + i18n"]
 ```
 
 **Diagram sources**
@@ -452,31 +477,129 @@ FinancesRoute --> FinancesComp["features/finances/*<br/>+ Dark Mode"]
 - [routes/personnel.$id.tsx](file://frontend/src/routes/personnel.$id.tsx)
 - [routes/finances.payments.tsx](file://frontend/src/routes/finances.payments.tsx)
 
+## Organization Feature Expansion
+
+### Remuneration Mode Management
+The organization feature has been significantly expanded with comprehensive remuneration mode management capabilities. This new functionality allows administrators to configure and manage different remuneration modes for personnel within the school system.
+
+#### Key Components
+- **ModesRemunerationPage**: Main page component for managing remuneration modes with full internationalization support
+- **useModesRemuneration**: Custom hook providing data fetching, mutation, and state management for remuneration modes
+- **Internationalization**: Complete translation support for French and English interfaces
+
+#### Component Architecture
+The remuneration mode management follows the established feature architecture pattern:
+
+```mermaid
+classDiagram
+class ModesRemunerationPage {
++render()
+-fetchModes()
+-handleCreateMode()
+-handleEditMode()
+-handleDeleteMode()
+-internationalized-texts
+-theme-aware-styling
+}
+class UseModesRemuneration {
++fetchModes()
++createMode(data)
++updateMode(id, data)
++deleteMode(id)
++isLoading
++error
++refetch()
+}
+class RemunerationTypes {
++RemunerationMode
++RemunerationModeFormData
++RemunerationModeFilters
+}
+ModesRemunerationPage --> UseModesRemuneration : "uses"
+ModesRemunerationPage --> RemunerationTypes : "types"
+ModesRemunerationPage --> Theme : "theme-aware"
+ModesRemunerationPage --> I18n : "translations"
+```
+
+**Diagram sources**
+- [features/organisation/modes-remuneration-page.tsx](file://frontend/src/features/organisation/modes-remuneration-page.tsx)
+- [features/organisation/use-modes-remuneration.ts](file://frontend/src/features/organisation/use-modes-remuneration.ts)
+
+#### Data Flow and State Management
+The remuneration mode management implements a complete CRUD workflow:
+
+```mermaid
+sequenceDiagram
+participant User as "Administrator"
+participant Page as "ModesRemunerationPage"
+participant Hook as "useModesRemuneration"
+participant Q as "React Query"
+participant API as "Backend API"
+User->>Page : Click "Add New Mode"
+Page->>Hook : createMode(formData)
+Hook->>Q : mutate({ key, variables })
+Q->>API : POST /api/remuneration-modes
+API-->>Q : Success response
+Q-->>Hook : Updated data
+Hook-->>Page : Refetch modes list
+Page-->>User : Show success notification
+```
+
+#### Internationalization Support
+The remuneration mode management includes comprehensive internationalization:
+- **French Interface**: Complete French translations for all UI elements
+- **English Interface**: Full English translation support
+- **Dynamic Language Switching**: Real-time language changes without page reload
+- **Contextual Translations**: Proper handling of plural forms and contextual text
+
+#### Dark Mode Integration
+The remuneration mode management fully supports dark mode:
+- **Theme-Aware Tables**: Enhanced table styling for dark backgrounds
+- **Accessible Forms**: Proper contrast ratios for form inputs in both themes
+- **Consistent Buttons**: Action buttons maintain proper visibility in dark mode
+- **Responsive Layout**: Adapts well to different screen sizes and themes
+
+**Updated** Added comprehensive remuneration mode management capabilities to the organization feature with internationalization support and full dark mode compatibility
+
+**Section sources**
+- [features/organisation/modes-remuneration-page.tsx](file://frontend/src/features/organisation/modes-remuneration-page.tsx)
+- [features/organisation/use-modes-remuneration.ts](file://frontend/src/features/organisation/use-modes-remuneration.ts)
+
 ## Dependency Analysis
 - Features depend on shared libraries:
   - React Query client configured in lib/queryClient.ts
   - Global app store in stores/app.store.ts
   - Permission guard and auth hook for access control
   - **Theme provider for consistent dark mode support**
+  - **i18n provider for internationalization**
 - Features are loosely coupled through typed APIs and re-exports
 - **All components inherit theme context from parent providers**
+- **New organization feature integrates seamlessly with existing infrastructure**
 
 ```mermaid
 graph TB
-Eleves["features/eleves<br/>+ Dark Mode"] --> Q["lib/queryClient.ts"]
-Personnel["features/personnel<br/>+ Dark Mode"] --> Q
-Finances["features/finances<br/>+ Dark Mode"] --> Q
+Eleves["features/eleves<br/>+ Dark Mode + i18n"] --> Q["lib/queryClient.ts"]
+Personnel["features/personnel<br/>+ Dark Mode + i18n"] --> Q
+Finances["features/finances<br/>+ Dark Mode + i18n"] --> Q
+Organisation["features/organisation<br/>+ Remuneration Modes<br/>+ Dark Mode + i18n"] --> Q
 Eleves --> AppStore["stores/app.store.ts"]
 Personnel --> AppStore
 Finances --> AppStore
-Routes["routes/*<br/>+ Theme Provider"] --> Eleves
+Organisation --> AppStore
+Routes["routes/*<br/>+ Theme Provider + i18n"] --> Eleves
 Routes --> Personnel
 Routes --> Finances
+Routes --> Organisation
 Routes --> Guard["components/guards/PermissionGuard.tsx"]
 Guard --> Auth["hooks/useAuth.ts"]
 Theme["Theme Provider"] --> Eleves
 Theme --> Personnel
 Theme --> Finances
+Theme --> Organisation
+I18n["i18n Provider"] --> Eleves
+I18n --> Personnel
+I18n --> Finances
+I18n --> Organisation
 ```
 
 **Diagram sources**
@@ -502,6 +625,8 @@ Theme --> Finances
 - Leverage route-level lazy loading where appropriate to reduce initial bundle size
 - **Optimize theme switching performance by minimizing re-renders during theme changes**
 - **Use CSS custom properties for theme values to enable fast theme switching without JavaScript overhead**
+- **Implement efficient internationalization with lazy-loaded translation files**
+- **Cache remuneration mode data appropriately to minimize API calls**
 
 ## Troubleshooting Guide
 Common issues and strategies:
@@ -513,6 +638,8 @@ Common issues and strategies:
 - **Dark mode issues: verify theme context availability and CSS custom property usage**
 - **Contrast problems: check WCAG compliance in both light and dark themes**
 - **Transition glitches: ensure smooth CSS transitions between theme states**
+- **Internationalization issues: verify translation keys exist and language switching works correctly**
+- **Remuneration mode errors: check API endpoints and data validation**
 
 **Section sources**
 - [lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
@@ -520,4 +647,4 @@ Common issues and strategies:
 - [hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
 
 ## Conclusion
-The feature-based architecture cleanly separates concerns by domain, enabling scalable growth and maintainability. By combining React Query for data, Zustand for UI state, robust routing with permission guards, and comprehensive dark mode support, each feature remains cohesive, accessible, and visually consistent across all themes. The recent enhancements to specialized components like PosteFormModal, UniteFormModal, fonction-form-modal, and nomenclature-crud-page demonstrate the commitment to maintaining high-quality user experiences in both light and dark modes. Following the composition patterns, performance tips, and accessibility guidelines outlined here will help keep the application responsive, inclusive, and easy to evolve.
+The feature-based architecture cleanly separates concerns by domain, enabling scalable growth and maintainability. By combining React Query for data, Zustand for UI state, robust routing with permission guards, comprehensive dark mode support, and internationalization capabilities, each feature remains cohesive, accessible, and visually consistent across all themes and languages. The recent expansion of the organization feature with remuneration mode management demonstrates the flexibility and extensibility of the architecture. Following the composition patterns, performance tips, and accessibility guidelines outlined here will help keep the application responsive, inclusive, and easy to evolve while supporting multiple languages and themes.

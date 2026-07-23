@@ -20,8 +20,6 @@ export interface UniteOrganisationnelle {
     responsableNom?: string;
     responsableId?: string;
     localisation?: string;
-    telephone?: string;
-    email?: string;
     createdAt: string;
     updatedAt: string;
     parent?: UniteOrganisationnelle;
@@ -40,8 +38,6 @@ export interface CreerUniteDto {
     responsableNom?: string;
     responsableId?: string;
     localisation?: string;
-    telephone?: string;
-    email?: string;
 }
 
 export type ModifierUniteDto = Partial<CreerUniteDto>;
@@ -97,8 +93,6 @@ export interface OrganigrammeNode {
     description?: string;
     responsableNom?: string;
     localisation?: string;
-    telephone?: string;
-    email?: string;
     usageUniteLabel?: string;
     niveauOrganisationLabel?: string;
     ordre: number;
@@ -131,7 +125,6 @@ export interface ModifierPosteDto {
     statut?: string;
     fonctionId?: string;
     categoriePosteId?: string;
-    categoriePosteCode?: string;
     niveauResponsabiliteId?: string;
     missions?: string[];
     competencesRequises?: string[];

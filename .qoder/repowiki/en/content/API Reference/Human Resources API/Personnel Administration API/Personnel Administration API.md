@@ -19,12 +19,19 @@
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
 - [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
-- [backend/database/migrations/017-module-personnel-rh-phase2.sql] (file://backend/database/migrations/017-module-personnel-rh-phase2.sql)
+- [backend/database/migrations/017-module-personnel-rh-phase2.sql](file://backend/database/migrations/017-module-personnel-rh-phase2.sql)
 - [backend/database/migrations/018-module-personnel-rh-phase3.sql](file://backend/database/migrations/018-module-personnel-rh-phase3.sql)
 - [backend/database/migrations/019-module-personnel-rh-phase4.sql](file://backend/database/migrations/019-module-personnel-rh-phase4.sql)
 - [backend/database/migrations/020-module-personnel-rh-phase5.sql](file://backend/database/migrations/020-module-personnel-rh-phase5.sql)
 - [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated architecture overview to reflect consolidation of specialized payroll controllers into unified personnel service
+- Revised controller structure documentation to show consolidated approach while maintaining functionality
+- Updated dependency analysis to reflect new unified personnel service architecture
+- Enhanced authentication and authorization patterns for the consolidated endpoints
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -39,18 +46,19 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for eLISAschool’s personnel administration endpoints. It covers:
+This document provides comprehensive API documentation for eLISAschool's personnel administration endpoints. The system has been significantly restructured with consolidation of specialized controllers (bulletin-paie, calcul-paie, cotisations, types-primes, types-retenues) into a unified personnel service. It covers:
 - Staff recruitment workflow APIs: job postings, candidate management, interview scheduling, and hiring processes
 - Employee profile management APIs: personal information, qualifications, certifications, and documents
 - Contract management APIs: employment contracts, contract types, renewal workflows, and termination processes
 - Position and role management APIs: positions, roles, organizational structure relationships, and employee hierarchy
+- Consolidated payroll and compensation services through unified personnel endpoints
 
 It includes authentication requirements, request/response examples, error handling patterns, and diagrams to help both technical and non-technical users integrate with the system effectively.
 
 ## Project Structure
-The personnel administration functionality is implemented across several modules:
+The personnel administration functionality is now implemented through a consolidated architecture that unifies previously specialized controllers:
+- Unified Personnel Service: consolidates bulletin-paie, calcul-paie, cotisations, types-primes, and types-retenues into single service layer
 - Recruitment module: manages job postings, candidates, interviews, and hiring transitions
-- Personnel module: manages employee profiles, qualifications, certifications, and documents
 - Contracts module: manages contracts, contract types, renewals, and terminations
 - Positions and Functions modules: manage positions, roles, and organizational relationships
 - Types Enum module: provides shared enumerations used across modules
@@ -58,7 +66,7 @@ The personnel administration functionality is implemented across several modules
 
 ```mermaid
 graph TB
-subgraph "API Layer"
+subgraph "Consolidated API Layer"
 R["Route Registry"]
 PC["Personnel Controller"]
 RC["Recruitment Controller"]
@@ -67,8 +75,8 @@ PO["Positions Controller"]
 FO["Functions Controller"]
 TE["Types Enum Controller"]
 end
-subgraph "Services"
-PS["Personnel Service"]
+subgraph "Unified Services"
+PS["Unified Personnel Service<br/>(consolidated from bulletin-paie, calcul-paie, cotisations, types-primes, types-retenues)"]
 RS["Recruitment Service"]
 CS["Contracts Service"]
 POS["Positions Service"]
@@ -135,13 +143,14 @@ TES --> DB
   - JWT-based authentication via middleware
   - Permission-based authorization guard enforcing RBAC permissions
 - Controllers
-  - Personnel controller: CRUD and lifecycle operations for employees
+  - Personnel controller: CRUD and lifecycle operations for employees with consolidated payroll services
   - Recruitment controller: job postings, candidates, interviews, hiring
   - Contracts controller: contracts, types, renewals, terminations
   - Positions controller: positions and role definitions
   - Functions controller: functional roles and organizational mapping
   - Types enum controller: shared enums for statuses and types
-- Services
+- Unified Services
+  - **Updated**: Unified Personnel Service consolidates previously specialized payroll controllers (bulletin-paie, calcul-paie, cotisations, types-primes, types-retenues) into single service layer
   - Business logic encapsulation for each domain
   - Data access orchestration and validation
 - Database
@@ -152,6 +161,7 @@ Key responsibilities:
 - Validate inputs and return standardized errors
 - Provide pagination and filtering where applicable
 - Support file/document uploads for certifications and documents
+- **Updated**: Provide consolidated payroll and compensation calculations through unified personnel service
 
 **Section sources**
 - [backend/src/modules/personnel/controllers/personnel.controller.ts](file://backend/src/modules/personnel/controllers/personnel.controller.ts)
@@ -164,9 +174,9 @@ Key responsibilities:
 - [backend/src/modules/auth/guards/require-permission.guard.ts](file://backend/src/modules/auth/guards/require-permission.guard.ts)
 
 ## Architecture Overview
-The API follows a layered architecture:
+The API follows a consolidated layered architecture with unified personnel service:
 - HTTP layer: controllers handle requests, validate payloads, and respond
-- Business layer: services implement domain logic and orchestrate data access
+- **Updated**: Business layer: unified personnel service consolidates specialized payroll operations; other services implement domain logic and orchestrate data access
 - Persistence layer: database migrations define entities and relationships
 - Security layer: auth middleware validates tokens; permission guard enforces RBAC
 
@@ -177,7 +187,7 @@ participant Router as "Route Registry"
 participant Auth as "Auth Middleware"
 participant Guard as "Permission Guard"
 participant Ctrl as "Controller"
-participant Svc as "Service"
+participant Svc as "Unified Personnel Service"
 participant DB as "Database"
 Client->>Router : "HTTP Request"
 Router->>Auth : "Validate JWT"
@@ -185,7 +195,7 @@ Auth-->>Router : "Context + User"
 Router->>Guard : "Check Permissions"
 Guard-->>Router : "Authorized"
 Router->>Ctrl : "Dispatch Endpoint"
-Ctrl->>Svc : "Invoke Business Logic"
+Ctrl->>Svc : "Invoke Consolidated Business Logic"
 Svc->>DB : "Query/Write"
 DB-->>Svc : "Data"
 Svc-->>Ctrl : "Result"
@@ -266,27 +276,30 @@ Ctrl-->>Client : "200 OK"
 - [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
 
 ### Employee Profile Management APIs
-Covers personal information, qualifications, certifications, and document handling.
+Covers personal information, qualifications, certifications, and document handling with consolidated payroll integration.
 
 - Endpoints overview
   - Employees: create, read, update, delete, search, list with filters
   - Qualifications: add/update/remove qualifications linked to employee
   - Certifications: attach/manage certifications with validity dates
   - Documents: upload, list, download, delete employee documents
+  - **Updated**: Payroll Integration: salary calculations, deductions, bonuses, and tax computations through unified personnel service
 
 - Authentication and permissions
   - Requires valid JWT token
-  - Role-based permissions (e.g., personnel.employee.read, personnel.document.upload)
+  - Role-based permissions (e.g., personnel.employee.read, personnel.document.upload, personnel.payroll.calculate)
 
 - Request/response patterns
   - Structured payloads for personal info and metadata
   - Pagination and sorting for lists
   - File upload/download endpoints with secure links
+  - **Updated**: Consolidated payroll calculation responses with detailed breakdowns
 
 - Error handling
   - Validation errors for required fields
   - Duplicate constraint violations
   - Access denied for unauthorized operations
+  - **Updated**: Payroll calculation errors with specific deduction and tax computation issues
 
 ```mermaid
 flowchart TD
@@ -296,7 +309,8 @@ Valid --> |No| Err["Return Validation Errors"]
 Valid --> |Yes| CheckPerm["Check Permissions"]
 CheckPerm --> PermOK{"Authorized?"}
 PermOK --> |No| Forbid["Return 403 Forbidden"]
-PermOK --> |Yes| Persist["Persist Data"]
+PermOK --> |Yes| Consolidate["Process Through Unified Personnel Service"]
+Consolidate --> Persist["Persist Data"]
 Persist --> Success["Return 200/201 Response"]
 Err --> End(["End"])
 Forbid --> End
@@ -453,6 +467,7 @@ Provides shared enumerations for statuses, types, and options used across module
 
 ## Dependency Analysis
 - Module coupling
+  - **Updated**: Unified Personnel Service consolidates dependencies from specialized payroll controllers (bulletin-paie, calcul-paie, cotisations, types-primes, types-retenues)
   - Recruitment depends on Personnel and Contracts for hiring conversions
   - Contracts depend on Types Enum for contract types
   - Positions and Functions interact with Organization units and assignments
@@ -463,7 +478,7 @@ Provides shared enumerations for statuses, types, and options used across module
 
 ```mermaid
 graph LR
-Recruit["Recruitment Module"] --> Person["Personnel Module"]
+Recruit["Recruitment Module"] --> Person["Unified Personnel Service<br/>(consolidated)"]
 Recruit --> Contr["Contracts Module"]
 Contr --> Enum["Types Enum Module"]
 Pos["Positions Module"] --> Func["Functions Module"]
@@ -493,8 +508,7 @@ Contr --> Enum
 - Avoid N+1 queries by batching reads in services
 - Cache static enums and configuration where appropriate
 - Optimize file uploads with streaming and size limits
-
-[No sources needed since this section provides general guidance]
+- **Updated**: Leverage consolidated personnel service for efficient payroll calculations and reduce redundant processing
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -513,20 +527,23 @@ Common issues and resolutions:
 - Not found
   - Resource identifiers may be incorrect or deleted
   - Verify existence before updates/deletes
+- **Updated**: Consolidated service errors
+  - Payroll calculation failures due to missing employee data
+  - Tax computation errors from invalid deduction configurations
+  - Bonus calculation conflicts with contract terms
 
 Operational checks:
 - Inspect logs for stack traces and error codes
 - Validate database connectivity and migration status
 - Test endpoints with minimal payloads to isolate issues
+- **Updated**: Verify unified personnel service health and consolidated endpoint availability
 
 **Section sources**
 - [backend/src/common/middlewares/auth.middleware.ts](file://backend/src/common/middlewares/auth.middleware.ts)
 - [backend/src/modules/auth/guards/require-permission.guard.ts](file://backend/src/modules/auth/guards/require-permission.guard.ts)
 
 ## Conclusion
-The personnel administration APIs provide a robust foundation for managing recruitment, employee profiles, contracts, and organizational structures. With clear authentication and authorization mechanisms, structured request/response patterns, and comprehensive error handling, these endpoints enable efficient integration for HR workflows. Follow the guidelines and diagrams to implement reliable integrations and troubleshoot effectively.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The personnel administration APIs provide a robust foundation for managing recruitment, employee profiles, contracts, and organizational structures. With the recent consolidation of specialized payroll controllers into a unified personnel service, the system offers improved efficiency and maintainability while preserving all existing functionality. Clear authentication and authorization mechanisms, structured request/response patterns, and comprehensive error handling enable efficient integration for HR workflows. Follow the guidelines and diagrams to implement reliable integrations and troubleshoot effectively.
 
 ## Appendices
 
@@ -534,6 +551,7 @@ The personnel administration APIs provide a robust foundation for managing recru
 - Header: Authorization: Bearer <JWT_TOKEN>
 - Context: establishment_id included in authenticated context
 - Permissions: required per endpoint (e.g., recruit.*, personnel.*, contracts.*, organization.*)
+- **Updated**: Consolidated personnel service permissions include payroll calculation and management operations
 
 **Section sources**
 - [backend/src/common/middlewares/auth.middleware.ts](file://backend/src/common/middlewares/auth.middleware.ts)
@@ -546,6 +564,7 @@ The personnel administration APIs provide a robust foundation for managing recru
 - 404 Not Found: resource does not exist
 - 409 Conflict: duplicate or overlapping records
 - 500 Internal Server Error: unexpected server issues
+- **Updated**: 503 Service Unavailable: consolidated personnel service temporarily unavailable
 
 **Section sources**
 - [backend/src/common/middlewares/auth.middleware.ts](file://backend/src/common/middlewares/auth.middleware.ts)
@@ -582,6 +601,11 @@ The personnel administration APIs provide a robust foundation for managing recru
   - Path: /personnel/employees/:id/certifications
   - Body: name, issuer, issue_date, expiry_date, file
   - Response: 201 Created with certification object
+- **Updated**: Calculate consolidated payroll
+  - Method: POST
+  - Path: /personnel/payroll/calculate
+  - Body: employee_id, period_start, period_end, deductions, bonuses
+  - Response: 200 OK with consolidated payroll calculation
 - Create contract
   - Method: POST
   - Path: /contracts/contracts
@@ -597,5 +621,3 @@ The personnel administration APIs provide a robust foundation for managing recru
   - Path: /contracts/contracts/:id/terminate
   - Body: termination_date, reason
   - Response: 200 OK with terminated contract
-
-[No sources needed since this section provides example patterns without analyzing specific files]

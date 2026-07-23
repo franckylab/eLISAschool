@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, User, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 
-interface PersonnelSearchResult {
+export interface PersonnelSearchResult {
     id: string;
     nom: string;
     prenom: string;
@@ -46,9 +46,20 @@ export function PersonnelSearchField({
             try {
                 const params: Record<string, string | number> = { search: query.trim(), limit: 10 };
                 if (typeCode) params.typeCode = typeCode;
-                const response = await apiClient.get<PersonnelSearchResult[]>('/api/personnel', params);
-                setResults(response.data || []);
-            } catch {
+                const raw = await apiClient.get('/api/personnel', params) as any;
+                // La réponse est paginée : { success, data: { items: MembrePersonnel[], meta } }
+                const membres = raw?.data?.items ?? raw?.data ?? [];
+                const mapped: PersonnelSearchResult[] = membres.map((m: any) => ({
+                    id: m.id,
+                    nom: m.utilisateur?.profil?.nom ?? '',
+                    prenom: m.utilisateur?.profil?.prenom ?? '',
+                    matricule: m.matricule ?? '',
+                    email: m.utilisateur?.email ?? '',
+                    posteExact: m.posteExact ?? '',
+                }));
+                setResults(mapped);
+            } catch (e) {
+                console.error('[PersonnelSearchField] Erreur recherche:', e);
                 setResults([]);
             } finally {
                 setSearching(false);

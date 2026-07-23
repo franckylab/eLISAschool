@@ -1,1 +1,0 @@
-Docker-based infrastructure for eLISAschool providing multi-environment orchestration (local/cloud, dev/prod) with PostgreSQL, Redis, pgAdmin, and a Node.js backend plus React frontend, managed through a unified deploy.sh script.

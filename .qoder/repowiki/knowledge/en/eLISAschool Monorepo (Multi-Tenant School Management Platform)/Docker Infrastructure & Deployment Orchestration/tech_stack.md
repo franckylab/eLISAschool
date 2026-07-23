@@ -1,1 +1,0 @@
-Docker Compose with Alpine-based images (node:20-alpine, postgres:16-alpine, redis:7-alpine, dpage/pgadmin4, nginx:alpine). Multi-stage builds with npm workspaces for shared/backend/frontend. OpenSSL for secret generation. Bash scripting for deployment orchestration.

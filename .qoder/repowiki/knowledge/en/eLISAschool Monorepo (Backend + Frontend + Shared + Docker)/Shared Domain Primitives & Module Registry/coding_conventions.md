@@ -1,0 +1,6 @@
+- Each sub-package exposes a thin `index.ts` barrel that re-exports all members from its sibling files, keeping the public surface flat under `@elisaschool/shared/<area>`.
+- Every source file opens with a French-language header block declaring project name, version, and author, followed by JSDoc comments on exported functions.
+- Validation schemas are defined with Zod and immediately paired with `z.infer<typeof X>` type exports so the inferred input shape is part of the public API.
+- User-facing error messages and schema field names use French (e.g. `motDePasse`, `confirmationMotDePasse`, `'Le mot de passe doit faire au moins...'`), while code identifiers stay in English.
+- Module registry entries follow a uniform record shape `{ name, label, description, icon, basePath, defaultActive, premium, defaultRoles, permissions, dependencies, defaultSettings }` keyed by `ModuleName`.
+- Runtime guards attach HTTP-like metadata (`statusCode`, `code`) onto thrown `Error` instances before throwing, instead of defining custom exception classes.

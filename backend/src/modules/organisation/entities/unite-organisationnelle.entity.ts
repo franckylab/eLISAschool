@@ -102,14 +102,12 @@ export class UniteOrganisationnelle {
     @Column({ type: 'uuid', nullable: true })
     responsableId?: string;
 
+    @ManyToOne('MembrePersonnel', { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'responsableId' })
+    responsable?: any;
+
     @Column({ type: 'varchar', length: 100, nullable: true })
     localisation?: string;
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    telephone?: string;
-
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    email?: string;
 
     @CreateDateColumn()
     createdAt!: Date;

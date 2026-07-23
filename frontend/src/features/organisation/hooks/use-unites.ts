@@ -127,7 +127,7 @@ export function useGetImpactUnite() {
 export function useCreerUniteAvecPostes() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (data: CreerUniteDto & { postes?: Array<{ intitule: string; code?: string; categoriePosteCode?: string; description?: string; estSuppleant?: boolean }> }) => {
+        mutationFn: async (data: CreerUniteDto & { postes?: Array<{ intitule: string; code?: string; categoriePosteId?: string; description?: string; estSuppleant?: boolean }> }) => {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites/avec-postes', data);
             return response.data;
         },

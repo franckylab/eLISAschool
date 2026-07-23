@@ -954,7 +954,7 @@ export class OrganisationService {
      */
     async creerUniteAvecPostes(
         dto: CreateUniteOrganisationnelleDto,
-        postes: Array<{ intitule: string; code?: string; categoriePosteCode?: string; description?: string; estSuppleant?: boolean }>
+        postes: Array<{ intitule: string; code?: string; categoriePosteId?: string; description?: string; estSuppleant?: boolean }>
     ): Promise<UniteOrganisationnelle> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -982,8 +982,6 @@ export class OrganisationService {
                 responsableNom: dto.responsableNom,
                 responsableId: dto.responsableId,
                 localisation: dto.localisation,
-                telephone: dto.telephone,
-                email: dto.email,
                 statut: StatutUnite.ACTIF,
                 actif: true,
             });
@@ -995,7 +993,7 @@ export class OrganisationService {
                     const poste = queryRunner.manager.create(Poste, {
                         intitule: posteDto.intitule,
                         code: posteDto.code || posteDto.intitule.substring(0, 4).toUpperCase(),
-                        categoriePosteCode: posteDto.categoriePosteCode,
+                        categoriePosteId: posteDto.categoriePosteId,
                         description: posteDto.description,
                         estSuppleant: posteDto.estSuppleant || false,
                         uniteOrganisationnelleId: savedUnite.id,

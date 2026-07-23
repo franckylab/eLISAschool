@@ -1,1 +1,0 @@
-React 19 PWA frontend for the eLISAschool school management system, organized as a feature-sliced SPA with file-based routing and TanStack Query data layer.

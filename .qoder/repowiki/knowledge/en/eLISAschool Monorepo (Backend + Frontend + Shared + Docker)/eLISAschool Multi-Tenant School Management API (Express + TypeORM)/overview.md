@@ -1,0 +1,1 @@
+Node/Express REST API for a multi-establishment school management system, organized as feature modules with TypeORM entities, migrations, seeds and cron jobs.

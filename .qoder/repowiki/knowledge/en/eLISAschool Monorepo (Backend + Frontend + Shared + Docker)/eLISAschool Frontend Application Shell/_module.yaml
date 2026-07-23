@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend
+title: eLISAschool Frontend Application Shell
+scope:
+    - frontend/src/
+    - frontend/public/
+    - frontend/scripts/
+source_files: []
+depends_on: []
+related_to: []

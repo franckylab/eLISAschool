@@ -3,6 +3,7 @@ import { MembrePersonnel } from '@modules/personnel/entities/personnel.entity';
 import { AffectationPoste, StatutAffectation, TypeMutation } from '@modules/personnel/entities/affectation-poste.entity';
 import { MembreFonction } from '@modules/personnel/entities/membre-fonction.entity';
 import { Poste } from '@modules/organisation/entities/poste.entity';
+import { UniteOrganisationnelle } from '@modules/organisation/entities/unite-organisationnelle.entity';
 import { Fonction } from '@modules/organisation/entities/fonction.entity';
 import { logger } from '@common/utils/logger.util';
 
@@ -40,6 +41,7 @@ export async function seedOrganisationDemo(etablissementId: string): Promise<voi
     const fonctions = await fonctionRepo.find({ where: { etablissementId } });
     const fonctionsByCode = new Map(fonctions.map((f) => [f.code, f]));
 
+    const uniteRepo = AppDataSource.getRepository(UniteOrganisationnelle);
     let countAffectations = 0;
     let countFonctions = 0;
 
@@ -96,6 +98,30 @@ export async function seedOrganisationDemo(etablissementId: string): Promise<voi
                 }
             }
         }
+    }
+
+    // Affecter les responsables d'unités
+    const responsableMapping: Record<string, string> = {
+        'COMPTABLE': 'comptable@elisaschool.cm',
+        'RESP-RH': 'rh@elisaschool.cm',
+        'PROVISEUR-ADJ': 'validateur.paie@elisaschool.cm',
+    };
+
+    const unites = await uniteRepo.find({ where: { etablissementId } });
+    const postesMap = new Map(postes.map((p) => [p.code, p]));
+
+    for (const [posteCode, email] of Object.entries(responsableMapping)) {
+        const poste = postesMap.get(posteCode);
+        if (!poste) continue;
+
+        const membre = await membreRepo.findOne({ where: { utilisateur: { email } } });
+        if (!membre) continue;
+
+        const unite = unites.find(u => u.id === poste.uniteOrganisationnelleId);
+        if (!unite) continue;
+
+        await uniteRepo.update(unite.id, { responsableId: membre.id });
+        logger.debug(`  ✓ ${unite.nom} → responsable ${email}`);
     }
 
     logger.info(`✅ ${countAffectations} affectations et ${countFonctions} fonctions créées pour la démo`);

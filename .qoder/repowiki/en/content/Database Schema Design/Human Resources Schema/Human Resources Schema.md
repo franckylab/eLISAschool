@@ -18,6 +18,13 @@
 - [personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated payroll processing section to reflect simplified schema structure
+- Removed references to dropped entities: bulletin-paie, cotisation, element-salaire, type-prime, type-retenue
+- Simplified payroll architecture description to focus on core salary components and payment runs
+- Updated dependency analysis to reflect consolidated payroll structure
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -30,7 +37,9 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides a comprehensive data model for eLISAschool’s human resources module. It covers personnel administration, contract management, payroll processing, recruitment workflow, attendance and leave tracking, performance evaluation, training and certifications, organizational structure, and the end-to-end HR lifecycle from recruitment to retirement. The schema is implemented across multiple database migrations that progressively add entities, relationships, and constraints.
+This document provides a comprehensive data model for eLISAschool's human resources module. It covers personnel administration, contract management, payroll processing, recruitment workflow, attendance and leave tracking, performance evaluation, training and certifications, organizational structure, and the end-to-end HR lifecycle from recruitment to retirement. The schema is implemented across multiple database migrations that progressively add entities, relationships, and constraints.
+
+**Updated** Recent consolidation efforts have simplified the payroll schema by removing complex entity structures (bulletin-paie, cotisation, element-salaire, type-prime, type-retenue) in favor of a more streamlined approach focusing on core salary components and payment processing.
 
 ## Project Structure
 The HR data model is defined primarily through SQL migrations under backend/database/migrations. Key phases include:
@@ -99,6 +108,8 @@ P1 --> PA
 - Organization: Positions, departments, reporting lines, and hierarchies.
 - Permissions: Role-based access control for HR operations.
 
+**Updated** Payroll processing has been simplified through consolidation, removing complex intermediate entities while maintaining core functionality for salary calculation and payment processing.
+
 **Section sources**
 - [016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
 - [022-module-personnel-rh-complete.sql](file://backend/database/migrations/022-module-personnel-rh-complete.sql)
@@ -116,6 +127,8 @@ The HR data architecture follows a layered approach:
 - A complete consolidation migration ensures referential integrity and finalizes indexes/constraints.
 - Custom contract types and additional fields enhance flexibility.
 - Permissions are attributed to support RBAC for HR workflows.
+
+**Updated** The payroll architecture has been streamlined through consolidation, eliminating redundant entity layers while preserving essential salary calculation and payment processing capabilities.
 
 ```mermaid
 erDiagram
@@ -281,6 +294,8 @@ Key responsibilities:
 - Tax rules specify rates and thresholds applied during payment runs.
 - Payment runs aggregate gross and net pay for a period and track status.
 
+**Updated** The payroll system has been simplified through consolidation, removing intermediate complexity while maintaining core functionality. The streamlined approach focuses on direct salary component calculation and payment processing without redundant entity layers.
+
 Processing logic:
 - Compute gross pay by summing salary components.
 - Apply tax rules based on thresholds and rates.
@@ -350,8 +365,6 @@ Evaluation process:
 
 Note: While specific training tables may be introduced in later migrations, the HR schema supports linking training and certification records to personnel and positions for compliance tracking.
 
-[No sources needed since this section provides general guidance]
-
 ### Organizational Structure
 - Departments form hierarchical units with parent-child relationships.
 - Positions define roles within departments, including grades and responsibilities.
@@ -383,6 +396,8 @@ The HR schema exhibits clear dependency patterns:
 - Attendance and leave depend on personnel and organizational context.
 - Performance scoring depends on personnel and positions.
 
+**Updated** The payroll dependency structure has been simplified, reducing intermediate entity dependencies while maintaining essential relationships between contracts, salary components, and payment processing.
+
 ```mermaid
 graph TB
 Personnel["Personnel"] --> Contracts["Contracts"]
@@ -395,6 +410,7 @@ Positions --> Personnel
 Contracts --> Payroll
 TaxRules["Tax Rules"] --> Payroll
 ContractTypes["Contract Types"] --> Contracts
+SalaryComponents["Salary Components"] --> Payroll
 ```
 
 **Diagram sources**
@@ -413,8 +429,7 @@ ContractTypes["Contract Types"] --> Contracts
 - Partitioning large tables like time sheets and payment runs by date ranges can optimize analytics queries.
 - Avoid over-normalization where read-heavy reports require denormalized views.
 - Use materialized views for complex payroll summaries and performance dashboards.
-
-[No sources needed since this section provides general guidance]
+- **Updated** The simplified payroll structure reduces query complexity and improves performance by eliminating unnecessary joins through intermediate entities.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -423,10 +438,11 @@ Common issues and resolutions:
 - Payroll calculation errors: Verify tax rules and salary components are correctly assigned to contracts.
 - Duplicate applications: Enforce unique constraints on candidate-posting combinations.
 - Unauthorized access: Confirm RBAC permissions are properly attributed to roles.
+- **Updated** Payroll processing issues: With the simplified schema, verify that salary components directly reference contracts and that payment runs calculate totals correctly without relying on removed intermediate entities.
 
 **Section sources**
 - [022-module-personnel-rh-complete.sql](file://backend/database/migrations/022-module-personnel-rh-complete.sql)
 - [021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
 
 ## Conclusion
-The eLISAschool HR schema provides a robust, extensible foundation for managing the full employee lifecycle. Through phased migrations, it integrates personnel administration, contracts, payroll, recruitment, attendance, performance, and organizational structure. The design emphasizes clarity, scalability, and security, supporting both operational needs and strategic HR analytics.
+The eLISAschool HR schema provides a robust, extensible foundation for managing the full employee lifecycle. Through phased migrations and recent consolidation efforts, it integrates personnel administration, contracts, streamlined payroll processing, recruitment, attendance, performance, and organizational structure. The design emphasizes clarity, scalability, and security, supporting both operational needs and strategic HR analytics while maintaining simplicity through the removal of redundant entity layers.

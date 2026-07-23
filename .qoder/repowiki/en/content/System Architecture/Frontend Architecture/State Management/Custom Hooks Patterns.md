@@ -7,6 +7,9 @@
 - [frontend/src/hooks/usePagination.ts](file://frontend/src/hooks/usePagination.ts)
 - [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/useModal.ts)
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
+- [frontend/src/hooks/use-modes-remuneration.ts](file://frontend/src/hooks/use-modes-remuneration.ts)
+- [frontend/src/hooks/use-personnel.ts](file://frontend/src/hooks/use-personnel.ts)
+- [frontend/src/hooks/use-enseignants.ts](file://frontend/src/hooks/use-enseignants.ts)
 - [frontend/src/stores/authStore.ts](file://frontend/src/stores/authStore.ts)
 - [frontend/src/stores/uiStore.ts](file://frontend/src/stores/uiStore.ts)
 - [frontend/src/lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
@@ -16,20 +19,28 @@
 - [frontend/src/components/common/PermissionGate.tsx](file://frontend/src/components/common/PermissionGate.tsx)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Added documentation for new remuneration mode management hook (use-modes-remuneration.ts)
+- Updated personnel-related hooks section to reflect consolidated API patterns (use-personnel.ts, use-enseignants.ts)
+- Enhanced composition strategy examples with new domain-specific hooks
+- Updated dependency analysis to include new personnel and remuneration hooks
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Domain-Specific Hooks](#domain-specific-hooks)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document explains the custom hooks patterns used across the application, focusing on composition strategy, shared logic extraction, and reusable patterns for authentication, permissions, pagination, and UI interactions. It also covers naming conventions, parameter validation, return value structures, integration with Zustand stores and React Query, lifecycle considerations, examples for creating new hooks, testing strategies, and debugging techniques.
+This document explains the custom hooks patterns used across the application, focusing on composition strategy, shared logic extraction, and reusable patterns for authentication, permissions, pagination, UI interactions, and domain-specific functionality like remuneration management and personnel operations. It also covers naming conventions, parameter validation, return value structures, integration with Zustand stores and React Query, lifecycle considerations, examples for creating new hooks, testing strategies, and debugging techniques.
 
 ## Project Structure
 The frontend organizes reusable logic into:
@@ -41,12 +52,17 @@ The frontend organizes reusable logic into:
 
 ```mermaid
 graph TB
-subgraph "Hooks"
+subgraph "Core Hooks"
 H_Auth["useAuth"]
 H_Perms["usePermissions"]
 H_Pag["usePagination"]
 H_Modal["useModal"]
 H_QC["useQueryClient"]
+end
+subgraph "Domain Hooks"
+H_Remun["useModesRemuneration"]
+H_Personnel["usePersonnel"]
+H_Enseignants["useEnseignants"]
 end
 subgraph "Stores"
 S_Auth["authStore (Zustand)"]
@@ -68,6 +84,9 @@ H_Perms --> S_Auth
 H_Modal --> S_UI
 H_Pag --> L_QC
 H_QC --> L_QC
+H_Remun --> L_QC
+H_Personnel --> L_QC
+H_Enseignants --> L_QC
 F_Login --> H_Auth
 F_Dash --> H_Perms
 C_Pag --> H_Pag
@@ -92,7 +111,7 @@ Key responsibilities:
 - [frontend/src/hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
 - [frontend/src/hooks/usePermissions.ts](file://frontend/src/hooks/usePermissions.ts)
 - [frontend/src/hooks/usePagination.ts](file://frontend/src/hooks/usePagination.ts)
-- [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/hooks/useModal.ts)
+- [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/useModal.ts)
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
 - [frontend/src/stores/authStore.ts](file://frontend/src/stores/authStore.ts)
 - [frontend/src/stores/uiStore.ts](file://frontend/src/stores/uiStore.ts)
@@ -373,11 +392,113 @@ Debugging tips:
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
 - [frontend/src/lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
 
+## Domain-Specific Hooks
+
+### Remuneration Mode Management Hook (useModesRemuneration)
+**New** - Added to support remuneration mode management functionality
+
+Responsibilities:
+- Manage remuneration modes and their configurations
+- Handle CRUD operations for remuneration modes
+- Provide filtering and search capabilities for remuneration data
+- Integrate with React Query for caching and real-time updates
+
+Composition strategy:
+- Leverages React Query for data fetching and caching
+- Implements standardized pagination and filtering patterns
+- Provides type-safe API for remuneration mode operations
+- Integrates with existing authentication and permission systems
+
+Parameter validation:
+- Validates remuneration mode parameters and filters
+- Ensures proper data types for API requests
+- Handles edge cases and error conditions
+
+Return value structure:
+- State: modes, loading, error, pagination
+- Methods: createMode, updateMode, deleteMode, searchModes
+- Utilities: resetCache, clearErrors, exportData
+
+Integration points:
+- React Query for server state management
+- Authentication system for access control
+- Permission system for operation authorization
+
+Lifecycle considerations:
+- Automatic cache invalidation on mutations
+- Optimistic updates where appropriate
+- Proper cleanup of subscriptions and listeners
+
+Testing approach:
+- Mock React Query responses and mutations
+- Test CRUD operations and error handling
+- Validate permission-based access controls
+
+Debugging tips:
+- Monitor React Query cache and network requests
+- Log operation failures and retry attempts
+- Track permission denials and access issues
+
+**Section sources**
+- [frontend/src/hooks/use-modes-remuneration.ts](file://frontend/src/hooks/use-modes-remuneration.ts)
+
+### Personnel Management Hooks (usePersonnel, useEnseignants)
+**Updated** - Enhanced for consolidated personnel APIs
+
+Responsibilities:
+- Consolidated personnel data management and operations
+- Specialized teacher (enseignant) management with enhanced features
+- Unified API patterns for personnel-related operations
+- Advanced filtering, search, and bulk operations
+
+Composition strategy:
+- Unified approach to personnel data access
+- Shared base functionality with specialized extensions
+- Consistent error handling and loading states
+- Integrated with existing authentication and permission systems
+
+Parameter validation:
+- Standardized validation for personnel queries
+- Type-safe filtering and search parameters
+- Bulk operation validation and batch processing
+
+Return value structure:
+- Common state: personnel, enseignants, loading, error
+- Shared methods: create, update, delete, search
+- Specialized methods for teacher-specific operations
+- Utilities for data transformation and export
+
+Integration points:
+- Consolidated personnel API endpoints
+- React Query for optimized data fetching
+- Existing permission system for access control
+- Integration with other personnel-related modules
+
+Lifecycle considerations:
+- Efficient caching strategies for large datasets
+- Optimistic updates for better UX
+- Proper error recovery and retry mechanisms
+
+Testing approach:
+- Mock consolidated API responses
+- Test both general personnel and teacher-specific operations
+- Validate data transformations and business logic
+
+Debugging tips:
+- Monitor consolidated API calls and responses
+- Track data synchronization between related entities
+- Debug permission issues for personnel operations
+
+**Section sources**
+- [frontend/src/hooks/use-personnel.ts](file://frontend/src/hooks/use-personnel.ts)
+- [frontend/src/hooks/use-enseignants.ts](file://frontend/src/hooks/use-enseignants.ts)
+
 ## Dependency Analysis
 Custom hooks depend on:
 - Zustand stores for global state
 - React Query for server state and caching
 - Shared utilities for validation and formatting
+- Domain-specific services for specialized operations
 
 ```mermaid
 graph LR
@@ -387,6 +508,12 @@ D["usePermissions"] --> B
 E["usePagination"] --> C
 F["useModal"] --> G["uiStore"]
 H["useQueryClient"] --> C
+I["useModesRemuneration"] --> C
+J["usePersonnel"] --> C
+K["useEnseignants"] --> C
+I --> L["personnelService"]
+J --> L
+K --> M["teacherService"]
 ```
 
 **Diagram sources**
@@ -395,6 +522,9 @@ H["useQueryClient"] --> C
 - [frontend/src/hooks/usePagination.ts](file://frontend/src/hooks/usePagination.ts)
 - [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/useModal.ts)
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
+- [frontend/src/hooks/use-modes-remuneration.ts](file://frontend/src/hooks/use-modes-remuneration.ts)
+- [frontend/src/hooks/use-personnel.ts](file://frontend/src/hooks/use-personnel.ts)
+- [frontend/src/hooks/use-enseignants.ts](file://frontend/src/hooks/use-enseignants.ts)
 - [frontend/src/stores/authStore.ts](file://frontend/src/stores/authStore.ts)
 - [frontend/src/stores/uiStore.ts](file://frontend/src/stores/uiStore.ts)
 - [frontend/src/lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
@@ -405,6 +535,9 @@ H["useQueryClient"] --> C
 - [frontend/src/hooks/usePagination.ts](file://frontend/src/hooks/usePagination.ts)
 - [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/useModal.ts)
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
+- [frontend/src/hooks/use-modes-remuneration.ts](file://frontend/src/hooks/use-modes-remuneration.ts)
+- [frontend/src/hooks/use-personnel.ts](file://frontend/src/hooks/use-personnel.ts)
+- [frontend/src/hooks/use-enseignants.ts](file://frontend/src/hooks/use-enseignants.ts)
 - [frontend/src/stores/authStore.ts](file://frontend/src/stores/authStore.ts)
 - [frontend/src/stores/uiStore.ts](file://frontend/src/stores/uiStore.ts)
 - [frontend/src/lib/queryClient.ts](file://frontend/src/lib/queryClient.ts)
@@ -415,8 +548,8 @@ H["useQueryClient"] --> C
 - Debounce input-driven pagination/filter changes
 - Batch store updates to reduce re-renders
 - Use selective subscriptions in Zustand to limit scope
-
-[No sources needed since this section provides general guidance]
+- Implement efficient caching strategies for large datasets in domain hooks
+- Use optimistic updates for better user experience in personnel operations
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -425,12 +558,16 @@ Common issues and resolutions:
 - Modal not closing: check store subscription cleanup
 - Pagination jumps: validate page bounds and filter resets
 - Memory leaks: confirm effect cleanup and listener removal
+- Remuneration mode conflicts: check for duplicate mode IDs and validation errors
+- Personnel data inconsistencies: verify consolidated API responses and data transformations
 
 Diagnostic steps:
 - Enable React Query devtools to inspect cache
 - Add logging at hook entry/exit points
 - Assert store slices for expected state transitions
 - Reproduce with minimal test cases
+- Monitor consolidated API calls for personnel operations
+- Validate remuneration mode data integrity
 
 **Section sources**
 - [frontend/src/hooks/useAuth.ts](file://frontend/src/hooks/useAuth.ts)
@@ -438,11 +575,12 @@ Diagnostic steps:
 - [frontend/src/hooks/usePagination.ts](file://frontend/src/hooks/usePagination.ts)
 - [frontend/src/hooks/useModal.ts](file://frontend/src/hooks/useModal.ts)
 - [frontend/src/hooks/useQueryClient.ts](file://frontend/src/hooks/useQueryClient.ts)
+- [frontend/src/hooks/use-modes-remuneration.ts](file://frontend/src/hooks/use-modes-remuneration.ts)
+- [frontend/src/hooks/use-personnel.ts](file://frontend/src/hooks/use-personnel.ts)
+- [frontend/src/hooks/use-enseignants.ts](file://frontend/src/hooks/use-enseignants.ts)
 
 ## Conclusion
-The custom hooks layer provides a cohesive, composable foundation for authentication, permissions, pagination, and UI interactions. By adhering to consistent naming, validation, and return structures, and integrating cleanly with Zustand and React Query, these hooks enable scalable, maintainable, and testable front-end logic.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The custom hooks layer provides a cohesive, composable foundation for authentication, permissions, pagination, UI interactions, and domain-specific functionality. By adhering to consistent naming, validation, and return structures, and integrating cleanly with Zustand and React Query, these hooks enable scalable, maintainable, and testable front-end logic. The addition of domain-specific hooks for remuneration management and consolidated personnel operations demonstrates the extensibility of the hook architecture while maintaining architectural consistency.
 
 ## Appendices
 
@@ -450,16 +588,19 @@ The custom hooks layer provides a cohesive, composable foundation for authentica
 - Prefix all custom hooks with use
 - Use descriptive verbs for actions (login, open, applyFilters)
 - Keep state names aligned with their purpose (isLoading, error, user)
+- Domain-specific hooks should clearly indicate their business domain (useModesRemuneration, usePersonnel)
 
 ### Parameter Validation Guidelines
 - Validate required fields early
 - Normalize inputs to canonical forms
 - Return structured errors with actionable messages
+- Implement domain-specific validation rules for specialized hooks
 
 ### Return Value Structures
 - Methods: imperative actions (login, open, goTo)
 - State: reactive values (isAuthenticated, isOpen, page)
 - Utilities: helpers (clearError, resetState)
+- Domain-specific return shapes should maintain consistency with core patterns
 
 ### Creating New Custom Hooks
 Steps:
@@ -468,6 +609,7 @@ Steps:
 - Define parameters and validation
 - Implement return shape consistently
 - Add tests and debug logs
+- For domain hooks, establish clear separation from core functionality
 
 ### Testing Hooks
 Approaches:
@@ -475,6 +617,7 @@ Approaches:
 - Mock dependencies (stores, query client)
 - Assert state transitions and method calls
 - Simulate async flows and errors
+- Test domain-specific business logic separately
 
 ### Debugging Hook Behavior
 Techniques:
@@ -482,11 +625,15 @@ Techniques:
 - Log dependency changes
 - Inspect React Query cache and Zustand slices
 - Use browser devtools to trace re-renders
+- Monitor consolidated API calls for personnel operations
+- Validate remuneration mode data integrity
 
 ### Integration Examples
 - Authentication flow in login page
 - Permission gating in dashboard
 - Pagination controls in list views
+- Remuneration mode management in finance modules
+- Personnel operations in HR and teaching modules
 
 **Section sources**
 - [frontend/src/features/auth/login/LoginPage.tsx](file://frontend/src/features/auth/login/LoginPage.tsx)

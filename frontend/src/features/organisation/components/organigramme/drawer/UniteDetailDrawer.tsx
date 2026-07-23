@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical, MapPin, Phone, Mail, Layers } from 'lucide-react';
+import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical, MapPin, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 
@@ -123,18 +123,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                 <span style={{ color: 'var(--color-text)' }}>{unite.localisation}</span>
                             </div>
                         )}
-                        {unite.telephone && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <Phone className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                                <a href={`tel:${unite.telephone}`} className="hover:underline" style={{ color: 'var(--color-dominant-600)' }}>{unite.telephone}</a>
-                            </div>
-                        )}
-                        {unite.email && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <Mail className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                                <a href={`mailto:${unite.email}`} className="hover:underline" style={{ color: 'var(--color-dominant-600)' }}>{unite.email}</a>
-                            </div>
-                        )}
+
                     </div>
 
                     {/* Stats rapides */}

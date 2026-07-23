@@ -1,1 +1,0 @@
-Root of the eLISAschool monorepo that wires a shared TypeScript contracts package, an Express/TypeORM backend API, and a React PWA frontend into a single npm workspaces project with Docker orchestration.

@@ -1,0 +1,1 @@
+Docker Compose-based infrastructure that provisions PostgreSQL, Redis, pgAdmin, and optional backend/frontend containers across local-dev, local-prod, cloud-dev, and cloud-prod environments.

@@ -1,1 +1,0 @@
-Express/TypeScript backend exposing a multi-tenant REST API for school management, with per-establishment RBAC, TypeORM migrations, and modular domain features.

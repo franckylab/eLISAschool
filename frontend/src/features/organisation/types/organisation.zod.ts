@@ -11,8 +11,6 @@ export const createUniteSchema = z.object({
     responsableNom: z.string().max(200).optional(),
     responsableId: z.string().optional(),
     localisation: z.string().max(100).optional(),
-    telephone: z.string().max(50).optional(),
-    email: z.string().email('Email invalide').optional().or(z.literal('')),
 });
 
 export const updateUniteSchema = createUniteSchema.partial().omit({ code: true });

@@ -16,10 +16,12 @@
 
 ## Update Summary
 **Changes Made**
-- Updated REST Conventions section to emphasize plural naming standards
-- Enhanced Resource Naming guidelines with specific examples from organization module
-- Added migration guidance for backward compatibility
-- Updated examples to reflect plural endpoint patterns
+- Updated REST Conventions section to emphasize plural naming standards for organization-related endpoints
+- Enhanced Resource Naming guidelines with specific examples from organization module implementation
+- Added comprehensive migration guide for backward compatibility with legacy singular endpoints
+- Updated OpenAPI/Swagger documentation standards to reflect plural endpoint patterns
+- Revised troubleshooting guidance to address common migration issues
+- Added new section covering migration strategies and best practices
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -30,13 +32,14 @@
 6. [Dependency Analysis](#dependency-analysis)
 7. [Performance Considerations](#performance-considerations)
 8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+9. [Migration Guide](#migration-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document defines the API design and response standards for eLISAschool's backend. It establishes RESTful conventions, request/response formats, status codes, error structures, DTO patterns, validation rules, OpenAPI/Swagger documentation standards, versioning strategy, pagination, filtering, sorting, authentication headers, rate limiting responses, and security best practices. The guidance is grounded in the repository's configuration, routing, tests, and documentation artifacts.
 
-**Updated** Recent improvements have modernized API endpoints across the organization module to follow strict RESTful plural naming conventions, ensuring consistency and predictability in resource identification.
+**Updated** Recent improvements have modernized API endpoints across the organization module to follow strict RESTful plural naming conventions, ensuring consistency and predictability in resource identification. All organization-related endpoints now use plural forms (e.g., `/organizations`, `/users`) instead of singular forms, aligning with industry-standard RESTful practices.
 
 ## Project Structure
 The backend follows a modular architecture with shared common utilities, module-scoped controllers/services/entities, centralized configuration (including Swagger), and a route registry that wires endpoints. Tests cover integration scenarios (authentication across establishments, multi-tenant configuration) and unit-level behavior (pagination utilities, Redis service).
@@ -166,8 +169,10 @@ App-->>Client : HTTP Response + Headers
 - ❌ Incorrect: `GET /api/v1/organization`
 - ✅ Correct: `POST /api/v1/users`
 - ❌ Incorrect: `POST /api/v1/user`
+- ✅ Correct: `PUT /api/v1/organizations/:id`
+- ❌ Incorrect: `PUT /api/v1/organization/:id`
 
-**Migration Notes**: Previous singular endpoint patterns have been deprecated but may still be available during transition periods with appropriate deprecation headers.
+**Migration Notes**: Previous singular endpoint patterns have been deprecated but may still be available during transition periods with appropriate deprecation headers. Clients should migrate to plural forms as soon as possible.
 
 **Section sources**
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
@@ -228,7 +233,7 @@ Validation guidelines:
 - Include security schemes and required scopes/roles.
 - Serve spec at a dedicated path and link from API index.
 
-**Updated** All organization module endpoints now reflect plural naming conventions in their OpenAPI specifications, providing accurate documentation for clients.
+**Updated** All organization module endpoints now reflect plural naming conventions in their OpenAPI specifications, providing accurate documentation for clients. The generated Swagger UI displays the correct plural endpoint patterns, making it easier for developers to understand the proper API usage.
 
 **Section sources**
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
@@ -303,7 +308,7 @@ Behavior:
 - Ensure consistent envelope usage for chart data and counters.
 - Respect pagination and caching headers for performance.
 
-**Updated** Frontend integrations with organization module endpoints should be updated to use plural resource names in their API calls.
+**Updated** Frontend integrations with organization module endpoints should be updated to use plural resource names in their API calls. Any hardcoded references to singular endpoint patterns need to be replaced with their plural equivalents.
 
 **Section sources**
 - [DASHBOARD-FRONTEND-INTEGRATION.md](file://backend/docs/DASHBOARD-FRONTEND-INTEGRATION.md)
@@ -361,7 +366,7 @@ Common issues and resolutions:
 - 403 Forbidden:
   - Confirm user has required permissions for the target resource.
 - 404 Not Found:
-  - **Updated**: If you're getting 404 errors after recent updates, verify you're using plural endpoint names (e.g., `/organizations` instead of `/organization`).
+  - **Updated**: If you're getting 404 errors after recent updates, verify you're using plural endpoint names (e.g., `/organizations` instead of `/organization`). Check your client code for any hardcoded singular endpoint references.
 - 429 Too Many Requests:
   - Implement exponential backoff and honor Retry-After.
 - Validation Errors:
@@ -378,10 +383,79 @@ Operational checks:
 - [auth-multi-etablissement.spec.ts](file://backend/test/integration/auth-multi-etablissement.spec.ts)
 - [configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
 
+## Migration Guide
+
+### Understanding the Change
+The eLISAschool platform has implemented RESTful API standardization by transitioning from singular to plural resource names for organization-related endpoints. This change improves consistency and aligns with industry-standard RESTful practices.
+
+### Affected Endpoints
+The following endpoint patterns have been updated:
+
+| Old Pattern (Deprecated) | New Pattern (Recommended) | Description |
+|--------------------------|---------------------------|-------------|
+| `/api/v1/organization` | `/api/v1/organizations` | List all organizations |
+| `/api/v1/organization/:id` | `/api/v1/organizations/:id` | Get specific organization |
+| `/api/v1/user` | `/api/v1/users` | List all users |
+| `/api/v1/user/:id` | `/api/v1/users/:id` | Get specific user |
+| `/api/v1/class` | `/api/v1/classes` | List all classes |
+| `/api/v1/class/:id` | `/api/v1/classes/:id` | Get specific class |
+
+### Migration Steps
+
+#### 1. Update Client Code
+Replace all singular endpoint references with plural forms:
+
+```javascript
+// Before (deprecated)
+const response = await fetch('/api/v1/organization');
+const user = await fetch('/api/v1/user/123');
+
+// After (recommended)
+const response = await fetch('/api/v1/organizations');
+const user = await fetch('/api/v1/users/123');
+```
+
+#### 2. Update Configuration Files
+Check any configuration files that might contain hardcoded endpoint URLs:
+
+```yaml
+# Before
+api_endpoints:
+  organization_list: "/api/v1/organization"
+  user_detail: "/api/v1/user/:id"
+
+# After
+api_endpoints:
+  organization_list: "/api/v1/organizations"
+  user_detail: "/api/v1/users/:id"
+```
+
+#### 3. Update API Documentation
+Ensure any internal documentation reflects the new endpoint patterns.
+
+#### 4. Testing Strategy
+- Test all API calls with new plural endpoints
+- Verify backward compatibility if legacy endpoints are still active
+- Monitor for any 404 errors indicating missed endpoint updates
+
+### Backward Compatibility
+During the transition period, some legacy singular endpoints may continue to work with deprecation warnings. However, these will eventually be removed, so migration should be prioritized.
+
+### Rollback Plan
+If issues arise during migration:
+1. Temporarily revert client code changes
+2. Investigate specific failing endpoints
+3. Address any compatibility issues
+4. Re-attempt migration with fixes applied
+
+**Section sources**
+- [route-registry.ts](file://backend/src/routes/route-registry.ts)
+- [swagger.config.ts](file://backend/src/config/swagger.config.ts)
+
 ## Conclusion
 These standards unify how eLISAschool exposes its capabilities via APIs. By enforcing consistent envelopes, robust validation, comprehensive OpenAPI docs, and strong security posture, clients can integrate reliably and securely. Adhering to pagination, filtering, and sorting conventions ensures scalability and predictable performance.
 
-**Updated** The recent modernization of organization module endpoints to follow strict RESTful plural naming conventions further strengthens API consistency and predictability across the entire platform.
+**Updated** The recent modernization of organization module endpoints to follow strict RESTful plural naming conventions further strengthens API consistency and predictability across the entire platform. This standardization effort ensures that all future development maintains consistent API patterns, making the platform more maintainable and developer-friendly.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -412,22 +486,34 @@ These standards unify how eLISAschool exposes its capabilities via APIs. By enfo
 - Define security schemes and requirements.
 - Publish spec and UI.
 
-**Updated** Ensure all organization module endpoints reflect plural naming in their OpenAPI specifications.
+**Updated** Ensure all organization module endpoints reflect plural naming in their OpenAPI specifications. The generated Swagger documentation should automatically display the correct plural endpoint patterns.
 
 **Section sources**
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
 
-### Migration Guide for Plural Endpoints
+### Migration Checklist
 **New Section**
 
-When upgrading to the new plural endpoint pattern:
+Use this checklist to ensure complete migration to plural endpoints:
 
-1. **Update Client Code**: Replace singular endpoint references with plural forms
-   - Old: `GET /api/v1/organization` → New: `GET /api/v1/organizations`
-   - Old: `POST /api/v1/user` → New: `POST /api/v1/users`
+- [ ] Update all client-side API calls to use plural endpoints
+- [ ] Modify configuration files containing endpoint URLs
+- [ ] Update any hardcoded strings in templates or scripts
+- [ ] Refresh API documentation and examples
+- [ ] Test all affected functionality thoroughly
+- [ ] Monitor for 404 errors in production
+- [ ] Update deployment scripts if they reference old endpoints
+- [ ] Notify team members about the changes
+- [ ] Schedule cleanup of legacy endpoint support
 
-2. **Testing**: Verify all API calls work with new endpoint patterns
-3. **Documentation**: Update any internal documentation referencing old endpoints
-4. **Monitoring**: Watch for 404 errors indicating clients still using old patterns
+### Common Migration Issues
+**New Section**
 
-**Backward Compatibility**: During transition periods, some legacy endpoints may continue to work with deprecation warnings.
+**Issue**: Some endpoints still return 404 errors
+**Solution**: Check for any remaining singular endpoint references in your codebase. Use grep to search for patterns like `/api/v1/organization` or `/api/v1/user`.
+
+**Issue**: OpenAPI documentation shows mixed patterns
+**Solution**: Regenerate the OpenAPI specification after updating all endpoint definitions.
+
+**Issue**: Third-party integrations break
+**Solution**: Contact third-party providers to update their configurations or implement proxy layers to handle the transition.

@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: docker_infra
+title: Docker Infrastructure & Deployment Orchestration
+scope:
+    - docker/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,1 @@
+TypeScript 5.7 compiled with vanilla `tsc`; runtime-only dependency is `zod ^3.24.1` used exclusively for request-validation schemas in `validators/auth.validators.ts`.

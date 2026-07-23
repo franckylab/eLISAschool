@@ -1,1 +1,0 @@
-TypeScript package publishing the application's shared domain surface — enums, types, Zod validators, theme/app constants, and module configuration registry — consumed by both backend and frontend.

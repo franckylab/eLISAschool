@@ -1,16 +1,4 @@
-/**
- * ==================================
- * eLISAschool - Modal formulaire Unité Organisationnelle
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- *
- * Modal create/edit pour unité organisationnelle.
- * Mode create : champs vides, parent pré-rempli si création enfant.
- * Mode edit : champs pré-remplis depuis les données de l'unité.
- */
-
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,17 +8,22 @@ import { useCreerUnite, useModifierUnite } from '../../../hooks/use-unites';
 import { useUsagesUnite } from '../../../hooks/use-usages-unite';
 import { useNiveauxOrganisation } from '../../../hooks/use-niveaux-organisation';
 import { useAuthStore } from '@/stores/auth.store';
+import { PersonnelSearchField } from '../../personnel-search-field';
+import type { PersonnelSearchResult } from '../../personnel-search-field';
 
-// Cible minimale acceptée : compatible OrganigrammeNode ET UniteOrganisationnelle.
 interface UniteFormTarget {
     id: string;
     nom: string;
     code?: string;
     description?: string;
+    usageUniteId?: string;
+    niveauOrganisationId?: string;
+    parentId?: string;
     responsableNom?: string;
+    responsableId?: string;
+    localisation?: string;
 }
 
-// Schéma de validation (messages i18n — construit dans le composant)
 type UniteFormData = {
     nom: string;
     code: string;
@@ -40,8 +33,6 @@ type UniteFormData = {
     parentId: string;
     responsableNom: string;
     localisation: string;
-    telephone: string;
-    email: string;
 };
 
 type ModalMode = 'create' | 'edit';
@@ -49,11 +40,9 @@ type ModalMode = 'create' | 'edit';
 interface UniteFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** Optionnel : déduit de la présence de `unite` si absent. */
     mode?: ModalMode;
     unite?: UniteFormTarget | null;
     parentUnite?: { id: string; nom: string } | null;
-    /** Alternative à `parentUnite` quand seul l'id du parent est connu. */
     parentId?: string;
     onSuccess?: () => void;
 }
@@ -67,13 +56,12 @@ const FORM_INIT: UniteFormData = {
     parentId: '',
     responsableNom: '',
     localisation: '',
-    telephone: '',
-    email: '',
 };
 
 export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, parentId, onSuccess }: UniteFormModalProps) {
     const { t } = useTranslation('organisation');
     const etablissementId = useAuthStore(s => s.etablissementId);
+    const [responsable, setResponsable] = useState<PersonnelSearchResult | null>(null);
 
     const uniteFormSchema = useMemo(() => z.object({
         nom: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
@@ -84,29 +72,26 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
         parentId: z.string().uuid().optional().or(z.literal('')),
         responsableNom: z.string().max(100).optional().or(z.literal('')),
         localisation: z.string().max(200).optional().or(z.literal('')),
-        telephone: z.string().max(20).optional().or(z.literal('')),
-        email: z.string().email(t('organigramme.form.validationEmail')).optional().or(z.literal('')),
     }), [t]);
     const { data: usages } = useUsagesUnite();
     const { data: niveaux } = useNiveauxOrganisation();
     const { mutateAsync: creerUnite, isPending: isCreating } = useCreerUnite();
     const { mutateAsync: modifierUnite, isPending: isUpdating } = useModifierUnite();
 
-    // Mode déduit de la présence de `unite` si non fourni explicitement.
     const effectiveMode: ModalMode = mode ?? (unite ? 'edit' : 'create');
     const effectiveParentId = parentUnite?.id ?? parentId;
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<UniteFormData>({
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<UniteFormData>({
         resolver: zodResolver(uniteFormSchema),
         defaultValues: FORM_INIT,
     });
 
     const isPending = isCreating || isUpdating;
 
-    // Pré-remplir le formulaire selon le mode
     useEffect(() => {
         if (!open) {
             reset(FORM_INIT);
+            setResponsable(null);
             return;
         }
         if (effectiveMode === 'edit' && unite) {
@@ -114,21 +99,32 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                 nom: unite.nom || '',
                 code: unite.code || '',
                 description: unite.description || '',
-                usageUniteId: '',
-                niveauOrganisationId: '',
-                parentId: '',
+                usageUniteId: unite.usageUniteId || '',
+                niveauOrganisationId: unite.niveauOrganisationId || '',
+                parentId: unite.parentId || '',
                 responsableNom: unite.responsableNom || '',
-                localisation: '',
-                telephone: '',
-                email: '',
+                localisation: unite.localisation || '',
             });
+            if (unite.responsableId && unite.responsableNom) {
+                setResponsable({
+                    id: unite.responsableId,
+                    nom: unite.responsableNom.split(' ').slice(1).join(' ') || unite.responsableNom,
+                    prenom: unite.responsableNom.split(' ')[0] || '',
+                });
+            }
         } else if (effectiveMode === 'create') {
             reset({
                 ...FORM_INIT,
                 parentId: effectiveParentId || '',
             });
+            setResponsable(null);
         }
     }, [open, effectiveMode, unite, effectiveParentId, reset]);
+
+    const handleResponsableChange = useCallback((p: PersonnelSearchResult | null) => {
+        setResponsable(p);
+        setValue('responsableNom', p ? `${p.prenom} ${p.nom}` : '');
+    }, [setValue]);
 
     const onSubmit = useCallback(async (data: UniteFormData) => {
         if (!etablissementId) return;
@@ -141,9 +137,8 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
             parentId: data.parentId || undefined,
             description: data.description || undefined,
             responsableNom: data.responsableNom || undefined,
+            responsableId: responsable?.id || undefined,
             localisation: data.localisation || undefined,
-            telephone: data.telephone || undefined,
-            email: data.email || undefined,
         };
 
         if (effectiveMode === 'edit' && unite) {
@@ -154,7 +149,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
 
         onOpenChange(false);
         onSuccess?.();
-    }, [effectiveMode, unite, etablissementId, creerUnite, modifierUnite, onOpenChange, onSuccess]);
+    }, [effectiveMode, unite, responsable, etablissementId, creerUnite, modifierUnite, onOpenChange, onSuccess]);
 
     const title = effectiveMode === 'edit'
         ? t('organigramme.modal.modifierUnite', 'Modifier l\'unité')
@@ -279,10 +274,9 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                             {t('organigramme.form.responsable', 'Responsable')}
                         </label>
-                        <input
-                            {...register('responsableNom')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        <PersonnelSearchField
+                            value={responsable}
+                            onChange={handleResponsableChange}
                             placeholder={t('organigramme.form.phResponsable')}
                         />
                     </div>
@@ -296,34 +290,6 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phLocalisation')}
                         />
-                    </div>
-                </div>
-
-                {/* Contact */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.telephone', 'Téléphone')}
-                        </label>
-                        <input
-                            {...register('telephone')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="+237..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.email', 'Email')}
-                        </label>
-                        <input
-                            {...register('email')}
-                            type="email"
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="email@etablissement.cm"
-                        />
-                        {errors.email && <p className="text-xs mt-1 text-destructive">{errors.email.message}</p>}
                     </div>
                 </div>
             </form>

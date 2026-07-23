@@ -1,67 +1,60 @@
 /**
  * ==================================
- * eLISAschool - Hooks Postes Organisation
+ * eLISAschool - Hooks Postes Organisation (délègue à features/postes)
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- *
- * Hooks React Query pour la gestion des postes.
+ * Ces hooks délèguent les appels aux hooks centralisés dans
+ * features/postes et ajoutent les invalidations organigramme.
  */
 
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { apiClient } from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    useCreerPoste as useCreerPosteCentral,
+    useModifierPoste as useModifierPosteCentral,
+    useSupprimerPoste as useSupprimerPosteCentral,
+} from '@/features/postes/hooks/use-postes';
 import type { ModifierPosteDto } from '../types/organisation.types';
-
-function handleError(e: unknown, msg: string) {
-    const err = e as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || msg);
-}
 
 export function useCreerPoste() {
     const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (dto: { intitule: string; code?: string; categoriePosteCode?: string; niveauResponsabiliteId?: string; description?: string; estSuppleant?: boolean; uniteOrganisationnelleId: string; etablissementId?: string }) => {
-            const response = await apiClient.post('/api/organisation/postes', dto);
-            return response.data;
-        },
-        onSuccess: () => {
+    const { mutateAsync, ...rest } = useCreerPosteCentral();
+
+    return {
+        ...rest,
+        mutateAsync: async (dto: any) => {
+            const result = await mutateAsync(dto);
             qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste créé');
+            return result;
         },
-        onError: (e: unknown) => handleError(e, 'Erreur création poste'),
-    });
+    };
 }
 
 export function useModifierPoste() {
     const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & ModifierPosteDto) => {
-            const response = await apiClient.patch(`/api/organisation/postes/${id}`, dto);
-            return response.data;
-        },
-        onSuccess: () => {
+    const { mutateAsync, ...rest } = useModifierPosteCentral();
+
+    return {
+        ...rest,
+        mutateAsync: async ({ id, ...dto }: { id: string } & ModifierPosteDto) => {
+            const result = await mutateAsync({ id, dto });
             qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste modifié');
+            return result;
         },
-        onError: (e: unknown) => handleError(e, 'Erreur modification poste'),
-    });
+    };
 }
 
 export function useSupprimerPoste() {
     const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/organisation/postes/${id}`);
-            return id;
-        },
-        onSuccess: () => {
+    const { mutateAsync, ...rest } = useSupprimerPosteCentral();
+
+    return {
+        ...rest,
+        mutateAsync: async (id: string) => {
+            const result = await mutateAsync(id);
             qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste supprimé');
+            return result;
         },
-        onError: (e: unknown) => handleError(e, 'Erreur suppression poste'),
-    });
+    };
 }

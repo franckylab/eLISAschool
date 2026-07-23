@@ -1,0 +1,5 @@
+- Environment variables use `${VAR:-default}` syntax throughout compose files so every service can be overridden without editing the base compose file.
+- Secrets are never committed; placeholder values like `__AUTO_GENERATE__` are detected and replaced at deploy time by `deploy.sh`'s `generate_secrets` function.
+- Each deployment mode maps one-to-one to a compose overlay and an `.env.*` file, selected through a `case $mode in ... esac` dispatch in `deploy.sh`.
+- Health checks are declared per service using `healthcheck.test` with `pg_isready` / `redis-cli ping`, and `depends_on` uses `condition: service_healthy` to gate startup order.
+- Backup artifacts are organized by retention tier under `backups/{daily,weekly,monthly,manual}/` and scheduled via the cron fragment in `scripts/cron-backup.txt` installed by `install-cron.sh`.
