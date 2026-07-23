@@ -20,12 +20,10 @@ import { notificationTemplates } from '@modules/notifications/services';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
-import { Utilisateur } from '@modules/utilisateurs/entities';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 import { gamificationService } from '@modules/gamification/services';
 import { TypeActionPoints } from '@modules/gamification/entities';
-import { Eleve } from '@modules/eleves/entities';
 
 export class NotesService {
     private noteRepository: Repository<Note>;
@@ -36,9 +34,9 @@ export class NotesService {
 
     private async getNotesParams() {
         return {
-            baremeDefaut: await getParamNumber('notes.bareme_defaut', 20),
-            showRanking: await getParamBoolean('notes.show_ranking', true),
-            requireValidation: await getParamBoolean('notes.require_validation', true),
+            baremeDefaut: await getParamNumber('notes.bareme_defaut', { defaultValue: 20 }),
+            showRanking: await getParamBoolean('notes.show_ranking', { defaultValue: true }),
+            requireValidation: await getParamBoolean('notes.require_validation', { defaultValue: true }),
         };
     }
 
@@ -46,11 +44,8 @@ export class NotesService {
         const params = await this.getNotesParams();
 
         // 1. Récupérer l'année scolaire via la période
-        let anneeId = createDto.anneeScolaireId;
         const periode = await periodesService.findOne(createDto.periodeId);
-        if (!anneeId) {
-            anneeId = periode.anneeScolaireId;
-        }
+        const anneeId = periode.anneeScolaireId;
 
         // 2. NOUVEAU: Guard de clôture - empêcher les notes dans période clôturée
         if (periode.statut === StatutPeriode.CLOTUREE) {
@@ -222,7 +217,7 @@ export class NotesService {
                             bareme: createDto.bareme || 20,
                             periode: periode?.nom || 'Période',
                             enseignant: enseignant?.utilisateur 
-                                ? `${enseignant.utilisateur.prenom} ${enseignant.utilisateur.email?.split('@')[0] || ''}`
+                                ? (enseignant.utilisateur.pseudonyme || enseignant.utilisateur.email?.split('@')[0] || 'Enseignant')
                                 : 'Enseignant',
                         });
                     }
@@ -264,11 +259,8 @@ export class NotesService {
     async createBulk(createDto: CreateBulkNotesDto, enseignantId: string, etablissementId?: string): Promise<number> {
         const params = await this.getNotesParams();
 
-        let anneeId = createDto.anneeScolaireId;
-        if (!anneeId) {
-            const periode = await periodesService.findOne(createDto.periodeId);
-            anneeId = periode.anneeScolaireId;
-        }
+        const periode = await periodesService.findOne(createDto.periodeId);
+        const anneeId = periode.anneeScolaireId;
 
         // Résoudre coefficient/bareme depuis la hiérarchie si non fournis
         let coefficient = createDto.coefficient;
@@ -335,7 +327,6 @@ export class NotesService {
             this.noteRepository.create({
                 eleveId: n.eleveId,
                 matiereId: createDto.matiereId,
-                classeId: createDto.classeId,
                 periodeId: createDto.periodeId,
                 anneeScolaireId: anneeId,
                 typeEvaluation: createDto.typeEvaluation as TypeEvaluation,
@@ -402,7 +393,7 @@ export class NotesService {
     async findOne(id: string): Promise<Note> {
         const note = await this.noteRepository.findOne({
             where: { id },
-            relations: ['eleve', 'enseignant', 'matiere', 'classe', 'periode'],
+            relations: ['eleve', 'enseignant', 'matiere', 'classeAnnee', 'periode'],
         });
         if (!note) throw new AppError('Note non trouvée', 404, 'NOTE_NOT_FOUND');
         return note;
@@ -473,8 +464,44 @@ export class NotesService {
 
     async remove(id: string, utilisateurId: string): Promise<void> {
         const note = await this.findOne(id);
-        // Check permissions logic...
+
+        // Vérifier le verrouillage de la période
+        if (note.periodeId) {
+            const periode = await periodesService.findOne(note.periodeId);
+            if (periode.statut === StatutPeriode.CLOTUREE) {
+                const lockOnCloture = await getParamBoolean('periodes.lock_on_cloture', { defaultValue: true });
+                if (lockOnCloture) {
+                    throw new AppError(
+                        'Impossible de supprimer une note dans une période clôturée',
+                        400,
+                        'PERIODE_CLOTUREE_IMMUTABLE',
+                    );
+                }
+            }
+        }
+
+        // Supprimer le workflow de validation associé (s'il existe)
+        try {
+            const workflow = await validationWorkflowService.findByModuleAndEntite('notes', id);
+            if (workflow) {
+                await validationWorkflowService.remove(workflow.id);
+            }
+        } catch (error) {
+            logger.warn('[Notes] Échec suppression workflow associé (non bloquant)', error);
+        }
+
         await this.noteRepository.remove(note);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NOTE_DELETE,
+            cible: 'Note',
+            cibleId: id,
+            description: `Note supprimée (élève: ${note.eleveId}, matière: ${note.matiereId})`,
+            module: 'notes',
+        });
+
+        logger.info(`[Notes] Note ${id} supprimée par ${utilisateurId}`);
     }
 
     // Calcul de moyenne refactorisé

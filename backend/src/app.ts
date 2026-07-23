@@ -457,7 +457,6 @@ export function createApp(): Application {
     app.use('/api/usages-niveau', authMiddleware, filterByEtablissement(), usagesNiveauController);
     app.use('/api/programmes', requireModuleActive('programmes'), authMiddleware, filterByEtablissement(), programmesController);
     app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
-    app.use('/api/bulletins', authMiddleware, filterByEtablissement(), bulletinsController);
     app.use('/api/responsables-eleves', authMiddleware, filterByEtablissement(), responsablesElevesController);
 
     // Module audit (doit être après tenantMiddleware)
