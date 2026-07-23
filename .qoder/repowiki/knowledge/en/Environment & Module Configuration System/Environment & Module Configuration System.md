@@ -7,58 +7,43 @@ scope:
 source_files:
     - backend/src/config/env.config.ts
     - backend/src/config/database.config.ts
+    - backend/src/config/index.ts
+    - backend/src/config/swagger.config.ts
     - shared/src/config/config.registry.ts
-    - backend/src/modules/configuration/services/configuration.service.ts
-    - backend/src/modules/configuration/services/configuration-seed.service.ts
+    - shared/src/config/index.ts
     - docker/.env.local
     - docker/.env.cloud
+    - docker/docker-compose.local.dev.yml
     - backend/.env
-    - frontend/.env.local
 ---
 
-The eLISAschool platform implements a two-layer configuration system: runtime environment configuration (process-level) and application feature/module configuration (database-backed).
+The eLISAschool monorepo implements a layered configuration system that combines runtime environment variables, Docker-based deployment profiles, and a shared module registry. The approach is split into three distinct layers:
 
-## Runtime Environment Configuration
+1. Runtime Environment Configuration (Backend)
+- backend/src/config/env.config.ts loads .env files via dotenv with multiple search paths, validates all keys with Zod, and exposes a typed envConfig object grouped by domain: app, database, jwt, encryption, redis, email, license, logging.
+- backend/src/config/database.config.ts consumes envConfig to build TypeORM DataSourceOptions, switching entity/migration paths between src/ (dev) and dist/ (prod), enabling synchronize only in development, and adjusting pool size / SSL based on NODE_ENV.
+- backend/src/config/swagger.config.ts provides a static OpenAPI spec mounted at /api/docs.
 
-**Loader**: `backend/src/config/env.config.ts` uses Zod for schema validation with `dotenv` for `.env` loading. It searches multiple paths (`../../.env`, `.env`, `__dirname/../../.env`, `backend/.env`) to locate the env file, then validates all variables against a strict schema. Missing or invalid values cause immediate process exit in production, while development mode generates secure defaults for JWT secrets and encryption keys.
+2. Deployment Profiles (Docker)
+- docker/.env.local documents all local development variables (DB, Redis, SMTP, Twilio, Firebase, CORS, logging, cron flags).
+- docker/.env.cloud defines production cloud settings with NODE_ENV=production, domain/SSL, backup schedule, monitoring toggles, and placeholders marked __AUTO_GENERATE__ for secrets.
+- docker/docker-compose.local.dev.yml injects these env vars directly as service environment entries, overriding container defaults via ${VAR:-default} syntax. Frontend compose also generates a temporary .env.local with VITE_API_URL at startup.
 
-**Structure**: Configuration is exported as a typed object grouped by domain:
-- `app`: nodeEnv, name, version, port, URLs, CORS settings
-- `database`: PostgreSQL connection parameters  
-- `jwt`: secret, token lifetimes
-- `encryption`: AES key
-- `redis`: cache/queue connection
-- `email`: SMTP settings
-- `license`: license key
-- `logging`: level and file path
+3. Shared Module Registry (Runtime Feature Flags)
+- shared/src/config/config.registry.ts is a TypeScript-only registry of every application module declaring label, description, icon, base path, default activation, premium flag, default roles, permissions, dependencies, and per-module defaultSettings.
+- Exported helpers getModuleConfig(), getModulesByCategory(), hasModuleAccess() are consumed by both backend and frontend to drive UI navigation, permission checks, and dynamic feature enablement.
+- This registry is the source of truth for which modules are available and what their built-in settings look like; runtime overrides are persisted separately in the database via the configuration module's REST API (/api/configuration).
 
-**Database Config**: `backend/src/config/database.config.ts` builds TypeORM DataSourceOptions from env config, with different entity/migration paths for dev vs prod environments.
+How it all fits together
+- On startup, env.config.ts loads .env, validates, produces envConfig.
+- database.config.ts reads envConfig.database + envConfig.app.isProduction to wire TypeORM.
+- app.ts reads envConfig.app.* for port, CORS origins, version info, and Swagger mounting.
+- Services (Redis, email, etc.) import envConfig from @config/env.config.
+- The shared MODULE_REGISTRY is independent of env vars — it defines what can be configured; the configuration module persists actual values per establishment.
 
-**Frontend Config**: `frontend/.env` and `frontend/.env.local` use Vite's `VITE_*` prefix convention for build-time variables like API URL and debug mode.
-
-**Docker Environments**: Separate `.env.local` (development) and `.env.cloud` (production) files in `docker/` provide environment-specific defaults with auto-generation markers (`__AUTO_GENERATE__`) for secrets.
-
-## Application Feature & Module Configuration
-
-**Module Registry**: `shared/src/config/config.registry.ts` defines a comprehensive registry of all 30+ modules with their default settings, permissions, roles, dependencies, and UI metadata (icons, basePaths, labels). Each module has a `defaultSettings` object containing tunable parameters like `maxLoginAttempts`, `enablePush`, `defaultCurrency`, etc.
-
-**Runtime Configuration Service**: The `backend/src/modules/configuration/` module provides database-backed configuration management through:
-- `ConfigurationService`: CRUD operations for application settings
-- `ConfigurationSeedService`: Seeds initial configuration from the module registry
-- `ConfigurationHistoryService`: Audit trail for configuration changes
-- `ConfigBackupService`: Import/export functionality for configuration snapshots
-- `ConfigurationListener`: Event-driven updates when configuration changes
-
-**Storage**: Configuration persists to PostgreSQL tables (`configuration_app`, `configuration_module`, `parametre_systeme`) with support for both app-level and module-scoped settings.
-
-**Access Control**: Configuration endpoints are protected by RBAC guards requiring specific permissions (`config:view`, `config:edit`).
-
-## Conventions & Rules
-
-1. **Environment variables must be defined in `.env` files** — never hardcoded in source
-2. **Use Zod schemas for validation** — any missing required variable crashes the app in production
-3. **Module configurations live in the shared registry** — new modules must register their defaults there
-4. **Sensitive values use `__AUTO_GENERATE__` markers** in cloud deployment configs
-5. **Frontend variables require `VITE_` prefix** for build-time injection
-6. **Configuration changes are audited** — all modifications tracked with user context and timestamps
-7. **Multi-tenant isolation** — configuration can be scoped per establishment via tenant context
+Rules developers should follow
+- Add new runtime variables in envSchema (with sensible defaults) and re-export them under the appropriate envConfig sub-object.
+- Do not read process.env directly outside env.config.ts; always use the typed envConfig export.
+- New modules must register themselves in shared/src/config/config.registry.ts with defaultActive, premium, dependencies, and defaultSettings so they appear in the admin UI and pass permission checks.
+- Per-establishment overrides go through the /api/configuration endpoints, never by editing the registry.
+- For deployment, create/update a profile in docker/.env.* and reference it via --env-file or compose environment: blocks; never hardcode secrets in code.

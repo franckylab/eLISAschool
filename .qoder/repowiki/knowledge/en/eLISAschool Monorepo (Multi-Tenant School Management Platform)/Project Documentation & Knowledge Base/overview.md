@@ -1,0 +1,1 @@
+Curated knowledge base for the eLISAschool school management platform, organizing analyses, implementations, guides, reports, and session artifacts across 15 thematic directories.

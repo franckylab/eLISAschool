@@ -927,7 +927,7 @@ function MenuEpinglageColonnes({ colonnes, pinning, onPin, enablePinning = true 
                                             title={t('tableau.epinglerGauche', { defaultValue: 'Épingler à gauche' })}
                                         >
                                             <ArrowLeftToLine className="h-3 w-3" />
-                                            <span className="hidden sm:inline">Gauche</span>
+                                            <span className="hidden sm:inline">{t('a11y.gauche')}</span>
                                         </button>
                                         <button
                                             disabled={desactive}
@@ -940,7 +940,7 @@ function MenuEpinglageColonnes({ colonnes, pinning, onPin, enablePinning = true 
                                             title={t('tableau.epinglerDroite', { defaultValue: 'Épingler à droite' })}
                                         >
                                             <ArrowRightToLine className="h-3 w-3" />
-                                            <span className="hidden sm:inline">Droite</span>
+                                            <span className="hidden sm:inline">{t('a11y.droite')}</span>
                                         </button>
                                         {etatEpinglage && (
                                             <button

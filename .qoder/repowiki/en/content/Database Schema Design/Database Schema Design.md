@@ -25,6 +25,8 @@
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
 - [107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [108-refactor-salle-principale.sql](file://backend/database/migrations/108-refactor-salle-principale.sql)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
 - [migrate-rbac-v3.sql](file://backend/database/migrations/migrate-rbac-v3.sql)
@@ -40,11 +42,11 @@
 
 ## Update Summary
 **Changes Made**
-- Updated to reflect fundamental schema changes replacing enum-based validation with database-driven truth tables
-- Added documentation for new personnel types and hierarchical relationships entities
-- Enhanced organizational unit classifications and their relationships
-- Updated migration patterns to include database-driven validation approaches
-- Revised entity relationship diagrams to reflect new structural changes
+- Updated to reflect database schema improvements through migrations 111 and 112 focusing on nomenclature refactoring and type/function refactoring
+- Enhanced data integrity and relationships with more normalized database design patterns
+- Added entity simplifications in the organisation module for improved maintainability
+- Updated architectural diagrams to reflect the latest normalization improvements
+- Revised validation approaches to support enhanced referential integrity constraints
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -63,7 +65,7 @@ This document provides comprehensive data model documentation for eLISAschool's 
 
 The goal is to make the schema accessible to both technical and non-technical readers while providing precise references to source files and migrations.
 
-**Updated** The schema has evolved to replace enum-based validation with database-driven truth tables, introducing new entities for personnel types, hierarchical relationships, and organizational unit classifications.
+**Updated** The schema has evolved significantly with recent migrations introducing enhanced normalization patterns, improved nomenclature consistency, and simplified organizational entities. The latest improvements focus on data integrity, relationship optimization, and maintainable database design patterns.
 
 ## Project Structure
 The database schema is defined primarily through SQL migrations under backend/database/migrations and managed via TypeORM configuration and scripts. The application uses a single PostgreSQL instance with multi-tenant scoping enforced at the application layer and reinforced by schema design (e.g., etablisement_id columns). Migrations are executed using Node.js scripts that integrate with TypeORM.
@@ -77,7 +79,13 @@ C["DB Index<br/>database/index.ts"]
 D["Migration Runner<br/>scripts/run-migration.ts"]
 E["Pending Migrations<br/>scripts/run-pending-migrations.ts"]
 end
-subgraph "Migrations"
+subgraph "Recent Schema Improvements"
+R1["Nomenclature Refactoring<br/>111-refactoring-nomenclatures.sql"]
+R2["Type & Function Refactoring<br/>112-refactoring-type-fonction.sql"]
+R3["Enhanced Normalization<br/>Improved Data Integrity"]
+R4["Organisation Module Simplification<br/>Entity Streamlining"]
+end
+subgraph "Core Migrations"
 M1["Multi-Tenant v3<br/>050-multi-tenant-v3-max-etablissements.sql"]
 M2["Academic Architecture Refactor<br/>088-refactorisation-architecture-academique.sql"]
 M3["Finalize Academic Arch v2<br/>089-finalisation-architecture-academique-v2.sql"]
@@ -93,8 +101,6 @@ M12["Templates V5 Migration<br/>105-migration-templates-v5.sql"]
 M13["Rename Sequence to Evaluation<br/>106-rename-sequence-to-evaluation.sql"]
 M14["Cleanup Modules Actif<br/>107-cleanup-configuration-modules-actif.sql"]
 M15["Refactor Salle Principale<br/>108-refactor-salle-principale.sql"]
-M16["Personnel Types & Hierarchies<br/>New Schema Evolution"]
-M17["Organizational Units<br/>Database-Driven Truth Tables"]
 end
 A --> B
 A --> C
@@ -115,8 +121,10 @@ D --> M12
 D --> M13
 D --> M14
 D --> M15
-D --> M16
-D --> M17
+D --> R1
+D --> R2
+D --> R3
+D --> R4
 ```
 
 **Diagram sources**
@@ -125,6 +133,8 @@ D --> M17
 - [index.ts](file://backend/src/database/index.ts)
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
@@ -155,6 +165,7 @@ D --> M17
 - Monitoring and configuration: Additional monitoring parameters and cleanup of module activation flags improve operational visibility and consistency.
 - **Enhanced Personnel Management**: New personnel types and hierarchical relationships provide flexible organizational structures.
 - **Database-Driven Validation**: Replaced enum-based validation with truth tables for better maintainability and extensibility.
+- **Latest Schema Improvements**: Recent migrations have introduced enhanced normalization patterns, improved nomenclature consistency, and simplified organisational entities for better data integrity and maintainability.
 
 Key responsibilities:
 - Enforce tenant boundaries across modules (finance, personnel, academic, scheduling).
@@ -163,6 +174,7 @@ Key responsibilities:
 - Support main room assignment per class and refactor associated fields.
 - **Manage complex personnel hierarchies and organizational units**.
 - **Enable dynamic validation through database-driven truth tables**.
+- **Implement enhanced normalization patterns for improved data integrity**.
 
 **Section sources**
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
@@ -179,11 +191,13 @@ Key responsibilities:
 - [108-refactor-salle-principale.sql](file://backend/database/migrations/108-refactor-salle-principale.sql)
 - [099-add-monitoring-params.sql](file://backend/database/migrations/099-add-monitoring-params.sql)
 - [107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 ## Architecture Overview
 The database architecture centers around a single PostgreSQL instance with multi-tenant scoping. Each tenant corresponds to an establishment (etablissement), and most domain tables include etablisement_id to enforce data isolation. Academic entities are organized hierarchically (cycles → levels → classes), with subjects and evaluations linked to these structures. Periods define academic timeframes and can be templated and configured per level. Scheduling includes rooms and main room assignments per class.
 
-**Updated** The architecture now includes enhanced personnel management with hierarchical relationships and organizational unit classifications, supported by database-driven validation tables.
+**Updated** The architecture now includes enhanced personnel management with hierarchical relationships and organizational unit classifications, supported by database-driven validation tables. Recent improvements have further strengthened data integrity through enhanced normalization patterns and simplified organisational entities.
 
 ```mermaid
 erDiagram
@@ -300,6 +314,15 @@ string value
 string description
 boolean active
 }
+ENHANCED_ENTITY {
+uuid id PK
+uuid etablisement_id FK
+string reference_code
+string display_name
+boolean active
+timestamp created_at
+timestamp updated_at
+}
 UTILISATEUR ||--o{ UTILISATEUR : "role hierarchy"
 ETABLISSEMENT ||--o{ UTILISATEUR : "belongs to"
 ETABLISSEMENT ||--o{ CYCLE : "owns"
@@ -313,6 +336,7 @@ ETABLISSEMENT ||--o{ SALLE : "owns"
 ETABLISSEMENT ||--o{ PERSONNEL_TYPE : "defines"
 ETABLISSEMENT ||--o{ ORGANIZATIONAL_UNIT : "contains"
 ETABLISSEMENT ||--o{ TRUTH_TABLE : "validates"
+ETABLISSEMENT ||--o{ ENHANCED_ENTITY : "manages"
 CYCLE ||--o{ NIVEAU : "contains"
 NIVEAU ||--o{ CLASSE : "has"
 CLASSE ||--o{ EVALUATION : "hosts"
@@ -335,6 +359,8 @@ ORGANIZATIONAL_UNIT ||--o{ ORGANIZATIONAL_UNIT : "hierarchical"
 - [104-refonte-periodes-niveaux-configurables.sql](file://backend/database/migrations/104-refonte-periodes-niveaux-configurables.sql)
 - [105-migration-templates-v5.sql](file://backend/database/migrations/105-migration-templates-v5.sql)
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 ## Detailed Component Analysis
 
@@ -420,6 +446,25 @@ Key benefits:
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 
+### Latest Schema Improvements and Normalization Enhancements
+**New** Recent migrations have introduced significant improvements to data integrity, normalization patterns, and entity simplification.
+
+- **Nomenclature Refactoring**: Standardized naming conventions across the database schema for improved consistency and maintainability.
+- **Type and Function Refactoring**: Enhanced data types and improved function implementations for better performance and reliability.
+- **Enhanced Normalization Patterns**: Applied advanced normalization techniques to reduce data redundancy and improve data integrity.
+- **Organisation Module Simplification**: Streamlined organisational entities to reduce complexity while maintaining functionality.
+
+Key improvements:
+- Consistent naming conventions across all database objects
+- Improved data type definitions with better constraints
+- Enhanced referential integrity through stricter foreign key relationships
+- Simplified entity structures that are easier to maintain and extend
+- Better performance through optimized query patterns and reduced joins
+
+**Section sources**
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+
 ### RBAC and Permissions
 - Role-based access control (RBAC) migrations establish roles, permissions, and group mappings.
 - Group-based permissions support scalable authorization across tenants.
@@ -451,6 +496,7 @@ The database schema dependencies follow a clear hierarchy:
 - Rooms are referenced by classes for main room assignment.
 - **Personnel types and organizational units provide foundational reference data for HR operations**.
 - **Truth tables serve as validation foundations for multiple domains**.
+- **Enhanced entities benefit from improved normalization patterns and simplified relationships**.
 
 ```mermaid
 graph TB
@@ -465,6 +511,7 @@ ETAB --> SAL["SALLE"]
 ETAB --> PTYPE["PERSONNEL_TYPE"]
 ETAB --> OUNIT["ORGANIZATIONAL_UNIT"]
 ETAB --> TRUTH["TRUTH_TABLE"]
+ETAB --> ENH["ENHANCED_ENTITY"]
 CYC --> NIV
 NIV --> CLA
 CLA --> EVA
@@ -474,6 +521,7 @@ CLA --> SAL
 OUNIT --> OUNIT
 PTYPE --> PTYPE
 TRUTH --> TRUTH
+ENH --> ETAB
 ```
 
 **Diagram sources**
@@ -481,12 +529,16 @@ TRUTH --> TRUTH
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 **Section sources**
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 ## Performance Considerations
 - Indexes: Ensure foreign keys and frequently filtered columns (e.g., etablisement_id, codes, dates) are indexed. Review migration scripts for index creation and consider composite indexes for common query patterns.
@@ -494,6 +546,7 @@ TRUTH --> TRUTH
 - Data volume management: Archive closed periods and old evaluations periodically. Normalize recurring structures to minimize duplication.
 - **Truth table optimization**: Implement appropriate indexing on truth tables to support efficient validation queries.
 - **Hierarchical queries**: Use recursive CTEs for deep organizational hierarchy traversals and consider materialized views for frequently accessed hierarchy snapshots.
+- **Enhanced performance patterns**: Recent normalization improvements have reduced join complexity and improved query performance through better data organization.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -502,23 +555,28 @@ Common issues and resolutions:
 - Migration failures: Run pending migrations carefully and review error logs. Use rollback strategies if necessary.
 - **Truth table validation errors**: Ensure truth table entries exist for required validation combinations before applying dependent migrations.
 - **Hierarchical relationship issues**: Verify parent-child relationships don't create circular dependencies when modifying organizational structures.
+- **Nomenclature conflicts**: Check for naming convention violations after applying nomenclature refactoring migrations.
+- **Type compatibility issues**: Verify data type compatibility when upgrading to newer schema versions.
 
 Operational steps:
 - Inspect migration logs and verify dependency order.
 - Validate data before applying destructive changes.
 - Use backups before major migrations.
 - **Test truth table configurations in development before production deployment**.
+- **Verify naming conventions after applying nomenclature refactoring**.
 
 **Section sources**
 - [084-cleanup-classe-id-notes.sql](file://backend/database/migrations/084-cleanup-classe-id-notes.sql)
 - [087-affectation-matiere-verifications.sql](file://backend/database/migrations/087-affectation-matiere-verifications.sql)
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 ## Conclusion
 The eLISAschool database schema emphasizes multi-tenant isolation, robust academic architecture, and flexible period management. Strong referential integrity and careful migration practices ensure data consistency and scalability. Monitoring and configuration cleanup further enhance operational reliability.
 
-**Updated** The recent evolution introduces enhanced personnel management capabilities, hierarchical organizational structures, and database-driven validation systems that replace static enum-based approaches. These improvements provide greater flexibility, maintainability, and scalability for complex institutional requirements.
+**Updated** The recent evolution introduces enhanced personnel management capabilities, hierarchical organizational structures, and database-driven validation systems that replace static enum-based approaches. The latest improvements through migrations 111 and 112 have significantly enhanced data integrity, normalization patterns, and entity simplification, providing greater flexibility, maintainability, and scalability for complex institutional requirements.
 
 ## Appendices
 
@@ -528,6 +586,7 @@ The eLISAschool database schema emphasizes multi-tenant isolation, robust academ
 - Implement soft deletes for auditability where appropriate.
 - **Personnel history**: Maintain historical records of personnel assignments and organizational changes for audit purposes.
 - **Truth table versions**: Version truth table configurations to track validation rule changes over time.
+- **Enhanced entity lifecycle**: Apply consistent lifecycle management to newly simplified organisational entities.
 
 ### Backup Procedures
 Automated and manual backup processes are provided via Docker scripts. Cron jobs can schedule regular backups. Restore procedures are available for disaster recovery.
@@ -562,6 +621,7 @@ VerifyBackup --> End(["Backup Complete"])
 - Seed data updates ensure baseline configurations and permissions.
 - **Database-driven validation migrations**: Include truth table population and validation rule setup in migration sequences.
 - **Hierarchical data migrations**: Handle organizational structure initialization and relationship establishment carefully.
+- **Enhanced migration patterns**: Recent migrations demonstrate improved patterns for nomenclature standardization and type/function refactoring.
 
 **Section sources**
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
@@ -569,6 +629,8 @@ VerifyBackup --> End(["Backup Complete"])
 - [PERMISSIONS-GROUPES-SEED-UPDATE.md](file://backend/database/migrations/PERMISSIONS-GROUPES-SEED-UPDATE.md)
 - [README-075-GROUPES.md](file://backend/database/migrations/README-075-GROUPES.md)
 - [MIGRATION-076-SUCCESS.md](file://backend/database/migrations/MIGRATION-076-SUCCESS.md)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 
 ### Seed Data Management and Demo Data Generation
 - Seed updates provide baseline permissions and groups.
@@ -576,7 +638,10 @@ VerifyBackup --> End(["Backup Complete"])
 - Use migration scripts to apply seed data safely.
 - **Personnel type seeds**: Initialize common personnel categories and organizational unit templates.
 - **Truth table seeds**: Populate essential validation rules and reference data for system functionality.
+- **Enhanced entity seeds**: Generate sample data for newly simplified organisational entities following improved naming conventions.
 
 **Section sources**
 - [PERMISSIONS-GROUPES-SEED-UPDATE.md](file://backend/database/migrations/PERMISSIONS-GROUPES-SEED-UPDATE.md)
 - [README-075-GROUPES.md](file://backend/database/migrations/README-075-GROUPES.md)
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)

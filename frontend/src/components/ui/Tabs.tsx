@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -139,6 +140,7 @@ export function TabsBar({
     showHeader = false,
     className,
 }: TabsBarProps) {
+    const { t } = useTranslation('common');
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -189,8 +191,8 @@ export function TabsBar({
                         onClick={() => scroll('left')}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="shrink-0 p-1.5 -ml-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/40 transition-colors"
-                        aria-label="Défiler vers la gauche"
+                        className="shrink-0 p-1.5 -ml-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/40 transition-colors"
+                        aria-label={t('a11y.defilerGauche')}
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </motion.button>
@@ -242,8 +244,8 @@ export function TabsBar({
                         onClick={() => scroll('right')}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="shrink-0 p-1.5 -mr-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/40 transition-colors"
-                        aria-label="Défiler vers la droite"
+                        className="shrink-0 p-1.5 -mr-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/40 transition-colors"
+                        aria-label={t('a11y.defilerDroite')}
                     >
                         <ChevronRight className="h-4 w-4" />
                     </motion.button>

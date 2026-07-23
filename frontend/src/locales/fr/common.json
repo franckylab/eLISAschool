@@ -27,6 +27,31 @@
         "back": "Retour",
         "contactAdmin": "Contacter un administrateur"
     },
+    "a11y": {
+        "fermer": "Fermer",
+        "reordonner": "Réordonner",
+        "retirer": "Retirer",
+        "toutAjouter": "Tout ajouter",
+        "toutRetirer": "Tout retirer",
+        "rechercher": "Rechercher...",
+        "effacerRecherche": "Effacer la recherche",
+        "defilerGauche": "Défiler vers la gauche",
+        "defilerDroite": "Défiler vers la droite",
+        "filAriane": "Fil d'Ariane",
+        "actions": "Actions",
+        "gauche": "Gauche",
+        "droite": "Droite",
+        "modalTitre": "Fenêtre modale",
+        "modalDescription": "Boîte de dialogue modale",
+        "reduire": "Réduire",
+        "agrandir": "Agrandir",
+        "restaurer": "Restaurer",
+        "disponibles": "Disponibles",
+        "selectionnes": "Sélectionnés",
+        "aucunElement": "Aucun élément",
+        "aucunElementSelectionne": "Aucun élément sélectionné",
+        "ajouterItem": "Ajouter {{label}}"
+    },
     "validation": {
         "requis": "Ce champ est requis",
         "confirmationInvalide": "Les valeurs ne correspondent pas",
@@ -71,7 +96,10 @@
     },
     "header": {
         "changerEtablissement": "Changer d'établissement",
-        "etablissements": "Établissements"
+        "etablissements": "Établissements",
+        "menu": "Menu",
+        "notifications": "Notifications",
+        "menuUtilisateur": "Menu utilisateur"
     },
     "pagination": {
         "pageSur": "Page {{page}} sur {{total}}",

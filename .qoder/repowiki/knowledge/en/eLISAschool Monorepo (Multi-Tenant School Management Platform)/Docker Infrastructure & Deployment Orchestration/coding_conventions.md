@@ -1,0 +1,5 @@
+- Environment variables use `${VAR:-default}` syntax throughout compose files and Dockerfiles, with `.env.local` and `.env.cloud` files holding environment-specific values.
+- Multi-environment setup follows a four-mode pattern (local-dev, local-prod, cloud-dev, cloud-prod) each with dedicated `.env.*` and `docker-compose.<env>.<stage>.yml` files.
+- Secrets are injected via placeholder tokens (`__AUTO_GENERATE__`) in `.env` files that `deploy.sh` replaces with OpenSSL-generated random values at runtime.
+- Services declare explicit health checks and `depends_on` with `condition: service_healthy` to ensure startup ordering between postgres, redis, backend, and frontend.
+- Development containers mount source directories (`../backend`, `../frontend`, `../shared`) as volumes with `node_modules` mounted separately to avoid overwriting host dependencies.

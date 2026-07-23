@@ -24,6 +24,9 @@
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
 - [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [specialized-nomenclature.service.ts](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts)
+- [fonctions.service.ts](file://backend/src/modules/personnel/services/fonctions.service.ts)
+- [postes.service.ts](file://backend/src/modules/personnel/services/postes.service.ts)
+- [contrat.service.ts](file://backend/src/modules/personnel/services/contrat.service.ts)
 - [auth.guard.ts](file://backend/src/common/guards/auth.guard.ts)
 - [roles.guard.ts](file://backend/src/common/guards/roles.guard.ts)
 - [logging.interceptor.ts](file://backend/src/common/interceptors/logging.interceptor.ts)
@@ -36,32 +39,34 @@
 
 ## Update Summary
 **Changes Made**
-- Updated architecture overview to reflect distributed configuration management pattern
-- Enhanced controller layer documentation showing delegation to specialized services
-- Added new section on responsibility boundaries between API and business logic layers
-- Updated module patterns to emphasize cleaner interfaces and improved maintainability
-- Revised service layer examples to demonstrate specialized service delegation patterns
-- Strengthened separation between API layer and business logic with enhanced specialization
+- Updated service layer architecture to reflect major consolidation improvements
+- Enhanced personnel module services with improved business logic implementation
+- Simplified organisation module entities and removed redundant data structures
+- Streamlined controller layer with better delegation patterns
+- Improved service-to-service communication and dependency management
+- Enhanced error handling and validation across all service layers
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Distributed Configuration Management Pattern](#distributed-configuration-management-pattern)
-6. [Controller Layer Delegation Architecture](#controller-layer-delegation-architecture)
-7. [Detailed Component Analysis](#detailed-component-analysis)
-8. [Dependency Analysis](#dependency-analysis)
-9. [Performance Considerations](#performance-considerations)
-10. [Troubleshooting Guide](#troubleshooting-guide)
-11. [Conclusion](#conclusion)
-12. [Appendices](#appendices)
+5. [Service Layer Consolidation](#service-layer-consolidation)
+6. [Personnel Module Enhancements](#personnel-module-enhancements)
+7. [Organisation Module Simplification](#organisation-module-simplification)
+8. [Controller Layer Streamlining](#controller-layer-streamlining)
+9. [Detailed Component Analysis](#detailed-component-analysis)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
+14. [Appendices](#appendices)
 
 ## Introduction
-This document explains the backend architecture built with NestJS for eLISAschool, focusing on the recent architectural evolution toward distributed configuration management and enhanced controller delegation patterns. The modular architecture pattern implements each business domain (eleves, personnel, finances, organisation) as an independent module with clear separation of concerns. The system has been significantly enhanced with a distributed configuration management approach where controllers delegate operations to specialized services, establishing cleaner interfaces between the API layer and business logic layer. This evolution improves maintainability through clear responsibility boundaries and better separation of concerns. The architecture includes Controllers, Services, Repositories, and Entities in a layered design, along with common infrastructure components such as guards, interceptors, middlewares, and utilities. It covers dependency injection patterns, event-driven communication between modules, and the enhanced configuration management system.
+This document explains the backend architecture built with NestJS for eLISAschool, focusing on the recent architectural evolution toward consolidated service layers and simplified entity structures. The modular architecture pattern implements each business domain (eleves, personnel, finances, organisation) as an independent module with clear separation of concerns. The system has undergone significant consolidation improvements including enhanced service layer implementations, entity simplifications in the organisation module, and refined business logic in key personnel services. These changes establish cleaner interfaces between API and business logic layers while improving maintainability through reduced complexity and better separation of responsibilities. The architecture includes Controllers, Services, Repositories, and Entities in a layered design, along with common infrastructure components such as guards, interceptors, middlewares, and utilities. It covers dependency injection patterns, event-driven communication between modules, and the enhanced configuration management system.
 
 ## Project Structure
-The backend follows a feature-based organization under src/modules, with shared infrastructure under src/common and configuration under src/config. The application bootstrap wires up global middleware, guards, interceptors, filters, and Swagger documentation. Each module encapsulates its own controllers, services, entities, DTOs, and tests. Recent enhancements include the implementation of distributed configuration management patterns and controller layer adaptations that delegate operations to specialized services, establishing cleaner interfaces between API and business logic layers.
+The backend follows a feature-based organization under src/modules, with shared infrastructure under src/common and configuration under src/config. The application bootstrap wires up global middleware, guards, interceptors, filters, and Swagger documentation. Each module encapsulates its own controllers, services, entities, DTOs, and tests. Recent enhancements include major service layer consolidation, entity simplifications, and streamlined controller patterns that improve overall system maintainability and performance.
 
 ```mermaid
 graph TB
@@ -72,7 +77,7 @@ subgraph "Configuration Management"
 C["src/config/database.config.ts"]
 D["src/config/env.config.ts"]
 E["src/config/swagger.config.ts"]
-F["Distributed Config Pattern"]
+F["Consolidated Config Pattern"]
 end
 subgraph "Database"
 G["src/database/data-source.ts"]
@@ -139,16 +144,16 @@ B --> N
 - [data-source.ts:1-200](file://backend/src/database/data-source.ts#L1-L200)
 
 ## Core Components
-- **Modules**: Feature boundaries that group related controllers, services, entities, DTOs, and providers. Examples include eleves, personnel, finances, and the enhanced organisation module with specialized services implementing distributed configuration patterns.
-- **Controllers**: HTTP endpoints that handle request/response mapping and delegate to specialized services. Controllers now establish cleaner interfaces by delegating complex operations to dedicated business logic services.
-- **Services**: Business logic layer orchestrating operations, calling repositories or TypeORM entities, and emitting events when needed. Specialized services now implement distributed configuration management patterns for better maintainability.
-- **Entities**: Data models mapped to database tables via TypeORM with enhanced relational schema design.
+- **Modules**: Feature boundaries that group related controllers, services, entities, DTOs, and providers. Examples include eleves, personnel, finances, and the enhanced organisation module with consolidated service patterns.
+- **Controllers**: HTTP endpoints that handle request/response mapping and delegate to specialized services. Controllers have been streamlined to focus on HTTP concerns while delegating complex operations to dedicated business logic services.
+- **Services**: Business logic layer orchestrating operations, calling repositories or TypeORM entities, and emitting events when needed. Services have undergone major consolidation with improved business logic implementation and better separation of concerns.
+- **Entities**: Data models mapped to database tables via TypeORM with simplified relational schema design and enhanced referential integrity.
 - **Common Infrastructure**: Guards for authorization, interceptors for cross-cutting behavior, middlewares for tenant scoping, filters for exception handling, and utilities for pagination and helpers.
 
 Key responsibilities:
-- **Dependency Injection**: Nest's DI container wires modules, controllers, and services with enhanced specialization patterns supporting distributed configuration.
-- **Event Bus**: Modules communicate asynchronously using Nest's EventEmitter or custom event bus with improved configuration event handling.
-- **Configuration Management**: Centralized environment and database configuration with distributed patterns and enhanced migration support.
+- **Dependency Injection**: Nest's DI container wires modules, controllers, and services with consolidated patterns supporting improved service orchestration.
+- **Event Bus**: Modules communicate asynchronously using Nest's EventEmitter or custom event bus with enhanced event handling patterns.
+- **Configuration Management**: Centralized environment and database configuration with consolidated patterns and improved migration support.
 
 **Section sources**
 - [eleves.module.ts:1-200](file://backend/src/modules/eleves/eleves.module.ts#L1-L200)
@@ -174,10 +179,10 @@ Key responsibilities:
 - [audit.service.ts:1-200](file://backend/src/common/services/audit.service.ts#L1-L200)
 
 ## Architecture Overview
-The system uses a layered approach within each module with enhanced distributed configuration management and controller delegation patterns:
-- **Presentation Layer**: Controllers expose REST endpoints with improved organization and clear delegation to specialized services.
-- **Application Layer**: Services implement use cases and orchestrate flows with distributed configuration management and specialized service delegation.
-- **Domain/Data Layer**: Entities represent persistent data with enhanced relational schema design and proper foreign key relationships.
+The system uses a consolidated layered approach within each module with enhanced service orchestration and simplified entity relationships:
+- **Presentation Layer**: Controllers expose REST endpoints with streamlined organization and clear delegation to specialized services.
+- **Application Layer**: Services implement use cases and orchestrate flows with consolidated business logic and improved service coordination.
+- **Domain/Data Layer**: Entities represent persistent data with simplified relational schema design and proper foreign key relationships.
 - **Cross-Cutting Concerns**: Middlewares (tenant context), Guards (authentication/authorization), Interceptors (logging, timing), Filters (global error handling).
 
 ```mermaid
@@ -193,7 +198,7 @@ class OrganisationController {
 +updateOrganisation()
 +getNomenclatures()
 +manageCategories()
-+delegateToSpecializedServices()
++delegateToConsolidatedServices()
 }
 class OrganisationService {
 +findAll()
@@ -202,7 +207,7 @@ class OrganisationService {
 +update()
 +remove()
 +emitEvents()
-+manageDistributedConfig()
++manageConsolidatedConfig()
 }
 class SpecializedNomenclatureService {
 +getCategorie()
@@ -211,7 +216,7 @@ class SpecializedNomenclatureService {
 +getCompetence()
 +handleConfigDelegation()
 }
-class DistributedConfigManager {
+class ConsolidatedConfigManager {
 +distributeConfig()
 +validateConfig()
 +syncConfig()
@@ -227,13 +232,13 @@ class OrganisationEntity {
 OrganisationModule --> OrganisationController : "registers"
 OrganisationModule --> OrganisationService : "provides"
 OrganisationModule --> SpecializedNomenclatureService : "provides"
-OrganisationModule --> DistributedConfigManager : "provides"
+OrganisationModule --> ConsolidatedConfigManager : "provides"
 OrganisationController --> OrganisationService : "delegates"
 OrganisationController --> SpecializedNomenclatureService : "delegates"
-OrganisationController --> DistributedConfigManager : "delegates"
+OrganisationController --> ConsolidatedConfigManager : "delegates"
 OrganisationService --> OrganisationEntity : "persists"
 SpecializedNomenclatureService --> OrganisationEntity : "queries"
-DistributedConfigManager --> OrganisationService : "coordinates"
+ConsolidatedConfigManager --> OrganisationService : "coordinates"
 ```
 
 **Diagram sources**
@@ -243,82 +248,157 @@ DistributedConfigManager --> OrganisationService : "coordinates"
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
 - [organisation.entity.ts:1-200](file://backend/src/modules/organisation/entities/organisation.entity.ts#L1-L200)
 
-## Distributed Configuration Management Pattern
-**New** The system has evolved to implement a distributed configuration management pattern that enhances maintainability and scalability across modules.
+## Service Layer Consolidation
+**Updated** The service layer has undergone major consolidation to improve maintainability, reduce complexity, and enhance business logic implementation across all modules.
 
-### Pattern Overview
-- **Decentralized Configuration**: Each module manages its own configuration while maintaining consistency through shared patterns.
-- **Service Delegation**: Controllers delegate configuration operations to specialized services for better separation of concerns.
-- **Consistency Enforcement**: Shared validation and synchronization mechanisms ensure configuration integrity.
-- **Scalability Support**: Pattern supports horizontal scaling and microservices architecture.
+### Consolidation Strategy
+- **Unified Service Patterns**: Standardized service interfaces and implementation patterns across all modules.
+- **Reduced Complexity**: Eliminated redundant service methods and consolidated overlapping functionality.
+- **Improved Error Handling**: Enhanced error handling and validation throughout the service layer.
+- **Better Dependency Management**: Streamlined service dependencies and improved coupling patterns.
 
-### Implementation Strategy
-- **Configuration Services**: Dedicated services handle configuration distribution and synchronization.
-- **Validation Layers**: Multiple validation points ensure data integrity across distributed systems.
-- **Event-Driven Updates**: Configuration changes propagate through event buses for real-time updates.
-- **Fallback Mechanisms**: Graceful degradation when configuration services are unavailable.
+### Implementation Improvements
+- **Service Orchestration**: Better coordination between services for complex business operations.
+- **Validation Enhancement**: Comprehensive input validation and business rule enforcement.
+- **Transaction Management**: Improved transaction handling for multi-step operations.
+- **Logging and Monitoring**: Enhanced logging and monitoring capabilities across services.
 
 ```mermaid
 flowchart TD
-Client["Client Request"] --> Controller["Controller Layer"]
-Controller --> ConfigService["Distributed Config Service"]
-ConfigService --> Validation["Configuration Validator"]
-Validation --> Distribution["Distribution Engine"]
-Distribution --> ModuleA["Module A Config"]
-Distribution --> ModuleB["Module B Config"]
-Distribution --> ModuleC["Module C Config"]
-ModuleA --> Event["Event Bus"]
-ModuleB --> Event
-ModuleC --> Event
-Event --> Sync["Sync Coordinator"]
-Sync --> Consistency["Consistency Check"]
-Consistency --> Response["Response to Client"]
+Client["Client Request"] --> Controller["Streamlined Controller"]
+Controller --> ServiceLayer["Consolidated Service Layer"]
+ServiceLayer --> Validation["Enhanced Validation"]
+Validation --> BusinessLogic["Improved Business Logic"]
+BusinessLogic --> DataAccess["Optimized Data Access"]
+DataAccess --> Response["Standardized Response"]
+Response --> Client
 ```
 
 **Diagram sources**
-- [organisation.controller.ts:1-200](file://backend/src/modules/organisation/controllers/organisation.controller.ts#L1-L200)
-- [organisation.service.ts:1-200](file://backend/src/modules/organisation/services/organisation.service.ts#L1-L200)
-- [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 
 **Section sources**
-- [organisation.controller.ts:1-200](file://backend/src/modules/organisation/controllers/organisation.controller.ts#L1-L200)
-- [organisation.service.ts:1-200](file://backend/src/modules/organisation/services/organisation.service.ts#L1-L200)
-- [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 
-## Controller Layer Delegation Architecture
-**New** The controller layer has been adapted to establish cleaner interfaces between API layer and business logic layer through strategic delegation to specialized services.
+## Personnel Module Enhancements
+**Updated** The personnel module has received significant enhancements with improved business logic implementation in key services including fonctions, postes, and contrat services.
 
-### Delegation Strategy
-- **Thin Controllers**: Controllers focus on HTTP concerns (validation, response formatting) while delegating business logic.
-- **Specialized Services**: Complex operations are delegated to domain-specific services for better maintainability.
-- **Interface Clarity**: Clear method signatures define explicit contracts between controllers and services.
-- **Error Handling**: Delegated services provide consistent error handling and response patterns.
+### Enhanced Service Implementations
+- **Fonctions Service**: Improved role and function management with better validation and relationship handling.
+- **Postes Service**: Enhanced position management with optimized queries and improved business rules.
+- **Contrat Service**: Refined contract management with better lifecycle handling and validation.
 
-### Responsibility Boundaries
-- **API Layer**: Handles request parsing, validation, authentication, and response formatting.
-- **Business Logic Layer**: Contains domain rules, calculations, and coordination of operations.
-- **Data Access Layer**: Manages persistence operations and data transformations.
-- **Configuration Layer**: Handles distributed configuration management and synchronization.
+### Business Logic Improvements
+- **Enhanced Validation**: Comprehensive input validation and business rule enforcement.
+- **Improved Relationships**: Better handling of complex relationships between personnel entities.
+- **Transaction Safety**: Enhanced transaction management for critical operations.
+- **Error Recovery**: Improved error handling and recovery mechanisms.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
-participant Controller as "OrganisationController"
-participant ConfigService as "DistributedConfigService"
-participant NomenclatureSvc as "SpecializedNomenclatureService"
+participant Controller as "PersonnelController"
+as FonctionsSvc as "FonctionsService"
+as PostesSvc as "PostesService"
+as ContratSvc as "ContratService"
+participant DB as "TypeORM Repository"
+Client->>Controller : "POST /personnel/contrat"
+Controller->>Controller : "Validate & Parse Request"
+Controller->>ContratSvc : "createContract(payload)"
+ContratSvc->>ContratSvc : "Apply Enhanced Business Rules"
+ContratSvc->>PostesSvc : "validatePosition()"
+PostesSvc->>DB : "Check position availability"
+DB-->>PostesSvc : "Position valid"
+PostesSvc-->>ContratSvc : "Position validated"
+ContratSvc->>FonctionsSvc : "assignFunctions()"
+FonctionsSvc->>DB : "Update function assignments"
+DB-->>FonctionsSvc : "Functions assigned"
+FonctionsSvc-->>ContratSvc : "Assignment complete"
+ContratSvc-->>Controller : "Contract created"
+Controller-->>Client : "201 Created"
+```
+
+**Diagram sources**
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
+
+**Section sources**
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
+
+## Organisation Module Simplification
+**Updated** The organisation module has been significantly simplified by removing redundant entities and streamlining the data model for better maintainability and performance.
+
+### Entity Simplification Strategy
+- **Removed Redundant Entities**: Eliminated duplicate or unnecessary entity definitions.
+- **Consolidated Relationships**: Streamlined entity relationships to reduce complexity.
+- **Improved Referential Integrity**: Enhanced foreign key constraints and cascading operations.
+- **Optimized Schema Design**: Better database schema design for improved query performance.
+
+### Simplification Benefits
+- **Reduced Complexity**: Lower maintenance overhead and clearer data model.
+- **Improved Performance**: Faster queries and reduced database overhead.
+- **Better Maintainability**: Easier to understand and modify the data structure.
+- **Enhanced Consistency**: More consistent data relationships and constraints.
+
+```mermaid
+flowchart TD
+Start(["Organisation Module Simplification"]) --> Analyze["Analyze Current Entities"]
+Analyze --> IdentifyRedundancies["Identify Redundant Entities"]
+IdentifyRedundancies --> Remove["Remove Unnecessary Entities"]
+Remove --> Consolidate["Consolidate Relationships"]
+Consolidate --> Optimize["Optimize Schema Design"]
+Optimize --> Validate["Validate Data Integrity"]
+Validate --> Complete(["Simplified Module"])
+```
+
+**Diagram sources**
+- [organisation.module.ts:1-200](file://backend/src/modules/organisation/organisation.module.ts#L1-L200)
+- [organisation.service.ts:1-200](file://backend/src/modules/organisation/services/organisation.service.ts#L1-L200)
+- [110-consolidation-organisation.sql:1-200](file://backend/database/migrations/110-consolidation-organisation.sql#L1-L200)
+
+**Section sources**
+- [organisation.module.ts:1-200](file://backend/src/modules/organisation/organisation.module.ts#L1-L200)
+- [organisation.service.ts:1-200](file://backend/src/modules/organisation/services/organisation.service.ts#L1-L200)
+- [110-consolidation-organisation.sql:1-200](file://backend/database/migrations/110-consolidation-organisation.sql#L1-L200)
+
+## Controller Layer Streamlining
+**Updated** The controller layer has been streamlined to focus on HTTP concerns while delegating business logic to consolidated services, establishing cleaner interfaces between API and business logic layers.
+
+### Streamlining Strategy
+- **Thin Controllers**: Controllers now focus exclusively on HTTP concerns (validation, response formatting).
+- **Enhanced Delegation**: Complex business operations are delegated to specialized consolidated services.
+- **Improved Interface Clarity**: Clear method signatures define explicit contracts between controllers and services.
+- **Consistent Error Handling**: Delegated services provide consistent error handling and response patterns.
+
+### Responsibility Boundaries
+- **API Layer**: Handles request parsing, validation, authentication, and response formatting.
+- **Business Logic Layer**: Contains domain rules, calculations, and coordination of operations in consolidated services.
+- **Data Access Layer**: Manages persistence operations and data transformations.
+- **Service Coordination**: Orchestrates complex operations across multiple services.
+
+```mermaid
+sequenceDiagram
+participant Client as "Client"
+participant Controller as "StreamlinedController"
+participant ServiceLayer as "ConsolidatedServiceLayer"
 participant EventBus as "EventBus"
 participant DB as "Database"
-Client->>Controller : "POST /organisation/config"
+Client->>Controller : "POST /resource"
 Controller->>Controller : "Validate & Parse Request"
-Controller->>ConfigService : "delegatemanageConfig(payload)"
-ConfigService->>ConfigService : "Apply Business Rules"
-ConfigService->>NomenclatureSvc : "coordinateWithSpecializedService()"
-NomenclatureSvc->>DB : "Update Configuration"
-DB-->>NomenclatureSvc : "Success"
-NomenclatureSvc->>EventBus : "emit 'config.updated'"
-EventBus-->>NomenclatureSvc : "ack"
-NomenclatureSvc-->>ConfigService : "Result"
-ConfigService-->>Controller : "Processed Result"
+Controller->>ServiceLayer : "delegatemanageResource(payload)"
+ServiceLayer->>ServiceLayer : "Apply Consolidated Business Rules"
+ServiceLayer->>DB : "Update Resource"
+DB-->>ServiceLayer : "Success"
+ServiceLayer->>EventBus : "emit 'resource.updated'"
+EventBus-->>ServiceLayer : "ack"
+ServiceLayer-->>Controller : "Processed Result"
 Controller-->>Client : "200 OK + Response"
 ```
 
@@ -334,13 +414,13 @@ Controller-->>Client : "200 OK + Response"
 
 ## Detailed Component Analysis
 
-### Module Pattern: Organisation (Enhanced with Distributed Configuration)
-**Updated** The organisation module has been significantly restructured with distributed configuration management patterns and enhanced controller delegation for better separation of concerns.
+### Module Pattern: Organisation (Simplified with Consolidated Services)
+**Updated** The organisation module has been significantly restructured with consolidated service patterns and simplified entity relationships for better maintainability and performance.
 
-- **Module registration**: Declares controllers, specialized services, and distributed configuration managers with enhanced separation of concerns.
-- **Controller**: Maps HTTP routes to specialized service methods with improved validation, response handling, and delegation patterns.
-- **Service Layer**: Now includes both general organisation service and specialized nomenclature services with distributed configuration capabilities.
-- **Entity**: Defines table schema with enhanced relational relationships and proper foreign key constraints.
+- **Module registration**: Declares controllers, consolidated services, and simplified dependencies with enhanced separation of concerns.
+- **Controller**: Maps HTTP routes to consolidated service methods with improved validation, response handling, and delegation patterns.
+- **Service Layer**: Now includes both general organisation service and specialized nomenclature services with consolidated business logic.
+- **Entity**: Defines table schema with simplified relationships and proper foreign key constraints.
 
 ```mermaid
 sequenceDiagram
@@ -348,7 +428,7 @@ participant Client as "Client"
 participant Controller as "OrganisationController"
 participant OrgService as "OrganisationService"
 participant NomenclatureSvc as "SpecializedNomenclatureService"
-participant ConfigMgr as "DistributedConfigManager"
+participant ConfigMgr as "ConsolidatedConfigManager"
 participant DB as "TypeORM Repository"
 participant Events as "EventEmitter"
 Client->>Controller : "POST /organisation/nomenclatures/categorie"
@@ -378,33 +458,7 @@ Controller-->>Client : "201 Created"
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
 - [organisation.entity.ts:1-200](file://backend/src/modules/organisation/entities/organisation.entity.ts#L1-L200)
 
-### Consolidation Migration Architecture
-**New** The consolidation migration system provides enhanced database schema management with proper relational entities and improved maintainability.
-
-- **Migration Strategy**: Consolidated migrations reduce complexity and improve deployment reliability.
-- **Schema Design**: Enhanced relational entities with proper foreign key relationships and constraints.
-- **Data Integrity**: Improved referential integrity and cascading operations.
-- **Performance Optimization**: Better indexing strategies and query optimization.
-
-```mermaid
-flowchart TD
-Start(["Migration 110"]) --> Analyze["Analyze Current Schema"]
-Analyze --> Identify["Identify Consolidation Opportunities"]
-Identify --> Redesign["Redesign Relational Schema"]
-Redesign --> Create["Create Migration Script"]
-Create --> Validate["Validate Schema Changes"]
-Validate --> Deploy["Deploy to Database"]
-Deploy --> Verify["Verify Data Integrity"]
-Verify --> Complete(["Migration Complete"])
-```
-
-**Diagram sources**
-- [110-consolidation-organisation.sql:1-200](file://backend/database/migrations/110-consolidation-organisation.sql#L1-L200)
-
-**Section sources**
-- [110-consolidation-organisation.sql:1-200](file://backend/database/migrations/110-consolidation-organisation.sql#L1-L200)
-
-### Module Pattern: Eleves
+### Module Pattern: Eleves (Unchanged)
 - **Module registration**: Declares controllers, services, and imports shared dependencies.
 - **Controller**: Maps HTTP routes to service methods, validates inputs, and returns responses with delegation patterns.
 - **Service**: Encapsulates business rules, interacts with entities/repositories, and emits domain events.
@@ -439,35 +493,7 @@ Controller-->>Client : "201 Created"
 - [eleves.service.ts:1-200](file://backend/src/modules/eleves/services/eleves.service.ts#L1-L200)
 - [eleves.entity.ts:1-200](file://backend/src/modules/eleves/entities/eleves.entity.ts#L1-L200)
 
-### Module Pattern: Personnel
-- Similar structure to Eleves with dedicated controller and service for HR-related operations.
-- Uses shared guards and interceptors for consistent security and logging.
-
-```mermaid
-flowchart TD
-Start(["Request to Personnel"]) --> Auth["Auth Guard"]
-Auth --> Roles["Roles Guard"]
-Roles --> Controller["PersonnelController"]
-Controller --> Service["PersonnelService"]
-Service --> Repo["Repository/Entity"]
-Repo --> Service
-Service --> Controller
-Controller --> End(["Response"])
-```
-
-**Diagram sources**
-- [personnel.module.ts:1-200](file://backend/src/modules/personnel/personnel.module.ts#L1-L200)
-- [personnel.controller.ts:1-200](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L200)
-- [personnel.service.ts:1-200](file://backend/src/modules/personnel/services/personnel.service.ts#L1-L200)
-- [auth.guard.ts:1-200](file://backend/src/common/guards/auth.guard.ts#L1-L200)
-- [roles.guard.ts:1-200](file://backend/src/common/guards/roles.guard.ts#L1-L200)
-
-**Section sources**
-- [personnel.module.ts:1-200](file://backend/src/modules/personnel/personnel.module.ts#L1-L200)
-- [personnel.controller.ts:1-200](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L200)
-- [personnel.service.ts:1-200](file://backend/src/modules/personnel/services/personnel.service.ts#L1-L200)
-
-### Module Pattern: Finances
+### Module Pattern: Finances (Unchanged)
 - Handles financial operations like fees, payments, and invoices.
 - Integrates with audit service for compliance and traceability.
 
@@ -594,14 +620,14 @@ Shape --> PEnd(["Paginated Result"])
 - Environment variables are loaded and validated centrally.
 - Database configuration defines connection settings and TypeORM options.
 - Swagger configuration sets API documentation metadata.
-- **Enhanced**: Distributed configuration management pattern supports scalable configuration distribution.
+- **Enhanced**: Consolidated configuration management pattern supports scalable configuration distribution.
 
 ```mermaid
 graph TB
 Env["env.config.ts"] --> App["app.ts"]
 DBConf["database.config.ts"] --> App
 Swagger["swagger.config.ts"] --> App
-DistConfig["Distributed Config Manager"] --> App
+ConsolConfig["Consolidated Config Manager"] --> App
 App --> DataSource["data-source.ts"]
 ```
 
@@ -621,7 +647,7 @@ App --> DataSource["data-source.ts"]
 - Providers are registered at module level and injected into controllers and services.
 - Shared services (e.g., audit) are imported by multiple modules.
 - Optional lazy loading and forward references can be used for circular dependencies.
-- **Enhanced**: Specialized services provide better separation of concerns and testability with distributed configuration support.
+- **Enhanced**: Consolidated services provide better separation of concerns and testability with improved dependency management.
 
 ```mermaid
 graph TB
@@ -629,7 +655,7 @@ ModA["ElevesModule"] --> ProvA["ElevesService"]
 ModB["FinancesModule"] --> ProvB["FinancesService"]
 ModC["OrganisationModule"] --> ProvC["OrganisationService"]
 ModC --> ProvD["SpecializedNomenclatureService"]
-ModC --> ProvE["DistributedConfigManager"]
+ModC --> ProvE["ConsolidatedConfigManager"]
 Shared["AuditService"] --> ModA
 Shared --> ModB
 Shared --> ModC
@@ -655,12 +681,12 @@ CtrlC --> ProvE
 ### Event-Driven Communication
 - Modules emit domain events (e.g., eleve.created, payment.processed, categorie.created) handled by listeners in other modules.
 - Use Nest's EventEmitter or a custom event bus for decoupled interactions.
-- **Enhanced**: Specialized services emit more granular events for better tracking and processing with distributed configuration events.
+- **Enhanced**: Consolidated services emit more granular events for better tracking and processing with improved event handling.
 
 ```mermaid
 sequenceDiagram
 participant ModA as "SpecializedNomenclatureService"
-participant ModB as "DistributedConfigManager"
+participant ModB as "ConsolidatedConfigManager"
 participant Bus as "EventBus"
 participant ModC as "NotificationsService"
 participant ModD as "AuditService"
@@ -677,7 +703,7 @@ ModD->>ModD : "log audit trail"
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
 
 ## Dependency Analysis
-The following diagram highlights key runtime dependencies among core files with enhanced organisation module integration and distributed configuration management.
+The following diagram highlights key runtime dependencies among core files with enhanced personnel module integration and consolidated service patterns.
 
 ```mermaid
 graph TB
@@ -698,8 +724,11 @@ App --> TenantMW["common/middlewares/tenant.middleware.ts"]
 App --> ExFilter["common/filters/exception.filter.ts"]
 App --> PaginationUtil["common/utils/pagination.util.ts"]
 App --> AuditSvc["common/services/audit.service.ts"]
+PersonnelMod --> FonctionsSvc["fonctions.service.ts"]
+PersonnelMod --> PostesSvc["postes.service.ts"]
+PersonnelMod --> ContratSvc["contrat.service.ts"]
 OrganisationMod --> SpecializedSvc["specialized-nomenclature.service.ts"]
-OrganisationMod --> DistConfig["distributed-config-manager.service.ts"]
+OrganisationMod --> ConsolConfig["consolidated-config-manager.service.ts"]
 ```
 
 **Diagram sources**
@@ -714,6 +743,9 @@ OrganisationMod --> DistConfig["distributed-config-manager.service.ts"]
 - [personnel.module.ts:1-200](file://backend/src/modules/personnel/personnel.module.ts#L1-L200)
 - [finances.module.ts:1-200](file://backend/src/modules/finances/finances.module.ts#L1-L200)
 - [organisation.module.ts:1-200](file://backend/src/modules/organisation/organisation.module.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
 - [auth.guard.ts:1-200](file://backend/src/common/guards/auth.guard.ts#L1-L200)
 - [roles.guard.ts:1-200](file://backend/src/common/guards/roles.guard.ts#L1-L200)
@@ -730,14 +762,15 @@ OrganisationMod --> DistConfig["distributed-config-manager.service.ts"]
 
 ## Performance Considerations
 - Use pagination utilities consistently to avoid large payloads.
-- Apply indexes and optimize queries at the repository/entity level with enhanced relational schema.
+- Apply indexes and optimize queries at the repository/entity level with simplified relational schema.
 - Cache frequently accessed read-only data using Redis or in-memory caches.
 - Enable compression and tune HTTP server settings.
 - Profile critical paths with logging interceptors and metrics collectors.
-- **Enhanced**: Leverage specialized services for better query optimization and reduced coupling.
-- **Enhanced**: Utilize consolidation migrations for improved database performance and maintainability.
-- **New**: Implement distributed configuration caching to reduce configuration lookup overhead.
+- **Enhanced**: Leverage consolidated services for better query optimization and reduced coupling.
+- **Enhanced**: Utilize simplified entity structures for improved database performance and maintainability.
+- **New**: Implement consolidated configuration caching to reduce configuration lookup overhead.
 - **New**: Optimize controller delegation patterns to minimize service call overhead.
+- **New**: Benefit from streamlined controller layer for improved request processing performance.
 
 ## Troubleshooting Guide
 - Authentication failures: Verify token validation in auth guard and ensure tenant context is attached.
@@ -745,11 +778,12 @@ OrganisationMod --> DistConfig["distributed-config-manager.service.ts"]
 - Global errors: Inspect exception filter output and logs for stack traces and normalized payloads.
 - Tenant isolation issues: Confirm tenant middleware runs early and sets context correctly.
 - Pagination anomalies: Validate page/size parameters and offset calculations.
-- **New**: Organisation module issues: Check specialized service dependencies and controller routing.
-- **New**: Migration problems: Review consolidation migration scripts and rollback procedures.
-- **New**: Service coupling issues: Verify specialized service interfaces and dependency injection configuration.
-- **New**: Distributed configuration issues: Check configuration service health and synchronization status.
-- **New**: Controller delegation problems: Verify service method signatures and error handling patterns.
+- **Enhanced**: Personnel module issues: Check consolidated service dependencies and enhanced business logic.
+- **Enhanced**: Organisation module issues: Verify simplified service interfaces and streamlined controller routing.
+- **New**: Service consolidation problems: Review consolidated service patterns and improved error handling.
+- **New**: Entity simplification issues: Check simplified entity relationships and foreign key constraints.
+- **New**: Controller delegation problems: Verify streamlined service method signatures and enhanced error handling patterns.
+- **New**: Performance issues: Monitor consolidated service performance and database query optimization.
 
 **Section sources**
 - [auth.guard.ts:1-200](file://backend/src/common/guards/auth.guard.ts#L1-L200)
@@ -759,10 +793,13 @@ OrganisationMod --> DistConfig["distributed-config-manager.service.ts"]
 - [pagination.util.ts:1-200](file://backend/src/common/utils/pagination.util.ts#L1-L200)
 - [organisation.module.ts:1-200](file://backend/src/modules/organisation/organisation.module.ts#L1-L200)
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 - [110-consolidation-organisation.sql:1-200](file://backend/database/migrations/110-consolidation-organisation.sql#L1-L200)
 
 ## Conclusion
-The eLISAschool backend leverages NestJS's modular and layered architecture to deliver a scalable, maintainable system. Recent architectural evolution includes the implementation of distributed configuration management patterns and enhanced controller delegation strategies. The organisation module restructuring with specialized services replacing monolithic components, improved database schema through consolidation migrations, and better separation of concerns demonstrate the system's evolution toward cleaner interfaces between API and business logic layers. Each business domain is isolated in its own module with clear responsibilities. Shared infrastructure ensures consistent security, logging, error handling, and multi-tenancy. Configuration is centralized with distributed patterns, and dependency injection promotes testability and extensibility. Event-driven patterns enable loose coupling between modules, while utilities standardize cross-cutting behaviors like pagination. The enhanced architecture provides better maintainability, performance, and scalability for the educational institution management system through improved responsibility boundaries and specialized service delegation.
+The eLISAschool backend leverages NestJS's modular and layered architecture to deliver a scalable, maintainable system. Recent architectural evolution includes major service layer consolidation, entity simplifications in the organisation module, and enhanced business logic implementation in key personnel services. The consolidation improvements demonstrate the system's evolution toward cleaner interfaces between API and business logic layers with reduced complexity and better separation of concerns. Each business domain is isolated in its own module with clear responsibilities. Shared infrastructure ensures consistent security, logging, error handling, and multi-tenancy. Configuration is centralized with consolidated patterns, and dependency injection promotes testability and extensibility. Event-driven patterns enable loose coupling between modules, while utilities standardize cross-cutting behaviors like pagination. The enhanced architecture provides better maintainability, performance, and scalability for the educational institution management system through improved service consolidation, simplified entity structures, and streamlined controller patterns.
 
 ## Appendices
 
@@ -776,6 +813,9 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
   - personnel.module.ts
   - controllers/personnel.controller.ts
   - services/personnel.service.ts
+  - services/fonctions.service.ts
+  - services/postes.service.ts
+  - services/contrat.service.ts
 - finances:
   - finances.module.ts
   - controllers/finances.controller.ts
@@ -785,7 +825,7 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
   - controllers/organisation.controller.ts
   - services/organisation.service.ts
   - services/specialized-nomenclature.service.ts
-  - services/distributed-config-manager.service.ts
+  - services/consolidated-config-manager.service.ts
   - entities/organisation.entity.ts
 
 **Section sources**
@@ -796,6 +836,9 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
 - [personnel.module.ts:1-200](file://backend/src/modules/personnel/personnel.module.ts#L1-L200)
 - [personnel.controller.ts:1-200](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L200)
 - [personnel.service.ts:1-200](file://backend/src/modules/personnel/services/personnel.service.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 - [finances.module.ts:1-200](file://backend/src/modules/finances/finances.module.ts#L1-L200)
 - [finances.controller.ts:1-200](file://backend/src/modules/finances/controllers/finances.controller.ts#L1-L200)
 - [finances.service.ts:1-200](file://backend/src/modules/finances/services/finances.service.ts#L1-L200)
@@ -807,13 +850,16 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
 
 ### Example Service Layer Implementation
 - Implement use cases in services, call repositories/entities, and emit events for side effects.
-- Keep controllers thin by delegating logic to services.
-- **Enhanced**: Use specialized services for specific business domains to improve maintainability and testability.
-- **New**: Implement distributed configuration management in specialized services for better scalability.
+- Keep controllers thin by delegating logic to consolidated services.
+- **Enhanced**: Use consolidated services for specific business domains to improve maintainability and testability.
+- **New**: Implement consolidated configuration management in specialized services for better scalability.
 
 **Section sources**
 - [eleves.service.ts:1-200](file://backend/src/modules/eleves/services/eleves.service.ts#L1-L200)
 - [personnel.service.ts:1-200](file://backend/src/modules/personnel/services/personnel.service.ts#L1-L200)
+- [fonctions.service.ts:1-200](file://backend/src/modules/personnel/services/fonctions.service.ts#L1-L200)
+- [postes.service.ts:1-200](file://backend/src/modules/personnel/services/postes.service.ts#L1-L200)
+- [contrat.service.ts:1-200](file://backend/src/modules/personnel/services/contrat.service.ts#L1-L200)
 - [finances.service.ts:1-200](file://backend/src/modules/finances/services/finances.service.ts#L1-L200)
 - [organisation.service.ts:1-200](file://backend/src/modules/organisation/services/organisation.service.ts#L1-L200)
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
@@ -824,8 +870,8 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
 - Multi-tenancy: Middleware injects tenant context.
 - Errors: Global filter normalizes error responses.
 - Utilities: Pagination and helper functions standardize behavior.
-- **Enhanced**: Specialized services provide better separation of concerns and improved maintainability.
-- **New**: Distributed configuration services handle cross-module configuration consistency.
+- **Enhanced**: Consolidated services provide better separation of concerns and improved maintainability.
+- **New**: Consolidated configuration services handle cross-module configuration consistency.
 
 **Section sources**
 - [auth.guard.ts:1-200](file://backend/src/common/guards/auth.guard.ts#L1-L200)
@@ -837,12 +883,12 @@ The eLISAschool backend leverages NestJS's modular and layered architecture to d
 - [specialized-nomenclature.service.ts:1-200](file://backend/src/modules/organisation/services/specialized-nomenclature.service.ts#L1-L200)
 
 ### Enhanced Database Schema Architecture
-**New** The consolidation migration system provides improved database schema management with proper relational entities and enhanced data integrity.
+**Updated** The consolidation migration system provides improved database schema management with simplified relational entities and enhanced data integrity.
 
 - **Consolidation Strategy**: Single comprehensive migration reduces deployment complexity and improves reliability.
-- **Relational Design**: Proper foreign key relationships and constraints ensure data consistency.
+- **Simplified Relational Design**: Streamlined foreign key relationships and constraints ensure data consistency.
 - **Performance Optimization**: Enhanced indexing strategies and query optimization techniques.
-- **Maintainability**: Clear separation of concerns in database schema design.
+- **Maintainability**: Clear separation of concerns in simplified database schema design.
 
 ```mermaid
 erDiagram

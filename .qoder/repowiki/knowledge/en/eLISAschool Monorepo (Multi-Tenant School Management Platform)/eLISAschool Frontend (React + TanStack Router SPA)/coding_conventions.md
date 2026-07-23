@@ -1,0 +1,6 @@
+- Feature modules under `src/features/<domain>/` follow a fixed subdirectory layout of `components/`, `hooks/`, `types/`, and a top-level `index.ts` barrel re-exporting types, hooks, and page components.
+- Each feature exposes its own typed hook prefixed with `use-<feature>` (e.g. `use-eleves`, `use-absences`) that encapsulates TanStack Query calls, keeping API access out of components.
+- Routes use TanStack Router's file-based convention with `_auth.` prefix for authenticated layouts and `$id` segments for dynamic params, all registered through the generated `routeTree.gen.ts`.
+- Global UI state lives in dedicated Zustand stores under `src/stores/` (one store per concern: auth, theme, language, sidebar) rather than context, while server state is exclusively handled by TanStack Query.
+- Shared presentation primitives are built on Radix UI and exported from `src/components/ui/` with an `index.ts` barrel, and features compose these instead of building raw HTML elements directly.
+- Internationalized strings are kept per-feature as parallel JSON files under `locales/fr/` and `locales/en/` named after the feature folder, loaded through the centralized `i18n.ts` setup.

@@ -83,7 +83,7 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
             }
             onOpenChange(false);
         } catch (err: any) {
-            setApiError(err?.response?.data?.message || err?.message || 'Une erreur est survenue');
+            setApiError(err?.response?.data?.message || err?.message || t('erreurGenerique'));
         }
     };
 

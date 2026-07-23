@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Info, XCircle, RefreshCw, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ElisaButton } from './ElisaButton';
@@ -85,6 +86,7 @@ export function ErrorMessage({
     onDismiss,
     autoDismissMs,
 }: ErrorMessageProps) {
+    const { t } = useTranslation('common');
     const [dismissed, setDismissed] = useState(false);
 
     const handleDismiss = useCallback(() => {
@@ -146,8 +148,8 @@ export function ErrorMessage({
                 {(dismissible || autoDismissMs) && handleDismiss && (
                     <button
                         onClick={handleDismiss}
-                        className="flex-shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-black/5 transition-all"
-                        aria-label="Fermer"
+                        className="flex-shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-black/5 transition-all"
+                        aria-label={t('a11y.fermer')}
                     >
                         <X className="h-4 w-4" />
                     </button>
@@ -187,10 +189,10 @@ export function EmptyState({
     className = '',
 }: EmptyStateProps) {
     return (
-        <div className={`text-center py-12 bg-gray-50 rounded-lg ${className}`}>
-            <Icon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">{title}</h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">{description}</p>
+        <div className={`text-center py-12 bg-gray-50 dark:bg-gray-800/40 border border-transparent dark:border-gray-700/60 rounded-lg ${className}`}>
+            <Icon className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">{title}</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">{description}</p>
             
             {actionLabel && onAction && (
                 <ElisaButton
@@ -230,8 +232,8 @@ export function LoadingState({
 
     return (
         <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
-            <div className={`animate-spin rounded-full border-b-2 border-blue-600 ${sizeConfig.spinner}`} />
-            <p className={`mt-4 text-gray-600 ${sizeConfig.text}`}>{message}</p>
+            <div className={`animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400 ${sizeConfig.spinner}`} />
+            <p className={`mt-4 text-gray-600 dark:text-gray-300 ${sizeConfig.text}`}>{message}</p>
         </div>
     );
 }

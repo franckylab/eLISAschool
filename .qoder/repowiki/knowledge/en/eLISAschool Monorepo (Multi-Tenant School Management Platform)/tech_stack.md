@@ -1,0 +1,1 @@
+Node.js ≥20 + npm workspaces as the monorepo runtime; TypeScript shared between backend (Express/TypeORM) and frontend (React/Vite/PWA); PostgreSQL + Redis orchestrated via docker-compose; TypeORM for migrations consumed by both backend and shared_package domain types.

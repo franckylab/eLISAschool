@@ -1,0 +1,1 @@
+Bash ≥4.0 (uses arrays, `${var:-default}`, `set -e`), Node.js scripts invoked via `#!/usr/bin/env node` and `npx ts-node -r tsconfig-paths/register`, raw `psql`/`pg_dump`/`createdb` against a Dockerized PostgreSQL, `curl` for HTTP health checks, and `docker compose up -d postgres redis` for infra bootstrap.

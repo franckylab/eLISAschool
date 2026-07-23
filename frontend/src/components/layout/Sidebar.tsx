@@ -78,27 +78,30 @@ function NavItemWithChildren({
     item,
     Icon,
     isActive,
-    isCollapsed,
+    forceExpanded = false,
     matchRoute,
 }: {
     item: NavItem;
     Icon: LucideIcon;
     isActive: boolean;
-    isCollapsed: boolean;
+    forceExpanded?: boolean;
     matchRoute: any;
 }) {
+    const { isCollapsed: storeCollapsed } = useSidebarStore();
+    // Le drawer mobile (forceExpanded) affiche toujours les libellés et sous-menus.
+    const collapsed = forceExpanded ? false : storeCollapsed;
     const [isExpanded, setIsExpanded] = useState(false);
-    
+
     // Vérifier si un child est actif
-    const isChildActive = item.children?.some(child => 
+    const isChildActive = item.children?.some(child =>
         matchRoute({ to: child.path, fuzzy: true })
     );
-    
+
     // Auto-expand si un child est actif
     if (isChildActive && !isExpanded) {
         setIsExpanded(true);
     }
-    
+
     return (
         <div>
             <div
@@ -107,9 +110,9 @@ function NavItemWithChildren({
                     isActive || isChildActive
                         ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
                         : 'text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]',
-                    isCollapsed && 'justify-center px-2',
+                    collapsed && 'justify-center px-2',
                 )}
-                title={isCollapsed ? item.label : undefined}
+                title={collapsed ? item.label : undefined}
             >
                 {/* Lien vers la page parent */}
                 <Link
@@ -121,11 +124,11 @@ function NavItemWithChildren({
                     }}
                 >
                     <Icon className="h-5 w-5 shrink-0" />
-                    <span className={cn("flex-1", isCollapsed && "hidden")}>{item.label}</span>
+                    <span className={cn("flex-1", collapsed && "hidden")}>{item.label}</span>
                 </Link>
-                
+
                 {/* Bouton pour expand/collapse (seulement si pas collapsé) */}
-                {!isCollapsed && (
+                {!collapsed && (
                     <button
                         onClick={(e) => {
                             e.preventDefault();
@@ -144,9 +147,9 @@ function NavItemWithChildren({
                     </button>
                 )}
             </div>
-            
+
             {/* Sous-menu */}
-            {!isCollapsed && isExpanded && item.children && (
+            {!collapsed && isExpanded && item.children && (
                 <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -157,7 +160,7 @@ function NavItemWithChildren({
                     {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         const isChildActive = !!matchRoute({ to: child.path, fuzzy: true });
-                        
+
                         return (
                             <Link
                                 key={child.path}
@@ -286,9 +289,11 @@ const NAV_SECTIONS: NavSection[] = [
     },
 ];
 
-export function Sidebar() {
+export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } = {}) {
     const { t } = useTranslation('common');
-    const { isCollapsed } = useSidebarStore();
+    const { isCollapsed: storeCollapsed } = useSidebarStore();
+    // Le drawer mobile (forceExpanded) affiche toujours les libellés, indépendamment du repli desktop.
+    const collapsed = forceExpanded ? false : storeCollapsed;
     const { utilisateur, etablissementId } = useAuthStore();
     const matchRoute = useMatchRoute();
 
@@ -352,17 +357,17 @@ export function Sidebar() {
                         const perms = permsMap[child.module];
                         return perms?.canAccess ?? true;
                     });
-                    
+
                     // Retourner l'item avec ses children filtrés
                     return {
                         ...item,
                         children: filteredChildren,
                     };
                 }
-                
+
                 // Item sans children - filtrage normal
                 if (!item.module) return item;
-                
+
                 const permsMap: Record<string, { canAccess: boolean }> = {
                     bulletins: bulletinsPerms,
                     classes: classesPerms,
@@ -390,7 +395,7 @@ export function Sidebar() {
                     transport: transportPerms,
                     utilisateurs: utilisateursPerms,
                 };
-                
+
                 const perms = permsMap[item.module];
                 return perms?.canAccess ?? true ? item : null;
             })
@@ -410,7 +415,7 @@ export function Sidebar() {
             {/* Logo eLISAschool (marque de la plateforme - toujours visible en haut) */}
             <div className="flex h-16 items-center justify-center border-b border-[var(--color-bordure)] px-4">
                 <AnimatePresence mode="wait">
-                    {!isCollapsed ? (
+                    {!collapsed ? (
                         <motion.div
                             key="logo-full"
                             initial={{ opacity: 0, x: -8 }}
@@ -442,7 +447,7 @@ export function Sidebar() {
             <nav className="flex-1 overflow-y-auto p-2">
                 {filteredSections.map((section) => (
                     <div key={section.title} className="mb-4">
-                        {!isCollapsed && (
+                        {!collapsed && (
                             <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-texte-secondaire)]">
                                 {section.title}
                             </p>
@@ -451,7 +456,7 @@ export function Sidebar() {
                             const Icon = item.icon;
                             const isActive = !!matchRoute({ to: item.path, fuzzy: true });
                             const hasChildren = item.children && item.children.length > 0;
-                            
+
                             // Composant pour les items avec sous-menus
                             if (hasChildren) {
                                 return (
@@ -460,12 +465,12 @@ export function Sidebar() {
                                         item={item}
                                         Icon={Icon}
                                         isActive={isActive}
-                                        isCollapsed={isCollapsed}
+                                        forceExpanded={forceExpanded}
                                         matchRoute={matchRoute}
                                     />
                                 );
                             }
-                            
+
                             // Composant pour les items simples
                             return (
                                 <Link
@@ -476,12 +481,12 @@ export function Sidebar() {
                                         isActive
                                             ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
                                             : 'text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]',
-                                        isCollapsed && 'justify-center px-2',
+                                        collapsed && 'justify-center px-2',
                                     )}
-                                    title={isCollapsed ? item.label : undefined}
+                                    title={collapsed ? item.label : undefined}
                                 >
                                     <Icon className="h-5 w-5 shrink-0" />
-                                    <span className={cn("flex-1", isCollapsed && "hidden")}>{item.label}</span>
+                                    <span className={cn("flex-1", collapsed && "hidden")}>{item.label}</span>
                                 </Link>
                             );
                         })}
@@ -490,7 +495,7 @@ export function Sidebar() {
             </nav>
 
             {/* Logo et slogan de l'établissement (en bas de la sidebar) */}
-            {!isCollapsed && etablissement && (
+            {!collapsed && etablissement && (
                 <div className="border-t border-[var(--color-bordure)] p-2">
                     <div className="flex flex-col items-center gap-1.5">
                         {/* Indicateur unifié : Année + Période en cours */}
@@ -556,9 +561,9 @@ export function Sidebar() {
                             </div>
                         )}
                         {etablissement?.slogan && (
-                            <span 
+                            <span
                                 className="text-center italic text-[var(--color-texte-secondaire)] leading-tight px-1"
-                                style={{ 
+                                style={{
                                     fontSize: 'clamp(9px, 1.2vw, 11px)',
                                     lineHeight: '1.3',
                                 }}

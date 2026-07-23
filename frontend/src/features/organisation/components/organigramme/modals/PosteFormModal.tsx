@@ -8,7 +8,7 @@
  * Modal create/edit pour un poste dans une unité organisationnelle.
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,16 +20,15 @@ import { useNiveauxResponsabilite } from '../../../hooks/use-niveaux-responsabil
 import { useAuthStore } from '@/stores/auth.store';
 import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organisation.types';
 
-const posteFormSchema = z.object({
-    intitule: z.string().min(2, 'Minimum 2 caractères').max(150),
-    code: z.string().max(20).optional().or(z.literal('')),
-    categoriePosteCode: z.string().optional().or(z.literal('')),
-    niveauResponsabiliteId: z.string().optional().or(z.literal('')),
-    description: z.string().max(500).optional().or(z.literal('')),
-    estSuppleant: z.boolean().default(false),
-});
-
-type PosteFormData = z.infer<typeof posteFormSchema>;
+// Schéma de validation (messages i18n — construit dans le composant)
+type PosteFormData = {
+    intitule: string;
+    code: string;
+    categoriePosteCode: string;
+    niveauResponsabiliteId: string;
+    description: string;
+    estSuppleant: boolean;
+};
 
 type ModalMode = 'create' | 'edit';
 
@@ -54,6 +53,15 @@ const FORM_INIT: PosteFormData = {
 export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSuccess }: PosteFormModalProps) {
     const { t } = useTranslation('organisation');
     const etablissementId = useAuthStore(s => s.etablissementId);
+
+    const posteFormSchema = useMemo(() => z.object({
+        intitule: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
+        code: z.string().max(20).optional().or(z.literal('')),
+        categoriePosteCode: z.string().optional().or(z.literal('')),
+        niveauResponsabiliteId: z.string().optional().or(z.literal('')),
+        description: z.string().max(500).optional().or(z.literal('')),
+        estSuppleant: z.boolean().default(false),
+    }), [t]);
     const { data: categories } = useCategoriesPoste();
     const { data: niveaux } = useNiveauxResponsabilite();
     const { mutateAsync: creerPoste, isPending: isCreating } = useCreerPoste();
@@ -164,7 +172,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                         {...register('intitule')}
                         className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                         style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        placeholder="ex: Directeur Général"
+                        placeholder={t('organigramme.form.phIntitulePoste')}
                     />
                     {errors.intitule && <p className="text-xs mt-1 text-red-500">{errors.intitule.message}</p>}
                 </div>
@@ -179,7 +187,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                             {...register('code')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="ex: DG"
+                            placeholder={t('organigramme.form.phCode')}
                         />
                     </div>
                     <div>
@@ -226,7 +234,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                         rows={2}
                         className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
                         style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        placeholder="Description du poste..."
+                        placeholder={t('organigramme.form.phDescriptionPoste')}
                     />
                 </div>
 

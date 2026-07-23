@@ -27,6 +27,31 @@
         "back": "Back",
         "contactAdmin": "Contact an administrator"
     },
+    "a11y": {
+        "fermer": "Close",
+        "reordonner": "Reorder",
+        "retirer": "Remove",
+        "toutAjouter": "Add all",
+        "toutRetirer": "Remove all",
+        "rechercher": "Search...",
+        "effacerRecherche": "Clear search",
+        "defilerGauche": "Scroll left",
+        "defilerDroite": "Scroll right",
+        "filAriane": "Breadcrumb",
+        "actions": "Actions",
+        "gauche": "Left",
+        "droite": "Right",
+        "modalTitre": "Modal window",
+        "modalDescription": "Modal dialog",
+        "reduire": "Minimize",
+        "agrandir": "Maximize",
+        "restaurer": "Restore",
+        "disponibles": "Available",
+        "selectionnes": "Selected",
+        "aucunElement": "No items",
+        "aucunElementSelectionne": "No selected items",
+        "ajouterItem": "Add {{label}}"
+    },
     "validation": {
         "requis": "This field is required",
         "confirmationInvalide": "The values do not match",
@@ -71,7 +96,10 @@
     },
     "header": {
         "changerEtablissement": "Switch establishment",
-        "etablissements": "Establishments"
+        "etablissements": "Establishments",
+        "menu": "Menu",
+        "notifications": "Notifications",
+        "menuUtilisateur": "User menu"
     },
     "pagination": {
         "pageSur": "Page {{page}} of {{total}}",

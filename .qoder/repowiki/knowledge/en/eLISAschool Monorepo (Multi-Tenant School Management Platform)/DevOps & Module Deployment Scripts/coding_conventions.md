@@ -1,0 +1,6 @@
+- Each deploy/test/fix script begins with a banner header block (`# ==================================`) declaring version, author, and purpose before any logic.
+- Colorized console output uses the same four ANSI variables (`GREEN='\033[0;32m'`, `BLUE='\033[0;34m'`, `YELLOW='\033[1;33m'`, `RED='\033[0;31m'`, `NC='\033[0m'`) defined at the top of every shell script.
+- Database connectivity is verified first via `pg_isready` / `docker exec ... pg_isready` or a retry loop calling `psql -c 'SELECT 1;'` before attempting any DDL/DML.
+- Per-module deployers follow a fixed six-step template: env load → DB connection check → run migration SQL → verify created tables/indexes → verify seeds → confirm backend wiring (modules/index.ts, app.ts, modules.enum.ts, roles.enum.ts).
+- Node-based auditors scan `shared/src/enums/roles.enum.ts` and `frontend/src/**/*.ts(x)` using regex over `fs.readFileSync` to compare declared permission keys against `hasPermission(...)` / `permission="..."` / `permissions={[...]}` usages.
+- Idempotent data-fix scripts accept interactive `read -p` prompts for DB credentials and use `psql -v var=value <<'SQL'` heredocs so the same SQL can be re-run safely.

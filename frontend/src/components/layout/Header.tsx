@@ -53,7 +53,7 @@ export function Header() {
                 <button
                     onClick={toggleMobile}
                     className="rounded-md p-1 text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] xs:p-1.5 sm:p-2 lg:hidden"
-                    aria-label="Menu"
+                    aria-label={t('header.menu')}
                 >
                     <Menu className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
                 </button>
@@ -99,7 +99,7 @@ export function Header() {
                                 animate={{ opacity: 1 }}
                                 onClick={() => setSearchOpen(true)}
                                 className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] xs:h-8 xs:w-8 sm:h-9 sm:w-9"
-                                aria-label="Rechercher"
+                                aria-label={t('boutons.rechercher')}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -122,7 +122,7 @@ export function Header() {
                 {/* Notifications */}
                 <motion.button
                     className="relative flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-texte-secondaire)] transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)] xs:h-8 xs:w-8 sm:h-9 sm:w-9"
-                    aria-label="Notifications"
+                    aria-label={t('header.notifications')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                 >
@@ -137,7 +137,7 @@ export function Header() {
                         <DropdownMenu.Trigger asChild>
                             <button
                                 className="flex items-center gap-1 rounded-lg p-0.5 transition-colors hover:bg-[var(--color-surface-hover)] xs:gap-1.5 xs:p-1 sm:gap-2 sm:p-1.5"
-                                aria-label="Menu utilisateur"
+                                aria-label={t('header.menuUtilisateur')}
                             >
                                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-dominante)] text-[9px] font-bold text-white xs:h-7 xs:w-7 xs:text-[10px] sm:h-8 sm:w-8 sm:text-xs">
                                     {utilisateur.prenom?.[0]}{utilisateur.nom?.[0]}
@@ -175,7 +175,7 @@ export function Header() {
                                     onSelect={() => router.navigate({ to: '/configuration' })}
                                 >
                                     <Settings className="h-3.5 w-3.5 flex-shrink-0 xs:h-4 xs:w-4" />
-                                    <span className="break-words">Configuration</span>
+                                    <span className="break-words">{t('navigation.configuration')}</span>
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Separator className="my-0.5 h-px bg-[var(--color-bordure)] xs:my-1" />
                                 <DropdownMenu.Item

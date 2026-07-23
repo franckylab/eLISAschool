@@ -1,0 +1,9 @@
+Single `@elisaschool/shared` npm package built with TypeScript (`tsconfig.json`, target ES2022, CommonJS output to `dist/`). The barrel `src/index.ts` re-exports six orthogonal sub-packages that form the contract between backend and frontend:
+- `enums/` — canonical enumerations (`Role`, `Permission`, `ModuleName`, `ModuleCategory`, `Statut*`, `Type*`, `Genre`) plus the `DEFAULT_ROLE_PERMISSIONS` mapping; this is the single source of truth for RBAC.
+- `types/` — API envelope interfaces (`ApiResponse<T>`, `PaginatedResult<T>`, `ApiError`) and user/session shapes (`IUser`, `IUserProfile`, `IUserSession`) that reference the enums above.
+- `validators/auth.validators.ts` — Zod schemas (`loginSchema`, `registerSchema`, …) whose inferred TS types are also exported so the frontend can reuse the same validation rules as the backend.
+- `constants/` — immutable app metadata (`APP_INFO`, `LIMITS`, `CURRENCIES`, `LANGUAGES`) and theming tokens (`THEMES`, `FONT_SIZES`, `SPACING`, `BORDER_RADIUS`) including a `cameroon` theme variant.
+- `config/config.registry.ts` — `MODULE_REGISTRY: Record<ModuleName, ModuleConfig>` declaring each module's label, icon, basePath, default roles, permissions, dependencies, and settings, plus helpers `getModuleConfig`, `getModulesByCategory`, `hasModuleAccess`; it depends on `roles.enum` and `modules.enum`.
+- `helpers/system-protection.helper.ts` — guard functions (`assertNotSystem`, `assertNotImmutable`) that enforce deletion immutability on seed/system entities via an `estSysteme` flag.
+
+Dependency direction inside the package is strictly one-way: `config` → `enums`; `types/user.types` → `enums`; `validators` → `constants`; nothing imports from `helpers`. No runtime framework is used — only `zod` as a dependency. Consumers import from `@elisaschool/shared` and get a flat namespace through the top-level barrel.

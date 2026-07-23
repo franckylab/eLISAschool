@@ -101,7 +101,7 @@ export function PageLayout({ children }: PageLayoutProps) {
                     isMobileOpen ? 'translate-x-0' : '-translate-x-full',
                 )}
             >
-                <Sidebar />
+                <Sidebar forceExpanded />
             </aside>
 
             {/* Zone principale */}

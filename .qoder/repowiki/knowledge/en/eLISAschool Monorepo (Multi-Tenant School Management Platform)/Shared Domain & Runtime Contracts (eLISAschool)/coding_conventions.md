@@ -1,0 +1,6 @@
+- Each sub-package exposes a local `index.ts` barrel that re-exports its files, and the root `src/index.ts` re-exports all barrels — consumers always import from `@elisaschool/shared` rather than deep paths.
+- Domain values are modelled as string-backed `enum`s (not union literals) so they survive JSON serialization across the backend/frontend boundary.
+- Zod schemas are defined once in `validators/` and their input types are derived via `z.infer<typeof schema>` and re-exported, giving the frontend the same shape contracts as the backend.
+- Configuration objects are declared with `as const` assertions (`APP_INFO`, `LIMITS`, `CURRENCIES`, `THEMES`, `FONT_SIZES`, `SPACING`, `BORDER_RADIUS`) to preserve literal types.
+- Guard helpers (`assertNotSystem`, `assertNotImmutable`) attach `statusCode` and `code` properties onto thrown `Error` instances to integrate with the application's HTTP error pipeline.
+- Every public file opens with a uniform header comment block containing version, author, and a short description, keeping provenance visible at a glance.

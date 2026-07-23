@@ -10,7 +10,7 @@
  * Mode edit : champs pré-remplis depuis les données de l'unité.
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,21 +30,19 @@ interface UniteFormTarget {
     responsableNom?: string;
 }
 
-// Schéma de validation
-const uniteFormSchema = z.object({
-    nom: z.string().min(2, 'Minimum 2 caractères').max(150),
-    code: z.string().min(1, 'Requis').max(20),
-    description: z.string().max(500).optional().or(z.literal('')),
-    usageUniteId: z.string().uuid().optional().or(z.literal('')),
-    niveauOrganisationId: z.string().uuid().optional().or(z.literal('')),
-    parentId: z.string().uuid().optional().or(z.literal('')),
-    responsableNom: z.string().max(100).optional().or(z.literal('')),
-    localisation: z.string().max(200).optional().or(z.literal('')),
-    telephone: z.string().max(20).optional().or(z.literal('')),
-    email: z.string().email('Email invalide').optional().or(z.literal('')),
-});
-
-type UniteFormData = z.infer<typeof uniteFormSchema>;
+// Schéma de validation (messages i18n — construit dans le composant)
+type UniteFormData = {
+    nom: string;
+    code: string;
+    description: string;
+    usageUniteId: string;
+    niveauOrganisationId: string;
+    parentId: string;
+    responsableNom: string;
+    localisation: string;
+    telephone: string;
+    email: string;
+};
 
 type ModalMode = 'create' | 'edit';
 
@@ -76,6 +74,19 @@ const FORM_INIT: UniteFormData = {
 export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, parentId, onSuccess }: UniteFormModalProps) {
     const { t } = useTranslation('organisation');
     const etablissementId = useAuthStore(s => s.etablissementId);
+
+    const uniteFormSchema = useMemo(() => z.object({
+        nom: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
+        code: z.string().min(1, t('organigramme.form.validationRequis')).max(20),
+        description: z.string().max(500).optional().or(z.literal('')),
+        usageUniteId: z.string().uuid().optional().or(z.literal('')),
+        niveauOrganisationId: z.string().uuid().optional().or(z.literal('')),
+        parentId: z.string().uuid().optional().or(z.literal('')),
+        responsableNom: z.string().max(100).optional().or(z.literal('')),
+        localisation: z.string().max(200).optional().or(z.literal('')),
+        telephone: z.string().max(20).optional().or(z.literal('')),
+        email: z.string().email(t('organigramme.form.validationEmail')).optional().or(z.literal('')),
+    }), [t]);
     const { data: usages } = useUsagesUnite();
     const { data: niveaux } = useNiveauxOrganisation();
     const { mutateAsync: creerUnite, isPending: isCreating } = useCreerUnite();
@@ -196,7 +207,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             {...register('nom')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="ex: Direction Générale"
+                            placeholder={t('organigramme.form.phNomUnite')}
                         />
                         {errors.nom && <p className="text-xs mt-1 text-red-500">{errors.nom.message}</p>}
                     </div>
@@ -208,7 +219,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             {...register('code')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="ex: DG"
+                            placeholder={t('organigramme.form.phCode')}
                         />
                         {errors.code && <p className="text-xs mt-1 text-red-500">{errors.code.message}</p>}
                     </div>
@@ -224,7 +235,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                         rows={2}
                         className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
                         style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        placeholder="Description de l'unité..."
+                        placeholder={t('organigramme.form.phDescriptionUnite')}
                     />
                 </div>
 
@@ -272,7 +283,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             {...register('responsableNom')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="Nom du responsable"
+                            placeholder={t('organigramme.form.phResponsable')}
                         />
                     </div>
                     <div>
@@ -283,7 +294,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             {...register('localisation')}
                             className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder="Bâtiment, étage..."
+                            placeholder={t('organigramme.form.phLocalisation')}
                         />
                     </div>
                 </div>

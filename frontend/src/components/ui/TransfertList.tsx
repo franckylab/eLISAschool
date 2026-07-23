@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     DndContext,
     closestCenter,
@@ -91,6 +92,7 @@ function SortableItem<T extends TransfertItem>({
     onRemove?: (id: string) => void;
     renderPoids?: (item: T) => ReactNode | null;
 }) {
+    const { t } = useTranslation('common');
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.id,
         disabled: context === 'pool',
@@ -113,7 +115,7 @@ function SortableItem<T extends TransfertItem>({
                     {...attributes}
                     {...listeners}
                     className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] cursor-grab active:cursor-grabbing shrink-0"
-                    aria-label="Réordonner"
+                    aria-label={t('a11y.reordonner')}
                 >
                     <GripVertical className="h-3.5 w-3.5" />
                 </button>
@@ -126,7 +128,7 @@ function SortableItem<T extends TransfertItem>({
                 <button
                     onClick={() => onRemove(item.id)}
                     className="p-1 mr-1 text-[var(--color-text-tertiary)] hover:text-red-500 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                    aria-label="Retirer"
+                    aria-label={t('a11y.retirer')}
                 >
                     <X className="h-3.5 w-3.5" />
                 </button>
@@ -143,13 +145,17 @@ export function TransfertList<T extends TransfertItem>({
     selectionnes,
     onSelectionChange,
     renderItem,
-    labelPool = 'Disponibles',
-    labelSelection = 'Sélectionnés',
+    labelPool,
+    labelSelection,
     disableDrag = false,
     isLoading = false,
-    emptyText = 'Aucun élément',
+    emptyText,
     showPoids = false,
 }: TransfertListProps<T>) {
+    const { t } = useTranslation('common');
+    const effectiveLabelPool = labelPool ?? t('a11y.disponibles');
+    const effectiveLabelSelection = labelSelection ?? t('a11y.selectionnes');
+    const effectiveEmptyText = emptyText ?? t('a11y.aucunElement');
     const estMobile = useMediaQuery('(max-width: 639px)');
     const [recherchePool, setRecherchePool] = useState('');
     const [rechercheSelection, setRechercheSelection] = useState('');
@@ -252,7 +258,7 @@ export function TransfertList<T extends TransfertItem>({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--color-bordure)]" style={{ padding: 'var(--space-sm)' }}>
                 <h4 className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                    {labelPool}
+                    {effectiveLabelPool}
                     <span className="ml-2 text-xs font-normal text-[var(--color-text-tertiary)]">({poolFiltre.length})</span>
                 </h4>
             </div>
@@ -264,7 +270,7 @@ export function TransfertList<T extends TransfertItem>({
                         type="text"
                         value={recherchePool}
                         onChange={(e) => setRecherchePool(e.target.value)}
-                        placeholder="Rechercher..."
+                        placeholder={t('a11y.rechercher')}
                         className="w-full rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)] pl-7 pr-2"
                         style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', padding: '0.375rem 0.5rem 0.375rem 1.75rem' }}
                     />
@@ -278,7 +284,7 @@ export function TransfertList<T extends TransfertItem>({
                     </div>
                 ) : poolFiltre.length === 0 ? (
                     <p className="text-center py-8 text-[var(--color-text-tertiary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)' }}>
-                        {emptyText}
+                        {effectiveEmptyText}
                     </p>
                 ) : (
                     poolFiltre.map((item) => (
@@ -289,7 +295,7 @@ export function TransfertList<T extends TransfertItem>({
                             <button
                                 onClick={() => ajouter(item)}
                                 className="p-1 rounded hover:bg-[var(--color-dominant-50)] text-[var(--color-text-tertiary)] hover:text-[var(--color-dominant-600)] transition-colors shrink-0"
-                                aria-label={`Ajouter ${item.label}`}
+                                aria-label={t('a11y.ajouterItem', { label: item.label })}
                             >
                                 <ChevronRight className="h-4 w-4" />
                             </button>
@@ -305,7 +311,7 @@ export function TransfertList<T extends TransfertItem>({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--color-dominant-200)]" style={{ padding: 'var(--space-sm)' }}>
                 <h4 className="font-semibold text-[var(--color-dominant-700)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                    {labelSelection}
+                    {effectiveLabelSelection}
                     <span className="ml-2 text-xs font-normal text-[var(--color-text-tertiary)]">({selectionnes.length})</span>
                 </h4>
             </div>
@@ -317,7 +323,7 @@ export function TransfertList<T extends TransfertItem>({
                         type="text"
                         value={rechercheSelection}
                         onChange={(e) => setRechercheSelection(e.target.value)}
-                        placeholder="Rechercher..."
+                        placeholder={t('a11y.rechercher')}
                         className="w-full rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)] pl-7 pr-2"
                         style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', padding: '0.375rem 0.5rem 0.375rem 1.75rem' }}
                     />
@@ -327,7 +333,7 @@ export function TransfertList<T extends TransfertItem>({
             <div className="flex-1 overflow-y-auto p-2 space-y-1" style={{ maxHeight: 'clamp(200px, 40vh, 400px)' }}>
                 {selectionFiltre.length === 0 ? (
                     <p className="text-center py-8 text-[var(--color-text-tertiary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)' }}>
-                        Aucun élément sélectionné
+                        {t('a11y.aucunElementSelectionne')}
                     </p>
                 ) : disableDrag || estMobile ? (
                     /* Mode sans drag (mobile ou désactivé) */
@@ -404,7 +410,7 @@ export function TransfertList<T extends TransfertItem>({
                     onClick={ajouterTous}
                     disabled={poolFiltre.length === 0}
                     className="flex items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-dominant-200)] px-2 py-1.5 text-xs font-medium text-[var(--color-dominant-600)] hover:bg-[var(--color-dominant-50)] disabled:opacity-40 transition-colors"
-                    title="Tout ajouter"
+                    title={t('a11y.toutAjouter')}
                 >
                     <ChevronsRight className="h-4 w-4" />
                 </button>
@@ -412,7 +418,7 @@ export function TransfertList<T extends TransfertItem>({
                     onClick={retirerTous}
                     disabled={selectionnes.length === 0}
                     className="flex items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-bordure)] px-2 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] disabled:opacity-40 transition-colors"
-                    title="Tout retirer"
+                    title={t('a11y.toutRetirer')}
                 >
                     <ChevronsLeft className="h-4 w-4" />
                 </button>

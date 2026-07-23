@@ -26,11 +26,11 @@
 
 ## Update Summary
 **Changes Made**
-- Removed all references to organization controller and related endpoints
-- Updated architecture overview to reflect consolidated functionality
-- Revised module structure documentation to exclude organization module
-- Updated dependency analysis to remove organization-related components
-- Maintained all other API documentation sections unchanged
+- Removed all references to nomenclature controllers and related endpoints that were eliminated during backend consolidation
+- Updated architecture overview to reflect the consolidated API structure without redundant endpoints
+- Revised module structure documentation to exclude removed nomenclature components
+- Updated dependency analysis to remove nomenclature-related controllers and DTOs
+- Maintained all other API documentation sections unchanged while ensuring accuracy with current implementation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -47,7 +47,7 @@
 ## Introduction
 This document provides a comprehensive reference for eLISAschool's RESTful API, covering authentication, academic, financial, and HR endpoints. It specifies HTTP methods, URL patterns, request/response schemas, authentication requirements, error handling, rate limiting, versioning strategy, and best practices. It also includes guidance for Swagger/OpenAPI integration and testing approaches.
 
-**Updated** Organization management functionality has been consolidated into other controllers or handled differently in the new architecture. Direct REST API endpoints for organization management are no longer available through a dedicated organization controller.
+**Updated** The API has been streamlined through backend consolidation, removing redundant nomenclature controllers and DTOs. The current structure focuses on core functionality across authentication, academic management, financial operations, and human resources without unnecessary complexity.
 
 ## Project Structure
 The backend is organized by feature modules under src/modules, with shared infrastructure (middleware, filters, utilities, config) under src/common and src/config. Routes are registered centrally via a route registry. The application entry point initializes configuration, database, middleware, routes, and the OpenAPI schema.
@@ -91,7 +91,7 @@ Key responsibilities:
 - Guards enforce role/permission checks.
 - Middlewares handle cross-cutting concerns (auth, rate limit, tenant scoping).
 
-**Updated** Organization-specific functionality has been integrated into other controllers rather than maintaining a separate organization controller.
+**Updated** The consolidation process has eliminated redundant nomenclature controllers, streamlining the component architecture while maintaining all essential functionality through focused, purpose-driven controllers.
 
 **Section sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -408,7 +408,7 @@ PersonnelCtrl --> RBAC
 PaieCtrl --> RBAC
 ```
 
-**Updated** Organization controller and its dependencies have been removed from the dependency graph as organization management functionality has been consolidated into other controllers.
+**Updated** The dependency graph has been streamlined by removing nomenclature controllers and their associated DTOs, resulting in a more focused and maintainable architecture.
 
 **Diagram sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -457,7 +457,7 @@ Debugging Tips:
 ## Conclusion
 eLISAschool's API provides a robust, secure, and well-structured interface across authentication, academic, financial, and HR domains. With clear versioning, comprehensive documentation, and strong error handling, it supports scalable integrations and reliable operations.
 
-**Updated** The removal of the organization controller represents a consolidation of functionality into other controllers, streamlining the API architecture while maintaining all essential features through alternative endpoints.
+**Updated** The recent consolidation effort has successfully eliminated redundant nomenclature controllers and DTOs, resulting in a cleaner, more efficient API architecture that maintains all essential functionality while reducing complexity and improving maintainability.
 
 [No sources needed since this section summarizes without analyzing specific files]
 

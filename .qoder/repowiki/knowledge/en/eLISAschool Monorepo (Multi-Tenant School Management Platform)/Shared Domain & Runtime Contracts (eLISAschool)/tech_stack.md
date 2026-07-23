@@ -1,0 +1,1 @@
+Pure TypeScript library targeting ES2022 / CommonJS; runtime dependency is only `zod` (^3.24.1) for schema validation. Built with `tsc` (no bundler), emitting `.d.ts` + declaration maps for IDE support in consumers.

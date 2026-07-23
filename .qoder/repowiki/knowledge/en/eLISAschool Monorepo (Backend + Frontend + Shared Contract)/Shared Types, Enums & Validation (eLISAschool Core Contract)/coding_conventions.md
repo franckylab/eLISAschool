@@ -1,6 +1,0 @@
-- Each sub-package exposes an `index.ts` barrel that re-exports its members, and the root `src/index.ts` re-exports all barrels, giving consumers a single import path.
-- Zod schemas are paired with `z.infer<typeof schema>` type exports so the same definition drives both runtime validation and TypeScript types.
-- Schema field names follow French naming conventions (e.g. `motDePasse`, `confirmationMotDePasse`, `identifiant`) documented in the validator header comment.
-- Validation rules reference shared limits from `../constants` (e.g. `LIMITS.PASSWORD_MIN_LENGTH`) rather than hard-coding numbers inside schemas.
-- Guard helpers in `system-protection.helper.ts` attach `statusCode` and `code` properties to thrown `Error` instances to integrate with the application's HTTP error pipeline.
-- The module registry uses computed keys (`[ModuleName.X]`) keyed by enum values, keeping the registry shape in sync with the `ModuleName` enum.

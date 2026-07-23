@@ -95,7 +95,7 @@ function TreeItem<T>({
             >
                 {enableDrag && (
                     <button
-                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                        className="cursor-grab active:cursor-grabbing text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
                         {...attributes}
                         {...listeners}
                     >
@@ -106,7 +106,7 @@ function TreeItem<T>({
                 {hasChildren ? (
                     <button
                         onClick={handleToggle}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
                     >
                         <motion.div
                             animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -119,7 +119,7 @@ function TreeItem<T>({
                     <span className="w-4 shrink-0" />
                 )}
 
-                {node.icon && <span className="shrink-0 text-gray-500">{node.icon}</span>}
+                {node.icon && <span className="shrink-0 text-gray-500 dark:text-gray-400">{node.icon}</span>}
 
                 <span className={cn(
                     'text-sm truncate flex-1',

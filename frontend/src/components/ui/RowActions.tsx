@@ -16,6 +16,7 @@
  */
 
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
     MoreVertical,
@@ -68,20 +69,20 @@ const VARIANT_COLORS: Record<ActionVariant, { hover: string; dropdown: string }>
         dropdown: 'hover:bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]',
     },
     success: {
-        hover: 'hover:bg-green-100 text-green-600',
-        dropdown: 'hover:bg-green-50 text-green-700',
+        hover: 'hover:bg-green-100 text-green-600 dark:hover:bg-green-900/30 dark:text-green-400',
+        dropdown: 'hover:bg-green-50 text-green-700 dark:hover:bg-green-900/30 dark:text-green-400',
     },
     warning: {
-        hover: 'hover:bg-yellow-100 text-yellow-600',
-        dropdown: 'hover:bg-yellow-50 text-yellow-700',
+        hover: 'hover:bg-yellow-100 text-yellow-600 dark:hover:bg-yellow-900/30 dark:text-yellow-400',
+        dropdown: 'hover:bg-yellow-50 text-yellow-700 dark:hover:bg-yellow-900/30 dark:text-yellow-400',
     },
     danger: {
-        hover: 'hover:bg-red-100 text-red-600',
-        dropdown: 'hover:bg-red-50 text-red-700',
+        hover: 'hover:bg-red-100 text-red-600 dark:hover:bg-red-900/30 dark:text-red-400',
+        dropdown: 'hover:bg-red-50 text-red-700 dark:hover:bg-red-900/30 dark:text-red-400',
     },
     info: {
-        hover: 'hover:bg-blue-100 text-blue-600',
-        dropdown: 'hover:bg-blue-50 text-blue-700',
+        hover: 'hover:bg-blue-100 text-blue-600 dark:hover:bg-blue-900/30 dark:text-blue-400',
+        dropdown: 'hover:bg-blue-50 text-blue-700 dark:hover:bg-blue-900/30 dark:text-blue-400',
     },
 };
 
@@ -93,6 +94,7 @@ export function RowActions({
     actions,
     className,
 }: RowActionsProps) {
+    const { t } = useTranslation('common');
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Filtrer les actions masquées
@@ -105,14 +107,14 @@ export function RowActions({
             className={`relative inline-flex items-center ${className || ''}`}
             tabIndex={0}
             role="group"
-            aria-label="Actions"
+            aria-label={t('a11y.actions')}
         >
             {/* Bouton d'actions toujours visible */}
             <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                     <button
                         type="button"
-                        title="Actions"
+                        title={t('a11y.actions')}
                         className="inline-flex h-[clamp(1.75rem,1.5rem+0.5vw,2rem)] w-[clamp(1.75rem,1.5rem+0.5vw,2rem)] items-center justify-center rounded-lg transition-all duration-200 hover:bg-[var(--color-surface-alt)] hover:shadow-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] active:scale-95"
                     >
                         <MoreVertical className="h-[clamp(0.875rem,0.75rem+0.3vw,1rem)] w-[clamp(0.875rem,0.75rem+0.3vw,1rem)]" />

@@ -1,2 +1,0 @@
-- Cross-package contracts live exclusively in the `shared` package; backend and frontend import from it rather than redefining types locally.
-- All top-level npm scripts delegate to child workspaces via `--workspace=<pkg>` instead of duplicating logic at the root.

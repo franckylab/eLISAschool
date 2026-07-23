@@ -11,6 +11,7 @@
  */
 
 import { type ReactNode, useCallback, useRef, useMemo, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, Minus, Maximize2, Minimize2 } from 'lucide-react';
@@ -83,6 +84,7 @@ export function CustomModal({
     initialWidth,
     initialHeight,
 }: CustomModalProps) {
+    const { t } = useTranslation('common');
     // ── Viewport tracking pour responsive size ──────────────────
     const [viewportWidth, setViewportWidth] = useState(0);
     useEffect(() => {
@@ -247,8 +249,8 @@ export function CustomModal({
                                             ) : (
                                                 // Titre caché mais accessible pour les lecteurs d'écran
                                                 <VisuallyHidden>
-                                                    <DialogPrimitive.Title>Modal</DialogPrimitive.Title>
-                                                    <DialogPrimitive.Description>Modal dialog</DialogPrimitive.Description>
+                                                    <DialogPrimitive.Title>{t('a11y.modalTitre')}</DialogPrimitive.Title>
+                                                    <DialogPrimitive.Description>{t('a11y.modalDescription')}</DialogPrimitive.Description>
                                                 </VisuallyHidden>
                                             )}
                                         </div>
@@ -259,8 +261,8 @@ export function CustomModal({
                                                 <button
                                                     className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
                                                     onClick={(e) => { e.stopPropagation(); handlers.toggleMinimize(); }}
-                                                    title={isMinimized ? 'Restaurer' : 'Réduire'}
-                                                    aria-label={isMinimized ? 'Restaurer' : 'Réduire'}
+                                                    title={isMinimized ? t('a11y.restaurer') : t('a11y.reduire')}
+                                                    aria-label={isMinimized ? t('a11y.restaurer') : t('a11y.reduire')}
                                                 >
                                                     <Minus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                                                 </button>
@@ -269,8 +271,8 @@ export function CustomModal({
                                                 <button
                                                     className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]"
                                                     onClick={(e) => { e.stopPropagation(); handlers.toggleMaximize(); }}
-                                                    title={isMaximized ? 'Restaurer' : 'Agrandir'}
-                                                    aria-label={isMaximized ? 'Restaurer' : 'Agrandir'}
+                                                    title={isMaximized ? t('a11y.restaurer') : t('a11y.agrandir')}
+                                                    aria-label={isMaximized ? t('a11y.restaurer') : t('a11y.agrandir')}
                                                 >
                                                     {isMaximized
                                                         ? <Minimize2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
@@ -281,8 +283,8 @@ export function CustomModal({
                                             {showClose && (
                                                 <DialogPrimitive.Close asChild>
                                                     <button
-                                                        className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-red-100 hover:text-red-600"
-                                                        aria-label="Fermer"
+                                                        className="rounded-[var(--radius-sm)] p-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-[var(--color-texte-secondaire)] transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                                                        aria-label={t('a11y.fermer')}
                                                     >
                                                         <X className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                                                     </button>

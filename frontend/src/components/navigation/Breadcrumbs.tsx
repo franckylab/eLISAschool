@@ -1,4 +1,5 @@
 import { Link, useMatches } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Home } from 'lucide-react';
 
 const LABEL_MAP: Record<string, string> = {
@@ -62,6 +63,7 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ currentLabel, labelsMap, inverted }: BreadcrumbsProps) {
+    const { t } = useTranslation('common');
     const matches = useMatches();
 
     const mergedLabels = { ...LABEL_MAP, ...labelsMap };
@@ -86,7 +88,7 @@ export function Breadcrumbs({ currentLabel, labelsMap, inverted }: BreadcrumbsPr
     const hoverClass = inverted ? 'hover:text-white' : 'hover:text-[var(--color-dominante)]';
 
     return (
-        <nav aria-label="Fil d'Ariane" className="mb-4">
+        <nav aria-label={t('a11y.filAriane')} className="mb-4">
             <ol className={`flex items-center gap-1 text-sm ${textMuted}`}>
                 <li>
                     <Link

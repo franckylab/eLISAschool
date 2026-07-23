@@ -1,0 +1,1 @@
+`npm install` then either `npm run dev` (hot-reload backend + frontend concurrently) or `npm run docker:dev` (full stack via compose). Database bootstrap uses `npm run db:migrate && npm run db:seed` (delegated to backend), and academic structure seeding runs `cd backend && ../scripts/deploy-structure-academique.sh` as documented in README.md.

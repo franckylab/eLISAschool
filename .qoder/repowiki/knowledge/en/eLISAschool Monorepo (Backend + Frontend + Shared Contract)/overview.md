@@ -1,1 +1,0 @@
-Root of the eLISAschool school-management PWA, wiring a Node/TypeScript monorepo where backend and frontend both consume a shared types/validation package.

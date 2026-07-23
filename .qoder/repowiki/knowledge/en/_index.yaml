@@ -3,54 +3,37 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-22T15:59:34Z"
+exported_at: "2026-07-22T23:31:01Z"
 modules:
     "":
-        dir_name: eLISAschool Monorepo (Backend + Frontend + Shared Contract)
-        title: eLISAschool Monorepo (Backend + Frontend + Shared Contract)
-        scope:
-            - README.md
-            - QUICKSTART.md
-            - INDEX.md
-            - CHEATSHEET.md
-            - AGENTS.md
-            - .gitignore
-            - .dockerignore
-            - package.json
-            - package-lock.json
+        dir_name: eLISAschool School Management Platform (Full-Stack Monorepo)
+        title: eLISAschool School Management Platform (Full-Stack Monorepo)
+        scope: []
         source_files: []
-        children:
-            - backend
-            - docker_infra
-            - docs
-            - frontend
-            - scripts
-            - shared_package
+        children: []
         depends_on: []
         related_to: []
     backend:
-        dir_name: backend
-        title: backend
+        dir_name: eLISAschool Multi-Tenant School Management API
+        title: eLISAschool Multi-Tenant School Management API
         scope:
-            - backend/src/
-            - backend/database/migrations/
-            - backend/scripts/
+            - backend/
         source_files: []
         children: []
         depends_on: []
         related_to: []
     docker_infra:
-        dir_name: docker_infra
-        title: docker_infra
+        dir_name: Docker Infrastructure & Deployment Orchestration
+        title: Docker Infrastructure & Deployment Orchestration
         scope:
             - docker/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    docs:
-        dir_name: Project Documentation Archive (eLISAschool)
-        title: Project Documentation Archive (eLISAschool)
+    documentation:
+        dir_name: Project Documentation & Knowledge Base
+        title: Project Documentation & Knowledge Base
         scope:
             - docs/
         source_files: []
@@ -58,19 +41,17 @@ modules:
         depends_on: []
         related_to: []
     frontend:
-        dir_name: frontend
-        title: frontend
+        dir_name: eLISAschool Frontend (React + TanStack Router SPA)
+        title: eLISAschool Frontend (React + TanStack Router SPA)
         scope:
-            - frontend/src/
-            - frontend/public/
-            - frontend/scripts/
+            - frontend/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    scripts:
-        dir_name: scripts
-        title: scripts
+    scripts_tooling:
+        dir_name: DevOps & Module Deployment Scripts
+        title: DevOps & Module Deployment Scripts
         scope:
             - scripts/
         source_files: []
@@ -78,11 +59,10 @@ modules:
         depends_on: []
         related_to: []
     shared_package:
-        dir_name: Shared Types, Enums & Validation (eLISAschool Core Contract)
-        title: Shared Types, Enums & Validation (eLISAschool Core Contract)
+        dir_name: Shared Domain & Runtime Contracts (eLISAschool)
+        title: Shared Domain & Runtime Contracts (eLISAschool)
         scope:
-            - shared/src/
-            - shared/package.json
+            - shared/
         source_files: []
         children: []
         depends_on: []

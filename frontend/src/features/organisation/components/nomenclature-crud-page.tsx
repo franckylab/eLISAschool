@@ -7,7 +7,7 @@ import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ErrorMessage, EmptyState } from '@/components/ui/ErrorMessage';
 import { usePermissions } from '@/hooks';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { ActionConfig } from '@/components/ui/RowActions';
@@ -121,6 +121,8 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
     if (isLoading && !data) return <PageSkeleton showHeader showTable />;
     if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
+    const isEmpty = !isLoading && !error && (data?.length ?? 0) === 0;
+
     const addButton = canEdit ? (
         <ElisaButton
             variant="outline"
@@ -145,18 +147,29 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
                 />
             )}
 
-            <DataTable
-                tableId={tableId}
-                columns={allColumns}
-                data={data || []}
-                isLoading={isLoading}
-                enableReordering
-                enablePinning
-                enableColumnVisibility
-                searchable={!noSearch}
-                disableClientSearch
-                emptyMessage={t('aucuneDonnee')}
-            />
+            {isEmpty ? (
+                <EmptyState
+                    icon={Icon}
+                    title={t('aucuneDonnee')}
+                    description={t('aucuneDonneeIndication')}
+                    actionLabel={canEdit ? t('ajouter') : undefined}
+                    actionIcon={canEdit ? <Plus className="h-4 w-4" /> : undefined}
+                    onAction={canEdit ? () => { setEditingId(null); setModalOpen(true); } : undefined}
+                />
+            ) : (
+                <DataTable
+                    tableId={tableId}
+                    columns={allColumns}
+                    data={data || []}
+                    isLoading={isLoading}
+                    enableReordering
+                    enablePinning
+                    enableColumnVisibility
+                    searchable={!noSearch}
+                    disableClientSearch
+                    emptyMessage={t('aucuneDonnee')}
+                />
+            )}
 
             {modalOpen && (
                 <FormComponent

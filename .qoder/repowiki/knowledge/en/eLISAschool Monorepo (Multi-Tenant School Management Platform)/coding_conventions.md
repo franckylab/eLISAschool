@@ -1,0 +1,3 @@
+- Cross-package contracts live exclusively in the `shared` package; backend and frontend never duplicate enums/types but import them from `shared`.
+- Top-level npm scripts are thin delegates using `--workspace=<pkg>` to invoke each child's own scripts rather than re-implementing logic at the root.
+- Docker compose targets are split by environment (`docker-compose.dev.yml` vs default prod) and exposed as paired `docker:<env>` / `docker:<env>:build` / `docker:<env>:down` scripts.

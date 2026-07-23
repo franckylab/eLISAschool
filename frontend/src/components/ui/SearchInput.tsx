@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, X } from 'lucide-react';
 
 interface SearchInputProps {
@@ -16,13 +17,15 @@ interface SearchInputProps {
 export function SearchInput({
     value: externalValue,
     onChange,
-    placeholder = 'Rechercher...',
+    placeholder,
     debounceMs = 0,
     icon = true,
     className = '',
     autoFocus,
     ariaLabel,
 }: SearchInputProps) {
+    const { t } = useTranslation('common');
+    const effectivePlaceholder = placeholder ?? t('a11y.rechercher');
     const isControlled = externalValue !== undefined;
     const [internalValue, setInternalValue] = useState('');
     const value = isControlled ? externalValue : internalValue;
@@ -67,9 +70,9 @@ export function SearchInput({
                 onKeyDown={(e) => {
                     if (e.key === 'Escape') handleClear();
                 }}
-                placeholder={placeholder}
+                placeholder={effectivePlaceholder}
                 autoFocus={autoFocus}
-                aria-label={ariaLabel || placeholder}
+                aria-label={ariaLabel || effectivePlaceholder}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] pl-9 pr-[clamp(1.5rem,1.2rem+0.5vw,2rem)] text-sm focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 dark:bg-[var(--color-surface)] dark:border-[var(--color-bordure)]"
                 style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
             />
@@ -78,7 +81,7 @@ export function SearchInput({
                     type="button"
                     onClick={handleClear}
                     className="absolute right-[clamp(0.5rem,0.4rem+0.2vw,0.625rem)] top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                    aria-label="Effacer la recherche"
+                    aria-label={t('a11y.effacerRecherche')}
                 >
                     <X className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                 </button>

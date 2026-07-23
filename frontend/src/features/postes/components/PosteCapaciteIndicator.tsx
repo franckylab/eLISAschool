@@ -14,7 +14,7 @@ export function PosteCapaciteIndicator({ occupantsCount = 0, nombrePostes, size 
 
     return (
         <span className="inline-flex items-center gap-2 min-w-[100px]">
-            <span className={`flex-1 ${h} bg-gray-200 rounded-full overflow-hidden`}>
+            <span className={`flex-1 ${h} bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden`}>
                 <span
                     className={`block ${h} ${color} rounded-full transition-all`}
                     style={{ width: `${Math.min(ratio * 100, 100)}%` }}

@@ -1,0 +1,1 @@
+React 19 + TypeScript 5.7 on Vite 6, with TanStack Router (file-based), TanStack Query v5, TanStack Table v8, Radix UI primitives, Tailwind CSS v4 via `@tailwindcss/vite`, Zustand v5 for client state, i18next v24 for localization, Framer Motion for animations, html2canvas + jsPDF for PDF export, dagre + reactflow for org charts, and vite-plugin-pwa for PWA support.

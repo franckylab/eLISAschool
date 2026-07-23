@@ -1,0 +1,1 @@
+Shell/Node/SQL tooling for bootstrapping the eLISAschool dev environment, deploying per-module database migrations and seeds, running integration tests, and auditing permissions.

@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: ""
+title: eLISAschool Monorepo (Multi-Tenant School Management Platform)
+scope:
+    - README.md
+    - QUICKSTART.md
+    - INDEX.md
+    - AGENTS.md
+    - CHEATSHEET.md
+    - .gitignore
+    - .dockerignore
+    - package.json
+    - package-lock.json
+source_files: []
+depends_on: []
+related_to: []

@@ -1,1 +1,0 @@
-Build with `npm run build` (runs `tsc`) from `shared/`; lint via `npm run lint` / `npm run lint:fix`. The package is private and not intended to be published — it is consumed as a workspace dependency by other services.
