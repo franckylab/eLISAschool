@@ -10,34 +10,31 @@ source_files:
     - backend/package.json
     - frontend/package.json
     - shared/package.json
+    - docker/Dockerfile.backend
 ---
 
-The eLISAschool monorepo manages dependencies through npm workspaces, centralizing three packages — @elisaschool/backend (Nest/Express), @elisaschool/frontend (React/Vite), and @elisaschool/shared (zero-dependency domain kernel) — under a single root that orchestrates install, build, test, and Docker commands.
+The eLISAschool monorepo uses npm workspaces to manage dependencies across three packages: @elisaschool/backend (Express/TypeORM API), @elisaschool/frontend (React + TanStack SPA), and @elisaschool/shared (shared TypeScript contracts). All third-party libraries are declared in each package's package.json, with a single root package-lock.json providing deterministic resolution for the entire workspace.
 
-System and tools
-- Package manager: npm (v10+) with Node.js v20+ enforced via engines in the root package.json.
-- Workspace model: workspaces declared at the root; each sub-package is private and scoped under @elisaschool/*.
-- Lockfile: a single root package-lock.json (lockfileVersion 3) records every resolved package across all workspaces, including integrity hashes and resolved URLs pointing to https://registry.npmjs.org.
-- No vendoring or private registry: there is no .npmrc, no vendor directory, and no custom registry configured — all third-party packages are pulled from the public npm registry.
+System and Tooling:
+- Package manager: npm >=10 (enforced via engines.node >=20.0.0, engines.npm >=10.0.0).
+- Workspace orchestration: Root package.json declares workspaces [backend, frontend, shared] and exposes unified scripts (dev, build, test, lint, db:migrate, db:seed) that delegate to individual workspaces via --workspace=....
+- Lockfile: A single package-lock.json at the repo root is committed and used by Docker builds (COPY package.json package-lock.json ./) to ensure reproducible installs across environments.
+- Docker integration: The production docker/Dockerfile.backend copies only the lockfile plus workspace package.jsons into the image, then runs npm ci --omit=dev to install production-only deps deterministically.
 
-Key files
-- Root package.json — workspace declaration, cross-workspace scripts (dev, build, test, lint, db:migrate, docker:*), postinstall cleanup, and overrides for transitive type conflicts.
-- backend/package.json — runtime deps (express, typeorm, pg, ioredis, firebase-admin, zod, etc.) plus dev tooling (ts-node, jest, eslint, typescript).
-- frontend/package.json — React 19 + TanStack Router/Query/Table, Radix UI primitives, Tailwind v4, framer-motion, zustand, zod.
-- shared/package.json — minimal footprint (only zod as a runtime dep); consumed by both backend and frontend as a local workspace reference.
-- Root package-lock.json — canonical lockfile used by CI and Docker builds.
+Versioning Strategy:
+- Dependencies use caret ranges (^x.y.z) allowing minor/patch updates while pinning major versions — no explicit version pinning per dependency.
+- No private registry or vendoring strategy is configured; all packages resolve from the public npm registry. There is no .npmrc, yarn.lock, pnpm-workspace.yaml, or vendor/ directory present.
+- Shared runtime code lives in @elisaschool/shared and is consumed as a local workspace dependency rather than published to a registry, keeping backend and frontend in sync without external publishing.
 
-Architecture and conventions
-- Local inter-workspace references use the @elisaschool/* scope; because all packages are private and co-located, they resolve via the workspace link rather than npm publish.
-- Shared TypeScript types/enums live in shared/src/ and are imported directly by backend and frontend modules without publishing to a registry.
-- The root overrides field pins @types/express and @types/express-serve-static-core to specific versions to resolve a known conflict between NestJS/Express type packages.
-- A postinstall script removes a nested duplicate of @types/express-serve-static-core inside @types/express/node_modules to avoid type duplication warnings.
-- Docker Compose images (Dockerfile.backend, Dockerfile.frontend) run npm ci against the root lockfile, ensuring reproducible installs across environments.
+Cross-Cutting Conventions:
+- Shared types only: @elisaschool/shared contains enums, Zod validators, and type definitions — it depends only on zod and has no runtime framework coupling.
+- Engine constraints: Node >=20 / npm >=10 enforced centrally so every developer and CI environment uses compatible tooling.
+- Dependency overrides: The root overrides field pins @types/express and @types/express-serve-static-core to specific versions to resolve transitive type conflicts across workspaces.
+- Postinstall cleanup: A root postinstall script removes a conflicting nested @types/express-serve-static-core to avoid type duplication.
 
-Rules developers should follow
-- Add new third-party dependencies only inside the relevant workspace's package.json (backend/, frontend/, or shared/); never edit the root dependencies.
-- Keep shared free of heavy runtime libraries — it should only hold enums, shared Zod schemas, and pure TS types consumed by both sides.
-- Always commit the updated root package-lock.json after npm install; do not generate per-workspace lockfiles.
-- Use npm run <script> --workspace=<name> (or the root shortcuts like dev:backend) instead of invoking npm directly inside a subdirectory.
-- When introducing a dependency that causes type conflicts, prefer adding an entry to the root overrides block rather than patching individual packages.
-- Do not introduce a private npm registry or .npmrc unless explicitly required by security policy; the current setup relies on the public registry.
+Rules for Developers:
+1. Add new dependencies to the appropriate workspace package.json (backend/, frontend/, or shared/) — never at the root unless shared across all workspaces.
+2. Commit the updated root package-lock.json after running npm install; do not run npm install inside a workspace subdirectory (always run from the repo root so the lockfile stays consistent).
+3. Use caret ranges (^) for library versions; coordinate major-version bumps across workspaces when a shared dependency changes its contract.
+4. If adding a private/internal package, publish it to a registry and reference it by name — there is no existing private registry configuration, so add an .npmrc with registry= and auth tokens before doing so.
+5. Keep @elisaschool/shared free of runtime framework dependencies; it should only contain types, enums, and validation schemas consumable by both backend and frontend.

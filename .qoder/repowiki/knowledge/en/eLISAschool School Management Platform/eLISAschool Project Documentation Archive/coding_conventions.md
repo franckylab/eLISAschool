@@ -1,0 +1,4 @@
+- Document filenames use a fixed prefix indicating category and purpose (e.g. `ANALYSE-*`, `CORRECTION-*`, `IMPLEMENTATION-*`, `GUIDE-*`, `RAPPORT-*`, `RESUME-*`, `SYNTHESE-*`, `AMELIORATION-*`, `MIGRATION-*`, `CONFIGURATION-*`, `DEPLOYMENT-*`, `AUDIT-*`, `CHECKLIST-*`, `CERTIFICATION-*`) followed by a descriptive slug.
+- Obsolete or superseded documents are retained in place but marked with a `⚠️ DOCUMENT OBSOLÈTE` banner at the top rather than being deleted, preserving historical traceability.
+- Cross-references between documents use relative Markdown links from `INDEX.md` instead of absolute URLs, keeping the index as the single source of truth for navigation.
+- Ephemeral session notes, temporary fixes, and draft templates are grouped under `autres/_*` underscore-prefixed subdirectories so they do not pollute the primary topical categories.

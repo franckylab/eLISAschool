@@ -14,6 +14,13 @@
 - [redis.service.spec.ts](file://backend/test/unit/redis.service.spec.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated REST Conventions section to emphasize plural naming standards
+- Enhanced Resource Naming guidelines with specific examples from organization module
+- Added migration guidance for backward compatibility
+- Updated examples to reflect plural endpoint patterns
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -27,7 +34,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document defines the API design and response standards for eLISAschool’s backend. It establishes RESTful conventions, request/response formats, status codes, error structures, DTO patterns, validation rules, OpenAPI/Swagger documentation standards, versioning strategy, pagination, filtering, sorting, authentication headers, rate limiting responses, and security best practices. The guidance is grounded in the repository’s configuration, routing, tests, and documentation artifacts.
+This document defines the API design and response standards for eLISAschool's backend. It establishes RESTful conventions, request/response formats, status codes, error structures, DTO patterns, validation rules, OpenAPI/Swagger documentation standards, versioning strategy, pagination, filtering, sorting, authentication headers, rate limiting responses, and security best practices. The guidance is grounded in the repository's configuration, routing, tests, and documentation artifacts.
+
+**Updated** Recent improvements have modernized API endpoints across the organization module to follow strict RESTful plural naming conventions, ensuring consistency and predictability in resource identification.
 
 ## Project Structure
 The backend follows a modular architecture with shared common utilities, module-scoped controllers/services/entities, centralized configuration (including Swagger), and a route registry that wires endpoints. Tests cover integration scenarios (authentication across establishments, multi-tenant configuration) and unit-level behavior (pagination utilities, Redis service).
@@ -143,7 +152,7 @@ App-->>Client : HTTP Response + Headers
 
 ### REST Conventions and Versioning
 - Base paths: Use module-scoped base paths under a stable root.
-- Resource naming: Plural nouns, kebab-case segments where appropriate.
+- **Resource naming**: Plural nouns are mandatory for all resource endpoints. This ensures consistency and aligns with RESTful best practices. Examples include `/organizations`, `/users`, `/classes`, `/students`, etc.
 - Methods:
   - GET: Retrieve resources or lists.
   - POST: Create resources.
@@ -151,6 +160,14 @@ App-->>Client : HTTP Response + Headers
   - PATCH: Partial update.
   - DELETE: Remove resource.
 - Versioning: Prefer URL versioning (e.g., /api/v1/...) for breaking changes; maintain backward compatibility within minor versions.
+
+**Updated** All organization module endpoints now follow strict plural naming conventions. For example:
+- ✅ Correct: `GET /api/v1/organizations`
+- ❌ Incorrect: `GET /api/v1/organization`
+- ✅ Correct: `POST /api/v1/users`
+- ❌ Incorrect: `POST /api/v1/user`
+
+**Migration Notes**: Previous singular endpoint patterns have been deprecated but may still be available during transition periods with appropriate deprecation headers.
 
 **Section sources**
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
@@ -199,6 +216,8 @@ Validation guidelines:
 - Numeric fields must be within defined bounds.
 - Enumerations must match declared values.
 
+**Updated** Organization module DTOs now consistently use plural naming patterns in their corresponding endpoint definitions, ensuring clear separation between resource types and individual instances.
+
 **Section sources**
 - [app.ts](file://backend/src/app.ts)
 
@@ -208,6 +227,8 @@ Validation guidelines:
 - Define schemas for all request bodies and responses.
 - Include security schemes and required scopes/roles.
 - Serve spec at a dedicated path and link from API index.
+
+**Updated** All organization module endpoints now reflect plural naming conventions in their OpenAPI specifications, providing accurate documentation for clients.
 
 **Section sources**
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
@@ -245,6 +266,8 @@ Security notes:
 Reference implementation and guidance:
 - See pagination guide and unit tests for utility behavior.
 
+**Updated** All organization module list endpoints now consistently use plural resource names in their pagination responses, maintaining alignment with the overall RESTful naming strategy.
+
 **Section sources**
 - [pagination-guide.md](file://backend/docs/pagination-guide.md)
 - [pagination.util.spec.ts](file://backend/test/unit/pagination.util.spec.ts)
@@ -279,6 +302,8 @@ Behavior:
 - Follow documented integration patterns for dashboard widgets and metrics.
 - Ensure consistent envelope usage for chart data and counters.
 - Respect pagination and caching headers for performance.
+
+**Updated** Frontend integrations with organization module endpoints should be updated to use plural resource names in their API calls.
 
 **Section sources**
 - [DASHBOARD-FRONTEND-INTEGRATION.md](file://backend/docs/DASHBOARD-FRONTEND-INTEGRATION.md)
@@ -335,6 +360,8 @@ Common issues and resolutions:
   - Check establishment context and role assignments.
 - 403 Forbidden:
   - Confirm user has required permissions for the target resource.
+- 404 Not Found:
+  - **Updated**: If you're getting 404 errors after recent updates, verify you're using plural endpoint names (e.g., `/organizations` instead of `/organization`).
 - 429 Too Many Requests:
   - Implement exponential backoff and honor Retry-After.
 - Validation Errors:
@@ -354,6 +381,8 @@ Operational checks:
 ## Conclusion
 These standards unify how eLISAschool exposes its capabilities via APIs. By enforcing consistent envelopes, robust validation, comprehensive OpenAPI docs, and strong security posture, clients can integrate reliably and securely. Adhering to pagination, filtering, and sorting conventions ensures scalability and predictable performance.
 
+**Updated** The recent modernization of organization module endpoints to follow strict RESTful plural naming conventions further strengthens API consistency and predictability across the entire platform.
+
 [No sources needed since this section summarizes without analyzing specific files]
 
 ## Appendices
@@ -362,6 +391,8 @@ These standards unify how eLISAschool exposes its capabilities via APIs. By enfo
 - Major versions change the base path (/api/v1/, /api/v2/...).
 - Minor versions add features without breaking changes.
 - Deprecation notices are provided via headers and OpenAPI metadata.
+
+**Updated** When migrating to new plural endpoint patterns, consider implementing redirect handlers for backward compatibility during transition periods.
 
 **Section sources**
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
@@ -381,5 +412,22 @@ These standards unify how eLISAschool exposes its capabilities via APIs. By enfo
 - Define security schemes and requirements.
 - Publish spec and UI.
 
+**Updated** Ensure all organization module endpoints reflect plural naming in their OpenAPI specifications.
+
 **Section sources**
 - [swagger.config.ts](file://backend/src/config/swagger.config.ts)
+
+### Migration Guide for Plural Endpoints
+**New Section**
+
+When upgrading to the new plural endpoint pattern:
+
+1. **Update Client Code**: Replace singular endpoint references with plural forms
+   - Old: `GET /api/v1/organization` → New: `GET /api/v1/organizations`
+   - Old: `POST /api/v1/user` → New: `POST /api/v1/users`
+
+2. **Testing**: Verify all API calls work with new endpoint patterns
+3. **Documentation**: Update any internal documentation referencing old endpoints
+4. **Monitoring**: Watch for 404 errors indicating clients still using old patterns
+
+**Backward Compatibility**: During transition periods, some legacy endpoints may continue to work with deprecation warnings.

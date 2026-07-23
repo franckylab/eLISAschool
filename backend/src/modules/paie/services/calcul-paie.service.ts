@@ -190,8 +190,14 @@ export class CalculPaieService {
             throw new AppError('Aucun contrat trouvé', 404, 'NO_CONTRACT');
         }
 
+        const membre = await this.personnelRepo.findOne({
+            where: { id: membrePersonnelId },
+            relations: ['typePersonnel'],
+        });
+
         const mode = contrat.modeRemuneration
             || contrat.typeContratEntity?.modeRemuneration
+            || membre?.typePersonnel?.modeRemunerationDefaut as ModeRemuneration | undefined
             || ModeRemuneration.MENSUEL;
 
         let salaireBase = 0;

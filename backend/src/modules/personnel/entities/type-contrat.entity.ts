@@ -22,7 +22,7 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { ContratPersonnel } from './contrat-personnel.entity';
-import { ModeRemuneration } from './mode-remuneration.enum';
+import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
 
 /**
  * Catégorie de contrat (pour organisation et filtrage)

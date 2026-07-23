@@ -138,6 +138,17 @@ export interface ModifierPosteDto {
     estSuppleant?: boolean;
 }
 
+export interface ModeRemuneration {
+    id: string;
+    code: string;
+    label: string;
+    description?: string;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // ==================== STATISTIQUES ====================
 
 export interface StatistiquesOrganisation {

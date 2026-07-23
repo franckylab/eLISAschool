@@ -8,7 +8,7 @@ const TYPES_PAR_DEFAUT: Array<Partial<TypePersonnel>> = [
     { code: 'ADMINISTRATIF', nom: 'Administratif', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
     { code: 'TECHNIQUE', nom: 'Technique', modeRemunerationDefaut: 'HORAIRE', actif: true, estSysteme: true },
     { code: 'SERVICE', nom: 'Service', modeRemunerationDefaut: 'HORAIRE', actif: true, estSysteme: true },
-    { code: 'STAGE', nom: 'Stagiaire', modeRemunerationDefaut: 'STAGE', actif: true, estSysteme: true },
+    { code: 'STAGE', nom: 'Stagiaire', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
     { code: 'TEMPORAIRE', nom: 'Temporaire', modeRemunerationDefaut: 'HORAIRE', actif: true, estSysteme: true },
     { code: 'AUTRE', nom: 'Autre', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
 ];

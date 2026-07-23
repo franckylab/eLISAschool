@@ -12,7 +12,7 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { TypePrime, TypePrimeCalcul } from '@modules/personnel/entities/type-prime.entity';
+import { TypePrime, TypePrimeCalcul } from '@modules/paie/entities/type-prime.entity';
 import { logger } from '@common/utils/logger.util';
 
 interface TypePrimeSeed {

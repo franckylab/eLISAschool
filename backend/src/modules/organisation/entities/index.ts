@@ -9,3 +9,4 @@ export * from './usage-unite.entity';
 export * from './categorie-poste.entity';
 export * from './niveau-responsabilite.entity';
 export * from './template-organisation.entity';
+export { ModeRemunerationEntity } from './mode-remuneration.entity';

@@ -7,49 +7,62 @@ scope:
 source_files:
     - frontend/src/styles/globals.css
     - frontend/src/lib/theme-utils.ts
+    - frontend/src/stores/theme.store.ts
     - frontend/src/lib/cn.ts
     - frontend/src/components/ui/ElisaButton.tsx
-    - frontend/src/components/ui/card-variants.ts
-    - frontend/src/components/ui/index.ts
+    - frontend/src/components/layout/PageLayout.tsx
+    - frontend/package.json
 ---
 
-The eLISAschool frontend uses a comprehensive Tailwind CSS v4 styling system built around dynamic design tokens, runtime theme switching, and a 60-30-10 color rule architecture.
+The eLISAschool frontend uses a comprehensive, multi-layered styling system built around Tailwind CSS v4 with dynamic theming and design tokens. The approach combines utility-first CSS with runtime theme customization through CSS custom properties.
 
-Core Styling Stack
-Primary framework: Tailwind CSS v4 with @tailwindcss/vite plugin, imported via @import 'tailwindcss' in the global stylesheet. No tailwind.config.js file — configuration lives entirely in CSS using the new @theme directive.
-Component primitives: Radix UI primitives provide unstyled, accessible base components, while custom wrappers in src/components/ui/ add consistent styling through Class Variance Authority (CVA) and utility composition.
-Utility layer: A centralized cn() helper in src/lib/cn.ts combines clsx and tailwind-merge for safe class merging across all components.
+**Core Styling Stack:**
+- **Tailwind CSS v4** with `@tailwindcss/vite` plugin for build-time processing
+- **CSS Custom Properties** as the primary design token system, defined in `frontend/src/styles/globals.css`
+- **class-variance-authority (CVA)** for component variant management (e.g., button variants)
+- **clsx + tailwind-merge** via centralized `cn()` utility for conditional class merging
+- **Framer Motion** for micro-interactions and transitions
+- **Radix UI primitives** for accessible base components
 
-Design Token Architecture
-Color system follows the 60-30-10 rule:
-- Dominant (60%): Green #28a745 by default, configurable at runtime
-- Secondary (30%): Yellow #ffc107, auto-generated from dominant hue (+40 degrees)
-- Accent (10%): Blue #007bff, auto-generated from dominant hue (+200 degrees)
-Each palette generates full 50-950 scales via HSL manipulation in src/lib/theme-utils.ts. Semantic aliases (--color-dominante, --color-texte, --color-bordure) bridge between French naming conventions and component usage.
-Typography and spacing: Fluid sizing via CSS clamp() functions for responsive text (--text-*), spacing (--space-*), padding (--padding-*), icons (--icon-*), radius (--radius-*), and gaps (--gap-*). All values scale smoothly across breakpoints.
-Breakpoints: Nine custom breakpoints from xxs: 100px to 5xl: 2560px defined in the @theme block, enabling granular responsive control.
+**Design Token Architecture:**
+The system implements a 60-30-10 color rule with three semantic color families:
+- **Dominant colors (60%)**: Primary brand colors (default green #28a745) with 50-950 scale
+- **Secondary colors (30%)**: Complementary palette (default yellow #ffc107) 
+- **Accent colors (10%)**: Highlight colors (default blue #007bff)
 
-Runtime Theming
-Theme switching is driven by data-theme="dark" attribute on the document root, with a custom @custom-variant dark selector. The appliquerThemeCSS() function dynamically generates and applies CSS custom properties when users select brand colors through the appearance settings module.
-Dark mode inverts background/surface/text variables and adjusts SVG background filters for visibility.
+All tokens are exposed as CSS variables (`--color-dominant-*`, `--color-secondary-*`, `--color-accent-*`) that can be dynamically updated at runtime via JavaScript.
 
-Component Styling Conventions
-Primitive pattern: Components use CVA variants for consistent styling with base classes and variant maps.
-Token consumption: Components reference CSS variables directly via var(--color-dominante) or Tailwind arbitrary value syntax bg-[var(--color-dominante)].
-Responsive patterns: Heavy use of clamp() within Tailwind classes for fluid sizing, avoiding media query duplication.
-Accessibility: Global focus styles via :focus-visible, semantic color roles (success/warning/danger/info), and Radix primitives ensure consistent accessibility.
+**Dynamic Theming System:**
+A Zustand store (`theme.store.ts`) manages theme state with persistence to localStorage. The system supports:
+- **Runtime color switching** - users can change the dominant color, automatically generating secondary/accent palettes
+- **Dark/light mode** - controlled via `data-theme` attribute on document root
+- **Auto mode** - respects system preferences
+- **Backend synchronization** - themes persist to backend configuration API
+- **Dynamic favicon generation** - updates browser icon based on selected color
 
-Key Files
-frontend/src/styles/globals.css - Central token definitions, breakpoints, dark mode, base styles
-frontend/src/lib/theme-utils.ts - Color generation algorithms and runtime theme application
-frontend/src/lib/cn.ts - Class merging utility
-frontend/src/components/ui/ - Primitive component library with CVA-based styling
-frontend/package.json - Dependencies including Tailwind v4, Radix UI, CVA, Framer Motion
+**Responsive Strategy:**
+- **9+ breakpoints** from 100px to 2560px using Tailwind's `@theme` directive
+- **Fluid typography and spacing** using CSS `clamp()` functions for smooth scaling
+- **Mobile-first layout** with sidebar overlay pattern on small screens
+- **Touch-friendly sizing** with minimum 44px touch targets
 
-Developer Guidelines
-Use cn() for all className composition to prevent conflicts
-Reference design tokens via CSS variables, not hardcoded colors
-Prefer CVA variants over inline conditional classes
-Use clamp() for fluid typography and spacing instead of breakpoint-specific rules
-Follow the 60-30-10 color rule when adding new brand colors
-Dark mode compatibility is automatic when using CSS variable tokens
+**Component Library Pattern:**
+Custom UI components in `src/components/ui/` follow consistent patterns:
+- **CVA-based variants** for props like `variant`, `size`, `fullWidth`
+- **CSS variable usage** instead of hardcoded colors
+- **Framer Motion animations** for hover/tap interactions
+- **Accessibility-first** with proper ARIA attributes and focus management
+- **Barrel exports** for clean imports
+
+**Layout System:**
+- **PageLayout component** provides consistent app shell with collapsible sidebar
+- **Background system** with honeycomb pattern and rotating catalog backgrounds
+- **Consistent spacing** using CSS custom properties for padding, gaps, and margins
+
+**Key Conventions:**
+- Use `cn()` utility for all className composition
+- Reference colors via CSS variables (`var(--color-dominante)`) not hardcoded values
+- Follow CVA pattern for component variants
+- Use fluid clamp() values for responsive sizing
+- Maintain dark mode compatibility with `data-theme` selector
+- Keep components theme-aware through CSS custom properties rather than prop drilling

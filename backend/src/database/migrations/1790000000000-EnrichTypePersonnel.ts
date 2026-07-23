@@ -22,7 +22,7 @@ export class EnrichTypePersonnel1790000000000 implements MigrationInterface {
             { code: 'ADMINISTRATIF', nom: 'Administratif', modeRemunerationDefaut: 'MENSUEL' },
             { code: 'TECHNIQUE', nom: 'Technique', modeRemunerationDefaut: 'HORAIRE' },
             { code: 'SERVICE', nom: 'Service', modeRemunerationDefaut: 'HORAIRE' },
-            { code: 'STAGE', nom: 'Stagiaire', modeRemunerationDefaut: 'STAGE' },
+            { code: 'STAGE', nom: 'Stagiaire', modeRemunerationDefaut: 'MENSUEL' },
             { code: 'TEMPORAIRE', nom: 'Temporaire', modeRemunerationDefaut: 'HORAIRE' },
             { code: 'AUTRE', nom: 'Autre', modeRemunerationDefaut: 'MENSUEL' },
         ];

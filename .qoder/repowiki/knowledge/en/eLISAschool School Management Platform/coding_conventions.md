@@ -1,0 +1,2 @@
+- New domain modules are added symmetrically under `backend/src/modules/<name>` and `frontend/src/features/<name>`, sharing identifiers via `shared/`.
+- All user-facing documentation lives under `docs/` organised by lifecycle stage (analyses, implementations, corrections, guides, rapports, …) and is linked from root index files rather than duplicated at the top level.

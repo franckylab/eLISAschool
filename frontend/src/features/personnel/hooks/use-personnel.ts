@@ -129,7 +129,7 @@ export function usePersonnelBulletins(membreId: string) {
     return useQuery({
         queryKey: [...PERSONNEL_KEYS.all, 'bulletins', membreId],
         queryFn: async () => {
-            const response = await apiClient.get<{ items: BulletinPaie[] }>(`/api/personnel/bulletins/membres/${membreId}`);
+            const response = await apiClient.get<{ items: BulletinPaie[] }>(`/api/paie/bulletins/membres/${membreId}`);
             return response.data?.items ?? [];
         },
         enabled: !!membreId && isAuthenticated,

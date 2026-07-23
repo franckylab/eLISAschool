@@ -11,7 +11,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Layers, Tag, Briefcase, UserCheck, ArrowUpDown, Network } from 'lucide-react';
+import { Layers, Tag, Briefcase, UserCheck, ArrowUpDown, Network, DollarSign } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TabsBar, TabsContent, type Tab } from '@/components/ui';
 import { useDocumentTitle } from '@/hooks';
@@ -21,6 +21,7 @@ import { CategoriesPostePage } from './categories-poste-page';
 import { NiveauxResponsabilitePage } from './niveaux-responsabilite-page';
 import { TypesPersonnelPage } from './types-personnel-page';
 import { TypesRelationPage } from './types-relation-page';
+import { ModesRemunerationPage } from './modes-remuneration-page';
 
 export function NomenclaturesPage() {
     const { t } = useTranslation('organisation');
@@ -34,6 +35,7 @@ export function NomenclaturesPage() {
         { id: 'niveaux-responsabilite', label: t('niveauxResponsabilite'), icon: ArrowUpDown },
         { id: 'types-personnel', label: t('typesPersonnel'), icon: UserCheck },
         { id: 'types-relation', label: t('typesRelation'), icon: Network },
+        { id: 'modes-remuneration', label: t('modesRemuneration'), icon: DollarSign },
     ];
 
     return (
@@ -52,6 +54,7 @@ export function NomenclaturesPage() {
                 {tab === 'niveaux-responsabilite' && <NiveauxResponsabilitePage embedded />}
                 {tab === 'types-personnel' && <TypesPersonnelPage embedded />}
                 {tab === 'types-relation' && <TypesRelationPage embedded />}
+                {tab === 'modes-remuneration' && <ModesRemunerationPage embedded />}
             </TabsContent>
         </div>
     );

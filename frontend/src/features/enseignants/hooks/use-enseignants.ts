@@ -226,7 +226,7 @@ export function useEnseignantBulletins(enseignantId: string) {
         queryKey: ENSEIGNANTS_KEYS.bulletins(enseignantId),
         queryFn: async () => {
             const response = await apiClient.get<{ items: BulletinPaie[] }>(
-                `/api/personnel/bulletins/membres/${enseignantId}`
+                `/api/paie/bulletins/membres/${enseignantId}`
             );
             return response.data?.items ?? [];
         },

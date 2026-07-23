@@ -12,7 +12,7 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { Cotisation, TypeCotisation } from '@modules/personnel/entities/cotisation.entity';
+import { Cotisation, TypeCotisation } from '@modules/paie/entities/cotisation.entity';
 import { logger } from '@common/utils/logger.util';
 
 interface CotisationSeed {

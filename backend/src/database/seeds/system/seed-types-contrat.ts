@@ -13,7 +13,7 @@
 import { AppDataSource } from '@database/data-source';
 import { IsNull } from 'typeorm';
 import { TypeContratPersonnalise, CategorieContrat } from '@modules/personnel/entities/type-contrat.entity';
-import { ModeRemuneration } from '@modules/personnel/entities/mode-remuneration.enum';
+import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
 import { logger } from '@common/utils/logger.util';
 
 interface TypeContratSeed {

@@ -1,0 +1,1 @@
+Node.js + Express + TypeScript + TypeORM (backend) paired with React + Vite + Tailwind + TanStack Router (frontend), sharing a single `shared/` package of Zod schemas and TS types; PostgreSQL with RLS and Redis are provisioned via `docker-compose` and accessed by both layers.

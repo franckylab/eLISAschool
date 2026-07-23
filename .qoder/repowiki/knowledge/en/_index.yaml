@@ -3,7 +3,7 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-23T00:59:05Z"
+exported_at: "2026-07-23T04:12:25Z"
 modules:
     "":
         dir_name: eLISAschool Monorepo (Multi-Tenant School Management Platform)
@@ -50,6 +50,15 @@ modules:
         depends_on: []
         related_to:
             - path: scripts_tooling
+    docs:
+        dir_name: eLISAschool Project Documentation Archive
+        title: eLISAschool Project Documentation Archive
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
     documentation:
         dir_name: Project Documentation & Knowledge Base
         title: Project Documentation & Knowledge Base
@@ -70,6 +79,15 @@ modules:
         related_to:
             - path: backend
             - path: shared_package
+    scripts:
+        dir_name: eLISAschool DevOps & Maintenance Scripts
+        title: eLISAschool DevOps & Maintenance Scripts
+        scope:
+            - scripts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
     scripts_tooling:
         dir_name: DevOps & Module Deployment Scripts
         title: DevOps & Module Deployment Scripts

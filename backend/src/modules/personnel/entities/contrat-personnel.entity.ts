@@ -20,7 +20,7 @@ import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { TypeContratPersonnalise } from './type-contrat.entity';
 import { UniteOrganisationnelle, Poste, Fonction } from '@modules/organisation/entities';
-import { ModeRemuneration } from './mode-remuneration.enum';
+import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
 
 /**
  * Statut du contrat

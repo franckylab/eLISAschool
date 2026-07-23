@@ -9,7 +9,7 @@ import { AppError } from '@common/filters/error.filter';
 import { MembrePersonnel } from '../entities/personnel.entity';
 import { ContratPersonnel } from '../entities/contrat-personnel.entity';
 import { AbsencePersonnel } from '../entities/absence-personnel.entity';
-import { BulletinPaie } from '../entities/bulletin-paie.entity';
+import { BulletinPaie } from '@modules/paie/entities/bulletin-paie.entity';
 import { EvaluationEnseignant } from '../entities/evaluation-enseignant.entity';
 import { ProgressionProgramme } from '../entities/progression-programme.entity';
 

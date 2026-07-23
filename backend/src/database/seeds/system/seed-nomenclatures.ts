@@ -4,6 +4,7 @@ import { NiveauOrganisation } from '@modules/organisation/entities/niveau-organi
 import { NiveauResponsabilite } from '@modules/organisation/entities/niveau-responsabilite.entity';
 import { UsageUnite } from '@modules/organisation/entities/usage-unite.entity';
 import { TypeRelationHierarchique } from '@modules/organisation/entities/type-relation-hierarchique.entity';
+import { ModeRemunerationEntity } from '@modules/organisation/entities/mode-remuneration.entity';
 import { logger } from '@common/utils/logger.util';
 
 async function upsertAll<T extends { id: string }>(
@@ -32,6 +33,7 @@ export async function seedNomenclatures(): Promise<{
     niveauxResponsabilite: Map<string, string>;
     usagesUnite: Map<string, string>;
     typesRelation: Map<string, string>;
+    modesRemuneration: Map<string, string>;
 }> {
     logger.info('📋 Seed des nomenclatures organisation (globales)...');
 
@@ -95,6 +97,16 @@ export async function seedNomenclatures(): Promise<{
     ], 'code');
     logger.info(`   Types relation: ${typesRelation.size}`);
 
+    // 6. Modes de rémunération
+    const modeRemRepo = AppDataSource.getRepository(ModeRemunerationEntity);
+    const modesRemuneration = await upsertAll(modeRemRepo, [
+        { code: 'MENSUEL', label: 'Mensuel', description: 'Salaire fixe mensuel', estSysteme: true },
+        { code: 'HORAIRE', label: 'Horaire', description: 'Rémunération à l\'heure', estSysteme: true },
+        { code: 'MIXTE', label: 'Mixte', description: 'Fixe + heures supplémentaires', estSysteme: true },
+        { code: 'HEBDOMADAIRE', label: 'Hebdomadaire', description: 'Rémunération hebdomadaire lissée sur l\'année', estSysteme: true },
+    ], 'code');
+    logger.info(`   Modes rémunération: ${modesRemuneration.size}`);
+
     logger.info('✅ Nomenclatures globales seedées');
-    return { categoriesPoste, niveauxOrganisation, niveauxResponsabilite, usagesUnite, typesRelation };
+    return { categoriesPoste, niveauxOrganisation, niveauxResponsabilite, usagesUnite, typesRelation, modesRemuneration };
 }

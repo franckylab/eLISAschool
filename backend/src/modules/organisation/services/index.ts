@@ -17,6 +17,7 @@ export * from './categorie-poste.service';
 export * from './niveau-responsabilite.service';
 export * from './template-organisation.service';
 export * from './type-relation.service';
+export * from './mode-remuneration.service';
 
 // Services spécialisés
 export * from './generation.service';

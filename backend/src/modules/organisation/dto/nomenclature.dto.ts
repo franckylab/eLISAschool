@@ -147,4 +147,28 @@ export const queryTypesRelationHierarchiqueSchema = z.object({
 export type CreateTypeRelationHierarchiqueDto = z.infer<typeof createTypeRelationHierarchiqueSchema>;
 export type UpdateTypeRelationHierarchiqueDto = z.infer<typeof updateTypeRelationHierarchiqueSchema>;
 
+// ==================== Mode Rémunération ====================
+
+export const createModeRemunerationSchema = z.object({
+    code: z.string().min(2).max(50),
+    label: z.string().min(2).max(100),
+    description: z.string().optional(),
+    etablissementId: z.string().uuid().optional(),
+    estSysteme: z.boolean().default(false),
+});
+
+export const updateModeRemunerationSchema = createModeRemunerationSchema.partial().omit({
+    code: true,
+    estSysteme: true,
+});
+
+export const queryModesRemunerationSchema = z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    search: z.string().optional(),
+});
+
+export type CreateModeRemunerationDto = z.infer<typeof createModeRemunerationSchema>;
+export type UpdateModeRemunerationDto = z.infer<typeof updateModeRemunerationSchema>;
+
 

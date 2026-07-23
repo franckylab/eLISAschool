@@ -12,7 +12,7 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { TypeRetenue, TypeRetenueFrequence } from '@modules/personnel/entities/type-retenue.entity';
+import { TypeRetenue, TypeRetenueFrequence } from '@modules/paie/entities/type-retenue.entity';
 import { logger } from '@common/utils/logger.util';
 
 interface TypeRetenueSeed {

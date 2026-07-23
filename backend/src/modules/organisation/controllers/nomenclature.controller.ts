@@ -6,6 +6,7 @@ import {
     niveauResponsabiliteService,
     templateOrganisationService,
     typeRelationHierarchiqueService,
+    modeRemunerationService,
     generationService,
 } from '../services';
 import {
@@ -26,6 +27,8 @@ import {
     queryTemplatesOrganisationSchema,
     createTypeRelationHierarchiqueSchema,
     updateTypeRelationHierarchiqueSchema,
+    createModeRemunerationSchema,
+    updateModeRemunerationSchema,
     genererOrganisationSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
@@ -365,6 +368,60 @@ router.delete('/types-relation/:id', authMiddleware, requirePermission('organisa
     try {
         await typeRelationHierarchiqueService.delete(req.params.id);
         res.json({ success: true, message: 'Type de relation supprimé' });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// MODES DE RÉMUNÉRATION
+// ==================================
+
+router.get('/modes-remuneration', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const search = req.query.search as string | undefined;
+
+        if (req.query.page || req.query.limit) {
+            const { data, total } = await modeRemunerationService.findAllPaginated(
+                page, limit, req.utilisateur?.etablissementId, search
+            );
+            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
+        } else {
+            const data = await modeRemunerationService.findAll(req.utilisateur?.etablissementId);
+            res.json({ success: true, data });
+        }
+    } catch (error) { next(error); }
+});
+
+router.post('/modes-remuneration', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createModeRemunerationSchema, req.body);
+        dto.etablissementId = req.utilisateur?.etablissementId;
+        const created = await modeRemunerationService.create(dto);
+        res.status(201).json({ success: true, data: created });
+    } catch (error) { next(error); }
+});
+
+router.get('/modes-remuneration/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await modeRemunerationService.findById(req.params.id);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.patch('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(updateModeRemunerationSchema, req.body);
+        delete dto.etablissementId;
+        const updated = await modeRemunerationService.update(req.params.id, dto);
+        res.json({ success: true, data: updated });
+    } catch (error) { next(error); }
+});
+
+router.delete('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await modeRemunerationService.delete(req.params.id);
+        res.json({ success: true, message: 'Mode de rémunération supprimé' });
     } catch (error) { next(error); }
 });
 

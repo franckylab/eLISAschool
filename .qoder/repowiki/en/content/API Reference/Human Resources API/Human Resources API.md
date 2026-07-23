@@ -17,6 +17,13 @@
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated Personnel Administration section to reflect consolidation of personnel type services
+- Removed references to standalone personnel type endpoints that no longer exist
+- Updated architecture diagrams to show consolidated service approach
+- Revised dependency analysis to reflect integrated functionality
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -30,7 +37,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive API documentation for eLISAschool’s human resources module, covering:
+This document provides comprehensive API documentation for eLISAschool's human resources module, covering:
 - Personnel administration: staff recruitment workflow, employee profiles, contract management, and document handling
 - Payroll processing: salary structure configuration, tax calculations, payment processing, and payroll reports
 - Attendance and leave management: time tracking systems, leave request workflows, absence monitoring, and attendance reports
@@ -38,10 +45,12 @@ This document provides comprehensive API documentation for eLISAschool’s human
 
 The goal is to enable developers and integrators to implement HR workflows confidently using the available endpoints, data models, and relationships.
 
+**Updated** The personnel type management has been consolidated into core services, eliminating separate type-specific endpoints in favor of a unified approach.
+
 ## Project Structure
 The HR functionality is implemented across dedicated backend modules and database migrations:
 - Recruitment module: manages candidate lifecycle and hiring workflow
-- Personnel module: core employee profiles, contracts, and documents
+- Personnel module: core employee profiles, contracts, documents, and consolidated type management
 - Payroll (paie) module: salary structures, taxes, payments, and reporting
 - Personnel tracking (suivi-personnel): attendance, leave requests, absences, and performance evaluations
 
@@ -49,7 +58,7 @@ The HR functionality is implemented across dedicated backend modules and databas
 graph TB
 subgraph "HR Modules"
 R["Recruitment Module"]
-P["Personnel Module"]
+P["Personnel Module (Consolidated Types)"]
 PA["Payroll (Paie) Module"]
 S["Personnel Tracking Module"]
 end
@@ -95,12 +104,14 @@ S --> M4
 
 ## Core Components
 - Recruitment API: Candidate registration, application submission, interview scheduling, offer generation, and onboarding triggers
-- Personnel API: Employee profile CRUD, contract lifecycle, document storage and retrieval, and status transitions
+- Personnel API: Employee profile CRUD, contract lifecycle, document storage and retrieval, status transitions, and **consolidated type management**
 - Payroll API: Salary structure setup, tax rules, pay slips, payment runs, and payroll reports
 - Attendance & Leave API: Time entries, leave requests/approvals, absence tracking, and attendance summaries
 - Performance Evaluation API: Metrics definition, review cycles, career progression records, and training logs
 
 These components are backed by well-defined database schemas created via migrations and exposed through REST endpoints within each module.
+
+**Updated** Personnel type management is now integrated directly into the core personnel service rather than being handled by separate type-specific endpoints.
 
 **Section sources**
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
@@ -109,7 +120,7 @@ These components are backed by well-defined database schemas created via migrati
 - [backend/src/modules/suivi-personnel/index.ts](file://backend/src/modules/suivi-personnel/index.ts)
 
 ## Architecture Overview
-The HR system follows a modular architecture where each domain has its own controller/service layer and database schema. Endpoints are registered per module and share common authentication, authorization, and multi-tenant scoping.
+The HR system follows a modular architecture where each domain has its own controller/service layer and database schema. Endpoints are registered per module and share common authentication, authorization, and multi-tenant scoping. Personnel type operations are now handled within the consolidated personnel service.
 
 ```mermaid
 sequenceDiagram
@@ -117,7 +128,7 @@ participant Client as "Client App"
 participant Auth as "Auth Middleware"
 participant Router as "Route Registry"
 participant Recruit as "Recruitment Controller"
-participant Person as "Personnel Controller"
+participant Person as "Personnel Controller (Consolidated)"
 participant Paie as "Payroll Controller"
 participant Track as "Tracking Controller"
 participant DB as "Database"
@@ -128,9 +139,13 @@ Recruit->>DB : "Insert candidate record"
 DB-->>Recruit : "Candidate ID"
 Recruit-->>Client : "201 Created"
 Client->>Person : "POST /personnel/employees"
-Person->>DB : "Create employee profile"
+Person->>DB : "Create employee profile with type"
 DB-->>Person : "Employee ID"
 Person-->>Client : "201 Created"
+Client->>Person : "PUT /personnel/employees/ : id/types"
+Person->>DB : "Update consolidated types"
+DB-->>Person : "Success"
+Person-->>Client : "200 OK"
 Client->>Paie : "POST /paie/payrolls/run"
 Paie->>DB : "Compute salaries and taxes"
 DB-->>Paie : "Payroll results"
@@ -181,13 +196,14 @@ OnboardEmployee --> End(["End Recruitment"])
 - [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
 
 ### Personnel Administration API
-Handles employee profiles, contracts, and document management. Includes creation, updates, status transitions, and attachment handling.
+Handles employee profiles, contracts, documents, and **consolidated type management**. Includes creation, updates, status transitions, attachment handling, and integrated personnel type operations.
 
 Key concepts:
 - Employee profile with personal and professional details
 - Contract types and lifecycle states
 - Document attachments linked to employees or contracts
 - Status transitions (active, inactive, terminated)
+- **Consolidated personnel type management within core service**
 
 ```mermaid
 classDiagram
@@ -196,6 +212,7 @@ class Employee {
 +personalInfo
 +professionalInfo
 +status
++types
 }
 class Contract {
 +id
@@ -211,10 +228,20 @@ class Document {
 +entityId
 +metadata
 }
+class PersonnelTypes {
++id
++employeeId
++typeCategory
++value
++effectiveDate
+}
 Employee "1" -- "0..*" Contract : "has"
 Employee "1" -- "0..*" Document : "owns"
+Employee "1" -- "0..*" PersonnelTypes : "manages"
 Contract "1" -- "0..*" Document : "references"
 ```
+
+**Updated** Personnel type management is now integrated directly into the employee entity and core service, eliminating the need for separate type-specific endpoints.
 
 **Diagram sources**
 - [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
@@ -354,12 +381,12 @@ Employee "1" -- "0..*" Training : "completes"
 - [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
 
 ## Dependency Analysis
-HR modules depend on shared constants and database schemas defined in migrations. The following diagram shows module-to-migration dependencies and shared constants usage.
+HR modules depend on shared constants and database schemas defined in migrations. The following diagram shows module-to-migration dependencies and shared constants usage. Personnel type functionality is now consolidated within the core personnel service.
 
 ```mermaid
 graph TB
 R["Recruitment Module"] --> MR["045-module-recrutement.sql"]
-P["Personnel Module"] --> MP1["016-module-personnel-rh-phase1.sql"]
+P["Personnel Module (Consolidated)"] --> MP1["016-module-personnel-rh-phase1.sql"]
 P --> MP2["017-module-personnel-rh-phase2.sql"]
 P --> MP3["018-module-personnel-rh-phase3.sql"]
 P --> MP4["019-module-personnel-rh-phase4.sql"]
@@ -369,6 +396,8 @@ S["Tracking Module"] --> MS["031-suivi-personnel.sql"]
 C["Shared Constants"] --> P
 C --> S
 ```
+
+**Updated** Personnel type management is now part of the consolidated personnel service rather than a separate module.
 
 **Diagram sources**
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
@@ -406,8 +435,7 @@ C --> S
 - Index frequently queried fields (e.g., employeeId, date ranges) as defined in migrations
 - Cache static configurations like salary structures and tax rules when appropriate
 - Monitor database query performance and adjust indexes based on workload patterns
-
-[No sources needed since this section provides general guidance]
+- **Consolidated personnel type operations reduce API call overhead and improve response times**
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -416,21 +444,25 @@ Common issues and resolutions:
 - Data integrity errors: Validate foreign key constraints between recruitment, personnel, and payroll entities
 - Payroll computation errors: Check salary structure and tax rule configurations; validate input data completeness
 - Attendance anomalies: Verify clock-in/out timestamps and timezone settings; reconcile leave approvals with absence records
+- **Personnel type errors**: Since type management is now consolidated, ensure all type operations use the main personnel endpoints rather than deprecated type-specific routes
+
+**Updated** Personnel type-related issues should now be resolved through the consolidated personnel service endpoints.
 
 **Section sources**
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
 ## Conclusion
-The eLISAschool HR API provides a robust set of endpoints to manage recruitment, personnel, payroll, attendance, leave, and performance evaluation. By leveraging the documented workflows, data models, and relationships, integrators can build reliable HR processes aligned with institutional needs.
+The eLISAschool HR API provides a robust set of endpoints to manage recruitment, personnel, payroll, attendance, leave, and performance evaluation. The recent consolidation of personnel type management into the core service improves efficiency and simplifies the API surface. By leveraging the documented workflows, data models, and relationships, integrators can build reliable HR processes aligned with institutional needs.
 
-[No sources needed since this section summarizes without analyzing specific files]
+**Updated** The consolidation of personnel type services eliminates redundant endpoints and provides a more streamlined approach to managing employee classifications and attributes.
 
 ## Appendices
 
 ### Example HR Workflows
 - Recruitment to Onboarding: Create candidate → submit application → schedule interview → issue offer → accept offer → onboard employee
+- **Consolidated Personnel Management**: Create employee → set basic info → assign types → manage contracts → handle documents
 - Payroll Run: Configure salary structure → compute taxes → generate pay slips → execute payments → produce report
 - Attendance and Leave: Clock in/out → submit leave request → approve/reject → record absence → generate attendance report
 - Performance Review: Define metrics → initiate review cycle → evaluate scores → update career progression → log training
 
-[No sources needed since this section provides conceptual examples]
+**Updated** Personnel management workflow now includes consolidated type assignment within the main employee management process.

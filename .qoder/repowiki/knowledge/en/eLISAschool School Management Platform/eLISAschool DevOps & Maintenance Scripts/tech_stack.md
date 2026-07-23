@@ -1,0 +1,1 @@
+Bash ≥ 4.0 as the primary runtime; TypeScript seeds executed via `ts-node -r tsconfig-paths/register`; Node/npm for service lifecycle; PostgreSQL client (`psql`, `pg_dump`, `createdb`) against a Dockerized `elisaschool_db` container; Docker Compose for infra orchestration.

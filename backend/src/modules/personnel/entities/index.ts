@@ -1,4 +1,3 @@
-export * from './mode-remuneration.enum';
 export * from './personnel.entity';
 export * from './contrat-personnel.entity';
 export * from './type-contrat.entity';
@@ -8,10 +7,6 @@ export * from './indisponibilite-enseignant.entity';
 export * from './absence-personnel.entity';
 export * from './evaluation-enseignant.entity';
 export * from './progression-programme.entity';
-export * from './bulletin-paie.entity';
-export * from './element-salaire.entity';
-export * from './cotisation.entity';
-export * from './type-prime.entity';
-export * from './type-retenue.entity';
 export * from './membre-fonction.entity';
 export { TypePersonnel } from '@modules/organisation/entities/type-personnel.entity';
+export { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
