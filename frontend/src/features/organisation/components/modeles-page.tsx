@@ -68,11 +68,11 @@ function NodeEditor({ noeud, onChange, onRemove, depth = 0 }: {
                     <Briefcase className="h-3.5 w-3.5" />
                 </button>
                 <button type="button" onClick={() => set({ enfants: [...(noeud.enfants || []), noeudVide(depth + 1)] })}
-                    className="p-1.5 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={t('ajouterSousUnite')}>
+                    className="p-1.5 rounded text-primary hover:bg-primary/10" title={t('ajouterSousUnite')}>
                     <Plus className="h-3.5 w-3.5" />
                 </button>
                 {onRemove && (
-                    <button type="button" onClick={onRemove} className="p-1.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title={t('supprimer')}>
+                    <button type="button" onClick={onRemove} className="p-1.5 rounded text-destructive hover:bg-destructive/10" title={t('supprimer')}>
                         <Trash2 className="h-3.5 w-3.5" />
                     </button>
                 )}
@@ -86,7 +86,7 @@ function NodeEditor({ noeud, onChange, onRemove, depth = 0 }: {
                                 placeholder={t('intitulePoste')} className="flex-1 px-2 py-0.5 text-xs border border-border rounded bg-background text-foreground" />
                             <input type="number" min={1} value={p.nombrePostes} onChange={(e) => { const postes = [...(noeud.postes || [])]; postes[i] = { ...p, nombrePostes: parseInt(e.target.value) || 1 }; set({ postes }); }}
                                 className="w-14 px-2 py-0.5 text-xs border border-border rounded bg-background text-foreground" />
-                            <button type="button" onClick={() => { const postes = [...(noeud.postes || [])]; postes.splice(i, 1); set({ postes }); }} className="p-1 text-red-500 hover:text-red-700"><X className="h-3 w-3" /></button>
+                            <button type="button" onClick={() => { const postes = [...(noeud.postes || [])]; postes.splice(i, 1); set({ postes }); }} className="p-1 text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
                         </div>
                     ))}
                 </div>
@@ -216,12 +216,12 @@ export function ModelesPage() {
                             )}
                             {canWrite && !tpl.estSysteme && (
                                 <>
-                                    <button onClick={() => openEdit(tpl)} className="p-1.5 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit className="h-4 w-4" /></button>
-                                    <button onClick={() => setDeleteId(tpl.id)} className="p-1.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
+                                    <button onClick={() => openEdit(tpl)} className="p-1.5 rounded text-primary hover:bg-primary/10"><Edit className="h-4 w-4" /></button>
+                                    <button onClick={() => setDeleteId(tpl.id)} className="p-1.5 rounded text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
                                 </>
                             )}
                             {canWrite && tpl.estSysteme && (
-                                <button onClick={() => openEdit({ ...tpl, id: '', estSysteme: false, nom: `${tpl.nom} (copie)` } as any)}
+                                <button onClick={() => openEdit({ ...tpl, id: '', estSysteme: false, nom: `${tpl.nom} (copie)` } as TemplateOrganisation)}
                                     className="p-1.5 rounded text-muted-foreground hover:bg-accent" title={t('dupliquer')}><Copy className="h-4 w-4" /></button>
                             )}
                         </div>

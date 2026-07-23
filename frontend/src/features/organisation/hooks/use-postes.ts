@@ -13,8 +13,9 @@ import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import type { ModifierPosteDto } from '../types/organisation.types';
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useCreerPoste() {
@@ -29,7 +30,7 @@ export function useCreerPoste() {
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste créé');
         },
-        onError: (e: any) => handleError(e, 'Erreur création poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur création poste'),
     });
 }
 
@@ -45,7 +46,7 @@ export function useModifierPoste() {
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste modifié');
         },
-        onError: (e: any) => handleError(e, 'Erreur modification poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification poste'),
     });
 }
 
@@ -61,6 +62,6 @@ export function useSupprimerPoste() {
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste supprimé');
         },
-        onError: (e: any) => handleError(e, 'Erreur suppression poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression poste'),
     });
 }

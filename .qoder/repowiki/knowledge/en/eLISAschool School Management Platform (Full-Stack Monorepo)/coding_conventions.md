@@ -1,6 +1,0 @@
-- Each domain module under `src/modules/<name>/` follows a consistent structure with `controllers/`, `services/`, `entities/`, `dto/`, and optional `middlewares/` subdirectories, exported from a single index file.
-- Route registration in `app.ts` chains middlewares in a fixed order: `authMiddleware` → `filterByEtablissement()` → optional `requireModuleActive('<module>')` → controller, ensuring multi-tenant isolation and feature gating.
-- Database changes are versioned as incrementally numbered SQL migration files (e.g., `056-suppression-cycle-scolaire.sql`) alongside TypeORM `.ts` migrations, never ad-hoc ALTER statements.
-- API responses follow a uniform `{ success, data?, message?, error? }` envelope shape, with errors wrapped in `AppError` carrying HTTP status, code, and message fields.
-- Configuration is loaded through `@config/env.config` with environment-specific values, and sensitive settings (JWT secret, DB credentials) come from `.env` files rather than hard-coded defaults.
-- Frontend features are organized under `src/features/<feature>/` with colocated hooks, components, and store slices, and state mutations go through Zustand stores rather than prop drilling.

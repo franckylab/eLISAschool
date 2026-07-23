@@ -65,7 +65,7 @@ export function UnitesPage() {
     const [deleteUniteId, setDeleteUniteId] = useState<string | null>(null);
     const [parentId, setParentId] = useState<string | undefined>(undefined);
 
-    const flattenTree = (nodes: any[]): any[] => nodes.flatMap((n) => [n, ...flattenTree(n.enfants || [])]);
+    const flattenTree = (nodes: UniteOrganisationnelle[]): UniteOrganisationnelle[] => nodes.flatMap((n) => [n, ...flattenTree((n as any).enfants || [])]);
     const treeNodes = useMemo(
         () => (arborescence && Array.isArray(arborescence) ? buildTreeNodes(flattenTree(arborescence)) : buildTreeNodes(unites || [])),
         [arborescence, unites],
@@ -88,25 +88,25 @@ export function UnitesPage() {
                         <Building2 className="h-5 w-5 text-[var(--color-dominant-600)]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{u.nom}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">{u.code}</p>
+                        <p className="font-medium text-foreground truncate">{u.nom}</p>
+                        <p className="text-xs text-muted-foreground font-mono truncate">{u.code}</p>
                     </div>
                 </div>
             ),
         },
-        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-gray-600 dark:text-gray-400">{u.usageUnite?.label || '—'}</span> },
-        { key: 'parent', header: t('parent'), render: (u) => <span className="text-sm text-gray-600 dark:text-gray-400">{u.parent?.nom || '—'}</span> },
+        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-secondary">{u.usageUnite?.label || '—'}</span> },
+        { key: 'parent', header: t('parent'), render: (u) => <span className="text-sm text-secondary">{u.parent?.nom || '—'}</span> },
         {
             key: 'responsable', header: t('responsable'),
             render: (u) => u.responsableNom
-                ? <span className="text-sm text-gray-600 dark:text-gray-400 inline-flex items-center gap-1"><User className="h-3.5 w-3.5" />{u.responsableNom}</span>
-                : <span className="text-sm text-gray-400">—</span>,
+                ? <span className="text-sm text-secondary inline-flex items-center gap-1"><User className="h-3.5 w-3.5" />{u.responsableNom}</span>
+                : <span className="text-sm text-muted-foreground">—</span>,
         },
         {
             key: 'localisation', header: t('localisation'),
             render: (u) => u.localisation
-                ? <span className="text-sm text-gray-600 dark:text-gray-400 inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{u.localisation}</span>
-                : <span className="text-sm text-gray-400">—</span>,
+                ? <span className="text-sm text-secondary inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{u.localisation}</span>
+                : <span className="text-sm text-muted-foreground">—</span>,
         },
         {
             key: 'statut', header: t('statut'), className: 'text-center',
@@ -158,7 +158,7 @@ export function UnitesPage() {
                         emptyMessage={t('aucuneUniteMsg')}
                     />
                 ) : (
-                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <div className="bg-card rounded-lg border border-border p-6">
                         <TreeView
                             nodes={treeNodes}
                             loading={isLoading}
@@ -167,9 +167,9 @@ export function UnitesPage() {
                             onDragEnd={handleDragEnd}
                             renderActions={canWrite ? (node) => (
                                 <div className="flex items-center gap-1">
-                                    <button onClick={() => handleCreateChild(node.id)} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded" title={t('ajouterSousUnite')}><Plus className="h-3.5 w-3.5" /></button>
-                                    <button onClick={() => setEditUnite(node.data)} className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded" title={t('modifier')}><Edit className="h-3.5 w-3.5" /></button>
-                                    {canDelete && <button onClick={() => setDeleteUniteId(node.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded" title={t('supprimer')}><Trash2 className="h-3.5 w-3.5" /></button>}
+                                    <button onClick={() => handleCreateChild(node.id)} className="p-1 text-muted-foreground hover:text-primary rounded" title={t('ajouterSousUnite')}><Plus className="h-3.5 w-3.5" /></button>
+                                    <button onClick={() => setEditUnite(node.data)} className="p-1 text-muted-foreground hover:text-success rounded" title={t('modifier')}><Edit className="h-3.5 w-3.5" /></button>
+                                    {canDelete && <button onClick={() => setDeleteUniteId(node.id)} className="p-1 text-muted-foreground hover:text-destructive rounded" title={t('supprimer')}><Trash2 className="h-3.5 w-3.5" /></button>}
                                 </div>
                             ) : undefined}
                         />

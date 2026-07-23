@@ -251,7 +251,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                             {onDelete && (
                                 <button
                                     onClick={() => onDelete(unite)}
-                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-red-50"
+                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-destructive/10"
                                     style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-attention-600, #d97706)' }}
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />

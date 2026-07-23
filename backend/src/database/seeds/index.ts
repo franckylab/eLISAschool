@@ -16,6 +16,7 @@ export { seedClassesParDefaut } from './system/seed-classes-par-defaut';
 export { seedMatieres } from './system/seed-matieres';
 export { seedMatieresNiveaux } from './system/seed-matieres-niveaux';
 export { seedTypePersonnel } from './system/seed-type-personnel';
+export { seedNomenclatures } from './system/seed-nomenclatures';
 export { seedOrganisation } from './system/seed-organisation';
 export { seedTemplatesOrganisation } from './system/seed-templates';
 export { seedSuperAdmin } from './system/seed-super-admin';
@@ -30,6 +31,7 @@ export { seedElevesExemples } from './demo/seed-eleves-exemples';
 export { seedGroupesEtablissements } from './demo/seed-groupes-etablissements';
 export { seedChefEtablissementSecondaire } from './demo/seed-chef-etablissement-secondaire';
 export { seedHeuresCoursEtEdt } from './demo/seed-heures-cours-edt';
+export { seedOrganisationDemo } from './demo/seed-organisation-demo';
 
 // Orchestration
 export { runSystemSeeds } from './initial.seed';

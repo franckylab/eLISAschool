@@ -3,14 +3,29 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-22T23:31:01Z"
+exported_at: "2026-07-23T00:59:05Z"
 modules:
     "":
-        dir_name: eLISAschool School Management Platform (Full-Stack Monorepo)
-        title: eLISAschool School Management Platform (Full-Stack Monorepo)
-        scope: []
+        dir_name: eLISAschool Monorepo (Multi-Tenant School Management Platform)
+        title: eLISAschool Monorepo (Multi-Tenant School Management Platform)
+        scope:
+            - README.md
+            - QUICKSTART.md
+            - INDEX.md
+            - AGENTS.md
+            - CHEATSHEET.md
+            - .gitignore
+            - .dockerignore
+            - package.json
+            - package-lock.json
         source_files: []
-        children: []
+        children:
+            - backend
+            - docker_infra
+            - documentation
+            - frontend
+            - scripts_tooling
+            - shared_package
         depends_on: []
         related_to: []
     backend:
@@ -21,7 +36,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: frontend
+            - path: scripts_tooling
+            - path: shared_package
     docker_infra:
         dir_name: Docker Infrastructure & Deployment Orchestration
         title: Docker Infrastructure & Deployment Orchestration
@@ -30,7 +48,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: scripts_tooling
     documentation:
         dir_name: Project Documentation & Knowledge Base
         title: Project Documentation & Knowledge Base
@@ -48,7 +67,9 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: shared_package
     scripts_tooling:
         dir_name: DevOps & Module Deployment Scripts
         title: DevOps & Module Deployment Scripts
@@ -57,7 +78,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: docker_infra
+            - path: shared_package
     shared_package:
         dir_name: Shared Domain & Runtime Contracts (eLISAschool)
         title: Shared Domain & Runtime Contracts (eLISAschool)
@@ -66,4 +90,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: backend
+            - path: frontend
+            - path: scripts_tooling

@@ -6,8 +6,9 @@ import type { UsageUnite } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'usages-unite'] as const };
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useUsagesUnite() {
@@ -24,7 +25,7 @@ export function useCreerUsageUnite() {
     return useMutation({
         mutationFn: async (dto: Partial<UsageUnite>) => { const res = await apiClient.post<UsageUnite>('/api/organisation/usages-unite', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Usage créé'); },
-        onError: (e: any) => handleError(e, 'Erreur création usage'),
+        onError: (e: unknown) => handleError(e, 'Erreur création usage'),
     });
 }
 
@@ -33,7 +34,7 @@ export function useModifierUsageUnite() {
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<UsageUnite>) => { const res = await apiClient.patch<UsageUnite>(`/api/organisation/usages-unite/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Usage modifié'); },
-        onError: (e: any) => handleError(e, 'Erreur modification usage'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification usage'),
     });
 }
 
@@ -42,6 +43,6 @@ export function useSupprimerUsageUnite() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/usages-unite/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Usage supprimé'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression usage'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression usage'),
     });
 }

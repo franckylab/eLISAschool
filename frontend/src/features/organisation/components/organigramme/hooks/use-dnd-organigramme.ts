@@ -126,7 +126,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
             } else {
                 toast.success('Unité déplacée');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Erreur déplacement:', error);
         }
     }, [modifierUnite, qc]);

@@ -38,7 +38,7 @@ export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
             formComponent={({ initialData, onSuccess, onCancel }) => (
                 <NomenclatureFormModal
                     open
-                    onOpenChange={(v) => { if (!v) onCancel(); }}
+                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
                     initialData={initialData}
                     titleKey={initialData ? 'modifierTypePersonnel' : 'nouveauTypePersonnel'}
                     icon={UserCheck}
@@ -48,7 +48,7 @@ export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
                         { key: 'description', labelKey: 'description', required: false },
                         { key: 'modeRemunerationDefaut', labelKey: 'modeRemuneration', required: false },
                     ]}
-                    onSave={async (values) => {
+                    onSave={async (values: Record<string, unknown>) => {
                         if (initialData) {
                             await useModifierTypePersonnel().mutateAsync({ id: initialData.id, ...values });
                         } else {

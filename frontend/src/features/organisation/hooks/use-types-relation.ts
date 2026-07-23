@@ -13,8 +13,9 @@ export interface TypeRelationHierarchique {
 
 const KEYS = { all: ['organisation', 'types-relation'] as const };
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useTypesRelation() {
@@ -37,7 +38,7 @@ export function useCreerTypeRelation() {
             return res.data!;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Type de relation créé'); },
-        onError: (e: any) => handleError(e, 'Erreur création type de relation'),
+        onError: (e: unknown) => handleError(e, 'Erreur création type de relation'),
     });
 }
 
@@ -49,7 +50,7 @@ export function useModifierTypeRelation() {
             return res.data!;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Type de relation modifié'); },
-        onError: (e: any) => handleError(e, 'Erreur modification type de relation'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification type de relation'),
     });
 }
 
@@ -58,6 +59,6 @@ export function useSupprimerTypeRelation() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/types-relation/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Type de relation supprimé'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression type de relation'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression type de relation'),
     });
 }

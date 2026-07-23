@@ -11,7 +11,7 @@ import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useOrganigramme, useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
 import { usePostes } from '@/features/postes/hooks/use-postes';
 import { HierarchieFormModal } from './hierarchie-form-modal';
-import type { HierarchiePersonnel } from '../types/organisation.types';
+import type { HierarchiePersonnel, OrganigrammeNode, OrganigrammePoste } from '../types/organisation.types';
 
 export function TabHierarchie() {
     const { t } = useTranslation('organisation');
@@ -29,21 +29,21 @@ export function TabHierarchie() {
 
     const organigrammeNodes = organigramme || [];
 
-    const compterOccupes = (postes: any[]): number =>
-        postes.reduce((acc, p) => acc + (p.occupantsCount || 0), 0);
+    const compterOccupes = (postes: OrganigrammePoste[]): number =>
+        postes.reduce((acc: number, p: OrganigrammePoste) => acc + (p.occupantsCount || 0), 0);
 
-    const buildOrganigramTree = (nodes: any[]): TreeNode<any>[] => {
-        return nodes.map((n) => {
-            const postesLocaux = n.postes || [];
+    const buildOrganigramTree = (nodes: OrganigrammeNode[]): TreeNode<OrganigrammeNode>[] => {
+        return nodes.map((n: OrganigrammeNode) => {
+            const postesLocaux: OrganigrammePoste[] = n.postes || [];
             const occupes = compterOccupes(postesLocaux);
-            const total = postesLocaux.reduce((acc: number, p: any) => acc + (p.nombrePostes || 1), 0);
+            const total = postesLocaux.reduce((acc: number, p: OrganigrammePoste) => acc + (p.nombrePostes || 1), 0);
             const capacite = total > 0 ? ` [${occupes}/${total}]` : '';
             return {
                 id: n.id,
                 label: `${n.nom} ${n.code ? `(${n.code})` : ''}${capacite}`,
                 data: n,
-                icon: <Users className="h-4 w-4 text-gray-500" />,
-                children: n.enfants ? buildOrganigramTree(n.enfants) : [],
+                icon: <Users className="h-4 w-4 text-muted-foreground" />,
+                children: n.enfants ? buildOrganigramTree(n.enfants as OrganigrammeNode[]) : [],
             };
         });
     };
@@ -54,8 +54,8 @@ export function TabHierarchie() {
             header: t('colSubordonne'),
             render: (h) => (
                 <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.personnelId || '-'}</span>
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{h.personnelId || '-'}</span>
                 </div>
             ),
         },
@@ -64,7 +64,7 @@ export function TabHierarchie() {
             header: '',
             render: () => (
                 <div className="flex items-center justify-center">
-                    <ArrowUp className="h-4 w-4 text-blue-500" />
+                    <ArrowUp className="h-4 w-4 text-primary" />
                 </div>
             ),
         },
@@ -73,8 +73,8 @@ export function TabHierarchie() {
             header: t('colSuperieur'),
             render: (h) => (
                 <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{h.superieurId || '-'}</span>
+                    <User className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">{h.superieurId || '-'}</span>
                 </div>
             ),
         },
@@ -92,11 +92,11 @@ export function TabHierarchie() {
             header: t('colPoste'),
             render: (h) => (
                 h.posteId ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-sm text-secondary">
                         <Briefcase className="h-3.5 w-3.5" />
                         {h.posteId}
                     </div>
-                ) : <span className="text-sm text-gray-400">-</span>
+                ) : <span className="text-sm text-muted-foreground">-</span>
             ),
         },
         {
@@ -133,9 +133,9 @@ export function TabHierarchie() {
                 variant="gradient"
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                        <Users className="h-5 w-5 text-blue-500" />
+                <div className="bg-card rounded-lg border border-border p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
                         {t('organigramme')}
                     </h3>
                     <TreeView
@@ -145,10 +145,10 @@ export function TabHierarchie() {
                     />
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="bg-card rounded-lg border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            <ArrowDown className="h-5 w-5 text-blue-500" />
+                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <ArrowDown className="h-5 w-5 text-primary" />
                             {t('relationsHierarchiques')}
                         </h3>
                         {hasPermission('organisation:hierarchie:write') && (

@@ -78,7 +78,7 @@ export interface CreerHierarchieDto {
     typeRelationId?: string;
     posteId?: string;
     uniteOrganisationnelleId?: string;
-    etablissementId?: string;
+    etablissementId?: string | null;
     dateDebut?: string;
     dateFin?: string;
     commentaire?: string;
@@ -124,7 +124,18 @@ export interface OrganigrammePoste {
 
 export interface ModifierPosteDto {
     uniteOrganisationnelleId?: string;
-    [key: string]: any;
+    intitule?: string;
+    code?: string;
+    description?: string;
+    nombrePostes?: number;
+    statut?: string;
+    fonctionId?: string;
+    categoriePosteId?: string;
+    categoriePosteCode?: string;
+    niveauResponsabiliteId?: string;
+    missions?: string[];
+    competencesRequises?: string[];
+    estSuppleant?: boolean;
 }
 
 // ==================== STATISTIQUES ====================
@@ -196,11 +207,39 @@ export interface NiveauResponsabilite {
     updatedAt: string;
 }
 
+export interface TemplateStructure {
+    nom?: string;
+    unites?: Array<{
+        ref: string;
+        nom: string;
+        code: string;
+        typeCode?: string;
+        usageCode?: string;
+        niveauOrg?: number;
+        parentRef?: string;
+        ordre?: number;
+        postes?: Array<{
+            ref: string;
+            intitule: string;
+            code: string;
+            nombrePostes?: number;
+            categorieCode?: string;
+            niveauRespCode?: string;
+            missions?: string[];
+            competences?: string[];
+        }>;
+    }>;
+    hierarchies?: Array<{
+        subordonneRef: string;
+        superieurRef: string;
+    }>;
+}
+
 export interface TemplateOrganisation {
     id: string;
     nom: string;
     description?: string;
-    structure: any;
+    structure: TemplateStructure;
     etablissementId?: string | null;
     estSysteme: boolean;
     actif: boolean;
@@ -210,7 +249,7 @@ export interface TemplateOrganisation {
 
 export interface GenererOrganisationDto {
     templateId?: string;
-    structure?: any;
+    structure?: TemplateStructure;
     etablissementId: string;
     options?: {
         prefixeCode?: string;
@@ -226,5 +265,5 @@ export interface ResultatGeneration {
     unites: Array<{ ref: string; id: string; nom: string; code: string }>;
     postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
     hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
-    arborescence: any;
+    arborescence: Record<string, unknown>;
 }

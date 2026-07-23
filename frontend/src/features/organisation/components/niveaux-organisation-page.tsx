@@ -33,7 +33,7 @@ export function NiveauxOrganisationPage({ embedded }: { embedded?: boolean } = {
             formComponent={({ initialData, onSuccess, onCancel }) => (
                 <NomenclatureFormModal
                     open
-                    onOpenChange={(v) => { if (!v) onCancel(); }}
+                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
                     initialData={initialData}
                     titleKey={initialData ? 'modifierNiveau' : 'nouveauNiveau'}
                     icon={Layers}
@@ -42,7 +42,7 @@ export function NiveauxOrganisationPage({ embedded }: { embedded?: boolean } = {
                         { key: 'niveau', labelKey: 'niveau', type: 'number', span: 'col-span-1' },
                         { key: 'description', labelKey: 'description', required: false },
                     ]}
-                    onSave={async (values) => {
+                    onSave={async (values: Record<string, unknown>) => {
                         if (initialData) {
                             await useModifierNiveauOrganisation().mutateAsync({ id: initialData.id, ...values });
                         } else {

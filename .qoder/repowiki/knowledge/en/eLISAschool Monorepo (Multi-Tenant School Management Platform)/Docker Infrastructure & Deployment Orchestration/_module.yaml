@@ -5,4 +5,5 @@ scope:
     - docker/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: scripts_tooling

@@ -163,7 +163,7 @@
     "liberer": "Libérer",
     "supprimerPoste": "Supprimer le poste",
     "confirmerSuppressionPoste": "Êtes-vous sûr de vouloir supprimer ce poste ? Cette action est irréversible.",
-    "confirmerSuppressionUnite": "Êtes-vous sûr de vouloir supprimer cette unité ? Les unités enfants seront détachées.",
+    "confirmerSuppressionUnite": "Êtes-vous sûr de vouloir supprimer cette unité ? Les unités enfants et les postes associés seront également supprimés.",
     "libererPosteTitre": "Libérer le poste",
     "supprimerRelation": "Supprimer la relation",
     "confirmerSuppressionRelation": "Êtes-vous sûr de vouloir supprimer cette relation hiérarchique ?",

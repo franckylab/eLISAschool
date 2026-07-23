@@ -6,8 +6,9 @@ import type { TemplateOrganisation, GenererOrganisationDto, ResultatGeneration }
 
 const KEYS = { all: ['organisation', 'templates'] as const };
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useTemplatesOrganisation() {
@@ -24,7 +25,7 @@ export function useCreerTemplateOrganisation() {
     return useMutation({
         mutationFn: async (dto: Partial<TemplateOrganisation>) => { const res = await apiClient.post<TemplateOrganisation>('/api/organisation/templates', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template créé'); },
-        onError: (e: any) => handleError(e, 'Erreur création template'),
+        onError: (e: unknown) => handleError(e, 'Erreur création template'),
     });
 }
 
@@ -33,7 +34,7 @@ export function useModifierTemplateOrganisation() {
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<TemplateOrganisation>) => { const res = await apiClient.patch<TemplateOrganisation>(`/api/organisation/templates/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template modifié'); },
-        onError: (e: any) => handleError(e, 'Erreur modification template'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification template'),
     });
 }
 
@@ -42,7 +43,7 @@ export function useSupprimerTemplateOrganisation() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/templates/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template supprimé'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression template'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression template'),
     });
 }
 
@@ -55,6 +56,6 @@ export function useGenererOrganisation() {
             qc.invalidateQueries({ queryKey: ['organisation', 'hierarchie'] });
             toast.success('Organisation générée avec succès');
         },
-        onError: (e: any) => handleError(e, 'Erreur génération organisation'),
+        onError: (e: unknown) => handleError(e, 'Erreur génération organisation'),
     });
 }

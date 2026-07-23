@@ -5,4 +5,7 @@ scope:
     - backend/
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: frontend
+    - path: scripts_tooling
+    - path: shared_package

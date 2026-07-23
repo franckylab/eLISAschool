@@ -209,7 +209,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phNomUnite')}
                         />
-                        {errors.nom && <p className="text-xs mt-1 text-red-500">{errors.nom.message}</p>}
+                        {errors.nom && <p className="text-xs mt-1 text-destructive">{errors.nom.message}</p>}
                     </div>
                     <div>
                         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
@@ -221,7 +221,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phCode')}
                         />
-                        {errors.code && <p className="text-xs mt-1 text-red-500">{errors.code.message}</p>}
+                        {errors.code && <p className="text-xs mt-1 text-destructive">{errors.code.message}</p>}
                     </div>
                 </div>
 
@@ -323,7 +323,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder="email@etablissement.cm"
                         />
-                        {errors.email && <p className="text-xs mt-1 text-red-500">{errors.email.message}</p>}
+                        {errors.email && <p className="text-xs mt-1 text-destructive">{errors.email.message}</p>}
                     </div>
                 </div>
             </form>

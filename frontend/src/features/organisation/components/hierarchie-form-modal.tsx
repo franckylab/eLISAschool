@@ -66,7 +66,7 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
         },
     });
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: Record<string, string | undefined>) => {
         setApiError(null);
         try {
             if (!subordonne || !superieur) return;
@@ -82,12 +82,13 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
                 await creer.mutateAsync(payload);
             }
             onOpenChange(false);
-        } catch (err: any) {
-            setApiError(err?.response?.data?.message || err?.message || t('erreurGenerique'));
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { message?: string } }; message?: string };
+            setApiError(e?.response?.data?.message || e?.message || t('erreurGenerique'));
         }
     };
 
-    const typesRelation = (typesRelationData || []).map((tr: any) => ({
+    const typesRelation = (typesRelationData || []).map((tr: { id: string; label: string }) => ({
         value: tr.id,
         label: tr.label,
     }));

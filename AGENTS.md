@@ -6,47 +6,54 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ## Décisions Architecturales (grill-me session)
 ### Modèle de données
 - **NiveauResponsabilite** : table unique `niveaux_responsabilite` (enum supprimé). Poste.niveauResponsabilite calculé via relation.
-- **TypePoste** : enum supprimé, `CategoriePoste` table unique. Poste.type calculé via `categoriePosteCode`.
-- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés. Statut RH d'une personne via `MembrePersonnel.typePersonnelId` (1 par personne). Pilote la paie (`modeRemunerationDefaut`). **Aucun** `roleIdParDefaut`/`permissionsDefaut` (RBAC uniquement via `utilisateur_etablissements`).
-- **Fonction** : nomenclature **multi-tenant** hiérarchique (primes, carrière). Porte le type statutaire via `Fonction.typePersonnelId` (FK optionnelle → type global). Une personne exerce N fonctions dans le temps via `MembreFonction`.
-- **Type attendu d'un Poste** : **dérivé** via `poste.fonction.typePersonnel` — jamais stocké sur `Poste` ni sur `HierarchiePersonnel`. Compatibilité contrat : seul un ENSEIGNANT occupe un poste dont la fonction est de type ENSEIGNANT.
-- **JSONB** : `missions`, `competencesRequises`, `metadata` normalisés en tables séparées (Mission, CompetenceRequise, UniteMetadata).
+- **CategoriePoste** : table unique `categories_poste` (remplace l'enum `TypePoste`). Poste.type calculé via `categoriePosteId` FK.
+- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés. Route API UNIQUE : `/api/personnel/types`. Pas de doublon dans `/api/organisation/types-personnel`.
+- **Fonction** : nomenclature **multi-tenant** hiérarchique (`etablissementId` requis). Porte le type statutaire via `Fonction.typePersonnelId` (FK optionnelle → type global). Seedée par établissement dans `seed-organisation.ts`.
+- **Type attendu d'un Poste** : **dérivé** via `poste.fonction.typePersonnel` — jamais stocké sur `Poste` ni sur `HierarchiePersonnel`.
+- **NiveauOrganisation** : table `niveaux_organisation` (niveau 0-3). Lié via `UniteOrganisationnelle.niveauOrganisationId`.
+- **UsageUnite** : table `usages_unite`. Lié via `UniteOrganisationnelle.usageUniteId`.
+- **TypeRelationHierarchique** : table `types_relation_hierarchique`. Lié via `HierarchiePersonnel.typeRelationId`.
+- **JSONB** : `missions`, `competencesRequises` conservés sur Poste (pas de tables séparées).
 - **TemplateOrganisation** : JSONB conservé (lecture seule, 22 templates seedés).
 - **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL sur UniteOrganisationnelle et Fonction.
 - **Protection seeds** : `assertNotSystem()` guard backend, UI bouton Supprimer caché + Dupliquer.
 
 ### Modules backend
-- **Postes** : fusionné dans `organisation/` (contrôleur, service, DTO). Route `/api/organisation/postes`.
-- **Fonctions** : sous-domaine d'organisation (entité dans organisation, service/contrôleur propres).
-- **TypePersonnel** : entité dans `organisation/entities/`, toujours accessible depuis `personnel/` via barrel.
-- **Routes API REST** : pur pluriel (`/api/organisation/niveaux-organisation`, `/api/organisations/usages-unite`, etc.). Actions spéciales via query params ou sous-ressources.
+- **Postes** : fusionné dans `organisation/`. Route `/api/organisation/postes`.
+- **Fonctions** : entité dans `organisation/entities/`, service/contrôleur propres.
+- **TypePersonnel** : entité dans `organisation/entities/`, accessible depuis `personnel/` via barrel. Routes dans `personnel/controllers/` uniquement.
+- **Nomenclatures** : 6 CRUD dans `nomenclature.controller.ts` : niveaux-organisation, usages-unite, categories-poste, niveaux-responsabilite, types-unite, types-relation. Pas de types-personnel ici.
+- **Seeds** : `seed-nomenclatures.ts` (global, 5 tables), `seed-organisation.ts` (par établissement : fonctions + unités + postes + hiérarchies avec résolution FK complète).
+- **Routes API REST** : pur pluriel. Actions via query params ou sous-ressources.
+- **Fonction.etablissementId** requis (NOT NULL). Les fonctions système sont seedées par établissement.
 
 ### Frontend
-- **Navigation** : routes dédiées pour chaque entité (pattern *utilisateurs*). **Aucune sticky sub-nav intra-page** — la navigation latérale entre sections d'organisation passe par le **sous-menu sidebar** « Organisation » (doublon supprimé).
-- **Layout** : `_auth.organisation.tsx` → layout minimal (Breadcrumbs + motion + ErrorBoundary + `<Outlet/>`). Chaque page utilise `PageHeader variant="gradient"` + `DataTable` (liste) ou `TabsBar`/`TabsContent` (détail & config).
-- **Modèles & Génération** : section dédiée `/organisation/modeles` (galerie de modèles + builder visuel par nœuds + panneau de génération), séparée des nomenclatures.
-- **Pagination** : enveloppe `meta` unifiée (`PaginatedResult<T>` via `@common/utils/pagination.util`) sur les listes unites/postes/fonctions ; hooks front consomment `{ items, meta }`.
-- **Composants** : `NomenclatureCrudPage<T>` générique pour les nomenclatures. `TreeView<T>` générique avec DnD pour arbres. `OrgViewToggle` (Table ⇄ Arbre).
-- **Hooks** : unitaires par entité (`use-unites.ts`, `use-niveaux-organisation.ts`, etc.), éclatement de `use-organisation.ts`.
-- **i18n** : 100% flat, helper `useEnumOptions` pour listes déroulantes.
-- **Permissions** : sous-permissions CRUD + section (`organisation:unites:read`, `organisation:postes:write`, etc.). ⚠️ Ne plus utiliser `organisation:edit` (grossier).
-- **ConfirmDialog** : pour suppressions. `ConfirmationModal`/`useConfirmation` conservé pour wizards. Documéntés.
+- **Navigation** : routes dédiées pour chaque entité. Sidebar « Organisation » : Vue d'ensemble, Unités, Postes, Fonctions, Hiérarchie, Nomenclatures (6 tabs), Modèles.
+- **Layout** : `_auth.organisation.tsx` → Breadcrumbs + motion + ErrorBoundary + `<Outlet/>`.
+- **Composants** : `NomenclatureCrudPage<T>` générique (6 nomenclatures). Plus de `TemplatesPage` (supprimé, remplacé par `ModelesPage`).
+- **Hooks** : unitaires, tous exportés depuis le barrel `features/organisation/index.ts` (use-postes, use-hierarchies, etc.).
+- **i18n** : 100% flat. `NomenclatureCrudPage` utilise `t('colActions')` (pas `t('actions')`).
+- **Permissions** : sous-permissions CRUD + section. Ne plus utiliser `organisation:edit`.
 - **Icônes** : Building2(module), LayoutDashboard(dashboard), GitBranch(unités), Briefcase(postes), Workflow(fonctions), Network(hiérarchie), Layers(niveaux-org), Tags(usages), FolderTree(catégories), ArrowUpDown(niveaux-resp), FileText(modèles), UserCheck(types-personnel), Sparkles(génération).
 
 ### Sidebar
 - "Organisation" expandable sous "Organisation Académique" : Vue d'ensemble, Unités, Postes, Fonctions, Hiérarchie, Nomenclatures.
 - Icône mère : Building2.
 
+### Seeds ordre (initial.seed.ts)
+10. seedTypePersonnel() — global, 8 types
+10b. seedTypesContrat() — global
+10c. seedNomenclatures() — global : categories_poste, niveaux_organisation, niveaux_responsabilite, usages_unite, types_relation_hierarchique
+11. seedOrganisation(etablissementId) — par établissement : 22 fonctions arborescentes + 20 unités + 22 postes + 13 hiérarchies (FK résolues)
+12. seedTemplatesOrganisation() — global, 22 templates
+
+### Seeds demo ordre (run-demo-seeds.ts)
+4. seedPersonnelDemo() — 10 membres + contrats
+7. seedOrganisationDemo() — affectations postes + MembreFonction pour les 10 membres
+8. seedBulletinsPaieDemo()
+
 ### Tests
 - Phase dédiée après stabilisation du refactoring.
-
-## Work State
-### Completed
-- **10 modules uniformisés** (session précédente) : filières, spécialités, examens-nationaux, diplomes-eleves, competences, periodes, notes, emploi-du-temps, configuration, parametres.
-- **Grill-me session** (courante) : 25 décisions architecturales validées pour le refactoring organisation.
-
-### Active
-— Aucune tâche active (planification terminée, en attente d'implémentation).
 
 ## Fond alvéole principal (nid d'abeille)
 - **SVG statique généré** : `public/fonds-catalogue/nid-alveole-dark.svg` + `nid-alveole-light.svg` — 570 hexagones chacun, 1920×1080, `preserveAspectRatio="xMidYMid slice"`
@@ -62,7 +69,40 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 — (none)
 
 ## Next Move
-Implémenter les décisions du grill-me : backend (modèle, entités, routes, guard) puis frontend (routes, composants génériques, i18n, sidebar).
+- Tests unitaires dédiés (phase séparée)
+- Sous-permissions CRUD+section granulaires
+- Routes détail pour unités (comme postes/fonctions ont `$id`)
+- Installer `reactflow` + `dagre` et résoudre les erreurs TS associées
+- Réviser `base-form-modal.tsx` colorMap pour couleurs non-`primary` (indigo, purple, green, orange, amber) — utiliser les CSS vars au lieu de classes hardcodées
+
+## Travail effectué — Session 2026-07-23
+### Frontend — Nettoyage `any` types
+- **`organisation.types.ts`** : `ModifierPosteDto` index signature `[key: string]: any` supprimée, champs explicites ajoutés (`intitule`, `code`, `description`, `nombrePostes`, `statut`, `fonctionId`, `categoriePosteId`, `categoriePosteCode`, `niveauResponsabiliteId`, `missions`, `competencesRequises`, `estSuppleant`). `TemplateOrganisation.structure` → `TemplateStructure` typé. `GenererOrganisationDto.structure` → `TemplateStructure`. `ResultatGeneration.arborescence` → `Record<string, unknown>`.
+- **10 hooks** (`use-usages-unite`, `use-niveaux-responsabilite`, `use-categories-poste`, `use-templates`, `use-types-relation`, `use-unites`, `use-hierarchies`, `use-niveaux-organisation`, `use-postes`) : `handleError(e: any, msg)` → `handleError(e: unknown, msg)` + cast interne. `onError: (e: any)` → `(e: unknown)`. `queryParams: any` → `Record<string, string>`.
+- **6 composants nomenclature-page** (`categories-poste-page`, `niveaux-organisation-page`, `niveaux-responsabilite-page`, `types-relation-page`, `usages-unite-page`, `types-personnel-page`) : paramètres implicites `v`, `values` typés.
+- **`nomenclature-form-modal.tsx`** : générique `T extends Record<string, any>` supprimé. `Props` non-générique avec `initialData?: unknown`. `catch (e: any)` → `(e: unknown)`. Callbacks `.map(f =>` → `.map((f: FieldConfig) =>`.
+- **`nomenclature-crud-page.tsx`** : `error?: any` → `Error | null`. `useCreate` variables type → `Partial<T>`.
+- **`hierarchie-form-modal.tsx`** : `data: any` → `Record<string, string | undefined>`. `err: any` → `err: unknown`. `tr: any` → `{ id: string; label: string }`. `CreerHierarchieDto.etablissementId` → `string | null | undefined`.
+- **`generation-wizard.tsx`** : `noeud: any` → `ApercuNode` interface. `(e: any)` → `(e: ApercuNode)`. Import `OrganigrammeNode` inutilisé supprimé. `noeud.count` / `noeud.postes` null-safety.
+- **`unites-page.tsx`** : `flattenTree(nodes: any[]): any[]` → `UniteOrganisationnelle[]`.
+- **`unite-detail-page.tsx`** : `(unite as any)` → cast local. `(e: any)` → `OrganigrammeNode`. `(p: any)` → `OrganigrammePoste`.
+- **`tab-hierarchie.tsx`** : `postes: any[]` → `OrganigrammePoste[]`. `TreeNode<any>[]` → `TreeNode<OrganigrammeNode>[]`. `p: any` → `p: OrganigrammePoste`.
+- **`OrganigrammeFlowView.tsx`** : paramètres implicites `_event`, `node` → `unknown`, `Record<string, unknown>`.
+- **`personnel-search-field.tsx`** : `Record<string, any>` → `Record<string, string | number>`.
+
+### Frontend — Couleurs hardcodées → CSS vars
+- **`base-form-modal.tsx`** : colorMap retiré `bg-*`, `text-*` → `wrapper` + `iconColor`. `text-gray-900` → `text-foreground`. `bg-red-50` → `bg-destructive/10`. `text-red-500` → `text-destructive`. `Loader2 text-blue-500` → `text-primary`.
+- **`personnel-search-field.tsx`** : toutes les couleurs `text-gray-*`, `bg-gray-*`, `bg-blue-*`, `text-blue-*`, `text-red-*`, `border-gray-*`, `border-red-*` → CSS vars (`text-secondary`, `bg-muted`, `bg-primary/10`, `text-primary`, `text-destructive`, `border-border`, `border-destructive`, `bg-card`, `text-muted-foreground`, `bg-accent`, `hover:bg-accent`).
+- **`tab-hierarchie.tsx`** : `text-gray-400` → `text-muted-foreground`. `text-blue-500` → `text-primary`. `text-gray-900` → `text-foreground`. `text-gray-600` → `text-secondary`. `bg-white dark:bg-gray-900 border-gray-200` → `bg-card border-border`.
+- **`unites-page.tsx`** : `text-gray-900/500/600/400` → `text-foreground`/`text-muted-foreground`/`text-secondary`. `bg-white dark:bg-gray-900 border-gray-200` → `bg-card border-border`. `hover:text-blue/green/red-600` → `hover:text-primary/success/destructive`.
+- **`modeles-page.tsx`** : `text-blue-600 hover:bg-blue-50` → `text-primary hover:bg-primary/10`. `text-red-600/500 hover:bg-red-50` → `text-destructive hover:bg-destructive/10`.
+- **`nomenclature-form-modal.tsx`** : `text-red-500` → `text-destructive`.
+- **`generation-wizard.tsx`** : `text-blue/purple/green-600` → `text-primary`/`text-secondary-foreground`/`text-success`.
+- **`UniteFormModal.tsx`, `PosteFormModal.tsx`, `UniteDetailDrawer.tsx`** : `text-red-500` → `text-destructive`. `hover:bg-red-50` → `hover:bg-destructive/10`.
+
+### Frontend — Fusion organigramme
+- `OrganigrammeVertical.tsx` et `OrganigrammeHorizontal.tsx` supprimés, remplacés par `OrganigrammeFlowView.tsx` avec prop `direction: 'TB' | 'LR'`.
+- `OrganigrammePage.tsx` mis à jour pour utiliser le composant fusionné.
 
 ## Notes de conception
 - `FilterPanel` retiré quand redondant avec les filtres DataTable intégrés (`enableCollapsibleFilters` + `filtres` prop).

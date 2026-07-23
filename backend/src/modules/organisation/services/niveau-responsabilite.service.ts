@@ -27,9 +27,13 @@ class NiveauResponsabiliteService {
     }
 
     async findAll(etablissementId?: string): Promise<NiveauResponsabilite[]> {
-        const where: any = {};
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.find({ where, order: { niveau: 'DESC' } });
+        const qb = this.repo.createQueryBuilder('n');
+        if (etablissementId) {
+            qb.where('(n.etablissementId = :eid OR n.estSysteme = TRUE)', { eid: etablissementId });
+        } else {
+            qb.where('(n.etablissementId IS NULL OR n.estSysteme = TRUE)');
+        }
+        return qb.orderBy('n.niveau', 'DESC').getMany();
     }
 
     async findAllPaginated(page: number, limit: number, etablissementId?: string, search?: string, niveau?: number) {

@@ -1,14 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Organigramme Vertical (Top-Down)
- * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
- *
- * Vue React Flow avec layout vertical (top-to-bottom).
- * Minimap, zoom controls, DnD, responsive.
- */
-
 import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
     ReactFlowProvider,
@@ -30,8 +19,9 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { Minimize2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface OrganigrammeVerticalProps {
+interface OrganigrammeFlowViewProps {
     data: OrganigrammeNode[];
+    direction?: 'TB' | 'LR';
     onNodeSelect?: (unite: OrganigrammeNode) => void;
     isEditMode?: boolean;
     onEditUnite?: (unite: OrganigrammeNode) => void;
@@ -42,7 +32,15 @@ interface OrganigrammeVerticalProps {
 const nodeTypes: NodeTypes = { uniteNode: UniteNode };
 const edgeTypes: EdgeTypes = { hierarchieEdge: HierarchieEdge };
 
-function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite, onAddChildUnite, onDeleteUnite }: OrganigrammeVerticalProps) {
+function FlowViewInner({
+    data,
+    direction = 'TB',
+    onNodeSelect,
+    isEditMode,
+    onEditUnite,
+    onAddChildUnite,
+    onDeleteUnite,
+}: OrganigrammeFlowViewProps) {
     const isDesktop = useMediaQuery('(min-width: 1280px)');
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { fitView, zoomIn, zoomOut } = useReactFlow();
@@ -51,7 +49,7 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
 
     const { nodes, edges, selectNode, expandAll, collapseAll, handleSearch } = useOrganigrammeFlow({
         data,
-        direction: 'TB',
+        direction,
         defaultCollapseDepth: 2,
         isEditMode,
         dndVisualState: { draggedNodeId: dndState.draggedNodeId, dropTargetId: dndState.dropTargetId, isValid: dndState.isValid, isDragging: dndState.isDragging, isConnecting: dndState.isConnecting },
@@ -61,7 +59,6 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
     const [posteDropTarget, setPosteDropTarget] = useState<string | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    // Synchroniser l'état plein écran
     useEffect(() => {
         const handler = () => setIsFullscreen(!!document.fullscreenElement);
         document.addEventListener('fullscreenchange', handler);
@@ -88,13 +85,10 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
         [nodes, handleNodeSelect, isEditMode, onEditUnite, onAddChildUnite, onDeleteUnite]
     );
 
-    // Pas besoin de nodesWithDnd séparé — le feedback visuel est géré par useOrganigrammeFlow via dndVisualState
-
     const onInit = useCallback(() => {
         setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 100);
     }, [fitView]);
 
-    // Écouter les commandes de la toolbar
     useEffect(() => {
         const handler = (e: Event) => {
             const { command } = (e as CustomEvent).detail;
@@ -123,7 +117,6 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
         return () => window.removeEventListener('organigramme:toolbar-command', handler);
     }, [zoomIn, zoomOut, fitView, expandAll, collapseAll, handleSearch]);
 
-    // Gestion du drop de poste depuis le drawer
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -147,7 +140,6 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
             ref={reactFlowWrapper}
             className="w-full"
             style={{ height: 'calc(100vh - 320px)', minHeight: '400px' }}
-            id="organigramme-flow-container"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
         >
@@ -159,12 +151,12 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
                 onInit={onInit}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
-                onNodeMouseEnter={(_, node) => {
-                    onNodeMouseEnter(_, node);
-                    setPosteDropTarget(node.id);
+                onNodeMouseEnter={(_event: unknown, node: Record<string, unknown>) => {
+                    onNodeMouseEnter(_event as React.MouseEvent, node as never);
+                    setPosteDropTarget((node.id as string) ?? null);
                 }}
-                onNodeMouseLeave={(_, node) => {
-                    onNodeMouseLeave(_, node);
+                onNodeMouseLeave={(_event: unknown, node: Record<string, unknown>) => {
+                    onNodeMouseLeave(_event as React.MouseEvent, node as never);
                     setPosteDropTarget(null);
                 }}
                 onConnect={onConnect}
@@ -200,7 +192,6 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
                     showInteractive={false}
                     className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg !shadow-sm"
                 />
-                {/* Bouton quitter plein écran — visible uniquement en fullscreen */}
                 {isFullscreen && (
                     <button
                         onClick={() => document.exitFullscreen().catch(() => {})}
@@ -221,10 +212,10 @@ function OrganigrammeVerticalInner({ data, onNodeSelect, isEditMode, onEditUnite
     );
 }
 
-export function OrganigrammeVertical(props: OrganigrammeVerticalProps) {
+export function OrganigrammeFlowView(props: OrganigrammeFlowViewProps) {
     return (
         <ReactFlowProvider>
-            <OrganigrammeVerticalInner {...props} />
+            <FlowViewInner {...props} />
         </ReactFlowProvider>
     );
 }

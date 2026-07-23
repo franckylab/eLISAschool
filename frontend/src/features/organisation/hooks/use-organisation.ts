@@ -25,4 +25,4 @@ export {
 } from './use-hierarchies';
 
 // Postes
-export { useModifierPoste } from './use-postes';
+export { useCreerPoste, useModifierPoste, useSupprimerPoste } from './use-postes';

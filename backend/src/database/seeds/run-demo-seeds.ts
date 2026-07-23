@@ -19,6 +19,7 @@ import { seedChefEtablissementSecondaire } from './demo/seed-chef-etablissement-
 import { seedHeuresCoursEtEdt } from './demo/seed-heures-cours-edt';
 import { seedPersonnelDemo } from './demo/seed-personnel-demo';
 import { seedBulletinsPaieDemo } from './demo/seed-bulletins-paie-demo';
+import { seedOrganisationDemo } from './demo/seed-organisation-demo';
 import { logger } from '@common/utils/logger.util';
 
 const envPath = path.resolve(__dirname, '../../../../.env');
@@ -102,7 +103,10 @@ async function main(): Promise<void> {
         // 6. Heures cours et EDT (demo)
         await seedHeuresCoursEtEdt(etablissementPrincipalId);
 
-        // 7. Bulletins de paie avec éléments salaire (cotisations, primes, retenues)
+        // 7. Organisation démo (affectations + fonctions)
+        await seedOrganisationDemo(etablissementPrincipalId);
+
+        // 8. Bulletins de paie avec éléments salaire (cotisations, primes, retenues)
         await seedBulletinsPaieDemo(etablissementPrincipalId);
 
         logger.info('✅ Seeds démonstration exécutés avec succès');

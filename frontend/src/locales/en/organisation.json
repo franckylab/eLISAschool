@@ -163,7 +163,7 @@
     "liberer": "Release",
     "supprimerPoste": "Delete position",
     "confirmerSuppressionPoste": "Are you sure you want to delete this position?",
-    "confirmerSuppressionUnite": "Are you sure you want to delete this unit? Child units will be detached.",
+    "confirmerSuppressionUnite": "Are you sure you want to delete this unit? Child units and associated positions will also be deleted.",
     "libererPosteTitre": "Release position",
     "supprimerRelation": "Delete relation",
     "confirmerSuppressionRelation": "Are you sure you want to delete this hierarchy relation?",

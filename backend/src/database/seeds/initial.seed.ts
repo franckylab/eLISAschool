@@ -18,6 +18,7 @@ import { seedMatieres } from './system/seed-matieres';
 import { seedMatieresNiveaux } from './system/seed-matieres-niveaux';
 import { seedTypePersonnel } from './system/seed-type-personnel';
 import { seedTypesContrat } from './system/seed-types-contrat';
+import { seedNomenclatures } from './system/seed-nomenclatures';
 import { seedOrganisation } from './system/seed-organisation';
 import { seedTemplatesOrganisation } from './system/seed-templates';
 import { seedSuperAdmin } from './system/seed-super-admin';
@@ -83,9 +84,12 @@ export async function runSystemSeeds(): Promise<{
     // 10b. Types de contrat
     await seedTypesContrat();
 
-    // 11. Structure organisationnelle
-    await seedOrganisation(etablissementPrincipalId, 'Lycée Bilingue eLISAschool');
-    await seedOrganisation(etablissementSecondaireId, 'Collège Privé Les Palmiers');
+    // 10c. Nomenclatures organisation (global — 6 tables)
+    const nomenclatures = await seedNomenclatures();
+
+    // 11. Structure organisationnelle (unités, postes, hiérarchies, fonctions)
+    await seedOrganisation(etablissementPrincipalId, 'Lycée Bilingue eLISAschool', nomenclatures);
+    await seedOrganisation(etablissementSecondaireId, 'Collège Privé Les Palmiers', nomenclatures);
 
     // 12. Templates d'organisation
     const templatesCount = await seedTemplatesOrganisation();

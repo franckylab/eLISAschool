@@ -25,8 +25,9 @@ const ORGA_KEYS = {
     },
 };
 
-function handleError(error: any, message: string) {
-    toast.error(error?.response?.data?.error?.message || message);
+function handleError(error: unknown, message: string) {
+    const err = error as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || message);
 }
 
 // ─── HIÉRARCHIE ───
@@ -36,7 +37,7 @@ export function useHierarchies(params?: { personnelId?: string }) {
     return useQuery({
         queryKey: ORGA_KEYS.hierarchie.liste(params),
         queryFn: async () => {
-            const queryParams: any = {};
+            const queryParams: Record<string, string> = {};
             if (params?.personnelId) queryParams.personnelId = params.personnelId;
             const response = await apiClient.get<HierarchiePersonnel[]>('/api/organisation/hierarchie', queryParams);
             return response.data || [];
@@ -80,7 +81,7 @@ export function useCreerHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             toast.success('Relation hiérarchique créée');
         },
-        onError: (e: any) => handleError(e, 'Erreur création hiérarchie'),
+        onError: (e: unknown) => handleError(e, 'Erreur création hiérarchie'),
     });
 }
 
@@ -95,7 +96,7 @@ export function useModifierHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             toast.success('Relation hiérarchique modifiée');
         },
-        onError: (e: any) => handleError(e, 'Erreur modification hiérarchie'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification hiérarchie'),
     });
 }
 
@@ -110,7 +111,7 @@ export function useSupprimerHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             toast.success('Relation hiérarchique supprimée');
         },
-        onError: (e: any) => handleError(e, 'Erreur suppression hiérarchie'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression hiérarchie'),
     });
 }
 

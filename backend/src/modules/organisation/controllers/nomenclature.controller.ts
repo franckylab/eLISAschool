@@ -6,7 +6,6 @@ import {
     niveauResponsabiliteService,
     templateOrganisationService,
     typeRelationHierarchiqueService,
-    typePersonnelService,
     generationService,
 } from '../services';
 import {
@@ -27,8 +26,6 @@ import {
     queryTemplatesOrganisationSchema,
     createTypeRelationHierarchiqueSchema,
     updateTypeRelationHierarchiqueSchema,
-    createTypePersonnelSchema,
-    updateTypePersonnelSchema,
     genererOrganisationSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
@@ -368,56 +365,6 @@ router.delete('/types-relation/:id', authMiddleware, requirePermission('organisa
     try {
         await typeRelationHierarchiqueService.delete(req.params.id);
         res.json({ success: true, message: 'Type de relation supprimé' });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// TYPES DE PERSONNEL
-// ==================================
-
-router.get('/types-personnel', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await typePersonnelService.findAllPaginated(page, limit, search);
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
-        } else {
-            const data = await typePersonnelService.findAll();
-            res.json({ success: true, data });
-        }
-    } catch (error) { next(error); }
-});
-
-router.post('/types-personnel', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(createTypePersonnelSchema, req.body);
-        const created = await typePersonnelService.create(dto);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
-router.get('/types-personnel/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const data = await typePersonnelService.findById(req.params.id);
-        res.json({ success: true, data });
-    } catch (error) { next(error); }
-});
-
-router.patch('/types-personnel/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(updateTypePersonnelSchema, req.body);
-        const updated = await typePersonnelService.update(req.params.id, dto);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-router.delete('/types-personnel/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await typePersonnelService.delete(req.params.id);
-        res.json({ success: true, message: 'Type de personnel supprimé' });
     } catch (error) { next(error); }
 });
 

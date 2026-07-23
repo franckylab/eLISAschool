@@ -27,17 +27,24 @@ interface Props {
     presetTemplateId?: string;
 }
 
-function StructureApercu({ noeud, depth = 0 }: { noeud: any; depth?: number }) {
+interface ApercuNode {
+    nom: string;
+    count?: number;
+    postes?: Array<{ length: number }>;
+    enfants?: ApercuNode[];
+}
+
+function StructureApercu({ noeud, depth = 0 }: { noeud: ApercuNode; depth?: number }) {
     if (!noeud) return null;
     return (
         <div className="text-xs" style={{ paddingLeft: depth ? '0.75rem' : 0 }}>
             <div className="flex items-center gap-1 text-muted-foreground">
                 <ChevronRightIcon className="h-3 w-3" />
                 <span className="font-medium text-foreground">{noeud.nom || '—'}</span>
-                {noeud.count > 1 && <span>×{noeud.count}</span>}
-                {noeud.postes?.length > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes.length} poste(s)</span>}
+                {(noeud.count ?? 0) > 1 && <span>×{noeud.count}</span>}
+                {(noeud.postes?.length ?? 0) > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes!.length} poste(s)</span>}
             </div>
-            {(noeud.enfants || []).slice(0, 5).map((e: any, i: number) => <StructureApercu key={i} noeud={e} depth={depth + 1} />)}
+            {(noeud.enfants || []).slice(0, 5).map((e: ApercuNode, i: number) => <StructureApercu key={i} noeud={e} depth={depth + 1} />)}
         </div>
     );
 }
@@ -164,7 +171,7 @@ export function GenerationWizard({ open, onOpenChange, templates, presetTemplate
                         <div>
                             <p className="text-sm font-medium text-foreground mb-2">{t('structureTemplate')}</p>
                             <div className="rounded-md border border-border bg-surface-alt/40 p-3 max-h-48 overflow-auto">
-                                <StructureApercu noeud={selected?.structure} />
+                                <StructureApercu noeud={selected?.structure as unknown as ApercuNode} />
                             </div>
                         </div>
                     </div>
@@ -175,9 +182,9 @@ export function GenerationWizard({ open, onOpenChange, templates, presetTemplate
                     <div className="space-y-3">
                         <div className="flex items-center gap-2 text-[var(--color-dominant-700)]"><Check className="h-5 w-5" /><span className="font-semibold">{t('resultatGeneration')}</span></div>
                         <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-blue-600">{result.unitesCrees}</p><p className="text-xs text-muted-foreground">{t('unitesCrees')}</p></div>
-                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-purple-600">{result.postesCrees}</p><p className="text-xs text-muted-foreground">{t('postesCrees')}</p></div>
-                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-green-600">{result.hierarchiesCrees}</p><p className="text-xs text-muted-foreground">{t('hierarchiesCrees')}</p></div>
+                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-primary">{result.unitesCrees}</p><p className="text-xs text-muted-foreground">{t('unitesCrees')}</p></div>
+                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-secondary-foreground">{result.postesCrees}</p><p className="text-xs text-muted-foreground">{t('postesCrees')}</p></div>
+                            <div className="p-3 bg-background border border-border rounded"><p className="text-2xl font-bold text-success">{result.hierarchiesCrees}</p><p className="text-xs text-muted-foreground">{t('hierarchiesCrees')}</p></div>
                         </div>
                     </div>
                 )}

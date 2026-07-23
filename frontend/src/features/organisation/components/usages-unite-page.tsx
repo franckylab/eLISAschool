@@ -33,7 +33,7 @@ export function UsagesUnitePage({ embedded }: { embedded?: boolean } = {}) {
             formComponent={({ initialData, onSuccess, onCancel }) => (
                 <NomenclatureFormModal
                     open
-                    onOpenChange={(v) => { if (!v) onCancel(); }}
+                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
                     initialData={initialData}
                     titleKey={initialData ? 'modifierUsage' : 'nouvelUsage'}
                     icon={Tag}
@@ -42,7 +42,7 @@ export function UsagesUnitePage({ embedded }: { embedded?: boolean } = {}) {
                         { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
                         { key: 'description', labelKey: 'description', required: false },
                     ]}
-                    onSave={async (values) => {
+                    onSave={async (values: Record<string, unknown>) => {
                         if (initialData) {
                             await useModifierUsageUnite().mutateAsync({ id: initialData.id, ...values });
                         } else {

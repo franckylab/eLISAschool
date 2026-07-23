@@ -16,8 +16,9 @@ const ORGA_KEYS = {
     },
 };
 
-function handleError(error: any, message: string) {
-    toast.error(error?.response?.data?.error?.message || message);
+function handleError(error: unknown, message: string) {
+    const err = error as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || message);
 }
 
 // ─── UNITÉS ORGANISATIONNELLES ───
@@ -57,7 +58,7 @@ export function useCreerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             toast.success('Unité créée');
         },
-        onError: (e: any) => handleError(e, 'Erreur création unité'),
+        onError: (e: unknown) => handleError(e, 'Erreur création unité'),
     });
 }
 
@@ -73,7 +74,7 @@ export function useModifierUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.detail(vars.id) });
             toast.success('Unité modifiée');
         },
-        onError: (e: any) => handleError(e, 'Erreur modification unité'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification unité'),
     });
 }
 
@@ -88,7 +89,7 @@ export function useSupprimerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             toast.success('Unité supprimée');
         },
-        onError: (e: any) => handleError(e, 'Erreur suppression unité'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression unité'),
     });
 }
 
@@ -134,7 +135,7 @@ export function useCreerUniteAvecPostes() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             toast.success('Unité créée avec ses postes');
         },
-        onError: (e: any) => handleError(e, 'Erreur création unité'),
+        onError: (e: unknown) => handleError(e, 'Erreur création unité'),
     });
 }
 
@@ -150,6 +151,6 @@ export function useReordonnerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             toast.success('Ordre mis à jour');
         },
-        onError: (e: any) => handleError(e, 'Erreur réordonnancement'),
+        onError: (e: unknown) => handleError(e, 'Erreur réordonnancement'),
     });
 }

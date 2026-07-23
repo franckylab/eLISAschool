@@ -28,11 +28,13 @@ class NiveauOrganisationService {
     }
 
     async findAll(etablissementId?: string): Promise<NiveauOrganisation[]> {
-        const where: any = {};
+        const qb = this.repo.createQueryBuilder('n');
         if (etablissementId) {
-            where.etablissementId = etablissementId;
+            qb.where('(n.etablissementId = :eid OR n.estSysteme = TRUE)', { eid: etablissementId });
+        } else {
+            qb.where('(n.etablissementId IS NULL OR n.estSysteme = TRUE)');
         }
-        return this.repo.find({ where, order: { niveau: 'ASC' } });
+        return qb.orderBy('n.niveau', 'ASC').getMany();
     }
 
     async findAllPaginated(page: number, limit: number, etablissementId?: string, search?: string, niveau?: number) {

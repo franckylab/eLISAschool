@@ -279,32 +279,65 @@ export class OrganisationService {
         return updated;
     }
 
+    /**
+     * Supprime une unité et TOUTE sa descendance (suppression en cascade).
+     * Conforme à la modale d'impact frontend qui annonce la suppression des unités
+     * enfants et des données associées.
+     *
+     * Mécanique FK :
+     * - postes (poste.uniteOrganisationnelleId) → ON DELETE CASCADE : supprimés automatiquement
+     * - hierarchie_personnel.posteId → ON DELETE SET NULL : détaché automatiquement
+     * - hierarchie_personnel.uniteOrganisationnelleId : colonne sans FK → détachée explicitement
+     * - unites_organisationnelles.parentId → ON DELETE SET NULL : les enfants ne sont PAS
+     *   supprimés en cascade DB, d'où la suppression explicite de toute la descendance.
+     */
     async deleteUnite(id: string): Promise<void> {
         const unite = await this.findUniteById(id);
-
-        // Vérifier qu'il n'y a pas d'enfants
-        const enfants = await this.uniteRepo.find({ where: { parentId: id } });
-        if (enfants.length > 0) {
-            throw new AppError(
-                'Impossible de supprimer une unité qui a des enfants. Supprimez d\'abord les unités enfants.',
-                400,
-                'UNITE_HAS_CHILDREN'
-            );
-        }
-
-        // Vérifier qu'il n'y a pas de postes
-        const postes = await this.posteRepo.find({ where: { uniteOrganisationnelleId: id } });
-        if (postes.length > 0) {
-            throw new AppError(
-                'Impossible de supprimer une unité qui a des postes. Supprimez d\'abord les postes.',
-                400,
-                'UNITE_HAS_POSTES'
-            );
-        }
-
         const etablissementId = unite.etablissementId;
-        await this.uniteRepo.remove(unite);
-        logger.info(`Unité supprimée: ${unite.nom}`, { uniteId: id });
+
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            // 1. Collecter l'unité + tous ses descendants (CTE récursif, garde anti-cycle)
+            const familleRows = await queryRunner.query(`
+                WITH RECURSIVE desc_tree AS (
+                    SELECT id, 0 AS depth FROM unites_organisationnelles WHERE id = $1
+                    UNION ALL
+                    SELECT u.id, dt.depth + 1 FROM unites_organisationnelles u
+                    INNER JOIN desc_tree dt ON u."parentId" = dt.id
+                    WHERE dt.depth < 100
+                )
+                SELECT id FROM desc_tree
+            `, [id]);
+            const familleIds: string[] = familleRows.map((r: any) => r.id);
+
+            // 2. Détacher les liens hiérarchiques (colonne sans contrainte FK → nettoyage explicite)
+            await queryRunner.query(
+                `UPDATE hierarchie_personnel SET "uniteOrganisationnelleId" = NULL WHERE "uniteOrganisationnelleId" = ANY($1::uuid[])`,
+                [familleIds],
+            );
+
+            // 3. Supprimer toute la famille d'unités.
+            //    Les postes sont supprimés en cascade (FK ON DELETE CASCADE) et
+            //    hierarchie.posteId est mis à NULL (FK ON DELETE SET NULL).
+            await queryRunner.query(
+                `DELETE FROM unites_organisationnelles WHERE id = ANY($1::uuid[])`,
+                [familleIds],
+            );
+
+            await queryRunner.commitTransaction();
+            logger.info(`Unité supprimée en cascade: ${unite.nom}`, {
+                uniteId: id,
+                unitesSupprimees: familleIds.length,
+            });
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
 
         // Invalider le cache
         await this.invalidateArborescenceCache(etablissementId);
@@ -884,10 +917,10 @@ export class OrganisationService {
         if (descendants > 0) {
             const descRows = await this.uniteRepo.query(`
                 WITH RECURSIVE desc_tree AS (
-                    SELECT id FROM unites_organisationnelles
+                    SELECT id, 0 AS depth FROM unites_organisationnelles
                     WHERE "parentId" = $1 AND "etablissementId" = $2
                     UNION ALL
-                    SELECT u.id FROM unites_organisationnelles u
+                    SELECT u.id, dt.depth + 1 FROM unites_organisationnelles u
                     INNER JOIN desc_tree dt ON u."parentId" = dt.id
                     WHERE dt.depth < 100
                 )

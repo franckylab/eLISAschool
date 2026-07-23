@@ -27,9 +27,13 @@ class UsageUniteService {
     }
 
     async findAll(etablissementId?: string): Promise<UsageUnite[]> {
-        const where: any = {};
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.find({ where, order: { label: 'ASC' } });
+        const qb = this.repo.createQueryBuilder('u');
+        if (etablissementId) {
+            qb.where('(u.etablissementId = :eid OR u.estSysteme = TRUE)', { eid: etablissementId });
+        } else {
+            qb.where('(u.etablissementId IS NULL OR u.estSysteme = TRUE)');
+        }
+        return qb.orderBy('u.label', 'ASC').getMany();
     }
 
     async findAllPaginated(page: number, limit: number, etablissementId?: string, search?: string) {

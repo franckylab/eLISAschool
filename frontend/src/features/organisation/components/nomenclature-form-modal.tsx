@@ -17,25 +17,25 @@ interface FieldConfig {
     span?: string;
 }
 
-interface Props<T> {
+interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    initialData?: T | null;
-    onSave: (values: Record<string, any>) => Promise<void>;
+    initialData?: unknown;
+    onSave: (values: Record<string, unknown>) => Promise<void>;
     fields: FieldConfig[];
     titleKey: string;
     icon: LucideIcon;
 }
 
-export function NomenclatureFormModal<T extends Record<string, any>>({
+export function NomenclatureFormModal({
     open, onOpenChange, initialData, onSave, fields, titleKey,
-}: Props<T>) {
+}: Props) {
     const { t } = useTranslation('organisation');
     const [error, setError] = useState('');
 
     const schema = z.object(
         Object.fromEntries(
-            fields.map(f => [
+            fields.map((f: FieldConfig) => [
                 f.key,
                 f.type === 'number'
                     ? z.coerce.number({ invalid_type_error: `${t(f.labelKey)} invalide` })
@@ -48,10 +48,10 @@ export function NomenclatureFormModal<T extends Record<string, any>>({
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(schema),
-        defaultValues: initialData ? Object.fromEntries(fields.map(f => [f.key, initialData[f.key] ?? ''])) : {},
+        defaultValues: initialData ? Object.fromEntries(fields.map((f: FieldConfig) => [f.key, (initialData as Record<string, unknown>)[f.key] ?? ''])) : {},
     });
 
-    const doSave = async (values: Record<string, any>) => {
+    const doSave = async (values: Record<string, unknown>) => {
         setError('');
         try {
             const clean = Object.fromEntries(
@@ -59,8 +59,8 @@ export function NomenclatureFormModal<T extends Record<string, any>>({
             );
             await onSave(clean);
             onOpenChange(false);
-        } catch (e: any) {
-            setError(e?.message || 'Erreur');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Erreur');
         }
     };
 
@@ -72,7 +72,7 @@ export function NomenclatureFormModal<T extends Record<string, any>>({
         >
             <form onSubmit={handleSubmit(doSave)} className="space-y-4 p-4">
                 <div className="grid grid-cols-2 gap-4">
-                    {fields.map(f => (
+                    {fields.map((f: FieldConfig) => (
                         <div key={f.key} className={f.span || 'col-span-2'}>
                             <label className="block text-sm font-medium mb-1 text-foreground">
                                 {t(f.labelKey)}{f.required && ' *'}
@@ -83,13 +83,13 @@ export function NomenclatureFormModal<T extends Record<string, any>>({
                                 placeholder={f.placeholder || t(f.labelKey)}
                                 className="w-full px-3 py-2 text-sm border border-border rounded bg-background text-foreground"
                             />
-                            {errors[f.key] && (
-                                <p className="text-xs text-red-500 mt-1">{errors[f.key]?.message as string}</p>
-                            )}
+{errors[f.key] && (
+    <p className="text-xs text-destructive mt-1">{errors[f.key]?.message as string}</p>
+)}
                         </div>
                     ))}
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
                     <button type="button" onClick={() => onOpenChange(false)}
                         className="px-3 py-1.5 text-sm border border-border rounded hover:bg-accent transition-colors">

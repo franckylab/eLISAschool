@@ -17,35 +17,55 @@
 - [frontend/src/components/ui/Layout/Header.tsx](file://frontend/src/components/ui/Layout/Header.tsx)
 - [frontend/src/components/ui/Layout/Sidebar.tsx](file://frontend/src/components/ui/Layout/Sidebar.tsx)
 - [frontend/src/components/ui/Layout/PageLayout.tsx](file://frontend/src/components/ui/Layout/PageLayout.tsx)
+- [frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx](file://frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx)
+- [frontend/src/components/ui/SearchInput/SearchInput.tsx](file://frontend/src/components/ui/SearchInput/SearchInput.tsx)
+- [frontend/src/components/ui/Tabs/Tabs.tsx](file://frontend/src/components/ui/Tabs/Tabs.tsx)
+- [frontend/src/components/ui/TransfertList/TransfertList.tsx](file://frontend/src/components/ui/TransfertList/TransfertList.tsx)
+- [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
+- [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
+- [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for new enhanced components: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, and Breadcrumbs
+- Updated all components with dark mode compatibility and consistent visual appearance across light and dark themes
+- Enhanced accessibility features with improved aria-label translations throughout the component library
+- Expanded component coverage to include advanced data manipulation and navigation components
+- Updated styling patterns to support theme-aware color schemes and responsive design
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
-4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+4. [Enhanced Components](#enhanced-components)
+5. [Architecture Overview](#architecture-overview)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dark Mode and Accessibility](#dark-mode-and-accessibility)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
+12. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive documentation for the shared UI component library used across the application. It covers reusable components, their props interfaces, customization options using Tailwind CSS, accessibility features, usage examples, composition patterns, and integration guidelines. It also documents feedback components (LoadingState, ErrorBoundary, EmptyState) and layout components (Header, Sidebar, PageLayout), along with responsive design considerations and cross-browser compatibility guidance.
+This document provides comprehensive documentation for the shared UI component library used across the application. It covers reusable components, their props interfaces, customization options using Tailwind CSS, accessibility features, usage examples, composition patterns, and integration guidelines. The library has been significantly enhanced with dark mode compatibility, improved accessibility features including aria-label translations, and consistent visual appearance across light and dark themes.
+
+The component library now includes both core primitives (Button, Input, Select, Card, DataTable, Modal) and enhanced components (ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs), along with feedback components (LoadingState, ErrorBoundary, EmptyState) and layout components (Header, Sidebar, PageLayout).
 
 ## Project Structure
 The shared UI components are organized under a feature-based structure within the frontend package:
 - components/ui: Core primitive and composite UI components
-  - Button, Input, Select, Card, DataTable, Modal
-  - Form and Field for form building blocks
-  - Feedback: LoadingState, ErrorBoundary, EmptyState
-  - Layout: Header, Sidebar, PageLayout
-- Each component is typically implemented as a single file with its own TypeScript types and Tailwind CSS styling.
+  - **Core Primitives**: Button, Input, Select, Card, DataTable, Modal
+  - **Form Components**: Form and Field for form building blocks
+  - **Enhanced Components**: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs
+  - **Feedback**: LoadingState, ErrorBoundary, EmptyState
+  - **Layout**: Header, Sidebar, PageLayout
+- Each component is implemented as a single file with its own TypeScript types and Tailwind CSS styling, featuring dark mode support and enhanced accessibility attributes.
 
 ```mermaid
 graph TB
-subgraph "UI Library"
+subgraph "Enhanced UI Library"
 A["Button"]
 B["Input"]
 C["Select"]
@@ -60,6 +80,13 @@ K["EmptyState"]
 L["Header"]
 M["Sidebar"]
 N["PageLayout"]
+O["ErrorMessage"]
+P["SearchInput"]
+Q["Tabs"]
+R["TransfertList"]
+S["TreeView"]
+T["RowActions"]
+U["Breadcrumbs"]
 end
 G --> H
 N --> L
@@ -77,6 +104,18 @@ N --> D
 N --> I
 N --> J
 N --> K
+E --> O
+E --> P
+E --> T
+Q --> A
+Q --> B
+R --> A
+R --> B
+R --> C
+S --> A
+S --> B
+U --> A
+U --> B
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
@@ -87,55 +126,45 @@ This section summarizes the core primitives and composites available in the UI l
 - Button
   - Purpose: Primary interactive element for actions.
   - Key props: variant (primary, secondary, ghost, danger), size (sm, md, lg), disabled, loading, icon, onClick.
-  - Customization: Use className to override styles; supports color variants and sizes via Tailwind classes.
-  - Accessibility: Focusable, keyboard navigable, aria-disabled when disabled, role="button" semantics by default.
+  - Customization: Use className to override styles; supports color variants and sizes via Tailwind classes with dark mode support.
+  - Accessibility: Focusable, keyboard navigable, aria-disabled when disabled, role="button" semantics by default, enhanced aria-labels for internationalization.
 
 - Input
   - Purpose: Text input field with validation support.
   - Key props: id, name, value, onChange, placeholder, type, disabled, error, helperText, required, maxLength, autoComplete.
-  - Customization: className overrides; supports focus rings and error states via Tailwind utilities.
-  - Accessibility: Associated label via htmlFor/id, aria-invalid on error, aria-describedby for helperText.
+  - Customization: className overrides; supports focus rings and error states via Tailwind utilities with theme-aware colors.
+  - Accessibility: Associated label via htmlFor/id, aria-invalid on error, aria-describedby for helperText, enhanced screen reader support.
 
 - Select
   - Purpose: Dropdown selection with options.
   - Key props: id, name, value, onChange, options, placeholder, disabled, error, helperText, required, multiple.
-  - Customization: className overrides; consistent focus and error styling.
-  - Accessibility: Label association, aria-invalid on error, keyboard navigation for options.
+  - Customization: className overrides; consistent focus and error styling with dark mode compatibility.
+  - Accessibility: Label association, aria-invalid on error, keyboard navigation for options, improved screen reader announcements.
 
 - Card
   - Purpose: Container for grouping related content.
   - Key props: title, subtitle, actions, padding, shadow, rounded, className.
-  - Customization: Tailwind spacing and shadows; flexible header/body/footer composition.
-  - Accessibility: Semantic divs; optional role="region" with aria-labelledby for titled cards.
+  - Customization: Tailwind spacing and shadows; flexible header/body/footer composition with theme-aware backgrounds.
+  - Accessibility: Semantic divs; optional role="region" with aria-labelledby for titled cards, enhanced contrast ratios.
 
 - DataTable
   - Purpose: Tabular data display with sorting, filtering, pagination, and row selection.
   - Key props: columns, data, pageSize, currentPage, sortable, filterable, selectable, loading, emptyMessage, onSortChange, onFilterChange, onPageChange, onRowClick, rowKey.
-  - Customization: Column renderers, cell formatting, header actions, toolbar slots.
-  - Accessibility: aria-sort on sortable headers, aria-selected on rows, keyboard navigation, screen reader labels.
+  - Customization: Column renderers, cell formatting, header actions, toolbar slots with dark mode support.
+  - Accessibility: aria-sort on sortable headers, aria-selected on rows, keyboard navigation, screen reader labels, enhanced navigation support.
 
 - Modal
   - Purpose: Overlay dialog for focused interactions.
   - Key props: isOpen, onClose, title, size, closeOnOverlayClick, closeOnEsc, children, footerActions.
-  - Customization: Size variants (sm, md, lg, xl), padding, backdrop opacity via Tailwind.
-  - Accessibility: Focus trap, aria-modal, role="dialog", aria-labelledby, escape key handling.
+  - Customization: Size variants (sm, md, lg, xl), padding, backdrop opacity via Tailwind with theme support.
+  - Accessibility: Focus trap, aria-modal, role="dialog", aria-labelledby, escape key handling, improved focus management.
 
 - Form and Field
   - Purpose: Declarative form composition with validation and state management.
   - Key props (Form): onSubmit, validate, children, className.
   - Key props (Field): name, label, component (Input/Select/etc.), rules, error, helperText, className.
-  - Customization: Slot-based rendering for custom inputs; consistent error and helper text styling.
-  - Accessibility: Labels linked to inputs, error messages associated via aria-describedby.
-
-- Feedback Components
-  - LoadingState: Displays spinner or skeleton while data loads. Props: message, size, fullScreen.
-  - ErrorBoundary: Catches rendering errors and displays fallback UI. Props: fallback, onError.
-  - EmptyState: Shows friendly messaging when no data is present. Props: title, description, action.
-
-- Layout Components
-  - Header: Top navigation bar with branding and actions. Props: logo, actions, collapsed.
-  - Sidebar: Navigation sidebar with menu items. Props: items, collapsed, onToggle, activeItem.
-  - PageLayout: Shell combining Header, Sidebar, and main content area. Props: header, sidebar, content, stickyHeader.
+  - Customization: Slot-based rendering for custom inputs; consistent error and helper text styling with theme support.
+  - Accessibility: Labels linked to inputs, error messages associated via aria-describedby, enhanced validation feedback.
 
 **Section sources**
 - [frontend/src/components/ui/Button/Button.tsx](file://frontend/src/components/ui/Button/Button.tsx)
@@ -146,21 +175,70 @@ This section summarizes the core primitives and composites available in the UI l
 - [frontend/src/components/ui/Modal/Modal.tsx](file://frontend/src/components/ui/Modal/Modal.tsx)
 - [frontend/src/components/ui/Form/Form.tsx](file://frontend/src/components/ui/Form/Form.tsx)
 - [frontend/src/components/ui/Form/Field.tsx](file://frontend/src/components/ui/Form/Field.tsx)
-- [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
-- [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
-- [frontend/src/components/ui/Feedback/EmptyState.tsx](file://frontend/src/components/ui/Feedback/EmptyState.tsx)
-- [frontend/src/components/ui/Layout/Header.tsx](file://frontend/src/components/ui/Layout/Header.tsx)
-- [frontend/src/components/ui/Layout/Sidebar.tsx](file://frontend/src/components/ui/Layout/Sidebar.tsx)
-- [frontend/src/components/ui/Layout/PageLayout.tsx](file://frontend/src/components/ui/Layout/PageLayout.tsx)
+
+## Enhanced Components
+This section documents the newly enhanced components that provide advanced functionality with dark mode compatibility and improved accessibility.
+
+- ErrorMessage
+  - Purpose: Displays error messages with contextual information and action suggestions.
+  - Key props: message, type (error, warning, info), dismissible, action, icon, className.
+  - Customization: Color-coded variants, dismissible behavior, custom icons, responsive layout.
+  - Accessibility: aria-live regions, semantic error roles, keyboard dismissible, screen reader announcements.
+
+- SearchInput
+  - Purpose: Enhanced search input with debounced search, clear button, and results preview.
+  - Key props: value, onChange, placeholder, debounceMs, onClear, showResults, results, onSelect, className.
+  - Customization: Debounce timing, result display format, clear button visibility, search icon positioning.
+  - Accessibility: Live region updates, keyboard navigation for results, aria-autocomplete, search result announcements.
+
+- Tabs
+  - Purpose: Tabbed interface for organizing content into selectable panels.
+  - Key props: tabs, activeTab, onChange, orientation (horizontal, vertical), size, className.
+  - Customization: Tab styling, animation transitions, indicator position, disabled tab support.
+  - Accessibility: aria-selected on active tabs, keyboard navigation with arrow keys, role="tablist" and role="tab".
+
+- TransfertList
+  - Purpose: Dual-list selector for transferring items between lists with drag-and-drop support.
+  - Key props: leftItems, rightItems, onTransfer, itemRenderer, transferDirection, className.
+  - Customization: Item rendering, transfer animations, list headers, selection modes.
+  - Accessibility: Keyboard transfer operations, aria-live for transfer status, focus management during transfers.
+
+- TreeView
+  - Purpose: Hierarchical data display with expandable/collapsible nodes and selection.
+  - Key props: data, expandedNodes, selectedNode, onExpand, onSelect, nodeRenderer, className.
+  - Customization: Node indentation, expand/collapse icons, selection highlighting, virtual scrolling for large trees.
+  - Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="tree" and role="treeitem".
+
+- RowActions
+  - Purpose: Contextual action menu for table rows with dropdown or inline actions.
+  - Key props: actions, trigger, placement, className, disabled.
+  - Customization: Action icons, tooltips, confirmation dialogs, conditional action visibility.
+  - Accessibility: Keyboard accessible menu, aria-haspopup, focus trapping within menus, screen reader announcements.
+
+- Breadcrumbs
+  - Purpose: Navigation breadcrumb trail showing current page location in hierarchy.
+  - Key props: items, separator, maxItems, onNavigate, className.
+  - Customization: Separator style, truncation behavior, link styling, responsive collapse.
+  - Accessibility: aria-current="page" on current item, semantic navigation landmark, keyboard navigation.
+
+**Section sources**
+- [frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx](file://frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx)
+- [frontend/src/components/ui/SearchInput/SearchInput.tsx](file://frontend/src/components/ui/SearchInput/SearchInput.tsx)
+- [frontend/src/components/ui/Tabs/Tabs.tsx](file://frontend/src/components/ui/Tabs/Tabs.tsx)
+- [frontend/src/components/ui/TransfertList/TransfertList.tsx](file://frontend/src/components/ui/TransfertList/TransfertList.tsx)
+- [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
+- [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
+- [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 
 ## Architecture Overview
-The UI library follows a layered architecture:
-- Primitives: Button, Input, Select, Card
-- Composite: DataTable, Modal, Form, Field
-- Feedback: LoadingState, ErrorBoundary, EmptyState
-- Layout: Header, Sidebar, PageLayout
+The UI library follows a layered architecture with enhanced component support:
+- **Primitives**: Button, Input, Select, Card
+- **Composite**: DataTable, Modal, Form, Field
+- **Enhanced**: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs
+- **Feedback**: LoadingState, ErrorBoundary, EmptyState
+- **Layout**: Header, Sidebar, PageLayout
 
-Primitives compose into higher-level components. Layout components orchestrate overall page structure. Feedback components provide global UX signals.
+Primitives compose into higher-level components. Enhanced components provide specialized functionality for complex user interactions. Layout components orchestrate overall page structure with theme support.
 
 ```mermaid
 classDiagram
@@ -249,6 +327,64 @@ class Field {
 +helperText
 +className
 }
+class ErrorMessage {
++message
++type
++dismissible
++action
++icon
++className
+}
+class SearchInput {
++value
++onChange()
++placeholder
++debounceMs
++onClear()
++showResults
++results
++onSelect()
++className
+}
+class Tabs {
++tabs
++activeTab
++onChange()
++orientation
++size
++className
+}
+class TransfertList {
++leftItems
++rightItems
++onTransfer()
++itemRenderer
++transferDirection
++className
+}
+class TreeView {
++data
++expandedNodes
++selectedNode
++onExpand()
++onSelect()
++nodeRenderer
++className
+}
+class RowActions {
++actions
++trigger
++placement
++className
++disabled
+}
+class Breadcrumbs {
++items
++separator
++maxItems
++onNavigate()
++className
+}
 class LoadingState {
 +message
 +size
@@ -283,12 +419,24 @@ class PageLayout {
 DataTable --> Button : "uses"
 DataTable --> Input : "uses"
 DataTable --> Select : "uses"
+DataTable --> ErrorMessage : "displays"
+DataTable --> SearchInput : "filters"
+DataTable --> RowActions : "contains"
 Modal --> Button : "uses"
 Modal --> Input : "uses"
 Modal --> Select : "uses"
 Modal --> Card : "uses"
 Modal --> Form : "uses"
 Modal --> Field : "uses"
+Tabs --> Button : "uses"
+Tabs --> Input : "uses"
+TransfertList --> Button : "uses"
+TransfertList --> Input : "uses"
+TransfertList --> Select : "uses"
+TreeView --> Button : "uses"
+TreeView --> Input : "uses"
+Breadcrumbs --> Button : "uses"
+Breadcrumbs --> Input : "uses"
 PageLayout --> Header : "composes"
 PageLayout --> Sidebar : "composes"
 PageLayout --> Card : "wraps content"
@@ -306,6 +454,13 @@ PageLayout --> EmptyState : "shows"
 - [frontend/src/components/ui/Modal/Modal.tsx](file://frontend/src/components/ui/Modal/Modal.tsx)
 - [frontend/src/components/ui/Form/Form.tsx](file://frontend/src/components/ui/Form/Form.tsx)
 - [frontend/src/components/ui/Form/Field.tsx](file://frontend/src/components/ui/Form/Field.tsx)
+- [frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx](file://frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx)
+- [frontend/src/components/ui/SearchInput/SearchInput.tsx](file://frontend/src/components/ui/SearchInput/SearchInput.tsx)
+- [frontend/src/components/ui/Tabs/Tabs.tsx](file://frontend/src/components/ui/Tabs/Tabs.tsx)
+- [frontend/src/components/ui/TransfertList/TransfertList.tsx](file://frontend/src/components/ui/TransfertList/TransfertList.tsx)
+- [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
+- [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
+- [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 - [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
 - [frontend/src/components/ui/Feedback/EmptyState.tsx](file://frontend/src/components/ui/Feedback/EmptyState.tsx)
@@ -317,45 +472,45 @@ PageLayout --> EmptyState : "shows"
 
 ### Button
 - Props interface: variant, size, disabled, loading, icon, onClick, className.
-- Styling: Tailwind classes for colors, spacing, and focus rings; className allows overrides.
-- Accessibility: Keyboard support, aria-disabled, semantic button element.
-- Usage example: Render primary action with loading indicator and icon.
+- Styling: Tailwind classes for colors, spacing, and focus rings with dark mode support; className allows overrides.
+- Accessibility: Keyboard support, aria-disabled, semantic button element, enhanced aria-labels for internationalization.
+- Usage example: Render primary action with loading indicator and icon, supporting both light and dark themes.
 
 **Section sources**
 - [frontend/src/components/ui/Button/Button.tsx](file://frontend/src/components/ui/Button/Button.tsx)
 
 ### Input
 - Props interface: id, name, value, onChange, placeholder, type, disabled, error, helperText, required, maxLength, autoComplete, className.
-- Styling: Focus ring, error border, helper text alignment via Tailwind.
-- Accessibility: htmlFor/id pairing, aria-invalid, aria-describedby.
-- Usage example: Controlled input with validation and helper text.
+- Styling: Focus ring, error border, helper text alignment via Tailwind with theme-aware colors.
+- Accessibility: htmlFor/id pairing, aria-invalid, aria-describedby, enhanced screen reader support.
+- Usage example: Controlled input with validation and helper text, displaying correctly in both light and dark modes.
 
 **Section sources**
 - [frontend/src/components/ui/Input/Input.tsx](file://frontend/src/components/ui/Input/Input.tsx)
 
 ### Select
 - Props interface: id, name, value, onChange, options, placeholder, disabled, error, helperText, required, multiple, className.
-- Styling: Consistent dropdown styling, focus and error states.
-- Accessibility: Label association, keyboard navigation, aria-invalid.
-- Usage example: Single/multiple selection with option groups.
+- Styling: Consistent dropdown styling, focus and error states with dark mode compatibility.
+- Accessibility: Label association, keyboard navigation, aria-invalid, improved screen reader announcements.
+- Usage example: Single/multiple selection with option groups, maintaining readability in all themes.
 
 **Section sources**
 - [frontend/src/components/ui/Select/Select.tsx](file://frontend/src/components/ui/Select/Select.tsx)
 
 ### Card
 - Props interface: title, subtitle, actions, padding, shadow, rounded, className.
-- Styling: Padding scales, shadow depth, rounded corners via Tailwind.
-- Accessibility: Optional region role with aria-labelledby for titled cards.
-- Usage example: Grouped content with header and actions.
+- Styling: Padding scales, shadow depth, rounded corners via Tailwind with theme-aware backgrounds.
+- Accessibility: Optional region role with aria-labelledby for titled cards, enhanced contrast ratios.
+- Usage example: Grouped content with header and actions, adapting to different background colors.
 
 **Section sources**
 - [frontend/src/components/ui/Card/Card.tsx](file://frontend/src/components/ui/Card/Card.tsx)
 
 ### DataTable
 - Props interface: columns, data, pageSize, currentPage, sortable, filterable, selectable, loading, emptyMessage, onSortChange, onFilterChange, onPageChange, onRowClick, rowKey, className.
-- Styling: Responsive table layout, hover states, selected row highlighting.
-- Accessibility: aria-sort, aria-selected, keyboard navigation, screen reader labels.
-- Usage example: Paginated, sortable, filterable table with row selection.
+- Styling: Responsive table layout, hover states, selected row highlighting with dark mode support.
+- Accessibility: aria-sort, aria-selected, keyboard navigation, screen reader labels, enhanced navigation support.
+- Usage example: Paginated, sortable, filterable table with row selection, displaying clearly in all themes.
 
 ```mermaid
 flowchart TD
@@ -389,9 +544,9 @@ SkipSelection --> End
 
 ### Modal
 - Props interface: isOpen, onClose, title, size, closeOnOverlayClick, closeOnEsc, children, footerActions, className.
-- Styling: Backdrop overlay, size variants, padding, rounded corners.
-- Accessibility: Focus trap, aria-modal, role="dialog", aria-labelledby, Escape key handling.
-- Usage example: Confirmation dialog with primary and secondary actions.
+- Styling: Backdrop overlay, size variants, padding, rounded corners with theme support.
+- Accessibility: Focus trap, aria-modal, role="dialog", aria-labelledby, Escape key handling, improved focus management.
+- Usage example: Confirmation dialog with primary and secondary actions, maintaining usability in all themes.
 
 ```mermaid
 sequenceDiagram
@@ -420,9 +575,9 @@ Parent-->>Modal : Set isOpen=false
 ### Form and Field
 - Form props: onSubmit, validate, children, className.
 - Field props: name, label, component, rules, error, helperText, className.
-- Styling: Consistent label/input/error layout via Tailwind.
-- Accessibility: Labels linked to inputs, error messages associated via aria-describedby.
-- Usage example: Compose Field(Input) and Field(Select) inside Form with validation rules.
+- Styling: Consistent label/input/error layout via Tailwind with theme support.
+- Accessibility: Labels linked to inputs, error messages associated via aria-describedby, enhanced validation feedback.
+- Usage example: Compose Field(Input) and Field(Select) inside Form with validation rules, displaying errors appropriately.
 
 ```mermaid
 flowchart TD
@@ -447,19 +602,84 @@ Submit --> End
 - [frontend/src/components/ui/Form/Form.tsx](file://frontend/src/components/ui/Form/Form.tsx)
 - [frontend/src/components/ui/Form/Field.tsx](file://frontend/src/components/ui/Form/Field.tsx)
 
+### Enhanced Components Analysis
+
+#### ErrorMessage
+- Props interface: message, type (error, warning, info), dismissible, action, icon, className.
+- Styling: Color-coded variants, dismissible behavior, custom icons, responsive layout with theme support.
+- Accessibility: aria-live regions, semantic error roles, keyboard dismissible, screen reader announcements.
+- Usage example: Display contextual error messages with actionable buttons and auto-dismiss functionality.
+
+**Section sources**
+- [frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx](file://frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx)
+
+#### SearchInput
+- Props interface: value, onChange, placeholder, debounceMs, onClear, showResults, results, onSelect, className.
+- Styling: Debounce timing, result display format, clear button visibility, search icon positioning with dark mode.
+- Accessibility: Live region updates, keyboard navigation for results, aria-autocomplete, search result announcements.
+- Usage example: Implement searchable dropdowns with debounced API calls and result highlighting.
+
+**Section sources**
+- [frontend/src/components/ui/SearchInput/SearchInput.tsx](file://frontend/src/components/ui/SearchInput/SearchInput.tsx)
+
+#### Tabs
+- Props interface: tabs, activeTab, onChange, orientation (horizontal, vertical), size, className.
+- Styling: Tab styling, animation transitions, indicator position, disabled tab support with theme awareness.
+- Accessibility: aria-selected on active tabs, keyboard navigation with arrow keys, role="tablist" and role="tab".
+- Usage example: Create tabbed interfaces for organizing complex content sections.
+
+**Section sources**
+- [frontend/src/components/ui/Tabs/Tabs.tsx](file://frontend/src/components/ui/Tabs/Tabs.tsx)
+
+#### TransfertList
+- Props interface: leftItems, rightItems, onTransfer, itemRenderer, transferDirection, className.
+- Styling: Item rendering, transfer animations, list headers, selection modes with theme support.
+- Accessibility: Keyboard transfer operations, aria-live for transfer status, focus management during transfers.
+- Usage example: Build dual-list selectors for permission assignment or category management.
+
+**Section sources**
+- [frontend/src/components/ui/TransfertList/TransfertList.tsx](file://frontend/src/components/ui/TransfertList/TransfertList.tsx)
+
+#### TreeView
+- Props interface: data, expandedNodes, selectedNode, onExpand, onSelect, nodeRenderer, className.
+- Styling: Node indentation, expand/collapse icons, selection highlighting, virtual scrolling for large trees.
+- Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="tree" and role="treeitem".
+- Usage example: Display hierarchical data structures like file systems or organizational charts.
+
+**Section sources**
+- [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
+
+#### RowActions
+- Props interface: actions, trigger, placement, className, disabled.
+- Styling: Action icons, tooltips, confirmation dialogs, conditional action visibility with theme support.
+- Accessibility: Keyboard accessible menu, aria-haspopup, focus trapping within menus, screen reader announcements.
+- Usage example: Add contextual action menus to table rows with dropdown or inline triggers.
+
+**Section sources**
+- [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
+
+#### Breadcrumbs
+- Props interface: items, separator, maxItems, onNavigate, className.
+- Styling: Separator style, truncation behavior, link styling, responsive collapse with theme support.
+- Accessibility: aria-current="page" on current item, semantic navigation landmark, keyboard navigation.
+- Usage example: Provide navigation context in deeply nested application structures.
+
+**Section sources**
+- [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
+
 ### Feedback Components
 - LoadingState
   - Props: message, size, fullScreen.
-  - Styling: Spinner/skeleton variants, centered layout.
-  - Accessibility: aria-live for dynamic updates.
+  - Styling: Spinner/skeleton variants, centered layout with theme support.
+  - Accessibility: aria-live for dynamic updates, enhanced screen reader announcements.
 - ErrorBoundary
   - Props: fallback, onError.
-  - Styling: Fallback UI container.
-  - Accessibility: Error message exposed to assistive tech.
+  - Styling: Fallback UI container with theme-aware styling.
+  - Accessibility: Error message exposed to assistive tech, improved error reporting.
 - EmptyState
   - Props: title, description, action.
-  - Styling: Friendly illustration and call-to-action.
-  - Accessibility: Semantic headings and links.
+  - Styling: Friendly illustration and call-to-action with theme support.
+  - Accessibility: Semantic headings and links, enhanced navigation support.
 
 **Section sources**
 - [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
@@ -469,28 +689,49 @@ Submit --> End
 ### Layout Components
 - Header
   - Props: logo, actions, collapsed.
-  - Styling: Sticky top, brand area, action buttons.
-  - Accessibility: Landmark roles, keyboard shortcuts.
+  - Styling: Sticky top, brand area, action buttons with theme support.
+  - Accessibility: Landmark roles, keyboard shortcuts, enhanced navigation support.
 - Sidebar
   - Props: items, collapsed, onToggle, activeItem.
-  - Styling: Collapsible navigation, hover/focus states.
-  - Accessibility: Navigation landmark, aria-current for active item.
+  - Styling: Collapsible navigation, hover/focus states with dark mode compatibility.
+  - Accessibility: Navigation landmark, aria-current for active item, improved keyboard navigation.
 - PageLayout
   - Props: header, sidebar, content, stickyHeader.
-  - Styling: Grid layout, responsive stacking.
-  - Accessibility: Proper landmark regions, focus management.
+  - Styling: Grid layout, responsive stacking with theme support.
+  - Accessibility: Proper landmark regions, focus management, enhanced screen reader support.
 
 **Section sources**
 - [frontend/src/components/ui/Layout/Header.tsx](file://frontend/src/components/ui/Layout/Header.tsx)
 - [frontend/src/components/ui/Layout/Sidebar.tsx](file://frontend/src/components/ui/Layout/Sidebar.tsx)
 - [frontend/src/components/ui/Layout/PageLayout.tsx](file://frontend/src/components/ui/Layout/PageLayout.tsx)
 
+## Dark Mode and Accessibility
+The component library has been significantly enhanced with comprehensive dark mode support and improved accessibility features.
+
+### Dark Mode Implementation
+- **Theme-Aware Colors**: All components use CSS custom properties and Tailwind's dark mode variants for consistent theming.
+- **Contrast Ratios**: Enhanced color combinations ensure WCAG AA compliance in both light and dark themes.
+- **Background Adaptation**: Cards, modals, and overlays automatically adjust backgrounds based on the active theme.
+- **Icon Support**: SVG icons switch between light and dark variants for optimal visibility.
+
+### Accessibility Enhancements
+- **ARIA Label Translations**: All components now support internationalized aria-labels through translation functions.
+- **Screen Reader Support**: Enhanced live regions and announcements for dynamic content updates.
+- **Keyboard Navigation**: Improved keyboard traversal with logical focus order and visible focus indicators.
+- **Semantic Markup**: Better use of HTML5 semantic elements and ARIA roles for assistive technologies.
+
+### Theme Configuration
+Components automatically detect and respond to theme changes through CSS media queries and JavaScript theme detection. The implementation uses Tailwind CSS's dark mode strategy with class-based switching.
+
+**Updated** Enhanced dark mode compatibility and accessibility features across all components
+
 ## Dependency Analysis
-The UI library exhibits clear dependency relationships:
-- Primitives (Button, Input, Select, Card) are independent.
-- Composite components (DataTable, Modal, Form, Field) depend on primitives.
-- Feedback components are standalone but often composed by layout shells.
-- Layout components orchestrate primitives and composites to build pages.
+The UI library exhibits clear dependency relationships with enhanced component support:
+- **Primitives** (Button, Input, Select, Card) are independent foundation components.
+- **Composite components** (DataTable, Modal, Form, Field) depend on primitives.
+- **Enhanced components** (ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs) build upon primitives for specialized functionality.
+- **Feedback components** are standalone but often composed by layout shells.
+- **Layout components** orchestrate primitives, composites, and enhanced components to build pages.
 
 ```mermaid
 graph TB
@@ -502,6 +743,13 @@ C1["DataTable"]
 C2["Modal"]
 C3["Form"]
 C4["Field"]
+E1["ErrorMessage"]
+E2["SearchInput"]
+E3["Tabs"]
+E4["TransfertList"]
+E5["TreeView"]
+E6["RowActions"]
+E7["Breadcrumbs"]
 F1["LoadingState"]
 F2["ErrorBoundary"]
 F3["EmptyState"]
@@ -511,12 +759,24 @@ L3["PageLayout"]
 C1 --> P1
 C1 --> P2
 C1 --> P3
+C1 --> E1
+C1 --> E2
+C1 --> E6
 C2 --> P1
 C2 --> P2
 C2 --> P3
 C2 --> P4
 C2 --> C3
 C2 --> C4
+E3 --> P1
+E3 --> P2
+E4 --> P1
+E4 --> P2
+E4 --> P3
+E5 --> P1
+E5 --> P2
+E7 --> P1
+E7 --> P2
 L3 --> L1
 L3 --> L2
 L3 --> P4
@@ -534,6 +794,13 @@ L3 --> F3
 - [frontend/src/components/ui/Modal/Modal.tsx](file://frontend/src/components/ui/Modal/Modal.tsx)
 - [frontend/src/components/ui/Form/Form.tsx](file://frontend/src/components/ui/Form/Form.tsx)
 - [frontend/src/components/ui/Form/Field.tsx](file://frontend/src/components/ui/Form/Field.tsx)
+- [frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx](file://frontend/src/components/ui/ErrorMessage/ErrorMessage.tsx)
+- [frontend/src/components/ui/SearchInput/SearchInput.tsx](file://frontend/src/components/ui/SearchInput/SearchInput.tsx)
+- [frontend/src/components/ui/Tabs/Tabs.tsx](file://frontend/src/components/ui/Tabs/Tabs.tsx)
+- [frontend/src/components/ui/TransfertList/TransfertList.tsx](file://frontend/src/components/ui/TransfertList/TransfertList.tsx)
+- [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
+- [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
+- [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 - [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
 - [frontend/src/components/ui/Feedback/EmptyState.tsx](file://frontend/src/components/ui/Feedback/EmptyState.tsx)
@@ -545,20 +812,26 @@ L3 --> F3
 - [frontend/src/components/ui/index.ts](file://frontend/src/components/ui/index.ts)
 
 ## Performance Considerations
-- Virtualization: For large datasets in DataTable, consider virtualized rows to reduce DOM overhead.
-- Memoization: Wrap expensive computations in React.memo where appropriate to avoid re-renders.
-- Lazy Loading: Defer non-critical modal content until opened.
-- CSS Optimization: Leverage Tailwind’s utility-first approach to minimize style bloat; ensure unused classes are purged in production builds.
-- Event Handling: Debounce search/filter inputs in DataTable to reduce frequent re-renders.
+- **Virtualization**: For large datasets in DataTable and TreeView, consider virtualized rows to reduce DOM overhead.
+- **Memoization**: Wrap expensive computations in React.memo where appropriate to avoid re-renders.
+- **Lazy Loading**: Defer non-critical modal content until opened; implement lazy loading for large tree structures.
+- **CSS Optimization**: Leverage Tailwind's utility-first approach to minimize style bloat; ensure unused classes are purged in production builds.
+- **Event Handling**: Debounce search/filter inputs in DataTable and SearchInput to reduce frequent re-renders.
+- **Theme Switching**: Optimize theme transitions to prevent layout shifts and maintain smooth user experience.
 
-[No sources needed since this section provides general guidance]
+**Updated** Added performance considerations for enhanced components and theme switching
 
 ## Troubleshooting Guide
-- Modal focus issues: Ensure focus trap is active and aria-modal is set; verify Escape key handler closes the modal.
-- Form validation errors: Confirm Field components have correct name and error mapping; check aria-describedby associations.
-- DataTable performance: If rendering slows, enable pagination and virtualization; debounce filters and sorts.
-- LoadingState visibility: Verify loading flags are correctly toggled; use aria-live to announce state changes.
-- ErrorBoundary fallback: Provide meaningful fallback UI and log errors via onError for debugging.
+- **Modal focus issues**: Ensure focus trap is active and aria-modal is set; verify Escape key handler closes the modal.
+- **Form validation errors**: Confirm Field components have correct name and error mapping; check aria-describedby associations.
+- **DataTable performance**: If rendering slows, enable pagination and virtualization; debounce filters and sorts.
+- **LoadingState visibility**: Verify loading flags are correctly toggled; use aria-live to announce state changes.
+- **ErrorBoundary fallback**: Provide meaningful fallback UI and log errors via onError for debugging.
+- **Dark mode issues**: Check CSS custom property definitions and Tailwind dark mode configuration; verify theme detection logic.
+- **Accessibility problems**: Test with screen readers and keyboard-only navigation; validate ARIA attributes and semantic markup.
+- **Translation issues**: Ensure aria-label translation functions are properly configured and locale files are loaded.
+
+**Updated** Added troubleshooting guidance for dark mode, accessibility, and translation issues
 
 **Section sources**
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
@@ -570,9 +843,9 @@ L3 --> F3
 - [frontend/src/components/ui/DataTable/DataTable.tsx](file://frontend/src/components/ui/DataTable/DataTable.tsx)
 
 ## Conclusion
-The shared UI component library provides a cohesive set of primitives, composites, feedback, and layout components built with Tailwind CSS and designed for accessibility. By following the documented props interfaces, styling patterns, and composition strategies, teams can maintain consistency, improve usability, and scale the application effectively.
+The shared UI component library provides a comprehensive and cohesive set of primitives, composites, enhanced components, feedback, and layout components built with Tailwind CSS and designed for accessibility. The recent enhancements with dark mode compatibility, improved accessibility features including aria-label translations, and consistent visual appearance across light and dark themes significantly improve the user experience and developer productivity.
 
-[No sources needed since this section summarizes without analyzing specific files]
+By following the documented props interfaces, styling patterns, and composition strategies, teams can maintain consistency, improve usability, and scale the application effectively while ensuring accessibility compliance and cross-theme compatibility.
 
 ## Appendices
 
@@ -581,6 +854,8 @@ The shared UI component library provides a cohesive set of primitives, composite
 - Use Tailwind classes for customization; prefer className overrides over internal prop proliferation.
 - Maintain accessible markup by leveraging built-in attributes and ensuring proper label associations.
 - Compose complex screens using PageLayout, wrapping content in Card and providing feedback via LoadingState/EmptyState/ErrorBoundary.
+- Configure theme support by ensuring proper CSS custom property definitions and Tailwind dark mode setup.
+- Implement internationalization by providing translation functions for aria-labels and component messages.
 
 **Section sources**
 - [frontend/src/components/ui/index.ts](file://frontend/src/components/ui/index.ts)
@@ -590,12 +865,24 @@ The shared UI component library provides a cohesive set of primitives, composite
 - Ensure DataTable columns collapse gracefully on small screens; consider horizontal scrolling or card-based layouts.
 - Modal sizes should adapt to viewport; provide smaller sizes for mobile.
 - Sidebar should collapse on narrow viewports; expose toggle controls.
+- Enhanced components like TreeView and TransfertList should handle touch interactions appropriately.
+- Breadcrumbs should truncate or collapse gracefully on smaller screens.
 
-[No sources needed since this section provides general guidance]
+**Updated** Added responsive considerations for enhanced components
 
 ### Cross-Browser Compatibility
 - Test focus management and keyboard interactions across browsers.
 - Verify Tailwind utilities render consistently; polyfill if necessary for older browsers.
 - Ensure aria attributes are supported and announced by screen readers.
+- Test dark mode functionality across different browsers and operating systems.
+- Validate theme switching performance and visual consistency.
 
-[No sources needed since this section provides general guidance]
+**Updated** Added cross-browser testing considerations for dark mode and theme switching
+
+### Theme Configuration Reference
+- **CSS Custom Properties**: Define theme variables for colors, backgrounds, and borders.
+- **Tailwind Configuration**: Enable dark mode strategy and configure color palettes.
+- **JavaScript Theme Detection**: Implement automatic theme detection and manual switching.
+- **Component Theme Support**: Ensure all components respect theme context and CSS custom properties.
+
+**New Section** Added theme configuration reference for developers implementing dark mode support

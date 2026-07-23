@@ -24,10 +24,10 @@ interface NomenclatureCrudConfig<T extends EntityWithId> {
     icon: LucideIcon;
     permission: string;
     columns: Column<T>[];
-    useData: () => { data?: T[]; isLoading: boolean; error?: any; refetch: () => void };
-    useCreate: () => UseMutationResult<T, Error, any>;
+    useData: () => { data?: T[]; isLoading: boolean; error?: Error | null; refetch: () => void };
+    useCreate: () => UseMutationResult<T, unknown, Partial<T>>;
     useUpdate?: () => unknown;
-    useDelete: () => UseMutationResult<void, Error, string>;
+    useDelete: () => UseMutationResult<void, unknown, string>;
     formComponent: (props: {
         initialData?: T;
         onSuccess: () => void;
@@ -80,7 +80,7 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
         },
         {
             key: 'actions',
-            header: t('actions'),
+            header: t('colActions'),
             renderActions: (item): ActionConfig[] => {
                 if (!canEdit) return [];
                 const actions: ActionConfig[] = [
@@ -99,7 +99,7 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
                         label: t('dupliquer'),
                         onClick: async () => {
                             const { id, estSysteme, createdAt, updatedAt, ...rest } = item;
-                            await create.mutateAsync({ ...rest, estSysteme: false });
+                            await create.mutateAsync({ ...rest, estSysteme: false } as unknown as Partial<T>);
                             refetch();
                         },
                         variant: 'default',
@@ -119,7 +119,7 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
     ];
 
     if (isLoading && !data) return <PageSkeleton showHeader showTable />;
-    if (error) return <ErrorMessage message={error} onRetry={refetch} />;
+    if (error) return <ErrorMessage message={error.message || t('erreurGenerique')} onRetry={refetch} />;
 
     const isEmpty = !isLoading && !error && (data?.length ?? 0) === 0;
 

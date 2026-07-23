@@ -21,4 +21,5 @@ export { CategoriesPostePage } from './components/categories-poste-page';
 export { NiveauxResponsabilitePage } from './components/niveaux-responsabilite-page';
 export { TypesPersonnelPage } from './components/types-personnel-page';
 export { TypesRelationPage } from './components/types-relation-page';
-export { TemplatesPage } from './components/templates-page';
+export { useCreerPoste, useModifierPoste, useSupprimerPoste } from './hooks/use-postes';
+export { useGetImpactUnite, useCreerUniteAvecPostes, useReordonnerUnite } from './hooks/use-unites';

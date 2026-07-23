@@ -6,8 +6,9 @@ import type { CategoriePoste } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'categories-poste'] as const };
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useCategoriesPoste() {
@@ -24,7 +25,7 @@ export function useCreerCategoriePoste() {
     return useMutation({
         mutationFn: async (dto: Partial<CategoriePoste>) => { const res = await apiClient.post<CategoriePoste>('/api/organisation/categories-poste', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Catégorie créée'); },
-        onError: (e: any) => handleError(e, 'Erreur création catégorie'),
+        onError: (e: unknown) => handleError(e, 'Erreur création catégorie'),
     });
 }
 
@@ -33,7 +34,7 @@ export function useModifierCategoriePoste() {
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<CategoriePoste>) => { const res = await apiClient.patch<CategoriePoste>(`/api/organisation/categories-poste/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Catégorie modifiée'); },
-        onError: (e: any) => handleError(e, 'Erreur modification catégorie'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification catégorie'),
     });
 }
 
@@ -42,6 +43,6 @@ export function useSupprimerCategoriePoste() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/categories-poste/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Catégorie supprimée'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression catégorie'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression catégorie'),
     });
 }

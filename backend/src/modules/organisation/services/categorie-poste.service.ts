@@ -27,9 +27,13 @@ class CategoriePosteService {
     }
 
     async findAll(etablissementId?: string): Promise<CategoriePoste[]> {
-        const where: any = {};
-        if (etablissementId) where.etablissementId = etablissementId;
-        return this.repo.find({ where, order: { label: 'ASC' } });
+        const qb = this.repo.createQueryBuilder('c');
+        if (etablissementId) {
+            qb.where('(c.etablissementId = :eid OR c.estSysteme = TRUE)', { eid: etablissementId });
+        } else {
+            qb.where('(c.etablissementId IS NULL OR c.estSysteme = TRUE)');
+        }
+        return qb.orderBy('c.label', 'ASC').getMany();
     }
 
     async findAllPaginated(page: number, limit: number, etablissementId?: string, search?: string) {

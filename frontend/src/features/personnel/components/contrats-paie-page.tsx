@@ -30,6 +30,7 @@ const ONGLETS = [
 ];
 
 function ContratsTab() {
+    const { t } = useTranslation('contrat');
     const { data: contrats, isLoading } = useContrats();
     const supprimer = useSupprimerContrat();
     const [showModal, setShowModal] = useState(false);
@@ -44,7 +45,7 @@ function ContratsTab() {
     };
 
     const modeDisplay: Record<string, string> = {
-        MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte', HEBDOMADAIRE: 'Hebdo',
+        MENSUEL: t('contrat.modeMensuelCourt'), HORAIRE: t('contrat.modeHoraireCourt'), MIXTE: t('contrat.modeMixteCourt'), HEBDOMADAIRE: t('contrat.modeHebdoCourt'),
     };
 
     const statutVariant: Record<string, 'success' | 'warning' | 'secondary' | 'danger'> = {
@@ -60,11 +61,11 @@ function ContratsTab() {
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-semibold">Tous les contrats</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Les affectations poste et fonctions sont synchronisées automatiquement</p>
+                    <h3 className="text-lg font-semibold">{t('contrat.tousLesContrats')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('contrat.syncInfo')}</p>
                 </div>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-                    Nouveau contrat
+                    {t('contrat.nouveauContrat')}
                 </ElisaButton>
             </div>
 
@@ -75,15 +76,15 @@ function ContratsTab() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-200 dark:border-gray-700">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Membre</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Type</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Poste</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fonction</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Mode</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Rémunération</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.membre')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.labelType')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.poste')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.fonction')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.labelMode')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.periode')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.remuneration')}</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.statut')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.labelActions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -149,10 +150,10 @@ function ContratsTab() {
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Modifier">
+                                            <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t('contrat.modifier')}>
                                                 <Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                             </button>
-                                            <button onClick={() => { if (confirm('Supprimer ce contrat ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title="Supprimer">
+                                            <button onClick={() => { if (confirm(t('contrat.confirmDelete'))) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title={t('contrat.supprimer')}>
                                                 <Trash2 className="h-4 w-4 text-red-400" />
                                             </button>
                                         </div>
@@ -165,8 +166,8 @@ function ContratsTab() {
             ) : (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <FileText className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-300">Aucun contrat enregistré</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Créez un contrat pour lier un membre à un poste et gérer sa rémunération</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('contrat.aucunContrat')}</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t('contrat.aucunContratHint')}</p>
                 </div>
             )}
 
@@ -176,6 +177,7 @@ function ContratsTab() {
 }
 
 function TypesContratTab() {
+    const { t } = useTranslation('contrat');
     const { data: types, isLoading } = useTypesContrat();
     const creer = useCreerTypeContrat();
     const modifier = useModifierTypeContrat();
@@ -195,13 +197,13 @@ function TypesContratTab() {
         setShowModal(true);
     };
 
-    const openEdit = (t: TypeContratPersonnalise) => {
-        setEditing(t);
+    const openEdit = (tc: TypeContratPersonnalise) => {
+        setEditing(tc);
         setForm({
-            code: t.code, nom: t.nom, description: t.description || '',
-            categorie: t.categorie, modeRemuneration: t.modeRemuneration,
-            ordre: t.ordre, renouvellementAutoDefaut: t.renouvellementAutoDefaut,
-            dureeMaxMois: t.dureeMaxMois || 0,
+            code: tc.code, nom: tc.nom, description: tc.description || '',
+            categorie: tc.categorie, modeRemuneration: tc.modeRemuneration,
+            ordre: tc.ordre, renouvellementAutoDefaut: tc.renouvellementAutoDefaut,
+            dureeMaxMois: tc.dureeMaxMois || 0,
         });
         setShowModal(true);
     };
@@ -221,15 +223,15 @@ function TypesContratTab() {
     };
 
     const modeLabel: Record<string, string> = {
-        MENSUEL: 'Mensuel fixe', HORAIRE: 'Horaire', MIXTE: 'Mixte + HS', HEBDOMADAIRE: 'Hebdo lissé',
+        MENSUEL: t('contrat.modeMensuel'), HORAIRE: t('contrat.modeHoraire'), MIXTE: t('contrat.modeMixte'), HEBDOMADAIRE: t('contrat.modeHebdomadaire'),
     };
 
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Types de contrat personnalisés</h3>
+                <h3 className="text-lg font-semibold">{t('contrat.typesContrat.titre')}</h3>
                 <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-                    Nouveau type
+                    {t('contrat.typesContrat.nouveauType')}
                 </ElisaButton>
             </div>
 
@@ -240,36 +242,36 @@ function TypesContratTab() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-200 dark:border-gray-700">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Catégorie</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Mode</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Système</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Ordre</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.code')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.nom')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.categorie')}</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.mode')}</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.actifCol')}</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.systeme')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.ordre')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.typesContrat.actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {types.map((t: TypeContratPersonnalise) => (
-                                <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    <td className="py-3 px-4 font-mono font-medium">{t.code}</td>
-                                    <td className="py-3 px-4">{t.nom}</td>
-                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{t.categorie}</td>
-                                    <td className="py-3 px-4 text-center"><Badge variant="default">{modeLabel[t.modeRemuneration] || t.modeRemuneration}</Badge></td>
-                                    <td className="py-3 px-4 text-center">{t.actif ? <Badge variant="success">Oui</Badge> : <Badge variant="secondary">Non</Badge>}</td>
-                                    <td className="py-3 px-4 text-center">{t.estSysteme ? <Badge variant="warning">Système</Badge> : '—'}</td>
-                                    <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{t.ordre}</td>
+                            {types.map((tc: TypeContratPersonnalise) => (
+                                <tr key={tc.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <td className="py-3 px-4 font-mono font-medium">{tc.code}</td>
+                                    <td className="py-3 px-4">{tc.nom}</td>
+                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{tc.categorie}</td>
+                                    <td className="py-3 px-4 text-center"><Badge variant="default">{modeLabel[tc.modeRemuneration] || tc.modeRemuneration}</Badge></td>
+                                    <td className="py-3 px-4 text-center">{tc.actif ? <Badge variant="success">{t('contrat.typesContrat.oui')}</Badge> : <Badge variant="secondary">{t('contrat.typesContrat.non')}</Badge>}</td>
+                                    <td className="py-3 px-4 text-center">{tc.estSysteme ? <Badge variant="warning">{t('contrat.typesContrat.systeme')}</Badge> : '—'}</td>
+                                    <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{tc.ordre}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => toggle.mutate(t.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t.actif ? 'Désactiver' : 'Activer'}>
-                                                {t.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
+                                            <button onClick={() => toggle.mutate(tc.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={tc.actif ? t('contrat.typesContrat.desactiver') : t('contrat.typesContrat.activer')}>
+                                                {tc.actif ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
                                             </button>
-                                            <button onClick={() => openEdit(t)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Modifier">
+                                            <button onClick={() => openEdit(tc)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title={t('contrat.typesContrat.modifier')}>
                                                 <Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                             </button>
-                                            {!t.estSysteme && (
-                                                <button onClick={() => { if (confirm('Supprimer ce type de contrat ?')) supprimer.mutate(t.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title="Supprimer"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            {!tc.estSysteme && (
+                                                <button onClick={() => { if (confirm(t('contrat.typesContrat.confirmDelete'))) supprimer.mutate(tc.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg" title={t('contrat.typesContrat.supprimer')}><Trash2 className="h-4 w-4 text-red-400" /></button>
                                             )}
                                         </div>
                                     </td>
@@ -281,53 +283,53 @@ function TypesContratTab() {
             ) : (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <Building className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-300">Aucun type de contrat personnalisé</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('contrat.typesContrat.aucun')}</p>
                 </div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
-                title={editing ? 'Modifier le type de contrat' : 'Nouveau type de contrat'}
+                title={editing ? t('contrat.typesContrat.modifierType') : t('contrat.typesContrat.nouveauTypeModal')}
                 size="md"
                 footer={
                     <div className="flex justify-end gap-3">
-                        <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>Annuler</ElisaButton>
+                        <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>{t('contrat.typesContrat.annuler')}</ElisaButton>
                         <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending}
                             disabled={!form.code || !form.nom}>
-                            {editing ? 'Enregistrer' : 'Créer'}
+                            {editing ? t('contrat.typesContrat.enregistrer') : t('contrat.typesContrat.creer')}
                         </ElisaButton>
                     </div>
                 }
             >
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="CDD, INTERIMAIRE" required disabled={!!editing?.estSysteme} hint={editing?.estSysteme ? 'Code système non modifiable' : undefined} />
-                        <ElisaInput label="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} placeholder="Contrat à durée déterminée" required />
+                        <ElisaInput label={t('contrat.typesContrat.code')} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder={t('contrat.typesContrat.codePlaceholder')} required disabled={!!editing?.estSysteme} hint={editing?.estSysteme ? t('contrat.typesContrat.codeSystemeHint') : undefined} />
+                        <ElisaInput label={t('contrat.typesContrat.nom')} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} placeholder={t('contrat.typesContrat.nomPlaceholder')} required />
                     </div>
-                    <ElisaInput label="Description (optionnelle)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                    <ElisaInput label={t('contrat.typesContrat.descriptionOptionnelle')} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect label="Catégorie" options={[
-                            { value: 'EMPLOI_PERMANENT', label: 'Emploi permanent' },
-                            { value: 'EMPLOI_TEMPORAIRE', label: 'Emploi temporaire' },
-                            { value: 'STAGE_FORMATION', label: 'Stage / Formation' },
-                            { value: 'FREELANCE', label: 'Freelance' },
-                            { value: 'TEMPS_PARTIEL', label: 'Temps partiel' },
-                            { value: 'APPRENTISSAGE', label: 'Apprentissage' },
-                            { value: 'AUTRE', label: 'Autre' },
+                        <ElisaSelect label={t('contrat.typesContrat.categorie')} options={[
+                            { value: 'EMPLOI_PERMANENT', label: t('contrat.typesContrat.catEmploiPermanent') },
+                            { value: 'EMPLOI_TEMPORAIRE', label: t('contrat.typesContrat.catEmploiTemporaire') },
+                            { value: 'STAGE_FORMATION', label: t('contrat.typesContrat.catStageFormation') },
+                            { value: 'FREELANCE', label: t('contrat.typesContrat.catFreelance') },
+                            { value: 'TEMPS_PARTIEL', label: t('contrat.typesContrat.catTempsPartiel') },
+                            { value: 'APPRENTISSAGE', label: t('contrat.typesContrat.catApprentissage') },
+                            { value: 'AUTRE', label: t('contrat.typesContrat.catAutre') },
                         ]} value={form.categorie} onValueChange={(v) => setForm({ ...form, categorie: v })} />
-                        <ElisaSelect label="Mode de rémunération par défaut" options={[
-                            { value: 'MENSUEL', label: 'Mensuel (fixe)' },
-                            { value: 'HORAIRE', label: 'Horaire (taux × heures)' },
-                            { value: 'MIXTE', label: 'Mixte (fixe + heures sup)' },
-                            { value: 'HEBDOMADAIRE', label: 'Hebdomadaire (taux × 52/12)' },
+                        <ElisaSelect label={t('contrat.typesContrat.modeRemunerationDefaut')} options={[
+                            { value: 'MENSUEL', label: t('contrat.modeMensuel') },
+                            { value: 'HORAIRE', label: t('contrat.modeHoraire') },
+                            { value: 'MIXTE', label: t('contrat.modeMixte') },
+                            { value: 'HEBDOMADAIRE', label: t('contrat.modeHebdomadaire') },
                         ]} value={form.modeRemuneration} onValueChange={(v) => setForm({ ...form, modeRemuneration: v })} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Ordre d'affichage" type="number" value={String(form.ordre)} onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })} />
-                        <ElisaInput label="Durée max (mois, 0 = illimité)" type="number" value={String(form.dureeMaxMois)} onChange={(e) => setForm({ ...form, dureeMaxMois: Number(e.target.value) })} />
+                        <ElisaInput label={t('contrat.typesContrat.ordreAffichage')} type="number" value={String(form.ordre)} onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })} />
+                        <ElisaInput label={t('contrat.typesContrat.dureeMax')} type="number" value={String(form.dureeMaxMois)} onChange={(e) => setForm({ ...form, dureeMaxMois: Number(e.target.value) })} />
                     </div>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                         <input type="checkbox" checked={form.renouvellementAutoDefaut} onChange={(e) => setForm({ ...form, renouvellementAutoDefaut: e.target.checked })} className="rounded border-gray-300 dark:border-gray-600" />
-                        Renouvellement automatique par défaut
+                        {t('contrat.typesContrat.renouvellementAutoDefaut')}
                     </label>
                 </div>
             </CustomModal>
@@ -336,6 +338,7 @@ function TypesContratTab() {
 }
 
 function BulletinsTab() {
+    const { t } = useTranslation('contrat');
     const [filters, setFilters] = useState({ mois: '', annee: String(new Date().getFullYear()), statut: '' });
     const { data: bulletins, isLoading } = useBulletins({
         mois: filters.mois ? Number(filters.mois) : undefined,
@@ -370,7 +373,7 @@ function BulletinsTab() {
         const nom = p?.prenom && p?.nom ? `${p.prenom} ${p.nom}` : m.matricule || m.id.slice(0, 8);
         return { value: m.id, label: `${nom} (${m.matricule || '—'})` };
     });
-    membreGenOptions.unshift({ value: '', label: '— Sélectionner un membre —' });
+    membreGenOptions.unshift({ value: '', label: t('contrat.bulletins.selectionnerMembre') });
 
     const getMembreBulletinLabel = (b: any): string => {
         const p = b.membrePersonnel?.utilisateur?.profil;
@@ -382,26 +385,26 @@ function BulletinsTab() {
 
     const moisOptions = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: new Date(0, i).toLocaleString('fr', { month: 'long' }) }));
     const statutOptions = [
-        { value: '', label: 'Tous les statuts' },
-        { value: 'GENERE', label: 'Généré' },
-        { value: 'EN_ATTENTE_VALIDATION', label: 'En attente validation' },
-        { value: 'VALIDE', label: 'Validé' },
-        { value: 'PAYE', label: 'Payé' },
-        { value: 'ANNULE', label: 'Annulé' },
+        { value: '', label: t('contrat.bulletins.tousStatuts') },
+        { value: 'GENERE', label: t('contrat.bulletins.genere') },
+        { value: 'EN_ATTENTE_VALIDATION', label: t('contrat.bulletins.enAttenteValidation') },
+        { value: 'VALIDE', label: t('contrat.bulletins.valide') },
+        { value: 'PAYE', label: t('contrat.bulletins.paye') },
+        { value: 'ANNULE', label: t('contrat.bulletins.annule') },
     ];
 
     const openCreate = () => { setEditing(null); setForm({ membrePersonnelId: '', contratId: '', mois: new Date().getMonth() + 1, annee: new Date().getFullYear(), salaireBase: 0, primes: 0, deductions: 0 }); setShowModal(true); };
     const openEdit = (b: BulletinPaie) => { setEditing(b); setForm({ membrePersonnelId: b.membrePersonnelId, contratId: b.contratId, mois: b.mois, annee: b.annee, salaireBase: b.salaireBase, primes: b.primes, deductions: b.deductions }); setShowModal(true); };
 
     const categorieLabels: Record<string, string> = {
-        SALAIRE_BASE: 'Salaire de base',
-        HEURE_COURS: 'Heures de cours',
-        HEURE_SUP: 'Heures supplémentaires',
-        PRIME: 'Primes',
-        COTISATION: 'Cotisations',
-        INDEMNITE: 'Indemnités',
-        RETENUE: 'Retenues',
-        AUTRE: 'Autres',
+        SALAIRE_BASE: t('contrat.bulletins.salaireBaseCat'),
+        HEURE_COURS: t('contrat.bulletins.heureCours'),
+        HEURE_SUP: t('contrat.bulletins.heureSupCat'),
+        PRIME: t('contrat.bulletins.primeCat'),
+        COTISATION: t('contrat.bulletins.cotisationCat'),
+        INDEMNITE: t('contrat.bulletins.indemniteCat'),
+        RETENUE: t('contrat.bulletins.retenueCat'),
+        AUTRE: t('contrat.bulletins.autreCat'),
     };
     const groupedElements = elements.reduce((acc: Record<string, ElementSalaire[]>, e: ElementSalaire) => {
         const cat = e.categorie || 'AUTRE';
@@ -426,57 +429,57 @@ function BulletinsTab() {
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Bulletins de paie</h3>
+                <h3 className="text-lg font-semibold">{t('contrat.bulletins.titre')}</h3>
                 {rapport && rapport.nombreBulletins > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3 w-full max-w-3xl">
                         <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 p-3">
-                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Bulletins</p>
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">{t('contrat.bulletins.statBulletins')}</p>
                             <p className="text-xl font-bold text-blue-800 dark:text-blue-300 mt-1">{rapport.nombreBulletins}</p>
                         </div>
                         <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 p-3">
-                            <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Masse salariale</p>
+                            <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">{t('contrat.bulletins.masseSalariale')}</p>
                             <p className="text-xl font-bold text-green-800 dark:text-green-300 mt-1">{rapport.totalSalairesNets.toLocaleString('fr-FR')} F</p>
                         </div>
                         <div className="rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 p-3">
-                            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Salaire moyen</p>
+                            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">{t('contrat.bulletins.salaireMoyen')}</p>
                             <p className="text-xl font-bold text-indigo-800 dark:text-indigo-300 mt-1">{rapport.nombreBulletins > 0 ? Math.round(rapport.totalSalairesNets / rapport.nombreBulletins).toLocaleString('fr-FR') : 0} F</p>
                         </div>
                         <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 p-3">
-                            <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Primes</p>
+                            <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">{t('contrat.bulletins.statPrimes')}</p>
                             <p className="text-xl font-bold text-amber-800 dark:text-amber-300 mt-1">+{rapport.totalPrimes.toLocaleString('fr-FR')} F</p>
                         </div>
                         <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-3">
-                            <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">Déductions</p>
+                            <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">{t('contrat.bulletins.deductions')}</p>
                             <p className="text-xl font-bold text-red-800 dark:text-red-300 mt-1">−{rapport.totalDeductions.toLocaleString('fr-FR')} F</p>
                         </div>
                     </div>
                 )}
                 <div className="flex gap-2">
                     <ElisaButton variant="outline" size="sm" icon={<Calendar className="h-4 w-4" />} onClick={() => { setGenForm({ membreId: '', mois: new Date().getMonth() + 1, annee: new Date().getFullYear() }); setShowGenerer(true); }}>
-                        Génération
+                        {t('contrat.bulletins.generation')}
                     </ElisaButton>
                     <ElisaButton variant="outline" size="sm" icon={<Building className="h-4 w-4" />}
                         onClick={() => {
                             const actifs = membres.filter((m: MembrePersonnel) => m.statut === 'ACTIF');
-                            if (actifs.length === 0) { toast.error('Aucun membre actif'); return; }
-                            if (confirm(`Générer les bulletins pour ${actifs.length} membre(s) actif(s) ?`))
+                            if (actifs.length === 0) { toast.error(t('contrat.bulletins.aucunMembreActifToast')); return; }
+                            if (confirm(t('contrat.bulletins.confirmGenererMasse', { count: actifs.length })))
                                 genererMasse.mutate({ membres: actifs, mois: new Date().getMonth() + 1, annee: new Date().getFullYear() });
                         }}
                         loading={genererMasse.isPending}>
-                        Tout le personnel
+                        {t('contrat.bulletins.confirmGenererMasseLabel')}
                     </ElisaButton>
                     <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-                        Nouveau bulletin
+                        {t('contrat.bulletins.nouveauBulletinBtn')}
                     </ElisaButton>
                 </div>
             </div>
 
             <div className="flex items-center gap-3 mb-4">
-                <ElisaSelect options={[{ value: '', label: 'Tous les mois' }, ...moisOptions]} value={filters.mois} onValueChange={(v) => setFilters({ ...filters, mois: v })} className="w-36" />
-                <ElisaInput type="number" value={filters.annee} onChange={(e) => setFilters({ ...filters, annee: e.target.value })} className="w-24" placeholder="Année" />
+                <ElisaSelect options={[{ value: '', label: t('contrat.bulletins.tousLesMois') }, ...moisOptions]} value={filters.mois} onValueChange={(v) => setFilters({ ...filters, mois: v })} className="w-36" />
+                <ElisaInput type="number" value={filters.annee} onChange={(e) => setFilters({ ...filters, annee: e.target.value })} className="w-24" placeholder={t('contrat.bulletins.anneePlaceholder')} />
                 <ElisaSelect options={statutOptions} value={filters.statut} onValueChange={(v) => setFilters({ ...filters, statut: v })} className="w-44" />
                 {(filters.mois || filters.annee !== String(new Date().getFullYear()) || filters.statut) && (
-                    <button onClick={() => setFilters({ mois: '', annee: String(new Date().getFullYear()), statut: '' })} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Réinitialiser</button>
+                    <button onClick={() => setFilters({ mois: '', annee: String(new Date().getFullYear()), statut: '' })} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t('contrat.bulletins.reinitialiserFiltres')}</button>
                 )}
             </div>
 
@@ -487,15 +490,15 @@ function BulletinsTab() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-200 dark:border-gray-700">
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Membre</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Base</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Heures sup</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Primes</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Retenues</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Net</th>
-                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thPeriode')}</th>
+                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thMembre')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thBase')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thHeuresSup')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thPrimes')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thRetenues')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thNet')}</th>
+                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thStatut')}</th>
+                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('contrat.bulletins.thActions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -513,11 +516,11 @@ function BulletinsTab() {
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => { setDetailBulletin(b); setShowDetail(true); }} className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg" title="Voir détail"><Eye className="h-4 w-4 text-blue-500" /></button>
-                                            <button onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')} className="p-1.5 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg" title="PDF"><FileDown className="h-4 w-4 text-green-600 dark:text-green-400" /></button>
+                                            <button onClick={() => { setDetailBulletin(b); setShowDetail(true); }} className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg" title={t('contrat.bulletins.titleVoirDetail')}><Eye className="h-4 w-4 text-blue-500" /></button>
+                                            <button onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')} className="p-1.5 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg" title={t('contrat.bulletins.titlePdf')}><FileDown className="h-4 w-4 text-green-600 dark:text-green-400" /></button>
                                             <button onClick={() => openEdit(b)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
-                                            <button onClick={() => regenerer.mutate({ id: b.id, membreId: b.membrePersonnelId, mois: b.mois, annee: b.annee })} className="p-1.5 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg" title="Régénérer"><CreditCard className="h-4 w-4 text-amber-500" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce bulletin ?')) supprimer.mutate(b.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => regenerer.mutate({ id: b.id, membreId: b.membrePersonnelId, mois: b.mois, annee: b.annee })} className="p-1.5 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg" title={t('contrat.bulletins.titleRegenerer')}><CreditCard className="h-4 w-4 text-amber-500" /></button>
+                                            <button onClick={() => { if (confirm(t('contrat.bulletins.confirmSupprimerBulletin'))) supprimer.mutate(b.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -528,40 +531,40 @@ function BulletinsTab() {
             ) : (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <CreditCard className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-300">Aucun bulletin de paie</p>
+                    <p className="text-gray-600 dark:text-gray-300">{t('contrat.bulletins.aucunBulletin')}</p>
                 </div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
-                title={editing ? 'Modifier le bulletin' : 'Nouveau bulletin'}
+                title={editing ? t('contrat.bulletins.modifierBulletinModal') : t('contrat.bulletins.nouveauBulletinModal')}
                 size="md"
                 footer={
                     <div className="flex justify-end gap-3">
-                        <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>Annuler</ElisaButton>
+                        <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>{t('contrat.bulletins.annulerBtn')}</ElisaButton>
                         <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending}
                             disabled={!form.membrePersonnelId || !form.contratId || !form.mois || !form.annee}>
-                            {editing ? 'Enregistrer' : 'Créer'}
+                            {editing ? t('contrat.bulletins.enregistrerBtn') : t('contrat.bulletins.creerBtn')}
                         </ElisaButton>
                     </div>
                 }
             >
                 <div className="space-y-4">
-                    <ElisaInput label="ID Membre" value={form.membrePersonnelId} onChange={(e) => setForm({ ...form, membrePersonnelId: e.target.value })} required />
-                    <ElisaInput label="ID Contrat" value={form.contratId} onChange={(e) => setForm({ ...form, contratId: e.target.value })} required />
+                    <ElisaInput label={t('contrat.bulletins.labelIdMembre')} value={form.membrePersonnelId} onChange={(e) => setForm({ ...form, membrePersonnelId: e.target.value })} required />
+                    <ElisaInput label={t('contrat.bulletins.labelIdContrat')} value={form.contratId} onChange={(e) => setForm({ ...form, contratId: e.target.value })} required />
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect label="Mois" options={moisOptions} value={String(form.mois)} onValueChange={(v) => setForm({ ...form, mois: Number(v) })} required />
-                        <ElisaInput label="Année" type="number" value={String(form.annee)} onChange={(e) => setForm({ ...form, annee: Number(e.target.value) })} required />
+                        <ElisaSelect label={t('contrat.bulletins.labelMois')} options={moisOptions} value={String(form.mois)} onValueChange={(v) => setForm({ ...form, mois: Number(v) })} required />
+                        <ElisaInput label={t('contrat.bulletins.labelAnnee')} type="number" value={String(form.annee)} onChange={(e) => setForm({ ...form, annee: Number(e.target.value) })} required />
                     </div>
-                    <ElisaInput label="Salaire de base (F CFA)" type="number" value={String(form.salaireBase)} onChange={(e) => setForm({ ...form, salaireBase: Number(e.target.value) })} required />
+                    <ElisaInput label={t('contrat.bulletins.labelSalaireBaseForm')} type="number" value={String(form.salaireBase)} onChange={(e) => setForm({ ...form, salaireBase: Number(e.target.value) })} required />
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Primes" type="number" value={String(form.primes)} onChange={(e) => setForm({ ...form, primes: Number(e.target.value) })} />
-                        <ElisaInput label="Retenues" type="number" value={String(form.deductions)} onChange={(e) => setForm({ ...form, deductions: Number(e.target.value) })} />
+                        <ElisaInput label={t('contrat.bulletins.labelPrimesForm')} type="number" value={String(form.primes)} onChange={(e) => setForm({ ...form, primes: Number(e.target.value) })} />
+                        <ElisaInput label={t('contrat.bulletins.labelRetenuesForm')} type="number" value={String(form.deductions)} onChange={(e) => setForm({ ...form, deductions: Number(e.target.value) })} />
                     </div>
                 </div>
             </CustomModal>
 
             <CustomModal open={showGenerer} onOpenChange={setShowGenerer}
-                title="Génération automatique de bulletin"
+                title={t('contrat.bulletins.generationAutoTitle')}
                 size="md"
                 footer={
                     <div className="flex items-center justify-end gap-3">
@@ -573,40 +576,40 @@ function BulletinsTab() {
                             }}
                             loading={simuler.isPending}
                             disabled={!genForm.membreId || !genForm.mois || !genForm.annee}>
-                            Simuler
+                            {t('contrat.bulletins.simulerBtn')}
                         </ElisaButton>
-                        <ElisaButton variant="secondary" onClick={() => setShowGenerer(false)}>Annuler</ElisaButton>
+                        <ElisaButton variant="secondary" onClick={() => setShowGenerer(false)}>{t('contrat.bulletins.annulerBtn')}</ElisaButton>
                         <ElisaButton variant="primary" onClick={() => { generer.mutate(genForm); setShowGenerer(false); }}
                             loading={generer.isPending} disabled={!genForm.membreId || !genForm.mois || !genForm.annee}>
-                            Générer
+                            {t('contrat.bulletins.genererBtn')}
                         </ElisaButton>
                     </div>
                 }
             >
                 <div className="space-y-4">
-                    <ElisaSelect label="Membre" options={membreGenOptions} value={genForm.membreId} onValueChange={(v) => setGenForm({ ...genForm, membreId: v })} required />
+                    <ElisaSelect label={t('contrat.bulletins.labelMembre')} options={membreGenOptions} value={genForm.membreId} onValueChange={(v) => setGenForm({ ...genForm, membreId: v })} required />
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect label="Mois" options={moisOptions} value={String(genForm.mois)} onValueChange={(v) => setGenForm({ ...genForm, mois: Number(v) })} required />
-                        <ElisaInput label="Année" type="number" value={String(genForm.annee)} onChange={(e) => setGenForm({ ...genForm, annee: Number(e.target.value) })} required />
+                        <ElisaSelect label={t('contrat.bulletins.labelMois')} options={moisOptions} value={String(genForm.mois)} onValueChange={(v) => setGenForm({ ...genForm, mois: Number(v) })} required />
+                        <ElisaInput label={t('contrat.bulletins.labelAnnee')} type="number" value={String(genForm.annee)} onChange={(e) => setGenForm({ ...genForm, annee: Number(e.target.value) })} required />
                     </div>
                 </div>
             </CustomModal>
 
             <CustomModal open={showSimulation} onOpenChange={setShowSimulation}
-                title="Simulation du bulletin" size="md"
-                footer={<ElisaButton variant="secondary" onClick={() => setShowSimulation(false)}>Fermer</ElisaButton>}
+                title={t('contrat.bulletins.simulation')} size="md"
+                footer={<ElisaButton variant="secondary" onClick={() => setShowSimulation(false)}>{t('contrat.bulletins.fermerBtn')}</ElisaButton>}
             >
                 {simulationData && (
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg"><span className="text-blue-600 dark:text-blue-400 text-xs">Salaire base</span><p className="font-semibold">{Number(simulationData.salaireBase).toLocaleString('fr-FR')} F</p></div>
-                            <div className="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg"><span className="text-amber-600 dark:text-amber-400 text-xs">Heures sup</span><p className="font-semibold">{simulationData.heuresSup > 0 ? `${Number(simulationData.montantHeuresSup).toLocaleString('fr-FR')} F (${simulationData.heuresSup}h)` : '—'}</p></div>
-                            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg"><span className="text-green-600 dark:text-green-400 text-xs">Primes</span><p className="font-semibold">{Number(simulationData.primes).toLocaleString('fr-FR')} F</p></div>
-                            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg"><span className="text-red-600 dark:text-red-400 text-xs">Retenues</span><p className="font-semibold">−{Number(simulationData.totalRetenues).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg"><span className="text-blue-600 dark:text-blue-400 text-xs">{t('contrat.bulletins.simSalaireBase')}</span><p className="font-semibold">{Number(simulationData.salaireBase).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg"><span className="text-amber-600 dark:text-amber-400 text-xs">{t('contrat.bulletins.simHeuresSup')}</span><p className="font-semibold">{simulationData.heuresSup > 0 ? `${Number(simulationData.montantHeuresSup).toLocaleString('fr-FR')} F (${simulationData.heuresSup}h)` : '—'}</p></div>
+                            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg"><span className="text-green-600 dark:text-green-400 text-xs">{t('contrat.bulletins.simPrimes')}</span><p className="font-semibold">{Number(simulationData.primes).toLocaleString('fr-FR')} F</p></div>
+                            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg"><span className="text-red-600 dark:text-red-400 text-xs">{t('contrat.bulletins.simRetenues')}</span><p className="font-semibold">−{Number(simulationData.totalRetenues).toLocaleString('fr-FR')} F</p></div>
                         </div>
                         {simulationData.detailParMatiere?.length > 0 && (
                             <>
-                                <h4 className="font-medium text-gray-700 dark:text-gray-300">Détail par matière</h4>
+                                <h4 className="font-medium text-gray-700 dark:text-gray-300">{t('contrat.bulletins.simDetailParMatiere')}</h4>
                                 <div className="space-y-1">
                                     {simulationData.detailParMatiere.map((d: any, i: number) => (
                                         <div key={i} className="flex justify-between py-1.5 px-3 rounded bg-gray-50 dark:bg-gray-800">
@@ -618,7 +621,7 @@ function BulletinsTab() {
                             </>
                         )}
                         <div className="border-t pt-3 flex justify-between font-semibold text-base">
-                            <span>Net à payer</span>
+                            <span>{t('contrat.bulletins.simNetAPayer')}</span>
                             <span>{Number(simulationData.salaireNet).toLocaleString('fr-FR')} F</span>
                         </div>
                     </div>
@@ -626,23 +629,23 @@ function BulletinsTab() {
             </CustomModal>
 
             <CustomModal open={showDetail} onOpenChange={setShowDetail}
-                title="Détail du bulletin de paie" size="lg"
-                footer={<ElisaButton variant="secondary" onClick={() => setShowDetail(false)}>Fermer</ElisaButton>}
+                title={t('contrat.bulletins.detailBulletinTitle')} size="lg"
+                footer={<ElisaButton variant="secondary" onClick={() => setShowDetail(false)}>{t('contrat.bulletins.fermerBtn')}</ElisaButton>}
             >
                 {detailBulletin && (
                     <div className="space-y-5">
                         <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div><span className="text-gray-500 dark:text-gray-400">Période</span><p className="font-medium">{detailBulletin.mois}/{detailBulletin.annee}</p></div>
-                            <div><span className="text-gray-500 dark:text-gray-400">Statut</span><p className="font-medium"><Badge variant={statutVariant[detailBulletin.statut] || 'secondary'}>{detailBulletin.statut}</Badge></p></div>
-                            <div><span className="text-gray-500 dark:text-gray-400">Membre</span><p className="font-medium">{getMembreBulletinLabel(detailBulletin)}</p></div>
-                            <div><span className="text-gray-500 dark:text-gray-400">ID Contrat</span><p className="font-mono text-xs truncate max-w-[180px]" title={detailBulletin.contratId}>{detailBulletin.contratId}</p></div>
-                            {detailBulletin.datePaiement && <div><span className="text-gray-500 dark:text-gray-400">Date paiement</span><p className="font-medium">{new Date(detailBulletin.datePaiement).toLocaleDateString('fr-FR')}</p></div>}
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailPeriode')}</span><p className="font-medium">{detailBulletin.mois}/{detailBulletin.annee}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailStatut')}</span><p className="font-medium"><Badge variant={statutVariant[detailBulletin.statut] || 'secondary'}>{detailBulletin.statut}</Badge></p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailMembre')}</span><p className="font-medium">{getMembreBulletinLabel(detailBulletin)}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailIdContrat')}</span><p className="font-mono text-xs truncate max-w-[180px]" title={detailBulletin.contratId}>{detailBulletin.contratId}</p></div>
+                            {detailBulletin.datePaiement && <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailDatePaiement')}</span><p className="font-medium">{new Date(detailBulletin.datePaiement).toLocaleDateString('fr-FR')}</p></div>}
                         </div>
 
                         <hr className="border-gray-200 dark:border-gray-700" />
 
                         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                            Éléments de paie <span className="text-xs font-normal text-gray-400 dark:text-gray-500">({elements.length} ligne{elements.length > 1 ? 's' : ''})</span>
+                            {t('contrat.bulletins.detailElementsPaie')} <span className="text-xs font-normal text-gray-400 dark:text-gray-500">({elements.length} {t('contrat.bulletins.detailLignes')})</span>
                         </h4>
 
                         {elements.length > 0 ? (
@@ -674,18 +677,18 @@ function BulletinsTab() {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">Aucun élément détaillé enregistré pour ce bulletin.</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">{t('contrat.bulletins.detailAucunElement')}</p>
                         )}
 
                         <hr className="border-gray-200 dark:border-gray-700" />
 
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div><span className="text-gray-500 dark:text-gray-400">Total heures effectuées</span><p className="font-medium">{detailBulletin.heuresEffectuees || 0}h</p></div>
-                            <div><span className="text-gray-500 dark:text-gray-400">Dont heures sup</span><p className="font-medium text-amber-600 dark:text-amber-400">{detailBulletin.montantHeuresSup > 0 ? `${Number(detailBulletin.montantHeuresSup).toLocaleString('fr-FR')} F` : '—'}</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailTotalHeures')}</span><p className="font-medium">{detailBulletin.heuresEffectuees || 0}h</p></div>
+                            <div><span className="text-gray-500 dark:text-gray-400">{t('contrat.bulletins.detailDontHeuresSup')}</span><p className="font-medium text-amber-600 dark:text-amber-400">{detailBulletin.montantHeuresSup > 0 ? `${Number(detailBulletin.montantHeuresSup).toLocaleString('fr-FR')} F` : '—'}</p></div>
                         </div>
 
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 flex items-center justify-between">
-                            <span className="font-semibold text-gray-900 dark:text-gray-100">Net à payer</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">{t('contrat.bulletins.detailNetAPayer')}</span>
                             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{Number(detailBulletin.salaireNet).toLocaleString('fr-FR')} F</span>
                         </div>
 
@@ -693,7 +696,7 @@ function BulletinsTab() {
                             <>
                                 <hr className="border-gray-200 dark:border-gray-700" />
                                 <div className="flex items-center gap-3">
-                                    <ElisaInput type="date" value={paiementDate} onChange={(e) => setPaiementDate(e.target.value)} className="flex-1" placeholder="Date de paiement" />
+                                    <ElisaInput type="date" value={paiementDate} onChange={(e) => setPaiementDate(e.target.value)} className="flex-1" placeholder={t('contrat.bulletins.detailDatePaiementPlaceholder')} />
                                     <ElisaButton variant="primary" size="sm"
                                         onClick={() => {
                                             modifier.mutate({ id: detailBulletin.id, statut: 'PAYE', datePaiement: paiementDate || new Date().toISOString().split('T')[0] });
@@ -701,7 +704,7 @@ function BulletinsTab() {
                                         }}
                                         loading={modifier.isPending}
                                         disabled={!paiementDate}>
-                                        Marquer comme payé
+                                        {t('contrat.bulletins.detailMarquerPaye')}
                                     </ElisaButton>
                                 </div>
                             </>
@@ -714,6 +717,7 @@ function BulletinsTab() {
 }
 
 function CotisationsTab() {
+    const { t } = useTranslation('contrat');
     const { data: cotisations, isLoading } = useCotisations();
     const creer = useCreerCotisation();
     const modifier = useModifierCotisation();
@@ -732,8 +736,8 @@ function CotisationsTab() {
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Cotisations sociales</h3>
-                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
+                <h3 className="text-lg font-semibold">{t('cotisations.titre')}</h3>
+                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>{t('cotisations.ajouter')}</ElisaButton>
             </div>
             {isLoading ? (
                 <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
@@ -741,13 +745,13 @@ function CotisationsTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead><tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Type</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Taux patronal</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Taux salarial</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.code')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.nom')}</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.type')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.tauxPatronal')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.tauxSalarial')}</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.actif')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('cotisations.actions')}</th>
                         </tr></thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {cotisations.map((c: Cotisation) => (
@@ -757,11 +761,11 @@ function CotisationsTab() {
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{c.type}</Badge></td>
                                     <td className="py-3 px-4 text-right">{c.tauxPatronal}%</td>
                                     <td className="py-3 px-4 text-right">{c.tauxSalarial}%</td>
-                                    <td className="py-3 px-4 text-center">{c.actif ? <Badge variant="success">Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</td>
+                                    <td className="py-3 px-4 text-center">{c.actif ? <Badge variant="success">{t('cotisations.actif')}</Badge> : <Badge variant="secondary">{t('cotisations.inactif')}</Badge>}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer cette cotisation ?')) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => { if (confirm(t('cotisations.confirmDelete'))) supprimer.mutate(c.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -770,23 +774,23 @@ function CotisationsTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Percent className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucune cotisation</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Percent className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">{t('cotisations.aucune')}</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
-                title={editing ? 'Modifier la cotisation' : 'Nouvelle cotisation'} size="sm"
+                title={editing ? t('cotisations.modifier') : t('cotisations.nouveau')} size="sm"
                 footer={<div className="flex justify-end gap-3">
-                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>Annuler</ElisaButton>
-                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? 'Enregistrer' : 'Créer'}</ElisaButton>
+                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>{t('cotisations.annuler')}</ElisaButton>
+                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? t('cotisations.enregistrer') : t('cotisations.creer')}</ElisaButton>
                 </div>}
             >
                 <div className="space-y-4">
-                    <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="CNPS, AMO, IRPP" required />
-                    <ElisaInput label="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
-                    <ElisaSelect label="Type" options={[{ value: 'PATRONALE', label: 'Patronale' }, { value: 'SALARIALE', label: 'Salariale' }, { value: 'MIXTE', label: 'Mixte' }]} value={form.type} onValueChange={(v) => setForm({ ...form, type: v })} />
+                    <ElisaInput label={t('cotisations.code')} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder={t('cotisations.codePlaceholder')} required />
+                    <ElisaInput label={t('cotisations.nom')} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
+                    <ElisaSelect label={t('cotisations.type')} options={[{ value: 'PATRONALE', label: t('cotisations.typePatronale') }, { value: 'SALARIALE', label: t('cotisations.typeSalariale') }, { value: 'MIXTE', label: t('cotisations.typeMixte') }]} value={form.type} onValueChange={(v) => setForm({ ...form, type: v })} />
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Taux patronal (%)" type="number" value={String(form.tauxPatronal)} onChange={(e) => setForm({ ...form, tauxPatronal: Number(e.target.value) })} />
-                        <ElisaInput label="Taux salarial (%)" type="number" value={String(form.tauxSalarial)} onChange={(e) => setForm({ ...form, tauxSalarial: Number(e.target.value) })} />
+                        <ElisaInput label={t('cotisations.tauxPatronalLabel')} type="number" value={String(form.tauxPatronal)} onChange={(e) => setForm({ ...form, tauxPatronal: Number(e.target.value) })} />
+                        <ElisaInput label={t('cotisations.tauxSalarialLabel')} type="number" value={String(form.tauxSalarial)} onChange={(e) => setForm({ ...form, tauxSalarial: Number(e.target.value) })} />
                     </div>
                 </div>
             </CustomModal>
@@ -795,6 +799,7 @@ function CotisationsTab() {
 }
 
 function PrimesTab() {
+    const { t } = useTranslation('contrat');
     const { data: primes, isLoading } = useTypesPrimes();
     const creer = useCreerTypePrime();
     const modifier = useModifierTypePrime();
@@ -813,8 +818,8 @@ function PrimesTab() {
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Types de primes</h3>
-                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
+                <h3 className="text-lg font-semibold">{t('primes.titre')}</h3>
+                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>{t('primes.ajouter')}</ElisaButton>
             </div>
             {isLoading ? (
                 <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
@@ -822,12 +827,12 @@ function PrimesTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead><tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Calcul</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Valeur</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actif</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.code')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.nom')}</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.calcul')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.valeur')}</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.actif')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('primes.actions')}</th>
                         </tr></thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {primes.map((p: TypePrime) => (
@@ -836,11 +841,11 @@ function PrimesTab() {
                                     <td className="py-3 px-4">{p.nom}</td>
                                     <td className="py-3 px-4 text-center"><Badge variant="default">{p.typeCalcul}</Badge></td>
                                     <td className="py-3 px-4 text-right font-medium">{p.valeur?.toLocaleString('fr-FR')}{p.typeCalcul === 'POURCENTAGE' ? '%' : ' F'}</td>
-                                    <td className="py-3 px-4 text-center">{p.actif ? <Badge variant="success">Oui</Badge> : <Badge variant="secondary">Non</Badge>}</td>
+                                    <td className="py-3 px-4 text-center">{p.actif ? <Badge variant="success">{t('primes.oui')}</Badge> : <Badge variant="secondary">{t('primes.non')}</Badge>}</td>
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce type de prime ?')) supprimer.mutate(p.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => { if (confirm(t('primes.confirmDelete'))) supprimer.mutate(p.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -849,21 +854,21 @@ function PrimesTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Gift className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucun type de prime</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Gift className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">{t('primes.aucun')}</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
-                title={editing ? 'Modifier le type de prime' : 'Nouveau type de prime'} size="sm"
+                title={editing ? t('primes.modifier') : t('primes.nouveau')} size="sm"
                 footer={<div className="flex justify-end gap-3">
-                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>Annuler</ElisaButton>
-                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? 'Enregistrer' : 'Créer'}</ElisaButton>
+                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>{t('primes.annuler')}</ElisaButton>
+                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? t('primes.enregistrer') : t('primes.creer')}</ElisaButton>
                 </div>}
             >
                 <div className="space-y-4">
-                    <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="ANCIENNETE, TRANSPORT" required />
-                    <ElisaInput label="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
-                    <ElisaSelect label="Type de calcul" options={[{ value: 'FIXE', label: 'Fixe' }, { value: 'POURCENTAGE', label: 'Pourcentage' }, { value: 'VARIABLE', label: 'Variable' }]} value={form.typeCalcul} onValueChange={(v) => setForm({ ...form, typeCalcul: v })} />
-                    <ElisaInput label="Valeur" type="number" value={String(form.valeur)} onChange={(e) => setForm({ ...form, valeur: Number(e.target.value) })} />
+                    <ElisaInput label={t('primes.code')} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder={t('primes.codePlaceholder')} required />
+                    <ElisaInput label={t('primes.nom')} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
+                    <ElisaSelect label={t('primes.typeCalcul')} options={[{ value: 'FIXE', label: t('primes.typeFixe') }, { value: 'POURCENTAGE', label: t('primes.typePourcentage') }, { value: 'VARIABLE', label: t('primes.typeVariable') }]} value={form.typeCalcul} onValueChange={(v) => setForm({ ...form, typeCalcul: v })} />
+                    <ElisaInput label={t('primes.valeur')} type="number" value={String(form.valeur)} onChange={(e) => setForm({ ...form, valeur: Number(e.target.value) })} />
                 </div>
             </CustomModal>
         </div>
@@ -871,6 +876,7 @@ function PrimesTab() {
 }
 
 function RetenuesTab() {
+    const { t } = useTranslation('contrat');
     const { data: retenues, isLoading } = useTypesRetenues();
     const creer = useCreerTypeRetenue();
     const modifier = useModifierTypeRetenue();
@@ -890,8 +896,8 @@ function RetenuesTab() {
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Types de retenues</h3>
-                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>Ajouter</ElisaButton>
+                <h3 className="text-lg font-semibold">{t('retenues.titre')}</h3>
+                <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>{t('retenues.ajouter')}</ElisaButton>
             </div>
             {isLoading ? (
                 <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
@@ -899,11 +905,11 @@ function RetenuesTab() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead><tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Code</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nom</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fréquence</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Montant max</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('retenues.code')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('retenues.nom')}</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('retenues.frequence')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('retenues.montantMax')}</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">{t('retenues.actions')}</th>
                         </tr></thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {retenues.map((r: TypeRetenue) => (
@@ -915,7 +921,7 @@ function RetenuesTab() {
                                     <td className="py-3 px-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <button onClick={() => openEdit(r)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"><Edit className="h-4 w-4 text-gray-500 dark:text-gray-400" /></button>
-                                            <button onClick={() => { if (confirm('Supprimer ce type de retenue ?')) supprimer.mutate(r.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
+                                            <button onClick={() => { if (confirm(t('retenues.confirmDelete'))) supprimer.mutate(r.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 className="h-4 w-4 text-red-400" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -924,21 +930,21 @@ function RetenuesTab() {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Ban className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">Aucun type de retenue</p></div>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg"><Ban className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" /><p className="text-gray-600 dark:text-gray-300">{t('retenues.aucun')}</p></div>
             )}
 
             <CustomModal open={showModal} onOpenChange={setShowModal}
-                title={editing ? 'Modifier le type de retenue' : 'Nouveau type de retenue'} size="sm"
+                title={editing ? t('retenues.modifier') : t('retenues.nouveau')} size="sm"
                 footer={<div className="flex justify-end gap-3">
-                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>Annuler</ElisaButton>
-                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? 'Enregistrer' : 'Créer'}</ElisaButton>
+                    <ElisaButton variant="secondary" onClick={() => setShowModal(false)}>{t('retenues.annuler')}</ElisaButton>
+                    <ElisaButton variant="primary" onClick={handleSubmit} loading={creer.isPending || modifier.isPending} disabled={!form.code || !form.nom}>{editing ? t('retenues.enregistrer') : t('retenues.creer')}</ElisaButton>
                 </div>}
             >
                 <div className="space-y-4">
-                    <ElisaInput label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="AVANCE, PRET, SANCTION" required />
-                    <ElisaInput label="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
-                    <ElisaSelect label="Fréquence" options={[{ value: 'PONCTUELLE', label: 'Ponctuelle' }, { value: 'RECURRENTE', label: 'Récurrente' }]} value={form.frequence} onValueChange={(v) => setForm({ ...form, frequence: v })} />
-                    <ElisaInput label="Montant max (optionnel)" type="number" value={String(form.montantMax)} onChange={(e) => setForm({ ...form, montantMax: Number(e.target.value) })} />
+                    <ElisaInput label={t('retenues.code')} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder={t('retenues.codePlaceholder')} required />
+                    <ElisaInput label={t('retenues.nom')} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
+                    <ElisaSelect label={t('retenues.frequence')} options={[{ value: 'PONCTUELLE', label: t('retenues.frequencePonctuelle') }, { value: 'RECURRENTE', label: t('retenues.frequenceRecurrente') }]} value={form.frequence} onValueChange={(v) => setForm({ ...form, frequence: v })} />
+                    <ElisaInput label={t('retenues.montantMaxLabel')} type="number" value={String(form.montantMax)} onChange={(e) => setForm({ ...form, montantMax: Number(e.target.value) })} />
                 </div>
             </CustomModal>
         </div>

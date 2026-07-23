@@ -8,8 +8,9 @@ const KEYS = {
     all: ['organisation', 'niveaux-organisation'] as const,
 };
 
-function handleError(e: any, msg: string) {
-    toast.error(e?.response?.data?.error?.message || msg);
+function handleError(e: unknown, msg: string) {
+    const err = e as { response?: { data?: { error?: { message?: string } } } };
+    toast.error(err?.response?.data?.error?.message || msg);
 }
 
 export function useNiveauxOrganisation() {
@@ -32,7 +33,7 @@ export function useCreerNiveauOrganisation() {
             return res.data!;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau créé'); },
-        onError: (e: any) => handleError(e, 'Erreur création niveau'),
+        onError: (e: unknown) => handleError(e, 'Erreur création niveau'),
     });
 }
 
@@ -44,7 +45,7 @@ export function useModifierNiveauOrganisation() {
             return res.data!;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau modifié'); },
-        onError: (e: any) => handleError(e, 'Erreur modification niveau'),
+        onError: (e: unknown) => handleError(e, 'Erreur modification niveau'),
     });
 }
 
@@ -53,6 +54,6 @@ export function useSupprimerNiveauOrganisation() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/niveaux-organisation/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau supprimé'); },
-        onError: (e: any) => handleError(e, 'Erreur suppression niveau'),
+        onError: (e: unknown) => handleError(e, 'Erreur suppression niveau'),
     });
 }

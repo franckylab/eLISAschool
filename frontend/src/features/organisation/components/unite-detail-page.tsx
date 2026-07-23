@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/Card';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useUnite } from '../hooks/use-unites';
+import type { OrganigrammePoste, OrganigrammeNode } from '../types/organisation.types';
 
 export function UniteDetailPage() {
     const { id } = useParams({ from: '/_auth/organisation/unites/$id' });
@@ -40,8 +41,10 @@ export function UniteDetailPage() {
         );
     }
 
-    const enfants = (unite as any).enfants || [];
-    const postes = (unite as any).postes || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const detail = unite as any;
+    const enfants: OrganigrammeNode[] = detail.enfants || [];
+    const postes: OrganigrammePoste[] = detail.postes || [];
 
     const onglets: Tab[] = [
         { id: 'infos', label: t('detailInfos'), icon: Info },
@@ -99,7 +102,7 @@ export function UniteDetailPage() {
                             <p className="text-sm text-muted-foreground text-center py-8">{t('aucuneSousUnite')}</p>
                         ) : (
                             <ul className="divide-y divide-border">
-                                {enfants.map((e: any) => (
+                                {enfants.map((e: OrganigrammeNode) => (
                                     <li key={e.id} className="flex items-center gap-3 py-2.5">
                                         <FolderTree className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
                                         <button className="text-sm font-medium text-foreground hover:text-primary" onClick={() => navigate({ to: '/organisation/unites/$id', params: { id: e.id } })}>{e.nom}</button>
@@ -116,7 +119,7 @@ export function UniteDetailPage() {
                             <p className="text-sm text-muted-foreground text-center py-8">{t('aucunPosteTrouve')}</p>
                         ) : (
                             <ul className="divide-y divide-border">
-                                {postes.map((p: any) => (
+                                {postes.map((p: OrganigrammePoste) => (
                                     <li key={p.id} className="flex items-center gap-3 py-2.5">
                                         <Briefcase className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
                                         <button className="text-sm font-medium text-foreground hover:text-primary" onClick={() => navigate({ to: '/organisation/postes/$id', params: { id: p.id } })}>{p.intitule}</button>

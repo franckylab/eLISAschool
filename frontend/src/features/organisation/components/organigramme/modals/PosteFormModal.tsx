@@ -174,7 +174,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                         style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phIntitulePoste')}
                     />
-                    {errors.intitule && <p className="text-xs mt-1 text-red-500">{errors.intitule.message}</p>}
+                    {errors.intitule && <p className="text-xs mt-1 text-destructive">{errors.intitule.message}</p>}
                 </div>
 
                 {/* Code + Catégorie */}

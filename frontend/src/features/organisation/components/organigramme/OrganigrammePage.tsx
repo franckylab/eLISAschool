@@ -20,8 +20,7 @@ import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { OrganigrammeVertical } from './OrganigrammeVertical';
-import { OrganigrammeHorizontal } from './OrganigrammeHorizontal';
+import { OrganigrammeFlowView } from './OrganigrammeFlowView';
 import { OrganigrammeListe } from './OrganigrammeListe';
 import { OrganigrammeSynthese } from './synthese/OrganigrammeSynthese';
 import { OrganigrammeToolbar } from './toolbar/OrganigrammeToolbar';
@@ -271,8 +270,15 @@ export function OrganigrammePage() {
                         className="w-full h-full"
                     >
                         {vueActive === 'synthese' && <OrganigrammeSynthese data={data} statsApi={statsApi} />}
-                        {vueActive === 'vertical' && <OrganigrammeVertical data={data} onNodeSelect={handleNodeSelect} isEditMode={isEditMode} onEditUnite={canEdit ? handleEditUnite : undefined} onAddChildUnite={canEdit ? handleAddChildUnite : undefined} onDeleteUnite={canDelete ? handleDeleteUnite : undefined} />}
-                        {vueActive === 'horizontal' && <OrganigrammeHorizontal data={data} onNodeSelect={handleNodeSelect} isEditMode={isEditMode} onEditUnite={canEdit ? handleEditUnite : undefined} onAddChildUnite={canEdit ? handleAddChildUnite : undefined} onDeleteUnite={canDelete ? handleDeleteUnite : undefined} />}
+                        <OrganigrammeFlowView
+                            data={data}
+                            direction={vueActive === 'horizontal' ? 'LR' : 'TB'}
+                            onNodeSelect={handleNodeSelect}
+                            isEditMode={isEditMode}
+                            onEditUnite={canEdit ? handleEditUnite : undefined}
+                            onAddChildUnite={canEdit ? handleAddChildUnite : undefined}
+                            onDeleteUnite={canDelete ? handleDeleteUnite : undefined}
+                        />
                         {vueActive === 'liste' && <OrganigrammeListe data={data} onNodeSelect={handleNodeSelect} />}
                     </motion.div>
                 </AnimatePresence>
